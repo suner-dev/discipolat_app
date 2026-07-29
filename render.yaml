@@ -1,0 +1,116 @@
+# Discipolat — Render Blueprint (Infrastructure as Code)
+# Deploys: PostgreSQL DB, Spring Boot API, React Frontend + Nginx
+#
+# Usage:
+#   1. Push this file to GitHub
+#   2. Connect repo to Render (https://render.com)
+#   3. Render auto-detects render.yaml and creates all services
+#   4. Add secrets via Render Dashboard (or GitHub Actions)
+
+databases:
+  - name: discipolat-db
+    databaseName: discipolat
+    user: discipolat
+    region: frankfurt
+    plan: free
+    version: "16"
+    postgresMajorVersion: 16
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+
+services:
+  # ============================================
+  # Backend — Spring Boot API (Docker)
+  # ============================================
+  - type: web
+    name: discipolat-api
+    runtime: image
+    repo: https://github.com/discipolat/discipolat
+    region: frankfurt
+    plan: free
+    branch: main
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: docker
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: discipolat-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: discipolat-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: discipolat-db
+          property: password
+      - key: JWT_PRIVATE_KEY
+        sync: false
+      - key: JWT_PUBLIC_KEY
+        sync: false
+      - key: MANAGEMENT_HEALTH_MAIL_ENABLED
+        value: "false"
+      - key: FRONTEND_URL
+        value: https://discipolat.onrender.com
+      - key: FRONTEND_URL_BASE
+        value: https://discipolat.onrender.com
+    # dockerCommand removed: Dockerfile ENTRYPOINT handles startup
+    # Build is handled by GitHub Actions (docker build & push to GHCR)
+    image:
+      registry: ghcr.io
+      repository: discipolat/discipolat/backend
+      tag: latest
+
+  # ============================================
+  # Frontend — React + Nginx (Docker)
+  # ============================================
+  - type: web
+    name: discipolat-web
+    runtime: image
+    repo: https://github.com/discipolat/discipolat
+    region: frankfurt
+    plan: free
+    branch: main
+    healthCheckPath: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://discipolat-api.onrender.com
+    # Note: VITE_API_URL is inlined at build time by Vite, not read at runtime.
+    # This is set during the GitHub Actions build (see ci.yml frontend job).
+    image:
+      registry: ghcr.io
+      repository: discipolat/discipolat/frontend
+      tag: latest
+
+  # ============================================
+  # Cron — Absence check & report reminders
+  # ============================================
+  - type: cron
+    name: discipolat-cron-absence
+    runtime: image
+    region: frankfurt
+    schedule: "0 */6 * * *" # every 6 hours
+    image:
+      registry: docker.io
+      repository: alpine/curl
+      tag: latest
+    dockerCommand: sh -c "curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/check-absences -H 'Authorization: Bearer $INTERNAL_API_KEY'"
+    envVars:
+      - key: INTERNAL_API_KEY
+        sync: false
+
+  - type: cron
+    name: discipolat-cron-reminder
+    runtime: image
+    region: frankfurt
+    schedule: "0 18 * * SAT" # Saturday 18:00
+    image:
+      registry: docker.io
+      repository: alpine/curl
+      tag: latest
+    dockerCommand: sh -c "curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/send-reminders -H 'Authorization: Bearer $INTERNAL_API_KEY'"
+    envVars:
+      - key: INTERNAL_API_KEY
+        sync: false

@@ -1,0 +1,48 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+
+# Java
+backend/target/
+*.class
+*.jar
+*.war
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Flutter
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+
+# Docker
+docker/volumes/
+
+# Environment
+.env
+.env.local
+
+# JWT Keys (sensitive - generated locally)
+keys/*
+!keys/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+jacoco/
+
+# Docker volumes (local)
+pgdata/

@@ -1,0 +1,152 @@
+package com.discipolat.modules.events.api;
+
+import com.discipolat.common.infrastructure.api.PageResponse;
+import com.discipolat.modules.events.domain.Event;
+import com.discipolat.modules.events.domain.EventRegistration;
+import com.discipolat.modules.events.domain.EventService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/events")
+public class EventController {
+
+    private final EventService eventService;
+
+    public EventController(EventService eventService) {
+        this.eventService = eventService;
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<EventResponse> create(@Valid @RequestBody CreateEventRequest request) {
+        Event event = Event.builder()
+                .typeEvenement(request.typeEvenement())
+                .titre(request.titre())
+                .description(request.description())
+                .lieu(request.lieu())
+                .dateDebut(request.dateDebut())
+                .dateFin(request.dateFin())
+                .limitePlaces(request.limitePlaces())
+                .familleId(request.familleId())
+                .build();
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(EventResponse.from(eventService.create(event)));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<EventResponse> findById(@PathVariable UUID id) {
+        return ResponseEntity.ok(EventResponse.from(eventService.findById(id)));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<PageResponse<EventResponse>> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) UUID familleId,
+            @RequestParam(required = false) String typeEvenement,
+            @RequestParam(required = false) String statut,
+            @RequestParam(defaultValue = "false") boolean upcomingOnly) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50),
+                Sort.by(Sort.Direction.ASC, "dateDebut"));
+        Page<Event> events;
+        if (upcomingOnly) {
+            events = eventService.findUpcoming(pageable);
+        } else if (familleId != null) {
+            events = eventService.findByFamilleId(familleId, pageable);
+        } else if (typeEvenement != null) {
+            events = eventService.findByTypeEvenement(typeEvenement, pageable);
+        } else if (statut != null) {
+            events = eventService.findByStatut(statut, pageable);
+        } else {
+            events = eventService.findAll(pageable);
+        }
+        Page<EventResponse> response = events.map(EventResponse::from);
+        return ResponseEntity.ok(PageResponse.of(
+                response.getContent(), response.getNumber(), response.getSize(),
+                response.getTotalElements(), response.getTotalPages()));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<EventResponse> update(@PathVariable UUID id,
+                                                @Valid @RequestBody UpdateEventRequest request) {
+        Event event = Event.builder()
+                .titre(request.titre())
+                .description(request.description())
+                .lieu(request.lieu())
+                .dateDebut(request.dateDebut())
+                .dateFin(request.dateFin())
+                .limitePlaces(request.limitePlaces())
+                .typeEvenement(request.typeEvenement())
+                .statut(request.statut())
+                .compteRendu(request.compteRendu())
+                .build();
+        return ResponseEntity.ok(EventResponse.from(eventService.update(id, event)));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        eventService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{eventId}/register")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<EventRegistrationResponse> register(@PathVariable UUID eventId) {
+        EventRegistration reg = eventService.register(eventId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(EventRegistrationResponse.from(reg));
+    }
+
+    @DeleteMapping("/{eventId}/unregister")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<Void> unregister(@PathVariable UUID eventId) {
+        eventService.unregister(eventId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{eventId}/attendance")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<EventRegistrationResponse> markAttendance(
+            @PathVariable UUID eventId,
+            @RequestBody Map<String, Object> body) {
+        UUID userId = UUID.fromString((String) body.get("userId"));
+        boolean present = (Boolean) body.get("present");
+        return ResponseEntity.ok(EventRegistrationResponse.from(
+                eventService.markAttendance(eventId, userId, present)));
+    }
+
+    @GetMapping("/{eventId}/registrations")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<List<EventRegistrationResponse>> getRegistrations(
+            @PathVariable UUID eventId) {
+        return ResponseEntity.ok(eventService.getRegistrations(eventId)
+                .stream().map(EventRegistrationResponse::from).toList());
+    }
+
+    // ======================== US-55: EVENT STATISTICS ========================
+
+    @GetMapping("/statistics")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<Map<String, Object>> getEventStatistics(
+            @RequestParam(required = false) UUID familleId,
+            @RequestParam(required = false) String periodeDebut,
+            @RequestParam(required = false) String periodeFin) {
+        return ResponseEntity.ok(eventService.getEventStatistics(familleId, periodeDebut, periodeFin));
+    }
+}
