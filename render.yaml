@@ -33,7 +33,7 @@ services:
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
-        value: docker
+        value: prod
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: discipolat-db
@@ -50,8 +50,14 @@ services:
         sync: false
       - key: JWT_PUBLIC_KEY
         sync: false
-      - key: MANAGEMENT_HEALTH_MAIL_ENABLED
-        value: "false"
+      - key: MAIL_HOST
+        value: smtp.mailgun.org
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
       - key: FRONTEND_URL
         value: https://discipolat.onrender.com
       - key: FRONTEND_URL_BASE

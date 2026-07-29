@@ -10,6 +10,11 @@ vi.mock('@/lib/api', () => ({
   default: {
     get: vi.fn().mockResolvedValue({ data: { content: [] } }),
     post: vi.fn().mockResolvedValue({ data: {} }),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+    defaults: { headers: { common: {} } },
   },
   getErrorMessage: vi.fn().mockReturnValue('Erreur'),
 }));
@@ -70,9 +75,12 @@ describe('SoulCreatePage', () => {
   it('shows date de conversion field when type is NOUVEAU_CONVERTI', async () => {
     renderWithProviders();
     
-    // Select NOUVEAU_CONVERTI from the type dropdown
+    // Select NOUVEAU_CONVERTI from the type dropdown (2nd select after situationFamiliale)
     const selects = screen.getAllByRole('combobox');
-    const typeSelect = selects[0];
+    // selects[0] = situationFamiliale (Identité section)
+    // selects[1] = typeDisciple (Info disciple section)
+    // We need to target selects[1] which is the type dropdown
+    const typeSelect = selects[1];
     fireEvent.change(typeSelect, { target: { value: 'NOUVEAU_CONVERTI' } });
 
     await waitFor(() => {

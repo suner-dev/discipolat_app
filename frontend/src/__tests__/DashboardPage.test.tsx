@@ -8,6 +8,8 @@ import DashboardPage from '@/pages/DashboardPage';
 // Mock recharts to avoid rendering issues in jsdom
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  AreaChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Area: () => null,
   LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Line: () => null,
   BarChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -23,17 +25,42 @@ vi.mock('recharts', () => ({
 }));
 
 // Mock axios to prevent actual API calls
-vi.mock('@/lib/api', () => ({
-  default: {
-    get: vi.fn().mockResolvedValue({ data: { content: [] } }),
+vi.mock('@/lib/api', () => {
+  const mockKpiData = {
+    tauxPresenceGlobal: 75.5,
+    tauxPresenceNouveauxArrivants: 60.0,
+    tauxPresenceNouveauxConvertis: 85.0,
+    totalAmes: 45,
+    totalFaiseurs: 8,
+    totalFamilles: 4,
+    totalDepartements: 2,
+    totalSorties: 3,
+    totalMaintenus: 42,
+    suivisParallelesActifs: 2,
+    alertesActives: 1,
+    rapportsSoumis: 5,
+    rapportsEnAttente: 2,
+    famillesARisque: 0,
+    tendancePresence: 2.5,
+  };
+  const mockApiInstance = {
+    get: vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/dashboard/kpi')) return Promise.resolve({ data: mockKpiData });
+      if (url.includes('/alerts')) return Promise.resolve({ data: { content: [] } });
+      return Promise.resolve({ data: { content: [] } });
+    }),
     post: vi.fn(),
     interceptors: {
       request: { use: vi.fn() },
       response: { use: vi.fn() },
     },
-  },
-  getErrorMessage: vi.fn().mockReturnValue('Erreur'),
-}));
+    defaults: { headers: { common: {} } },
+  };
+  return {
+    default: mockApiInstance,
+    getErrorMessage: vi.fn().mockReturnValue('Erreur'),
+  };
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,7 +100,7 @@ describe('DashboardPage', () => {
 
   it('displays welcome message with user name', () => {
     renderWithProviders();
-    expect(screen.getByText(/Bienvenue.*Pierre/)).toBeInTheDocument();
+    expect(screen.getByText(/^(Bonjour|Bon après-midi|Bonsoir), Pierre$/)).toBeInTheDocument();
   });
 
   it('renders stat cards with labels', () => {
@@ -86,8 +113,8 @@ describe('DashboardPage', () => {
 
   it('renders charts section headings', () => {
     renderWithProviders();
-    expect(screen.getByText('Taux de présence par type')).toBeInTheDocument();
-    expect(screen.getByText('Mouvements du suivi')).toBeInTheDocument();
+    expect(screen.getByText('Présence par type de disciple')).toBeInTheDocument();
+    expect(screen.getByText('Tendance de présence')).toBeInTheDocument();
   });
 
   it('shows non-pasteur message for other roles', () => {
