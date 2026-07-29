@@ -26,7 +26,7 @@ services:
   - type: web
     name: discipolat-api
     runtime: image
-    repo: https://github.com/discipolat/discipolat
+    repo: https://github.com/suner-dev/discipolat_app
     region: frankfurt
     plan: free
     branch: main
@@ -56,11 +56,10 @@ services:
         value: https://discipolat.onrender.com
       - key: FRONTEND_URL_BASE
         value: https://discipolat.onrender.com
-    # dockerCommand removed: Dockerfile ENTRYPOINT handles startup
     # Build is handled by GitHub Actions (docker build & push to GHCR)
     image:
       registry: ghcr.io
-      repository: discipolat/discipolat/backend
+      repository: suner-dev/discipolat_app/backend
       tag: latest
 
   # ============================================
@@ -69,7 +68,7 @@ services:
   - type: web
     name: discipolat-web
     runtime: image
-    repo: https://github.com/discipolat/discipolat
+    repo: https://github.com/suner-dev/discipolat_app
     region: frankfurt
     plan: free
     branch: main
@@ -77,11 +76,9 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://discipolat-api.onrender.com
-    # Note: VITE_API_URL is inlined at build time by Vite, not read at runtime.
-    # This is set during the GitHub Actions build (see ci.yml frontend job).
     image:
       registry: ghcr.io
-      repository: discipolat/discipolat/frontend
+      repository: suner-dev/discipolat_app/frontend
       tag: latest
 
   # ============================================
