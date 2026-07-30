@@ -1,17 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'api_config.dart';
 
 class ApiService {
   late final Dio _dio;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  static const String _baseUrl = 'http://10.0.2.2:8080/api/v1';
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
 
-  ApiService() {
+  /// Crée une instance d'ApiService.
+  ///
+  /// [baseUrl] peut être omis pour utiliser la configuration automatique
+  /// (production Render par défaut, ou `--dart-define=API_URL=...`).
+  ApiService({String? baseUrl}) {
+    final resolvedUrl = baseUrl ?? ApiConfig.baseUrl;
     _dio = Dio(BaseOptions(
-      baseUrl: _baseUrl,
+      baseUrl: resolvedUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       headers: {
@@ -48,7 +53,7 @@ class ApiService {
       if (refreshToken == null) return false;
 
       final response = await Dio().post(
-        '$_baseUrl/auth/refresh',
+        '${_dio.options.baseUrl}/auth/refresh',
         data: {'refreshToken': refreshToken},
       );
 
