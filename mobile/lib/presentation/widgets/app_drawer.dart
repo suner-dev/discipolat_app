@@ -3,8 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../../app.dart';
 import '../../data/services/api_service.dart';
 import 'glass_theme.dart';
-import 'package:dio/dio.dart';
-
 class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
 
@@ -23,6 +21,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.business_rounded, 'title': 'Dashboard Responsable', 'route': '/dashboard/responsable', 'roles': ['PASTEUR', 'RESPONSABLE']},
     {'icon': Icons.favorite_rounded, 'title': 'Âmes', 'route': '/souls', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
     {'icon': Icons.group_rounded, 'title': 'Familles', 'route': '/families', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
+    {'icon': Icons.people_rounded, 'title': 'CRM Faiseur', 'route': '/crm-faiseur', 'roles': ['ADMIN', 'PASTEUR', 'FAISEUR']},
     {'icon': Icons.search_rounded, 'title': 'Recherche', 'route': '/search', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']},
     {'icon': Icons.description_rounded, 'title': 'Rapport faiseur', 'route': '/reports/maker', 'roles': ['ADMIN', 'PASTEUR', 'FAISEUR']},
     {'icon': Icons.group_work_rounded, 'title': 'Rapport famille', 'route': '/reports/family', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},

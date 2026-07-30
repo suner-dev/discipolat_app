@@ -17,6 +17,8 @@ import 'presentation/screens/events/events_list_screen.dart';
 import 'presentation/screens/departments/departments_list_screen.dart';
 import 'presentation/screens/evaluations/evaluations_screen.dart';
 import 'presentation/screens/search/search_screen.dart';
+import 'presentation/screens/souls/crm_faiseur_screen.dart';
+import 'presentation/screens/souls/pastoral_360_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
 /// with full multi-role support (roles + activeRole).
@@ -115,6 +117,8 @@ Map<String, List<String>> _routeRoles = {
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/evaluations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/parallel-followups': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+  '/crm-faiseur': ['ADMIN', 'PASTEUR', 'FAISEUR'],
+  '/souls/:id/pastoral-360': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
   '/search': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
   '/documents': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
   '/audit': ['ADMIN', 'PASTEUR'],
@@ -236,6 +240,18 @@ final appRouter = GoRouter(
       path: '/evaluations',
       name: 'evaluations',
       builder: (context, state) => const EvaluationsScreen(),
+    ),
+    GoRoute(
+      path: '/crm-faiseur',
+      name: 'crm-faiseur',
+      builder: (context, state) => const CrmFaiseurScreen(),
+    ),
+    GoRoute(
+      path: '/souls/:id/pastoral-360',
+      name: 'soul-pastoral-360',
+      builder: (context, state) => Pastoral360Screen(
+        soulId: state.pathParameters['id']!,
+      ),
     ),
     GoRoute(
       path: '/search',

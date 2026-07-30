@@ -67,6 +67,11 @@ app:
     allowed-origins: ${FRONTEND_URL:http://localhost:3000,http://localhost:5173}
   frontend-url: ${FRONTEND_URL_BASE:http://localhost:5173}
   rate-limiting:
+    # Redis connection URL for distributed rate limiting
+    redis-url: ${REDIS_URL:redis://localhost:6379}
+    # Bucket key expiry in Redis after inactivity (minutes)
+    redis-key-expire-minutes: 10
+    # Rate limit capacities (per-IP, per minute)
     login-capacity: 10
     login-refill: 10
     login-period-minutes: 1
