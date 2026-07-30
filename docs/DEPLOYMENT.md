@@ -69,6 +69,18 @@ docker compose logs -f
 | **Actuator Health** | http://localhost:8081/actuator/health |
 | **PostgreSQL** | localhost:5432 (user: `discipolat`, db: `discipolat`) |
 
+### Services Docker Compose
+
+```
+discipolat-net (bridge)
+├── db:5432         → PostgreSQL 16
+├── redis:6379      → Redis 7 (rate limiting distribué)
+├── api:8080        → Spring Boot API
+├── mailhog:1025    → SMTP de développement
+├── web:80          → React SPA (Nginx)
+└── nginx:80        → Reverse proxy (entrée)
+```
+
 ### Comptes de démonstration (seed data)
 
 | Rôle | Email | Mot de passe |
@@ -80,7 +92,35 @@ docker compose logs -f
 
 ---
 
-## 3. Déploiement Render (Production)
+## 3. Redis — Rate limiting distribué
+
+L'application utilise **Redis 7** comme backend distribué pour le rate limiting (Bucket4j ProxyManager).
+
+### Configuration
+
+```yaml
+app:
+  rate-limiting:
+    redis-url: ${REDIS_URL:redis://localhost:6379}    # URL de connexion Redis
+    redis-key-expire-minutes: 10                        # Expiration des clés inactives
+```
+
+### Clés Redis
+
+Les buckets sont stockés avec le pattern : `rl:{endpoint}:{ip}`
+
+```
+rl:login:192.168.1.1
+rl:refresh:10.0.0.1
+rl:forgot-password:172.16.0.1
+...
+```
+
+Chaque clé expire automatiquement après 10 minutes d'inactivité (politique `allkeys-lru`).
+
+---
+
+## 4. Déploiement Render (Production)
 
 ### Option A — Render Blueprint (Auto) ⭐ Recommandé
 
@@ -102,7 +142,7 @@ cat keys/public.pem | base64 -w0
 
 1. Aller sur https://dashboard.render.com/
 2. Cliquer **"New +" → "Blueprint"**
-3. Connecter votre dépôt GitHub `discipolat/discipolat`
+3. Connecter votre dépôt GitHub `suner-dev/discipolat_app`
 4. Render détecte automatiquement `render.yaml`
 5. Remplir les **secrets** suivants dans le Dashboard Render :
    - `JWT_PRIVATE_KEY` → clé privée base64
@@ -114,10 +154,14 @@ cat keys/public.pem | base64 -w0
 | Service | Type | Plan | Description |
 |---------|------|------|-------------|
 | `discipolat-db` | PostgreSQL | Free | Base de données (1 GB) |
+| `discipolat-redis` | Redis | Free | Cache rate limiting (25 MB) |
 | `discipolat-api` | Web Service (Docker) | Free | API Spring Boot |
 | `discipolat-web` | Web Service (Docker) | Free | Frontend React + Nginx |
 | `discipolat-cron-absence` | Cron Job | Free | Vérification absences /6h |
 | `discipolat-cron-reminder` | Cron Job | Free | Rappel rapports samedi 18h |
+
+> **Note :** Le service Redis est automatiquement provisionné par Render Blueprint.
+> La variable `REDIS_URL` est automatiquement injectée dans l'API via le bloc `fromDatabase`.
 
 #### 4. URLs finales
 

@@ -33,6 +33,10 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']},
+    {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE']},
+    {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions', 'roles': ['ADMIN']},
+    {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
+    {'icon': Icons.history_rounded, 'title': 'Audit', 'route': '/audit', 'roles': ['ADMIN', 'PASTEUR']},
   ];
 
   static const _roleLabels = {

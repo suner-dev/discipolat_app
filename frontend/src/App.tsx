@@ -41,6 +41,7 @@ import UrgentAidPage from '@/pages/UrgentAidPage';
 import IntelligentSearchPage from '@/pages/IntelligentSearchPage';
 import Pastoral360Page from '@/pages/Pastoral360Page';
 import CrmFaiseurPage from '@/pages/CrmFaiseurPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 import WeeklyProgramPage from '@/pages/WeeklyProgramPage';
 import EventStatisticsPage from '@/pages/EventStatisticsPage';
 import PrayerSpacesPage from '@/pages/PrayerSpacesPage';
@@ -287,7 +288,7 @@ export default function App() {
 
       {/* Default redirect */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

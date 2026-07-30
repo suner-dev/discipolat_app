@@ -19,6 +19,12 @@ databases:
       - source: 0.0.0.0/0
         description: everywhere
 
+redis:
+  - name: discipolat-redis
+    region: frankfurt
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
 services:
   # ============================================
   # Backend — Spring Boot API (Docker)
@@ -46,6 +52,11 @@ services:
         fromDatabase:
           name: discipolat-db
           property: password
+      - key: REDIS_URL
+        fromService:
+          name: discipolat-redis
+          type: redis
+          property: connectionString
       - key: JWT_PRIVATE_KEY
         sync: false
       - key: JWT_PUBLIC_KEY

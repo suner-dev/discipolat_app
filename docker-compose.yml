@@ -1,4 +1,7 @@
 services:
+  # ============================================
+  # PostgreSQL — Base de données principale
+  # ============================================
   db:
     image: postgres:16-alpine
     container_name: discipolat-db
@@ -15,7 +18,30 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - discipolat-net
 
+  # ============================================
+  # Redis — Rate limiting distribué (Bucket4j)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: discipolat-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - discipolat-net
+
+  # ============================================
+  # Backend — Spring Boot API
+  # ============================================
   api:
     build:
       context: ./backend
@@ -28,6 +54,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/discipolat
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-discipolat}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-discipolat_secret}
+      REDIS_URL: redis://redis:6379
       JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
       MAIL_HOST: mailhog
@@ -37,21 +64,33 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./keys:/app/keys:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+    networks:
+      - discipolat-net
 
+  # ============================================
+  # MailHog — Email de développement (SMTP factice)
+  # ============================================
   mailhog:
     image: mailhog/mailhog:latest
     container_name: discipolat-mailhog
     ports:
       - "8026:8025"
       - "1026:1025"
+    networks:
+      - discipolat-net
 
+  # ============================================
+  # Frontend — React + Nginx (SPA)
+  # ============================================
   web:
     build:
       context: ./frontend
@@ -62,7 +101,12 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    networks:
+      - discipolat-net
 
+  # ============================================
+  # Nginx — Reverse proxy (optionnel si Render)
+  # ============================================
   nginx:
     image: nginx:alpine
     container_name: discipolat-nginx
@@ -73,6 +117,13 @@ services:
     depends_on:
       - web
       - api
+    networks:
+      - discipolat-net
 
 volumes:
   pgdata:
+  redisdata:
+
+networks:
+  discipolat-net:
+    driver: bridge

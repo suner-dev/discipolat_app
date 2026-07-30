@@ -19,6 +19,11 @@ import 'presentation/screens/evaluations/evaluations_screen.dart';
 import 'presentation/screens/search/search_screen.dart';
 import 'presentation/screens/souls/crm_faiseur_screen.dart';
 import 'presentation/screens/souls/pastoral_360_screen.dart';
+import 'presentation/screens/users/users_list_screen.dart';
+import 'presentation/screens/users/permissions_screen.dart';
+import 'presentation/screens/users/documents_screen.dart';
+import 'presentation/screens/users/audit_screen.dart';
+import 'presentation/screens/not_found_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
 /// with full multi-role support (roles + activeRole).
@@ -120,6 +125,8 @@ Map<String, List<String>> _routeRoles = {
   '/crm-faiseur': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/souls/:id/pastoral-360': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
   '/search': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+  '/users': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/permissions': ['ADMIN'],
   '/documents': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
   '/audit': ['ADMIN', 'PASTEUR'],
 };
@@ -258,5 +265,26 @@ final appRouter = GoRouter(
       name: 'search',
       builder: (context, state) => const SearchScreen(),
     ),
+    GoRoute(
+      path: '/users',
+      name: 'users',
+      builder: (context, state) => const UsersListScreen(),
+    ),
+    GoRoute(
+      path: '/permissions',
+      name: 'permissions',
+      builder: (context, state) => const PermissionsScreen(),
+    ),
+    GoRoute(
+      path: '/documents',
+      name: 'documents',
+      builder: (context, state) => const DocumentsScreen(),
+    ),
+    GoRoute(
+      path: '/audit',
+      name: 'audit',
+      builder: (context, state) => const AuditScreen(),
+    ),
   ],
+  errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
 );
