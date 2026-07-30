@@ -73,6 +73,8 @@ services:
         value: https://discipolat.onrender.com
       - key: FRONTEND_URL_BASE
         value: https://discipolat.onrender.com
+      - key: MAIL_PASSWORD
+        sync: false
     # Build is handled by GitHub Actions (docker build & push to GHCR)
     image:
       registry: ghcr.io

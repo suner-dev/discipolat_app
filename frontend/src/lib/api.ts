@@ -1,6 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081';
+// Par défaut : utilise le proxy Vite (baseURL = '/api/v1')
+// En production : défini via VITE_API_URL (ex: https://discipolat-api.onrender.com)
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const api = axios.create({
   baseURL: `${API_URL}/api/v1`,
