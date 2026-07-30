@@ -12,5 +12,5 @@ public record CreatePrayerRequest(
         UUID ameId,
         @NotBlank @Pattern(regexp = "SANTE|FAMILLE|TRAVAIL|SPIRITUEL|AUTRE") String categorie,
         @Pattern(regexp = "BASSE|MOYENNE|HAUTE") String priorite,
-        @Pattern(regexp = "PRIVEE|PARTAGEE") String visibilite
+        @Pattern(regexp = "PRIVEE|PARTAGEE|GENERALE|PASTEUR_RESPONSABLE|FAISEUR") String visibilite
 ) {}

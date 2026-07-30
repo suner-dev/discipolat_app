@@ -34,6 +34,8 @@ spring:
       write-dates-as-timestamps: false
     date-format: yyyy-MM-dd'T'HH:mm:ss'Z'
     time-zone: UTC
+  cache:
+    cache-names: evaluationScores,dashboardKpi,dashboardTrends
   servlet:
     multipart:
       max-file-size: 10MB
@@ -64,6 +66,29 @@ app:
   cors:
     allowed-origins: ${FRONTEND_URL:http://localhost:3000,http://localhost:5173}
   frontend-url: ${FRONTEND_URL_BASE:http://localhost:5173}
+  rate-limiting:
+    login-capacity: 10
+    login-refill: 10
+    login-period-minutes: 1
+    refresh-capacity: 20
+    refresh-refill: 20
+    refresh-period-minutes: 1
+    forgot-password-capacity: 3
+    forgot-password-refill: 3
+    forgot-password-period-minutes: 1
+    reset-password-capacity: 5
+    reset-password-refill: 5
+    reset-password-period-minutes: 1
+    activate-capacity: 5
+    activate-refill: 5
+    activate-period-minutes: 1
+    change-password-capacity: 5
+    change-password-refill: 5
+    change-password-period-minutes: 1
+    switch-role-capacity: 30
+    switch-role-refill: 30
+    switch-role-period-minutes: 1
+
   scheduler:
     absence-check-cron: "0 0 */6 * * *"
     report-reminder-cron: "0 0 8 * * MON"

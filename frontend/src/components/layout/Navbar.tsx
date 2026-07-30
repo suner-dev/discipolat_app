@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, roleLabels } from '@/contexts/AuthContext';
 import {
   Menu,
   Sun,
@@ -9,9 +9,11 @@ import {
   BellRing,
   LogOut,
   User,
+  RotateCw,
   ChevronDown,
   Settings,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -22,7 +24,6 @@ interface NavbarProps {
 }
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -30,9 +31,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     }
     return false;
   });
+  const { user, logout, switchRole, roles, activeRole } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const roleMenuRef = useRef<HTMLDivElement>(null);
 
   // Track scroll for shadow effect
   useEffect(() => {
@@ -43,11 +47,14 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close menu on click outside
+  // Close menus on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setShowProfileMenu(false);
+      }
+      if (roleMenuRef.current && !roleMenuRef.current.contains(e.target as Node)) {
+        setShowRoleMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -78,6 +85,23 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleRoleSwitch = async (newRole: string) => {
+    setShowRoleMenu(false);
+    setShowProfileMenu(false);
+    await switchRole(newRole);
+  };
+
+  const roleColor = (r: string) => {
+    switch (r) {
+      case 'ADMIN': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'PASTEUR': return 'bg-primary-500/20 text-primary-400 border-primary-500/30';
+      case 'RESPONSABLE': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+      case 'FAISEUR': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+      case 'CHEF_DE_FAMILLE': return 'bg-gold-500/20 text-gold-400 border-gold-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
   };
 
   return (
@@ -183,6 +207,13 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     {user?.firstName} {user?.lastName}
                   </p>
                   <p className="text-xs text-gray-400">{user?.email}</p>
+                  {/* Active role badge */}
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3 h-3 text-primary-400" />
+                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${roleColor(activeRole || user?.role || '')}`}>
+                      {roleLabels[activeRole || user?.role || ''] || activeRole || user?.role}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="py-1">
@@ -204,6 +235,44 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     <Settings className="w-4 h-4 text-gray-400" />
                     Paramètres
                   </Link>
+
+                  {/* Role Switcher — only show if user has multiple roles */}
+                  {roles && roles.length > 1 && (
+                    <div ref={roleMenuRef} className="border-t border-gray-100/50 dark:border-gray-700/30 mt-1 pt-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowRoleMenu(!showRoleMenu); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300
+                                 hover:bg-gray-100/60 dark:hover:bg-gray-800/40 transition-colors"
+                      >
+                        <RotateCw className="w-4 h-4 text-gray-400" />
+                        <span className="flex-1 text-left">Changer de rôle</span>
+                        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${showRoleMenu ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {showRoleMenu && (
+                        <div className="px-2 pb-1 space-y-0.5 animate-slide-up">
+                          {roles.map((r: string) => (
+                            <button
+                              key={r}
+                              onClick={() => handleRoleSwitch(r)}
+                              disabled={r === (activeRole || user?.role)}
+                              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all
+                                ${r === (activeRole || user?.role)
+                                  ? 'bg-primary-500/10 text-primary-400 cursor-default'
+                                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/40'
+                                }`}
+                            >
+                              <span className={`w-2 h-2 rounded-full ${r === (activeRole || user?.role) ? 'bg-primary-400' : 'bg-gray-500'}`} />
+                              <span className="flex-1 text-left">{roleLabels[r] || r}</span>
+                              {r === (activeRole || user?.role) && (
+                                <span className="text-[9px] text-primary-400 font-semibold">ACTIF</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t border-gray-100/50 dark:border-gray-700/30 pt-1">

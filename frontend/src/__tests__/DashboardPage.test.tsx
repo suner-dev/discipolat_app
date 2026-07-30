@@ -140,7 +140,7 @@ describe('DashboardPage', () => {
       </QueryClientProvider>
     );
 
-    expect(screen.getByText(/indicateurs détaillés.*Pasteur/)).toBeInTheDocument();
+    expect(screen.getByText('Mon tableau de bord')).toBeInTheDocument();
   });
 
   it('has links to souls, families, and other sections', () => {

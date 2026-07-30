@@ -1,0 +1,13 @@
+package com.discipolat.modules.events.domain;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.UUID;
+
+@Repository
+public interface WeeklyProgramTemplateRepository extends JpaRepository<WeeklyProgramTemplate, UUID> {
+    List<WeeklyProgramTemplate> findByActifTrueOrderByJourSemaineAscHeureDebutAsc();
+    List<WeeklyProgramTemplate> findByCreatedByOrderByJourSemaineAsc(UUID createdBy);
+}

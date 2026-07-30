@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable from '@/components/shared/DataTable';
-import type { Prayer, PageResponse, CategoriePriere, PrioritePriere } from '@/types';
+import type { Prayer, PageResponse, CategoriePriere, PrioritePriere, VisibilitePriere } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
   Heart,
@@ -64,7 +64,7 @@ interface PrayerFormState {
   contenu: string;
   categorie: CategoriePriere;
   priorite: PrioritePriere;
-  visibilite: 'PRIVEE' | 'PARTAGEE';
+  visibilite: VisibilitePriere;
 }
 
 function createPrayerForm(
@@ -128,9 +128,12 @@ function createPrayerForm(
         </div>
         <div>
           <label className="label">Visibilité</label>
-          <select className="input" value={form.visibilite} onChange={(e) => update({ visibilite: e.target.value as 'PRIVEE' | 'PARTAGEE' })}>
-            <option value="PARTAGEE">Partagé famille</option>
-            <option value="PRIVEE">Privé (moi + faiseur)</option>
+          <select className="input" value={form.visibilite} onChange={(e) => update({ visibilite: e.target.value as VisibilitePriere })}>
+            <option value="GENERALE">Général (tous)</option>
+            <option value="PASTEUR_RESPONSABLE">Pasteur + Responsables</option>
+            <option value="FAISEUR">Chefs de famille + Faiseurs</option>
+            <option value="PARTAGEE">Famille</option>
+            <option value="PRIVEE">Privé (moi uniquement)</option>
           </select>
         </div>
       </div>
@@ -156,6 +159,7 @@ export default function PrayersPage() {
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState<CategoriePriere | ''>('');
   const [statutFilter, setStatutFilter] = useState('');
+  const [visibiliteFilter, setVisibiliteFilter] = useState<VisibilitePriere | ''>('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -168,23 +172,24 @@ export default function PrayersPage() {
     contenu: '',
     categorie: 'AUTRE' as CategoriePriere,
     priorite: 'MOYENNE' as PrioritePriere,
-    visibilite: 'PARTAGEE' as 'PRIVEE' | 'PARTAGEE',
+    visibilite: 'PARTAGEE' as VisibilitePriere,
   });
   const [editForm, setEditForm] = useState({
     titre: '',
     contenu: '',
     categorie: 'AUTRE' as CategoriePriere,
     priorite: 'MOYENNE' as PrioritePriere,
-    visibilite: 'PARTAGEE' as 'PRIVEE' | 'PARTAGEE',
+    visibilite: 'PARTAGEE' as VisibilitePriere,
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['prayers', page, search, catFilter, statutFilter],
+    queryKey: ['prayers', page, search, catFilter, statutFilter, visibiliteFilter],
     queryFn: async () => {
       const params = new URLSearchParams({ size: '20', page: String(page) });
       if (search) params.set('search', search);
       if (catFilter) params.set('categorie', catFilter);
       if (statutFilter) params.set('statut', statutFilter);
+      if (visibiliteFilter) params.set('visibilite', visibiliteFilter);
       const res = await api.get(`/prayers?${params}`);
       return res.data as PageResponse<Prayer>;
     },
@@ -307,12 +312,28 @@ export default function PrayersPage() {
     },
     {
       header: 'Visibilité',
-      cell: (prayer) => (
-        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-          {prayer.visibilite === 'PRIVEE' ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-          {prayer.visibilite === 'PRIVEE' ? 'Privé' : 'Famille'}
-        </span>
-      ),
+      cell: (prayer) => {
+        const visColors: Record<string, string> = {
+          GENERALE: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300',
+          PASTEUR_RESPONSABLE: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+          FAISEUR: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+          PARTAGEE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+          PRIVEE: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+        };
+        const visLabels: Record<string, string> = {
+          GENERALE: 'Général',
+          PASTEUR_RESPONSABLE: 'Pasteur + Resp.',
+          FAISEUR: 'Chefs + Faiseurs',
+          PARTAGEE: 'Famille',
+          PRIVEE: 'Privé',
+        };
+        return (
+          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${visColors[prayer.visibilite] || visColors.PRIVEE}`}>
+            {prayer.visibilite === 'PRIVEE' ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+            {visLabels[prayer.visibilite] || prayer.visibilite}
+          </span>
+        );
+      },
     },
     {
       header: 'Statut',
@@ -486,6 +507,14 @@ export default function PrayersPage() {
               <option value="">Tous statuts</option>
               <option value="EN_COURS">En cours</option>
               <option value="EXAUCEE">Exaucé</option>
+            </select>
+            <select value={visibiliteFilter} onChange={(e) => { setVisibiliteFilter(e.target.value as VisibilitePriere | ''); setPage(0); }} className="input w-auto">
+              <option value="">Toutes visibilités</option>
+              <option value="GENERALE">Général</option>
+              <option value="PASTEUR_RESPONSABLE">Pasteur + Responsables</option>
+              <option value="FAISEUR">Chefs + Faiseurs</option>
+              <option value="PARTAGEE">Famille</option>
+              <option value="PRIVEE">Privé</option>
             </select>
           </div>
         )}

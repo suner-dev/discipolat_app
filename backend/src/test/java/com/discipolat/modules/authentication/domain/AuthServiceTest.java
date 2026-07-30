@@ -69,9 +69,9 @@ class AuthServiceTest {
     @Test
     void login_WithValidCredentials_ShouldReturnAuthResult() {
         when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anyBoolean()))
+        when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean()))
                 .thenReturn("access-token");
-        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString()))
+        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet()))
                 .thenReturn("refresh-token");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
@@ -82,8 +82,8 @@ class AuthServiceTest {
         assertEquals("refresh-token", result.refreshToken());
         assertEquals(userId, result.user().getId());
         assertEquals("Test", result.user().getFirstName());
-        // Verify failed login attempts reset on success
-        verify(userRepository).save(any(User.class));
+        // Verify failed login attempts reset on success (called at least once)
+        verify(userRepository, atLeastOnce()).save(any(User.class));
     }
 
     @Test
@@ -141,9 +141,9 @@ class AuthServiceTest {
         when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.extractUserId(refreshToken)).thenReturn(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anyBoolean()))
+        when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean()))
                 .thenReturn("new-access-token");
-        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString()))
+        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet()))
                 .thenReturn("new-refresh-token");
 
         AuthService.AuthResult result = authService.refreshToken(refreshToken);

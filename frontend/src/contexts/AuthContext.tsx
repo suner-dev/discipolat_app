@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { User, LoginRequest } from '@/types';
+import type { User, LoginRequest, AuthResponse, UserRole } from '@/types';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -7,10 +7,49 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (data: LoginRequest) => Promise<void>;
+  login: (data: LoginRequest) => Promise<AuthResponse>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   hasRole: (...roles: string[]) => boolean;
+  switchRole: (newRole: string) => Promise<void>;
+  roles: UserRole[];
+  activeRole: UserRole | null;
+}
+
+const roleLabels: Record<string, string> = {
+  ADMIN: 'Admin',
+  PASTEUR: 'Pasteur',
+  RESPONSABLE: 'Responsable',
+  FAISEUR: 'Faiseur',
+  CHEF_DE_FAMILLE: 'Chef de famille',
+  MEMBRE: 'Membre',
+};
+
+function buildUserFromAuthResponse(d: any): User {
+  const roles: UserRole[] = d.roles && d.roles.length > 0
+    ? d.roles
+    : d.role ? [d.role] : ['FAISEUR'];
+  const activeRole: UserRole = d.activeRole || roles[0] || 'FAISEUR';
+
+  return {
+    id: d.userId,
+    email: d.email,
+    role: activeRole,
+    roles,
+    activeRole,
+    estChefDeFamille: d.estChefDeFamille || false,
+    firstName: d.firstName || '',
+    lastName: d.lastName || '',
+    phone: d.phone || '',
+    statut: d.statut || 'ACTIVE',
+    familleGereeId: d.familleGereeId || undefined,
+    dateNaissance: d.dateNaissance || '',
+    photoUrl: d.photoUrl || '',
+    situationFamiliale: d.situationFamiliale || '',
+    twoFactorEnabled: d.twoFactorEnabled || false,
+    createdAt: d.createdAt || new Date().toISOString(),
+    updatedAt: d.updatedAt || new Date().toISOString(),
+  };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,9 +57,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     const stored = localStorage.getItem('user');
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored) as User;
+    } catch {
+      return null;
+    }
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  const roles: UserRole[] = user?.roles ?? (user?.role ? [user.role] : []);
+  const activeRole: UserRole | null = user?.activeRole ?? user?.role ?? null;
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -34,29 +81,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await api.post('/auth/login', data);
     const d = response.data;
 
-    const userData = {
-      id: d.userId,
-      email: d.email,
-      role: d.role,
-      estChefDeFamille: d.estChefDeFamille || false,
-      firstName: d.firstName || '',
-      lastName: d.lastName || '',
-      phone: d.phone || '',
-      statut: d.statut || 'ACTIVE',
-      familleGereeId: d.familleGereeId || undefined,
-      dateNaissance: d.dateNaissance || '',
-      photoUrl: d.photoUrl || '',
-      situationFamiliale: d.situationFamiliale || '',
-      createdAt: d.createdAt || new Date().toISOString(),
-      updatedAt: d.updatedAt || new Date().toISOString(),
-    };
+    const userData = buildUserFromAuthResponse(d);
 
     localStorage.setItem('accessToken', d.accessToken);
     localStorage.setItem('refreshToken', d.refreshToken);
     localStorage.setItem('user', JSON.stringify(userData));
     api.defaults.headers.common['Authorization'] = `Bearer ${d.accessToken}`;
     setUser(userData);
-    toast.success(`Bienvenue, ${userData.firstName || userData.email}!`);
+
+    if (!d.twoFactorEnabled) {
+      toast.success(`Bienvenue, ${userData.firstName || userData.email}!`);
+    }
+
+    return d;
   }, []);
 
   const logout = useCallback(() => {
@@ -78,12 +115,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const hasRole = useCallback(
-    (...roles: string[]) => {
+    (...checkRoles: string[]) => {
       if (!user) return false;
-      return roles.includes(user.role);
+      // Check against ALL user roles, not just activeRole
+      return user.roles?.some((r) => checkRoles.includes(r)) ?? checkRoles.includes(user.role);
     },
     [user]
   );
+
+  const switchRole = useCallback(async (newRole: string) => {
+    try {
+      const res = await api.post('/auth/switch-role', { role: newRole });
+      const d = res.data;
+
+      // Update JWT tokens returned by switch-role
+      if (d.accessToken) {
+        localStorage.setItem('accessToken', d.accessToken);
+        localStorage.setItem('refreshToken', d.refreshToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${d.accessToken}`;
+      }
+
+      setUser((prev) => {
+        if (!prev) return prev;
+        const updated = {
+          ...prev,
+          role: newRole as UserRole,
+          activeRole: newRole as UserRole,
+        };
+        localStorage.setItem('user', JSON.stringify(updated));
+        return updated;
+      });
+
+      toast.success(`Rôle actif : ${roleLabels[newRole] || newRole}`);
+      // React state update triggers automatic re-render with new role
+    } catch (err: any) {
+      toast.error('Échec du changement de rôle');
+    }
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -95,6 +163,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         updateUser,
         hasRole,
+        switchRole,
+        roles,
+        activeRole,
       }}
     >
       {children}
@@ -109,3 +180,6 @@ export function useAuth() {
   }
   return context;
 }
+
+export { roleLabels };
+

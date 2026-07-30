@@ -6,6 +6,9 @@ import com.discipolat.modules.users.domain.UserStatus;
 import java.time.Instant;
 import java.util.UUID;
 
+import java.util.List;
+import java.util.Set;
+
 public record UserResponse(
         UUID id,
         String email,
@@ -13,6 +16,8 @@ public record UserResponse(
         String lastName,
         String phone,
         UserRole role,
+        Set<UserRole> roles,
+        UserRole activeRole,
         boolean estChefDeFamille,
         UUID familleGereeId,
         UserStatus statut,
@@ -31,6 +36,8 @@ public record UserResponse(
                 user.getLastName(),
                 user.getPhone(),
                 user.getRole(),
+                user.getRoles(),
+                user.getActiveRole(),
                 user.isEstChefDeFamille(),
                 user.getFamilleGereeId(),
                 user.getStatut(),

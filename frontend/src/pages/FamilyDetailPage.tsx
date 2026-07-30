@@ -5,7 +5,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import type { Family, Soul, FamilyReport, User } from '@/types';
 import {
   ArrowLeft, Users, FileText, Heart, UserCog, Loader2, CheckCircle2, X,
-  Calendar, Crown, Sparkles, ChevronRight, Clock,
+  Calendar, Crown, Sparkles, ChevronRight, Clock, BarChart3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -36,7 +36,7 @@ export default function FamilyDetailPage() {
   const { data: chefHistory } = useQuery({
     queryKey: ['family', id, 'chief-history'],
     queryFn: async () => {
-      const res = await api.get(`/families/${id}/chief/history`);
+      const res = await api.get(`/families/${id}/chief-history`);
       return res.data as { ancienChefId: string; nouveauChefId: string; dateChangement: string }[];
     },
     enabled: !!id,
@@ -128,9 +128,14 @@ export default function FamilyDetailPage() {
               </div>
             </div>
           </div>
-          <button onClick={() => setShowChiefModal(true)} className="btn-secondary btn-sm self-start">
-            <UserCog className="w-4 h-4" /> Changer chef
-          </button>
+          <div className="flex gap-2 self-start">
+            <Link to={`/families/${id}/faiseur-performance`} className="btn-secondary btn-sm">
+              <BarChart3 className="w-4 h-4" /> Performance faiseurs
+            </Link>
+            <button onClick={() => setShowChiefModal(true)} className="btn-secondary btn-sm">
+              <UserCog className="w-4 h-4" /> Changer chef
+            </button>
+          </div>
         </div>
       </div>
 

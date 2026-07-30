@@ -1,5 +1,58 @@
 # Changelog
 
+## [2.0.0] - 2026-07-30
+
+### 🏗️ Architecture
+- **Système Multi-Rôles** : un compte, plusieurs rôles, Role Context Switcher
+- JWT enrichi avec `roles[]`, `activeRole`, `estChefDeFamille`
+- `SecurityUtils.getAllUserRoles()` + `SecurityUtils.getCurrentUserRole()` mis à jour
+- `@PreAuthorize` vérifie désormais `hasAnyRole` pour le multi-rôle
+- `User.java` : ajout de `Set<UserRole> roles`, `UserRole activeRole`
+- DataInitializer seed : 6 profils multi-rôles (admin, pasteur, responsable, chef, faiseur, paul)
+
+### 📊 Dashboards
+- **Dashboard Pasteur** : centre de pilotage avec vue globale, croissance, alertes, stats
+- **Dashboard Responsable** : vue département (scope unique), événements, rapports, évaluations
+- **Dashboard Chef de Famille** : vue famille, faiseurs, disciples, réseau
+- **CRM Faiseur** : suivi des disciples avec filtres (Actifs, Intégration, Veille, Décrochés)
+- **Dossier Pastoral 360°** : fiche complète avec indices intelligents, timeline, notes privées
+
+### 🔒 Sécurité
+- **Rate limiting Bucket4j** : 7 buckets configurables (login, refresh, forgot-password, reset-password, activate, change-password, switch-role)
+- HSTS (1 an, subdomains), CSP, X-Frame-Options DENY
+- Actuator et Swagger restreints à ADMIN/PASTEUR
+- Cache configuré (CacheConfig, CacheMissLogger)
+
+### 🔍 Recherche et analyses
+- **Recherche intelligente** : moteur de recherche cross-entity
+- **Indices automatiques** : santé spirituelle, fidélité, engagement, participation
+- **Alertes intelligentes** : inactifs, absences multiples, isolement
+
+### 🧪 Tests
+- 3 nouveaux fichiers de test frontend : `Pastoral360Page.test.tsx` (11 tests), `CrmFaiseurPage.test.tsx` (8 tests), `Sidebar.test.tsx` (7 tests)
+- 1 nouveau fichier de test backend : `DashboardServiceTest` (6 tests)
+- Correction des tests existants pour le multi-rôle (`JwtTokenProviderTest`, `AuthServiceTest`, `SoulServiceTest`, `TwoFactorServiceTest`)
+- **Total : 59 tests backend + 39 tests frontend = 98 tests ✅**
+
+### 🗄️ Base de données
+- Migrations V9 à V15 (programmes hebdomadaires, évaluations, discipline, multi-rôle, performances)
+- Indexes composites optimisés (53+ indexes)
+- Table `user_roles` pour le multi-rôle
+- Colonnes `active_role`, `user_id`, `created_at`, `updated_at`
+
+### 📱 Mobile (Flutter)
+- Role Switcher complet synchronisé
+- Écrans dashboard spécialisés (Pasteur, Responsable, Chef de Famille)
+- Écran Évaluations, Recherche, Prières, Événements
+- Drawer dynamique avec sélecteur de rôle
+- Scrollable dashboards
+
+### 🔧 Technologies ajoutées
+- Bucket4j 8.10.1 (rate limiting)
+- Micrometer Prometheus (métriques)
+- Spring Cache abstrait
+- @EnableScheduling + @EnableCaching
+
 ## [1.0.0] - 2026-07-15
 
 ### Backend

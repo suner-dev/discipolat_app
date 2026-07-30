@@ -14,6 +14,8 @@ public interface FamilyRepository extends JpaRepository<Family, UUID> {
     Page<Family> findByDepartementId(UUID departementId, Pageable pageable);
     Page<Family> findByDepartementIdAndStatut(UUID departementId, StatutEntite statut, Pageable pageable);
     List<Family> findByDepartementId(UUID departementId);
+    List<Family> findByDepartementIdIn(List<UUID> departementIds);
+    Page<Family> findByChefFamilleId(UUID chefFamilleId, Pageable pageable);
     List<Family> findByChefFamilleId(UUID chefFamilleId);
     long countByDepartementIdAndStatut(UUID departementId, StatutEntite statut);
     Page<Family> findAllByStatut(StatutEntite statut, Pageable pageable);

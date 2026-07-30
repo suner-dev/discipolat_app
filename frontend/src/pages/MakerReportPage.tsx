@@ -59,6 +59,28 @@ export default function MakerReportPage() {
     enabled: !!user?.id,
   });
 
+  const prefillMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.get(`/reports/maker-weekly/prefill/${user?.id}`);
+      return res.data as { ameId: string; nom: string; statut: string; etatSpirituel?: string; semaine: string; brouillonExistant: boolean; dejaSoumis: boolean }[];
+    },
+    onSuccess: (data) => {
+      const newReports: Record<string, ReportFormData> = {};
+      for (const entry of data) {
+        newReports[entry.ameId] = {
+          ameId: entry.ameId,
+          presencesParCulte: Object.fromEntries(CULTES.map(c => [c, true])),
+          nbSorties: 0,
+          notesComplementaires: '',
+        };
+      }
+      setReports(newReports);
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(newReports));
+      toast.success(`Pré-remplissage effectué pour ${data.length} âme${data.length > 1 ? 's' : ''}`);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
   const { data: existingReports } = useQuery({
     queryKey: ['maker-reports', 'week', semaine],
     queryFn: async () => {
@@ -191,6 +213,10 @@ export default function MakerReportPage() {
           </p>
         </div>
         <div className="flex gap-2 animate-fade-in">
+          <button onClick={() => prefillMutation.mutate()} disabled={prefillMutation.isPending || !user?.id} className="btn-secondary btn-sm">
+            {prefillMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Pré-remplir
+          </button>
           <button onClick={saveDraft} disabled={!souls?.length} className="btn-secondary btn-sm">
             <Save className="w-4 h-4" /> Sauvegarder
           </button>

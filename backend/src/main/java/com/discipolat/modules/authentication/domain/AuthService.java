@@ -2,6 +2,7 @@ package com.discipolat.modules.authentication.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.users.domain.User;
@@ -15,9 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -54,7 +55,11 @@ public class AuthService {
         this.frontendUrl = frontendUrl;
     }
 
-    public record AuthResult(String accessToken, String refreshToken, User user) {}
+    public record AuthResult(String accessToken, String refreshToken, User user, String activeRole) {
+        public AuthResult(String accessToken, String refreshToken, User user) {
+            this(accessToken, refreshToken, user, user.getActiveRole() != null ? user.getActiveRole().name() : user.getRole().name());
+        }
+    }
 
     // ======================== LOGIN ========================
 
@@ -90,17 +95,41 @@ public class AuthService {
         user.setAccountLockedUntil(null);
         userRepository.save(user);
 
-        // US-04: Enforce 2FA for Admin users (force setup if not enabled)
-        if (user.getRole() == com.discipolat.common.domain.UserRole.ADMIN && !user.isTwoFactorEnabled()) {
-            throw new BadCredentialsException("2FA is required for Admin accounts. Please set up two-factor authentication.");
+        // Initialize roles from existing role + estChefDeFamille flag
+        Set<String> roleNames = new HashSet<>();
+        roleNames.add(user.getRole().name());
+        if (user.isEstChefDeFamille() && !roleNames.contains(UserRole.CHEF_DE_FAMILLE.name())) {
+            roleNames.add(UserRole.CHEF_DE_FAMILLE.name());
+        }
+        // Ensure admin also has PASTEUR-level access
+        if (user.getRole() == UserRole.ADMIN) {
+            roleNames.add(UserRole.PASTEUR.name());
         }
 
-        String accessToken = jwtTokenProvider.generateAccessToken(
-                user.getId(), user.getEmail(), user.getRole().name(), user.isEstChefDeFamille());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(
-                user.getId(), user.getEmail(), user.getRole().name());
+        // Sync User entity roles set
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            Set<UserRole> roles = roleNames.stream()
+                    .map(UserRole::valueOf)
+                    .collect(Collectors.toSet());
+            user.setRoles(roles);
+        }
 
-        return new AuthResult(accessToken, refreshToken, user);
+        // Set active role to default (highest priority)
+        if (user.getActiveRole() == null) {
+            user.setActiveRole(getDefaultActiveRole(user));
+        }
+        userRepository.save(user);
+
+        String activeRoleStr = user.getActiveRole().name();
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                user.getId(), user.getEmail(), activeRoleStr,
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
+                user.isEstChefDeFamille());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(
+                user.getId(), user.getEmail(), activeRoleStr,
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()));
+
+        return new AuthResult(accessToken, refreshToken, user, activeRoleStr);
     }
 
     // ======================== ACTIVATION (US-02) ========================
@@ -241,12 +270,16 @@ public class AuthService {
 
         blacklistedRefreshTokens.add(refreshToken);
 
+        String activeRoleStr = user.getActiveRole() != null ? user.getActiveRole().name() : user.getRole().name();
         String newAccessToken = jwtTokenProvider.generateAccessToken(
-                user.getId(), user.getEmail(), user.getRole().name(), user.isEstChefDeFamille());
+                user.getId(), user.getEmail(), activeRoleStr,
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
+                user.isEstChefDeFamille());
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(
-                user.getId(), user.getEmail(), user.getRole().name());
+                user.getId(), user.getEmail(), activeRoleStr,
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()));
 
-        return new AuthResult(newAccessToken, newRefreshToken, user);
+        return new AuthResult(newAccessToken, newRefreshToken, user, activeRoleStr);
     }
 
     public void logout(String refreshToken) {
@@ -279,5 +312,63 @@ public class AuthService {
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    // ======================== ROLE SWITCHING ========================
+
+    /**
+     * Switch the active role for the current user.
+     * Returns a new access token with the updated active role.
+     */
+    public AuthResult switchActiveRole(UUID userId, UserRole newActiveRole) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
+
+        if (!user.getRoles().contains(newActiveRole)) {
+            throw new BusinessRuleException("User does not have the role: " + newActiveRole,
+                    "INVALID_ROLE");
+        }
+
+        user.setActiveRole(newActiveRole);
+        userRepository.save(user);
+
+        String activeRoleStr = newActiveRole.name();
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                user.getId(), user.getEmail(), activeRoleStr,
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
+                user.isEstChefDeFamille());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(
+                user.getId(), user.getEmail(), activeRoleStr,
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()));
+
+        return new AuthResult(accessToken, refreshToken, user, activeRoleStr);
+    }
+
+    /**
+     * Returns the default active role based on priority.
+     * Priority: ADMIN > PASTEUR > RESPONSABLE > CHEF_DE_FAMILLE > FAISEUR > MEMBRE
+     */
+    /**
+     * Returns the current authenticated user's ID
+     */
+    public UUID getCurrentUserId() {
+        return securityUtils.getCurrentUserId();
+    }
+
+    private UserRole getDefaultActiveRole(User user) {
+        List<UserRole> priority = List.of(
+                UserRole.ADMIN,
+                UserRole.PASTEUR,
+                UserRole.RESPONSABLE,
+                UserRole.CHEF_DE_FAMILLE,
+                UserRole.FAISEUR,
+                UserRole.MEMBRE
+        );
+        for (UserRole role : priority) {
+            if (user.getRoles() != null && user.getRoles().contains(role)) {
+                return role;
+            }
+        }
+        return user.getRole();
     }
 }

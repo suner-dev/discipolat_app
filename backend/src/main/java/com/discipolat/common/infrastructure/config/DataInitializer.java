@@ -1,13 +1,17 @@
 package com.discipolat.common.infrastructure.config;
 
+import com.discipolat.common.domain.UserRole;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
+import com.discipolat.modules.users.domain.UserStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -35,10 +39,70 @@ public class DataInitializer implements CommandLineRunner {
                 userRepository.save(user);
                 updatedCount++;
             }
+            // Migrate legacy users: ensure roles set has at least their primary role
+            if (user.getRoles() == null || user.getRoles().isEmpty()) {
+                user.getRoles().add(user.getRole());
+                if (user.isEstChefDeFamille()) {
+                    user.getRoles().add(UserRole.CHEF_DE_FAMILLE);
+                }
+                if (user.getActiveRole() == null) {
+                    user.setActiveRole(user.getRole());
+                }
+                userRepository.save(user);
+            }
         }
 
         if (updatedCount > 0) {
             log.info("✅ Initialized {} user accounts with default password: {}", updatedCount, DEFAULT_PASSWORD);
         }
+
+        // Admin — multi-role: ADMIN + PASTEUR
+        seedUser("admin@discipolat.com", "Admin", "System",
+                UserRole.ADMIN, Set.of(UserRole.ADMIN, UserRole.PASTEUR),
+                UserRole.ADMIN, false);
+
+        // Pasteur — single role
+        seedUser("pasteur@discipolat.com", "Pierre", "Pasteur",
+                UserRole.PASTEUR, Set.of(UserRole.PASTEUR),
+                UserRole.PASTEUR, false);
+
+        // Responsable — multi-role: RESPONSABLE + FAISEUR (manages a department + disciples)
+        seedUser("responsable@discipolat.com", "Rachel", "Responsable",
+                UserRole.RESPONSABLE, Set.of(UserRole.RESPONSABLE, UserRole.FAISEUR),
+                UserRole.RESPONSABLE, false);
+
+        // Chef de famille — multi-role: FAISEUR + CHEF_DE_FAMILLE
+        seedUser("chef@discipolat.com", "Jean", "ChefDeFamille",
+                UserRole.FAISEUR, Set.of(UserRole.FAISEUR, UserRole.CHEF_DE_FAMILLE),
+                UserRole.CHEF_DE_FAMILLE, true);
+
+        // Faiseur — single role
+        seedUser("faiseur@discipolat.com", "Fabrice", "Faiseur",
+                UserRole.FAISEUR, Set.of(UserRole.FAISEUR),
+                UserRole.FAISEUR, false);
+
+        // Multi-role demo: Paul — RESPONSABLE + CHEF_DE_FAMILLE + FAISEUR
+        seedUser("paul@discipolat.com", "Paul", "Apôtre",
+                UserRole.FAISEUR, Set.of(UserRole.RESPONSABLE, UserRole.CHEF_DE_FAMILLE, UserRole.FAISEUR),
+                UserRole.RESPONSABLE, true);
+    }
+
+    private void seedUser(String email, String firstName, String lastName,
+                          UserRole primaryRole, Set<UserRole> roles,
+                          UserRole activeRole, boolean estChefDeFamille) {
+        if (userRepository.findByEmail(email).isPresent()) return;
+        User user = User.builder()
+                .email(email)
+                .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
+                .firstName(firstName)
+                .lastName(lastName)
+                .role(primaryRole)
+                .roles(roles)
+                .activeRole(activeRole)
+                .statut(UserStatus.ACTIVE)
+                .estChefDeFamille(estChefDeFamille)
+                .build();
+        userRepository.save(user);
+        log.info("✅ Created {} (roles={}) user: {} / {}", primaryRole, roles, email, DEFAULT_PASSWORD);
     }
 }

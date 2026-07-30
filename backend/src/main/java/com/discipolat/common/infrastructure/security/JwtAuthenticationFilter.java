@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,12 +37,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UUID userId = UUID.fromString(claims.getSubject());
             String role = claims.get("role", String.class);
 
-            List<SimpleGrantedAuthority> authorities = List.of(
-                    new SimpleGrantedAuthority("ROLE_" + role)
-            );
+            // Multi-role: extract ALL roles from JWT as authorities
+            List<String> roles = jwtTokenProvider.extractRoles(token);
+            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+            if (roles != null && !roles.isEmpty()) {
+                for (String r : roles) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + r));
+                }
+            } else {
+                // Fallback: single role
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+            }
 
+            // Store the raw JWT token in credentials for SecurityUtils to read
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userId, null, authorities);
+                    new UsernamePasswordAuthenticationToken(userId, token, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);

@@ -22,6 +22,9 @@ public interface PrayerRepository extends JpaRepository<Prayer, UUID> {
     long countByFamilleIdAndStatutAndDeletedFalse(UUID familleId, String statut);
     long countByFamilleIdAndDeletedFalse(UUID familleId);
     long countByAuteurIdAndDeletedFalse(UUID auteurId);
+    Page<Prayer> findByVisibiliteInAndDeletedFalse(List<String> visibilites, Pageable pageable);
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM Prayer p WHERE (p.auteurId = ?1 OR p.visibilite IN ?2) AND p.deleted = false")
+    Page<Prayer> findByAuteurIdOrVisibiliteIn(UUID auteurId, List<String> visibilites, Pageable pageable);
     List<Prayer> findByStatutAndDeletedFalseOrderByDateExauceeDesc(String statut);
     List<Prayer> findByFamilleIdAndStatutAndDeletedFalseOrderByDateExauceeDesc(UUID familleId, String statut);
 }

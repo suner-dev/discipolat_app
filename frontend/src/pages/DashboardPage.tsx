@@ -19,6 +19,8 @@ import {
   Loader2,
   Sparkles,
   ChevronRight,
+  Star,
+  ThumbsUp,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -74,13 +76,33 @@ export default function DashboardPage() {
   const { user, hasRole } = useAuth();
   const { exportReport, isExporting } = useExportReport();
 
+  const isPasteurOrAdmin = hasRole('PASTEUR') || hasRole('ADMIN');
+
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ['dashboard', 'kpi'],
     queryFn: async () => {
       const res = await api.get('/dashboard/kpi');
       return res.data as DashboardKPI;
     },
-    enabled: hasRole('PASTEUR'),
+    enabled: isPasteurOrAdmin,
+  });
+
+  const { data: myMetrics, isLoading: myMetricsLoading } = useQuery({
+    queryKey: ['dashboard', 'my-metrics'],
+    queryFn: async () => {
+      const res = await api.get('/dashboard/my-metrics');
+      return res.data as Record<string, unknown>;
+    },
+    enabled: !isPasteurOrAdmin,
+  });
+
+  const { data: myEvalScores } = useQuery({
+    queryKey: ['evaluations', 'me'],
+    queryFn: async () => {
+      const res = await api.get('/evaluations/me');
+      return res.data as { statistiques: Record<string, { moyenne: number | null; total: number }> };
+    },
+    enabled: !isPasteurOrAdmin,
   });
 
   const { data: alerts } = useQuery({
@@ -188,7 +210,7 @@ export default function DashboardPage() {
             Vision consolidée de l'état du discipolat · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        {hasRole('PASTEUR') && (
+        {isPasteurOrAdmin && (
           <button
             onClick={() => exportReport({ endpoint: '/reports/export/consolidated-pdf', filename: `rapport-consolide-${new Date().toISOString().split('T')[0]}.html` })}
             disabled={isExporting}
@@ -438,20 +460,131 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Empty state for non-pasteur */}
-      {!hasRole('PASTEUR') && (
-        <div className="glass-card p-10 sm:p-14 text-center animate-scale-in">
-          <div className="inline-flex p-4 rounded-2xl bg-gray-100 dark:bg-gray-800/50 mb-5">
-            <BarChart3 className="w-10 h-10 text-gray-400" />
+      {/* Role-aware dashboard for non-PASTEUR roles */}
+      {!isPasteurOrAdmin && (
+        <div className="glass-card p-6 animate-scale-in">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {hasRole('RESPONSABLE') ? 'Vue Responsable' : 'Mon tableau de bord'}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {hasRole('RESPONSABLE')
+                  ? 'Aperçu de vos départements et familles'
+                  : 'Vos statistiques personnelles de suivi'}
+              </p>
+            </div>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            Vue Pasteur uniquement
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-            Les indicateurs détaillés du tableau de bord avec KPI, graphiques et alertes consolidées sont disponibles pour le rôle Pasteur.
-          </p>
+
+          {myMetricsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="glass-card p-5 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+                  <div className="skeleton h-4 w-24 mb-3 rounded" />
+                  <div className="skeleton h-8 w-20 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {hasRole('FAISEUR') && (
+                <>
+                  <div className="stat-card">
+                    <span className="stat-label">Mes âmes</span>
+                    <span className="stat-value">{(myMetrics as any)?.totalAmes || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Âmes actives</span>
+                    <span className="stat-value">{(myMetrics as any)?.amesActives || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">En intégration</span>
+                    <span className="stat-value text-amber-500">{(myMetrics as any)?.amesEnIntegration || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">En veille</span>
+                    <span className="stat-value text-gray-400">{(myMetrics as any)?.amesEnVeille || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Décrochées</span>
+                    <span className={`stat-value ${((myMetrics as any)?.amesDecrochees || 0) > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                      {(myMetrics as any)?.amesDecrochees || 0}
+                    </span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Rapport soumis</span>
+                    <span className={`stat-value ${(myMetrics as any)?.rapportSoumisCetteSemaine ? 'text-green-500' : 'text-amber-500'}`}>
+                      {(myMetrics as any)?.rapportSoumisCetteSemaine ? 'Oui' : 'Non'}
+                    </span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Rapports total</span>
+                    <span className="stat-value">{(myMetrics as any)?.totalRapportsSoumis || 0}</span>
+                  </div>
+                  {/* Évaluation score */}
+                  <div className="stat-card">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ThumbsUp className="w-4 h-4 text-amber-500" />
+                      <span className="stat-label">Évaluation</span>
+                    </div>
+                    {myEvalScores && Object.keys(myEvalScores.statistiques).length > 0 ? (
+                      Object.entries(myEvalScores.statistiques).map(([cat, s]) => (
+                        <div key={cat} className="flex items-center justify-between text-xs mb-1">
+                          <span className="text-gray-400">{cat === 'RESPONSABLE' ? 'Resp.' : cat === 'CHEF_FAMILLE' ? 'Chef' : 'Faiseur'}</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">{s.moyenne ?? '—'}</span>
+                            {s.moyenne != null && [1,2,3,4,5].map(i => (
+                              <Star key={i} className={`w-2.5 h-2.5 ${i <= Math.round(s.moyenne!) ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-gray-400">Aucune évaluation</p>
+                    )}
+                  </div>
+                </>
+              )}
+              {hasRole('RESPONSABLE') && (
+                <>
+                  <div className="stat-card">
+                    <span className="stat-label">Départements</span>
+                    <span className="stat-value">{(myMetrics as any)?.totalDepartements || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Familles</span>
+                    <span className="stat-value">{(myMetrics as any)?.totalFamilles || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Âmes total</span>
+                    <span className="stat-value">{(myMetrics as any)?.totalAmes || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Âmes actives</span>
+                    <span className="stat-value">{(myMetrics as any)?.amesActives || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Faiseurs</span>
+                    <span className="stat-value">{(myMetrics as any)?.totalFaiseurs || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Rapports soumis</span>
+                    <span className="stat-value">{(myMetrics as any)?.rapportsSoumis || 0}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Rapports attendus</span>
+                    <span className="stat-value">{(myMetrics as any)?.rapportsAttendus || 0}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="divider-glow my-5" />
-          <p className="text-xs text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
             Utilisez la navigation latérale pour accéder à vos sections
           </p>
         </div>

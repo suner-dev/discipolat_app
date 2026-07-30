@@ -4,6 +4,7 @@ import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.domain.EventRegistration;
 import com.discipolat.modules.events.domain.EventService;
+import com.discipolat.modules.events.domain.WeeklyProgramTemplate;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -139,6 +141,77 @@ public class EventController {
                 .stream().map(EventRegistrationResponse::from).toList());
     }
 
+    // ======================== WEEKLY PROGRAM TEMPLATES (US-50) ========================
+
+    @GetMapping("/templates")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<List<WeeklyProgramTemplate>> getTemplates() {
+        return ResponseEntity.ok(eventService.getActiveTemplates());
+    }
+
+    @PostMapping("/templates")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<WeeklyProgramTemplate> createTemplate(@Valid @RequestBody WeeklyProgramTemplate template) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createTemplate(template));
+    }
+
+    @PutMapping("/templates/{id}")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<WeeklyProgramTemplate> updateTemplate(
+            @PathVariable UUID id, @Valid @RequestBody WeeklyProgramTemplate template) {
+        return ResponseEntity.ok(eventService.updateTemplate(id, template));
+    }
+
+    @DeleteMapping("/templates/{id}")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<Void> deleteTemplate(@PathVariable UUID id) {
+        eventService.deleteTemplate(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/templates/{id}/toggle")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<Void> toggleTemplate(@PathVariable UUID id, @RequestBody Map<String, Boolean> body) {
+        eventService.toggleTemplateActif(id, body.getOrDefault("actif", true));
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Generate events for a specific week from the active program templates.
+     */
+    @PostMapping("/program/generate")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<List<EventResponse>> generateWeekProgram(
+            @RequestParam(required = false) String semaine) {
+        LocalDate weekStart = semaine != null ? LocalDate.parse(semaine)
+                : LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        List<Event> events = eventService.generateWeekProgram(weekStart);
+        return ResponseEntity.ok(events.stream().map(EventResponse::from).toList());
+    }
+
+    /**
+     * Generate events for the next 4 weeks from the active program templates.
+     */
+    @PostMapping("/program/generate-month")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<List<EventResponse>> generateMonthProgram() {
+        List<Event> events = eventService.generateMonthProgram();
+        return ResponseEntity.ok(events.stream().map(EventResponse::from).toList());
+    }
+
+    /**
+     * Get the program for a specific week.
+     */
+    @GetMapping("/program/week")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<List<EventResponse>> getWeekProgram(
+            @RequestParam(required = false) String semaine) {
+        LocalDate weekStart = semaine != null ? LocalDate.parse(semaine)
+                : LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        List<Event> events = eventService.getWeekProgram(weekStart);
+        return ResponseEntity.ok(events.stream().map(EventResponse::from).toList());
+    }
+
     // ======================== US-55: EVENT STATISTICS ========================
 
     @GetMapping("/statistics")
@@ -148,5 +221,27 @@ public class EventController {
             @RequestParam(required = false) String periodeDebut,
             @RequestParam(required = false) String periodeFin) {
         return ResponseEntity.ok(eventService.getEventStatistics(familleId, periodeDebut, periodeFin));
+    }
+
+    // ======================== CONSOLIDATED VIEW (Phase 6) ========================
+
+    /**
+     * Get all upcoming events consolidated — for Pasteur to see events from all departments/families.
+     */
+    @GetMapping("/consolidated")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<List<Map<String, Object>>> getConsolidatedUpcoming(
+            @RequestParam(defaultValue = "14") int days) {
+        return ResponseEntity.ok(eventService.getConsolidatedUpcoming(days));
+    }
+
+    /**
+     * Get upcoming events grouped by family and type — consolidated.
+     */
+    @GetMapping("/consolidated/by-family")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<Map<String, Object>> getConsolidatedByFamily(
+            @RequestParam(defaultValue = "14") int days) {
+        return ResponseEntity.ok(eventService.getConsolidatedByFamily(days));
     }
 }

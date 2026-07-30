@@ -19,10 +19,17 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     Page<Soul> findByTypeDiscipleAndStatut(TypeDisciple typeDisciple, StatutAme statut, Pageable pageable);
     List<Soul> findAllByFaiseurId(UUID faiseurId);
     List<Soul> findAllByFamilleId(UUID familleId);
+    List<Soul> findByFamilleIdIn(List<UUID> familleIds);
+    Page<Soul> findByFamilleIdIn(List<UUID> familleIds, Pageable pageable);
+    List<Soul> findByFaiseurIdIn(List<UUID> faiseurIds);
     long countByFaiseurId(UUID faiseurId);
     long countByFamilleId(UUID familleId);
     long countByTypeDisciple(TypeDisciple typeDisciple);
     long countByStatut(StatutAme statut);
     Page<Soul> findByStatutAndEtatSpirituel(StatutAme statut, String etatSpirituel, Pageable pageable);
     Page<Soul> findByEtatSpirituel(String etatSpirituel, Pageable pageable);
+    long countByFamilleIdAndStatut(UUID familleId, StatutAme statut);
+    List<Soul> findByFaiseurIdAndStatut(UUID faiseurId, StatutAme statut);
+    List<Soul> findAllByUserId(UUID userId);
+    Page<Soul> findByUserId(UUID userId, Pageable pageable);
 }

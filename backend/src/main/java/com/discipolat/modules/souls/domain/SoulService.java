@@ -6,7 +6,11 @@ import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.modules.evaluations.domain.EvaluationService;
+import com.discipolat.modules.families.domain.Family;
+import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.notifications.domain.NotificationService;
+import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.api.CreateSoulRequest;
 import com.discipolat.modules.souls.api.SoulHistoryResponse;
 import com.discipolat.modules.souls.api.UpdateSoulRequest;
@@ -20,7 +24,9 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -31,17 +37,28 @@ public class SoulService {
 
     private final SoulRepository soulRepository;
     private final SoulHistoryRepository soulHistoryRepository;
+    private final SoulNoteRepository soulNoteRepository;
     private final SecurityUtils securityUtils;
     private final UserRepository userRepository;
+    private final FamilyRepository familyRepository;
+    private final MakerReportRepository makerReportRepository;
+    private final EvaluationService evaluationService;
     private final NotificationService notificationService;
 
     public SoulService(SoulRepository soulRepository, SoulHistoryRepository soulHistoryRepository,
+                       SoulNoteRepository soulNoteRepository,
                        SecurityUtils securityUtils, UserRepository userRepository,
+                       FamilyRepository familyRepository, MakerReportRepository makerReportRepository,
+                       EvaluationService evaluationService,
                        NotificationService notificationService) {
         this.soulRepository = soulRepository;
         this.soulHistoryRepository = soulHistoryRepository;
+        this.soulNoteRepository = soulNoteRepository;
         this.securityUtils = securityUtils;
         this.userRepository = userRepository;
+        this.familyRepository = familyRepository;
+        this.makerReportRepository = makerReportRepository;
+        this.evaluationService = evaluationService;
         this.notificationService = notificationService;
     }
 
@@ -257,6 +274,186 @@ public class SoulService {
                         || StatutAme.DECROCHE.equals(s.getStatut())
                         || StatutAme.EN_VEILLE.equals(s.getStatut()))
                 .toList();
+    }
+
+    // ========================================================================
+    // PHASE 3: DOSSIER PASTORAL 360°
+    // ========================================================================
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getPastoral360(UUID soulId) {
+        Soul soul = findById(soulId);
+        Map<String, Object> dossier = new java.util.LinkedHashMap<>();
+
+        // 1. INFORMATIONS PERSONNELLES
+        Map<String, Object> infos = new java.util.LinkedHashMap<>();
+        infos.put("id", soul.getId());
+        infos.put("nom", soul.getNom());
+        infos.put("prenom", soul.getPrenom());
+        infos.put("email", soul.getEmail());
+        infos.put("telephone", soul.getTelephone());
+        infos.put("adresse", soul.getAdresse());
+        infos.put("dateNaissance", soul.getDateNaissance() != null ? soul.getDateNaissance().toString() : null);
+        infos.put("profession", soul.getProfession());
+        infos.put("situationFamiliale", soul.getSituationFamiliale());
+        infos.put("photoUrl", null);
+        dossier.put("informations", infos);
+
+        // 2. PARCOURS SPIRITUEL
+        Map<String, Object> spirituel = new java.util.LinkedHashMap<>();
+        spirituel.put("typeDisciple", soul.getTypeDisciple().name());
+        spirituel.put("statut", soul.getStatut().name());
+        spirituel.put("etatSpirituel", soul.getEtatSpirituel());
+        spirituel.put("niveauCroissance", soul.getNiveauCroissance());
+        spirituel.put("dateIntegration", soul.getDateIntegration() != null ? soul.getDateIntegration().toString() : null);
+        spirituel.put("dateConversion", soul.getDateConversion() != null ? soul.getDateConversion().toString() : null);
+        spirituel.put("dateDernierContact", soul.getDateDernierContact() != null ? soul.getDateDernierContact().toString() : null);
+
+        // 3. INDICES INTELLIGENTS
+        Map<String, Object> indices = new java.util.LinkedHashMap<>();
+        // Indice de santé spirituelle (basé sur etatSpirituel, niveauCroissance, statut)
+        int sante = calculateSanteIndex(soul);
+        indices.put("santeSpirituelle", sante);
+        // Indice de fidélité (basé sur présences aux rapports)
+        int fidelite = calculateFideliteIndex(soul);
+        indices.put("fidelite", fidelite);
+        // Indice d'engagement (basé sur participation, type disciple, durée)
+        int engagement = calculateEngagementIndex(soul);
+        indices.put("engagement", engagement);
+        // Indice de participation (basé sur rapports soumis)
+        int participation = calculateParticipationIndex(soul);
+        indices.put("participation", participation);
+        // Indice global
+        int global = Math.round((float)(sante + fidelite + engagement + participation) / 4);
+        indices.put("global", global);
+        dossier.put("indices", indices);
+
+        // Alertes automatiques
+        List<Map<String, Object>> alertesAuto = new java.util.ArrayList<>();
+        if (soul.getStatut() == StatutAme.DECROCHE) {
+            alertesAuto.add(Map.of("type", "INACTIF", "message", "Membre inactif (décroché)", "priorite", "HAUTE"));
+        } else if (soul.getStatut() == StatutAme.EN_VEILLE) {
+            alertesAuto.add(Map.of("type", "VEILLE", "message", "Membre en veille", "priorite", "MOYENNE"));
+        }
+        if (soul.getDateDernierContact() != null
+                && soul.getDateDernierContact().plusDays(30).isBefore(java.time.LocalDateTime.now())) {
+            alertesAuto.add(Map.of("type", "ABSENCE_CONTACT", "message", "Aucun contact depuis plus de 30 jours", "priorite", "MOYENNE"));
+        }
+        if ("EN_DIFFICULTE".equals(soul.getEtatSpirituel())) {
+            alertesAuto.add(Map.of("type", "DIFFICULTE", "message", "Membre en difficulté spirituelle", "priorite", "HAUTE"));
+        }
+        dossier.put("alertesAutomatiques", alertesAuto);
+
+        // 4. ENCADREMENT
+        Map<String, Object> encadrement = new java.util.LinkedHashMap<>();
+        encadrement.put("faiseurId", soul.getFaiseurId());
+        encadrement.put("familleId", soul.getFamilleId());
+        userRepository.findById(soul.getFaiseurId()).ifPresent(f ->
+            encadrement.put("faiseurNom", f.getFirstName() + " " + f.getLastName()));
+        dossier.put("encadrement", encadrement);
+
+        // 5. HISTORIQUE COMPLET (timeline)
+        List<SoulHistory> allHistory = soulHistoryRepository.findByAmeIdOrderByCreatedAtDesc(soulId);
+        List<Map<String, Object>> timeline = new java.util.ArrayList<>();
+        for (SoulHistory h : allHistory) {
+            Map<String, Object> entry = new java.util.LinkedHashMap<>();
+            entry.put("id", h.getId());
+            entry.put("type", h.getTypeEvenement());
+            entry.put("description", h.getDescription());
+            entry.put("ancienStatut", h.getAncienStatut());
+            entry.put("nouveauStatut", h.getNouveauStatut());
+            entry.put("utilisateurId", h.getUtilisateurId());
+            entry.put("date", h.getCreatedAt().toString());
+            timeline.add(entry);
+        }
+        dossier.put("timeline", timeline);
+
+        // 6. ÉVALUATIONS du faiseur
+        if (soul.getFaiseurId() != null) {
+            try {
+                Map<String, Object> evalScores = evaluationService.getUserEvalScores(soul.getFaiseurId());
+                dossier.put("evaluations", evalScores);
+            } catch (Exception e) {
+                dossier.put("evaluations", Map.of());
+            }
+        }
+
+        // 7. NOTES PRIVÉES
+        List<SoulNote> notes = soulNoteRepository.findByAmeIdAndDeletedFalseOrderByCreatedAtDesc(soulId);
+        dossier.put("notes", notes.stream().map(n -> Map.<String, Object>of(
+            "id", n.getId(), "contenu", n.getContenu(),
+            "auteurId", n.getAuteurId(), "date", n.getCreatedAt().toString()
+        )).toList());
+
+        spirituel.put("indices", indices);
+        dossier.put("spirituel", spirituel);
+
+        return dossier;
+    }
+
+    private int calculateSanteIndex(Soul soul) {
+        int score = 50; // base
+        if (soul.getStatut() == StatutAme.ACTIF) score += 30;
+        else if (soul.getStatut() == StatutAme.EN_INTEGRATION) score += 15;
+        else if (soul.getStatut() == StatutAme.EN_VEILLE) score -= 10;
+        else if (soul.getStatut() == StatutAme.DECROCHE) score -= 30;
+
+        if ("MATURE".equals(soul.getEtatSpirituel())) score += 20;
+        else if ("CROISSANCE".equals(soul.getEtatSpirituel())) score += 10;
+        else if ("EN_DIFFICULTE".equals(soul.getEtatSpirituel())) score -= 20;
+
+        if (soul.getNiveauCroissance() >= 4) score += 10;
+        else if (soul.getNiveauCroissance() >= 2) score += 5;
+
+        return Math.max(0, Math.min(100, score));
+    }
+
+    private int calculateFideliteIndex(Soul soul) {
+        int score = 50;
+        // Check attendances in recent reports
+        var currentWeek = java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        var reports = makerReportRepository.findByAmeIdAndSemaine(soul.getId(), currentWeek);
+        if (!reports.isEmpty()) {
+            for (var r : reports) {
+                if (r.getPresencesParCulte() != null) {
+                    for (var p : r.getPresencesParCulte().values()) {
+                        if (p) score += 10;
+                    }
+                }
+            }
+        }
+        if (soul.getDateDernierContact() != null
+                && soul.getDateDernierContact().plusDays(7).isAfter(java.time.LocalDateTime.now())) {
+            score += 15; // contacted recently
+        }
+        return Math.max(0, Math.min(100, score));
+    }
+
+    private int calculateEngagementIndex(Soul soul) {
+        int score = 50;
+        if (soul.getNiveauCroissance() >= 3) score += 20;
+        else if (soul.getNiveauCroissance() >= 2) score += 10;
+
+        var reports = makerReportRepository.findByAmeIdAndSemaine(
+                soul.getId(), java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY));
+        if (!reports.isEmpty() && reports.get(0).isSoumis()) score += 15;
+
+        return Math.max(0, Math.min(100, score));
+    }
+
+    private int calculateParticipationIndex(Soul soul) {
+        int score = 50;
+        var allReports = makerReportRepository.findByAmeIdAndSemaine(
+                soul.getId(), java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY));
+        if (!allReports.isEmpty()) {
+            if (allReports.get(0).isSoumis()) score += 25;
+            if (allReports.get(0).getPresencesParCulte() != null) {
+                long presents = allReports.get(0).getPresencesParCulte().values().stream().filter(b -> b).count();
+                long total = allReports.get(0).getPresencesParCulte().size();
+                if (total > 0) score += (int) (presents * 25 / total);
+            }
+        }
+        return Math.max(0, Math.min(100, score));
     }
 
     private void logHistory(UUID ameId, String typeEvenement, String description,

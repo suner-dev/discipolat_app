@@ -140,6 +140,18 @@ public class SoulController {
                 .body(SoulRetractionRequestResponse.from(retraction));
     }
 
+    /** List retraction requests by status */
+    @GetMapping("/retraction-requests")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<PageResponse<SoulRetractionRequestResponse>> getRetractionRequests(
+            @RequestParam(defaultValue = "EN_ATTENTE") String statut,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        var result = retractionRequestService.findByStatut(statut, PageRequest.of(page, size));
+        var mapped = result.map(SoulRetractionRequestResponse::from);
+        return ResponseEntity.ok(PageResponse.of(mapped.getContent(), mapped.getNumber(), mapped.getSize(), mapped.getTotalElements(), mapped.getTotalPages()));
+    }
+
     /** Get retraction requests for a soul */
     @GetMapping("/{soulId}/retraction-requests")
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
@@ -201,6 +213,14 @@ public class SoulController {
                         "dateSortie", ex.getDateSortie().toString(),
                         "peutReintegrer", ex.isPeutReintegrer()))
                 .toList());
+    }
+
+    // ======================== PHASE 3: DOSSIER PASTORAL 360° ========================
+
+    @GetMapping("/{id}/pastoral-360")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> getPastoral360(@PathVariable UUID id) {
+        return ResponseEntity.ok(soulService.getPastoral360(id));
     }
 
     // ======================== US-23: FILTER SOULS BY SPIRITUAL STATE ========================

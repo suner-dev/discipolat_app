@@ -4,6 +4,7 @@ import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.authentication.api.TwoFactorSetupResponse;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.stereotype.Service;
@@ -27,8 +28,27 @@ public class TwoFactorService {
         this.securityUtils = securityUtils;
     }
 
+    private static final char[] BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".toCharArray();
+
+    private String bytesToBase32(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        int buffer = 0, bitsLeft = 0;
+        for (byte b : bytes) {
+            buffer = (buffer << 8) | (b & 0xff);
+            bitsLeft += 8;
+            while (bitsLeft >= 5) {
+                sb.append(BASE32[(buffer >> (bitsLeft - 5)) & 0x1f]);
+                bitsLeft -= 5;
+            }
+        }
+        if (bitsLeft > 0) {
+            sb.append(BASE32[(buffer << (5 - bitsLeft)) & 0x1f]);
+        }
+        return sb.toString();
+    }
+
     /**
-     * Generate a TOTP secret for 2FA
+     * Generate a TOTP secret for 2FA (Base64-encoded)
      */
     public String generateSecret() {
         SecureRandom random = new SecureRandom();
@@ -70,9 +90,9 @@ public class TwoFactorService {
     }
 
     /**
-     * US-04: Enable 2FA for current user
+     * US-04: Enable 2FA for current user — returns setup data
      */
-    public User enableTwoFactor() {
+    public TwoFactorSetupResponse enableTwoFactor(String email) {
         UUID userId = securityUtils.getCurrentUserId();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User", userId));
@@ -82,14 +102,24 @@ public class TwoFactorService {
         user.setTwoFactorEnabled(true);
 
         // Generate backup codes
-        List<String> backupCodes = new ArrayList<>();
         SecureRandom random = new SecureRandom();
+        List<String> backupCodes = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
             backupCodes.add(String.format("%08d", random.nextInt(100_000_000)));
         }
         user.setTwoFactorBackupCodes(String.join(",", backupCodes));
 
-        return userRepository.save(user);
+        userRepository.save(user);
+
+        // Build Base32 secret for authenticator app
+        byte[] secretBytes = Base64.getDecoder().decode(secret);
+        String base32Secret = bytesToBase32(secretBytes);
+        String otpauthUri = "otpauth://totp/Discipolat:" + email
+                + "?secret=" + base32Secret
+                + "&issuer=Discipolat"
+                + "&algorithm=SHA1&digits=6&period=30";
+
+        return new TwoFactorSetupResponse(true, base32Secret, otpauthUri, backupCodes);
     }
 
     /**

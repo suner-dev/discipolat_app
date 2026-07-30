@@ -59,17 +59,19 @@ class TwoFactorServiceTest {
     }
 
     @Test
-    void enableTwoFactor_ShouldSetSecretAndBackupCodes() {
+    void enableTwoFactor_ShouldReturnSetupResponse() {
         when(securityUtils.getCurrentUserId()).thenReturn(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        User result = twoFactorService.enableTwoFactor();
+        var result = twoFactorService.enableTwoFactor("test@discipolat.com");
 
-        assertTrue(result.isTwoFactorEnabled());
-        assertNotNull(result.getTwoFactorSecret());
-        assertNotNull(result.getTwoFactorBackupCodes());
-        assertTrue(result.getTwoFactorBackupCodes().contains(",")); // Multiple backup codes
+        assertTrue(result.twoFactorEnabled());
+        assertNotNull(result.secret());
+        assertNotNull(result.backupCodes());
+        assertEquals(8, result.backupCodes().size());
+        assertNotNull(result.otpauthUri());
+        assertTrue(result.otpauthUri().startsWith("otpauth://totp/"));
     }
 
     @Test

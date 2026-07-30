@@ -22,6 +22,10 @@ import {
   Eye,
   UserCheck,
   UserX,
+  LayoutDashboard,
+  ChevronRight,
+  Sparkles,
+  BellRing,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -34,6 +38,10 @@ const TYPE_LABELS: Record<TypeEvenement, string> = {
   CONFERENCE: 'Conférence',
   FORMATION: 'Formation',
   ANNIVERSAIRE: 'Anniversaire',
+  CULTE: 'Culte',
+  ETUDE_BIBLIQUE: 'Étude biblique',
+  VEILLEE: 'Veillée',
+  PRIERE: 'Temps de prière',
   AUTRE: 'Autre',
 };
 
@@ -46,6 +54,10 @@ const TYPE_COLORS: Record<TypeEvenement, string> = {
   CONFERENCE: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
   FORMATION: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   ANNIVERSAIRE: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+  CULTE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  ETUDE_BIBLIQUE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  VEILLEE: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  PRIERE: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   AUTRE: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
 };
 
@@ -145,14 +157,16 @@ function eventForm(
 }
 
 export default function EventsPage() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
+  const [view, setView] = useState<'list' | 'consolidated'>('list');
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeEvenement | ''>('');
   const [statutFilter, setStatutFilter] = useState<StatutEvenement | ''>('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const isPasteurOrAdmin = hasRole('PASTEUR') || hasRole('ADMIN');
   const [showEdit, setShowEdit] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Evenement | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -250,6 +264,31 @@ export default function EventsPage() {
       setShowDeleteConfirm(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  // Consolidated upcoming events (Pasteur only)
+  const { data: consolidated } = useQuery({
+    queryKey: ['events', 'consolidated'],
+    queryFn: async () => {
+      const res = await api.get('/events/consolidated?days=14');
+      return res.data as {
+        id: string; titre: string; typeEvenement: string;
+        dateDebut: string; dateFin?: string; lieu?: string;
+        statut: string; nbInscrits: number; limitePlaces?: number;
+        organisateurNom?: string; organisateurRole?: string;
+        familleId?: string;
+      }[];
+    },
+    enabled: isPasteurOrAdmin && view === 'consolidated',
+  });
+
+  const { data: consolidatedStats } = useQuery({
+    queryKey: ['events', 'consolidated', 'stats'],
+    queryFn: async () => {
+      const res = await api.get('/events/consolidated/by-family?days=14');
+      return res.data as { total: number; parType: Record<string, number>; parFamille: Record<string, number> };
+    },
+    enabled: isPasteurOrAdmin && view === 'consolidated',
   });
 
   // User lookup cache
@@ -413,6 +452,22 @@ export default function EventsPage() {
           <p className="text-gray-500 dark:text-gray-400 mt-1">Gestion des événements de famille</p>
         </div>
         <div className="flex gap-2">
+          {isPasteurOrAdmin && (
+            <div className="tabs p-1 rounded-xl bg-white/50 dark:bg-gray-800/30 mr-2">
+              <button
+                onClick={() => setView('list')}
+                className={view === 'list' ? 'tab-active text-xs px-3 py-1.5' : 'tab text-xs px-3 py-1.5'}
+              >
+                <Calendar className="w-3.5 h-3.5" /> Liste
+              </button>
+              <button
+                onClick={() => setView('consolidated')}
+                className={view === 'consolidated' ? 'tab-active text-xs px-3 py-1.5' : 'tab text-xs px-3 py-1.5'}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" /> Vue consolidée
+              </button>
+            </div>
+          )}
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
           </button>
@@ -569,49 +624,149 @@ export default function EventsPage() {
         </div>
       )}
 
-      {/* Search and filters */}
-      <div className="card p-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input type="text" placeholder="Rechercher un événement..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="input pl-10" />
-          </div>
-        </div>
-        {showFilters && (
-          <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-            <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value as TypeEvenement | ''); setPage(0); }} className="input w-auto">
-              <option value="">Tous les types</option>
-              {Object.entries(TYPE_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
+      {/* Consolidated view (Pasteur / Admin) */}
+      {view === 'consolidated' && isPasteurOrAdmin ? (
+        <div className="space-y-6 animate-fade-in">
+          {/* Stats cards */}
+          {consolidatedStats && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="glass-card p-5 animate-slide-up">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="stat-label">Total à venir</span>
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-lg">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                </div>
+                <span className="stat-value">{consolidatedStats.total}</span>
+                <p className="text-[10px] text-gray-400 mt-1">dans les 14 prochains jours</p>
+              </div>
+              {Object.entries(consolidatedStats.parType).slice(0, 3).map(([type, count], i) => (
+                <div key={type} className="glass-card p-5 animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="stat-label">{TYPE_LABELS[type as TypeEvenement] || type}</span>
+                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <span className="stat-value text-2xl">{count}</span>
+                </div>
               ))}
-            </select>
-            <select value={statutFilter} onChange={(e) => { setStatutFilter(e.target.value as StatutEvenement | ''); setPage(0); }} className="input w-auto">
-              <option value="">Tous les statuts</option>
-              <option value="PLANIFIE">Planifié</option>
-              <option value="EN_COURS">En cours</option>
-              <option value="TERMINE">Terminé</option>
-              <option value="ANNULE">Annulé</option>
-            </select>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
 
-      <DataTable<Evenement>
-        columns={columns}
-        data={data?.content || []}
-        isLoading={isLoading}
-        emptyMessage="Aucun événement trouvé"
-        emptyIcon={<Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />}
-      />
-
-      {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
-          <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">Précédent</button>
-            <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-secondary btn-sm">Suivant</button>
+          {/* Upcoming events list */}
+          <div className="glass-card p-5 animate-slide-up">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+              <BellRing className="w-4 h-4 text-primary-500" />
+              Événements à venir (14 jours)
+            </h3>
+            {consolidated && consolidated.length > 0 ? (
+              <div className="space-y-2">
+                {consolidated.map((evt, i) => {
+                  const bgColor = evt.typeEvenement === 'CULTE' || evt.typeEvenement === 'ETUDE_BIBLIQUE'
+                    ? 'bg-green-50/50 dark:bg-green-900/10 border-l-green-500'
+                    : evt.typeEvenement === 'VEILLEE' || evt.typeEvenement === 'PRIERE'
+                    ? 'bg-purple-50/50 dark:bg-purple-900/10 border-l-purple-500'
+                    : 'bg-white/30 dark:bg-gray-800/30 border-l-gray-300 dark:border-l-gray-600';
+                  return (
+                    <div
+                      key={evt.id}
+                      className={`flex items-center justify-between p-3.5 rounded-xl ${bgColor} border-l-[3px] animate-fade-in`}
+                      style={{ animationDelay: `${i * 30}ms` }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-center min-w-[48px]">
+                          <span className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-none">
+                            {new Date(evt.dateDebut).getDate()}
+                          </span>
+                          <span className="text-[10px] text-gray-400 uppercase">
+                            {new Date(evt.dateDebut).toLocaleDateString('fr-FR', { month: 'short' })}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{evt.titre}</p>
+                          <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5">
+                            <Clock className="w-3 h-3" />
+                            {new Date(evt.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                            {evt.lieu && <><MapPin className="w-3 h-3 ml-1" />{evt.lieu}</>}
+                          </div>
+                          {evt.organisateurNom && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              Organisé par {evt.organisateurNom}
+                              {evt.organisateurRole && ` (${evt.organisateurRole})`}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TYPE_COLORS[evt.typeEvenement as TypeEvenement] || 'bg-gray-100 text-gray-800'}`}>
+                          {TYPE_LABELS[evt.typeEvenement as TypeEvenement] || evt.typeEvenement}
+                        </span>
+                        {evt.nbInscrits > 0 && (
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <Users className="w-3 h-3" />{evt.nbInscrits}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">Aucun événement à venir dans les 14 prochains jours</p>
+              </div>
+            )}
           </div>
         </div>
+      ) : (
+        <>
+          {/* Search and filters */}
+          <div className="card p-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input type="text" placeholder="Rechercher un événement..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="input pl-10" />
+              </div>
+            </div>
+            {showFilters && (
+              <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value as TypeEvenement | ''); setPage(0); }} className="input w-auto">
+                  <option value="">Tous les types</option>
+                  {Object.entries(TYPE_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+                <select value={statutFilter} onChange={(e) => { setStatutFilter(e.target.value as StatutEvenement | ''); setPage(0); }} className="input w-auto">
+                  <option value="">Tous les statuts</option>
+                  <option value="PLANIFIE">Planifié</option>
+                  <option value="EN_COURS">En cours</option>
+                  <option value="TERMINE">Terminé</option>
+                  <option value="ANNULE">Annulé</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          <DataTable<Evenement>
+            columns={columns}
+            data={data?.content || []}
+            isLoading={isLoading}
+            emptyMessage="Aucun événement trouvé"
+            emptyIcon={<Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />}
+          />
+
+          {data && data.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
+              <div className="flex gap-2">
+                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">Précédent</button>
+                <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-secondary btn-sm">Suivant</button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

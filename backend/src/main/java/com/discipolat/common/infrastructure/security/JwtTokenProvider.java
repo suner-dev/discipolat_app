@@ -84,10 +84,12 @@ public class JwtTokenProvider {
         return Base64.getDecoder().decode(pemContent.replaceAll("\\s", ""));
     }
 
-    public String generateAccessToken(UUID userId, String email, String role, boolean estChefDeFamille) {
+    public String generateAccessToken(UUID userId, String email, String activeRole, java.util.Set<String> roles, boolean estChefDeFamille) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
-        claims.put("role", role);
+        claims.put("role", activeRole);
+        claims.put("roles", roles);
+        claims.put("activeRole", activeRole);
         claims.put("estChefDeFamille", estChefDeFamille);
         claims.put("type", "access");
 
@@ -100,10 +102,12 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String generateRefreshToken(UUID userId, String email, String role) {
+    public String generateRefreshToken(UUID userId, String email, String activeRole, java.util.Set<String> roles) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
-        claims.put("role", role);
+        claims.put("role", activeRole);
+        claims.put("roles", roles);
+        claims.put("activeRole", activeRole);
         claims.put("type", "refresh");
 
         return Jwts.builder()
@@ -113,6 +117,15 @@ public class JwtTokenProvider {
                 .expiration(Date.from(Instant.now().plus(Duration.ofDays(REFRESH_TOKEN_VALIDITY_DAYS))))
                 .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
+    }
+
+    public java.util.List<String> extractRoles(String token) {
+        return getClaims(token).get("roles", java.util.List.class);
+    }
+
+    public String extractActiveRole(String token) {
+        String activeRole = getClaims(token).get("activeRole", String.class);
+        return activeRole != null ? activeRole : getClaims(token).get("role", String.class);
     }
 
     public boolean validateToken(String token) {

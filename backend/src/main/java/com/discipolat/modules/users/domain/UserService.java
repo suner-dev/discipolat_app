@@ -53,10 +53,15 @@ public class UserService {
 
     public User promoteToFaiseur(UUID userId) {
         User user = findById(userId);
-        if (user.getRole() == UserRole.FAISEUR) {
-            throw new BusinessRuleException("User is already a Faiseur");
+        if (user.getRoles().contains(UserRole.FAISEUR)) {
+            throw new BusinessRuleException("User already has the Faiseur role");
         }
+        user.getRoles().add(UserRole.FAISEUR);
         user.setRole(UserRole.FAISEUR);
+        // Auto-set active role if not set
+        if (user.getActiveRole() == null) {
+            user.setActiveRole(UserRole.FAISEUR);
+        }
         user.markUpdated();
         user = userRepository.save(user);
 
@@ -80,11 +85,8 @@ public class UserService {
 
     public User demoteFaiseur(UUID userId, UserRole newRole) {
         User user = findById(userId);
-        if (user.getRole() != UserRole.FAISEUR) {
-            throw new BusinessRuleException("User is not a Faiseur");
-        }
-        if (newRole == UserRole.FAISEUR) {
-            throw new BusinessRuleException("Cannot demote to same role");
+        if (!user.getRoles().contains(UserRole.FAISEUR)) {
+            throw new BusinessRuleException("User does not have the Faiseur role");
         }
         // US-17: Check that souls are reassigned before demoting
         long activeSouls = soulRepository.countByFaiseurId(userId);
@@ -93,7 +95,25 @@ public class UserService {
                     "Cannot demote faiseur with " + activeSouls + " active soul(s). Please reassign them first.",
                     "FAISEUR_HAS_ACTIVE_SOULS");
         }
-        user.setRole(newRole != null ? newRole : UserRole.FAISEUR);
+        // Remove FAISEUR from roles set
+        user.getRoles().remove(UserRole.FAISEUR);
+        // If new role provided, add it
+        if (newRole != null && newRole != UserRole.FAISEUR) {
+            user.getRoles().add(newRole);
+            user.setRole(newRole);
+            user.setActiveRole(newRole);
+        } else {
+            // Fallback: keep the primary role, just remove FAISEUR
+            if (user.getRoles().isEmpty()) {
+                user.getRoles().add(UserRole.MEMBRE);
+                user.setRole(UserRole.MEMBRE);
+                user.setActiveRole(UserRole.MEMBRE);
+            } else {
+                UserRole fallback = user.getRoles().iterator().next();
+                user.setRole(fallback);
+                user.setActiveRole(fallback);
+            }
+        }
         user.setEstChefDeFamille(false);
         user.setFamilleGereeId(null);
         user.markUpdated();
@@ -129,6 +149,14 @@ public class UserService {
         user.setStatut(UserStatus.PENDING_ACTIVATION);
         user.setEstChefDeFamille(false);
         user.setTwoFactorEnabled(false);
+        // Ensure roles set contains at least the primary role
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            user.setRoles(new HashSet<>(Set.of(user.getRole())));
+        }
+        // Ensure active role is set
+        if (user.getActiveRole() == null) {
+            user.setActiveRole(user.getRole());
+        }
         return userRepository.save(user);
     }
 
@@ -153,6 +181,14 @@ public class UserService {
         existing.setLastName(updatedUser.getLastName());
         existing.setPhone(updatedUser.getPhone());
         existing.setRole(updatedUser.getRole());
+        // Update roles if provided
+        if (updatedUser.getRoles() != null && !updatedUser.getRoles().isEmpty()) {
+            existing.setRoles(updatedUser.getRoles());
+        }
+        // Update active role if provided
+        if (updatedUser.getActiveRole() != null) {
+            existing.setActiveRole(updatedUser.getActiveRole());
+        }
         existing.markUpdated();
         return userRepository.save(existing);
     }
@@ -192,10 +228,92 @@ public class UserService {
         return userRepository.findByFamilleGereeId(familleId);
     }
 
+    // ======================== MULTI-ROLE METHODS ========================
+
+    /** Find users whose roles set contains the given role */
+    @Transactional(readOnly = true)
+    public List<User> findByRolesContaining(UserRole role) {
+        return userRepository.findByRolesContaining(role);
+    }
+
+    /** Find users whose roles set contains the given role (paginated) */
+    @Transactional(readOnly = true)
+    public Page<User> findByRolesContaining(UserRole role, Pageable pageable) {
+        return userRepository.findByRolesContaining(role, pageable);
+    }
+
+    /** Add a role to a user's roles set */
+    public User addRole(UUID userId, UserRole role) {
+        User user = findById(userId);
+        user.getRoles().add(role);
+        user.markUpdated();
+        return userRepository.save(user);
+    }
+
+    /** Remove a role from a user's roles set */
+    public User removeRole(UUID userId, UserRole role) {
+        User user = findById(userId);
+        user.getRoles().remove(role);
+        // Don't remove the last role — fallback to MEMBRE
+        if (user.getRoles().isEmpty()) {
+            user.getRoles().add(UserRole.MEMBRE);
+        }
+        // If active role was removed, switch to another
+        if (user.getActiveRole() == role && !user.getRoles().isEmpty()) {
+            user.setActiveRole(user.getRoles().iterator().next());
+            user.setRole(user.getActiveRole());
+        }
+        user.markUpdated();
+        return userRepository.save(user);
+    }
+
+    /** Set the active role for a user */
+    public User setActiveRole(UUID userId, UserRole activeRole) {
+        User user = findById(userId);
+        if (!user.getRoles().contains(activeRole)) {
+            throw new BusinessRuleException("User does not have the role: " + activeRole);
+        }
+        user.setActiveRole(activeRole);
+        user.setRole(activeRole);
+        user.markUpdated();
+        return userRepository.save(user);
+    }
+
+    /** Replace the entire roles set for a user (admin operation) */
+    public User replaceRoles(UUID userId, Set<UserRole> newRoles) {
+        if (newRoles == null || newRoles.isEmpty()) {
+            throw new BusinessRuleException("User must have at least one role");
+        }
+        User user = findById(userId);
+        user.setRoles(new HashSet<>(newRoles));
+        // Ensure active role is valid
+        if (user.getActiveRole() == null || !newRoles.contains(user.getActiveRole())) {
+            user.setActiveRole(newRoles.iterator().next());
+            user.setRole(user.getActiveRole());
+        }
+        user.markUpdated();
+        return userRepository.save(user);
+    }
+
+    /** Check if the user's only role is the given one (helper for controller filtering) */
+    @Transactional(readOnly = true)
+    public boolean isOnlyRole(String currentRole, String roleName) {
+        if (currentRole == null) return false;
+        try {
+            UUID userId = securityUtils.getCurrentUserId();
+            User user = findById(userId);
+            return user.getRoles().size() == 1 && user.getRoles().contains(UserRole.valueOf(roleName));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public User promoteToChefDeFamille(UUID userId, UUID familleId) {
         User user = findById(userId);
         user.setEstChefDeFamille(true);
         user.setFamilleGereeId(familleId);
+        // Ensure CHEF_DE_FAMILLE role is in the roles set
+        user.getRoles().add(UserRole.CHEF_DE_FAMILLE);
         user.markUpdated();
         return userRepository.save(user);
     }
@@ -204,6 +322,13 @@ public class UserService {
         User user = findById(userId);
         user.setEstChefDeFamille(false);
         user.setFamilleGereeId(null);
+        // Remove CHEF_DE_FAMILLE role from the set, but keep other roles
+        user.getRoles().remove(UserRole.CHEF_DE_FAMILLE);
+        // If active role was CHEF_DE_FAMILLE, switch to another role
+        if (user.getActiveRole() == UserRole.CHEF_DE_FAMILLE && !user.getRoles().isEmpty()) {
+            user.setActiveRole(user.getRoles().iterator().next());
+            user.setRole(user.getActiveRole());
+        }
         user.markUpdated();
         return userRepository.save(user);
     }

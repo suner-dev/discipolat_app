@@ -46,3 +46,6 @@ jacoco/
 
 # Docker volumes (local)
 pgdata/
+
+# TypeScript build info
+dist-ts/

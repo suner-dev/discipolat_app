@@ -61,6 +61,9 @@ public class Soul {
     @Column(name = "faiseur_id", nullable = false)
     private UUID faiseurId;
 
+    @Column(name = "user_id")
+    private UUID userId;
+
     @Column(name = "famille_id")
     private UUID familleId;
 

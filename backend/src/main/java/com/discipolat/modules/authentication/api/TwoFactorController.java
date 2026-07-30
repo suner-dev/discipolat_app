@@ -31,9 +31,12 @@ public class TwoFactorController {
 
     /** US-04: Enable 2FA */
     @PostMapping("/enable")
-    public ResponseEntity<UserResponse> enable() {
-        User user = twoFactorService.enableTwoFactor();
-        return ResponseEntity.ok(UserResponse.from(user));
+    public ResponseEntity<TwoFactorSetupResponse> enable() {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new EntityNotFoundException("User", currentUserId));
+        TwoFactorSetupResponse result = twoFactorService.enableTwoFactor(user.getEmail());
+        return ResponseEntity.ok(result);
     }
 
     /** US-04: Disable 2FA */
@@ -41,6 +44,18 @@ public class TwoFactorController {
     public ResponseEntity<UserResponse> disable() {
         User user = twoFactorService.disableTwoFactor();
         return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    /** US-04: Check 2FA status */
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> status() {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new EntityNotFoundException("User", currentUserId));
+        return ResponseEntity.ok(Map.of(
+                "twoFactorEnabled", user.isTwoFactorEnabled(),
+                "twoFactorSecret", user.getTwoFactorSecret() != null
+        ));
     }
 
     /** US-04: Verify 2FA code */

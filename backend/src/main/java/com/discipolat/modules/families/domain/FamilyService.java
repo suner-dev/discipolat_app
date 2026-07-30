@@ -5,6 +5,8 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.reports.domain.MakerReport;
+import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
@@ -14,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -25,17 +29,20 @@ public class FamilyService {
     private final FamilyChiefHistoryRepository chiefHistoryRepository;
     private final SoulRepository soulRepository;
     private final UserRepository userRepository;
+    private final MakerReportRepository makerReportRepository;
     private final SecurityUtils securityUtils;
 
     public FamilyService(FamilyRepository familyRepository,
                          FamilyChiefHistoryRepository chiefHistoryRepository,
                          SoulRepository soulRepository,
                          UserRepository userRepository,
+                         MakerReportRepository makerReportRepository,
                          SecurityUtils securityUtils) {
         this.familyRepository = familyRepository;
         this.chiefHistoryRepository = chiefHistoryRepository;
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
+        this.makerReportRepository = makerReportRepository;
         this.securityUtils = securityUtils;
     }
 
@@ -69,6 +76,10 @@ public class FamilyService {
     @Transactional(readOnly = true)
     public List<Family> findByChefFamille(UUID chefId) {
         return familyRepository.findByChefFamilleId(chefId);
+    }
+
+    public Page<Family> findByChefFamille(UUID chefId, Pageable pageable) {
+        return familyRepository.findByChefFamilleId(chefId, pageable);
     }
 
     public Family update(Family updated) {
@@ -268,6 +279,73 @@ public class FamilyService {
     @Transactional(readOnly = true)
     public List<FamilyChiefHistory> getChiefHistory(UUID familyId) {
         return chiefHistoryRepository.findByFamilleIdOrderByCreatedAtDesc(familyId);
+    }
+
+    // ======================== FAISEUR PERFORMANCE (Chef de famille view) ========================
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getFaiseurPerformance(UUID familyId, LocalDate semaine) {
+        List<Soul> souls = soulRepository.findAllByFamilleId(familyId).stream()
+                .filter(s -> !s.isDeleted())
+                .toList();
+
+        Map<UUID, List<Soul>> soulsByFaiseur = new LinkedHashMap<>();
+        for (Soul soul : souls) {
+            soulsByFaiseur.computeIfAbsent(soul.getFaiseurId(), k -> new ArrayList<>()).add(soul);
+        }
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (Map.Entry<UUID, List<Soul>> entry : soulsByFaiseur.entrySet()) {
+            UUID faiseurId = entry.getKey();
+            List<Soul> faiseurSouls = entry.getValue();
+
+            Optional<User> faiseur = userRepository.findById(faiseurId);
+
+            int totalAmes = faiseurSouls.size();
+            long actifs = faiseurSouls.stream().filter(s -> s.getStatut() == StatutAme.ACTIF).count();
+            long enIntegration = faiseurSouls.stream().filter(s -> s.getStatut() == StatutAme.EN_INTEGRATION).count();
+            long enVeille = faiseurSouls.stream().filter(s -> s.getStatut() == StatutAme.EN_VEILLE).count();
+
+            List<MakerReport> reports = makerReportRepository.findByFaiseurIdAndSemaine(faiseurId, semaine);
+            long soumis = reports.stream().filter(MakerReport::isSoumis).count();
+
+            int totalPresents = 0;
+            int totalPresences = 0;
+            for (MakerReport r : reports) {
+                if (r.getPresencesParCulte() != null) {
+                    for (Boolean p : r.getPresencesParCulte().values()) {
+                        totalPresences++;
+                        if (p) totalPresents++;
+                    }
+                }
+            }
+            BigDecimal tauxPresence = totalPresences > 0
+                    ? BigDecimal.valueOf(totalPresents).multiply(BigDecimal.valueOf(100))
+                            .divide(BigDecimal.valueOf(totalPresences), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+
+            BigDecimal tauxSoumission = totalAmes > 0
+                    ? BigDecimal.valueOf(soumis).multiply(BigDecimal.valueOf(100))
+                            .divide(BigDecimal.valueOf(totalAmes), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+
+            Map<String, Object> perf = new LinkedHashMap<>();
+            perf.put("faiseurId", faiseurId);
+            perf.put("faiseurNom", faiseur.map(u -> u.getFirstName() + " " + u.getLastName()).orElse("N/A"));
+            perf.put("totalAmes", totalAmes);
+            perf.put("actifs", actifs);
+            perf.put("enIntegration", enIntegration);
+            perf.put("enVeille", enVeille);
+            perf.put("rapportsSoumis", soumis);
+            perf.put("tauxSoumission", tauxSoumission);
+            perf.put("tauxPresence", tauxPresence);
+            perf.put("totalPresents", totalPresents);
+
+            results.add(perf);
+        }
+
+        results.sort((a, b) -> ((String) a.get("faiseurNom")).compareTo((String) b.get("faiseurNom")));
+        return results;
     }
 
     // ======================== US-60: RESTORE FAMILY ========================

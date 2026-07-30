@@ -8,11 +8,11 @@ import {
   ArrowLeft, Mail, Phone, Calendar, MapPin, Briefcase, FileText,
   Activity, MessageSquare, Send, Loader2, AlertTriangle, BookOpen,
   TrendingUp, Edit, LogOut, Undo2, Heart, Sparkles, Clock, ChevronRight,
-  CheckCircle2,
+  CheckCircle2, Star, Users, UserCheck, X, Flag, Gavel,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-type Tab = 'info' | 'history' | 'notes' | 'reports';
+type Tab = 'info' | 'history' | 'notes' | 'reports' | 'discipline';
 
 const STATUT_LABELS: Record<string, string> = {
   NOUVEAU_CONVERTI: 'Nouveau converti', NOUVEL_ARRIVANT: 'Nouvel arrivant',
@@ -40,6 +40,13 @@ export default function SoulDetailPage() {
   const [showExitForm, setShowExitForm] = useState(false);
   const [exitMotif, setExitMotif] = useState('');
   const [exitMotifDetail, setExitMotifDetail] = useState('');
+  // Discipline state
+  const [showDisciplineForm, setShowDisciplineForm] = useState(false);
+  const [disciplineForm, setDisciplineForm] = useState({
+    categorie: 'COMPORTEMENT', typeEvenement: 'REPROCHE',
+    titre: '', description: '', gravite: 'MOYENNE',
+    dateEvenement: new Date().toISOString().slice(0, 10),
+  });
 
   const { data: soul, isLoading } = useQuery({
     queryKey: ['soul', id], queryFn: async () => { const res = await api.get(`/souls/${id}`); return res.data as Soul; }, enabled: !!id,
@@ -52,6 +59,98 @@ export default function SoulDetailPage() {
   });
   const { data: reports } = useQuery({
     queryKey: ['soul', id, 'reports'], queryFn: async () => { const res = await api.get(`/reports/maker-weekly?ameId=${id}&size=10`); return res.data.content as MakerReport[]; }, enabled: !!id && activeTab === 'reports',
+  });
+
+  // Discipline events
+  const { data: disciplineEvents } = useQuery({
+    queryKey: ['soul', id, 'discipline'],
+    queryFn: async () => {
+      const res = await api.get(`/souls/${id}/discipline?size=100`);
+      return res.data as { content: {
+        id: string; categorie: string; typeEvenement: string;
+        gravite?: string; titre: string; description?: string;
+        dateEvenement: string; resolu: boolean;
+        dateResolution?: string; createdAt: string;
+      }[]; totalElements: number };
+    },
+    enabled: !!id && activeTab === 'discipline',
+  });
+
+  const { data: disciplineStats } = useQuery({
+    queryKey: ['soul', id, 'discipline', 'stats'],
+    queryFn: async () => {
+      const res = await api.get(`/souls/${id}/discipline/stats`);
+      return res.data as { total: number; nonResolus: number; parCategorie: Record<string, number> };
+    },
+    enabled: !!id,
+  });
+
+  const createDisciplineMutation = useMutation({
+    mutationFn: async () => {
+      await api.post(`/souls/${id}/discipline`, disciplineForm);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['soul', id, 'discipline'] });
+      queryClient.invalidateQueries({ queryKey: ['soul', id, 'discipline', 'stats'] });
+      setShowDisciplineForm(false);
+      setDisciplineForm({ categorie: 'COMPORTEMENT', typeEvenement: 'REPROCHE', titre: '', description: '', gravite: 'MOYENNE', dateEvenement: new Date().toISOString().slice(0, 10) });
+      toast.success('Événement disciplinaire enregistré');
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const resolveDisciplineMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      await api.patch(`/souls/${id}/discipline/${eventId}/resolve`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['soul', id, 'discipline'] });
+      queryClient.invalidateQueries({ queryKey: ['soul', id, 'discipline', 'stats'] });
+      toast.success('Événement marqué comme résolu');
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const CATEGORIE_DISCIPLINE_LABELS: Record<string, string> = {
+    COMPORTEMENT: 'Comportement', CONDUITE: 'Conduite', HABILLEMENT: 'Habillement',
+    VIE_SPIRITUELLE: 'Vie spirituelle', PONCTUALITE: 'Ponctualité',
+    PARTICIPATION: 'Participation', FIDELITE: 'Fidélité', ENGAGEMENT: 'Engagement',
+    REPROCHE: 'Reproche', SANCTION: 'Sanction', LITIGE: 'Litige',
+    CONFLIT: 'Conflit', SCANDALE: 'Scandale',
+    RELATION_PROBLEMATIQUE: 'Relation problématique',
+    FLIRT_INAPPROPRIE: 'Flirt inapproprié',
+    DEGAT_MATERIEL: 'Dégât matériel', DEGAT_RELATIONNEL: 'Dégât relationnel',
+    RESOLUTION: 'Résolution',
+    TEMOIGNAGE_MEMBRE: 'Témoignage membre',
+    TEMOIGNAGE_RESPONSABLE: 'Témoignage responsable',
+    TEMOIGNAGE_CHEF: 'Témoignage chef',
+    COMMENTAIRE_PASTORAL: 'Commentaire pastoral', AUTRE: 'Autre',
+  };
+
+  const TYPE_EVENEMENT_LABELS: Record<string, string> = {
+    REPROCHE: 'Reproche', SANCTION: 'Sanction', LITIGE: 'Litige',
+    CONFLIT: 'Conflit', SCANDALE: 'Scandale', OBSERVATION: 'Observation',
+    TEMOIGNAGE: 'Témoignage', ENTRETIEN: 'Entretien pastoral',
+    RESOLUTION: 'Résolution', AUTRE: 'Autre',
+  };
+
+  const GRAVITE_COLORS: Record<string, string> = {
+    FAIBLE: 'bg-green-100 text-green-700',
+    MOYENNE: 'bg-amber-100 text-amber-700',
+    GRAVE: 'bg-orange-100 text-orange-700',
+    CRITIQUE: 'bg-red-100 text-red-700',
+  };
+
+  // Fetch evaluation scores for the faiseur
+  const faiseurIds = soul?.faiseurId ? soul.faiseurId : '';
+  const { data: evalScores } = useQuery({
+    queryKey: ['users', 'eval-scores', faiseurIds],
+    queryFn: async () => {
+      if (!faiseurIds) return {};
+      const res = await api.get(`/users/evaluation-scores?userIds=${faiseurIds}`);
+      return res.data as Record<string, Record<string, { moyenne: number | null; total: number }>>;
+    },
+    enabled: !!faiseurIds,
   });
 
   const createNoteMutation = useMutation({
@@ -86,11 +185,12 @@ export default function SoulDetailPage() {
     </div>
   );
 
-  const tabs: { key: Tab; label: string; icon: typeof BookOpen }[] = [
+  const tabs: { key: Tab; label: string; icon: typeof BookOpen | typeof Gavel }[] = [
     { key: 'info', label: 'Informations', icon: BookOpen },
     { key: 'history', label: 'Historique', icon: Activity },
     { key: 'notes', label: 'Notes', icon: MessageSquare },
     { key: 'reports', label: 'Rapports', icon: FileText },
+    { key: 'discipline', label: `Discipline${disciplineStats && disciplineStats.nonResolus > 0 ? ` (${disciplineStats.nonResolus})` : ''}`, icon: Gavel },
   ];
 
   return (
@@ -121,6 +221,7 @@ export default function SoulDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link to={`/souls/${soul.id}/pastoral-360`} className="btn-glow btn-sm"><Activity className="w-4 h-4" /> Vue 360°</Link>
             <Link to={`/souls/${soul.id}/edit`} className="btn-secondary btn-sm"><Edit className="w-4 h-4" /> Modifier</Link>
             <button onClick={() => setShowRetraction(!showRetraction)} className="btn-ghost btn-sm text-orange-600 hover:text-orange-700">
               <AlertTriangle className="w-4 h-4" /> Retrait
@@ -376,6 +477,173 @@ export default function SoulDetailPage() {
               )}
             </div>
           )}
+
+          {/* DISCIPLINE TAB */}
+          {activeTab === 'discipline' && (
+            <div className="space-y-6">
+              {/* Stats */}
+              {disciplineStats && (
+                <div className="glass-card p-5 animate-slide-up">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <Flag className="w-4 h-4 text-primary-500" />
+                    Suivi disciplinaire
+                    {disciplineStats.nonResolus > 0 && (
+                      <span className="badge-danger text-[10px]">{disciplineStats.nonResolus} non résolu{disciplineStats.nonResolus > 1 ? 's' : ''}</span>
+                    )}
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30 text-center">
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{disciplineStats.total}</p>
+                      <p className="text-[10px] text-gray-400">Total</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30 text-center">
+                      <p className={`text-lg font-bold ${disciplineStats.nonResolus > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                        {disciplineStats.nonResolus}
+                      </p>
+                      <p className="text-[10px] text-gray-400">Non résolus</p>
+                    </div>
+                    {Object.entries(disciplineStats.parCategorie).slice(0, 4).map(([cat, count]) => (
+                      <div key={cat} className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30 text-center">
+                        <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{count}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{CATEGORIE_DISCIPLINE_LABELS[cat] || cat}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Create form */}
+              {showDisciplineForm ? (
+                <div className="glass-card p-5 animate-slide-up">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouvel événement disciplinaire</h3>
+                    <button onClick={() => setShowDisciplineForm(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                      <X className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Catégorie *</label>
+                      <select className="input" value={disciplineForm.categorie}
+                        onChange={(e) => setDisciplineForm({ ...disciplineForm, categorie: e.target.value })}>
+                        {Object.keys(CATEGORIE_DISCIPLINE_LABELS).map(k => (
+                          <option key={k} value={k}>{CATEGORIE_DISCIPLINE_LABELS[k]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Type *</label>
+                      <select className="input" value={disciplineForm.typeEvenement}
+                        onChange={(e) => setDisciplineForm({ ...disciplineForm, typeEvenement: e.target.value })}>
+                        {Object.keys(TYPE_EVENEMENT_LABELS).map(k => (
+                          <option key={k} value={k}>{TYPE_EVENEMENT_LABELS[k]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="label">Titre *</label>
+                      <input className="input" value={disciplineForm.titre}
+                        onChange={(e) => setDisciplineForm({ ...disciplineForm, titre: e.target.value })}
+                        placeholder="Ex: Absence répétée aux cultes" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="label">Description</label>
+                      <textarea className="input" rows={3} value={disciplineForm.description}
+                        onChange={(e) => setDisciplineForm({ ...disciplineForm, description: e.target.value })}
+                        placeholder="Détails de l'événement..." />
+                    </div>
+                    <div>
+                      <label className="label">Gravité</label>
+                      <select className="input" value={disciplineForm.gravite}
+                        onChange={(e) => setDisciplineForm({ ...disciplineForm, gravite: e.target.value })}>
+                        <option value="FAIBLE">Faible</option>
+                        <option value="MOYENNE">Moyenne</option>
+                        <option value="GRAVE">Grave</option>
+                        <option value="CRITIQUE">Critique</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Date</label>
+                      <input type="date" className="input" value={disciplineForm.dateEvenement}
+                        onChange={(e) => setDisciplineForm({ ...disciplineForm, dateEvenement: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button onClick={() => setShowDisciplineForm(false)} className="btn-secondary btn-sm">Annuler</button>
+                    <button onClick={() => createDisciplineMutation.mutate()}
+                      disabled={!disciplineForm.titre || createDisciplineMutation.isPending}
+                      className="btn-primary btn-sm">
+                      {createDisciplineMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      Enregistrer
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setShowDisciplineForm(true)} className="btn-primary btn-sm flex items-center gap-2">
+                  <Flag className="w-4 h-4" /> Nouvel événement
+                </button>
+              )}
+
+              {/* Discipline events list */}
+              {disciplineEvents && disciplineEvents.content.length > 0 ? (
+                <div className="space-y-2 animate-fade-in">
+                  {disciplineEvents.content.map((d, i) => (
+                    <div key={d.id} className={`glass-card p-4 animate-slide-up ${d.resolu ? '' : 'border-l-[3px] border-l-red-500'}`}
+                      style={{ animationDelay: `${i * 40}ms` }}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{d.titre}</span>
+                            {d.gravite && (
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${GRAVITE_COLORS[d.gravite] || 'bg-gray-100 text-gray-600'}`}>
+                                {d.gravite}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-gray-400 mb-1">
+                            <span className="font-medium">{CATEGORIE_DISCIPLINE_LABELS[d.categorie] || d.categorie}</span>
+                            <span>•</span>
+                            <span>{new Date(d.dateEvenement).toLocaleDateString('fr-FR')}</span>
+                            {d.resolu ? (
+                              <span className="text-green-600 flex items-center gap-0.5">
+                                <CheckCircle2 className="w-3 h-3" /> Résolu
+                              </span>
+                            ) : (
+                              <span className="text-red-500">Non résolu</span>
+                            )}
+                          </div>
+                          {d.description && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{d.description}</p>
+                          )}
+                        </div>
+                        {!d.resolu && (
+                          <button
+                            onClick={() => resolveDisciplineMutation.mutate(d.id)}
+                            disabled={resolveDisciplineMutation.isPending}
+                            className="btn-ghost btn-sm text-green-600 flex-shrink-0"
+                            title="Marquer comme résolu"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : disciplineEvents && disciplineEvents.content.length === 0 && (
+                <div className="glass-card p-8 text-center animate-fade-in">
+                  <Flag className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Aucun événement disciplinaire</p>
+                </div>
+              )}
+
+              {disciplineEvents && disciplineEvents.totalElements > 50 && (
+                <p className="text-xs text-gray-400 text-center">
+                  {disciplineEvents.totalElements} événements au total — utilisez la recherche intelligente pour voir tout l'historique
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right sidebar */}
@@ -413,6 +681,48 @@ export default function SoulDetailPage() {
               </Link>
             </div>
           </div>
+
+          {/* Évaluation du faiseur */}
+          {evalScores && soul.faiseurId && evalScores[soul.faiseurId] && (() => {
+            const scores = evalScores[soul.faiseurId];
+            const allNotes = Object.values(scores);
+            const totalAvg = allNotes.reduce((acc, s) => acc + (s.moyenne || 0), 0) / Math.max(allNotes.length, 1);
+            const totalCount = allNotes.reduce((acc, s) => acc + s.total, 0);
+            const CATEGORIE_LABELS: Record<string, string> = {
+              RESPONSABLE: 'Resp.', CHEF_FAMILLE: 'Chef', FAISEUR: 'Faiseur',
+            };
+            return (
+              <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '120ms' }}>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <Star className="w-3 h-3 text-amber-500" /> Évaluation du faiseur
+                </h3>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex">
+                    {[1,2,3,4,5].map(i => (
+                      <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(totalAvg) ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
+                    ))}
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {totalAvg > 0 ? totalAvg.toFixed(1) : '—'}
+                  </span>
+                  {totalCount > 0 && (
+                    <span className="text-[10px] text-gray-400">({totalCount} éval.)</span>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  {Object.entries(scores).map(([cat, s]) => (
+                    <div key={cat} className="flex items-center justify-between text-[11px]">
+                      <span className="text-gray-400">{CATEGORIE_LABELS[cat] || cat}</span>
+                      <span className="text-gray-500">
+                        {s.moyenne !== null && s.moyenne > 0 ? `${s.moyenne.toFixed(1)}/5` : '—'}
+                        <span className="text-gray-400 ml-1">({s.total})</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

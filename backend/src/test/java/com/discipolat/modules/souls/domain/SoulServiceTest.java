@@ -4,7 +4,10 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.evaluations.domain.EvaluationService;
+import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.notifications.domain.NotificationService;
+import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.api.CreateSoulRequest;
 import com.discipolat.modules.souls.api.UpdateSoulRequest;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -34,6 +37,14 @@ class SoulServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
+    private SoulNoteRepository soulNoteRepository;
+    @Mock
+    private FamilyRepository familyRepository;
+    @Mock
+    private MakerReportRepository makerReportRepository;
+    @Mock
+    private EvaluationService evaluationService;
+    @Mock
     private NotificationService notificationService;
 
     private SoulService soulService;
@@ -44,7 +55,10 @@ class SoulServiceTest {
 
     @BeforeEach
     void setUp() {
-        soulService = new SoulService(soulRepository, soulHistoryRepository, securityUtils, userRepository, notificationService);
+        soulService = new SoulService(soulRepository, soulHistoryRepository,
+                soulNoteRepository, securityUtils, userRepository,
+                familyRepository, makerReportRepository, evaluationService,
+                notificationService);
 
         faiseurId = UUID.randomUUID();
         familleId = UUID.randomUUID();

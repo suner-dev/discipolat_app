@@ -36,9 +36,16 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
 
   Future<void> _loadKpi() async {
     try {
-      final response = await _apiService.get('/dashboard/kpi');
+      Map<String, dynamic> data;
+      try {
+        final response = await _apiService.get('/dashboard/kpi');
+        data = response.data as Map<String, dynamic>;
+      } catch (_) {
+        final response = await _apiService.get('/dashboard/my-metrics');
+        data = response.data as Map<String, dynamic>;
+      }
       if (mounted) {
-        setState(() { _kpi = response.data as Map<String, dynamic>; _isLoading = false; });
+        setState(() { _kpi = data; _isLoading = false; });
         _animCtrl.forward();
       }
     } catch (e) {
@@ -48,14 +55,19 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final stats = _kpi != null ? [
+    final hasFullKpi = _kpi?.containsKey('totalAmes') ?? false;
+    final stats = _kpi != null ? (hasFullKpi ? [
       {'label': 'Âmes suivies', 'value': '${_kpi!['totalAmes'] ?? 0}', 'icon': Icons.favorite, 'gradient': [Colors.red, Colors.pink], 'trend': null},
       {'label': 'Taux de présence', 'value': '${(_kpi!['tauxPresenceGlobal'] ?? 0.0).toStringAsFixed(1)}%', 'icon': Icons.trending_up, 'gradient': [Colors.green, Colors.teal], 'trend': '+${(_kpi!['tendancePresence'] ?? 0).toStringAsFixed(1)}%'},
       {'label': 'Faiseurs', 'value': '${_kpi!['totalFaiseurs'] ?? 0}', 'icon': Icons.group, 'gradient': [Colors.blue, Colors.indigo], 'trend': null},
       {'label': 'Familles', 'value': '${_kpi!['totalFamilles'] ?? 0}', 'icon': Icons.home, 'gradient': [Colors.purple, Colors.deepPurple], 'trend': null},
       {'label': 'Alertes', 'value': '${_kpi!['alertesActives'] ?? 0}', 'icon': Icons.notifications_active, 'gradient': [Colors.orange, Colors.deepOrange], 'trend': null},
       {'label': 'Rapports', 'value': '${_kpi!['rapportsSoumis'] ?? 0}/${_kpi!['rapportsEnAttente'] ?? 0}', 'icon': Icons.description, 'gradient': [Colors.teal, Colors.cyan], 'trend': null},
-    ] : [];
+    ] : [
+      {'label': 'Mes âmes', 'value': '${_kpi!['totalAmes'] ?? _kpi!['totalAmesFamille'] ?? 0}', 'icon': Icons.favorite, 'gradient': [Colors.red, Colors.pink], 'trend': null},
+      {'label': 'Rapport soumis', 'value': '${_kpi!['rapportSoumisCetteSemaine'] == true ? 'Oui' : 'Non'}', 'icon': Icons.description, 'gradient': [Colors.teal, Colors.cyan], 'trend': null},
+      {'label': 'Faiseurs', 'value': '${_kpi!['totalFaiseursFamille'] ?? 0}', 'icon': Icons.group, 'gradient': [Colors.blue, Colors.indigo], 'trend': null},
+    ]) : [];
 
     return Scaffold(
       appBar: AppBar(

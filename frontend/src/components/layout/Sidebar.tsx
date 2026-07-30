@@ -1,6 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 import {
   LayoutDashboard,
   Users,
@@ -18,6 +20,11 @@ import {
   ChevronLeft,
   Sparkles,
   Church,
+  BarChart3,
+  AlertTriangle,
+  Search,
+  Shield,
+  Star as StarIcon,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -30,78 +37,176 @@ const navigation = [
     name: 'Tableau de bord',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Vue d\'ensemble',
+  },
+  {
+    name: 'Recherche',
+    href: '/search',
+    icon: Search,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+    subtitle: 'Recherche intelligente',
   },
   {
     name: 'Âmes',
     href: '/souls',
     icon: Heart,
-    roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Disciples suivis',
   },
   {
     name: 'Familles',
     href: '/families',
     icon: Users,
-    roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Groupes de disciples',
+  },
+  {
+    name: 'Pilotage Pasteur',
+    href: '/dashboard/pasteur',
+    icon: LayoutDashboard,
+    roles: ['ADMIN', 'PASTEUR'],
+    subtitle: 'Centre de commandement',
+  },
+  {
+    name: 'Dashboard Responsable',
+    href: '/dashboard/responsable',
+    icon: Building2,
+    roles: ['PASTEUR', 'RESPONSABLE'],
+    subtitle: 'Mon département',
+  },
+  {
+    name: 'CRM Faiseur',
+    href: '/crm/faiseur',
+    icon: Heart,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+    subtitle: 'Suivi des disciples',
+  },
+  {
+    name: 'Dashboard Chef',
+    href: '/dashboard/chef-famille',
+    icon: Users,
+    roles: ['PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+    subtitle: 'Ma famille',
   },
   {
     name: 'Départements',
     href: '/departments',
     icon: Building2,
-    roles: ['PASTEUR', 'RESPONSABLE'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
     subtitle: 'Structure',
   },
   {
     name: 'Rapports',
     href: '/reports',
     icon: FileText,
-    roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Hebdomadaires',
+  },
+  {
+    name: 'Aide urgente',
+    href: '/reports/urgent-aid',
+    icon: AlertTriangle,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+    subtitle: 'Demandes d\'aide',
   },
   {
     name: 'Prières',
     href: '/prayers',
     icon: BookOpen,
-    roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Sujets & témoignages',
+  },
+  {
+    name: 'Espaces prière',
+    href: '/prayers/spaces',
+    icon: Shield,
+    roles: ['ADMIN', 'PASTEUR'],
+    subtitle: 'Par niveau de visibilité',
+  },
+  {
+    name: 'Actions de grâce',
+    href: '/prayers/actions-de-grace',
+    icon: Heart,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+    subtitle: 'Prières exaucées',
   },
   {
     name: 'Événements',
     href: '/events',
     icon: Calendar,
-    roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Calendrier',
+  },
+  {
+    name: 'Programme',
+    href: '/events/program',
+    icon: Calendar,
+    roles: ['ADMIN', 'PASTEUR'],
+    subtitle: 'Programme hebdomadaire',
+  },
+  {
+    name: 'Statistiques événements',
+    href: '/events/statistics',
+    icon: BarChart3,
+    roles: ['PASTEUR'],
+    subtitle: 'Indicateurs',
   },
   {
     name: 'Documents',
     href: '/documents',
     icon: FolderOpen,
-    roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Fichiers & rapports',
+  },
+  {
+    name: 'Évaluations',
+    href: '/evaluations',
+    icon: StarIcon,
+    roles: ['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+    subtitle: 'Anonymes & feedback',
+  },
+  {
+    name: 'Retraits',
+    href: '/souls/retractions',
+    icon: AlertTriangle,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+    subtitle: 'Demandes de retrait',
   },
   {
     name: 'Suivis parallèles',
     href: '/parallel-followups',
     icon: Activity,
-    roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Accompagnements',
   },
   {
     name: 'Alertes',
     href: '/alerts',
     icon: Bell,
-    roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Notifications',
   },
   {
     name: 'Utilisateurs',
     href: '/users',
     icon: UserCog,
-    roles: ['PASTEUR', 'RESPONSABLE'],
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
     subtitle: 'Gestion des comptes',
+  },
+  {
+    name: 'Audit',
+    href: '/audit',
+    icon: Activity,
+    roles: ['ADMIN', 'PASTEUR'],
+    subtitle: 'Journal de bord',
+  },
+  {
+    name: 'Permissions',
+    href: '/permissions',
+    icon: UserCog,
+    roles: ['ADMIN'],
+    subtitle: 'Matrice des rôles',
   },
 ];
 
@@ -164,7 +269,24 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
-  const filteredNav = navigation.filter((item) => user && item.roles.includes(user.role));
+  // Fetch evaluation score for the current user
+  const { data: myEval } = useQuery({
+    queryKey: ['sidebar', 'eval'],
+    queryFn: async () => {
+      const res = await api.get('/evaluations/me');
+      return res.data as { statistiques: Record<string, { moyenne: number | null }> };
+    },
+    enabled: !!user && user.activeRole !== 'ADMIN',
+  });
+
+  // Compute overall average from all categories
+  const evalAvg = myEval && Object.keys(myEval.statistiques).length > 0
+    ? Object.values(myEval.statistiques).reduce((acc, s) => acc + (s.moyenne || 0), 0) / Object.keys(myEval.statistiques).length
+    : null;
+
+  // Filter navigation by activeRole
+  const activeRole = user?.activeRole || user?.role;
+  const filteredNav = navigation.filter((item) => activeRole && item.roles.includes(activeRole));
 
   return (
     <>
@@ -235,7 +357,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                      {user?.role === 'PASTEUR' ? 'Pasteur' : user?.role === 'RESPONSABLE' ? 'Responsable' : 'Faiseur'}
+                      {user?.activeRole === 'ADMIN' ? 'Admin' : user?.activeRole === 'PASTEUR' ? 'Pasteur' : user?.activeRole === 'RESPONSABLE' ? 'Responsable' : user?.activeRole === 'FAISEUR' ? 'Faiseur' : user?.activeRole === 'CHEF_DE_FAMILLE' ? 'Chef' : user?.role}
                     </span>
                     {user?.estChefDeFamille && (
                       <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400 rounded-full uppercase tracking-wider">
@@ -243,6 +365,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                       </span>
                     )}
                   </div>
+                  {evalAvg != null && (
+                    <div className="flex items-center gap-1 mt-1">
+                      {[1,2,3,4,5].map(i => (
+                        <StarIcon key={i} className={`w-2.5 h-2.5 ${i <= Math.round(evalAvg!) ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
+                      ))}
+                      <span className="text-[9px] font-medium text-gray-400 ml-0.5">{evalAvg!.toFixed(1)}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

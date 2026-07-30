@@ -1,5 +1,5 @@
 // User types
-export type UserRole = 'PASTEUR' | 'RESPONSABLE' | 'FAISEUR';
+export type UserRole = 'ADMIN' | 'PASTEUR' | 'RESPONSABLE' | 'CHEF_DE_FAMILLE' | 'FAISEUR' | 'MEMBRE';
 export type UserStatus = 'ACTIVE' | 'INACTIVE';
 export type EntityStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 
@@ -10,12 +10,15 @@ export interface User {
   lastName: string;
   phone?: string;
   role: UserRole;
+  roles: UserRole[];
+  activeRole: UserRole;
   estChefDeFamille: boolean;
   familleGereeId?: string;
   statut: UserStatus;
   dateNaissance?: string;
   photoUrl?: string;
   situationFamiliale?: string;
+  twoFactorEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -25,8 +28,15 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   tokenType: string;
-  expiresIn: number;
-  user: User;
+  userId: string;
+  email: string;
+  role: string;
+  roles: string[];
+  activeRole: string;
+  estChefDeFamille: boolean;
+  firstName?: string;
+  lastName?: string;
+  twoFactorEnabled?: boolean;
 }
 
 export interface LoginRequest {
@@ -288,7 +298,8 @@ export type TypeNotification =
   | 'ABSENCE_48H'
   | 'RAPPORT_FAMILLE_NON_SOUMIS'
   | 'ALERTE_ABSENCE'
-  | 'INFORMATION';
+  | 'INFORMATION'
+  | 'PRIERE_EXAUCEE';
 
 export interface Notification {
   id: string;
@@ -306,7 +317,7 @@ export interface Notification {
 export type CategoriePriere = 'SANTE' | 'FAMILLE' | 'TRAVAIL' | 'SPIRITUEL' | 'AUTRE';
 export type PrioritePriere = 'BASSE' | 'MOYENNE' | 'HAUTE';
 export type StatutPriere = 'EN_COURS' | 'EXAUCEE';
-export type VisibilitePriere = 'PRIVEE' | 'PARTAGEE';
+export type VisibilitePriere = 'PRIVEE' | 'PARTAGEE' | 'GENERALE' | 'PASTEUR_RESPONSABLE' | 'FAISEUR';
 
 export interface Prayer {
   id: string;
@@ -344,7 +355,24 @@ export interface UpdatePrayerRequest {
 }
 
 // Event types
-export type TypeEvenement = 'SORTIE' | 'RETRAITE' | 'EVANGELISATION' | 'REUNION' | 'VISITE' | 'CONFERENCE' | 'FORMATION' | 'ANNIVERSAIRE' | 'AUTRE';
+export type TypeEvenement = 'SORTIE' | 'RETRAITE' | 'EVANGELISATION' | 'REUNION' | 'VISITE' | 'CONFERENCE' | 'FORMATION' | 'ANNIVERSAIRE' | 'CULTE' | 'ETUDE_BIBLIQUE' | 'VEILLEE' | 'PRIERE' | 'AUTRE';
+export type JourSemaine = 'LUNDI' | 'MARDI' | 'MERCREDI' | 'JEUDI' | 'VENDREDI' | 'SAMEDI' | 'DIMANCHE';
+
+export interface WeeklyProgramTemplate {
+  id: string;
+  titre: string;
+  description?: string;
+  typeEvenement: TypeEvenement;
+  jourSemaine: JourSemaine;
+  heureDebut: string;
+  heureFin?: string;
+  lieu?: string;
+  dureeMinutes?: number;
+  actif: boolean;
+  couleur?: string;
+  createdBy: string;
+  createdAt: string;
+}
 export type StatutEvenement = 'PLANIFIE' | 'EN_COURS' | 'TERMINE' | 'ANNULE';
 export type StatutInscription = 'INSCRIT' | 'EN_ATTENTE' | 'ANNULEE';
 

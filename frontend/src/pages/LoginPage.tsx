@@ -3,9 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, roleLabels } from '@/contexts/AuthContext';
 import { getErrorMessage } from '@/lib/api';
-import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Sparkles, Shield } from 'lucide-react';
+import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Sparkles, Shield, RotateCw, ShieldCheck } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide').min(1, 'Email requis'),
@@ -14,11 +14,54 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+const roleIcons: Record<string, string> = {
+  PASTEUR: '👑',
+  RESPONSABLE: '📋',
+  FAISEUR: '🌱',
+  CHEF_DE_FAMILLE: '👪',
+  ADMIN: '⚙️',
+  MEMBRE: '🙏',
+};
+
+const roleDescriptions: Record<string, string> = {
+  PASTEUR: 'Accès complet à toute l\'église',
+  RESPONSABLE: 'Gestion de votre département',
+  FAISEUR: 'Suivi de vos disciples',
+  CHEF_DE_FAMILLE: 'Coordination de votre famille',
+  ADMIN: 'Administration technique',
+  MEMBRE: 'Espace membre',
+};
+
+const roleColor = (r: string) => {
+  switch (r) {
+    case 'ADMIN': return 'from-red-600 to-red-500';
+    case 'PASTEUR': return 'from-primary-600 to-primary-500';
+    case 'RESPONSABLE': return 'from-amber-600 to-amber-500';
+    case 'FAISEUR': return 'from-emerald-600 to-emerald-500';
+    case 'CHEF_DE_FAMILLE': return 'from-gold-600 to-gold-500';
+    default: return 'from-gray-600 to-gray-500';
+  }
+};
+
+const roleBg = (r: string) => {
+  switch (r) {
+    case 'ADMIN': return 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20';
+    case 'PASTEUR': return 'bg-primary-500/10 border-primary-500/20 hover:bg-primary-500/20';
+    case 'RESPONSABLE': return 'bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20';
+    case 'FAISEUR': return 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20';
+    case 'CHEF_DE_FAMILLE': return 'bg-gold-500/10 border-gold-500/20 hover:bg-gold-500/20';
+    default: return 'bg-gray-500/10 border-gray-500/20 hover:bg-gray-500/20';
+  }
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, roles, user, switchRole } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(false);
 
   const {
     register,
@@ -31,12 +74,90 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       setError('');
-      await login(data);
-      navigate('/dashboard');
+      const result = await login(data);
+
+      // Check if user has multiple roles — show role selector
+      if (result.roles && result.roles.length > 1 && !result.twoFactorEnabled) {
+        setShowRoleSelector(true);
+        return;
+      }
+
+      if (result?.twoFactorEnabled) {
+        navigate('/verify-2fa');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(getErrorMessage(err));
     }
   };
+
+  const handleSelectRole = async (role: string) => {
+    setSelectedRole(role);
+    setRoleLoading(true);
+    try {
+      await switchRole(role);
+      navigate('/dashboard');
+    } catch {
+      setError('Échec de la sélection du rôle');
+      setRoleLoading(false);
+    }
+  };
+
+  if (showRoleSelector && user && roles.length > 1) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-400 text-xs font-medium mb-4 animate-fade-in">
+            <RotateCw className="w-3 h-3" />
+            Choisissez un rôle
+          </div>
+          <h2 className="text-2xl font-bold text-white font-display animate-slide-up">
+            Bienvenue, {user.firstName} 🙌
+          </h2>
+          <p className="mt-1.5 text-sm text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
+            Vous avez plusieurs rôles. Sélectionnez celui à utiliser
+          </p>
+        </div>
+
+        {/* Role cards */}
+        <div className="space-y-3 animate-slide-up" style={{ animationDelay: '100ms' }}>
+          {roles.map((r) => (
+            <button
+              key={r}
+              onClick={() => handleSelectRole(r)}
+              disabled={roleLoading && selectedRole === r}
+              className={`w-full p-4 rounded-2xl border text-left transition-all duration-200
+                         ${roleBg(r)}
+                         ${roleLoading && selectedRole === r ? 'opacity-60 cursor-wait' : 'hover:scale-[1.02] active:scale-[0.98]'}
+                         ${selectedRole === r ? 'ring-2 ring-primary-500/50' : ''}
+                       `}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${roleColor(r)} flex items-center justify-center text-xl shadow-lg`}>
+                  {roleIcons[r] || '🔘'}
+                </div>
+                <div className="flex-1">
+                  <p className="text-base font-semibold text-white">{roleLabels[r] || r}</p>
+                  <p className="text-sm text-gray-400 mt-0.5">{roleDescriptions[r] || ''}</p>
+                </div>
+                {roleLoading && selectedRole === r ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-primary-400" />
+                ) : (
+                  <ShieldCheck className="w-5 h-5 text-gray-500" />
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-gray-500 text-center">
+          Vous pourrez changer de rôle à tout moment depuis le menu
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

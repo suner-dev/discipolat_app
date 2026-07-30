@@ -7,7 +7,7 @@ import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "users")
@@ -42,6 +42,17 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private UserRole role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "active_role")
+    private UserRole activeRole;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "role")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Set<UserRole> roles = new HashSet<>();
 
     @Column(name = "est_chef_de_famille", nullable = false)
     private boolean estChefDeFamille;

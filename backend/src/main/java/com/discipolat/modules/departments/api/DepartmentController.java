@@ -12,7 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -81,5 +83,40 @@ public class DepartmentController {
     public ResponseEntity<List<DepartmentResponse>> findByResponsable(@PathVariable UUID responsableId) {
         List<Department> departments = departmentService.findByResponsableId(responsableId);
         return ResponseEntity.ok(departments.stream().map(DepartmentResponse::from).toList());
+    }
+
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<Map<String, Object>> detail(@PathVariable UUID id) {
+        return ResponseEntity.ok(departmentService.getDetail(id));
+    }
+
+    @GetMapping("/{id}/kpi")
+    public ResponseEntity<Map<String, Object>> kpi(@PathVariable UUID id) {
+        return ResponseEntity.ok(departmentService.getDepartmentKpi(id));
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<com.discipolat.common.infrastructure.api.PageResponse<Map<String, Object>>> members(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        var pageable = org.springframework.data.domain.PageRequest.of(page, Math.min(size, 100));
+        var result = departmentService.getDepartmentMembers(id, pageable);
+        return ResponseEntity.ok(com.discipolat.common.infrastructure.api.PageResponse.of(
+                result.getContent(), result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages()));
+    }
+
+    @GetMapping("/{id}/unassigned")
+    public ResponseEntity<List<Map<String, Object>>> unassigned(@PathVariable UUID id) {
+        return ResponseEntity.ok(departmentService.getUnassignedMembers(id));
+    }
+
+    @GetMapping("/{id}/report")
+    public ResponseEntity<Map<String, Object>> report(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String semaine) {
+        LocalDate week = semaine != null ? LocalDate.parse(semaine) : LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        return ResponseEntity.ok(departmentService.getDepartmentReport(id, week));
     }
 }

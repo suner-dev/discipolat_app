@@ -1,13 +1,23 @@
 package com.discipolat.modules.events.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.UserRole;
+import com.discipolat.common.enums.CanalNotification;
+import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.notifications.domain.NotificationService;
+import com.discipolat.modules.users.domain.User;
+import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,21 +27,51 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final EventRegistrationRepository registrationRepository;
+    private final WeeklyProgramTemplateRepository templateRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
     private final SecurityUtils securityUtils;
 
     public EventService(EventRepository eventRepository,
                         EventRegistrationRepository registrationRepository,
+                        WeeklyProgramTemplateRepository templateRepository,
+                        UserRepository userRepository,
+                        NotificationService notificationService,
                         SecurityUtils securityUtils) {
         this.eventRepository = eventRepository;
         this.registrationRepository = registrationRepository;
+        this.templateRepository = templateRepository;
+        this.userRepository = userRepository;
+        this.notificationService = notificationService;
         this.securityUtils = securityUtils;
     }
 
     public Event create(Event event) {
-        event.setOrganisateurId(securityUtils.getCurrentUserId());
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        event.setOrganisateurId(currentUserId);
         event.setStatut("PLANIFIE");
         event.setNbInscrits(0);
-        return eventRepository.save(event);
+        Event saved = eventRepository.save(event);
+
+        // Notify all PASTEUR users when a non-pasteur creates an event
+        User currentUser = userRepository.findById(currentUserId).orElse(null);
+        if (currentUser != null && !currentUser.getRoles().contains(UserRole.PASTEUR) && !currentUser.getRoles().contains(UserRole.ADMIN)) {
+            String userName = currentUser.getFirstName() + " " + currentUser.getLastName();
+            userRepository.findByRole(UserRole.PASTEUR).forEach(pasteur -> {
+                notificationService.create(
+                        pasteur.getId(),
+                        TypeNotification.INFORMATION,
+                        CanalNotification.IN_APP,
+                        "Nouvel événement créé",
+                        userName + " a créé l'événement \"" + saved.getTitre() + "\" le " +
+                                saved.getDateDebut().toLocalDate().toString() + ".",
+                        saved.getId(),
+                        "EVENT"
+                );
+            });
+        }
+
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -146,6 +186,240 @@ public class EventService {
     @Transactional(readOnly = true)
     public long countByFamilleId(UUID familleId) {
         return eventRepository.countByFamilleIdAndDeletedFalse(familleId);
+    }
+
+    // ======================== CONSOLIDATED VIEW (US-06) ========================
+
+    /**
+     * Get all upcoming events consolidated for the Pasteur — across all departments and families.
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getConsolidatedUpcoming(int days) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime end = now.plusDays(days);
+        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedFalse(now, end);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Event e : events) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("id", e.getId());
+            entry.put("titre", e.getTitre());
+            entry.put("typeEvenement", e.getTypeEvenement());
+            entry.put("dateDebut", e.getDateDebut());
+            entry.put("dateFin", e.getDateFin());
+            entry.put("lieu", e.getLieu());
+            entry.put("statut", e.getStatut());
+            entry.put("nbInscrits", e.getNbInscrits());
+            entry.put("limitePlaces", e.getLimitePlaces());
+            entry.put("familleId", e.getFamilleId());
+
+            // Organiser info
+            userRepository.findById(e.getOrganisateurId()).ifPresent(org -> {
+                entry.put("organisateurNom", org.getFirstName() + " " + org.getLastName());
+                entry.put("organisateurRole", org.getActiveRole() != null ? org.getActiveRole().name() : org.getRole().name());
+            });
+
+            result.add(entry);
+        }
+        result.sort(Comparator.comparing(m -> (LocalDateTime) m.get("dateDebut")));
+        return result;
+    }
+
+    /**
+     * Get events grouped by family for consolidated view.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getConsolidatedByFamily(int days) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime end = now.plusDays(days);
+        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedFalse(now, end);
+
+        Map<UUID, List<Map<String, Object>>> byFamille = new LinkedHashMap<>();
+        Map<String, List<Map<String, Object>>> byType = new LinkedHashMap<>();
+
+        for (Event e : events) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("id", e.getId());
+            entry.put("titre", e.getTitre());
+            entry.put("typeEvenement", e.getTypeEvenement());
+            entry.put("dateDebut", e.getDateDebut());
+            entry.put("dateFin", e.getDateFin());
+            entry.put("lieu", e.getLieu());
+            entry.put("statut", e.getStatut());
+            entry.put("nbInscrits", e.getNbInscrits());
+            entry.put("familleId", e.getFamilleId());
+            entry.put("organisateurId", e.getOrganisateurId());
+
+            userRepository.findById(e.getOrganisateurId()).ifPresent(org -> {
+                entry.put("organisateurNom", org.getFirstName() + " " + org.getLastName());
+            });
+
+            // Group by type
+            byType.computeIfAbsent(e.getTypeEvenement(), k -> new ArrayList<>()).add(entry);
+
+            // Group by family
+            if (e.getFamilleId() != null) {
+                byFamille.computeIfAbsent(e.getFamilleId(), k -> new ArrayList<>()).add(entry);
+            }
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("total", (long) events.size());
+        result.put("events", events.stream().map(e -> {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("id", e.getId());
+            entry.put("titre", e.getTitre());
+            entry.put("typeEvenement", e.getTypeEvenement());
+            entry.put("dateDebut", e.getDateDebut());
+            return entry;
+        }).toList());
+        result.put("parType", byType.entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        Map.Entry::getKey, e -> (long) e.getValue().size())));
+        result.put("parFamille", byFamille.entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        Map.Entry::getKey, e -> (long) e.getValue().size())));
+
+        return result;
+    }
+
+    // ======================== WEEKLY PROGRAM TEMPLATES (US-50) ========================
+
+    /**
+     * Create a weekly program template (Pasteur only)
+     */
+    public WeeklyProgramTemplate createTemplate(WeeklyProgramTemplate template) {
+        template.setCreatedBy(securityUtils.getCurrentUserId());
+        return templateRepository.save(template);
+    }
+
+    @Transactional(readOnly = true)
+    public List<WeeklyProgramTemplate> getActiveTemplates() {
+        return templateRepository.findByActifTrueOrderByJourSemaineAscHeureDebutAsc();
+    }
+
+    @Transactional(readOnly = true)
+    public List<WeeklyProgramTemplate> getMyTemplates() {
+        return templateRepository.findByCreatedByOrderByJourSemaineAsc(securityUtils.getCurrentUserId());
+    }
+
+    public WeeklyProgramTemplate updateTemplate(UUID id, WeeklyProgramTemplate updated) {
+        WeeklyProgramTemplate template = templateRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("WeeklyProgramTemplate", id));
+        if (updated.getTitre() != null) template.setTitre(updated.getTitre());
+        if (updated.getDescription() != null) template.setDescription(updated.getDescription());
+        if (updated.getTypeEvenement() != null) template.setTypeEvenement(updated.getTypeEvenement());
+        if (updated.getJourSemaine() != null) template.setJourSemaine(updated.getJourSemaine());
+        if (updated.getHeureDebut() != null) template.setHeureDebut(updated.getHeureDebut());
+        if (updated.getHeureFin() != null) template.setHeureFin(updated.getHeureFin());
+        if (updated.getLieu() != null) template.setLieu(updated.getLieu());
+        if (updated.getDureeMinutes() != null) template.setDureeMinutes(updated.getDureeMinutes());
+        if (updated.getCouleur() != null) template.setCouleur(updated.getCouleur());
+        template.setActif(updated.isActif());
+        return templateRepository.save(template);
+    }
+
+    public void deleteTemplate(UUID id) {
+        templateRepository.deleteById(id);
+    }
+
+    public void toggleTemplateActif(UUID id, boolean actif) {
+        WeeklyProgramTemplate template = templateRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("WeeklyProgramTemplate", id));
+        template.setActif(actif);
+        templateRepository.save(template);
+    }
+
+    /**
+     * Generate events for a specific week from the active templates.
+     * Creates one Event per template for the given week's dates.
+     * Skips dates in the past.
+     */
+    public List<Event> generateWeekProgram(LocalDate weekStart) {
+        if (weekStart == null) {
+            weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        }
+
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        List<WeeklyProgramTemplate> activeTemplates = templateRepository.findByActifTrueOrderByJourSemaineAscHeureDebutAsc();
+        List<Event> createdEvents = new ArrayList<>();
+        LocalDate weekEnd = weekStart.plusDays(6);
+
+        for (WeeklyProgramTemplate template : activeTemplates) {
+            LocalDate eventDate = getDateForDayOfWeek(weekStart, template.getJourSemaine());
+            if (eventDate == null || eventDate.isBefore(LocalDate.now())) continue;
+
+            LocalDateTime dateDebut = LocalDateTime.of(eventDate, template.getHeureDebut());
+            LocalDateTime dateFin = template.getHeureFin() != null
+                    ? LocalDateTime.of(eventDate, template.getHeureFin())
+                    : (template.getDureeMinutes() != null
+                        ? dateDebut.plusMinutes(template.getDureeMinutes())
+                        : dateDebut.plusHours(2));
+
+            // Check if event already exists for this date + time to avoid duplicates
+            boolean exists = eventRepository.findByDateDebutBetweenAndDeletedFalse(
+                    dateDebut.minusMinutes(30), dateDebut.plusMinutes(30))
+                    .stream()
+                    .anyMatch(e -> e.getTitre().equals(template.getTitre())
+                            && e.getTypeEvenement().equals(template.getTypeEvenement()));
+            if (exists) continue;
+
+            Event event = Event.builder()
+                    .organisateurId(currentUserId)
+                    .typeEvenement(template.getTypeEvenement())
+                    .titre(template.getTitre())
+                    .description(template.getDescription())
+                    .lieu(template.getLieu())
+                    .dateDebut(dateDebut)
+                    .dateFin(dateFin)
+                    .statut("PLANIFIE")
+                    .nbInscrits(0)
+                    .build();
+            createdEvents.add(eventRepository.save(event));
+        }
+
+        return createdEvents;
+    }
+
+    /**
+     * Generate events for a full month (4 weeks) from the active templates.
+     */
+    public List<Event> generateMonthProgram() {
+        LocalDate thisMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        List<Event> allEvents = new ArrayList<>();
+        for (int w = 0; w < 4; w++) {
+            allEvents.addAll(generateWeekProgram(thisMonday.plusWeeks(w)));
+        }
+        return allEvents;
+    }
+
+    /**
+     * Get the program for a specific week (all planned events in that week).
+     */
+    @Transactional(readOnly = true)
+    public List<Event> getWeekProgram(LocalDate weekStart) {
+        if (weekStart == null) {
+            weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        }
+        LocalDateTime start = weekStart.atStartOfDay();
+        LocalDateTime end = weekStart.plusDays(7).atStartOfDay();
+        return eventRepository.findByDateDebutBetweenAndDeletedFalse(start, end).stream()
+                .sorted(Comparator.comparing(Event::getDateDebut))
+                .toList();
+    }
+
+    private LocalDate getDateForDayOfWeek(LocalDate weekStart, String jourSemaine) {
+        DayOfWeek targetDay = switch (jourSemaine.toUpperCase()) {
+            case "LUNDI" -> DayOfWeek.MONDAY;
+            case "MARDI" -> DayOfWeek.TUESDAY;
+            case "MERCREDI" -> DayOfWeek.WEDNESDAY;
+            case "JEUDI" -> DayOfWeek.THURSDAY;
+            case "VENDREDI" -> DayOfWeek.FRIDAY;
+            case "SAMEDI" -> DayOfWeek.SATURDAY;
+            case "DIMANCHE" -> DayOfWeek.SUNDAY;
+            default -> null;
+        };
+        if (targetDay == null) return null;
+        return weekStart.with(TemporalAdjusters.nextOrSame(targetDay));
     }
 
     // ======================== US-55: EVENT STATISTICS ========================

@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -37,10 +38,13 @@ public class FamilyController {
     public ResponseEntity<PageResponse<FamilyResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) UUID departementId) {
+            @RequestParam(required = false) UUID departementId,
+            @RequestParam(required = false) UUID chefFamilleId) {
         Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Family> families;
-        if (departementId != null) {
+        if (chefFamilleId != null) {
+            families = familyService.findByChefFamille(chefFamilleId, pageable);
+        } else if (departementId != null) {
             families = familyService.findByDepartement(departementId, pageable);
         } else {
             families = familyService.findAll(pageable);
@@ -115,6 +119,17 @@ public class FamilyController {
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getFamilyTree(@PathVariable UUID id) {
         return ResponseEntity.ok(familyService.getFamilyTree(id));
+    }
+
+    // ======================== FAISEUR PERFORMANCE ========================
+
+    @GetMapping("/{id}/faiseur-performance")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    public ResponseEntity<List<Map<String, Object>>> getFaiseurPerformance(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String semaine) {
+        LocalDate week = semaine != null ? LocalDate.parse(semaine) : LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        return ResponseEntity.ok(familyService.getFaiseurPerformance(id, week));
     }
 
     // ======================== US-10: FAMILY HISTORY ========================

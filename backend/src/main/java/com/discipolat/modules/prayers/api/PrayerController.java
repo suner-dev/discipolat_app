@@ -57,7 +57,8 @@ public class PrayerController {
             @RequestParam(required = false) UUID familleId,
             @RequestParam(required = false) UUID auteurId,
             @RequestParam(required = false) String statut,
-            @RequestParam(required = false) String categorie) {
+            @RequestParam(required = false) String categorie,
+            @RequestParam(required = false) String visibilite) {
         Pageable pageable = PageRequest.of(page, Math.min(size, 50),
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Prayer> prayers;
@@ -69,6 +70,8 @@ public class PrayerController {
             prayers = prayerService.findByFamilleId(familleId, pageable);
         } else if (auteurId != null) {
             prayers = prayerService.findByAuteurId(auteurId, pageable);
+        } else if (visibilite != null) {
+            prayers = prayerService.findByVisibilite(visibilite, pageable);
         } else {
             prayers = prayerService.findAll(pageable);
         }
@@ -125,7 +128,8 @@ public class PrayerController {
         if (familleId != null) {
             answered = prayerService.findAnsweredByFamille(familleId);
         } else {
-            answered = prayerService.findAllAnswered();
+            // Phase 9: filter by role-based visibility
+            answered = prayerService.findAllAnsweredByVisibility();
         }
         return ResponseEntity.ok(answered.stream().map(PrayerResponse::from).toList());
     }

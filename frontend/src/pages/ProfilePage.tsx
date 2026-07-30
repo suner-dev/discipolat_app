@@ -5,10 +5,13 @@ import api, { getErrorMessage } from '@/lib/api';
 import {
   User, Mail, Shield, Calendar, CheckCircle, XCircle, Edit3, Save, X, Lock,
   Eye, EyeOff, Loader2, Phone, Heart, Sparkles, Key, ChevronDown, ChevronUp,
+  Smartphone, Copy, Check,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 
 const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Administrateur',
   PASTEUR: 'Pasteur',
   RESPONSABLE: 'Responsable de département',
   FAISEUR: 'Faiseur de disciples',
@@ -58,6 +61,64 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['user'] });
       toast.success('Profil mis à jour avec succès');
       setIsEditing(false);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const [show2FA, setShow2FA] = useState(false);
+  const has2FA = user?.twoFactorEnabled ?? false;
+  const [twoFAStep, setTwoFAStep] = useState<'idle' | 'show' | 'verify' | 'done'>('idle');
+  const [twoFAData, setTwoFAData] = useState<{
+    secret: string;
+    otpauthUri: string;
+    backupCodes: string[];
+  } | null>(null);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const enable2FAMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/auth/2fa/enable');
+      return res.data as {
+        twoFactorEnabled: boolean;
+        secret: string;
+        otpauthUri: string;
+        backupCodes: string[];
+      };
+    },
+    onSuccess: (data) => {
+      setTwoFAData({ secret: data.secret, otpauthUri: data.otpauthUri, backupCodes: data.backupCodes });
+      setTwoFAStep('show');
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const verify2FAMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const res = await api.post('/auth/2fa/verify', { code });
+      return res.data as { valid: boolean };
+    },
+    onSuccess: (data) => {
+      if (data.valid) {
+        toast.success('Code vérifié avec succès');
+        setTwoFAStep('done');
+        updateUser({ twoFactorEnabled: true });
+      } else {
+        toast.error('Code invalide. Veuillez réessayer.');
+      }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const disable2FAMutation = useMutation({
+    mutationFn: async () => {
+      await api.post('/auth/2fa/disable');
+    },
+    onSuccess: () => {
+      toast.success('2FA désactivée');
+      updateUser({ twoFactorEnabled: false });
+      setTwoFAStep('idle');
+      setTwoFAData(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -132,6 +193,159 @@ export default function ProfilePage() {
             {showPasswordForm ? 'Masquer' : 'Mot de passe'}
           </button>
         </div>
+      </div>
+
+      {/* 2FA Section */}
+      <div className="glass-card p-6 mb-6 animate-slide-up border-l-[3px] border-l-violet-500">
+        <button onClick={() => setShow2FA(!show2FA)} className="w-full flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-violet-100 dark:bg-violet-900/30">
+              <Smartphone className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div className="text-left">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Authentification à deux facteurs</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {user?.role === 'ADMIN' ? 'Obligatoire pour les administrateurs' : 'Sécurisez votre compte avec 2FA'}
+              </p>
+            </div>
+          </div>
+          {show2FA ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+        </button>
+
+        {show2FA && (
+          <div className="mt-5 pt-5 border-t border-white/20 dark:border-white/[0.06]">
+            {twoFAStep === 'done' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-semibold">2FA activée avec succès</span>
+                </div>
+                {twoFAData && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      Codes de secours — conservez-les dans un endroit sûr :
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {twoFAData.backupCodes.map((code, i) => (
+                        <button
+                          key={i}
+                          onClick={() => { navigator.clipboard.writeText(code); setCopiedIndex(i); setTimeout(() => setCopiedIndex(null), 2000); }}
+                          className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 font-mono text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <span>{code}</span>
+                          {copiedIndex === i ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => disable2FAMutation.mutate()}
+                    disabled={disable2FAMutation.isPending}
+                    className="btn-secondary btn-sm"
+                  >
+                    {disable2FAMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                    Désactiver
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {twoFAStep === 'verify' && twoFAData && (
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Entrez le code à 6 chiffres généré par votre application d'authentification :
+                </p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="input text-center text-2xl font-mono tracking-widest"
+                  placeholder="000000"
+                  value={verifyCode}
+                  onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 6); setVerifyCode(v); }}
+                />
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => { setTwoFAStep('idle'); setTwoFAData(null); }} className="btn-secondary btn-sm">
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => verify2FAMutation.mutate(verifyCode)}
+                    disabled={verifyCode.length !== 6 || verify2FAMutation.isPending}
+                    className="btn-primary btn-sm"
+                  >
+                    {verify2FAMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                    Vérifier
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {twoFAStep === 'show' && twoFAData && (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Scannez ce code QR avec votre application d'authentification (Google Authenticator, Authy, etc.) :
+                </p>
+                <div className="flex justify-center">
+                  <div className="p-4 bg-white rounded-2xl shadow-md">
+                    <QRCodeSVG value={twoFAData.otpauthUri} size={180} />
+                  </div>
+                </div>
+                <div className="flex justify-center">
+                  <p className="text-xs text-gray-400 break-all select-all font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg max-w-full">
+                    {twoFAData.secret}
+                  </p>
+                </div>
+                <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+                  Vous pouvez aussi saisir la clé secrète manuellement dans votre application
+                </p>
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => setTwoFAStep('verify')}
+                    className="btn-primary btn-sm"
+                  >
+                    Continuer
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {twoFAStep === 'idle' && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Statut: {user?.role === 'ADMIN' ? 'Obligatoire' : has2FA ? 'Activé' : 'Désactivé'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {has2FA
+                      ? "Votre compte est sécurisé avec l'authentification à deux facteurs"
+                      : 'Ajoutez une couche de sécurité supplémentaire à votre compte'}
+                  </p>
+                </div>
+                {has2FA ? (
+                  <button
+                    onClick={() => disable2FAMutation.mutate()}
+                    disabled={disable2FAMutation.isPending}
+                    className="btn-secondary btn-sm"
+                  >
+                    {disable2FAMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                    Désactiver
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => enable2FAMutation.mutate()}
+                    disabled={enable2FAMutation.isPending}
+                    className="btn-primary btn-sm"
+                  >
+                    {enable2FAMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                    Activer
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Password change (toggle) */}

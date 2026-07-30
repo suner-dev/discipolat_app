@@ -4,5 +4,7 @@ public enum UserRole {
     ADMIN,
     PASTEUR,
     RESPONSABLE,
-    FAISEUR
+    CHEF_DE_FAMILLE,
+    FAISEUR,
+    MEMBRE
 }

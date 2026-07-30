@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -53,6 +54,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       });
       if (mounted) {
         await _apiService.saveTokens(response.data);
+        // Notify the auth guard with full user data (multi-role)
+        AuthState().setAuthenticated(true, userData: response.data as Map<String, dynamic>?);
         context.go('/dashboard');
       }
     } on DioException catch (e) {
