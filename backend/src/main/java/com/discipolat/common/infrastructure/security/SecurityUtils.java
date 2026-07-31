@@ -20,7 +20,9 @@ public class SecurityUtils {
 
     public UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())
+                || authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
             throw new UnauthorizedException("No authenticated user found");
         }
         Object principal = authentication.getPrincipal();

@@ -53,7 +53,7 @@ public class RedisRateLimiterConfig {
      *   <li>Key expiration when buckets are idle (prevents memory leaks)</li>
      * </ul>
      */
-    @Bean(destroyMethod = "close")
+    @Bean(destroyMethod = "")
     public LettuceBasedProxyManager<byte[]> lettuceProxyManager(RedisClient redisClient) {
         LettuceBasedProxyManager<byte[]> manager = LettuceBasedProxyManager.builderFor(redisClient)
                 .withExpirationStrategy(

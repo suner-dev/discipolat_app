@@ -96,9 +96,26 @@ api.interceptors.response.use(
 );
 
 export const getErrorMessage = (error: unknown): string => {
-  if (error instanceof AxiosError && error.response?.data) {
-    const data = error.response.data as { detail?: string; title?: string };
-    return data.detail || data.title || 'Une erreur est survenue';
+  if (error instanceof AxiosError) {
+    if (error.response?.data) {
+      const data = error.response.data as {
+        detail?: string;
+        title?: string;
+        message?: string;
+        error?: string;
+      };
+      return data.detail || data.title || data.message || data.error || 'Une erreur est survenue';
+    }
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      return 'Impossible de joindre le serveur. Vérifiez votre connexion internet et réessayez.';
+    }
+    if (error.code === 'ECONNABORTED') {
+      return 'Le serveur met trop de temps à répondre. Veuillez réessayer.';
+    }
+    if (error.response?.status) {
+      return `Erreur serveur (${error.response.status}). Veuillez réessayer.`;
+    }
+    return error.message || 'Une erreur est survenue';
   }
   if (error instanceof Error) {
     return error.message;

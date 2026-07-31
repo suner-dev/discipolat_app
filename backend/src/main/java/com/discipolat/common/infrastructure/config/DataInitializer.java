@@ -81,6 +81,11 @@ public class DataInitializer implements CommandLineRunner {
                 UserRole.FAISEUR, Set.of(UserRole.FAISEUR),
                 UserRole.FAISEUR, false);
 
+        // Membre — single role
+        seedUser("membre@discipolat.com", "Moïse", "Membre",
+                UserRole.MEMBRE, Set.of(UserRole.MEMBRE),
+                UserRole.MEMBRE, false);
+
         // Multi-role demo: Paul — RESPONSABLE + CHEF_DE_FAMILLE + FAISEUR
         seedUser("paul@discipolat.com", "Paul", "Apôtre",
                 UserRole.FAISEUR, Set.of(UserRole.RESPONSABLE, UserRole.CHEF_DE_FAMILLE, UserRole.FAISEUR),

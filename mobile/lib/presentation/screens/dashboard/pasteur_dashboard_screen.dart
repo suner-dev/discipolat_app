@@ -54,6 +54,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
     final presences = _dashboard?['presences'] as Map<String, dynamic>? ?? {};
     final rapports = _dashboard?['rapports'] as Map<String, dynamic>? ?? {};
     final alertesActives = _dashboard?['alertesActives'] ?? 0;
+    final famillesRisque = _dashboard?['famillesARisque'] as List<dynamic>? ?? [];
 
     return Scaffold(
       appBar: AppBar(
@@ -233,7 +234,6 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                       const SizedBox(height: 16),
 
                       // Families at risk
-                      final famillesRisque = _dashboard?['famillesARisque'] as List<dynamic>? ?? [];
                       if (famillesRisque.isNotEmpty) ...[
                         SectionTitle(title: 'Familles à risque', icon: Icons.warning),
                         const SizedBox(height: 8),

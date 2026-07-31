@@ -52,14 +52,30 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
       });
-      if (mounted) {
-        await _apiService.saveTokens(response.data);
-        // Notify the auth guard with full user data (multi-role)
-        AuthState().setAuthenticated(true, userData: response.data as Map<String, dynamic>?);
-        context.go('/dashboard');
-      }
+      await _apiService.saveTokens(response.data);
+      if (!mounted) return;
+      // Notify the auth guard with full user data (multi-role)
+      AuthState().setAuthenticated(true, userData: response.data as Map<String, dynamic>?);
+      context.go('/dashboard');
     } on DioException catch (e) {
-      setState(() => _error = e.response?.data?['detail'] as String? ?? 'Email ou mot de passe incorrect');
+      String message;
+      switch (e.type) {
+        case DioExceptionType.connectionError:
+        case DioExceptionType.unknown:
+        case DioExceptionType.badCertificate:
+          message = 'Impossible de joindre le serveur. Vérifiez votre connexion internet et réessayez.';
+          break;
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.receiveTimeout:
+        case DioExceptionType.sendTimeout:
+          message = 'Le serveur met trop de temps à répondre. Veuillez réessayer.';
+          break;
+        default:
+          message = e.response?.data?['detail'] as String?
+              ?? e.response?.data?['error'] as String?
+              ?? 'Email ou mot de passe incorrect';
+      }
+      setState(() => _error = message);
     } catch (e) {
       setState(() => _error = 'Une erreur est survenue');
     } finally {
@@ -210,6 +226,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         _demoAccount('Responsable', 'responsable@discipolat.com'),
                         _demoAccount('Chef de famille', 'chef@discipolat.com'),
                         _demoAccount('Faiseur', 'faiseur@discipolat.com'),
+                        _demoAccount('Membre', 'membre@discipolat.com'),
                       ],
                     ),
                   ),

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -56,12 +56,19 @@ const roleBg = (r: string) => {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, roles, user, switchRole } = useAuth();
+  const { login, roles, user, switchRole, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
+
+  // Already authenticated (and not in the middle of choosing a role) → go to dashboard
+  useEffect(() => {
+    if (isAuthenticated && !showRoleSelector) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, showRoleSelector, navigate]);
 
   const {
     register,
@@ -312,6 +319,7 @@ export default function LoginPage() {
               { role: 'Responsable', email: 'responsable@discipolat.com' },
               { role: 'Chef de famille', email: 'chef@discipolat.com' },
               { role: 'Faiseur', email: 'faiseur@discipolat.com' },
+              { role: 'Membre', email: 'membre@discipolat.com' },
             ].map((account) => (
               <div key={account.email} className="flex items-center justify-between text-xs">
                 <span className="text-gray-400">{account.role}</span>

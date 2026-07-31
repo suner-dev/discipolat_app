@@ -41,9 +41,9 @@ CREATE INDEX IF NOT EXISTS idx_user_roles_user_role
 CREATE INDEX IF NOT EXISTS idx_soul_notes_ame_date
     ON soul_notes(ame_id, created_at DESC);
 
--- Evaluations: score lookups by user
-CREATE INDEX IF NOT EXISTS idx_evaluations_evaluated_user
-    ON evaluations(evaluated_user_id, created_at DESC);
+-- Evaluations: score lookups by user (column is evalue_id per V11)
+CREATE INDEX IF NOT EXISTS idx_evaluations_evalue_created
+    ON evaluations(evalue_id, created_at DESC);
 
 -- Dashboard metrics: type + periode
 CREATE INDEX IF NOT EXISTS idx_dashboard_metrics_type_periode
