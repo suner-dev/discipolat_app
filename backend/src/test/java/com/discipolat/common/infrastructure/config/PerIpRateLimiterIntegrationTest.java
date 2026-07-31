@@ -1,19 +1,19 @@
 package com.discipolat.common.infrastructure.config;
 
 import com.discipolat.DiscipolatApplication;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.RedisURI;
+import io.lettuce.core.api.StatefulRedisConnection;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,45 +21,59 @@ import static org.junit.jupiter.api.Assertions.*;
  * Integration test for {@link PerIpRateLimiter} using Redis-backed distributed
  * rate limiting via Bucket4j ProxyManager.
  * <p>
- * In CI (GitHub Actions), the {@code REDIS_URL} environment variable is set
- * by the CI pipeline to point to the Redis service container, so Testcontainers
- * is not started. Locally, Testcontainers spins up a Redis 7 Alpine container.
+ * Uses the configured Redis connection ({@code app.rate-limiting.redis-url},
+ * defaulting to {@code redis://localhost:6379}) instead of Testcontainers, so it
+ * works out of the box in CI (where the {@code REDIS_URL} environment variable
+ * points to the Redis service container) as well as locally. The class is
+ * skipped automatically when Redis is not reachable.
  * <p>
  * Tests are ordered to simulate a real usage flow: consume tokens until
  * the bucket is exhausted, then verify denial with retry-after headers.
  */
 @SpringBootTest(classes = DiscipolatApplication.class)
 @ActiveProfiles("test")
-@Testcontainers(disabledWithoutDocker = true)
+@EnabledIf("isRedisAvailable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PerIpRateLimiterIntegrationTest {
 
-    @Container
-    static GenericContainer<?> redis = new GenericContainer<>(
-            DockerImageName.parse("redis:7-alpine"))
-            .withExposedPorts(6379);
-
-    @DynamicPropertySource
-    static void configureRedis(DynamicPropertyRegistry registry) {
-        // In CI: REDIS_URL is already set via GitHub Actions env → use it as-is
-        // Locally: start Testcontainers Redis and override the URL
-        String ciRedisUrl = System.getenv("REDIS_URL");
-        if (ciRedisUrl != null && !ciRedisUrl.isBlank()) {
-            return; // Use CI Redis service — don't override
+    private static boolean isRedisAvailable() {
+        String url = System.getenv("REDIS_URL");
+        if (url == null || url.isBlank()) {
+            url = "redis://localhost:6379";
         }
-        String redisUrl = "redis://" + redis.getHost() + ":" + redis.getFirstMappedPort();
-        registry.add("app.rate-limiting.redis-url", () -> redisUrl);
+        try (RedisClient client = RedisClient.create(RedisURI.create(url))) {
+            StatefulRedisConnection<String, String> connection = client.connect();
+            try {
+                connection.sync().ping();
+                return true;
+            } finally {
+                connection.close();
+            }
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Autowired
     private PerIpRateLimiter rateLimiter;
+
+    /**
+     * Random per-run IP prefix so buckets from a previous run on a shared Redis
+     * (e.g. local dev Redis) never leak into the current one.
+     */
+    private static final String IP_PREFIX = "10." + ThreadLocalRandom.current().nextInt(1, 255)
+            + "." + ThreadLocalRandom.current().nextInt(1, 255) + ".";
+
+    private static String ip(int lastOctet) {
+        return IP_PREFIX + lastOctet;
+    }
 
     // ======================== LOGIN BUCKET (capacity=10, refill=10/min) ========================
 
     @Test
     @Order(1)
     void tryConsumeLogin_ShouldAllowWithinLimit() {
-        String ip = "192.168.1.10";
+        String ip = ip(10);
         for (int i = 0; i < 10; i++) {
             RateLimitResult result = rateLimiter.tryConsumeLogin(ip);
             assertTrue(result.allowed(),
@@ -72,7 +86,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(2)
     void tryConsumeLogin_ShouldBlockAfterExceedingCapacity() {
-        String ip = "192.168.1.20";
+        String ip = ip(20);
         // Consume all 10 tokens
         for (int i = 0; i < 10; i++) {
             RateLimitResult r = rateLimiter.tryConsumeLogin(ip);
@@ -91,12 +105,12 @@ class PerIpRateLimiterIntegrationTest {
     void tryConsumeLogin_DifferentIpsHaveSeparateBuckets() {
         // Exhaust IP-A
         for (int i = 0; i < 10; i++) {
-            rateLimiter.tryConsumeLogin("10.0.0.1");
+            rateLimiter.tryConsumeLogin(ip(1));
         }
-        assertFalse(rateLimiter.tryConsumeLogin("10.0.0.1").allowed());
+        assertFalse(rateLimiter.tryConsumeLogin(ip(1)).allowed());
 
         // IP-B should still have a full bucket
-        assertTrue(rateLimiter.tryConsumeLogin("10.0.0.2").allowed());
+        assertTrue(rateLimiter.tryConsumeLogin(ip(2)).allowed());
     }
 
     // ======================== REFRESH BUCKET (capacity=20, refill=20/min) ========================
@@ -104,7 +118,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(4)
     void tryConsumeRefresh_ShouldHaveSeparateBucketFromLogin() {
-        String ip = "10.0.0.50";
+        String ip = ip(50);
         // Exhaust login bucket
         for (int i = 0; i < 10; i++) {
             rateLimiter.tryConsumeLogin(ip);
@@ -120,7 +134,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(5)
     void tryConsumeRefresh_ShouldAllowUpToCapacity() {
-        String ip = "10.0.0.60";
+        String ip = ip(60);
         for (int i = 0; i < 20; i++) {
             assertTrue(rateLimiter.tryConsumeRefresh(ip).allowed(),
                     "Refresh token " + (i + 1) + " should be allowed");
@@ -134,7 +148,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(6)
     void tryConsumeForgotPassword_ShouldAllowUpTo3() {
-        String ip = "10.0.0.100";
+        String ip = ip(100);
         for (int i = 0; i < 3; i++) {
             assertTrue(rateLimiter.tryConsumeForgotPassword(ip).allowed(),
                     "Forgot-password token " + (i + 1) + " should be allowed");
@@ -148,7 +162,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(7)
     void tryConsumeResetPassword_ShouldAllowUpTo5() {
-        String ip = "10.0.0.110";
+        String ip = ip(110);
         for (int i = 0; i < 5; i++) {
             assertTrue(rateLimiter.tryConsumeResetPassword(ip).allowed(),
                     "Reset-password token " + (i + 1) + " should be allowed");
@@ -162,7 +176,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(8)
     void tryConsumeActivate_ShouldAllowUpTo5() {
-        String ip = "10.0.0.120";
+        String ip = ip(120);
         for (int i = 0; i < 5; i++) {
             assertTrue(rateLimiter.tryConsumeActivate(ip).allowed(),
                     "Activate token " + (i + 1) + " should be allowed");
@@ -176,7 +190,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(9)
     void tryConsumeChangePassword_ShouldAllowUpTo5() {
-        String ip = "10.0.0.130";
+        String ip = ip(130);
         for (int i = 0; i < 5; i++) {
             assertTrue(rateLimiter.tryConsumeChangePassword(ip).allowed(),
                     "Change-password token " + (i + 1) + " should be allowed");
@@ -190,7 +204,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(10)
     void tryConsumeSwitchRole_ShouldAllowUpTo30() {
-        String ip = "10.0.0.140";
+        String ip = ip(140);
         for (int i = 0; i < 30; i++) {
             assertTrue(rateLimiter.tryConsumeSwitchRole(ip).allowed(),
                     "Switch-role token " + (i + 1) + " should be allowed");
@@ -204,7 +218,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(11)
     void allBuckets_ShouldBeIsolated() {
-        String ip = "10.0.0.200";
+        String ip = ip(200);
         // Each endpoint type should track its own consumption independently
         assertTrue(rateLimiter.tryConsumeLogin(ip).allowed());
         assertTrue(rateLimiter.tryConsumeRefresh(ip).allowed());
@@ -221,7 +235,7 @@ class PerIpRateLimiterIntegrationTest {
     @Order(12)
     void rateLimitResult_ShouldProvideCorrectRetryAfter() {
         // When denied, retryAfterSeconds should be positive and finite
-        String ip = "10.0.0.250";
+        String ip = ip(250);
         for (int i = 0; i < 10; i++) {
             rateLimiter.tryConsumeLogin(ip);
         }
@@ -236,7 +250,7 @@ class PerIpRateLimiterIntegrationTest {
     @Test
     @Order(13)
     void remainingTokens_ShouldDecreaseAfterConsume() {
-        String ip = "192.168.100.1";
+        String ip = ip(99);
         RateLimitResult first = rateLimiter.tryConsumeLogin(ip);
         assertTrue(first.allowed());
         long remainingAfterFirst = first.remainingTokens();
