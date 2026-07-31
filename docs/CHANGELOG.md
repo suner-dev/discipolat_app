@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.1.0] - 2026-07-31
+
+### 🔒 Sécurité & Robustesse
+- `/actuator/health` public (requis par le healthcheck Render et docker-compose) ; détails restreints à ADMIN/PASTEUR
+- Réponses HTTP propres 400/404/405 dans `GlobalExceptionHandler` (paramètre manquant, ressource introuvable, méthode non supportée)
+
+### 🧪 Tests & CI
+- **Fix CI Backend** : le test d'intégration rate-limiting (`PerIpRateLimiterIntegrationTest`) ne dépend plus de Testcontainers — il utilise `REDIS_URL` (fournie en CI) et est skippé automatiquement si Redis est injoignable (`@EnabledIf`)
+- IPs de test aléatoires par run : plus de fuite de buckets Redis entre deux `mvn verify` consécutifs sur le même Redis
+- Profil `test` sans driver/dialecte H2 hardcodés : compatible H2 (local) et PostgreSQL (override `SPRING_DATASOURCE_URL` en CI)
+- **Total : 72 tests backend, 0 skipped** (les 13 tests Redis s'exécutent désormais réellement)
+
+### 📱 Responsive
+- Vérification responsive automatisée : 27 pages × 3 tailles d'écran (375 / 768 / 1440 px) = 81 points de contrôle sans débordement horizontal
+
 ## [2.0.0] - 2026-07-30
 
 ### 🏗️ Architecture

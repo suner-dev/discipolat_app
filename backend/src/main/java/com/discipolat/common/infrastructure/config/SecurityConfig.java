@@ -63,8 +63,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
-                // Actuator: restrict to authenticated in production, permit health check for probes
-                .requestMatchers("/actuator/health/liveness", "/actuator/health/readiness").permitAll()
+                // Actuator: health public (for load balancer / Render healthcheck), details only when authenticated
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR")
                 // Swagger: restrict in production
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAnyRole("ADMIN", "PASTEUR")

@@ -67,7 +67,7 @@ docker compose logs -f
 | **Swagger UI** | http://localhost:8081/swagger-ui.html |
 | **OpenAPI JSON** | http://localhost:8081/api-docs |
 | **Actuator Health** | http://localhost:8081/actuator/health |
-| **PostgreSQL** | localhost:5432 (user: `discipolat`, db: `discipolat`) |
+| **PostgreSQL** | localhost:5433 (user: `discipolat`, db: `discipolat`) |
 
 ### Services Docker Compose
 
@@ -85,10 +85,13 @@ discipolat-net (bridge)
 
 | Rôle | Email | Mot de passe |
 |------|-------|-------------|
+| **Admin** (ADMIN + PASTEUR) | admin@discipolat.com | password123 |
 | **Pasteur** | pasteur@discipolat.com | password123 |
-| **Responsable** | responsable@discipolat.com | password123 |
-| **Chef de famille** | chef@discipolat.com | password123 |
+| **Responsable** (RESPONSABLE + FAISEUR) | responsable@discipolat.com | password123 |
+| **Chef de famille** (FAISEUR + CHEF_DE_FAMILLE) | chef@discipolat.com | password123 |
 | **Faiseur** | faiseur@discipolat.com | password123 |
+| **Membre** | membre@discipolat.com | password123 |
+| **Multi-rôles** (RESPONSABLE + CHEF_DE_FAMILLE + FAISEUR) | paul@discipolat.com | password123 |
 
 ---
 
@@ -368,10 +371,11 @@ cat backup.sql | docker exec -i discipolat-db psql -U discipolat discipolat
 ### Endpoints de health check
 
 ```
-GET /actuator/health        → {"status":"UP"}
-GET /actuator/info          → Version, build info
-GET /actuator/metrics       → Métriques JVM/DB
-GET /actuator/loggers       → Niveaux de log dynamiques
+GET /actuator/health        → {"status":"UP"}          (public, requis par Render)
+GET /actuator/health/liveness|readiness → probes        (public)
+GET /actuator/info          → Version, build info       (ADMIN/PASTEUR)
+GET /actuator/metrics       → Métriques JVM/DB          (ADMIN/PASTEUR)
+GET /actuator/loggers       → Niveaux de log dynamiques (ADMIN/PASTEUR)
 ```
 
 ### Logs en production

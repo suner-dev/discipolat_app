@@ -15,15 +15,19 @@ docker compose up -d
 
 # 3. Accéder à l'application
 # Frontend: http://localhost:3000
-# API:      http://localhost:8080
-# Swagger:  http://localhost:8080/swagger-ui.html
+# API:      http://localhost:8081
+# Swagger:  http://localhost:8081/swagger-ui.html (rôle ADMIN/PASTEUR requis)
 ```
 
-> **Comptes de démonstration** (mot de passe: `password123`)
+> **Comptes de démonstration** (mot de passe : `password123`)
+> - Admin (ADMIN + PASTEUR) : `admin@discipolat.com`
 > - Pasteur : `pasteur@discipolat.com`
-> - Responsable : `responsable1@discipolat.com`
-> - Chef de famille : `chef1@discipolat.com`
-> - Faiseur : `faiseur1@discipolat.com`
+> - Responsable (RESPONSABLE + FAISEUR) : `responsable@discipolat.com`
+> - Chef de famille (FAISEUR + CHEF_DE_FAMILLE) : `chef@discipolat.com`
+> - Faiseur : `faiseur@discipolat.com`
+> - Membre : `membre@discipolat.com`
+
+En développement, le frontend Vite tourne sur `http://localhost:5173` (proxy `/api` → `localhost:8080`).
 
 ## 🏗️ Architecture
 
@@ -87,27 +91,29 @@ discipolat/
 
 | Composant | Technologie |
 |---|---|
-| Backend | Java 23, Spring Boot 3, Spring Modulith |
+| Backend | Java 21, Spring Boot 3, Spring Modulith |
 | Frontend | React 19, TypeScript, Vite, TailwindCSS |
 | Mobile | Flutter 3, Dart |
 | Base de données | PostgreSQL 16 |
+| Cache / Rate limiting | Redis 7 + Bucket4j |
 | Authentification | JWT RS256, Spring Security |
 | ORM | Spring Data JPA, Flyway |
 | API | REST, OpenAPI 3, Swagger |
 | Conteneurisation | Docker, Docker Compose |
-| CI/CD | GitHub Actions |
+| CI/CD | GitHub Actions (Backend, Frontend, Docker, Render) |
+| Hébergement | Render (PostgreSQL, Redis, API, Web) |
 
 ## 🧪 Tests
 
 ```bash
-# Backend
-cd backend && mvn test
+# Backend (tests unitaires + intégration Redis ; nécessite un Redis local ou REDIS_URL)
+cd backend && mvn verify -B
 
 # Frontend
-cd frontend && npm test
+cd frontend && npm test && npm run build
 
 # Mobile
-cd mobile && flutter test
+cd mobile && flutter analyze && flutter test
 ```
 
 ## 📄 Licence
