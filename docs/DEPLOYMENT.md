@@ -156,10 +156,10 @@ cat keys/public.pem | base64 -w0
 
 | Service | Type | Plan | Description |
 |---------|------|------|-------------|
-| `discipolat-db` | PostgreSQL | Free | Base de données (1 GB) |
-| `discipolat-redis` | Redis | Free | Cache rate limiting (25 MB) |
+| `discipolat-db` | PostgreSQL | Free | Base de données (1 GB) — ⚠️ **expire 30 j après création** |
+| `discipolat-redis` | Redis | Free | Cache rate limiting (25 MB, en mémoire) |
 | `discipolat-api` | Web Service (Docker) | Free | API Spring Boot |
-| `discipolat-web` | Web Service (Docker) | Free | Frontend React + Nginx |
+| `discipolat-web` | **Static Site** (CDN) | Free | Frontend React — jamais endormi, 0 h d'instance |
 | `discipolat-cron-absence` | Cron Job | Free | Vérification absences /6h |
 | `discipolat-cron-reminder` | Cron Job | Free | Rappel rapports samedi 18h |
 
@@ -169,10 +169,15 @@ cat keys/public.pem | base64 -w0
 #### 4. URLs finales
 
 ```
-Frontend : https://discipolat.onrender.com
+Frontend : https://discipolat-web.onrender.com   (Static Site — vérifier l'URL réelle après déploiement)
 API      : https://discipolat-api.onrender.com
 Swagger  : https://discipolat-api.onrender.com/swagger-ui.html
 ```
+
+> **⚠️ Après migration du frontend (web service → static site) :** vérifier l'URL réelle du
+> static site dans le Dashboard Render (`discipolat-web → Settings`) puis mettre à jour
+> `FRONTEND_URL` / `FRONTEND_URL_BASE` sur l'API si elle diffère (ex: domaine personnalisé).
+> Une URL CORS incorrecte bloque la connexion (login 403).
 
 ---
 
@@ -217,22 +222,23 @@ Si vous préférez configurer chaque service un par un :
 | `FRONTEND_URL_BASE` | `https://discipolat.onrender.com` | ❌ |
 | `SERVER_PORT` | `10000` | ❌ |
 
-#### 3. Frontend (Docker)
+#### 3. Frontend (Static Site)
 
-1. **New + → Web Service**
+1. **New + → Static Site**
    - Name: `discipolat-web`
-   - Runtime: **Docker**
    - Branch: `main`
-   - Plan: **Free**
-   - Region: `Frankfurt (EU)`
    - Root Directory: `frontend`
-   - Dockerfile Path: `frontend/Dockerfile`
+   - Build Command: `npm ci && npm run build`
+   - Publish Directory: `dist`
 
-2. **Variables d'environnement** :
+2. **Variables d'environnement (build)** :
 
 | Variable | Valeur | Secret |
 |----------|--------|--------|
 | `VITE_API_URL` | `https://discipolat-api.onrender.com` | ❌ |
+
+3. **En-têtes de sécurité + fallback SPA** : configurés dans `render.yaml`
+   (`headers` et `routes` → `rewrite /* → /index.html`).
 
 #### 4. Cron Jobs
 
@@ -268,8 +274,9 @@ on: push → branches: [main, develop]
 |-----|-------------|---------|
 | **Backend** | Tout push | `mvn verify` avec PostgreSQL de test |
 | **Frontend** | Tout push | `npm ci → tsc → vitest → build` |
-| **Docker** | Push sur `main` | Build & Push images vers **GHCR** |
-| **Deploy** | Push sur `main` | Trigger déploiement Render via API |
+| **Docker** | Push sur `main` | Build & Push image **backend** vers **GHCR** |
+| **Deploy** | Push sur `main` | Trigger déploiement **API** via API Render (le frontend static site se redéploie automatiquement à chaque push) |
+| **Keep-alive** | Toutes les 10 min | Ping de l'API pour éviter le cold start (voir section 9) |
 
 ### Secrets GitHub requis
 
@@ -279,7 +286,9 @@ Pour que le déploiement automatique fonctionne, ajouter ces **GitHub Secrets** 
 |--------|--------|-------------|
 | `RENDER_API_KEY` | Clé API Render | Dashboard Render → Account Settings → API Keys |
 | `RENDER_API_SERVICE_ID` | ID du service API | Dashboard Render → discipolat-api → Settings → Service ID |
-| `RENDER_WEB_SERVICE_ID` | ID du service Web | Dashboard Render → discipolat-web → Settings → Service ID |
+
+> **Note :** `RENDER_WEB_SERVICE_ID` n'est plus nécessaire — le frontend est un
+> Static Site qui se redéploie automatiquement à chaque push sur `main`.
 
 ### Obtention des Service IDs
 
@@ -391,7 +400,84 @@ curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
 
 ---
 
-## 9. Dépannage
+## 8.5. Migration du frontend Docker → Static Site
+
+> `runtime` étant **immuable après création** (Blueprint Render), la synchro du Blueprint ne
+> convertit **pas en place** l'ancien service web `discipolat-web` (runtime: image) en static site.
+>
+> **Procédure :**
+> 1. Dashboard Render → supprimer l'ancien service web `discipolat-web` (ou le renommer).
+>    ⚠️ Si votre service actuel s'appelle **`discipolat`** (URL `discipolat.onrender.com`),
+>    recréez le static site **sous ce même nom** pour conserver l'URL, ou ajustez
+>    `FRONTEND_URL` en conséquence.
+> 2. Re-synchroniser le Blueprint (`Dashboard → Blueprints → Sync`) → Render crée le **Static Site** `discipolat-web` depuis `render.yaml`.
+> 3. Vérifier l'URL réelle du static site dans le Dashboard. Pendant la migration,
+>    l'API accepte déjà les deux origines CORS (`FRONTEND_URL` contient
+>    `discipolat.onrender.com` **et** `discipolat-web.onrender.com`) → aucun blocage login.
+>    Retirer l'ancienne origine une fois la migration terminée (voir section 4).
+
+---
+
+## 9. Performance — Éviter le cold start Render
+
+### Problème
+
+Les Web Services du plan **Free** de Render s'endorment après **15 minutes sans trafic**.
+Au premier chargement suivant, Render doit réveiller l'instance (boot JVM) :
+**~1 minute d'attente** avant que l'application ne réponde.
+
+### Architecture anti-cold-start (2 piliers)
+
+#### 1. Frontend = Static Site (CDN mondial)
+
+Le frontend React est un **Static Site** Render (`runtime: static` dans `render.yaml`) :
+- servi par le **CDN mondial** de Render → chargement **instantané** et rapide partout ;
+- **ne s'endort jamais** et ne consomme **aucune heure d'instance** ;
+- se redéploie automatiquement à chaque push sur `main`.
+
+→ C'est le pilier principal : l'ouverture de l'appli est instantanée, toujours.
+
+#### 2. API = maintenue éveillée par GitHub Actions
+
+Le workflow `.github/workflows/keep-alive.yml` ping l'API **toutes les 10 minutes** :
+
+| Cible | URL pingée |
+|-------|-----------|
+| API | `https://discipolat-api.onrender.com/actuator/health` |
+
+- Intervalle **10 min < 15 min** (seuil de sommeil) → l'API reste **éveillée**.
+- **Coût : zéro** — le dépôt est public, donc les minutes GitHub Actions sont illimitées.
+- Un ping en échec (après 3 tentatives) marque le run comme **failed** dans l'onglet Actions →
+  sert d'alerte gratuite si l'API tombe.
+- ⚠️ Les crons GitHub Actions peuvent être retardés de quelques minutes : un écart > 15 min
+  est rare mais possible → cold start occasionnel de l'API. Acceptable (démarrage ~1 min).
+
+> **⚠️ Quota Render (plan free) : 750 h/mois PAR WORKSPACE** (pas par service).
+> Une instance éveillée 24/7 ≈ 720-744 h/mois. On ne garde donc éveillée **QUE l'API**
+> (~720 h ≤ 750 h) : c'est la seule configuration qui tient dans le quota. Garder
+> 2 services éveillés (~1464 h) aurait **suspendu toute l'appli à mi-mois**.
+
+#### 3. ⚠️ Limites du plan Free à connaître
+
+- **PostgreSQL Free : expire 30 jours après sa création** → après expiration, 14 j de
+  grâce pour passer en payant, sinon **suppression définitive des données**.
+  → Pour une appli durable, prévoir un plan payant sur la DB.
+- **Redis Free : en mémoire uniquement** → données perdues à chaque redémarrage
+  (acceptable : buckets de rate limiting, se reconstruisent seuls).
+- **Quota : 750 h/mois/workspace** → si dépassé, Render suspend TOUS les services gratuits
+  jusqu'au 1er du mois suivant.
+- **Cron jobs : le plan `free` n'existe pas pour les cron jobs** (Blueprint Render) → ils sont
+  créés par défaut en **Starter** (~7 $/mois chacun, soit ~14 $/mois pour les 2 crons actuels).
+  Point de budget préexistant à connaître.
+
+### Alternative payante (décision produit)
+
+Si l'application monte en charge, passer en plan **Starter** (~7 $/mois/service) :
+plus de spin-down, plus de quota, meilleures performances. C'est un choix métier/budget.
+
+---
+
+## 10. Dépannage
 
 | Problème | Cause probable | Solution |
 |----------|---------------|----------|

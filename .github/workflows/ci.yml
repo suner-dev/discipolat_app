@@ -122,19 +122,12 @@ jobs:
       - name: Build backend JAR
         run: cd backend && mvn package -DskipTests -q
 
-      # Rebuild frontend dist/ (workspace frais)
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '23'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      - name: Install frontend dependencies
-        run: cd frontend && npm ci --prefer-offline
-      - name: Build frontend (VITE_API_URL inliné)
-        run: cd frontend && npm run build
+      # NB: le frontend est un Static Site Render (runtime: static) —
+      # il est construit directement par Render depuis le dépôt
+      # (buildCommand npm ci && npm run build). Plus d'image Docker
+      # frontend à pousser sur GHCR.
 
-      # Docker build & push
+      # Docker build & push (backend uniquement)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to GitHub Container Registry
@@ -153,16 +146,6 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Build and push Frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   deploy-render:
     name: Deploy to Render
@@ -176,14 +159,10 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{"clearCache": "do_not_clear"}'
-      - name: Trigger Render Deploy (Web)
-        run: |
-          curl -s -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_WEB_SERVICE_ID }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"clearCache": "do_not_clear"}'
+      # NB: le frontend (Static Site) se redéploie automatiquement à
+      # chaque push sur main — aucun trigger API nécessaire.
       - name: Wait for Deployments
         run: |
           echo "Deployments triggered! Check Render Dashboard:"
           echo "- API: https://dashboard.render.com/"
-          echo "- Web: https://dashboard.render.com/"
+          echo "- Web (static site, auto-deploy): https://dashboard.render.com/"

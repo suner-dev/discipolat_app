@@ -69,10 +69,13 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+      # CORS allowlist (liste séparée par virgules). Les deux URLs sont
+      # autorisées pendant la migration web service → static site :
+      # l'ancienne (discipolat) et la nouvelle (discipolat-web).
       - key: FRONTEND_URL
-        value: https://discipolat.onrender.com
+        value: https://discipolat.onrender.com,https://discipolat-web.onrender.com
       - key: FRONTEND_URL_BASE
-        value: https://discipolat.onrender.com
+        value: https://discipolat-web.onrender.com
     # Build is handled by GitHub Actions (docker build & push to GHCR)
     image:
       registry: ghcr.io
@@ -80,23 +83,48 @@ services:
       tag: latest
 
   # ============================================
-  # Frontend — React + Nginx (Docker)
+  # Frontend — React SPA (Static Site, CDN mondial)
   # ============================================
+  # Static Site = servi via CDN, JAMAIS endormi, 0 heure
+  # d'instance consommée → ouverture instantanée à chaque visite.
   - type: web
     name: discipolat-web
-    runtime: image
+    runtime: static
     repo: https://github.com/suner-dev/discipolat_app
-    region: frankfurt
-    plan: free
     branch: main
-    healthCheckPath: /index.html
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
     envVars:
+      - key: NODE_VERSION
+        value: "22.11.0"
       - key: VITE_API_URL
         value: https://discipolat-api.onrender.com
-    image:
-      registry: ghcr.io
-      repository: suner-dev/discipolat_app/frontend
-      tag: latest
+    # En-têtes de sécurité (équivalents à frontend/nginx.conf)
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: "camera=(), microphone=(), geolocation=(), payment=()"
+      - path: /*
+        name: Strict-Transport-Security
+        value: "max-age=31536000; includeSubDomains; preload"
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.onrender.com; frame-ancestors 'none';"
+    # Fallback SPA — le routage client (react-router) passe par /index.html
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
 
   # ============================================
   # Cron — Absence check & report reminders
@@ -110,7 +138,8 @@ services:
       registry: docker.io
       repository: alpine/curl
       tag: latest
-    dockerCommand: sh -c "curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/check-absences -H 'Authorization: Bearer $INTERNAL_API_KEY'"
+    dockerCommand: >-
+      sh -c "curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/check-absences -H 'Authorization: Bearer $INTERNAL_API_KEY'"
     envVars:
       - key: INTERNAL_API_KEY
         sync: false
@@ -124,7 +153,8 @@ services:
       registry: docker.io
       repository: alpine/curl
       tag: latest
-    dockerCommand: sh -c "curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/send-reminders -H 'Authorization: Bearer $INTERNAL_API_KEY'"
+    dockerCommand: >-
+      sh -c "curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/send-reminders -H 'Authorization: Bearer $INTERNAL_API_KEY'"
     envVars:
       - key: INTERNAL_API_KEY
         sync: false

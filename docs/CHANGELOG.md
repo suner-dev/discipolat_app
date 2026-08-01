@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.1.1] - 2026-08-01
+
+### ⚡ Performance — Anti cold start Render
+- **Frontend converti en Static Site Render** (`runtime: static`) : servi via CDN mondial,
+  jamais endormi, 0 heure d'instance consommée → ouverture de l'appli instantanée à chaque visite
+- **Keep-alive GitHub Actions** (`.github/workflows/keep-alive.yml`) : ping de l'API toutes les
+  10 minutes (gratuit, dépôt public) → plus de 30-90 s d'attente au premier chargement
+- **Respect du quota Render** : 750 h/mois **par workspace** → seule l'API reste éveillée
+  (~720 h ≤ 750 h) ; le frontend static site ne consomme rien
+- En-têtes de sécurité (CSP, HSTS, X-Frame-Options…) et fallback SPA `/* → /index.html`
+  désormais déclarés dans `render.yaml` (remplacent nginx.conf en production)
+- CI : suppression du build/push de l'image Docker frontend + trigger deploy web (auto-deploy)
+- Documentation : section « Éviter le cold start Render » + limites du plan Free (Postgres 30 j) dans DEPLOYMENT.md
+
 ## [2.1.0] - 2026-07-31
 
 ### 🔒 Sécurité & Robustesse

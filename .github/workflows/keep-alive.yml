@@ -1,0 +1,50 @@
+name: Keep-alive Render
+
+# ============================================================
+# Anti-cold-start pour l'API Render (plan Free).
+#
+# Contexte :
+# - Le FRONTEND est un Static Site Render (CDN) : servi sur un
+#   réseau de bord mondial, il ne s'endort JAMAIS et ne consomme
+#   aucune heure d'instance. Il n'a donc pas besoin de ping.
+# - L'API (web service Free) s'endort après 15 min sans trafic
+#   et met ~1 min à redémarrer au premier appel.
+#
+# Solution : ce workflow ping l'API toutes les 10 minutes
+# (< 15 min = seuil de sommeil), ce qui la maintient éveillée.
+#
+# ⚠️ QUOTA Render (plan Free) : 750 h/mois PAR WORKSPACE
+# (pas par service). Une instance éveillée 24/7 ≈ 720-744 h/mois.
+# → On ne garde éveillée QUE l'API : ~720 h ≤ 750 h = dans le quota.
+#   Maintenir 2 services éveillés (~1464 h) aurait EXCÉDÉ le quota
+#   et fait suspendre TOUTE l'appli à mi-mois.
+#
+# Coût : zéro — le dépôt est PUBLIC, donc les minutes GitHub
+# Actions sont illimitées et gratuites.
+# ============================================================
+
+on:
+  schedule:
+    # Toutes les 10 minutes (le seuil de sommeil Render est 15 min)
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # déclenchement manuel depuis l'onglet Actions
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-alive-render
+  cancel-in-progress: true
+
+jobs:
+  keep-alive:
+    name: Ping API (anti cold start)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Réveiller l'API
+        run: |
+          curl -fsS -o /dev/null \
+            --max-time 60 --retry 3 --retry-delay 10 --retry-all-errors \
+            -A "Discipolat keep-alive (GitHub Actions)" \
+            https://discipolat-api.onrender.com/actuator/health
