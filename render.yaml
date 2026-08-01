@@ -75,13 +75,14 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
-      # CORS allowlist (liste séparée par virgules). Les deux URLs sont
-      # autorisées pendant la migration web service → static site :
-      # l'ancienne (discipolat) et la nouvelle (discipolat-web).
+      # CORS allowlist. Le static site est sous l'URL historique
+      # https://discipolat.onrender.com (nom conservé → URL inchangée).
+      # FRONTEND_URL_BASE alimente les liens email (activation, reset
+      # password) — doit pointer vers l'URL réelle du frontend.
       - key: FRONTEND_URL
-        value: https://discipolat.onrender.com,https://discipolat-web.onrender.com
+        value: https://discipolat.onrender.com
       - key: FRONTEND_URL_BASE
-        value: https://discipolat-web.onrender.com
+        value: https://discipolat.onrender.com
     # Build is handled by GitHub Actions (docker build & push to GHCR)
     image:
       registry: ghcr.io
@@ -93,8 +94,10 @@ services:
   # ============================================
   # Static Site = servi via CDN, JAMAIS endormi, 0 heure
   # d'instance consommée → ouverture instantanée à chaque visite.
+  # NB : nom `discipolat` (pas `discipolat-web`) pour CONSERVER l'URL
+  # historique https://discipolat.onrender.com (voir DEPLOYMENT.md §8.5).
   - type: web
-    name: discipolat-web
+    name: discipolat
     runtime: static
     repo: https://github.com/suner-dev/discipolat_app
     branch: main

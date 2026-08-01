@@ -158,7 +158,7 @@ cat keys/public.pem | base64 -w0
 | `discipolat-db` | PostgreSQL | Free* | Base de données (1 GB) — ⚠️ **expire 30 j après création** — voir §8.6 pour la migration payante (*plan non figé dans `render.yaml`) |
 | `discipolat-redis` | Redis | Free | Cache rate limiting (25 MB, en mémoire) |
 | `discipolat-api` | Web Service (Docker) | Free | API Spring Boot |
-| `discipolat-web` | **Static Site** (CDN) | Free | Frontend React — jamais endormi, 0 h d'instance |
+| `discipolat` | **Static Site** (CDN) | Free | Frontend React — jamais endormi, 0 h d'instance (nom conservé : URL historique `discipolat.onrender.com`) |
 
 > **Note :** plus de cron jobs Render depuis 2.1.3 — le plan `free` n'existe pas pour
 > les crons (~14 $/mois). Les tâches (absences 6h, rappels samedi 18h) sont exécutées
@@ -171,15 +171,16 @@ cat keys/public.pem | base64 -w0
 #### 4. URLs finales
 
 ```
-Frontend : https://discipolat-web.onrender.com   (Static Site — vérifier l'URL réelle après déploiement)
+Frontend : https://discipolat.onrender.com   (Static Site CDN — URL historique conservée)
 API      : https://discipolat-api.onrender.com
 Swagger  : https://discipolat-api.onrender.com/swagger-ui.html
 ```
 
-> **⚠️ Après migration du frontend (web service → static site) :** vérifier l'URL réelle du
-> static site dans le Dashboard Render (`discipolat-web → Settings`) puis mettre à jour
-> `FRONTEND_URL` / `FRONTEND_URL_BASE` sur l'API si elle diffère (ex: domaine personnalisé).
-> Une URL CORS incorrecte bloque la connexion (login 403).
+> **✅ Migration terminée :** le static site est sous l'URL historique
+> `https://discipolat.onrender.com` (nom `discipolat` conservé). `FRONTEND_URL`
+> et `FRONTEND_URL_BASE` pointent vers cette URL (liens email fonctionnels).
+> Si l'URL change (ex: domaine personnalisé), mettre à jour ces deux variables
+> sur l'API — une URL CORS incorrecte bloque la connexion (login 403).
 
 ---
 
@@ -227,7 +228,7 @@ Si vous préférez configurer chaque service un par un :
 #### 3. Frontend (Static Site)
 
 1. **New + → Static Site**
-   - Name: `discipolat-web`
+   - Name: `discipolat` (nom conservé → URL `discipolat.onrender.com`)
    - Branch: `main`
    - Root Directory: `frontend`
    - Build Command: `npm ci && npm run build`
@@ -336,6 +337,7 @@ aws ecs update-service --cluster discipolat-cluster \
 | `JWT_PRIVATE_KEY_PATH` | Chemin fichier clé privée | `keys/private.pem` | Non utilisé (base64) |
 | `JWT_PUBLIC_KEY_PATH` | Chemin fichier clé publique | `keys/public.pem` | Non utilisé (base64) |
 | `FRONTEND_URL` | URLs autorisées CORS | `http://localhost:3000,http://localhost:5173` | `https://discipolat.onrender.com` |
+| `FRONTEND_URL_BASE` | Base des liens email (activation, reset password) | `http://localhost:5173` | `https://discipolat.onrender.com` |
 | `SPRING_PROFILES_ACTIVE` | Profil Spring | `docker` | `prod` |
 
 > ⚠️ **SMTP sur plan Free Render : port 2525 obligatoire.** Les web services du plan
@@ -473,7 +475,10 @@ Workspace      → discipolat-web : type=web, runtime=image    (service existant
       ou ajuster FRONTEND_URL en conséquence
 3. Dashboard → Blueprints → Sync
    └─ crée le Static Site `discipolat-web` (nom libre après suppression)
+   (dans notre cas, dénouement 2.1.6 : le service a été créé sous le nom
+   `discipolat` → URL historique https://discipolat.onrender.com conservée)
 4. Vérifier l'URL réelle du static site (discipolat-web → Settings) — règle n°4
+   (dans notre cas : nom `discipolat` → https://discipolat.onrender.com)
 5. Dashboard → discipolat-api → Manual Deploy → Deploy latest commit
    └─ active le CORS double origine (sans cela : login 403 — règle n°5)
 6. Tester le login depuis le static site (doit passer)
@@ -486,6 +491,14 @@ Workspace      → discipolat-web : type=web, runtime=image    (service existant
 > réelles (incident 2.1.1, documenté en 2.1.5) : le premier Sync n'a pas créé le
 > static site (conflit de nom avec l'ancien web service Docker), confirmé par
 > `404 no-server` + CORS 403.
+>
+> ✅ **Dénouement (2.1.6) :** après suppression de l'ancien web service et re-Sync,
+> le static site a été créé sous le nom **`discipolat`** (pas `discipolat-web`) → URL
+> historique `https://discipolat.onrender.com` conservée. Le `render.yaml` a été aligné :
+> nom du service `discipolat`, `FRONTEND_URL` et `FRONTEND_URL_BASE` →
+> `https://discipolat.onrender.com` (les liens email activation/reset, générés depuis
+> `FRONTEND_URL_BASE` dans `AuthService`, pointaient auparavant vers l'URL morte).
+> Une fois l'API redéployée, le CORS accepte cette unique origine → login fonctionnel.
 
 ---
 

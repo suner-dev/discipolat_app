@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.1.6] - 2026-08-01
+
+### 🎯 Static site finalisé — alignement config sur l'URL historique `discipolat.onrender.com`
+- **Static site en ligne sous `discipolat.onrender.com`** (nom `discipolat` conservé, URL historique
+  préservée après suppression de l'ancien web service Docker — dénouement de la migration §8.5)
+- **Fix critique `FRONTEND_URL_BASE`** : pointait encore vers `discipolat-web.onrender.com` (URL
+  morte) → les **liens email** (activation de compte, reset password) générés dans `AuthService`
+  (`frontendUrl + /activate?token=` et `/reset-password?token=`) étaient brisés en production
+- `render.yaml` aligné : nom du static site `discipolat-web` → `discipolat` (correspond au service
+  réel créé dans le Dashboard, évite un doublon au prochain Sync Blueprint), `FRONTEND_URL` et
+  `FRONTEND_URL_BASE` → `https://discipolat.onrender.com` (origine CORS unique)
+- DEPLOYMENT.md mis à jour (table des services, URLs finales, Option B, dénouement §8.5)
+- **Action requise côté Dashboard** : Sync Blueprint + redéploiement de l'API pour appliquer
+  les nouvelles valeurs CORS/email
+
 ## [2.1.5] - 2026-08-01
 
 ### 📚 Doc — Migration frontend Static Site : mécanisme exact + checklist anti-piège
