@@ -424,7 +424,7 @@ Deux règles de la spec Blueprint Render expliquent tout :
    *« You can't modify this value after creation »* pour ces deux champs. On ne peut
    donc pas convertir un service existant d'un runtime vers un autre.
 
-**Séquence d'échec réelle (observée lors de la migration 2.1.1 → 2.1.5) :**
+**Séquence d'échec réelle (observée lors de l'incident 2.1.1) :**
 
 ```
 render.yaml    → discipolat-web : type=web, runtime=static   (config désirée)
