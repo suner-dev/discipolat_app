@@ -410,19 +410,82 @@ curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
 
 ## 8.5. Migration du frontend Docker → Static Site
 
-> `runtime` étant **immuable après création** (Blueprint Render), la synchro du Blueprint ne
-> convertit **pas en place** l'ancien service web `discipolat-web` (runtime: image) en static site.
->
-> **Procédure :**
-> 1. Dashboard Render → supprimer l'ancien service web `discipolat-web` (ou le renommer).
->    ⚠️ Si votre service actuel s'appelle **`discipolat`** (URL `discipolat.onrender.com`),
->    recréez le static site **sous ce même nom** pour conserver l'URL, ou ajustez
->    `FRONTEND_URL` en conséquence.
-> 2. Re-synchroniser le Blueprint (`Dashboard → Blueprints → Sync`) → Render crée le **Static Site** `discipolat-web` depuis `render.yaml`.
-> 3. Vérifier l'URL réelle du static site dans le Dashboard. Pendant la migration,
->    l'API accepte déjà les deux origines CORS (`FRONTEND_URL` contient
->    `discipolat.onrender.com` **et** `discipolat-web.onrender.com`) → aucun blocage login.
->    Retirer l'ancienne origine une fois la migration terminée (voir section 4).
+### Le mécanisme exact — pourquoi le Sync « échoue » silencieusement
+
+Deux règles de la spec Blueprint Render expliquent tout :
+
+1. **Render associe les services PAR NOM, pas par type.** D'après la spec officielle
+   (champ `name`) : *« If you add the name of an existing service to your Blueprint
+   file, Render attempts to apply the Blueprint's configuration to that existing
+   service. »* Render ne vérifie donc pas « est-ce un web service ou un static site ? »
+   mais « **existe-t-il déjà un service nommé `X` ?** » — et si oui, il tente d'appliquer
+   la nouvelle config dessus.
+2. **`runtime` et `type` sont IMMUABLES après création.** La spec est formelle :
+   *« You can't modify this value after creation »* pour ces deux champs. On ne peut
+   donc pas convertir un service existant d'un runtime vers un autre.
+
+**Séquence d'échec réelle (observée lors de la migration 2.1.1 → 2.1.5) :**
+
+```
+render.yaml    → discipolat-web : type=web, runtime=static   (config désirée)
+Workspace      → discipolat-web : type=web, runtime=image    (service existant, immuable)
+
+1. Le Sync lit render.yaml et trouve le service `discipolat-web`
+2. Il matche PAR NOM avec le web service Docker existant
+3. Il tente d'appliquer la nouvelle config → `runtime` ne peut PAS être modifié
+4. Résultat : Render ne peut ni convertir l'ancien service, ni créer un
+   second service du même nom → le static site n'est JAMAIS créé,
+   l'ancien service reste en place, AUCUNE erreur bloquante affichée
+```
+
+**Symptômes observables depuis l'extérieur (diagnostic sans le Dashboard) :**
+
+| Test | Symptôme de l'échec |
+|------|--------------------|
+| `GET https://<static-site>.onrender.com/` | `HTTP 404` + header `x-render-routing: no-server` (aucun service sur cette URL) |
+| Préflight CORS `OPTIONS /api/v1/auth/login` avec `Origin: <nouvelle-url>` | `HTTP 403 Invalid CORS request` (l'API déployée n'a pas la nouvelle origine) |
+| `GET /actuator/health` de l'API | Toujours `200 UP` (l'API n'est pas affectée) |
+
+---
+
+### Checklist anti-piège — 6 règles pour migrer sans casse
+
+| # | Règle | Pourquoi |
+|---|-------|----------|
+| 1 | **Ne jamais modifier `runtime`/`type` d'un service existant dans `render.yaml`** | Immutables après création → le Sync ne peut pas convertir, il ignore ou laisse l'ancien service en place |
+| 2 | **Supprimer (ou renommer) l'ancien service AVANT le Sync** | L'ancien service libère son nom → le Sync peut alors créer le nouveau service `runtime: static` |
+| 3 | **Vérifier le statut du Sync dans `Blueprints`** | Le Sync n'échoue pas toujours visiblement : contrôler son historique (statut, date, erreurs) |
+| 4 | **Vérifier l'URL RÉELLE du static site créé (Settings)** | Si le nom était encore pris, Render peut suffixer (ex: `discipolat-web-1`) → URL différente |
+| 5 | **Redéployer l'API après le Sync** pour prendre le nouveau `FRONTEND_URL` | Le CORS est lu au démarrage : sans redéploiement, la nouvelle origine répond 403 |
+| 6 | **Garder les DEUX origines CORS pendant la migration, puis retirer l'ancienne** | `FRONTEND_URL` = ancienne + nouvelle URL → le login marche pendant et après la bascule |
+
+---
+
+### Procédure de migration complète (ordre impératif)
+
+```
+1. git push main
+   └─ render.yaml : static site prêt (runtime: static) + FRONTEND_URL avec les 2 origines
+2. Dashboard → supprimer l'ANCIEN web service frontend
+   ⚠️ Étape manuelle OBLIGATOIRE AVANT le Sync (règle n°2)
+   ⚠️ Si l'ancien service s'appelle `discipolat` (URL discipolat.onrender.com) :
+      recréer le static site SOUS CE MÊME NOM pour conserver l'URL,
+      ou ajuster FRONTEND_URL en conséquence
+3. Dashboard → Blueprints → Sync
+   └─ crée le Static Site `discipolat-web` (nom libre après suppression)
+4. Vérifier l'URL réelle du static site (discipolat-web → Settings) — règle n°4
+5. Dashboard → discipolat-api → Manual Deploy → Deploy latest commit
+   └─ active le CORS double origine (sans cela : login 403 — règle n°5)
+6. Tester le login depuis le static site (doit passer)
+7. Une fois stable : retirer l'ancienne origine de FRONTEND_URL + commit
+   → le push redéploie l'API automatiquement (CI), aucune action manuelle requise
+   (règle n°6 — laisser les 2 origines tant que la bascule n'est pas validée)
+```
+
+> 📌 Le diagnostic et la résolution de cette migration ont été validés en conditions
+> réelles (incident 2.1.1, documenté en 2.1.5) : le premier Sync n'a pas créé le
+> static site (conflit de nom avec l'ancien web service Docker), confirmé par
+> `404 no-server` + CORS 403.
 
 ---
 

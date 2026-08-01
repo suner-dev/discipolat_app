@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.1.5] - 2026-08-01
+
+### 📚 Doc — Migration frontend Static Site : mécanisme exact + checklist anti-piège
+- **DEPLOYMENT.md §8.5 enrichie** avec le mécanisme exact du Blueprint Render : les services
+  sont associés **par nom, pas par type** (*« Render attempts to apply the Blueprint's
+  configuration to that existing service »*) et `runtime`/`type` sont **immuables après
+  création** → un Sync ne peut pas convertir un web service Docker en static site
+- Séquence d'échec détaillée (matching par nom → runtime immuable → static site jamais créé)
+  + symptômes diagnostiquables sans le Dashboard (`404 no-server`, préflight CORS 403)
+- **Checklist anti-piège en 6 règles** (ne pas modifier runtime/type, supprimer l'ancien
+  service AVANT le Sync, vérifier le statut du Sync, vérifier l'URL réelle, redéployer l'API
+  pour le CORS, garder les 2 origines pendant la bascule) + procédure de migration en 7 étapes
+  validée en conditions réelles (2.1.1 → 2.1.5)
+
 ## [2.1.4] - 2026-08-01
 
 ### 📧 Fix SMTP — plan Free Render bloque les ports 25/465/587
