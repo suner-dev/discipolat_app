@@ -98,6 +98,11 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22.11.0"
+      # Évite le double install : Render auto-installerait les deps,
+      # puis buildCommand rejouerait `npm ci`. SKIP_INSTALL_DEPS=true
+      # laisse `npm ci` dans buildCommand gérer l'installation seule.
+      - key: SKIP_INSTALL_DEPS
+        value: "true"
       - key: VITE_API_URL
         value: https://discipolat-api.onrender.com
     # En-têtes de sécurité (équivalents à frontend/nginx.conf)
