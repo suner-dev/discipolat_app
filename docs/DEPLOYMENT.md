@@ -156,7 +156,7 @@ cat keys/public.pem | base64 -w0
 
 | Service | Type | Plan | Description |
 |---------|------|------|-------------|
-| `discipolat-db` | PostgreSQL | Free | Base de données (1 GB) — ⚠️ **expire 30 j après création** |
+| `discipolat-db` | PostgreSQL | Free* | Base de données (1 GB) — ⚠️ **expire 30 j après création** — voir §8.6 pour la migration payante (*plan non figé dans `render.yaml`) |
 | `discipolat-redis` | Redis | Free | Cache rate limiting (25 MB, en mémoire) |
 | `discipolat-api` | Web Service (Docker) | Free | API Spring Boot |
 | `discipolat-web` | **Static Site** (CDN) | Free | Frontend React — jamais endormi, 0 h d'instance |
@@ -356,12 +356,15 @@ aws ecs update-service --cluster discipolat-cluster \
 ### Backup PostgreSQL
 
 ```bash
-# Backup manuel
+# Backup manuel (base locale docker-compose)
 docker exec discipolat-db pg_dump -U discipolat discipolat > backup_$(date +%Y%m%d).sql
-
-# Backup via Render (automatique)
-# Render Free plan : backups automatiques quotidiens, rétention 7 jours
 ```
+
+> ⚠️ **Base Render en plan Free : AUCUN backup automatique.** Les bases gratuites
+> ne supportent aucun backup (ni automatique ni manuel côté Render). Le seul moyen
+> de sauvegarder une base Free est un export `pg_dump` **externe** depuis votre
+> machine (voir section 8.6). Les backups quotidiens automatiques n'existent que
+> sur les plans **payants** (rétention selon le plan).
 
 ### Restauration
 
@@ -369,8 +372,11 @@ docker exec discipolat-db pg_dump -U discipolat discipolat > backup_$(date +%Y%m
 # Restauration locale
 cat backup.sql | docker exec -i discipolat-db psql -U discipolat discipolat
 
-# Restauration Render
+# Restauration Render (plans payants uniquement)
 # Dashboard Render → discipolat-db → Backups → Restore
+
+# Restauration d'un export pg_dump dans une base Render
+# (voir section 8.6, étape 4)
 ```
 
 ---
@@ -415,6 +421,101 @@ curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
 >    l'API accepte déjà les deux origines CORS (`FRONTEND_URL` contient
 >    `discipolat.onrender.com` **et** `discipolat-web.onrender.com`) → aucun blocage login.
 >    Retirer l'ancienne origine une fois la migration terminée (voir section 4).
+
+---
+
+## 8.6. Migration de la base PostgreSQL Free → payante (expiration 30 jours)
+
+> **⚠️ Rappel critique :** une base Render **Free** expire **30 jours après sa création**.
+> Passé ce délai : 14 jours de grâce pour passer en payant, sinon **suppression
+> définitive des données** (et la base est inaccessible pendant la grâce tant
+> qu'elle n'est pas passée en payant). Les bases Free n'ont **aucun backup**.
+
+### Étape 0 — Vérifier la date d'expiration
+
+1. **Dashboard Render** → onglet **Databases** → ouvrir `discipolat-db` (page Info).
+2. La page Info affiche l'âge de la base ; Render envoie aussi des **emails de
+   notification** à l'approche de l'expiration et du début de la grâce.
+3. Si la base est déjà expirée (bannière visible), passer directement à l'Étape 2 :
+   il reste exactement **14 jours** pour l'upgrade.
+
+### Option A — Upgrade en place vers un plan payant (recommandé)
+
+**Avantages :** aucune perte de données, **l'URL de connexion ne change PAS**
+(les identifiants et la config sont conservés) → l'API continue de fonctionner
+sans rien modifier.
+
+**Inconvénients :** la base est **indisponible quelques minutes** pendant le
+changement ; **impossible de revenir en Free ensuite** ; coût mensuel.
+
+**Procédure exacte dans le Dashboard :**
+
+1. **Dashboard Render** (https://dashboard.render.com) → onglet **Databases**.
+2. Cliquer sur **`discipolat-db`** pour ouvrir sa page **Info**.
+3. Descendre jusqu'à la section **PostgreSQL Instance**.
+4. Cliquer **Update**.
+5. Dans **Plan Options**, sélectionner le nouveau type d'instance **payant** :
+   - **Starter** (~7 $/mois) — suffisant pour cette application (départ : 0.25 CPU,
+     256 MB RAM, 1 GB disque, backups) ;
+   - **Basic / Standard / Pro** si besoin de plus de ressources
+     (voir https://render.com/pricing).
+6. Cliquer **Save Changes**.
+7. Attendre la fin du changement (quelques minutes d'indisponibilité).
+
+> ✅ **URL/credentials inchangés** : `SPRING_DATASOURCE_URL`, `USERNAME`,
+> `PASSWORD` sont injectés par le Blueprint (`fromDatabase` → `connectionString`)
+> et restent identiques. Seule l'instance est redimensionnée.
+>
+> 📝 **Pensez à `render.yaml`** : le champ `plan` de `discipolat-db` a été **omis**
+> pour éviter tout conflit de re-sync Blueprint (une base payante ne peut pas
+> repasser en `free`). Sur une base existante, Render conserve le type d'instance
+> actuel → aucun coût forcé, aucun échec de synchro.
+
+### Option B — Export pg_dump (filet de sécurité, sans payer)
+
+À faire **AVANT le 30ᵉ jour**. Utile comme filet de sécurité même si vous
+choisissez l'Option A.
+
+1. **Dashboard Render** → **Databases** → `discipolat-db` → section **Connect**.
+2. Copier la chaîne **External Database URL** (⚠️ PAS l'Internal URL : celle-ci
+   n'est accessible que depuis le réseau privé Render, pas depuis votre machine).
+3. Depuis votre machine (avec `pg_dump` installé, PostgreSQL 16) :
+
+```bash
+pg_dump "postgresql://<user>:<password>@<host>:5432/discipolat" \
+  --no-owner --no-privileges > discipolat_backup_$(date +%Y%m%d).sql
+```
+
+4. Vérifier le fichier : `head -5 discipolat_backup_$(date +%Y%m%d).sql`
+   (doit commencer par `-- PostgreSQL database dump`).
+5. **Stocker le fichier hors de Render** (GitHub private, machine, NAS…).
+
+> 💡 Automatisation possible : un workflow GitHub Actions mensuel qui dump la base
+> via `pg_dump` (avec l'External URL en secret) et pousse le fichier en artifact.
+
+### Étape 2 — Restaurer dans une nouvelle base (seulement si Option B)
+
+1. **Dashboard Render** → **New + → PostgreSQL** → créer `discipolat-db-v2`
+   (plan payant recommandé, même région `Frankfurt`).
+2. Copier sa **External Database URL**.
+3. Restaurer le dump **dans une base vide** (⚠️ jamais sur une base contenant déjà
+   des données) :
+
+```bash
+psql "postgresql://<user>:<password>@<host>:5432/discipolat" < discipolat_backup_YYYYMMDD.sql
+```
+
+4. **Brancher l'API sur la nouvelle base** :
+   - **Dashboard Render** → `discipolat-api` → **Environment** → mettre à jour
+     `SPRING_DATASOURCE_URL` / `USERNAME` / `PASSWORD` avec les valeurs de
+     `discipolat-db-v2` → **Save** → **Deploy**.
+   - **OU** modifier `render.yaml` (`fromDatabase` → `discipolat-db-v2`) puis
+     re-synchroniser le Blueprint.
+5. Vérifier : `GET https://discipolat-api.onrender.com/actuator/health` → `"status":"UP"`
+   et un login fonctionnel.
+
+> ⚠️ **Flyway** : le schéma restauré doit correspondre aux migrations existantes.
+> `baseline-on-migrate: true` est déjà configuré → pas d'intervention attendue.
 
 ---
 

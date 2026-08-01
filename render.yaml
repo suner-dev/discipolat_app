@@ -12,7 +12,11 @@ databases:
     databaseName: discipolat
     user: discipolat
     region: frankfurt
-    plan: free
+    # NB: `plan` est volontairement OMIS (voir DEPLOYMENT.md §8.6) :
+    # - nouvelle base → Render utilise starter par défaut ;
+    # - base existante → Render CONSERVE le type d'instance actuel.
+    # Cela évite tout conflit lors d'un re-sync Blueprint après un
+    # upgrade en Dashboard (une base payante ne peut pas repasser en free).
     version: "16"
     postgresMajorVersion: 16
     ipAllowList:

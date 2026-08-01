@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.1.2] - 2026-08-01
+
+### 🗄️ Migration PostgreSQL Free → payant (expiration 30 jours)
+- Nouvelle section 8.6 dans DEPLOYMENT.md : procédure exacte Dashboard Render pour
+  vérifier l'expiration, upgrader en place vers un plan payant (sans perte de données,
+  URL de connexion inchangée) ou exporter en `pg_dump` avant expiration + restauration
+- Correction section 7 : les bases Render **Free n'ont AUCUN backup automatique**
+  (l'affirmation « backups quotidiens, rétention 7 jours » était fausse) — seul un
+  export `pg_dump` externe est possible en Free
+
 ## [2.1.1] - 2026-08-01
 
 ### ⚡ Performance — Anti cold start Render
