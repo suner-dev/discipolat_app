@@ -67,8 +67,10 @@ services:
         sync: false
       - key: MAIL_HOST
         value: smtp.mailgun.org
+      # Port 2525 (pas 587) : le plan Free Render bloque le SMTP sortant sur
+      # 25/465/587. Mailgun accepte 2525 avec STARTTLS.
       - key: MAIL_PORT
-        value: "587"
+        value: "2525"
       - key: MAIL_USERNAME
         sync: false
       - key: MAIL_PASSWORD

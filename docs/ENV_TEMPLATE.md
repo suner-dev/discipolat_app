@@ -33,7 +33,7 @@
 | `SPRING_DATASOURCE_URL` | Généré automatiquement (Render DB) | `jdbc:postgresql://db:5432/discipolat` |
 | `SPRING_DATASOURCE_USERNAME` | Généré automatiquement (Render DB) | `discipolat` |
 | `MAIL_HOST` | `smtp.mailgun.org` (ou autre) | `mailhog` |
-| `MAIL_PORT` | `587` | `1025` |
+| `MAIL_PORT` | `2525` ⚠️ (les web services Free Render bloquent 25/465/587) | `1025` |
 | `MAIL_USERNAME` | À renseigner | `noreply@discipolat.com` |
 | `FRONTEND_URL` | `https://discipolat.onrender.com` | `http://localhost:3000,http://localhost:5173` |
 | `FRONTEND_URL_BASE` | `https://discipolat.onrender.com` | `http://localhost:5173` |

@@ -337,10 +337,17 @@ aws ecs update-service --cluster discipolat-cluster \
 | `JWT_PUBLIC_KEY_PATH` | Chemin fichier clé publique | `keys/public.pem` | Non utilisé (base64) |
 | `FRONTEND_URL` | URLs autorisées CORS | `http://localhost:3000,http://localhost:5173` | `https://discipolat.onrender.com` |
 | `SPRING_PROFILES_ACTIVE` | Profil Spring | `docker` | `prod` |
+
+> ⚠️ **SMTP sur plan Free Render : port 2525 obligatoire.** Les web services du plan
+> Free bloquent le trafic SMTP sortant sur les ports **25, 465 et 587**. Or l'API
+> envoie des emails (création de compte, reset password, rappels). Mailgun accepte
+> le port **2525** avec STARTTLS (même comportement que 587) → `MAIL_PORT=2525`.
+> Sans cette valeur, les emails échouent silencieusement en production.
+
 | `VITE_API_URL` | URL API pour le frontend | `/api` (proxy Nginx) | `https://discipolat-api.onrender.com` |
 | `SERVER_PORT` | Port interne | 8080 | 10000 (défaut Render) |
-| `MAIL_HOST` | Serveur SMTP | `mailhog` | À configurer |
-| `MAIL_PORT` | Port SMTP | `1025` | À configurer |
+| `MAIL_HOST` | Serveur SMTP | `mailhog` | `smtp.mailgun.org` |
+| `MAIL_PORT` | Port SMTP | `1025` | `2525` ⚠️ (pas 587, voir note ci-dessous) |
 | `MAIL_USERNAME` | Utilisateur SMTP | — | À configurer |
 | `MAIL_PASSWORD` | Mot de passe SMTP | — | **Secret** — à configurer |
 

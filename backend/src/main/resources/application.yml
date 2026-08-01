@@ -185,8 +185,11 @@ spring:
     activate:
       on-profile: prod
   mail:
+    # ⚠️ Port 2525 obligatoire en production : les web services du plan Free
+    # Render bloquent le trafic SMTP sortant sur les ports 25/465/587.
+    # Mailgun accepte le port 2525 avec STARTTLS (même comportement que 587).
     host: ${MAIL_HOST:smtp.mailgun.org}
-    port: ${MAIL_PORT:587}
+    port: ${MAIL_PORT:2525}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
     properties:

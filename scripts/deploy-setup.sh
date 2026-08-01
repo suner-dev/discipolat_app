@@ -216,7 +216,7 @@ show_render_guide() {
     echo ""
     echo "Étape 3 — Configurer les variables non-secrètes Render"
     echo "  MAIL_HOST              → smtp.mailgun.org (ou autre)"
-    echo "  MAIL_PORT              → 587"
+    echo "  MAIL_PORT              → 2525 (pas 587 : bloqué sur plan Free Render)"
     echo "  MAIL_USERNAME          → votre compte SMTP"
     echo "  FRONTEND_URL           → https://discipolat.onrender.com"
     echo "  FRONTEND_URL_BASE      → https://discipolat.onrender.com"

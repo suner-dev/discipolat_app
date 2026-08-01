@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.1.4] - 2026-08-01
+
+### 📧 Fix SMTP — plan Free Render bloque les ports 25/465/587
+- **Découverte critique** : les web services du plan Free Render bloquent le trafic SMTP
+  sortant sur les ports **25, 465 et 587** → les emails (création de compte, reset password,
+  rappels) échouaient **silencieusement** en production avec `MAIL_PORT=587` (Mailgun)
+- **Fix gratuit** : passage au port **2525** (accepté par Mailgun avec STARTTLS, même
+  comportement que 587) dans `application.yml` (défaut profil prod) et `render.yaml`
+- Documentation : note SMTP explicite dans DEPLOYMENT.md (§6) + tableau env mis à jour
+  (MAIL_HOST=`smtp.mailgun.org`, MAIL_PORT=`2525`)
+- ⚠️ Ce fix évite d'être **obligé de payer un plan API** (~7 $/mois) juste pour envoyer
+  des emails → l'API reste sur le plan Free à 0 $/mois
+
 ## [2.1.3] - 2026-08-01
 
 ### 💸 Optimisation coûts — Cron jobs Render supprimés (~14 $/mois économisés)
