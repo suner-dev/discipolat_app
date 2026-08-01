@@ -150,7 +150,6 @@ cat keys/public.pem | base64 -w0
 5. Remplir les **secrets** suivants dans le Dashboard Render :
    - `JWT_PRIVATE_KEY` → clé privée base64
    - `JWT_PUBLIC_KEY` → clé publique base64
-   - `INTERNAL_API_KEY` → une clé API forte (ex: `openssl rand -hex 32`)
 
 #### 3. Services créés automatiquement
 
@@ -160,8 +159,11 @@ cat keys/public.pem | base64 -w0
 | `discipolat-redis` | Redis | Free | Cache rate limiting (25 MB, en mémoire) |
 | `discipolat-api` | Web Service (Docker) | Free | API Spring Boot |
 | `discipolat-web` | **Static Site** (CDN) | Free | Frontend React — jamais endormi, 0 h d'instance |
-| `discipolat-cron-absence` | Cron Job | Free | Vérification absences /6h |
-| `discipolat-cron-reminder` | Cron Job | Free | Rappel rapports samedi 18h |
+
+> **Note :** plus de cron jobs Render depuis 2.1.3 — le plan `free` n'existe pas pour
+> les crons (~14 $/mois). Les tâches (absences 6h, rappels samedi 18h) sont exécutées
+> par le **scheduler interne Spring** (`ScheduledJobs.java`), fiable grâce au keep-alive
+> qui maintient l'API éveillée 24/7.
 
 > **Note :** Le service Redis est automatiquement provisionné par Render Blueprint.
 > La variable `REDIS_URL` est automatiquement injectée dans l'API via le bloc `fromDatabase`.
@@ -240,23 +242,16 @@ Si vous préférez configurer chaque service un par un :
 3. **En-têtes de sécurité + fallback SPA** : configurés dans `render.yaml`
    (`headers` et `routes` → `rewrite /* → /index.html`).
 
-#### 4. Cron Jobs
+#### 4. Tâches planifiées (aucun cron job Render requis)
 
-##### Vérification des absences (toutes les 6h)
-1. **New + → Cron Job**
-   - Name: `discipolat-cron-absence`
-   - Source: **Deploy from GitHub**
-   - Branch: `main`
-   - Command: `curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/check-absences -H 'Authorization: Bearer $INTERNAL_API_KEY'`
-   - Schedule: `0 */6 * * *`
-   - Variable secrète : `INTERNAL_API_KEY`
+Les tâches périodiques (vérification des absences toutes les 6h, rappels de rapports
+le samedi à 18h) sont exécutées **en interne par le scheduler Spring**
+(`@EnableScheduling` + `ScheduledJobs.java`) : aucun cron job Render payant nécessaire.
 
-##### Rappel des rapports (samedi 18h)
-1. **New + → Cron Job**
-   - Name: `discipolat-cron-reminder`
-   - Command: `curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/send-reminders -H 'Authorization: Bearer $INTERNAL_API_KEY'`
-   - Schedule: `0 18 * * SAT`
-   - Variable secrète : `INTERNAL_API_KEY`
+> Les anciens crons Render (`discipolat-cron-*`, ~14 $/mois) ont été **supprimés en
+> 2.1.3** : ils appelaient des endpoints `/api/v1/internal/*` qui n'existaient pas
+> dans le code (404) — ils ne faisaient rien. Le scheduler interne couvre tout,
+> et le keep-alive (section 9) garantit que l'API reste éveillée pour l'exécuter.
 
 ---
 
@@ -567,9 +562,6 @@ Le workflow `.github/workflows/keep-alive.yml` ping l'API **toutes les 10 minute
   (acceptable : buckets de rate limiting, se reconstruisent seuls).
 - **Quota : 750 h/mois/workspace** → si dépassé, Render suspend TOUS les services gratuits
   jusqu'au 1er du mois suivant.
-- **Cron jobs : le plan `free` n'existe pas pour les cron jobs** (Blueprint Render) → ils sont
-  créés par défaut en **Starter** (~7 $/mois chacun, soit ~14 $/mois pour les 2 crons actuels).
-  Point de budget préexistant à connaître.
 
 ### Alternative payante (décision produit)
 
@@ -586,6 +578,6 @@ plus de spin-down, plus de quota, meilleures performances. C'est un choix métie
 | `Connection refused` à la DB | DB pas encore prête ou URL erronée | Vérifier l'Internal Connection String |
 | Build Docker échoue | Cache périmé ou dépendances manquantes | Ajouter `"clearCache": "clear"` au trigger de déploiement |
 | CORS bloque les requêtes | `FRONTEND_URL` incorrect | Vérifier l'URL exacte du frontend Render |
-| Cron jobs ne s'exécutent pas | `INTERNAL_API_KEY` invalide | Vérifier le secret + cohérence API key |
+| Tâches planifiées (absences, rappels) non exécutées | Scheduler Spring inactif | Vérifier les logs API (`ScheduledJobs`) + que le keep-alive tourne (API éveillée) |
 | Page blanche (frontend) | Build non trouvé ou `VITE_API_URL` incorrect | Vérifier les logs Nginx dans le Dashboard |
 | Flyway migration échoue | Schéma DB incompatible | Supprimer la table `flyway_schema_history` et relancer (⚠️ données perdues) |

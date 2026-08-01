@@ -186,8 +186,6 @@ MAIL_PASSWORD=                                              # [SECRET]
 SPRING_PROFILES_ACTIVE=dev                                  # dev | docker | prod | test
 SERVER_PORT=8080
 
-# --- Interne (cron jobs) ---
-INTERNAL_API_KEY=                                           # [SECRET] openssl rand -hex 32
 ENVEOF
 
     ok "$env_file créé avec succès."
@@ -215,10 +213,6 @@ show_render_guide() {
     echo "  🔐 JWT_PRIVATE_KEY     → clé privée RSA (base64)"
     echo "  🔐 JWT_PUBLIC_KEY      → clé publique RSA (base64)"
     echo "  🔐 MAIL_PASSWORD       → mot de passe SMTP"
-    echo "  🔐 INTERNAL_API_KEY    → clé API pour les cron jobs"
-    echo ""
-    echo "  Pour générer INTERNAL_API_KEY :"
-    echo "    openssl rand -hex 32"
     echo ""
     echo "Étape 3 — Configurer les variables non-secrètes Render"
     echo "  MAIL_HOST              → smtp.mailgun.org (ou autre)"
@@ -232,7 +226,6 @@ show_render_guide() {
     echo ""
     echo "  🔐 RENDER_API_KEY         → clé API Render"
     echo "  🔐 RENDER_API_SERVICE_ID  → ID du service API"
-    echo "  🔐 RENDER_WEB_SERVICE_ID  → ID du service Web"
     echo ""
     echo "  Pour obtenir RENDER_API_KEY :"
     echo "    Dashboard Render → Account Settings → API Keys"

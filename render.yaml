@@ -136,34 +136,11 @@ services:
         destination: /index.html
 
   # ============================================
-  # Cron — Absence check & report reminders
+  # NB: Plus de cron jobs Render (supprimés en 2.1.3).
   # ============================================
-  - type: cron
-    name: discipolat-cron-absence
-    runtime: image
-    region: frankfurt
-    schedule: "0 */6 * * *" # every 6 hours
-    image:
-      registry: docker.io
-      repository: alpine/curl
-      tag: latest
-    dockerCommand: >-
-      sh -c "curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/check-absences -H 'Authorization: Bearer $INTERNAL_API_KEY'"
-    envVars:
-      - key: INTERNAL_API_KEY
-        sync: false
-
-  - type: cron
-    name: discipolat-cron-reminder
-    runtime: image
-    region: frankfurt
-    schedule: "0 18 * * SAT" # Saturday 18:00
-    image:
-      registry: docker.io
-      repository: alpine/curl
-      tag: latest
-    dockerCommand: >-
-      sh -c "curl -s --max-time 30 -X POST https://discipolat-api.onrender.com/api/v1/internal/send-reminders -H 'Authorization: Bearer $INTERNAL_API_KEY'"
-    envVars:
-      - key: INTERNAL_API_KEY
-        sync: false
+  # Le plan `free` n'existant pas pour les cron jobs (~14 $/mois pour 2),
+  # ils ont été SUPPRIMÉS : les tâches sont exécutées en interne par le
+  # scheduler Spring (ScheduledJobs.java — absence 6h, rappels samedi 18h),
+  # rendu fiable par le keep-alive qui maintient l'API éveillée 24/7.
+  # De plus, les endpoints /api/v1/internal/* appelés n'existaient pas
+  # dans le code (404) : ces crons ne faisaient rien.

@@ -8,7 +8,7 @@
                                 Variables d'environnement
     ┌─────────────────────────────┬──────────────────────────────┬──────────────────────────┐
     │       Backend (Java)        │      Frontend (Node/React)    │       Infrastructure     │
-    │   SPRING_*, JWT_*, MAIL_*   │        VITE_API_URL          │    INTERNAL_API_KEY      │
+    │   SPRING_*, JWT_*, MAIL_*   │        VITE_API_URL          │   RENDER_API_* (GitHub)   │
     └─────────────────────────────┴──────────────────────────────┴──────────────────────────┘
 ```
 
@@ -51,21 +51,16 @@
 
 ---
 
-## 3. Infrastructure
-
-### 🔐 Secrets
-
-| Variable | Description | Commande de génération | Secret |
-|----------|-------------|----------------------|--------|
-| `INTERNAL_API_KEY` | Clé API pour les cron jobs internes | `openssl rand -hex 32` | ✅ |
-
-### 🔓 Variables
+## 3. Infrastructure (GitHub Secrets uniquement)
 
 | Variable | Valeur | Description |
 |----------|--------|-------------|
 | `RENDER_API_KEY` | Clé API Render (GitHub Secret) | Obtenir via Dashboard Render → Account Settings |
 | `RENDER_API_SERVICE_ID` | ID du service API sur Render (GitHub Secret) | Obtenir via Dashboard ou API |
-| `RENDER_WEB_SERVICE_ID` | ID du service Web sur Render (GitHub Secret) | Obtenir via Dashboard ou API |
+
+> **Note :** `INTERNAL_API_KEY` et `RENDER_WEB_SERVICE_ID` ne sont plus nécessaires
+> depuis 2.1.3 (cron jobs Render supprimés — scheduler Spring interne — et static site
+> en auto-deploy).
 
 ---
 
@@ -93,31 +88,20 @@ echo "JWT_PRIVATE_KEY : $JWT_PRIVATE_KEY"
 echo "JWT_PUBLIC_KEY  : $JWT_PUBLIC_KEY"
 ```
 
-### Étape 2 : Générer la clé API interne
-
-```bash
-INTERNAL_API_KEY=$(openssl rand -hex 32)
-echo "INTERNAL_API_KEY : $INTERNAL_API_KEY"
-```
-
-### Étape 3 : Connecter le dépôt à Render
+### Étape 2 : Connecter le dépôt à Render
 
 1. Aller sur https://dashboard.render.com/
 2. **New + → Blueprint**
 3. Sélectionner `suner-dev/discipolat_app`
 4. Render détecte automatiquement `render.yaml`
 
-### Étape 4 : Définir les secrets dans Render Dashboard
-
-Dans le Dashboard Render, pour chaque service (discipolat-api, discipolat-cron-*), ajouter les secrets :
+### Étape 3 : Définir les secrets dans Render Dashboard
 
 | Service | Secrets à définir |
 |---------|------------------|
 | `discipolat-api` | `JWT_PRIVATE_KEY`, `JWT_PUBLIC_KEY`, `MAIL_PASSWORD` |
-| `discipolat-cron-absence` | `INTERNAL_API_KEY` |
-| `discipolat-cron-reminder` | `INTERNAL_API_KEY` |
 
-### Étape 5 : Configurer les GitHub Secrets (CI/CD)
+### Étape 4 : Configurer les GitHub Secrets (CI/CD)
 
 Dans GitHub → Settings → Secrets and variables → Actions :
 
@@ -125,7 +109,6 @@ Dans GitHub → Settings → Secrets and variables → Actions :
 |--------|--------|
 | `RENDER_API_KEY` | Clé API générée dans Render |
 | `RENDER_API_SERVICE_ID` | ID du service discipolat-api |
-| `RENDER_WEB_SERVICE_ID` | ID du service discipolat-web |
 
 #### Obtenir les Service IDs
 
@@ -138,7 +121,7 @@ curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
   jq '.[] | {name: .service.name, id: .service.id}'
 ```
 
-### Étape 6 : Pousser sur `main`
+### Étape 5 : Pousser sur `main`
 
 ```bash
 git push origin main
@@ -182,6 +165,6 @@ curl -s -o /dev/null -w "%{http_code}" https://discipolat.onrender.com/
 | `Connection refused` à la DB | URL de connexion erronée | Render génère automatiquement `SPRING_DATASOURCE_URL` |
 | Build Docker échoue | Cache périmé | Ajouter `"clearCache": "clear"` au body du deploy |
 | CORS bloque les requêtes | `FRONTEND_URL` incorrect | Vérifier l'URL exacte du frontend Render |
-| Cron jobs ne s'exécutent pas | `INTERNAL_API_KEY` invalide | Vérifier le secret + l'API key dans la commande curl |
+| Tâches planifiées inactives | Scheduler Spring arrêté | Vérifier les logs API + keep-alive actif |
 | Page blanche (frontend) | `VITE_API_URL` incorrect | Vérifier la variable d'env du service Web |
 | Flyway échoue | Migration incompatible | Vider `flyway_schema_history` (⚠️ perte de données) |

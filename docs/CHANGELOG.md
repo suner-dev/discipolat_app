@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.1.3] - 2026-08-01
+
+### 💸 Optimisation coûts — Cron jobs Render supprimés (~14 $/mois économisés)
+- **Suppression des 2 cron jobs Render** (`discipolat-cron-absence`, `discipolat-cron-reminder`)
+  dans `render.yaml` : le plan `free` n'existant pas pour les crons, ils coûtaient ~14 $/mois
+- **Preuve de redondance + inutilité** : les tâches (absences /6h, rappels samedi 18h) sont
+  déjà exécutées par le **scheduler interne Spring** (`ScheduledJobs.java`,
+  `@EnableScheduling`), et les endpoints `/api/v1/internal/check-absences` et
+  `/send-reminders` appelés n'existaient **pas** dans le code (404) → ces crons ne faisaient rien
+- Le **keep-alive** (2.1.1) maintient l'API éveillée 24/7 → le scheduler Spring tourne de façon fiable
+- Nettoyage de la doc et des scripts : suppression de `INTERNAL_API_KEY` (jamais lue par le code)
+  et de `RENDER_WEB_SERVICE_ID` (static site en auto-deploy) — DEPLOYMENT.md, ENV_TEMPLATE.md, deploy-setup.sh
+
 ## [2.1.2] - 2026-08-01
 
 ### 🗄️ Migration PostgreSQL Free → payant (expiration 30 jours)
