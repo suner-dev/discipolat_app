@@ -25,6 +25,7 @@ import {
   Search,
   Shield,
   Star as StarIcon,
+  User,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,6 +34,13 @@ interface SidebarProps {
 }
 
 const navigation = [
+  {
+    name: 'Espace Membre',
+    href: '/dashboard/membre',
+    icon: User,
+    roles: ['MEMBRE'],
+    subtitle: 'Mes informations',
+  },
   {
     name: 'Tableau de bord',
     href: '/dashboard',
@@ -276,7 +284,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       const res = await api.get('/evaluations/me');
       return res.data as { statistiques: Record<string, { moyenne: number | null }> };
     },
-    enabled: !!user && user.activeRole !== 'ADMIN',
+    enabled: !!user && user.activeRole !== 'ADMIN' && user.activeRole !== 'MEMBRE',
   });
 
   // Compute overall average from all categories

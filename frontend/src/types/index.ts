@@ -154,6 +154,72 @@ export interface SoulHistoryEntry {
   createdAt: string;
 }
 
+// ======================== Member Space (Espace Membre) ========================
+
+export interface MemberUserInfo {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  photoUrl?: string;
+  dateNaissance?: string;
+  situationFamiliale?: string;
+}
+
+export interface MemberSoulInfo {
+  id: string;
+  profession?: string;
+  niveauEtude?: string;
+  nbEnfants?: number;
+  dateIntegration?: string;
+  statut?: string;
+}
+
+export interface MemberFamilyInfo {
+  id: string;
+  nom: string;
+  chefFamilleId: string;
+  chefNom?: string;
+}
+
+export interface MemberDepartmentInfo {
+  id: string;
+  nom: string;
+  description?: string;
+  responsableId: string;
+  responsableNom?: string;
+}
+
+export interface PersonneInfo {
+  id: string;
+  nom: string;
+}
+
+export type StatutMembre = 'MEMBRE' | 'FAISEUR' | 'CHEF_DE_FAMILLE';
+
+export interface MemberDashboard {
+  user: MemberUserInfo;
+  soul?: MemberSoulInfo;
+  age?: number;
+  statutMembre: StatutMembre;
+  estFaiseur: boolean;
+  dateArriveeEglise?: string;
+  famille?: MemberFamilyInfo;
+  faiseur?: PersonneInfo;
+  departements: MemberDepartmentInfo[];
+}
+
+export interface UpdateMemberProfileRequest {
+  phone?: string;
+  photoUrl?: string;
+  situationFamiliale?: string;
+  dateNaissance?: string;
+  profession?: string;
+  niveauEtude?: string;
+  nbEnfants?: number;
+}
+
 // Report types
 export type RaisonAbsence =
   | 'MALADIE'

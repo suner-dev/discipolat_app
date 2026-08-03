@@ -1,6 +1,13 @@
 package com.discipolat.common.infrastructure.config;
 
 import com.discipolat.common.domain.UserRole;
+import com.discipolat.common.enums.StatutAme;
+import com.discipolat.common.enums.TypeDisciple;
+import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.members.domain.MemberDepartment;
+import com.discipolat.modules.members.domain.MemberDepartmentRepository;
+import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -11,7 +18,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -19,12 +29,25 @@ public class DataInitializer implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
     private static final String DEFAULT_PASSWORD = "password123";
 
+    // Identifiants stables définis dans V2__seed_data.sql
+    private static final UUID CHEF1_ID = UUID.fromString("a0000000-0000-0000-0000-000000000004");
+    private static final UUID FAMILLE_TIMOTHEE_ID = UUID.fromString("c0000000-0000-0000-0000-000000000001");
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SoulRepository soulRepository;
+    private final DepartmentRepository departmentRepository;
+    private final MemberDepartmentRepository memberDepartmentRepository;
 
-    public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                           SoulRepository soulRepository,
+                           DepartmentRepository departmentRepository,
+                           MemberDepartmentRepository memberDepartmentRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.soulRepository = soulRepository;
+        this.departmentRepository = departmentRepository;
+        this.memberDepartmentRepository = memberDepartmentRepository;
     }
 
     @Override
@@ -90,6 +113,61 @@ public class DataInitializer implements CommandLineRunner {
         seedUser("paul@discipolat.com", "Paul", "Apôtre",
                 UserRole.FAISEUR, Set.of(UserRole.RESPONSABLE, UserRole.CHEF_DE_FAMILLE, UserRole.FAISEUR),
                 UserRole.RESPONSABLE, true);
+
+        // Espace Membre : âme liée au compte membre + départements ministères
+        seedMemberSpace();
+    }
+
+    /**
+     * Seed de l'Espace Membre pour le compte de démonstration membre@discipolat.com :
+     * crée l'âme liée au compte (famille, faiseur, date d'arrivée) et l'affecte
+     * aux départements Chorale et Audiovisuel.
+     */
+    private void seedMemberSpace() {
+        User membre = userRepository.findByEmail("membre@discipolat.com").orElse(null);
+        if (membre == null) return;
+
+        Soul soul = soulRepository.findAllByUserId(membre.getId()).stream()
+                .filter(s -> !s.isDeleted())
+                .findFirst()
+                .orElse(null);
+
+        if (soul == null) {
+            soul = Soul.builder()
+                    .nom(membre.getLastName() != null ? membre.getLastName() : "Membre")
+                    .prenom(membre.getFirstName())
+                    .email(membre.getEmail())
+                    .telephone(membre.getPhone())
+                    .dateNaissance(membre.getDateNaissance())
+                    .profession("Étudiant")
+                    .niveauEtude("Licence")
+                    .nbEnfants(0)
+                    .typeDisciple(TypeDisciple.NOUVEL_ARRIVANT)
+                    .dateIntegration(LocalDate.now().minusMonths(8))
+                    .statut(StatutAme.ACTIF)
+                    .faiseurId(CHEF1_ID)
+                    .familleId(FAMILLE_TIMOTHEE_ID)
+                    .userId(membre.getId())
+                    .etatSpirituel("EN_CROISSANCE")
+                    .niveauCroissance(2)
+                    .situationFamiliale("CELIBATAIRE")
+                    .build();
+            soul = soulRepository.save(soul);
+            log.info("✅ Created member soul for {} / {}", membre.getEmail(), DEFAULT_PASSWORD);
+        }
+
+        final Soul memberSoul = soul;
+        for (String deptNom : List.of("Chorale", "Audiovisuel")) {
+            departmentRepository.findByNom(deptNom).ifPresent(dept -> {
+                if (!memberDepartmentRepository.existsBySoulIdAndDepartmentId(memberSoul.getId(), dept.getId())) {
+                    memberDepartmentRepository.save(MemberDepartment.builder()
+                            .soulId(memberSoul.getId())
+                            .departmentId(dept.getId())
+                            .build());
+                    log.info("✅ Membre {} affecté au département {}", membre.getEmail(), deptNom);
+                }
+            });
+        }
     }
 
     private void seedUser(String email, String firstName, String lastName,

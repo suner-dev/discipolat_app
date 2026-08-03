@@ -44,6 +44,12 @@ public class Soul {
     @Column(name = "profession")
     private String profession;
 
+    @Column(name = "niveau_etude")
+    private String niveauEtude;
+
+    @Column(name = "nb_enfants")
+    private Integer nbEnfants;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "type_disciple", nullable = false)
     private TypeDisciple typeDisciple;

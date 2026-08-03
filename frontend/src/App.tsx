@@ -46,6 +46,7 @@ import WeeklyProgramPage from '@/pages/WeeklyProgramPage';
 import EventStatisticsPage from '@/pages/EventStatisticsPage';
 import PrayerSpacesPage from '@/pages/PrayerSpacesPage';
 import EvaluationsPage from '@/pages/EvaluationsPage';
+import MemberDashboardPage from '@/pages/MemberDashboardPage';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { isAuthenticated, user, isLoading, activeRole } = useAuth();
@@ -71,6 +72,25 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
   return <>{children}</>;
 }
 
+/**
+ * Tableau de bord racine : un membre pur (sans autre rôle) est redirigé
+ * vers son Espace Membre ; les autres rôles gardent le dashboard général.
+ */
+function DashboardGate() {
+  const { hasRole } = useAuth();
+  const isPureMembre =
+    hasRole('MEMBRE') &&
+    !hasRole('FAISEUR') &&
+    !hasRole('RESPONSABLE') &&
+    !hasRole('CHEF_DE_FAMILLE') &&
+    !hasRole('PASTEUR') &&
+    !hasRole('ADMIN');
+  if (isPureMembre) {
+    return <Navigate to="/dashboard/membre" replace />;
+  }
+  return <DashboardPage />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -91,7 +111,12 @@ export default function App() {
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <DashboardPage />
+            <DashboardGate />
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard/membre" element={
+          <ProtectedRoute roles={['MEMBRE']}>
+            <MemberDashboardPage />
           </ProtectedRoute>
         } />
         <Route path="/dashboard/pasteur" element={
