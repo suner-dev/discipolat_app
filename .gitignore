@@ -47,5 +47,8 @@ jacoco/
 # Docker volumes (local)
 pgdata/
 
+# Database dumps (donnees personnelles — ne jamais committer)
+backups/
+
 # TypeScript build info
 dist-ts/
