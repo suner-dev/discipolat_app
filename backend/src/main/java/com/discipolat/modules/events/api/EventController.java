@@ -31,7 +31,7 @@ public class EventController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<EventResponse> create(@Valid @RequestBody CreateEventRequest request) {
         Event event = Event.builder()
                 .typeEvenement(request.typeEvenement())
@@ -48,13 +48,13 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<EventResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(EventResponse.from(eventService.findById(id)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PageResponse<EventResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -83,7 +83,7 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<EventResponse> update(@PathVariable UUID id,
                                                 @Valid @RequestBody UpdateEventRequest request) {
         Event event = Event.builder()
@@ -108,7 +108,7 @@ public class EventController {
     }
 
     @PostMapping("/{eventId}/register")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<EventRegistrationResponse> register(@PathVariable UUID eventId) {
         EventRegistration reg = eventService.register(eventId);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -116,14 +116,14 @@ public class EventController {
     }
 
     @DeleteMapping("/{eventId}/unregister")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Void> unregister(@PathVariable UUID eventId) {
         eventService.unregister(eventId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{eventId}/attendance")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<EventRegistrationResponse> markAttendance(
             @PathVariable UUID eventId,
             @RequestBody Map<String, Object> body) {
@@ -134,7 +134,7 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}/registrations")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<List<EventRegistrationResponse>> getRegistrations(
             @PathVariable UUID eventId) {
         return ResponseEntity.ok(eventService.getRegistrations(eventId)
@@ -203,7 +203,7 @@ public class EventController {
      * Get the program for a specific week.
      */
     @GetMapping("/program/week")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<List<EventResponse>> getWeekProgram(
             @RequestParam(required = false) String semaine) {
         LocalDate weekStart = semaine != null ? LocalDate.parse(semaine)

@@ -20,7 +20,7 @@ public class DashboardController {
     }
 
     @GetMapping("/kpi")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getKPI(
             @RequestParam(required = false) LocalDate periodeDebut,
             @RequestParam(required = false) LocalDate periodeFin,
@@ -56,7 +56,7 @@ public class DashboardController {
     }
 
     @GetMapping("/my-metrics")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getMyMetrics() {
         return ResponseEntity.ok(dashboardService.getCurrentUserMetrics());
     }
@@ -85,7 +85,7 @@ public class DashboardController {
     // ======================== PHASE 3: CRM FAISEUR ========================
 
     @GetMapping("/crm-faiseur")
-    @PreAuthorize("hasAnyRole('FAISEUR', 'PASTEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getCrmFaiseur() {
         return ResponseEntity.ok(dashboardService.getCrmFaiseurDashboard());
     }

@@ -26,7 +26,7 @@ public class ParallelFollowupController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PageResponse<ParallelFollowupResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -42,7 +42,7 @@ public class ParallelFollowupController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<ParallelFollowupResponse> create(@Valid @RequestBody CreateParallelFollowupRequest request) {
         ParallelFollowup followup = service.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ParallelFollowupResponse.from(followup));
@@ -54,7 +54,7 @@ public class ParallelFollowupController {
     }
 
     @PatchMapping("/{id}/close")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<ParallelFollowupResponse> close(@PathVariable UUID id) {
         return ResponseEntity.ok(ParallelFollowupResponse.from(service.close(id)));
     }

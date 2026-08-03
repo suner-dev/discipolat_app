@@ -38,7 +38,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PageResponse<UserResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -77,7 +77,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE') or #id == authentication.principal")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE') or #id == authentication.principal")
     public ResponseEntity<UserResponse> findById(@PathVariable UUID id) {
         User user = userService.findById(id);
         return ResponseEntity.ok(UserResponse.from(user));
@@ -122,7 +122,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<UserResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
         User user = userService.findById(id);
         user.setEmail(request.email());
@@ -141,21 +141,21 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
         userService.deactivate(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Void> activate(@PathVariable UUID id) {
         userService.activate(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/promote-chef")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<UserResponse> promoteToChefDeFamille(
             @PathVariable UUID id,
             @RequestBody ChefPromotionRequest request) {
@@ -164,21 +164,21 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/demote-chef")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<UserResponse> demoteFromChefDeFamille(@PathVariable UUID id) {
         User user = userService.demoteFromChefDeFamille(id);
         return ResponseEntity.ok(UserResponse.from(user));
     }
 
     @GetMapping("/by-role/{role}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<List<UserResponse>> findByRole(@PathVariable UserRole role) {
         List<User> users = userService.findByRole(role);
         return ResponseEntity.ok(users.stream().map(UserResponse::from).toList());
     }
 
     @GetMapping("/by-famille/{familleId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<List<UserResponse>> findByFamille(@PathVariable UUID familleId) {
         List<User> users = userService.findByFamilleGereeId(familleId);
         return ResponseEntity.ok(users.stream().map(UserResponse::from).toList());
@@ -187,7 +187,7 @@ public class UserController {
     // ======================== US-12: PROMOTE TO FAISEUR ========================
 
     @PatchMapping("/{id}/promote-faiseur")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<UserResponse> promoteToFaiseur(@PathVariable UUID id) {
         return ResponseEntity.ok(UserResponse.from(userService.promoteToFaiseur(id)));
     }
@@ -195,7 +195,7 @@ public class UserController {
     // ======================== US-14: FAISEUR WORKLOAD ========================
 
     @GetMapping("/faiseur-workload")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<List<Map<String, Object>>> getFaiseurWorkload(
             @RequestParam(required = false) UUID familleId) {
         return ResponseEntity.ok(userService.getFaiseurWorkload(familleId));
@@ -204,7 +204,7 @@ public class UserController {
     // ======================== US-16: FAISEUR HISTORY ========================
 
     @GetMapping("/{id}/faiseur-history")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<Map<String, Object>> getFaiseurHistory(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getFaiseurHistory(id));
     }
@@ -212,7 +212,7 @@ public class UserController {
     // ======================== US-13: TRANSFER FAISEUR ========================
 
     @PatchMapping("/{id}/transfer")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<UserResponse> transferFaiseur(
             @PathVariable UUID id,
             @RequestBody Map<String, Object> body) {
@@ -225,7 +225,7 @@ public class UserController {
     // ======================== US-17: DEMOTE FAISEUR ========================
 
     @PatchMapping("/{id}/demote")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<UserResponse> demote(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         String newRole = body.get("newRole");
         UserRole role = newRole != null ? UserRole.valueOf(newRole) : null;
@@ -244,7 +244,7 @@ public class UserController {
     // ======================== US-60: RESTORE USER ========================
 
     @PatchMapping("/{id}/restore")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<UserResponse> restore(@PathVariable UUID id) {
         return ResponseEntity.ok(UserResponse.from(userService.restoreUser(id)));
     }
@@ -298,7 +298,7 @@ public class UserController {
     // ======================== EVALUATION SCORES ========================
 
     @GetMapping("/evaluation-scores")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<UUID, Map<String, Object>>> getEvaluationScores(
             @RequestParam List<UUID> userIds) {
         Map<UUID, Map<String, Object>> result = new LinkedHashMap<>();

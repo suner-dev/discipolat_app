@@ -38,7 +38,7 @@ public class SoulDisciplineEventController {
     ) {}
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> create(
             @PathVariable UUID soulId,
             @Valid @RequestBody CreateDisciplineRequest request) {
@@ -50,7 +50,7 @@ public class SoulDisciplineEventController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PageResponse<Map<String, Object>>> findAll(
             @PathVariable UUID soulId,
             @RequestParam(defaultValue = "0") int page,
@@ -71,13 +71,13 @@ public class SoulDisciplineEventController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> stats(@PathVariable UUID soulId) {
         return ResponseEntity.ok(service.getStats(soulId));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(toResponse(service.findById(id)));
     }

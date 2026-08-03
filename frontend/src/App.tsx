@@ -135,32 +135,32 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/search" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <IntelligentSearchPage />
           </ProtectedRoute>
         } />
         <Route path="/souls" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <SoulsPage />
           </ProtectedRoute>
         } />
         <Route path="/souls/new" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <SoulCreatePage />
           </ProtectedRoute>
         } />
         <Route path="/souls/:id" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <SoulDetailPage />
           </ProtectedRoute>
         } />
         <Route path="/souls/:id/edit" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <SoulEditPage />
           </ProtectedRoute>
         } />
         <Route path="/families" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <FamiliesPage />
           </ProtectedRoute>
         } />
@@ -170,7 +170,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/families/:id" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <FamilyDetailPage />
           </ProtectedRoute>
         } />
@@ -190,47 +190,47 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/reports" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <ReportsPage />
           </ProtectedRoute>
         } />
         <Route path="/reports/maker" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <MakerReportPage />
           </ProtectedRoute>
         } />
         <Route path="/reports/family" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <FamilyReportPage />
           </ProtectedRoute>
         } />
         <Route path="/families/:id/faiseur-performance" element={
-          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <FamilyFaiseurPerformancePage />
           </ProtectedRoute>
         } />
         <Route path="/prayers" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <PrayersPage />
           </ProtectedRoute>
         } />
         <Route path="/events" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <EventsPage />
           </ProtectedRoute>
         } />
         <Route path="/documents" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <DocumentsPage />
           </ProtectedRoute>
         } />
         <Route path="/parallel-followups" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <ParallelFollowupsPage />
           </ProtectedRoute>
         } />
         <Route path="/alerts" element={
-          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <AlertsPage />
           </ProtectedRoute>
         } />
@@ -260,7 +260,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/souls/retractions" element={
-          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
             <SoulRetractionsPage />
           </ProtectedRoute>
         } />
@@ -270,17 +270,17 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/evaluations" element={
-          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <EvaluationsPage />
           </ProtectedRoute>
         } />
         <Route path="/prayers/actions-de-grace" element={
-          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <ActionsDeGracePage />
           </ProtectedRoute>
         } />
         <Route path="/reports/urgent-aid" element={
-          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
             <UrgentAidPage />
           </ProtectedRoute>
         } />
@@ -290,7 +290,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/souls/:id/pastoral-360" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <Pastoral360Page />
           </ProtectedRoute>
         } />

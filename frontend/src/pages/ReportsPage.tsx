@@ -27,7 +27,7 @@ export default function ReportsPage() {
       icon: FileSpreadsheet,
       link: '/reports/maker',
       gradient: 'from-emerald-500 to-teal-500',
-      roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+      roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
       stats: 'Hebdomadaire',
     },
     {
@@ -36,7 +36,7 @@ export default function ReportsPage() {
       icon: Users,
       link: '/reports/family',
       gradient: 'from-blue-500 to-indigo-500',
-      roles: ['PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+      roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
       stats: 'Consolidé',
     },
   ];

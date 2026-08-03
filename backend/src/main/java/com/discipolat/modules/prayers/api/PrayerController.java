@@ -28,7 +28,7 @@ public class PrayerController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PrayerResponse> create(@Valid @RequestBody CreatePrayerRequest request) {
         Prayer prayer = Prayer.builder()
                 .titre(request.titre())
@@ -44,13 +44,13 @@ public class PrayerController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PrayerResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(PrayerResponse.from(prayerService.findById(id)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PageResponse<PrayerResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -82,14 +82,14 @@ public class PrayerController {
     }
 
     @GetMapping("/by-ame/{ameId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<List<PrayerResponse>> findByAmeId(@PathVariable UUID ameId) {
         return ResponseEntity.ok(prayerService.findByAmeId(ameId)
                 .stream().map(PrayerResponse::from).toList());
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PrayerResponse> update(@PathVariable UUID id,
                                                  @Valid @RequestBody UpdatePrayerRequest request) {
         Prayer prayer = Prayer.builder()
@@ -103,7 +103,7 @@ public class PrayerController {
     }
 
     @PatchMapping("/{id}/answer")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PrayerResponse> markAsAnswered(
             @PathVariable UUID id,
             @RequestBody Map<String, String> body) {
@@ -112,7 +112,7 @@ public class PrayerController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         prayerService.delete(id);
         return ResponseEntity.noContent().build();
@@ -121,7 +121,7 @@ public class PrayerController {
     // ======================== US-48: ACTIONS DE GRÂCE ========================
 
     @GetMapping("/actions-de-grace")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<List<PrayerResponse>> getActionsDeGrace(
             @RequestParam(required = false) UUID familleId) {
         List<Prayer> answered;

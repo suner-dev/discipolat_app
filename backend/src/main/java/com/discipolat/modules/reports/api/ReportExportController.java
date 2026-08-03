@@ -27,7 +27,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/maker-weekly")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<byte[]> exportMakerReports(
             @RequestParam(required = false) UUID faiseurId,
             @RequestParam(required = false) UUID familleId,
@@ -63,7 +63,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/family-weekly")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<byte[]> exportFamilyReports(
             @RequestParam(required = false) UUID familleId,
             @RequestParam(required = false) LocalDate semaine) {
@@ -102,7 +102,7 @@ public class ReportExportController {
     // ======================== US-43: PDF EXPORT ========================
 
     @GetMapping("/consolidated-pdf")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<byte[]> exportConsolidatedPdf(
             @RequestParam(required = false) UUID familleId,
             @RequestParam(required = false) LocalDate semaine) {

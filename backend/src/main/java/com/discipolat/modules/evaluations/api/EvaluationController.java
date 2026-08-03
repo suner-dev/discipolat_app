@@ -31,7 +31,7 @@ public class EvaluationController {
      * Submit an anonymous evaluation.
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> submit(@RequestBody Map<String, Object> body) {
         UUID evalueId = UUID.fromString((String) body.get("evalueId"));
         CategorieEvaluation categorie = CategorieEvaluation.valueOf((String) body.get("categorie"));
@@ -49,7 +49,7 @@ public class EvaluationController {
      * Get my evaluations aggregated stats (what others think of me — anonymous).
      */
     @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getMyEvaluations() {
         return ResponseEntity.ok(evaluationService.getMyEvaluations());
     }
@@ -58,7 +58,7 @@ public class EvaluationController {
      * Get my evaluations as a paginated list (anonymous results, no evaluateur_id).
      */
     @GetMapping("/me/list")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PageResponse<Map<String, Object>>> getMyEvaluationsList(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -82,7 +82,7 @@ public class EvaluationController {
      * Get people I can evaluate.
      */
     @GetMapping("/to-evaluate")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<List<Map<String, Object>>> getPeopleToEvaluate() {
         return ResponseEntity.ok(evaluationService.getPeopleToEvaluate());
     }

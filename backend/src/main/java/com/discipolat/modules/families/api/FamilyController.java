@@ -61,7 +61,7 @@ public class FamilyController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<FamilyResponse> create(@Valid @RequestBody CreateFamilyRequest request) {
         Family family = Family.builder()
                 .nom(request.nom())
@@ -73,7 +73,7 @@ public class FamilyController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<FamilyResponse> update(@PathVariable UUID id, @Valid @RequestBody CreateFamilyRequest request) {
         Family family = familyService.findById(id);
         family.setNom(request.nom());
@@ -83,7 +83,7 @@ public class FamilyController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable UUID id) {
         try {
             familyService.delete(id);
@@ -95,7 +95,7 @@ public class FamilyController {
     }
 
     @PatchMapping("/{id}/chief")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<FamilyResponse> reassignChief(@PathVariable UUID id, @RequestBody ReassignChiefRequest request) {
         familyService.reassignChef(id, request.newChefId());
         return ResponseEntity.ok(FamilyResponse.from(familyService.findById(id)));
@@ -116,7 +116,7 @@ public class FamilyController {
     // ======================== US-08: TREE VIEW ========================
 
     @GetMapping("/{id}/tree")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getFamilyTree(@PathVariable UUID id) {
         return ResponseEntity.ok(familyService.getFamilyTree(id));
     }
@@ -124,7 +124,7 @@ public class FamilyController {
     // ======================== FAISEUR PERFORMANCE ========================
 
     @GetMapping("/{id}/faiseur-performance")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<List<Map<String, Object>>> getFaiseurPerformance(
             @PathVariable UUID id,
             @RequestParam(required = false) String semaine) {
@@ -135,7 +135,7 @@ public class FamilyController {
     // ======================== US-10: FAMILY HISTORY ========================
 
     @GetMapping("/{id}/history")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<Map<String, Object>> getFamilyHistory(@PathVariable UUID id) {
         return ResponseEntity.ok(familyService.getFamilyHistory(id));
     }
@@ -153,7 +153,7 @@ public class FamilyController {
     // ======================== US-07: CHIEF HISTORY ========================
 
     @GetMapping("/{id}/chief-history")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<List<com.discipolat.modules.families.domain.FamilyChiefHistory>> getChiefHistory(
             @PathVariable UUID id) {
         return ResponseEntity.ok(familyService.getChiefHistory(id));
@@ -162,7 +162,7 @@ public class FamilyController {
     // ======================== US-60: RESTORE FAMILY ========================
 
     @PatchMapping("/{id}/restore")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<FamilyResponse> restore(@PathVariable UUID id) {
         return ResponseEntity.ok(FamilyResponse.from(familyService.restore(id)));
     }

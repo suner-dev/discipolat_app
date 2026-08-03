@@ -49,7 +49,7 @@ public class DepartmentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<DepartmentResponse> create(@Valid @RequestBody CreateDepartmentRequest request) {
         Department department = Department.builder()
                 .nom(request.nom())
@@ -61,7 +61,7 @@ public class DepartmentController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<DepartmentResponse> update(@PathVariable UUID id,
                                                       @Valid @RequestBody CreateDepartmentRequest request) {
         Department department = departmentService.findById(id);
@@ -73,7 +73,7 @@ public class DepartmentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         departmentService.delete(id);
         return ResponseEntity.noContent().build();

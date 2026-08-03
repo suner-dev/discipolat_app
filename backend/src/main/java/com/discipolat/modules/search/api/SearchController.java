@@ -30,7 +30,7 @@ public class SearchController {
      * - FAISEUR: searches only their assigned souls
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PageResponse<Map<String, Object>>> search(
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
@@ -48,7 +48,7 @@ public class SearchController {
      * full timeline, notes, prayer requests, parallel followups, alerts, exits.
      */
     @GetMapping("/profile/{soulId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getCompleteProfile(@PathVariable UUID soulId) {
         return ResponseEntity.ok(searchService.getCompleteProfile(soulId));
     }

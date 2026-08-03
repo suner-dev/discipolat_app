@@ -26,7 +26,7 @@ public class FileController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<FileResponse> upload(@Valid @RequestBody CreateFileRequest request) {
         FileEntity file = FileEntity.builder()
                 .nom(request.nom())
@@ -43,13 +43,13 @@ public class FileController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<FileResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(FileResponse.from(fileService.findById(id)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PageResponse<FileResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -75,7 +75,7 @@ public class FileController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<FileResponse> update(@PathVariable UUID id,
                                                @RequestBody UpdateFileRequest request) {
         FileEntity file = FileEntity.builder()
@@ -87,7 +87,7 @@ public class FileController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         fileService.delete(id);
         return ResponseEntity.noContent().build();
