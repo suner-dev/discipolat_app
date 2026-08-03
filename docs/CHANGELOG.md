@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.1.8] - 2026-08-03
+
+### 💾 Backup PostgreSQL automatisé (mensuel, GitHub Actions)
+- **Nouveau workflow `.github/workflows/backup-postgres.yml`** : dump mensuel de la base
+  Render (1er du mois à 02:00 UTC + déclenchement manuel `workflow_dispatch`)
+- Export `pg_dump` PostgreSQL 16 via conteneur `postgres:16-alpine`, vérification de
+  l'en-tête du dump, puis **chiffrement AES-256** (openssl, `-pbkdf2 -iter 100000`)
+  AVANT l'upload — le dépôt étant public, le chiffrement protège les données
+  personnelles (âmes, familles, emails)
+- Upload en artifact GitHub Actions (rétention 90 jours) + suppression du fichier en
+  clair sur le runner ; commande de déchiffrement documentée dans le workflow
+- **Secrets GitHub requis** : `RENDER_DB_URL` (External Database URL de `discipolat-db`)
+  et `BACKUP_ENCRYPTION_KEY` (`openssl rand -base64 32`)
+- DEPLOYMENT.md §8.6 Option B : référence au workflow ajoutée
+- ⚠️ Rappel : le backup ne remplace pas l'upgrade — la base Free expire fin août 2026
+  (voir 2.1.7/§8.6)
+
 ## [2.1.7] - 2026-08-03
 
 ### 🗄️ Préparation migration DB Free → payante (expiration 30 j — base créée fin juillet 2026)

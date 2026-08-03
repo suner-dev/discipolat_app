@@ -1,0 +1,102 @@
+name: Backup PostgreSQL (mensuel)
+
+# ============================================================
+# Backup mensuel de la base PostgreSQL Render (plan Free).
+#
+# Contexte :
+# - Les bases Free Render expirent 30 jours après création et
+#   n'ont AUCUN backup automatique → le seul moyen de sauvegarder
+#   est un export pg_dump EXTERNE (DEPLOYMENT.md §8.6 Option B).
+# - Ce workflow effectue l'export mensuel et le stocke en tant
+#   qu'artifact GitHub Actions (90 jours de rétention).
+#
+# ⚠️ SÉCURITÉ — le dump contient des DONNÉES PERSONNELLES
+#   (âmes, familles, emails) et le dépôt est PUBLIC :
+#   le fichier est CHIFFRÉ (AES-256, openssl) AVANT l'upload.
+#   Sans la passphrase, l'artifact est inutilisable.
+#   Ne jamais logger l'URL de la base ni le contenu du dump.
+#
+# Secrets GitHub requis (Settings → Secrets and variables → Actions) :
+#   RENDER_DB_URL         : External Database URL de discipolat-db
+#     Dashboard → Databases → discipolat-db → Connect →
+#     External Database URL (⚠️ PAS l'Internal URL, inaccessible
+#     hors du réseau privé Render)
+#   BACKUP_ENCRYPTION_KEY : passphrase de chiffrement AES-256
+#     Génération : openssl rand -base64 32
+#
+# Déchiffrement d'un artifact téléchargé :
+#   export ENC_KEY="<passphrase>"
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
+#     -pass env:ENC_KEY \
+#     -in discipolat_db_YYYYMMDD.sql.enc -out discipolat_db_YYYYMMDD.sql
+# ============================================================
+
+on:
+  schedule:
+    # 1er de chaque mois à 02:00 UTC
+    - cron: '0 2 1 * *'
+  workflow_dispatch: # déclenchement manuel depuis l'onglet Actions
+
+permissions:
+  contents: read
+  actions: write # requis pour upload-artifact@v4
+
+concurrency:
+  group: backup-postgres
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: pg_dump + chiffrement + artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Vérifier les secrets
+        env:
+          DB_URL: ${{ secrets.RENDER_DB_URL }}
+          ENC_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          [ -n "$DB_URL" ] || { echo "❌ Secret RENDER_DB_URL manquant"; exit 1; }
+          [ -n "$ENC_KEY" ] || { echo "❌ Secret BACKUP_ENCRYPTION_KEY manquant"; exit 1; }
+          echo "✅ Secrets présents"
+
+      - name: Export pg_dump (PostgreSQL 16)
+        env:
+          DB_URL: ${{ secrets.RENDER_DB_URL }}
+        run: |
+          DATE=$(date +%Y%m%d)
+          docker run --rm -e DB_URL="$DB_URL" postgres:16-alpine \
+            sh -c 'pg_dump "$DB_URL" --no-owner --no-privileges' \
+            > "discipolat_db_${DATE}.sql"
+          # Vérification : le dump doit commencer par l'en-tête pg_dump
+          head -1 "discipolat_db_${DATE}.sql" | grep -q "PostgreSQL database dump" \
+            || { echo "❌ Dump invalide — vérifier l'External Database URL" ; exit 1; }
+          echo "BACKUP_DATE=$DATE" >> "$GITHUB_ENV"
+          echo "✅ Dump brut OK : discipolat_db_${DATE}.sql ($(du -h discipolat_db_${DATE}.sql | cut -f1))"
+
+      - name: Chiffrer le dump (AES-256)
+        env:
+          ENC_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
+            -pass env:ENC_KEY \
+            -in "discipolat_db_${BACKUP_DATE}.sql" \
+            -out "discipolat_db_${BACKUP_DATE}.sql.enc"
+          # Suppression du fichier en clair : ne pas laisser de PII sur le runner
+          rm "discipolat_db_${BACKUP_DATE}.sql"
+          echo "✅ Chiffré : discipolat_db_${BACKUP_DATE}.sql.enc ($(du -h discipolat_db_${BACKUP_DATE}.sql.enc | cut -f1))"
+
+      - name: Upload artifact (chiffré)
+        uses: actions/upload-artifact@v4
+        with:
+          name: discipolat-db-backup-${{ env.BACKUP_DATE }}
+          path: discipolat_db_*.sql.enc
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Instructions de récupération
+        run: |
+          echo "✅ Backup disponible : onglet Actions → « Backup PostgreSQL (mensuel) »"
+          echo "   → dernière run (verte) → section Artifacts (rétention 90 jours)"
+          echo "   → télécharger puis déchiffrer (commande dans l'en-tête du workflow)"
+          echo "   → stocker le fichier HORS de GitHub (NAS, disque chiffré…)"

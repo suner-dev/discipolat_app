@@ -572,8 +572,14 @@ pg_dump "postgresql://<user>:<password>@<host>:5432/discipolat" \
 > (ou `RENDER_DB_URL=...`) exécute exactement ces étapes : `pg_dump --no-owner
 > --no-privileges` + vérification de l'en-tête + indication du stockage hors Render.
 
-> 💡 Automatisation possible : un workflow GitHub Actions mensuel qui dump la base
-> via `pg_dump` (avec l'External URL en secret) et pousse le fichier en artifact.
+> 💡 **Automatisé (2.1.8)** : le workflow `.github/workflows/backup-postgres.yml`
+> dump la base le **1er de chaque mois** (`pg_dump` PostgreSQL 16) et pousse l'export
+> **chiffré AES-256** en artifact GitHub Actions (90 j de rétention) — le dépôt étant
+> PUBLIC, le chiffrement protège les données personnelles du dump.
+> **Secrets GitHub à créer** (Settings → Secrets and variables → Actions) :
+> `RENDER_DB_URL` (External Database URL) + `BACKUP_ENCRYPTION_KEY`
+> (`openssl rand -base64 32`). Déclenchement manuel possible via `workflow_dispatch`
+> (onglet Actions → « Backup PostgreSQL (mensuel) » → Run workflow).
 
 ### Étape 2 — Restaurer dans une nouvelle base (seulement si Option B)
 
