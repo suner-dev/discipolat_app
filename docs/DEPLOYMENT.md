@@ -568,6 +568,10 @@ pg_dump "postgresql://<user>:<password>@<host>:5432/discipolat" \
    (doit commencer par `-- PostgreSQL database dump`).
 5. **Stocker le fichier hors de Render** (GitHub private, machine, NAS…).
 
+> 💡 **Script prêt à l'emploi** (2.1.7) : `./scripts/backup-render.sh "<External URL>"`
+> (ou `RENDER_DB_URL=...`) exécute exactement ces étapes : `pg_dump --no-owner
+> --no-privileges` + vérification de l'en-tête + indication du stockage hors Render.
+
 > 💡 Automatisation possible : un workflow GitHub Actions mensuel qui dump la base
 > via `pg_dump` (avec l'External URL en secret) et pousse le fichier en artifact.
 

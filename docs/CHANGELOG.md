@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.1.7] - 2026-08-03
+
+### 🗄️ Préparation migration DB Free → payante (expiration 30 j — base créée fin juillet 2026)
+- **Nouveau script `scripts/backup-render.sh`** : export `pg_dump` prêt à l'emploi depuis
+  la machine locale vers la base Render Free (⚠️ aucun backup automatique sur plan Free)
+  — prend l'**External Database URL** en argument ou via `RENDER_DB_URL`, fait `pg_dump
+  --no-owner --no-privileges` (dump portable), vérifie l'en-tête PostgreSQL et rappelle
+  de stocker le fichier hors de Render
+- **Datation de la base** : `discipolat-db` créée avec le Blueprint (render.yaml initial le
+  29/07, déploiement Render le 30/07/2026) → **expiration estimée : fin août 2026**
+  (vérification exacte : Dashboard → Databases → discipolat-db → Info)
+- DEPLOYMENT.md §8.6 Option B : référence au script ajoutée (étapes 3-5)
+- **Recommandation** : export `pg_dump` immédiat (filet de sécurité gratuit) + upgrade
+  en place Starter (~7 $/mois) AVANT l'expiration — URL de connexion inchangée, aucune
+  perte de données, ~quelques minutes d'indisponibilité
+
 ## [2.1.6] - 2026-08-01
 
 ### 🎯 Static site finalisé — alignement config sur l'URL historique `discipolat.onrender.com`
