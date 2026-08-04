@@ -593,3 +593,95 @@
   @apply spinner;
   border-width: 3px;
 }
+
+/* ============================================
+   Impression (PDF / papier)
+   ============================================ */
+
+@media print {
+  /* Masquer tout ce qui n'est pas le contenu principal */
+  aside,
+  nav,
+  header,
+  footer,
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-glow,
+  .btn-ghost,
+  .btn-danger,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Fond neutre pour économiser l'encre */
+  body,
+  .bg-gradient-mesh {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  /* Conteneur plein écran sans marges */
+  .lg\:ml-64 {
+    margin-left: 0 !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  .glass-card,
+  .glass-strong {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+    break-inside: avoid;
+  }
+
+  /* Couleurs pleines lisibles sur papier */
+  .text-gray-500,
+  .text-gray-400,
+  .text-gray-600,
+  .text-gray-700 {
+    color: #374151 !important;
+  }
+
+  h1, h2, h3, h4 {
+    color: #111827 !important;
+  }
+
+  /* Éviter de couper les lignes de tableau */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  table th, table td {
+    border: 1px solid #d1d5db !important;
+    padding: 6px 8px !important;
+    color: #111827 !important;
+    background: #ffffff !important;
+  }
+
+  table th {
+    background: #f3f4f6 !important;
+    font-weight: 700 !important;
+  }
+
+  /* Pagination propre */
+  .page-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+
+  a {
+    color: #111827 !important;
+    text-decoration: none !important;
+  }
+}

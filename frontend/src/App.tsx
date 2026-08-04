@@ -47,6 +47,8 @@ import EventStatisticsPage from '@/pages/EventStatisticsPage';
 import PrayerSpacesPage from '@/pages/PrayerSpacesPage';
 import EvaluationsPage from '@/pages/EvaluationsPage';
 import MemberDashboardPage from '@/pages/MemberDashboardPage';
+import MemberRequestsPage from '@/pages/MemberRequestsPage';
+import MessagesPage from '@/pages/MessagesPage';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { isAuthenticated, user, isLoading, activeRole } = useAuth();
@@ -232,6 +234,16 @@ export default function App() {
         <Route path="/alerts" element={
           <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <AlertsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/members/requests" element={
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}>
+            <MemberRequestsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/messages" element={
+          <ProtectedRoute>
+            <MessagesPage />
           </ProtectedRoute>
         } />
         <Route path="/users" element={

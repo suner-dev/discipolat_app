@@ -44,7 +44,7 @@ public class DashboardController {
     }
 
     @GetMapping("/report-completion")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getReportCompletion() {
         return ResponseEntity.ok(dashboardService.getReportCompletion());
     }

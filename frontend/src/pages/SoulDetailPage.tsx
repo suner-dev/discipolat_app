@@ -8,7 +8,7 @@ import {
   ArrowLeft, Mail, Phone, Calendar, MapPin, Briefcase, FileText,
   Activity, MessageSquare, Send, Loader2, AlertTriangle, BookOpen,
   TrendingUp, Edit, LogOut, Undo2, Heart, Sparkles, Clock, ChevronRight,
-  CheckCircle2, Star, Users, UserCheck, X, Flag, Gavel,
+  CheckCircle2, Star, Users, UserCheck, X, Flag, Gavel, Plus,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -165,6 +165,47 @@ export default function SoulDetailPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
+  // ======================== TAGS & FAVORIS ========================
+  const [tagInput, setTagInput] = useState('');
+  const { data: tags = [] } = useQuery({
+    queryKey: ['soul', id, 'tags'],
+    queryFn: async () => (await api.get(`/souls/${id}/tags`)).data as string[],
+    enabled: !!id,
+  });
+  const { data: isFav = false } = useQuery({
+    queryKey: ['soul', id, 'favorite'],
+    queryFn: async () => (await api.get(`/favorites/is-favorite?entityType=SOUL&entityId=${id}`)).data?.favorite as boolean,
+    enabled: !!id,
+  });
+
+  const addTagMutation = useMutation({
+    mutationFn: async (tag: string) => {
+      const res = await api.post(`/souls/${id}/tags`, { tag });
+      return res.data as string[];
+    },
+    onSuccess: (newTags) => { queryClient.setQueryData(['soul', id, 'tags'], newTags); setTagInput(''); },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+  const removeTagMutation = useMutation({
+    mutationFn: async (tag: string) => {
+      const res = await api.delete(`/souls/${id}/tags/${encodeURIComponent(tag)}`);
+      return res.data as string[];
+    },
+    onSuccess: (newTags) => queryClient.setQueryData(['soul', id, 'tags'], newTags),
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+  const favoriteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/favorites/toggle', { entityType: 'SOUL', entityId: id });
+      return res.data as { favorite: boolean };
+    },
+    onSuccess: (r) => {
+      queryClient.setQueryData(['soul', id, 'favorite'], r.favorite);
+      toast.success(r.favorite ? 'Ajouté aux favoris ⭐' : 'Retiré des favoris');
+    },
+    onError: () => toast.error('Impossible de modifier le favori'),
+  });
+
   if (isLoading) return (
     <div className="page-container">
       <div className="animate-fade-in space-y-4">
@@ -221,6 +262,14 @@ export default function SoulDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => favoriteMutation.mutate()}
+              title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+              className={`btn-secondary btn-sm ${isFav ? 'text-amber-500 border-amber-300 dark:border-amber-700' : ''}`}
+            >
+              <Star className={`w-4 h-4 ${isFav ? 'fill-amber-400' : ''}`} />
+              {isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            </button>
             <Link to={`/souls/${soul.id}/pastoral-360`} className="btn-glow btn-sm"><Activity className="w-4 h-4" /> Vue 360°</Link>
             <Link to={`/souls/${soul.id}/edit`} className="btn-secondary btn-sm"><Edit className="w-4 h-4" /> Modifier</Link>
             <button onClick={() => setShowRetraction(!showRetraction)} className="btn-ghost btn-sm text-orange-600 hover:text-orange-700">
@@ -679,6 +728,48 @@ export default function SoulDetailPage() {
               <Link to={`/reports/maker?ameId=${soul.id}`} className="flex items-center gap-2 p-2.5 rounded-lg hover:bg-white/30 dark:hover:bg-gray-800/30 transition-colors text-sm text-gray-700 dark:text-gray-300">
                 <FileText className="w-4 h-4 text-primary-500" /> Voir les rapports
               </Link>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '80ms' }}>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Star className="w-3 h-3 text-primary-500" /> Tags
+            </h3>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {tags.length > 0 ? (
+                tags.map((tag) => (
+                  <span key={tag} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200/50 dark:border-primary-800/40 text-[11px] font-medium text-primary-700 dark:text-primary-300">
+                    #{tag}
+                    <button onClick={() => removeTagMutation.mutate(tag)} className="hover:text-red-500 transition-colors" title="Supprimer">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))
+              ) : (
+                <p className="text-xs text-gray-400">Aucun tag — ajoutez jusqu'à 3 tags pour faciliter la recherche</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="input !py-2 text-sm flex-1"
+                placeholder="Nouveau tag..."
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && tagInput.trim()) {
+                    e.preventDefault();
+                    addTagMutation.mutate(tagInput.trim());
+                  }
+                }}
+              />
+              <button
+                onClick={() => tagInput.trim() && addTagMutation.mutate(tagInput.trim())}
+                disabled={!tagInput.trim() || addTagMutation.isPending}
+                className="btn-primary btn-sm"
+              >
+                <Plus className="w-4 h-4" /> Ajouter
+              </button>
             </div>
           </div>
 

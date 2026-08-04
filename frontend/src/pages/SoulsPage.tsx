@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import type { Soul, PageResponse, TypeDisciple, StatutAme } from '@/types';
@@ -12,7 +12,11 @@ import {
   Filter,
   ChevronDown,
   Sparkles,
+  Star,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const TYPE_LABELS: Record<TypeDisciple, string> = {
   NOUVEL_ARRIVANT: 'Nouvel arrivant',
@@ -43,20 +47,65 @@ export default function SoulsPage() {
   const [typeFilter, setTypeFilter] = useState<TypeDisciple | ''>('');
   const [statutFilter, setStatutFilter] = useState<StatutAme | ''>('');
   const [showFilters, setShowFilters] = useState(false);
+  const [view, setView] = useState<'liste' | 'corbeille'>('liste');
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['souls', page, search, typeFilter, statutFilter],
+    queryKey: ['souls', page, search, typeFilter, statutFilter, view],
     queryFn: async () => {
       const params = new URLSearchParams({ size: '20', page: String(page) });
       if (search) params.set('search', search);
       if (typeFilter) params.set('typeDisciple', typeFilter);
       if (statutFilter) params.set('statut', statutFilter);
-      const res = await api.get(`/souls?${params}`);
+      const url = view === 'corbeille' ? '/souls/trash' : '/souls';
+      const res = await api.get(`${url}?${params}`);
       return res.data as PageResponse<Soul>;
     },
   });
 
+  const { data: favorites = [] } = useQuery({
+    queryKey: ['favorites', 'souls'],
+    queryFn: async () => (await api.get('/favorites/souls')).data as { entityId: string; nom: string }[],
+  });
+  const favoriteIds = new Set(favorites.map((f) => f.entityId));
+
+  const favoriteMutation = useMutation({
+    mutationFn: async (soulId: string) => {
+      const res = await api.post('/favorites/toggle', { entityType: 'SOUL', entityId: soulId });
+      return res.data as { favorite: boolean };
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorites', 'souls'] }),
+    onError: () => toast.error("Impossible de mettre à jour le favori"),
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (soulId: string) => {
+      await api.patch(`/souls/${soulId}/restore`);
+    },
+    onSuccess: () => {
+      toast.success('Âme restaurée avec succès ✨');
+      queryClient.invalidateQueries({ queryKey: ['souls'] });
+    },
+    onError: () => toast.error("Erreur lors de la restauration"),
+  });
+
   const columns: ColumnDef<Soul>[] = [
+    {
+      header: '',
+      cell: (soul) => (
+        <button
+          onClick={(e) => { e.preventDefault(); favoriteMutation.mutate(soul.id); }}
+          title={favoriteIds.has(soul.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          className={`p-1.5 rounded-lg transition-all hover:scale-110 ${
+            favoriteIds.has(soul.id)
+              ? 'text-amber-500 fill-amber-400'
+              : 'text-gray-300 dark:text-gray-600 hover:text-amber-400'
+          }`}
+        >
+          <Star className="w-4 h-4" />
+        </button>
+      ),
+    },
     {
       header: 'Nom',
       cell: (soul) => (
@@ -129,16 +178,26 @@ export default function SoulsPage() {
         </div>
         <div className="flex gap-2 animate-fade-in">
           <button
+            onClick={() => { setView(view === 'corbeille' ? 'liste' : 'corbeille'); setPage(0); }}
+            className={`btn-secondary btn-sm ${view === 'corbeille' ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700' : ''}`}
+            title="Âmes supprimées (restauration possible)"
+          >
+            <Trash2 className="w-4 h-4" />
+            {view === 'corbeille' ? 'Voir les âmes' : 'Corbeille'}
+          </button>
+          <button
             onClick={() => setShowFilters(!showFilters)}
             className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-700' : ''}`}
           >
             <Filter className="w-4 h-4" />
             Filtres
           </button>
-          <Link to="/souls/new" className="btn-primary btn-sm">
-            <Plus className="w-4 h-4" />
-            Nouvelle âme
-          </Link>
+          {view !== 'corbeille' && (
+            <Link to="/souls/new" className="btn-primary btn-sm">
+              <Plus className="w-4 h-4" />
+              Nouvelle âme
+            </Link>
+          )}
         </div>
       </div>
 
@@ -190,13 +249,66 @@ export default function SoulsPage() {
       </div>
 
       {/* Table */}
-      <DataTable<Soul>
-        columns={columns}
-        data={data?.content || []}
-        isLoading={isLoading}
-        emptyMessage="Aucune âme trouvée"
-        emptyIcon={<Heart className="w-16 h-16 text-gray-300 dark:text-gray-600" />}
-      />
+      {view === 'corbeille' ? (
+        <div className="glass-card overflow-hidden animate-slide-up">
+          {isLoading ? (
+            <div className="p-8 space-y-3">
+              {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-12 w-full rounded-xl" />)}
+            </div>
+          ) : data && data.content.length === 0 ? (
+            <div className="p-14 text-center">
+              <div className="inline-flex p-4 rounded-2xl bg-green-100 dark:bg-green-900/20 mb-4">
+                <RotateCcw className="w-10 h-10 text-green-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Corbeille vide</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Aucune âme supprimée. Les âmes supprimées apparaissent ici pour restauration.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="table w-full min-w-[560px]">
+                <thead>
+                  <tr>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th className="text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.content || []).map((soul) => (
+                    <tr key={soul.id} className="hover:bg-white/40 dark:hover:bg-gray-800/20 transition-colors">
+                      <td className="font-medium text-gray-900 dark:text-gray-100">
+                        {soul.prenom ? `${soul.prenom} ${soul.nom}` : soul.nom}
+                      </td>
+                      <td className="text-sm text-gray-500">{TYPE_LABELS[soul.typeDisciple]}</td>
+                      <td className="text-sm text-gray-500">{soul.email || '—'}</td>
+                      <td className="text-sm text-gray-500">{soul.telephone || '—'}</td>
+                      <td className="text-right">
+                        <button
+                          onClick={() => restoreMutation.mutate(soul.id)}
+                          disabled={restoreMutation.isPending}
+                          className="btn-secondary btn-xs"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" /> Restaurer
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        <DataTable<Soul>
+          columns={columns}
+          data={data?.content || []}
+          isLoading={isLoading}
+          emptyMessage="Aucune âme trouvée"
+          emptyIcon={<Heart className="w-16 h-16 text-gray-300 dark:text-gray-600" />}
+        />
+      )}
 
       {/* Pagination */}
       {data && data.totalPages > 1 && (

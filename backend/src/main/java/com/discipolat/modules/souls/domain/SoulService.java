@@ -97,7 +97,8 @@ public class SoulService {
 
     @Transactional(readOnly = true)
     public Page<Soul> findAll(UUID faiseurId, UUID familleId, TypeDisciple typeDisciple,
-                              StatutAme statut, Pageable pageable) {
+                              StatutAme statut, String search, Pageable pageable) {
+        if (search != null && !search.isBlank()) return soulRepository.search(search.trim(), pageable);
         if (faiseurId != null) return soulRepository.findByFaiseurId(faiseurId, pageable);
         if (familleId != null) return soulRepository.findByFamilleId(familleId, pageable);
         if (typeDisciple != null && statut != null)
@@ -105,6 +106,12 @@ public class SoulService {
         if (typeDisciple != null) return soulRepository.findByTypeDisciple(typeDisciple, pageable);
         if (statut != null) return soulRepository.findByStatut(statut, pageable);
         return soulRepository.findAll(pageable);
+    }
+
+    /** Corbeille : toutes les âmes soft-deleted, pour restauration. */
+    @Transactional(readOnly = true)
+    public Page<Soul> findTrash(Pageable pageable) {
+        return soulRepository.findByDeletedTrue(pageable);
     }
 
     public Soul update(UUID id, UpdateSoulRequest request) {

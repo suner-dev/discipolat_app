@@ -26,6 +26,8 @@ import {
   Shield,
   Star as StarIcon,
   User,
+  MessageSquare,
+  MessagesSquare,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -194,6 +196,20 @@ const navigation = [
     icon: Bell,
     roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Notifications',
+  },
+  {
+    name: 'Demandes membres',
+    href: '/members/requests',
+    icon: MessageSquare,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+    subtitle: 'Suggestions & présences',
+  },
+  {
+    name: 'Messagerie',
+    href: '/messages',
+    icon: MessagesSquare,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+    subtitle: 'Conversations privées',
   },
   {
     name: 'Utilisateurs',

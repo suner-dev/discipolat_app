@@ -17,6 +17,11 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     Page<Soul> findByTypeDisciple(TypeDisciple typeDisciple, Pageable pageable);
     Page<Soul> findByStatut(StatutAme statut, Pageable pageable);
     Page<Soul> findByTypeDiscipleAndStatut(TypeDisciple typeDisciple, StatutAme statut, Pageable pageable);
+    @org.springframework.data.jpa.repository.Query("SELECT s FROM Soul s WHERE s.deleted = false AND " +
+            "(LOWER(s.nom) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(s.prenom) LIKE LOWER(CONCAT('%', :q, '%')) " +
+            "OR LOWER(s.email) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(s.telephone) LIKE LOWER(CONCAT('%', :q, '%')))")
+    Page<Soul> search(@org.springframework.data.repository.query.Param("q") String q, Pageable pageable);
+
     List<Soul> findAllByFaiseurId(UUID faiseurId);
     List<Soul> findAllByFamilleId(UUID familleId);
     List<Soul> findByFamilleIdIn(List<UUID> familleIds);
@@ -32,4 +37,6 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     List<Soul> findByFaiseurIdAndStatut(UUID faiseurId, StatutAme statut);
     List<Soul> findAllByUserId(UUID userId);
     Page<Soul> findByUserId(UUID userId, Pageable pageable);
+    List<Soul> findByUserIdIsNotNull();
+    Page<Soul> findByDeletedTrue(Pageable pageable);
 }

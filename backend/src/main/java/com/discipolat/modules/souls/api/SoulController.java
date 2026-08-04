@@ -44,11 +44,27 @@ public class SoulController {
             @RequestParam(required = false) UUID familleId,
             @RequestParam(required = false) TypeDisciple typeDisciple,
             @RequestParam(required = false) StatutAme statut,
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Pageable pageable = PageRequest.of(page, Math.min(size, 50),
                 sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending());
-        Page<Soul> souls = soulService.findAll(faiseurId, familleId, typeDisciple, statut, pageable);
+        Page<Soul> souls = soulService.findAll(faiseurId, familleId, typeDisciple, statut, search, pageable);
+        Page<SoulResponse> response = souls.map(SoulResponse::from);
+        return ResponseEntity.ok(PageResponse.of(
+                response.getContent(), response.getNumber(), response.getSize(),
+                response.getTotalElements(), response.getTotalPages()));
+    }
+
+    /** Corbeille : âmes supprimées (soft-deleted), pour restauration éventuelle. */
+    @GetMapping("/trash")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<PageResponse<SoulResponse>> trash(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50),
+                Sort.by(Sort.Direction.DESC, "updatedAt"));
+        Page<Soul> souls = soulService.findTrash(pageable);
         Page<SoulResponse> response = souls.map(SoulResponse::from);
         return ResponseEntity.ok(PageResponse.of(
                 response.getContent(), response.getNumber(), response.getSize(),

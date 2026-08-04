@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { useExportReport } from '@/hooks/useExportReport';
@@ -13,12 +14,26 @@ import {
   BarChart3,
   Sparkles,
   ChevronRight,
+  Printer,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ReportsPage() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const { exportReport, isExporting } = useExportReport();
+
+  const { data: completion } = useQuery({
+    queryKey: ['reports', 'completion'],
+    queryFn: async () => (await api.get('/dashboard/report-completion')).data as {
+      totalRapports: number;
+      rapportsSoumis: number;
+      tauxCompletion: number;
+    },
+  });
+
+  const totalRapports = completion?.totalRapports ?? 0;
+  const enAttente = Math.max(0, (completion?.totalRapports ?? 0) - (completion?.rapportsSoumis ?? 0));
+  const taux = completion?.tauxCompletion ?? 0;
 
   const sections = [
     {
@@ -41,7 +56,7 @@ export default function ReportsPage() {
     },
   ];
 
-  const filteredSections = sections.filter((s) => user && s.roles.includes(user.role));
+  const filteredSections = sections.filter((s) => user && user.roles.some((r) => s.roles.includes(r)));
 
   const handleExport = async (type: 'maker' | 'family') => {
     try {
@@ -73,8 +88,11 @@ export default function ReportsPage() {
           </div>
           <p className="page-subtitle">Gestion des rapports hebdomadaires</p>
         </div>
-        {user?.role === 'PASTEUR' && (
+        {hasRole('PASTEUR') && (
           <div className="flex flex-wrap gap-2 animate-fade-in">
+            <button onClick={() => window.print()} className="btn-secondary btn-sm">
+              <Printer className="w-4 h-4" /> Imprimer
+            </button>
             <button onClick={() => handleExport('maker')} className="btn-secondary btn-sm">
               <Download className="w-4 h-4" /> CSV faiseur
             </button>
@@ -104,7 +122,7 @@ export default function ReportsPage() {
               <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 font-mono">24</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 font-mono">{totalRapports}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Rapports cette semaine</p>
             </div>
           </div>
@@ -115,7 +133,7 @@ export default function ReportsPage() {
               <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 font-mono">87%</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 font-mono">{taux}%</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Taux de soumission</p>
             </div>
           </div>
@@ -126,7 +144,7 @@ export default function ReportsPage() {
               <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 font-mono">3</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 font-mono">{enAttente}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">En attente</p>
             </div>
           </div>
