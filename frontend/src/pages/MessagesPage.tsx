@@ -162,13 +162,14 @@ export default function MessagesPage() {
           {/* Liste des conversations */}
           <div className={`w-full sm:w-80 border-r border-white/20 dark:border-white/[0.06] flex flex-col ${activeConv ? 'hidden sm:flex' : 'flex'}`}>
             <div className="p-3 border-b border-white/20 dark:border-white/[0.06]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  className="input pl-10 !py-2 text-sm"
-                  placeholder="Filtrer les conversations..."
-                />
-              </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                id="filter-conversations"
+                className="input pl-10 !py-2 text-sm"
+                placeholder="Filtrer les conversations..."
+              />
+            </div>
             </div>
             <div className="flex-1 overflow-y-auto">
               {isLoading ? (
@@ -342,6 +343,7 @@ export default function MessagesPage() {
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
+                id="search-contact"
                 className="input pl-10"
                 placeholder="Rechercher un membre..."
                 value={userSearch}
