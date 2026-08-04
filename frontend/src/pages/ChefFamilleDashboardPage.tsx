@@ -33,11 +33,11 @@ export default function ChefFamilleDashboardPage() {
     queryKey: ['dashboard', 'chef-famille', familleId],
     queryFn: async () => {
       const res = await api.get('/dashboard/chef-famille', {
-        params: { familleId },
+        params: familleId ? { familleId } : undefined,
       });
       return res.data as any;
     },
-    enabled: !!familleId,
+    enabled: !!user,
   });
 
   const famille = dashboard?.famille ?? {};
@@ -82,13 +82,7 @@ export default function ChefFamilleDashboardPage() {
         </div>
       </div>
 
-      {!familleId ? (
-        <div className="glass-card p-12 text-center animate-fade-in">
-          <Church className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Aucune famille assignée</h2>
-          <p className="text-sm text-gray-400">Vous n'êtes pas encore chef d'une famille de disciples.</p>
-        </div>
-      ) : isLoading ? (
+      {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="glass-card p-5 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
@@ -96,6 +90,12 @@ export default function ChefFamilleDashboardPage() {
               <div className="skeleton h-8 w-20 rounded" />
             </div>
           ))}
+        </div>
+      ) : !dashboard?.famille?.id ? (
+        <div className="glass-card p-12 text-center animate-fade-in">
+          <Church className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Aucune famille assignée</h2>
+          <p className="text-sm text-gray-400">Vous n'êtes pas encore chef d'une famille de disciples.</p>
         </div>
       ) : (
         <>
@@ -285,7 +285,7 @@ export default function ChefFamilleDashboardPage() {
                 <Heart className="w-4 h-4 text-primary-500" />
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tous les disciples</h3>
               </div>
-              <Link to={`/souls?familleId=${familleId}`} className="text-[10px] font-medium text-primary-600">
+              <Link to={`/souls?familleId=${dashboard?.famille?.id}`} className="text-[10px] font-medium text-primary-600">
                 Voir tout
               </Link>
             </div>

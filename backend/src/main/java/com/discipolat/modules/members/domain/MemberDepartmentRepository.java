@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface MemberDepartmentRepository extends JpaRepository<MemberDepartment, UUID> {
     List<MemberDepartment> findBySoulId(UUID soulId);
     boolean existsBySoulIdAndDepartmentId(UUID soulId, UUID departmentId);
+    List<MemberDepartment> findByDepartmentIdIn(List<UUID> departmentIds);
 }

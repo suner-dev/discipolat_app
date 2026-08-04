@@ -2,13 +2,13 @@ package com.discipolat.modules.members.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.UserRole;
+import com.discipolat.common.exception.BadRequestException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
-import com.discipolat.modules.members.api.MemberDashboardResponse;
-import com.discipolat.modules.members.api.UpdateMemberProfileRequest;
+import com.discipolat.modules.members.api.*;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
@@ -18,15 +18,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.time.temporal.TemporalAdjusters;
+import java.util.*;
 
 /**
- * Espace Membre — Phase 1 : le membre consulte et met à jour ses informations,
- * sa famille de disciple, son encadrement et ses départements.
+ * Espace Membre — Phase 2 : présences hebdomadaires et demandes
+ * (suggestions, rendez-vous, signalements) avec visibilité scopée :
+ * pasteur voit tout, responsable voit les demandes/présences de ses
+ * départements, chef de famille voit celles de sa famille.
  */
 @Service
 @Transactional
@@ -39,6 +41,8 @@ public class MemberService {
     private final FamilyRepository familyRepository;
     private final DepartmentRepository departmentRepository;
     private final MemberDepartmentRepository memberDepartmentRepository;
+    private final MemberPresenceRepository memberPresenceRepository;
+    private final MemberRequestRepository memberRequestRepository;
     private final SecurityUtils securityUtils;
 
     public MemberService(UserRepository userRepository,
@@ -46,14 +50,22 @@ public class MemberService {
                          FamilyRepository familyRepository,
                          DepartmentRepository departmentRepository,
                          MemberDepartmentRepository memberDepartmentRepository,
+                         MemberPresenceRepository memberPresenceRepository,
+                         MemberRequestRepository memberRequestRepository,
                          SecurityUtils securityUtils) {
         this.userRepository = userRepository;
         this.soulRepository = soulRepository;
         this.familyRepository = familyRepository;
         this.departmentRepository = departmentRepository;
         this.memberDepartmentRepository = memberDepartmentRepository;
+        this.memberPresenceRepository = memberPresenceRepository;
+        this.memberRequestRepository = memberRequestRepository;
         this.securityUtils = securityUtils;
     }
+
+    // ============================================================
+    // PHASE 1 — Dashboard & profil
+    // ============================================================
 
     @Transactional(readOnly = true)
     public MemberDashboardResponse getMyDashboard() {
@@ -66,24 +78,20 @@ public class MemberService {
                 .toList();
         Soul soul = souls.isEmpty() ? null : souls.get(0);
 
-        // Profil personnel (compte utilisateur)
         MemberDashboardResponse.MemberUserInfo userInfo = new MemberDashboardResponse.MemberUserInfo(
                 user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(),
                 user.getPhone(), user.getPhotoUrl(), user.getDateNaissance(), user.getSituationFamiliale());
 
-        // Âge (date de naissance du compte, sinon de l'âme)
         LocalDate birth = user.getDateNaissance() != null ? user.getDateNaissance()
                 : (soul != null ? soul.getDateNaissance() : null);
         Integer age = birth != null ? Period.between(birth, LocalDate.now()).getYears() : null;
 
-        // Statut : simple membre, faiseur de disciples ou chef de famille
         boolean estFaiseur = user.getRoles().contains(UserRole.FAISEUR);
         String statutMembre;
         if (user.getRoles().contains(UserRole.CHEF_DE_FAMILLE)) statutMembre = "CHEF_DE_FAMILLE";
         else if (estFaiseur) statutMembre = "FAISEUR";
         else statutMembre = "MEMBRE";
 
-        // Profil disciple (âme liée au compte)
         MemberDashboardResponse.MemberSoulInfo soulInfo = null;
         if (soul != null) {
             soulInfo = new MemberDashboardResponse.MemberSoulInfo(
@@ -93,7 +101,6 @@ public class MemberService {
         String dateArriveeEglise = soul != null && soul.getDateIntegration() != null
                 ? soul.getDateIntegration().toString() : null;
 
-        // Famille de disciple + chef de famille
         MemberDashboardResponse.MemberFamilyInfo familleInfo = null;
         if (soul != null && soul.getFamilleId() != null) {
             Family family = familyRepository.findById(soul.getFamilleId()).orElse(null);
@@ -107,7 +114,6 @@ public class MemberService {
             }
         }
 
-        // Faiseur de disciples (encadrant direct)
         MemberDashboardResponse.PersonneInfo faiseurInfo = null;
         if (soul != null && soul.getFaiseurId() != null) {
             faiseurInfo = userRepository.findById(soul.getFaiseurId())
@@ -117,7 +123,6 @@ public class MemberService {
                     .orElse(null);
         }
 
-        // Départements du membre (chorale, audiovisuel, ...)
         List<MemberDashboardResponse.MemberDepartmentInfo> departements = new ArrayList<>();
         if (soul != null) {
             for (MemberDepartment md : memberDepartmentRepository.findBySoulId(soul.getId())) {
@@ -137,10 +142,6 @@ public class MemberService {
                 dateArriveeEglise, familleInfo, faiseurInfo, departements);
     }
 
-    /**
-     * Mise à jour du profil du membre connecté (compte + âme liée).
-     * Seuls les champs fournis sont modifiés (PATCH-like via PUT partiel).
-     */
     public MemberDashboardResponse updateMyProfile(UpdateMemberProfileRequest request) {
         UUID userId = securityUtils.getCurrentUserId();
         User user = userRepository.findById(userId)
@@ -153,7 +154,6 @@ public class MemberService {
         user.markUpdated();
         userRepository.save(user);
 
-        // Profil disciple : l'âme liée au compte, si elle existe
         List<Soul> souls = soulRepository.findAllByUserId(userId).stream()
                 .filter(s -> !s.isDeleted())
                 .toList();
@@ -169,5 +169,255 @@ public class MemberService {
         }
 
         return getMyDashboard();
+    }
+
+    // ============================================================
+    // PHASE 2 — Présences hebdomadaires
+    // ============================================================
+
+    /** Historique des présences saisies par le membre connecté. */
+    @Transactional(readOnly = true)
+    public List<MemberPresenceResponse> getMyPresences() {
+        UUID userId = securityUtils.getCurrentUserId();
+        String nom = fullName(userId);
+        return memberPresenceRepository.findByUserIdOrderBySemaineDesc(userId)
+                .stream().map(p -> MemberPresenceResponse.from(p, nom)).toList();
+    }
+
+    /** Crée ou met à jour la présence de la semaine pour le membre connecté. */
+    public MemberPresenceResponse submitMyPresence(SubmitPresenceRequest request) {
+        UUID userId = securityUtils.getCurrentUserId();
+        LocalDate lundi = lundiDe(request.semaine());
+
+        MemberPresence presence = memberPresenceRepository.findByUserIdAndSemaine(userId, lundi)
+                .orElseGet(() -> MemberPresence.builder()
+                        .userId(userId)
+                        .semaine(lundi)
+                        .build());
+
+        UUID soulId = currentSoulId(userId);
+        if (soulId != null) presence.setSoulId(soulId);
+        presence.setPresences(request.presences());
+        presence.setNotes(request.notes());
+
+        return MemberPresenceResponse.from(memberPresenceRepository.save(presence), fullName(userId));
+    }
+
+    /**
+     * Présences récentes des membres sous la responsabilité du rôle courant :
+     * pasteur/admin = tous, responsable = membres de ses départements,
+     * chef de famille = membres de ses familles.
+     */
+    @Transactional(readOnly = true)
+    public List<MemberPresenceResponse> getScopedPresences() {
+        UUID userId = securityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
+
+        // Pasteur / admin : toutes les présences (même sans âme liée au compte)
+        if (user.getRoles().contains(UserRole.PASTEUR) || user.getRoles().contains(UserRole.ADMIN)) {
+            return memberPresenceRepository.findAllByOrderBySemaineDesc()
+                    .stream()
+                    .map(p -> MemberPresenceResponse.from(p, fullName(p.getUserId())))
+                    .toList();
+        }
+
+        List<UUID> soulIds = scopedSoulIds(user);
+        if (soulIds.isEmpty()) return List.of();
+
+        return memberPresenceRepository.findBySoulIdInOrderBySemaineDesc(soulIds)
+                .stream()
+                .map(p -> MemberPresenceResponse.from(p, fullName(p.getUserId())))
+                .toList();
+    }
+
+    // ============================================================
+    // PHASE 2 — Demandes : suggestions, rendez-vous, signalements
+    // ============================================================
+
+    /** Demandes envoyées par le membre connecté. */
+    @Transactional(readOnly = true)
+    public List<MemberRequestResponse> getMyRequests() {
+        UUID userId = securityUtils.getCurrentUserId();
+        return memberRequestRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream().map(this::toResponse).toList();
+    }
+
+    /** Crée une demande : cible PASTEUR (église), RESPONSABLE (département) ou CHEF_DE_FAMILLE (famille). */
+    public MemberRequestResponse createRequest(CreateMemberRequest request) {
+        UUID userId = securityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
+
+        MemberRequest req = MemberRequest.builder()
+                .userId(userId)
+                .type(request.type())
+                .cible(request.cible())
+                .message(request.message())
+                .statut(MemberRequest.Statut.OUVERT)
+                .build();
+
+        // Portée automatique selon la cible
+        if (request.cible() == MemberRequest.Cible.RESPONSABLE) {
+            UUID deptId = firstDepartmentId(userId);
+            if (deptId == null) {
+                throw new BadRequestException(
+                        "Vous n'êtes pas encore rattaché(e) à un département. Contactez votre faiseur ou le pasteur.");
+            }
+            req.setDepartmentId(deptId);
+        } else if (request.cible() == MemberRequest.Cible.CHEF_DE_FAMILLE) {
+            Soul soul = currentSoul(userId);
+            if (soul == null || soul.getFamilleId() == null) {
+                throw new BadRequestException(
+                        "Vous n'êtes pas encore rattaché(e) à une famille de disciple. Contactez votre faiseur ou le pasteur.");
+            }
+            req.setFamilyId(soul.getFamilleId());
+        }
+
+        return toResponse(memberRequestRepository.save(req));
+    }
+
+    /** Boîte de réception scopée par rôle : pasteur/admin tout, responsable ses départements, chef ses familles. */
+    @Transactional(readOnly = true)
+    public List<MemberRequestResponse> getRequestsInbox() {
+        UUID userId = securityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
+
+        // Accumulation pour les rôles multiples (ex : responsable aussi chef de famille)
+        List<MemberRequest> requests = new ArrayList<>();
+        if (user.getRoles().contains(UserRole.PASTEUR) || user.getRoles().contains(UserRole.ADMIN)) {
+            requests.addAll(memberRequestRepository.findAllByOrderByCreatedAtDesc());
+        } else {
+            if (user.getRoles().contains(UserRole.RESPONSABLE)) {
+                List<UUID> deptIds = departmentRepository.findByResponsableId(userId)
+                        .stream().map(Department::getId).toList();
+                if (!deptIds.isEmpty()) {
+                    requests.addAll(memberRequestRepository
+                            .findByCibleAndDepartmentIdInOrderByCreatedAtDesc(MemberRequest.Cible.RESPONSABLE, deptIds));
+                }
+            }
+            if (user.getRoles().contains(UserRole.CHEF_DE_FAMILLE)) {
+                List<UUID> famIds = familyRepository.findByChefFamilleId(userId)
+                        .stream().map(Family::getId).toList();
+                if (!famIds.isEmpty()) {
+                    requests.addAll(memberRequestRepository
+                            .findByCibleAndFamilyIdInOrderByCreatedAtDesc(MemberRequest.Cible.CHEF_DE_FAMILLE, famIds));
+                }
+            }
+        }
+
+        return requests.stream()
+                .sorted(Comparator.comparing(MemberRequest::getCreatedAt).reversed())
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /** Met à jour le statut d'une demande (seul le récepteur ciblé peut traiter). */
+    public MemberRequestResponse updateRequestStatus(UUID requestId, UpdateMemberRequestStatus payload) {
+        UUID userId = securityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
+
+        MemberRequest req = memberRequestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("MemberRequest", requestId));
+
+        // Permission : pasteur/admin partout, sinon le récepteur scopé
+        if (!user.getRoles().contains(UserRole.PASTEUR) && !user.getRoles().contains(UserRole.ADMIN)) {
+            boolean allowed = switch (req.getCible()) {
+                case RESPONSABLE -> {
+                    List<UUID> deptIds = departmentRepository.findByResponsableId(userId)
+                            .stream().map(Department::getId).toList();
+                    yield req.getDepartmentId() != null && deptIds.contains(req.getDepartmentId());
+                }
+                case CHEF_DE_FAMILLE -> {
+                    List<UUID> famIds = familyRepository.findByChefFamilleId(userId)
+                            .stream().map(Family::getId).toList();
+                    yield req.getFamilyId() != null && famIds.contains(req.getFamilyId());
+                }
+                case PASTEUR -> false;
+            };
+            if (!allowed) throw new org.springframework.security.access.AccessDeniedException("Vous ne pouvez pas traiter cette demande");
+        }
+
+        req.setStatut(payload.statut());
+        if (payload.reponse() != null && !payload.reponse().isBlank()) {
+            req.setReponse(payload.reponse());
+        }
+        req.setTraitePar(userId);
+        req.setDateTraitement(java.time.LocalDateTime.now());
+
+        return toResponse(memberRequestRepository.save(req));
+    }
+
+    // ============================================================
+    // Helpers
+    // ============================================================
+
+    private String fullName(UUID userId) {
+        return userRepository.findById(userId)
+                .map(u -> u.getFirstName() + " " + u.getLastName())
+                .orElse("Membre");
+    }
+
+    private Soul currentSoul(UUID userId) {
+        return soulRepository.findAllByUserId(userId).stream()
+                .filter(s -> !s.isDeleted())
+                .findFirst().orElse(null);
+    }
+
+    private UUID currentSoulId(UUID userId) {
+        Soul soul = currentSoul(userId);
+        return soul != null ? soul.getId() : null;
+    }
+
+    private UUID firstDepartmentId(UUID userId) {
+        Soul soul = currentSoul(userId);
+        if (soul == null) return null;
+        return memberDepartmentRepository.findBySoulId(soul.getId()).stream()
+                .findFirst()
+                .map(MemberDepartment::getDepartmentId)
+                .orElse(null);
+    }
+
+    /** Lundi de la semaine contenant la date donnée. */
+    private LocalDate lundiDe(LocalDate date) {
+        return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+    }
+
+    /** Âmes sous la responsabilité du rôle courant (pour la visibilité des présences). */
+    private List<UUID> scopedSoulIds(User user) {
+        if (user.getRoles().contains(UserRole.RESPONSABLE)) {
+            List<UUID> deptIds = departmentRepository.findByResponsableId(user.getId())
+                    .stream().map(Department::getId).toList();
+            return deptIds.isEmpty() ? List.of()
+                    : memberDepartmentRepository.findByDepartmentIdIn(deptIds)
+                            .stream().map(MemberDepartment::getSoulId).distinct().toList();
+        }
+        if (user.getRoles().contains(UserRole.CHEF_DE_FAMILLE)) {
+            List<UUID> famIds = familyRepository.findByChefFamilleId(user.getId())
+                    .stream().map(Family::getId).toList();
+            return famIds.isEmpty() ? List.of()
+                    : soulRepository.findByFamilleIdIn(famIds).stream()
+                            .filter(s -> !s.isDeleted())
+                            .map(Soul::getId).toList();
+        }
+        return List.of();
+    }
+
+    private MemberRequestResponse toResponse(MemberRequest r) {
+        String auteurNom = userRepository.findById(r.getUserId())
+                .map(u -> u.getFirstName() + " " + u.getLastName()).orElse(null);
+        String traiteParNom = r.getTraitePar() != null
+                ? userRepository.findById(r.getTraitePar())
+                        .map(u -> u.getFirstName() + " " + u.getLastName()).orElse(null)
+                : null;
+        String deptNom = r.getDepartmentId() != null
+                ? departmentRepository.findById(r.getDepartmentId()).map(Department::getNom).orElse(null)
+                : null;
+        String famNom = r.getFamilyId() != null
+                ? familyRepository.findById(r.getFamilyId()).map(Family::getNom).orElse(null)
+                : null;
+        return MemberRequestResponse.from(r, auteurNom, traiteParNom, deptNom, famNom);
     }
 }

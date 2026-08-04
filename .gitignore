@@ -52,3 +52,4 @@ backups/
 
 # TypeScript build info
 dist-ts/
+tsconfig.tsbuildinfo

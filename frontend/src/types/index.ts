@@ -220,6 +220,59 @@ export interface UpdateMemberProfileRequest {
   nbEnfants?: number;
 }
 
+// ======================== Member Presences & Requests (Phase 2) ========================
+
+export interface MemberPresence {
+  id: string;
+  userId: string;
+  nomMembre?: string;
+  semaine: string;
+  presences: Record<string, boolean>;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubmitPresenceRequest {
+  semaine: string;
+  presences: Record<string, boolean>;
+  notes?: string;
+}
+
+export type MemberRequestType = 'SUGGESTION' | 'RENDEZ_VOUS' | 'SIGNALEMENT';
+export type MemberRequestTarget = 'PASTEUR' | 'RESPONSABLE' | 'CHEF_DE_FAMILLE';
+export type MemberRequestStatus = 'OUVERT' | 'EN_COURS' | 'RESOLU' | 'REJETE';
+
+export interface MemberRequest {
+  id: string;
+  type: MemberRequestType;
+  cible: MemberRequestTarget;
+  message: string;
+  statut: MemberRequestStatus;
+  reponse?: string;
+  traitePar?: string;
+  traiteParNom?: string;
+  dateTraitement?: string;
+  createdAt: string;
+  auteurId: string;
+  auteurNom?: string;
+  departmentId?: string;
+  departmentNom?: string;
+  familyId?: string;
+  familyNom?: string;
+}
+
+export interface CreateMemberRequest {
+  type: MemberRequestType;
+  cible: MemberRequestTarget;
+  message: string;
+}
+
+export interface UpdateMemberRequestStatus {
+  statut: MemberRequestStatus;
+  reponse?: string;
+}
+
 // Report types
 export type RaisonAbsence =
   | 'MALADIE'

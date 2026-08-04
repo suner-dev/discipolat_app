@@ -3,11 +3,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
-import type { MemberDashboard, UpdateMemberProfileRequest } from '@/types';
+import type {
+  MemberDashboard,
+  UpdateMemberProfileRequest,
+  MemberPresence,
+  SubmitPresenceRequest,
+  MemberRequest,
+  MemberRequestType,
+  MemberRequestTarget,
+  MemberRequestStatus,
+  CreateMemberRequest,
+} from '@/types';
 import {
   Sparkles, User, Mail, Phone, Calendar, GraduationCap, Briefcase, Heart,
-  Users, Building2, Camera, Edit3, Save, X, Loader2, Clock, MessageSquare,
-  Lock, ChevronRight, UserCheck, Church, Cake,
+  Users, Building2, Camera, Edit3, Save, X, Loader2, MessageSquare,
+  ChevronRight, UserCheck, Church, Cake, CalendarCheck, Send,
 } from 'lucide-react';
 
 const STATUT_LABELS: Record<string, { label: string; badge: string }> = {
@@ -26,6 +36,48 @@ const SITUATION_LABELS: Record<string, string> = {
 };
 
 const NIVEAU_ETUDES = ['Primaire', 'Secondaire', 'Baccalauréat', 'Licence', 'Master', 'Doctorat', 'Formation professionnelle', 'Autre'];
+
+/** Programmes hebdomadaires de l'église (saisie de présence par le membre). */
+const WEEKLY_PROGRAMS = ['Culte du dimanche', 'Culte du soir', 'Étude biblique', 'Prière', 'Évangélisation', 'Chorale'];
+
+const TYPE_LABELS: Record<MemberRequestType, string> = {
+  SUGGESTION: '💡 Suggestion',
+  RENDEZ_VOUS: '📅 Rendez-vous',
+  SIGNALEMENT: '⚠️ Signalement',
+};
+
+const CIBLE_LABELS: Record<MemberRequestTarget, string> = {
+  PASTEUR: 'Pasteur',
+  RESPONSABLE: 'Responsable',
+  CHEF_DE_FAMILLE: 'Chef de famille',
+};
+
+const STATUS_BADGES: Record<MemberRequestStatus, string> = {
+  OUVERT: 'badge-warning',
+  EN_COURS: 'badge-info',
+  RESOLU: 'badge-success',
+  REJETE: 'badge-error',
+};
+
+const STATUS_LABELS: Record<MemberRequestStatus, string> = {
+  OUVERT: 'Ouvert',
+  EN_COURS: 'En cours',
+  RESOLU: 'Résolu',
+  REJETE: 'Rejeté',
+};
+
+/** Lundi de la semaine courante (AAAA-MM-JJ). */
+const currentWeekMonday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.toISOString().split('T')[0];
+};
+
+const tauxPresence = (p: MemberPresence) => {
+  const entries = Object.entries(p.presences || {});
+  if (entries.length === 0) return 0;
+  return Math.round((entries.filter(([, v]) => v).length * 100) / entries.length);
+};
 
 const getGreeting = () => {
   const h = new Date().getHours();
@@ -63,6 +115,74 @@ export default function MemberDashboardPage() {
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
+
+  // ==================== Phase 2 : présences hebdomadaires ====================
+  const { data: presences = [] } = useQuery({
+    queryKey: ['members', 'me', 'presences'],
+    queryFn: async () => (await api.get('/members/me/presences')).data as MemberPresence[],
+  });
+
+  const [presenceForm, setPresenceForm] = useState<Record<string, boolean>>({});
+  const [presenceNotes, setPresenceNotes] = useState('');
+
+  const presenceMutation = useMutation({
+    mutationFn: async (payload: SubmitPresenceRequest) => {
+      const res = await api.post('/members/me/presences', payload);
+      return res.data as MemberPresence;
+    },
+    onSuccess: () => {
+      toast.success('Votre présence a été enregistrée ✨');
+      setPresenceNotes('');
+      queryClient.invalidateQueries({ queryKey: ['members', 'me', 'presences'] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const submitPresence = () => {
+    const selected = Object.values(presenceForm).filter(Boolean).length;
+    if (selected === 0 && !presenceNotes.trim()) {
+      toast.error('Cochez au moins un programme ou ajoutez une note');
+      return;
+    }
+    presenceMutation.mutate({
+      semaine: currentWeekMonday(),
+      presences: presenceForm,
+      notes: presenceNotes.trim() || undefined,
+    });
+  };
+
+  // ==================== Phase 2 : suggestions, rendez-vous, signalements ====================
+  const { data: myRequests = [] } = useQuery({
+    queryKey: ['members', 'me', 'requests'],
+    queryFn: async () => (await api.get('/members/me/requests')).data as MemberRequest[],
+  });
+
+  const [requestForm, setRequestForm] = useState<{
+    type: MemberRequestType;
+    cible: MemberRequestTarget;
+    message: string;
+  }>({ type: 'SUGGESTION', cible: 'PASTEUR', message: '' });
+
+  const requestMutation = useMutation({
+    mutationFn: async (payload: CreateMemberRequest) => {
+      const res = await api.post('/members/me/requests', payload);
+      return res.data as MemberRequest;
+    },
+    onSuccess: () => {
+      toast.success('Votre demande a été envoyée ✅');
+      setRequestForm({ type: 'SUGGESTION', cible: 'PASTEUR', message: '' });
+      queryClient.invalidateQueries({ queryKey: ['members', 'me', 'requests'] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const submitRequest = () => {
+    if (!requestForm.message.trim()) {
+      toast.error('Écrivez votre message avant d\'envoyer');
+      return;
+    }
+    requestMutation.mutate(requestForm);
+  };
 
   const openEdit = () => {
     setForm({
@@ -340,36 +460,198 @@ export default function MemberDashboardPage() {
           )}
         </div>
 
-        {/* À venir */}
-        <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '320ms' }}>
-          <div className="flex items-center gap-3 mb-4">
+        {/* Mes présences hebdomadaires */}
+        <div className="glass-card p-6 animate-slide-up lg:col-span-3" style={{ animationDelay: '320ms' }}>
+          <div className="flex items-center gap-3 mb-1">
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-lg">
-              <Clock className="w-5 h-5" />
+              <CalendarCheck className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bientôt disponible</h3>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Mes présences hebdomadaires</h3>
+              <p className="text-xs text-gray-400">Visibles par votre chef de famille, votre responsable de département et le pasteur</p>
+            </div>
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50/60 dark:bg-gray-800/20 opacity-70">
-              <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
-                <Clock className="w-4 h-4 text-gray-400" />
+
+          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Saisie semaine courante */}
+            <div className="p-4 rounded-2xl bg-white/40 dark:bg-gray-800/30 border border-white/40 dark:border-white/[0.04]">
+              <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-3">
+                Semaine du{' '}
+                {new Date(currentWeekMonday() + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {WEEKLY_PROGRAMS.map((p) => (
+                  <label
+                    key={p}
+                    className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/60 dark:bg-gray-900/40 border border-white/40 dark:border-white/[0.05] cursor-pointer hover:border-primary-400/50 hover:shadow-sm transition-all"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!!presenceForm[p]}
+                      onChange={(e) => setPresenceForm((f) => ({ ...f, [p]: e.target.checked }))}
+                      className="w-4 h-4 rounded accent-primary-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{p}</span>
+                  </label>
+                ))}
+              </div>
+              <textarea
+                className="input mt-3"
+                rows={2}
+                placeholder="Notes (facultatif)"
+                value={presenceNotes}
+                onChange={(e) => setPresenceNotes(e.target.value)}
+              />
+              <button
+                onClick={submitPresence}
+                disabled={presenceMutation.isPending}
+                className="btn-primary btn-sm mt-3 w-full"
+              >
+                {presenceMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {presenceMutation.isPending ? 'Enregistrement...' : 'Enregistrer ma présence'}
+              </button>
+            </div>
+
+            {/* Historique */}
+            <div>
+              <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-3">
+                Mon historique ({presences.length})
+              </p>
+              {presences.length > 0 ? (
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {presences.map((p) => {
+                    const t = tauxPresence(p);
+                    const presents = Object.entries(p.presences || {}).filter(([, v]) => v).length;
+                    return (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-white/40 dark:bg-gray-800/30 border border-white/40 dark:border-white/[0.04] animate-fade-in"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {new Date(p.semaine + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                          </p>
+                          <p className="text-[11px] text-gray-400 truncate">
+                            {presents} / {Object.keys(p.presences || {}).length} programmes présents
+                          </p>
+                        </div>
+                        <span className={`badge text-xs ${t >= 70 ? 'badge-success' : t >= 40 ? 'badge-warning' : 'badge-error'}`}>
+                          {t}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-8 text-center">
+                  <CalendarCheck className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Aucune présence enregistrée pour l'instant</p>
+                  <p className="text-xs text-gray-400">Cochez les programmes de la semaine et enregistrez</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===================== SUGGESTIONS & RENDEZ-VOUS ===================== */}
+      <div className="glass-card p-6 animate-slide-up mb-6">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg">
+            <MessageSquare className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Suggestions, rendez-vous & signalements</h3>
+            <p className="text-xs text-gray-400">Envoyez un message au pasteur, à votre responsable de département ou à votre chef de famille</p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-5">
+          {/* Formulaire */}
+          <div className="lg:col-span-2 p-4 rounded-2xl bg-white/40 dark:bg-gray-800/30 border border-white/40 dark:border-white/[0.04]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="label">Type</label>
+                <select
+                  className="input"
+                  value={requestForm.type}
+                  onChange={(e) => setRequestForm({ ...requestForm, type: e.target.value as MemberRequestType })}
+                >
+                  <option value="SUGGESTION">💡 Suggestion</option>
+                  <option value="RENDEZ_VOUS">📅 Rendez-vous</option>
+                  <option value="SIGNALEMENT">⚠️ Signalement</option>
+                </select>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Mes présences hebdomadaires</p>
-                <p className="text-[11px] text-gray-400">Visible par mon chef de famille et le pasteur</p>
+                <label className="label">Destinataire</label>
+                <select
+                  className="input"
+                  value={requestForm.cible}
+                  onChange={(e) => setRequestForm({ ...requestForm, cible: e.target.value as MemberRequestTarget })}
+                >
+                  <option value="PASTEUR">Pasteur (église)</option>
+                  <option value="RESPONSABLE">Mon responsable de département</option>
+                  <option value="CHEF_DE_FAMILLE">Mon chef de famille</option>
+                </select>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50/60 dark:bg-gray-800/20 opacity-70">
-              <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
-                <MessageSquare className="w-4 h-4 text-gray-400" />
+            <textarea
+              className="input mt-3"
+              rows={4}
+              placeholder="Votre message..."
+              value={requestForm.message}
+              onChange={(e) => setRequestForm({ ...requestForm, message: e.target.value })}
+            />
+            <button
+              onClick={submitRequest}
+              disabled={requestMutation.isPending || !requestForm.message.trim()}
+              className="btn-primary btn-sm mt-3 w-full"
+            >
+              {requestMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {requestMutation.isPending ? 'Envoi...' : 'Envoyer ma demande'}
+            </button>
+          </div>
+
+          {/* Mes demandes */}
+          <div className="lg:col-span-3">
+            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-3">
+              Mes demandes ({myRequests.length})
+            </p>
+            {myRequests.length > 0 ? (
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                {myRequests.map((r) => (
+                  <div
+                    key={r.id}
+                    className="p-3.5 rounded-xl bg-white/40 dark:bg-gray-800/30 border border-white/40 dark:border-white/[0.04] animate-fade-in"
+                  >
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="badge text-[10px] badge-info">{TYPE_LABELS[r.type]}</span>
+                        <span className="badge text-[10px] badge-warning">{CIBLE_LABELS[r.cible]}</span>
+                        <span className={`badge text-[10px] ${STATUS_BADGES[r.statut] || 'badge-warning'}`}>
+                          {STATUS_LABELS[r.statut] || r.statut}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-gray-400">
+                        {new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 dark:text-gray-200 mt-2 leading-relaxed">{r.message}</p>
+                    {r.reponse && (
+                      <div className="mt-2 p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-900/10 border border-emerald-200/50 dark:border-emerald-800/30 text-sm text-emerald-800 dark:text-emerald-300">
+                        <strong>Réponse :</strong> {r.reponse}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Suggestions & rendez-vous</p>
-                <p className="text-[11px] text-gray-400">Vers le pasteur, mon responsable et mon chef de famille</p>
+            ) : (
+              <div className="flex flex-col items-center py-8 text-center">
+                <MessageSquare className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">Aucune demande envoyée</p>
+                <p className="text-xs text-gray-400">Vos demandes apparaîtront ici avec leur statut et la réponse</p>
               </div>
-            </div>
-            <div className="flex items-center gap-2 px-1 text-[11px] text-gray-400">
-              <Lock className="w-3 h-3" /> Fonctionnalités en cours de développement
-            </div>
+            )}
           </div>
         </div>
       </div>
