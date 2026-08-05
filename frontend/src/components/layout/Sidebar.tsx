@@ -32,6 +32,7 @@ import {
   Target,
   DoorOpen,
   Trophy,
+  GraduationCap,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -242,6 +243,13 @@ const navigation = [
     icon: Trophy,
     roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
     subtitle: 'Récompenses & classements',
+  },
+  {
+    name: 'Formations',
+    href: '/trainings',
+    icon: GraduationCap,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+    subtitle: 'Cours, quiz & certificats',
   },
   {
     name: 'Utilisateurs',

@@ -851,6 +851,102 @@ export interface LeaderboardEntry {
   badges: number;
 }
 
+// ======================== Formations ========================
+
+export type CourseNiveau = 'DEBUTANT' | 'INTERMEDIAIRE' | 'AVANCE';
+export type EnrollmentStatut = 'INSCRIT' | 'EN_COURS' | 'TERMINE';
+
+export interface Course {
+  id: string;
+  titre: string;
+  description?: string;
+  categorie: string;
+  niveau: CourseNiveau;
+  dureeMinutes?: number;
+  formateurId?: string;
+  formateurNom?: string;
+  imageUrl?: string;
+  actif: boolean;
+  nbModules: number;
+  nbInscrits: number;
+  createdAt: string;
+}
+
+export interface CourseModule {
+  id: string;
+  courseId: string;
+  titre: string;
+  contenu?: string;
+  videoUrl?: string;
+  ordre: number;
+}
+
+export interface QuizQuestion {
+  id: string;
+  moduleId: string;
+  question: string;
+  propositions: string;
+  ordre: number;
+}
+
+export interface CreateQuestionRequest {
+  question: string;
+  propositions: string;
+  reponseIndex: number;
+  ordre: number;
+}
+
+export interface CourseEnrollment {
+  id: string;
+  courseId: string;
+  userId: string;
+  statut: EnrollmentStatut;
+  progression: number;
+  scoreQuiz?: number;
+  dateInscription: string;
+  dateTerminaison?: string;
+}
+
+export interface Certificate {
+  id: string;
+  enrollmentId: string;
+  numero: string;
+  userId: string;
+  courseId: string;
+  scoreFinal: number;
+  delivreLe: string;
+}
+
+export interface CreateCourseRequest {
+  titre: string;
+  description?: string;
+  categorie?: string;
+  niveau: CourseNiveau;
+  dureeMinutes?: number;
+  formateurId?: string;
+  imageUrl?: string;
+}
+
+export interface CreateModuleRequest {
+  titre: string;
+  contenu?: string;
+  videoUrl?: string;
+  ordre: number;
+}
+
+export interface SubmitQuizRequest {
+  moduleId: string;
+  reponses: Record<string, number>;
+}
+
+export interface QuizResult {
+  score: number;
+  bonnesReponses: number;
+  totalQuestions: number;
+  reussi: boolean;
+  certificat: boolean;
+}
+
 // Pagination
 export interface PageResponse<T> {
   content: T[];
