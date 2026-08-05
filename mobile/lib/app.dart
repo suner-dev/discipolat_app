@@ -23,6 +23,16 @@ import 'presentation/screens/users/users_list_screen.dart';
 import 'presentation/screens/users/permissions_screen.dart';
 import 'presentation/screens/users/documents_screen.dart';
 import 'presentation/screens/users/audit_screen.dart';
+import 'presentation/screens/appointments/appointments_screen.dart';
+import 'presentation/screens/visits/visits_screen.dart';
+import 'presentation/screens/evangelism/evangelism_screen.dart';
+import 'presentation/screens/objectives/objectives_screen.dart';
+import 'presentation/screens/badges/badges_screen.dart';
+import 'presentation/screens/trainings/trainings_screen.dart';
+import 'presentation/screens/messages/messages_screen.dart';
+import 'presentation/screens/parallel_followups/parallel_followups_screen.dart';
+import 'presentation/screens/map/map_screen.dart';
+import 'presentation/screens/members/member_requests_screen.dart';
 import 'presentation/screens/not_found_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -121,7 +131,6 @@ Map<String, List<String>> _routeRoles = {
   '/notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/evaluations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-  '/parallel-followups': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
   '/crm-faiseur': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/souls/:id/pastoral-360': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
   '/search': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
@@ -129,6 +138,16 @@ Map<String, List<String>> _routeRoles = {
   '/permissions': ['ADMIN'],
   '/documents': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
   '/audit': ['ADMIN', 'PASTEUR'],
+  '/appointments': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/visits': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/evangelism': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/objectives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/badges': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/trainings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/messages': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/parallel-followups': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/map': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/members/requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'MEMBRE'],
 };
 
 final appRouter = GoRouter(
@@ -284,6 +303,51 @@ final appRouter = GoRouter(
       path: '/audit',
       name: 'audit',
       builder: (context, state) => const AuditScreen(),
+    ),
+    GoRoute(
+      path: '/appointments',
+      name: 'appointments',
+      builder: (context, state) => const AppointmentsScreen(),
+    ),
+    GoRoute(
+      path: '/visits',
+      name: 'visits',
+      builder: (context, state) => const VisitsScreen(),
+    ),
+    GoRoute(
+      path: '/evangelism',
+      name: 'evangelism',
+      builder: (context, state) => const EvangelismScreen(),
+    ),
+    GoRoute(
+      path: '/objectives',
+      name: 'objectives',
+      builder: (context, state) => const ObjectivesScreen(),
+    ),
+    GoRoute(
+      path: '/badges',
+      name: 'badges',
+      builder: (context, state) => const BadgesScreen(),
+    ),
+    GoRoute(
+      path: '/trainings',
+      name: 'trainings',
+      builder: (context, state) => const TrainingsScreen(),
+    ),
+    GoRoute(
+      path: '/messages',
+      name: 'messages',
+      builder: (context, state) => const MessagesScreen(),
+    ),
+    GoRoute(
+      path: '/map',
+      name: 'map',
+      builder: (context, state) => const MapScreen(),
+    ),
+    GoRoute(
+      path: '/members/requests',
+      name: 'member-requests',
+      builder: (context, state) => const MemberRequestsScreen(),
     ),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
