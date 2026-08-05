@@ -28,12 +28,15 @@ public class SoulController {
     private final SoulService soulService;
     private final SoulRetractionRequestService retractionRequestService;
     private final SoulExitService soulExitService;
+    private final com.discipolat.modules.souls.domain.SpiritualScoreService spiritualScoreService;
 
     public SoulController(SoulService soulService, SoulRetractionRequestService retractionRequestService,
-                          SoulExitService soulExitService) {
+                          SoulExitService soulExitService,
+                          com.discipolat.modules.souls.domain.SpiritualScoreService spiritualScoreService) {
         this.soulService = soulService;
         this.retractionRequestService = retractionRequestService;
         this.soulExitService = soulExitService;
+        this.spiritualScoreService = spiritualScoreService;
     }
 
     @GetMapping
@@ -229,6 +232,20 @@ public class SoulController {
                         "dateSortie", ex.getDateSortie().toString(),
                         "peutReintegrer", ex.isPeutReintegrer()))
                 .toList());
+    }
+
+    // ======================== SCORE SPIRITUEL ========================
+
+    @GetMapping("/{id}/spiritual-score")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> spiritualScore(@PathVariable UUID id) {
+        return ResponseEntity.ok(spiritualScoreService.computeScore(id));
+    }
+
+    @GetMapping("/{id}/spiritual-score/history")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<List<Map<String, Object>>> spiritualScoreHistory(@PathVariable UUID id) {
+        return ResponseEntity.ok(spiritualScoreService.getHistory(id));
     }
 
     // ======================== PHASE 3: DOSSIER PASTORAL 360° ========================

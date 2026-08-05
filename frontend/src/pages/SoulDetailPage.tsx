@@ -3,16 +3,19 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Soul, MakerReport, SoulHistoryEntry, SoulNote } from '@/types';
+import type { Soul, MakerReport, SoulHistoryEntry, SoulNote, Interaction, InteractionType, SpiritualScore, ScoreHistoryPoint, AiAnalysis, CreateInteractionRequest } from '@/types';
 import {
   ArrowLeft, Mail, Phone, Calendar, MapPin, Briefcase, FileText,
   Activity, MessageSquare, Send, Loader2, AlertTriangle, BookOpen,
   TrendingUp, Edit, LogOut, Undo2, Heart, Sparkles, Clock, ChevronRight,
   CheckCircle2, Star, Users, UserCheck, X, Flag, Gavel, Plus,
+  PhoneCall, MessageCircle, MailPlus, UserPlus, Handshake, Sparkle,
+  BrainCircuit, AlertTriangle as AlertIcon, Trash2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 
-type Tab = 'info' | 'history' | 'notes' | 'reports' | 'discipline';
+type Tab = 'info' | 'history' | 'notes' | 'reports' | 'discipline' | 'interactions';
 
 const STATUT_LABELS: Record<string, string> = {
   NOUVEAU_CONVERTI: 'Nouveau converti', NOUVEL_ARRIVANT: 'Nouvel arrivant',
@@ -165,6 +168,67 @@ export default function SoulDetailPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
+  // ======================== INTERACTIONS CRM ========================
+  const INTERACTION_TYPE_LABELS: Record<string, string> = {
+    APPEL: 'Appel', SMS: 'SMS', WHATSAPP: 'WhatsApp', EMAIL: 'Email', VISITE: 'Visite',
+    REUNION: 'Réunion', PRIERE: 'Prière', CONSEIL: 'Conseil', SUIVI: 'Suivi', PROGRAMME: 'Programme',
+  };
+
+  const [interactionForm, setInteractionForm] = useState<{
+    type: string; canal?: string; objet: string; contenu: string;
+  }>({ type: 'APPEL', canal: undefined, objet: '', contenu: '' });
+
+  const { data: interactions = [] } = useQuery({
+    queryKey: ['soul', id, 'interactions'],
+    queryFn: async () => (await api.get(`/souls/${id}/interactions`)).data as Interaction[],
+    enabled: !!id && activeTab === 'interactions',
+  });
+
+  const createInteractionMutation = useMutation({
+    mutationFn: async (payload: CreateInteractionRequest) => {
+      const res = await api.post(`/souls/${id}/interactions`, payload);
+      return res.data as Interaction;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['soul', id, 'interactions'] });
+      queryClient.invalidateQueries({ queryKey: ['soul', id] });
+      setInteractionForm({ type: 'APPEL', canal: undefined, objet: '', contenu: '' });
+      toast.success('Interaction enregistrée ✅');
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const deleteInteractionMutation = useMutation({
+    mutationFn: async (interactionId: string) => {
+      await api.delete(`/interactions/${interactionId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['soul', id, 'interactions'] });
+      toast.success('Interaction supprimée');
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  // ======================== SCORE SPIRITUEL ========================
+  const { data: score } = useQuery({
+    queryKey: ['soul', id, 'spiritual-score'],
+    queryFn: async () => (await api.get(`/souls/${id}/spiritual-score`)).data as SpiritualScore,
+    enabled: !!id,
+  });
+  const { data: scoreHistory = [] } = useQuery({
+    queryKey: ['soul', id, 'spiritual-score', 'history'],
+    queryFn: async () => (await api.get(`/souls/${id}/spiritual-score/history`)).data as ScoreHistoryPoint[],
+    enabled: !!id,
+  });
+
+  // ======================== ASSISTANT IA ========================
+  const [aiOpen, setAiOpen] = useState(false);
+  const { data: ai } = useQuery({
+    queryKey: ['soul', id, 'ai'],
+    queryFn: async () => (await api.get(`/ai/analyze/${id}`)).data as AiAnalysis,
+    enabled: !!id && aiOpen,
+  });
+
   // ======================== TAGS & FAVORIS ========================
   const [tagInput, setTagInput] = useState('');
   const { data: tags = [] } = useQuery({
@@ -232,6 +296,7 @@ export default function SoulDetailPage() {
     { key: 'notes', label: 'Notes', icon: MessageSquare },
     { key: 'reports', label: 'Rapports', icon: FileText },
     { key: 'discipline', label: `Discipline${disciplineStats && disciplineStats.nonResolus > 0 ? ` (${disciplineStats.nonResolus})` : ''}`, icon: Gavel },
+    { key: 'interactions', label: 'Interactions', icon: PhoneCall },
   ];
 
   return (
@@ -414,6 +479,30 @@ export default function SoulDetailPage() {
                   </div>}
                 </div>
               </div>
+
+              {score && (
+                <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '140ms' }}>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary-500" /> Évolution du score spirituel
+                  </h3>
+                  {scoreHistory.length > 1 ? (
+                    <ResponsiveContainer width="100%" height={190}>
+                      <LineChart data={scoreHistory} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(120,120,140,0.15)" />
+                        <XAxis dataKey="semaine" tick={{ fontSize: 10 }} tickFormatter={(v: string) => (v ? v.slice(5) : '')} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} width={28} />
+                        <Tooltip labelFormatter={(l: string) => `Semaine du ${l}`} />
+                        <Line type="monotone" dataKey="global" name="Score global" stroke="#22c55e" strokeWidth={2.5} dot={{ r: 2 }} />
+                        <Line type="monotone" dataKey="participation" name="Participation" stroke="#3b82f6" strokeWidth={1.5} dot={false} />
+                        <Line type="monotone" dataKey="fidelite" name="Fidélité" stroke="#f59e0b" strokeWidth={1.5} dot={false} />
+                        <Line type="monotone" dataKey="engagement" name="Engagement" stroke="#a855f7" strokeWidth={1.5} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center py-6">Pas encore assez d'historique — le score s'enrichit chaque semaine.</p>
+                  )}
+                </div>
+              )}
             </>
           )}
 
@@ -693,6 +782,101 @@ export default function SoulDetailPage() {
               )}
             </div>
           )}
+
+          {/* INTERACTIONS TAB (CRM) */}
+          {activeTab === 'interactions' && (
+            <div className="space-y-6">
+              {/* Create form */}
+              <div className="glass-card p-5 animate-slide-up">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                  <PhoneCall className="w-4 h-4 text-primary-500" /> Enregistrer une interaction
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Type *</label>
+                    <select className="input" value={interactionForm.type}
+                      onChange={(e) => setInteractionForm({ ...interactionForm, type: e.target.value })}>
+                      {Object.entries(INTERACTION_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">Canal</label>
+                    <select className="input" value={interactionForm.canal || ''}
+                      onChange={(e) => setInteractionForm({ ...interactionForm, canal: e.target.value || undefined })}>
+                      <option value="">—</option>
+                      {['TELEPHONE', 'WHATSAPP', 'SMS', 'EMAIL', 'VIDEO', 'PRESENTIEL'].map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="label">Objet</label>
+                    <input className="input" value={interactionForm.objet}
+                      onChange={(e) => setInteractionForm({ ...interactionForm, objet: e.target.value })}
+                      placeholder="Ex : Appel de suivi, visite fraternelle, conseil..." />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="label">Compte rendu</label>
+                    <textarea className="input" rows={3} value={interactionForm.contenu}
+                      onChange={(e) => setInteractionForm({ ...interactionForm, contenu: e.target.value })}
+                      placeholder="Détail de l'interaction, points abordés, suite donnée..." />
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <button
+                    onClick={() => createInteractionMutation.mutate({
+                      type: interactionForm.type as InteractionType,
+                      canal: interactionForm.canal || undefined,
+                      objet: interactionForm.objet || undefined,
+                      contenu: interactionForm.contenu || undefined,
+                    })}
+                    disabled={createInteractionMutation.isPending}
+                    className="btn-primary btn-sm"
+                  >
+                    {createInteractionMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Enregistrer
+                  </button>
+                </div>
+              </div>
+
+              {/* List */}
+              {interactions.length > 0 ? (
+                <div className="space-y-3">
+                  {interactions.map((interaction, i) => (
+                    <div key={interaction.id} className="glass-card p-4 animate-slide-up" style={{ animationDelay: `${i * 40}ms` }}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="badge-info text-[10px]">{INTERACTION_TYPE_LABELS[interaction.type] || interaction.type}</span>
+                            {interaction.canal && <span className="text-[10px] text-gray-400 uppercase tracking-wider">{interaction.canal}</span>}
+                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {new Date(interaction.dateInteraction || interaction.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          {interaction.objet && <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{interaction.objet}</p>}
+                          {interaction.contenu && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-line">{interaction.contenu}</p>}
+                          <p className="text-[10px] text-gray-400 mt-1.5">Par {interaction.auteurNom || '—'}</p>
+                        </div>
+                        <button
+                          onClick={() => deleteInteractionMutation.mutate(interaction.id)}
+                          disabled={deleteInteractionMutation.isPending}
+                          className="btn-ghost btn-sm text-red-400 hover:text-red-600 flex-shrink-0"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="glass-card p-8 text-center animate-fade-in">
+                  <Handshake className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Aucune interaction — tracez chaque appel, visite, SMS, conseil ou suivi pour un CRM complet.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right sidebar */}
@@ -771,6 +955,111 @@ export default function SoulDetailPage() {
                 <Plus className="w-4 h-4" /> Ajouter
               </button>
             </div>
+          </div>
+
+          {/* Score spirituel */}
+          {score && (() => {
+            const scoreColor = score.global >= 70 ? '#22c55e' : score.global >= 45 ? '#f59e0b' : '#ef4444';
+            const subScores: { key: 'sante' | 'fidelite' | 'engagement' | 'participation'; label: string }[] = [
+              { key: 'sante', label: 'Santé' },
+              { key: 'fidelite', label: 'Fidélité' },
+              { key: 'engagement', label: 'Engagement' },
+              { key: 'participation', label: 'Participation' },
+            ];
+            return (
+              <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '90ms' }}>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <TrendingUp className="w-3 h-3 text-primary-500" /> Score spirituel
+                </h3>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="relative w-16 h-16 flex-shrink-0">
+                    <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
+                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(120,120,140,0.15)" strokeWidth="3.5" />
+                      <circle cx="18" cy="18" r="15.5" fill="none" stroke={scoreColor} strokeWidth="3.5" strokeLinecap="round"
+                        strokeDasharray={`${score.global} ${100 - score.global}`} />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-lg font-bold" style={{ color: scoreColor }}>{score.global}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{score.label}</p>
+                    <p className="text-[10px] text-gray-400">Semaine du {new Date(score.semaine).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {subScores.map(({ key, label }) => (
+                    <div key={key} className="flex items-center justify-between text-[11px]">
+                      <span className="text-gray-400 w-20">{label}</span>
+                      <div className="flex-1 h-1.5 rounded-full bg-white/20 dark:bg-gray-700/40 overflow-hidden mx-2">
+                        <div className="h-full rounded-full bg-primary-500 transition-all duration-700" style={{ width: `${score[key]}%` }} />
+                      </div>
+                      <span className="text-gray-500 font-medium w-7 text-right">{score[key]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Assistant IA */}
+          <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '140ms' }}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                <BrainCircuit className="w-3 h-3 text-primary-500" /> Assistant IA
+              </h3>
+              <button onClick={() => setAiOpen(!aiOpen)} className="btn-secondary btn-sm !px-2.5 !py-1">
+                <Sparkles className="w-3.5 h-3.5" /> {aiOpen ? 'Masquer' : 'Analyser'}
+              </button>
+            </div>
+            {aiOpen && (
+              ai ? (
+                <div className="space-y-3 animate-fade-in">
+                  {ai.signaux.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1.5 flex items-center gap-1">
+                        <AlertIcon className="w-3 h-3 text-red-500" /> Signaux d'attention
+                      </p>
+                      <div className="space-y-1.5">
+                        {ai.signaux.map((s, i) => (
+                          <div key={i} className={`p-2 rounded-lg text-[11px] ${
+                            s.severite === 'CRITIQUE'
+                              ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                              : s.severite === 'ELEVE'
+                                ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300'
+                                : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
+                          }`}>
+                            <p className="font-medium">{s.message}</p>
+                            <p className="mt-0.5 opacity-80">→ {s.actionConseillee}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {ai.suggestions.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1.5">Actions suggérées</p>
+                      <div className="space-y-1.5">
+                        {ai.suggestions.map((s, i) => (
+                          <div key={i} className="p-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 text-[11px] text-gray-700 dark:text-gray-300">
+                            <p className="font-medium text-primary-700 dark:text-primary-300">{s.titre}</p>
+                            <p className="opacity-80">{s.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 border border-primary-100 dark:border-primary-800/30">
+                    <p className="text-[10px] font-semibold text-primary-600 dark:text-primary-300 uppercase mb-1 flex items-center gap-1">
+                      <Sparkle className="w-3 h-3" /> Encouragement
+                    </p>
+                    <p className="text-xs italic text-gray-700 dark:text-gray-300">« {ai.encouragement} »</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-gray-400 py-3">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Analyse en cours...
+                </div>
+              )
+            )}
           </div>
 
           {/* Évaluation du faiseur */}

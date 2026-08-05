@@ -14,6 +14,7 @@ import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
+import com.discipolat.modules.workflow.domain.WorkflowService;
 import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.domain.EventRepository;
 import com.discipolat.modules.events.domain.EventRegistrationRepository;
@@ -46,13 +47,15 @@ public class ScheduledJobs {
     private final EventRegistrationRepository eventRegistrationRepository;
     private final ActivationTokenRepository activationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final WorkflowService workflowService;
 
     public ScheduledJobs(SoulRepository soulRepository, AlertRepository alertRepository,
                         NotificationService notificationService, MakerReportRepository makerReportRepository,
                         UserRepository userRepository, EventRepository eventRepository,
                         EventRegistrationRepository eventRegistrationRepository,
                         ActivationTokenRepository activationTokenRepository,
-                        PasswordResetTokenRepository passwordResetTokenRepository) {
+                        PasswordResetTokenRepository passwordResetTokenRepository,
+                        WorkflowService workflowService) {
         this.soulRepository = soulRepository;
         this.alertRepository = alertRepository;
         this.notificationService = notificationService;
@@ -62,6 +65,7 @@ public class ScheduledJobs {
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.activationTokenRepository = activationTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.workflowService = workflowService;
     }
 
     /**
@@ -217,6 +221,30 @@ public class ScheduledJobs {
             }
         }
         log.info("Event reminders sent for {} events", upcomingEvents.size());
+    }
+
+    /**
+     * Workflow automatique : escalade d'absentéisme (3 semaines → faiseur,
+     * 2 mois → chef de famille, 3 mois → pasteur) + anniversaires du jour.
+     * Exécuté chaque matin à 8h.
+     */
+    @Scheduled(cron = "0 0 8 * * *")
+    @Transactional
+    public void runWorkflows() {
+        log.info("Running automatic workflows...");
+        int absences = workflowService.checkAbsenceEscalation();
+        int birthdays = workflowService.checkBirthdays();
+        log.info("Workflows done: {} absence escalations, {} birthday reminders", absences, birthdays);
+    }
+
+    /**
+     * Snapshot hebdomadaire du score spirituel (chaque lundi à 6h).
+     */
+    @Scheduled(cron = "0 0 6 * * MON")
+    @Transactional
+    public void snapshotSpiritualScores() {
+        int saved = workflowService.snapshotSpiritualScores();
+        log.info("Spiritual score snapshot complete: {} souls recorded", saved);
     }
 
     /**

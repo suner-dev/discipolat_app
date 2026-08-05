@@ -626,6 +626,83 @@ export interface DashboardKPI {
   tendancePresence: number;
 }
 
+// ======================== CRM Interactions ========================
+
+export type InteractionType =
+  | 'APPEL' | 'SMS' | 'WHATSAPP' | 'EMAIL' | 'VISITE' | 'REUNION'
+  | 'PRIERE' | 'CONSEIL' | 'SUIVI' | 'PROGRAMME';
+
+export interface Interaction {
+  id: string;
+  soulId: string;
+  auteurId: string;
+  auteurNom?: string;
+  type: InteractionType;
+  canal?: string;
+  objet?: string;
+  contenu?: string;
+  dateInteraction: string;
+  aFairePar?: string;
+  aFaireParNom?: string;
+  rappelLe?: string;
+  createdAt: string;
+}
+
+export interface CreateInteractionRequest {
+  type: InteractionType;
+  canal?: string;
+  objet?: string;
+  contenu?: string;
+  dateInteraction?: string;
+  aFairePar?: string;
+  rappelLe?: string;
+}
+
+// ======================== Score spirituel & Assistant IA ========================
+
+export interface SpiritualScore {
+  soulId: string;
+  global: number;
+  sante: number;
+  fidelite: number;
+  engagement: number;
+  participation: number;
+  label: string;
+  semaine: string;
+}
+
+export interface ScoreHistoryPoint {
+  semaine: string;
+  global: number;
+  sante: number;
+  fidelite: number;
+  engagement: number;
+  participation: number;
+}
+
+export interface AiSignal {
+  severite: 'CRITIQUE' | 'ELEVE' | 'MOYEN';
+  type: string;
+  message: string;
+  actionConseillee: string;
+}
+
+export interface AiSuggestion {
+  type: string;
+  titre: string;
+  description: string;
+}
+
+export interface AiAnalysis {
+  soulId: string;
+  nom: string;
+  score: SpiritualScore;
+  signaux: AiSignal[];
+  suggestions: AiSuggestion[];
+  encouragement: string;
+  resume: string;
+}
+
 // Pagination
 export interface PageResponse<T> {
   content: T[];
