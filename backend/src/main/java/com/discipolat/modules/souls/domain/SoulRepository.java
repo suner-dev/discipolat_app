@@ -34,6 +34,7 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     Page<Soul> findByStatutAndEtatSpirituel(StatutAme statut, String etatSpirituel, Pageable pageable);
     Page<Soul> findByEtatSpirituel(String etatSpirituel, Pageable pageable);
     long countByFamilleIdAndStatut(UUID familleId, StatutAme statut);
+    long countByDateIntegrationBetween(java.time.LocalDate from, java.time.LocalDate to);
     List<Soul> findByFaiseurIdAndStatut(UUID faiseurId, StatutAme statut);
     List<Soul> findAllByUserId(UUID userId);
     Page<Soul> findByUserId(UUID userId, Pageable pageable);

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,6 +17,8 @@ public interface InteractionRepository extends JpaRepository<Interaction, UUID> 
     Page<Interaction> findBySoulId(UUID soulId, Pageable pageable);
     long countBySoulId(UUID soulId);
     long countBySoulIdAndType(UUID soulId, InteractionType type);
+    long countByTypeAndDateInteractionBetween(InteractionType type, LocalDateTime from, LocalDateTime to);
+    long countByTypeAndSoulIdInAndDateInteractionBetween(InteractionType type, List<UUID> soulIds, LocalDateTime from, LocalDateTime to);
 
     /** Actions assignées à un utilisateur : à faire (rappel passé ou sans rappel) puis à venir. */
     @Query("""

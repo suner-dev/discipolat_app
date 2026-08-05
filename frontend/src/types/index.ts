@@ -703,6 +703,85 @@ export interface AiAnalysis {
   resume: string;
 }
 
+// ======================== Suivi d'évangélisation (pipeline) ========================
+
+export type EvangelismEtape =
+  | 'NOUVELLE_AME'
+  | 'PREMIER_CONTACT'
+  | 'VISITE'
+  | 'INVITATION'
+  | 'PREMIER_CULTE'
+  | 'SUIVI'
+  | 'BAPTEME'
+  | 'DEPARTEMENT'
+  | 'FAMILLE'
+  | 'DISCIPOLAT'
+  | 'LEADER';
+
+export interface EvangelismTrack {
+  id: string;
+  soulId: string;
+  soulNom?: string;
+  etape: EvangelismEtape;
+  dateEtape: string;
+  note?: string;
+  creePar?: string;
+  creeParNom?: string;
+  creeLe: string;
+  majLe: string;
+}
+
+export interface UpdateEvangelismRequest {
+  etape: EvangelismEtape;
+  note?: string;
+}
+
+export interface EvangelismStats {
+  totalAmes: number;
+  parEtape: Record<EvangelismEtape, number>;
+}
+
+export interface EvangelismHistoryEntry {
+  etape: EvangelismEtape;
+  creePar?: string;
+  creeLe: string;
+}
+
+// ======================== Système d'objectifs ========================
+
+export type ObjectiveType =
+  | 'VISITES' | 'NOUVELLES_AMES' | 'DISCIPLES_ACTIFS'
+  | 'EVANGELISATION' | 'SUIVIS' | 'PRESENCE';
+export type ObjectivePeriode = 'MENSUEL' | 'TRIMESTRIEL' | 'ANNUEL';
+
+export interface Objective {
+  id: string;
+  role: UserRole;
+  type: ObjectiveType;
+  cible: number;
+  periode: ObjectivePeriode;
+  actif: boolean;
+  creeLe: string;
+}
+
+export interface CreateObjectiveRequest {
+  role: UserRole;
+  type: ObjectiveType;
+  cible: number;
+  periode: ObjectivePeriode;
+}
+
+export interface ObjectiveProgress {
+  id: string;
+  role: UserRole;
+  type: ObjectiveType;
+  cible: number;
+  periode: ObjectivePeriode;
+  realise: number;
+  taux: number;
+  atteint: boolean;
+}
+
 // Pagination
 export interface PageResponse<T> {
   content: T[];

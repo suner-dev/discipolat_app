@@ -28,6 +28,8 @@ import {
   User,
   MessageSquare,
   MessagesSquare,
+  Sprout,
+  Target,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -210,6 +212,20 @@ const navigation = [
     icon: MessagesSquare,
     roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
     subtitle: 'Conversations privées',
+  },
+  {
+    name: 'Évangélisation',
+    href: '/evangelism',
+    icon: Sprout,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+    subtitle: 'Pipeline de croissance',
+  },
+  {
+    name: 'Objectifs',
+    href: '/objectives',
+    icon: Target,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+    subtitle: 'Performances mesurées',
   },
   {
     name: 'Utilisateurs',
