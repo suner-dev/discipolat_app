@@ -19,6 +19,7 @@ public interface InteractionRepository extends JpaRepository<Interaction, UUID> 
     long countBySoulIdAndType(UUID soulId, InteractionType type);
     long countByTypeAndDateInteractionBetween(InteractionType type, LocalDateTime from, LocalDateTime to);
     long countByTypeAndSoulIdInAndDateInteractionBetween(InteractionType type, List<UUID> soulIds, LocalDateTime from, LocalDateTime to);
+    long countByAuteurId(UUID auteurId);
 
     /** Actions assignées à un utilisateur : à faire (rappel passé ou sans rappel) puis à venir. */
     @Query("""

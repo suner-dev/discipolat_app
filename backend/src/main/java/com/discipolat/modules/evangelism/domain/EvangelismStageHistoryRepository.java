@@ -7,4 +7,7 @@ import java.util.UUID;
 
 public interface EvangelismStageHistoryRepository extends JpaRepository<EvangelismStageHistory, UUID> {
     List<EvangelismStageHistory> findByTrackIdOrderByCreeLeDesc(UUID trackId);
+
+    /** Nombre de franchissements d'une étape par un utilisateur (attribution de badges). */
+    long countByEtapeAndCreePar(EvangelismEtape etape, UUID creePar);
 }

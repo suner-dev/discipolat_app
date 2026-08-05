@@ -782,6 +782,75 @@ export interface ObjectiveProgress {
   atteint: boolean;
 }
 
+// ======================== Visites pastorales ========================
+
+export type VisitStatut = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE' | 'REPORTEE';
+
+export interface Visit {
+  id: string;
+  soulId: string;
+  soulNom?: string;
+  visiteurId: string;
+  visiteurNom?: string;
+  datePrevue: string;
+  dateRealisee?: string;
+  statut: VisitStatut;
+  motif?: string;
+  objectif?: string;
+  compteRendu?: string;
+  photoUrl?: string;
+  present?: boolean;
+  createdAt: string;
+}
+
+export interface CreateVisitRequest {
+  soulId: string;
+  datePrevue: string;
+  motif?: string;
+  objectif?: string;
+}
+
+export interface UpdateVisitRequest {
+  statut: VisitStatut;
+  dateRealisee?: string;
+  compteRendu?: string;
+  photoUrl?: string;
+  present?: boolean;
+  datePrevue?: string;
+}
+
+// ======================== Badges & Gamification ========================
+
+export type BadgeNiveau = 'BRONZE' | 'ARGENT' | 'OR' | 'DIAMANT';
+export type BadgeCritere = 'VISITES' | 'PRESENCE' | 'EVANGELISATION' | 'INTERACTIONS' | 'FIDELITE';
+
+export interface Badge {
+  id: string;
+  code: string;
+  nom: string;
+  description?: string;
+  icone?: string;
+  niveau: BadgeNiveau;
+  critere: BadgeCritere;
+  seuil: number;
+  score: number;
+  gagne: boolean;
+  progression: number;
+}
+
+export interface BadgeProfile {
+  userId: string;
+  totalBadges: number;
+  scores: Record<BadgeCritere, number>;
+  badges: Badge[];
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  nom: string;
+  badges: number;
+}
+
 // Pagination
 export interface PageResponse<T> {
   content: T[];

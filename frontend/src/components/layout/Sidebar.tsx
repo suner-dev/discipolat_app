@@ -30,6 +30,8 @@ import {
   MessagesSquare,
   Sprout,
   Target,
+  DoorOpen,
+  Trophy,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -226,6 +228,20 @@ const navigation = [
     icon: Target,
     roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
     subtitle: 'Performances mesurées',
+  },
+  {
+    name: 'Visites',
+    href: '/visits',
+    icon: DoorOpen,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+    subtitle: 'Planification & comptes rendus',
+  },
+  {
+    name: 'Badges',
+    href: '/badges',
+    icon: Trophy,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+    subtitle: 'Récompenses & classements',
   },
   {
     name: 'Utilisateurs',

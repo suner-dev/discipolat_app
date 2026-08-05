@@ -51,6 +51,8 @@ import MemberRequestsPage from '@/pages/MemberRequestsPage';
 import MessagesPage from '@/pages/MessagesPage';
 import EvangelismPage from '@/pages/EvangelismPage';
 import ObjectivesPage from '@/pages/ObjectivesPage';
+import VisitsPage from '@/pages/VisitsPage';
+import BadgesPage from '@/pages/BadgesPage';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { isAuthenticated, user, isLoading, activeRole } = useAuth();
@@ -251,6 +253,16 @@ export default function App() {
         <Route path="/objectives" element={
           <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <ObjectivesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/visits" element={
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <VisitsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/badges" element={
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <BadgesPage />
           </ProtectedRoute>
         } />
         <Route path="/messages" element={
