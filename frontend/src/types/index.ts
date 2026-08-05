@@ -69,6 +69,9 @@ export interface Family {
   chefFamilleId: string;
   dateCreation: string;
   statut: EntityStatus;
+  latitude?: number;
+  longitude?: number;
+  zone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -110,6 +113,9 @@ export interface Soul {
   familleId?: string;
   notesPasteur?: string;
   dateDernierContact?: string;
+  latitude?: number;
+  longitude?: number;
+  zone?: string;
   createdAt: string;
 }
 
@@ -980,6 +986,29 @@ export interface CreateAppointmentRequest {
 export interface UpdateAppointmentStatusRequest {
   statut: AppointmentStatut;
   reponse?: string;
+}
+
+// ======================== Cartographie ========================
+
+export type MapPointType = 'SOUL' | 'FAMILY';
+
+export interface MapPoint {
+  id: string;
+  type: MapPointType;
+  nom: string;
+  latitude: number;
+  longitude: number;
+  zone?: string;
+  statut?: string;
+  familleNom?: string;
+  departementNom?: string;
+  niveauCroissance?: number;
+}
+
+export interface UpdateCoordinatesRequest {
+  latitude: number;
+  longitude: number;
+  zone?: string;
 }
 
 // Pagination

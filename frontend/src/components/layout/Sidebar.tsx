@@ -34,6 +34,7 @@ import {
   Trophy,
   GraduationCap,
   CalendarClock,
+  Map as MapIcon,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -258,6 +259,13 @@ const navigation = [
     icon: CalendarClock,
     roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
     subtitle: 'Prises de RDV & validations',
+  },
+  {
+    name: 'Cartographie',
+    href: '/map',
+    icon: MapIcon,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+    subtitle: 'Carte des disciples',
   },
   {
     name: 'Utilisateurs',

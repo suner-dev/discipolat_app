@@ -46,6 +46,15 @@ public class Family {
     @Column(name = "deleted", nullable = false)
     private boolean deleted;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "zone")
+    private String zone;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

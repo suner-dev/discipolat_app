@@ -13,6 +13,9 @@ public record FamilyResponse(
         UUID chefFamilleId,
         LocalDate dateCreation,
         StatutEntite statut,
+        Double latitude,
+        Double longitude,
+        String zone,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -20,6 +23,8 @@ public record FamilyResponse(
         return new FamilyResponse(
                 family.getId(), family.getNom(), family.getDepartementId(),
                 family.getChefFamilleId(), family.getDateCreation(),
-                family.getStatut(), family.getCreatedAt(), family.getUpdatedAt());
+                family.getStatut(),
+                family.getLatitude(), family.getLongitude(), family.getZone(),
+                family.getCreatedAt(), family.getUpdatedAt());
     }
 }

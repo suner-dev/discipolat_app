@@ -48,6 +48,7 @@ import PrayerSpacesPage from '@/pages/PrayerSpacesPage';
 import EvaluationsPage from '@/pages/EvaluationsPage';
 import MemberDashboardPage from '@/pages/MemberDashboardPage';
 import MemberRequestsPage from '@/pages/MemberRequestsPage';
+import MapPage from '@/pages/MapPage';
 import MessagesPage from '@/pages/MessagesPage';
 import EvangelismPage from '@/pages/EvangelismPage';
 import ObjectivesPage from '@/pages/ObjectivesPage';
@@ -245,6 +246,11 @@ export default function App() {
         <Route path="/members/requests" element={
           <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}>
             <MemberRequestsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/map" element={
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <MapPage />
           </ProtectedRoute>
         } />
         <Route path="/evangelism" element={

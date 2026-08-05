@@ -88,6 +88,15 @@ public class Soul {
     @Column(name = "date_dernier_contact")
     private LocalDateTime dateDernierContact;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "zone")
+    private String zone;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -685,3 +685,46 @@
     text-decoration: none !important;
   }
 }
+
+/* ====== Cartographie (Leaflet) ====== */
+.map-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.map-pin svg {
+  transform: rotate(45deg);
+}
+.soul-pin {
+  background: #ef4444;
+}
+.family-pin {
+  background: #7c3aed;
+}
+
+.leaflet-container {
+  font-family: inherit;
+  background: #e8eaed;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.leaflet-popup-content {
+  margin: 12px 14px;
+  line-height: 1.4;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: #6b7280;
+}
+.leaflet-tooltip {
+  border-radius: 8px;
+  font-size: 11px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}

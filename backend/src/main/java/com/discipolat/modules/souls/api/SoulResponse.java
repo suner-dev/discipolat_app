@@ -28,6 +28,9 @@ public record SoulResponse(
         Integer niveauCroissance,
         String notesPasteur,
         LocalDateTime dateDernierContact,
+        Double latitude,
+        Double longitude,
+        String zone,
         LocalDateTime createdAt
 ) {
     public static SoulResponse from(Soul soul) {
@@ -38,6 +41,8 @@ public record SoulResponse(
                 soul.getTypeDisciple(), soul.getDateIntegration(), soul.getDateConversion(),
                 soul.getStatut(), soul.getFaiseurId(), soul.getFamilleId(),
                 soul.getSituationFamiliale(), soul.getEtatSpirituel(), soul.getNiveauCroissance(),
-                soul.getNotesPasteur(), soul.getDateDernierContact(), soul.getCreatedAt());
+                soul.getNotesPasteur(), soul.getDateDernierContact(),
+                soul.getLatitude(), soul.getLongitude(), soul.getZone(),
+                soul.getCreatedAt());
     }
 }
