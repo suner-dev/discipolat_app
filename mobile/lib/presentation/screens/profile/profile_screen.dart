@@ -13,7 +13,33 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _apiService = ApiService();
+  Map<String, dynamic>? _userInfo;
+  Map<String, dynamic>? _dashboard;
+  bool _isLoading = true;
   int _currentNavIndex = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final userRes = await _apiService.get('/users/me');
+      final dashRes = await _apiService.get('/dashboard/my-metrics');
+      if (mounted) {
+        setState(() {
+          _userInfo = userRes.data as Map<String, dynamic>?;
+          _dashboard = dashRes.data as Map<String, dynamic>?;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _logout() async {
     await _apiService.clearTokens();
@@ -22,72 +48,187 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final firstName = _userInfo?['firstName'] ?? '—';
+    final lastName = _userInfo?['lastName'] ?? '—';
+    final email = _userInfo?['email'] ?? '—';
+    final role = _userInfo?['role'] ?? 'MEMBRE';
+    final phone = _userInfo?['phone'] ?? '—';
+    final initials = '${(firstName as String).isNotEmpty ? firstName[0] : ''}${(lastName as String).isNotEmpty ? lastName[0] : ''}';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
+      appBar: AppBar(
+        title: const Text('Profil'),
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
+        ],
+      ),
       drawer: const AppDrawer(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          const SizedBox(height: 16),
-          // Avatar
-          const GradientAvatar(text: 'FD', radius: 48, showGlow: true, showStatus: true),
-          const SizedBox(height: 16),
-          const Text('Faiseur de disciples', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text('faiseur@discipolat.com', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
-          const SizedBox(height: 8),
-          const StatusBadge(label: 'Actif', color: Colors.green, glowing: true),
-          const SizedBox(height: 32),
+      body: _isLoading
+          ? const ShimmerLoading(itemCount: 3)
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    // Avatar
+                    GradientAvatar(text: initials, radius: 48, showGlow: true, showStatus: true),
+                    const SizedBox(height: 16),
+                    Text('$firstName $lastName', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(email, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+                    const SizedBox(height: 8),
+                    StatusBadge(label: role, color: Colors.green, glowing: true),
+                    const SizedBox(height: 24),
 
-          // Info card
-          GlassCard(
-            padding: const EdgeInsets.all(16),
-            child: Column(children: [
-              _profileRow(Icons.person_outline, 'Rôle', 'Faiseur de disciples'),
-              const GlassDivider(),
-              _profileRow(Icons.verified_user, 'Statut', 'Actif'),
-              const GlassDivider(),
-              _profileRow(Icons.calendar_today, 'Membre depuis', '14 juillet 2026'),
-              const GlassDivider(),
-              _profileRow(Icons.email_outlined, 'Email', 'faiseur@discipolat.com'),
-            ]),
-          ),
-          const SizedBox(height: 16),
+                    // Stats cards
+                    Row(
+                      children: [
+                        _statCard(Icons.star, 'Score', '${_dashboard?['scoreSpirituel'] ?? '—'}', Colors.amber),
+                        const SizedBox(width: 8),
+                        _statCard(Icons.check_circle, 'Présence', '${_dashboard?['tauxPresence'] ?? '—'}', Colors.green),
+                        const SizedBox(width: 8),
+                        _statCard(Icons.trending_up, 'Progression', '${_dashboard?['progression'] ?? '—'}', Colors.blue),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
 
-          // Logout
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _logout,
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text('Déconnexion', style: TextStyle(color: Colors.red)),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                    // Personal info
+                    GlassCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Informations personnelles', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 12),
+                          _profileRow(Icons.person_outline, 'Rôle', role),
+                          const GlassDivider(),
+                          _profileRow(Icons.phone_outlined, 'Téléphone', phone),
+                          const GlassDivider(),
+                          _profileRow(Icons.email_outlined, 'Email', email),
+                          const GlassDivider(),
+                          _profileRow(Icons.calendar_today, 'Inscrit le', _userInfo?['createdAt']?.toString().substring(0, 10) ?? '—'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Spiritual info
+                    GlassCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Informations spirituelles', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 12),
+                          _profileRow(Icons.auto_awesome, 'Score spirituel', '${_dashboard?['scoreSpirituel'] ?? '—'}/100'),
+                          const GlassDivider(),
+                          _profileRow(Icons.family_restroom, 'Famille', _dashboard?['famille'] ?? '—'),
+                          const GlassDivider(),
+                          _profileRow(Icons.business, 'Département', _dashboard?['departement'] ?? '—'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Quick actions
+                    GlassCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Actions rapides', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 12),
+                          _actionRow(Icons.lock_outline, 'Changer le mot de passe', () {}),
+                          const GlassDivider(),
+                          _actionRow(Icons.notifications_outlined, 'Paramètres notifications', () {}),
+                          const GlassDivider(),
+                          _actionRow(Icons.dark_mode_outlined, 'Mode sombre', () {}),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Logout
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _logout,
+                        icon: const Icon(Icons.logout, color: Colors.red),
+                        label: const Text('Déconnexion', style: TextStyle(color: Colors.red)),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ]),
+      bottomNavigationBar: GlassBottomNav(
+        currentIndex: _currentNavIndex,
+        onTap: (i) {
+          setState(() => _currentNavIndex = i);
+          final routes = ['/dashboard', '/souls', '/reports/maker', '/profile'];
+          if (i < routes.length) context.go(routes[i]);
+        },
       ),
-      bottomNavigationBar: GlassBottomNav(currentIndex: _currentNavIndex, onTap: (i) {
-        setState(() => _currentNavIndex = i);
-        final routes = ['/dashboard', '/souls', '/reports/maker', '/profile'];
-        if (i < routes.length) context.go(routes[i]);
-      }),
+    );
+  }
+
+  Widget _statCard(IconData icon, String label, String value, Color color) {
+    return Expanded(
+      child: GlassCard(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _profileRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(children: [
-        Icon(icon, color: AppColors.primaryLight, size: 22),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-        ])),
-      ]),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white38, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                Text(value, style: const TextStyle(color: Colors.white, fontSize: 14)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionRow(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white38, size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14))),
+            Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3), size: 20),
+          ],
+        ),
+      ),
     );
   }
 }

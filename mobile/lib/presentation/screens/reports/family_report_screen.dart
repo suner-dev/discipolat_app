@@ -12,85 +12,185 @@ class FamilyReportScreen extends StatefulWidget {
 
 class _FamilyReportScreenState extends State<FamilyReportScreen> {
   final _apiService = ApiService();
-  List<Map<String, dynamic>> _families = [];
+  List<dynamic> _families = [];
   bool _isLoading = true;
+  String _searchQuery = '';
 
   @override
-  void initState() { super.initState(); _loadFamilies(); }
+  void initState() {
+    super.initState();
+    _loadFamilies();
+  }
 
   Future<void> _loadFamilies() async {
+    setState(() => _isLoading = true);
     try {
-      final response = await _apiService.get('/families', params: {'size': '50'});
-      final data = response.data as Map<String, dynamic>;
-      if (mounted) setState(() {
-        _families = (data['content'] as List).map((e) => e as Map<String, dynamic>).toList();
-        _isLoading = false;
-      });
-    } catch (e) { if (mounted) setState(() => _isLoading = false); }
+      final res = await _apiService.get('/families', params: {'size': '50'});
+      if (mounted) {
+        setState(() {
+          _families = (res.data is Map ? res.data['content'] : res.data) as List<dynamic>? ?? [];
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  List<dynamic> get _filtered {
+    if (_searchQuery.isEmpty) return _families;
+    return _families.where((f) {
+      final nom = (f as Map)['nom']?.toString().toLowerCase() ?? '';
+      return nom.contains(_searchQuery.toLowerCase());
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rapport de famille')),
+      appBar: AppBar(
+        title: const Text('Rapport famille'),
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadFamilies),
+          IconButton(icon: const Icon(Icons.picture_as_pdf), onPressed: () {}),
+        ],
+      ),
       drawer: const AppDrawer(),
       body: _isLoading
           ? const ShimmerLoading(itemCount: 4)
           : RefreshIndicator(
               onRefresh: _loadFamilies,
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _families.length,
-                itemBuilder: (context, index) {
-                  final family = _families[index];
-                  final nom = family['nom'] as String? ?? 'Sans nom';
-                  final chefId = family['chefFamilleId'] as String? ?? 'N/A';
-
-                  return GlassCard(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          GradientAvatar(text: nom.substring(0, 2), radius: 22, gradientStart: Colors.blue, gradientEnd: Colors.indigo),
-                          const SizedBox(width: 12),
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(nom, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                            Text('Chef: ${chefId.length > 8 ? '${chefId.substring(0, 8)}...' : chefId}', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
-                          ])),
-                          const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                        ]),
-                        const SizedBox(height: 16),
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                          _statItem(Icons.person, 'Faiseurs', 'N/A'),
-                          _statItem(Icons.favorite, 'Âmes', 'N/A'),
-                          _statItem(Icons.trending_up, 'Présence', 'N/A'),
-                        ]),
-                        const SizedBox(height: 16),
-                        GlassCard(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(children: [
-                            Icon(Icons.description, color: Colors.white.withValues(alpha: 0.3), size: 20),
-                            const SizedBox(width: 8),
-                            Text('Aucun rapport disponible', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
-                          ]),
-                        ),
-                      ],
+              child: ListView(
+                padding: const EdgeInsets.all(12),
+                children: [
+                  // Stats
+                  Row(
+                    children: [
+                      _statMini('Familles', '${_families.length}', Colors.purple),
+                      const SizedBox(width: 8),
+                      _statMini('Actives', '${_families.where((f) => (f as Map)['actif'] != false).length}', Colors.green),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Search
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  );
-                },
+                    child: TextField(
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher une famille...',
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                        prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4), size: 20),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Family cards
+                  if (_filtered.isEmpty)
+                    GlassCard(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(Icons.family_restroom_outlined, size: 48, color: Colors.white.withValues(alpha: 0.3)),
+                          const SizedBox(height: 12),
+                          Text('Aucune famille', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                        ],
+                      ),
+                    )
+                  else
+                    ..._filtered.map((f) {
+                      final family = f as Map;
+                      final nom = family['nom'] ?? 'Famille';
+                      final chefId = family['chefFamilleId']?.toString().substring(0, 8) ?? '—';
+                      final nbDisciples = family['nombreDisciples'] ?? '—';
+                      final nbFaiseurs = family['nombreFaiseurs'] ?? '—';
+                      final presence = family['tauxPresence'] ?? '—';
+                      final dateCreation = family['createdAt']?.toString().substring(0, 10) ?? '';
+
+                      return GlassCard(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                GradientAvatar(
+                                  text: nom.toString().substring(0, nom.toString().length.clamp(0, 2)),
+                                  radius: 22,
+                                  gradientStart: Colors.blue,
+                                  gradientEnd: Colors.indigo,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(nom, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                                      Text('Chef: $chefId...', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                _miniStat(Icons.person, 'Faiseurs', '$nbFaiseurs'),
+                                _miniStat(Icons.favorite, 'Âmes', '$nbDisciples'),
+                                _miniStat(Icons.trending_up, 'Présence', '$presence'),
+                              ],
+                            ),
+                            if (dateCreation.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_today, size: 12, color: Colors.white.withValues(alpha: 0.3)),
+                                  const SizedBox(width: 4),
+                                  Text('Créée le $dateCreation', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10)),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+                ],
               ),
             ),
     );
   }
 
-  Widget _statItem(IconData icon, String label, String value) {
-    return Column(children: [
-      Icon(icon, color: AppColors.primaryLight, size: 20),
-      const SizedBox(height: 4),
-      Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-      Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
-    ]);
+  Widget _miniStat(IconData icon, String label, String value) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.white.withValues(alpha: 0.4), size: 16),
+        const SizedBox(height: 2),
+        Text('$value', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
+      ],
+    );
+  }
+
+  Widget _statMini(String label, String value, Color color) {
+    return Expanded(
+      child: GlassCard(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+          ],
+        ),
+      ),
+    );
   }
 }
