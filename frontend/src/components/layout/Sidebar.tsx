@@ -33,6 +33,7 @@ import {
   DoorOpen,
   Trophy,
   GraduationCap,
+  CalendarClock,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -250,6 +251,13 @@ const navigation = [
     icon: GraduationCap,
     roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
     subtitle: 'Cours, quiz & certificats',
+  },
+  {
+    name: 'Rendez-vous',
+    href: '/appointments',
+    icon: CalendarClock,
+    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+    subtitle: 'Prises de RDV & validations',
   },
   {
     name: 'Utilisateurs',

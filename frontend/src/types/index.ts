@@ -947,6 +947,41 @@ export interface QuizResult {
   certificat: boolean;
 }
 
+// ======================== Rendez-vous ========================
+
+export type AppointmentMotif = 'CONSEIL' | 'CONFESSION' | 'SUIVI' | 'FORMATION' | 'AUTRE';
+export type AppointmentStatut = 'EN_ATTENTE' | 'CONFIRME' | 'REFUSE' | 'ANNULE' | 'TERMINE';
+
+export interface Appointment {
+  id: string;
+  demandeurId: string;
+  demandeurNom?: string;
+  recepteurId: string;
+  recepteurNom?: string;
+  motif: AppointmentMotif;
+  objet?: string;
+  datePrevue: string;
+  dureeMinutes: number;
+  statut: AppointmentStatut;
+  reponse?: string;
+  dateTraitement?: string;
+  rappelEnvoye: boolean;
+  createdAt: string;
+}
+
+export interface CreateAppointmentRequest {
+  recepteurId: string;
+  motif: AppointmentMotif;
+  objet?: string;
+  datePrevue: string;
+  dureeMinutes?: number;
+}
+
+export interface UpdateAppointmentStatusRequest {
+  statut: AppointmentStatut;
+  reponse?: string;
+}
+
 // Pagination
 export interface PageResponse<T> {
   content: T[];

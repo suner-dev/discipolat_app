@@ -15,6 +15,7 @@ import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.workflow.domain.WorkflowService;
+import com.discipolat.modules.appointments.domain.AppointmentService;
 import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.domain.EventRepository;
 import com.discipolat.modules.events.domain.EventRegistrationRepository;
@@ -48,6 +49,7 @@ public class ScheduledJobs {
     private final ActivationTokenRepository activationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final WorkflowService workflowService;
+    private final AppointmentService appointmentService;
 
     public ScheduledJobs(SoulRepository soulRepository, AlertRepository alertRepository,
                         NotificationService notificationService, MakerReportRepository makerReportRepository,
@@ -55,7 +57,8 @@ public class ScheduledJobs {
                         EventRegistrationRepository eventRegistrationRepository,
                         ActivationTokenRepository activationTokenRepository,
                         PasswordResetTokenRepository passwordResetTokenRepository,
-                        WorkflowService workflowService) {
+                        WorkflowService workflowService,
+                        AppointmentService appointmentService) {
         this.soulRepository = soulRepository;
         this.alertRepository = alertRepository;
         this.notificationService = notificationService;
@@ -66,6 +69,20 @@ public class ScheduledJobs {
         this.activationTokenRepository = activationTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.workflowService = workflowService;
+        this.appointmentService = appointmentService;
+    }
+
+    /**
+     * Check for souls with no contact in 48h (original) + 3-week absence alert (US-41)
+     */
+    /** Rappels automatiques des rendez-vous confirmés (2h avant). */
+    @Scheduled(cron = "0 */30 * * * *") // toutes les 30 minutes
+    @Transactional
+    public void appointmentReminders() {
+        int sent = appointmentService.sendReminders();
+        if (sent > 0) {
+            log.info("Appointment reminders: {} sent", sent);
+        }
     }
 
     /**
