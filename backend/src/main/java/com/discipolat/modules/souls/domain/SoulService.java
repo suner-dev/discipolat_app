@@ -6,6 +6,8 @@ import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.modules.departments.domain.Department;
+import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
@@ -17,6 +19,7 @@ import com.discipolat.modules.souls.api.UpdateSoulRequest;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;import org.slf4j.Logger;
@@ -41,6 +44,8 @@ public class SoulService {
     private final SecurityUtils securityUtils;
     private final UserRepository userRepository;
     private final FamilyRepository familyRepository;
+    private final DepartmentRepository departmentRepository;
+    private final SoulDepartmentRepository soulDepartmentRepository;
     private final MakerReportRepository makerReportRepository;
     private final EvaluationService evaluationService;
     private final NotificationService notificationService;
@@ -48,7 +53,9 @@ public class SoulService {
     public SoulService(SoulRepository soulRepository, SoulHistoryRepository soulHistoryRepository,
                        SoulNoteRepository soulNoteRepository,
                        SecurityUtils securityUtils, UserRepository userRepository,
-                       FamilyRepository familyRepository, MakerReportRepository makerReportRepository,
+                       FamilyRepository familyRepository, DepartmentRepository departmentRepository,
+                       SoulDepartmentRepository soulDepartmentRepository,
+                       MakerReportRepository makerReportRepository,
                        EvaluationService evaluationService,
                        NotificationService notificationService) {
         this.soulRepository = soulRepository;
@@ -57,6 +64,8 @@ public class SoulService {
         this.securityUtils = securityUtils;
         this.userRepository = userRepository;
         this.familyRepository = familyRepository;
+        this.departmentRepository = departmentRepository;
+        this.soulDepartmentRepository = soulDepartmentRepository;
         this.makerReportRepository = makerReportRepository;
         this.evaluationService = evaluationService;
         this.notificationService = notificationService;
@@ -98,14 +107,38 @@ public class SoulService {
     @Transactional(readOnly = true)
     public Page<Soul> findAll(UUID faiseurId, UUID familleId, TypeDisciple typeDisciple,
                               StatutAme statut, String search, Pageable pageable) {
-        if (search != null && !search.isBlank()) return soulRepository.search(search.trim(), pageable);
-        if (faiseurId != null) return soulRepository.findByFaiseurId(faiseurId, pageable);
-        if (familleId != null) return soulRepository.findByFamilleId(familleId, pageable);
-        if (typeDisciple != null && statut != null)
-            return soulRepository.findByTypeDiscipleAndStatut(typeDisciple, statut, pageable);
-        if (typeDisciple != null) return soulRepository.findByTypeDisciple(typeDisciple, pageable);
-        if (statut != null) return soulRepository.findByStatut(statut, pageable);
-        return soulRepository.findAll(pageable);
+        // Recherche scopée par rôle actif (sauf super-utilisateurs)
+        if (search != null && !search.isBlank()) {
+            if (securityUtils.isSuperUser()) return soulRepository.search(search.trim(), pageable);
+            List<Soul> matches = soulRepository.findAllById(accessibleSoulIds()).stream()
+                    .filter(s -> !s.isDeleted())
+                    .filter(s -> matchesQuery(s, search.trim()))
+                    .toList();
+            return paginate(matches, pageable);
+        }
+        // Super-utilisateurs : filtres DB explicites sur toutes les âmes
+        if (securityUtils.isSuperUser()) {
+            if (faiseurId != null) return soulRepository.findByFaiseurId(faiseurId, pageable);
+            if (familleId != null) return soulRepository.findByFamilleId(familleId, pageable);
+            if (typeDisciple != null && statut != null)
+                return soulRepository.findByTypeDiscipleAndStatut(typeDisciple, statut, pageable);
+            if (typeDisciple != null) return soulRepository.findByTypeDisciple(typeDisciple, pageable);
+            if (statut != null) return soulRepository.findByStatut(statut, pageable);
+            return soulRepository.findAll(pageable);
+        }
+        // Non super-utilisateur : les filtres explicites ne sont PAS des ancres de confiance.
+        // On restreint toujours à l'espace métier (rôle actif), puis on filtre en mémoire.
+        if (faiseurId == null && familleId == null && typeDisciple == null && statut == null) {
+            return scopeSouls(pageable);
+        }
+        List<Soul> scoped = soulRepository.findAllById(accessibleSoulIds()).stream()
+                .filter(s -> !s.isDeleted())
+                .filter(s -> faiseurId == null || faiseurId.equals(s.getFaiseurId()))
+                .filter(s -> familleId == null || familleId.equals(s.getFamilleId()))
+                .filter(s -> typeDisciple == null || typeDisciple == s.getTypeDisciple())
+                .filter(s -> statut == null || statut == s.getStatut())
+                .toList();
+        return paginate(scoped, pageable);
     }
 
     /** Corbeille : toutes les âmes soft-deleted, pour restauration. */
@@ -244,14 +277,30 @@ public class SoulService {
     @Transactional(readOnly = true)
     public Page<Soul> filterSouls(String etatSpirituel, String statut, UUID faiseurId,
                                    UUID familleId, Pageable pageable) {
-        if (faiseurId != null) return soulRepository.findByFaiseurId(faiseurId, pageable);
-        if (familleId != null) return soulRepository.findByFamilleId(familleId, pageable);
-        if (statut != null && etatSpirituel != null) {
-            return soulRepository.findByStatutAndEtatSpirituel(StatutAme.valueOf(statut), etatSpirituel, pageable);
+        // Super-utilisateurs : filtres DB explicites sur toutes les âmes
+        if (securityUtils.isSuperUser()) {
+            if (faiseurId != null) return soulRepository.findByFaiseurId(faiseurId, pageable);
+            if (familleId != null) return soulRepository.findByFamilleId(familleId, pageable);
+            if (statut != null && etatSpirituel != null) {
+                return soulRepository.findByStatutAndEtatSpirituel(StatutAme.valueOf(statut), etatSpirituel, pageable);
+            }
+            if (statut != null) return soulRepository.findByStatut(StatutAme.valueOf(statut), pageable);
+            if (etatSpirituel != null) return soulRepository.findByEtatSpirituel(etatSpirituel, pageable);
+            return soulRepository.findAll(pageable);
         }
-        if (statut != null) return soulRepository.findByStatut(StatutAme.valueOf(statut), pageable);
-        if (etatSpirituel != null) return soulRepository.findByEtatSpirituel(etatSpirituel, pageable);
-        return soulRepository.findAll(pageable);
+        // Non super-utilisateur : intersection avec l'espace métier du rôle actif
+        if (statut == null && etatSpirituel == null && faiseurId == null && familleId == null) {
+            return scopeSouls(pageable);
+        }
+        StatutAme statutEnum = statut != null ? StatutAme.valueOf(statut) : null;
+        List<Soul> scoped = soulRepository.findAllById(accessibleSoulIds()).stream()
+                .filter(s -> !s.isDeleted())
+                .filter(s -> faiseurId == null || faiseurId.equals(s.getFaiseurId()))
+                .filter(s -> familleId == null || familleId.equals(s.getFamilleId()))
+                .filter(s -> statutEnum == null || statutEnum == s.getStatut())
+                .filter(s -> etatSpirituel == null || etatSpirituel.equals(s.getEtatSpirituel()))
+                .toList();
+        return paginate(scoped, pageable);
     }
 
     /**
@@ -281,6 +330,65 @@ public class SoulService {
                         || StatutAme.DECROCHE.equals(s.getStatut())
                         || StatutAme.EN_VEILLE.equals(s.getStatut()))
                 .toList();
+    }
+
+    // ========================================================================
+    // Scoping des âmes par rôle actif (espace métier courant)
+    // ========================================================================
+
+    /**
+     * Page des âmes accessibles au rôle actif : toutes pour les super-utilisateurs
+     * (Admin / Pasteur actifs), sinon uniquement les âmes de l'espace métier :
+     * faiseur → ses disciples, chef de famille → les âmes de sa famille,
+     * responsable → les membres de ses départements.
+     */
+    private Page<Soul> scopeSouls(Pageable pageable) {
+        if (securityUtils.isSuperUser()) return soulRepository.findAll(pageable);
+        List<UUID> ids = accessibleSoulIds();
+        if (ids.isEmpty()) return new PageImpl<>(List.of(), pageable, 0);
+        return soulRepository.findAllByIdIn(ids, pageable);
+    }
+
+    /** Ids des âmes accessibles au rôle actif (liste vide si aucun accès). */
+    private List<UUID> accessibleSoulIds() {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        if (securityUtils.hasActiveRole("FAISEUR")) {
+            return soulRepository.findAllByFaiseurId(currentUserId).stream()
+                    .filter(s -> !s.isDeleted()).map(Soul::getId).toList();
+        }
+        if (securityUtils.hasActiveRole("CHEF_DE_FAMILLE")) {
+            User user = userRepository.findById(currentUserId).orElse(null);
+            if (user != null && user.getFamilleGereeId() != null) {
+                return soulRepository.findAllByFamilleId(user.getFamilleGereeId()).stream()
+                        .filter(s -> !s.isDeleted()).map(Soul::getId).toList();
+            }
+        }
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            List<UUID> deptIds = departmentRepository.findByResponsableId(currentUserId)
+                    .stream().map(Department::getId).toList();
+            if (!deptIds.isEmpty()) {
+                return soulDepartmentRepository.findByDepartmentIdIn(deptIds).stream()
+                        .filter(SoulDepartment::isActif)
+                        .map(SoulDepartment::getSoulId).distinct().toList();
+            }
+        }
+        return List.of();
+    }
+
+    private boolean matchesQuery(Soul soul, String q) {
+        String query = q.toLowerCase().trim();
+        return (soul.getNom() != null && soul.getNom().toLowerCase().contains(query))
+                || (soul.getPrenom() != null && soul.getPrenom().toLowerCase().contains(query))
+                || (soul.getEmail() != null && soul.getEmail().toLowerCase().contains(query))
+                || (soul.getTelephone() != null && soul.getTelephone().contains(query));
+    }
+
+    /** Pagination en mémoire (pour les résultats déjà filtrés côté service). */
+    private Page<Soul> paginate(List<Soul> souls, Pageable pageable) {
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), souls.size());
+        List<Soul> content = start < souls.size() ? souls.subList(start, end) : List.of();
+        return new PageImpl<>(content, pageable, souls.size());
     }
 
     // ========================================================================

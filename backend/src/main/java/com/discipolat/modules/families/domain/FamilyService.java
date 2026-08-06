@@ -6,14 +6,19 @@ import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.departments.domain.Department;
+import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.api.CreateFamilyRequest;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.modules.souls.domain.SoulDepartment;
+import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +36,8 @@ public class FamilyService {
     private final FamilyRepository familyRepository;
     private final FamilyChiefHistoryRepository chiefHistoryRepository;
     private final SoulRepository soulRepository;
+    private final SoulDepartmentRepository soulDepartmentRepository;
+    private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
     private final MakerReportRepository makerReportRepository;
     private final SecurityUtils securityUtils;
@@ -39,6 +46,8 @@ public class FamilyService {
     public FamilyService(FamilyRepository familyRepository,
                          FamilyChiefHistoryRepository chiefHistoryRepository,
                          SoulRepository soulRepository,
+                         SoulDepartmentRepository soulDepartmentRepository,
+                         DepartmentRepository departmentRepository,
                          UserRepository userRepository,
                          MakerReportRepository makerReportRepository,
                          SecurityUtils securityUtils,
@@ -46,6 +55,8 @@ public class FamilyService {
         this.familyRepository = familyRepository;
         this.chiefHistoryRepository = chiefHistoryRepository;
         this.soulRepository = soulRepository;
+        this.soulDepartmentRepository = soulDepartmentRepository;
+        this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
         this.makerReportRepository = makerReportRepository;
         this.securityUtils = securityUtils;
@@ -147,13 +158,76 @@ public class FamilyService {
 
     @Transactional(readOnly = true)
     public Family findById(UUID id) {
-        return familyRepository.findById(id)
+        Family family = familyRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Family", id));
+        // Espace métier : un rôle opérationnel ne peut consulter que les familles
+        // de son propre espace (chef : sa famille, responsable : ses départements,
+        // faiseur : ses disciples). Les super-utilisateurs (admin/pasteur) voient tout.
+        if (!securityUtils.isSuperUser() && !getVisibleFamilyIds().contains(id)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Accès refusé à cette famille dans l'espace métier courant");
+        }
+        return family;
     }
 
     @Transactional(readOnly = true)
     public Page<Family> findAll(Pageable pageable) {
-        return familyRepository.findAll(pageable);
+        if (securityUtils.isSuperUser()) {
+            return familyRepository.findAll(pageable);
+        }
+        Set<UUID> visibleIds = getVisibleFamilyIds();
+        if (visibleIds.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+        return familyRepository.findAllByIdIn(visibleIds, pageable);
+    }
+
+    /**
+     * Familles accessibles dans l'espace métier du rôle ACTIF courant.
+     * Union dédupliquée (un utilisateur multi-rôles n'accumule QUE les familles
+     * des espaces qu'il est capable d'administrer dans le rôle actif).
+     */
+    private Set<UUID> getVisibleFamilyIds() {
+        UUID userId = securityUtils.getCurrentUserId();
+        Set<UUID> familyIds = new HashSet<>();
+
+        // Chef de famille actif : la famille qu'il gère
+        if (securityUtils.hasActiveRole("CHEF_DE_FAMILLE")) {
+            userRepository.findById(userId).ifPresent(u -> {
+                if (u.getFamilleGereeId() != null) familyIds.add(u.getFamilleGereeId());
+            });
+            familyRepository.findByChefFamilleId(userId).stream()
+                    .map(Family::getId).forEach(familyIds::add);
+        }
+
+        // Responsable actif : familles des membres de SES départements
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            List<UUID> deptIds = departmentRepository.findByResponsableId(userId)
+                    .stream().map(Department::getId).toList();
+            if (!deptIds.isEmpty()) {
+                List<UUID> soulIds = soulDepartmentRepository.findByDepartmentIdIn(deptIds).stream()
+                        .filter(SoulDepartment::isActif)
+                        .map(SoulDepartment::getSoulId)
+                        .distinct()
+                        .toList();
+                if (!soulIds.isEmpty()) {
+                    soulRepository.findAllById(soulIds).stream()
+                            .filter(s -> !s.isDeleted() && s.getFamilleId() != null)
+                            .map(Soul::getFamilleId)
+                            .forEach(familyIds::add);
+                }
+            }
+        }
+
+        // Faiseur actif : familles de ses disciples
+        if (securityUtils.hasActiveRole("FAISEUR")) {
+            soulRepository.findAllByFaiseurId(userId).stream()
+                    .filter(s -> !s.isDeleted() && s.getFamilleId() != null)
+                    .map(Soul::getFamilleId)
+                    .forEach(familyIds::add);
+        }
+
+        return familyIds;
     }
 
     @Transactional(readOnly = true)

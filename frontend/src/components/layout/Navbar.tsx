@@ -14,7 +14,9 @@ import {
   Settings,
   Sparkles,
   ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react';
+import { WORKSPACE_HOME, ROLE_META, roleIcon } from '@/workspaces';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { Notification } from '@/types';
@@ -35,6 +37,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [transitionRole, setTransitionRole] = useState<string | null>(null);
+  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const roleMenuRef = useRef<HTMLDivElement>(null);
 
@@ -91,7 +95,20 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     setShowRoleMenu(false);
     setShowProfileMenu(false);
     await switchRole(newRole);
+
+    // Transition vers le nouvel espace métier : overlay + redirection vers son dashboard.
+    setTransitionRole(newRole);
+    navigate(WORKSPACE_HOME[newRole as keyof typeof WORKSPACE_HOME] || '/dashboard');
+    if (transitionTimer.current) clearTimeout(transitionTimer.current);
+    transitionTimer.current = setTimeout(() => setTransitionRole(null), 1400);
   };
+
+  // Nettoyage du timer de transition
+  useEffect(() => {
+    return () => {
+      if (transitionTimer.current) clearTimeout(transitionTimer.current);
+    };
+  }, []);
 
   const roleColor = (r: string) => {
     switch (r) {
@@ -115,6 +132,30 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     >
       {/* Top gradient line */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary-500/30 to-transparent" />
+
+      {/* Overlay de transition entre espaces métiers */}
+      {transitionRole && (() => {
+        const meta = ROLE_META[transitionRole as keyof typeof ROLE_META] || ROLE_META.FAISEUR;
+        const Icon = roleIcon(transitionRole);
+        return (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-950/70 dark:bg-gray-950/80 backdrop-blur-xl animate-fade-in">
+            <div className="flex flex-col items-center gap-3 animate-scale-in">
+              <div className="relative">
+                <span className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${meta.gradient} opacity-40 animate-ping`} />
+                <div className={`relative w-20 h-20 rounded-2xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center shadow-glow`}>
+                  <Icon className="w-9 h-9 text-white drop-shadow-sm" />
+                </div>
+              </div>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-medium mt-1">Espace métier</p>
+              <p className="text-2xl font-bold text-white font-display">{meta.label}</p>
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-primary-400">
+                <CheckCircle2 className="w-4 h-4" />
+                {meta.tagline}
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         {/* Left section */}

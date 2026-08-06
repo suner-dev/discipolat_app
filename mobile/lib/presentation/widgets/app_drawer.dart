@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import '../../app.dart';
 import '../../data/services/api_service.dart';
 import 'glass_theme.dart';
+
+/// Éléments de navigation de chaque espace métier.
+/// Le rôle actif détermine entièrement le contenu du menu :
+/// un changement de rôle = un changement complet d'application.
 class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
 
@@ -13,40 +17,117 @@ class AppDrawer extends StatefulWidget {
 class _AppDrawerState extends State<AppDrawer> {
   bool _showRoleMenu = false;
 
-  // Navigation items with roles
-  static const _navItems = [
-    {'icon': Icons.dashboard_rounded, 'title': 'Tableau de bord', 'route': '/dashboard', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']},
-    {'icon': Icons.dashboard_customize_rounded, 'title': 'Pilotage Pasteur', 'route': '/dashboard/pasteur', 'roles': ['ADMIN', 'PASTEUR']},
-    {'icon': Icons.group_rounded, 'title': 'Dashboard Chef', 'route': '/dashboard/chef-famille', 'roles': ['PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.business_rounded, 'title': 'Dashboard Responsable', 'route': '/dashboard/responsable', 'roles': ['PASTEUR', 'RESPONSABLE']},
-    {'icon': Icons.favorite_rounded, 'title': 'Âmes', 'route': '/souls', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.group_rounded, 'title': 'Familles', 'route': '/families', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.people_rounded, 'title': 'CRM Faiseur', 'route': '/crm-faiseur', 'roles': ['ADMIN', 'PASTEUR', 'FAISEUR']},
-    {'icon': Icons.search_rounded, 'title': 'Recherche', 'route': '/search', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']},
-    {'icon': Icons.description_rounded, 'title': 'Rapport faiseur', 'route': '/reports/maker', 'roles': ['ADMIN', 'PASTEUR', 'FAISEUR']},
-    {'icon': Icons.group_work_rounded, 'title': 'Rapport famille', 'route': '/reports/family', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.star_rounded, 'title': 'Évaluations', 'route': '/evaluations', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.swap_horiz_rounded, 'title': 'Suivis parallèles', 'route': '/parallel-followups', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']},
-    {'icon': Icons.business_rounded, 'title': 'Départements', 'route': '/departments', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE']},
-    {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.calendar_today_rounded, 'title': 'Rendez-vous', 'route': '/appointments', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']},
-    {'icon': Icons.map_rounded, 'title': 'Cartographie', 'route': '/map', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.route_rounded, 'title': 'Évangélisation', 'route': '/evangelism', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.flag_rounded, 'title': 'Objectifs', 'route': '/objectives', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.emoji_events_rounded, 'title': 'Badges', 'route': '/badges', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']},
-    {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']},
-    {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']},
-    {'icon': Icons.mail_rounded, 'title': 'Demandes', 'route': '/members/requests', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'MEMBRE']},
-    {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']},
-    {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']},
-    {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE']},
-    {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions', 'roles': ['ADMIN']},
-    {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents', 'roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']},
-    {'icon': Icons.history_rounded, 'title': 'Audit', 'route': '/audit', 'roles': ['ADMIN', 'PASTEUR']},
+  // Navigation complète — Admin / Pasteur (super-utilisateurs)
+  static const List<Map<String, Object>> _fullNav = [
+    {'icon': Icons.dashboard_rounded, 'title': 'Tableau de bord', 'route': '/dashboard'},
+    {'icon': Icons.dashboard_customize_rounded, 'title': 'Pilotage Pasteur', 'route': '/dashboard/pasteur'},
+    {'icon': Icons.search_rounded, 'title': 'Recherche', 'route': '/search'},
+    {'icon': Icons.map_rounded, 'title': 'Cartographie', 'route': '/map'},
+    {'icon': Icons.favorite_rounded, 'title': 'Âmes', 'route': '/souls'},
+    {'icon': Icons.group_rounded, 'title': 'Familles', 'route': '/families'},
+    {'icon': Icons.people_rounded, 'title': 'CRM Faiseur', 'route': '/crm-faiseur'},
+    {'icon': Icons.group_rounded, 'title': 'Dashboard Chef', 'route': '/dashboard/chef-famille'},
+    {'icon': Icons.business_rounded, 'title': 'Dashboard Responsable', 'route': '/dashboard/responsable'},
+    {'icon': Icons.business_rounded, 'title': 'Départements', 'route': '/departments'},
+    {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports'},
+    {'icon': Icons.description_rounded, 'title': 'Rapport faiseur', 'route': '/reports/maker'},
+    {'icon': Icons.group_work_rounded, 'title': 'Rapport famille', 'route': '/reports/family'},
+    {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
+    {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
+    {'icon': Icons.route_rounded, 'title': 'Évangélisation', 'route': '/evangelism'},
+    {'icon': Icons.flag_rounded, 'title': 'Objectifs', 'route': '/objectives'},
+    {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits'},
+    {'icon': Icons.swap_horiz_rounded, 'title': 'Suivis parallèles', 'route': '/parallel-followups'},
+    {'icon': Icons.star_rounded, 'title': 'Évaluations', 'route': '/evaluations'},
+    {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
+    {'icon': Icons.mail_rounded, 'title': 'Demandes', 'route': '/members/requests'},
+    {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
+    {'icon': Icons.calendar_today_rounded, 'title': 'Rendez-vous', 'route': '/appointments'},
+    {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
+    {'icon': Icons.emoji_events_rounded, 'title': 'Badges', 'route': '/badges'},
+    {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
+    {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
+    {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+    {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},
+    {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions'},
+    {'icon': Icons.history_rounded, 'title': 'Audit', 'route': '/audit'},
   ];
+
+  // Espace RESPONSABLE — gestion des départements uniquement
+  static const List<Map<String, Object>> _responsableNav = [
+    {'icon': Icons.dashboard_rounded, 'title': 'Dashboard Responsable', 'route': '/dashboard/responsable'},
+    {'icon': Icons.business_rounded, 'title': 'Départements', 'route': '/departments'},
+    {'icon': Icons.mail_rounded, 'title': 'Demandes & présences', 'route': '/members/requests'},
+    {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports'},
+    {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
+    {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
+    {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
+    {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
+    {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+  ];
+
+  // Espace FAISEUR — discipolat uniquement
+  static const List<Map<String, Object>> _faiseurNav = [
+    {'icon': Icons.people_rounded, 'title': 'CRM Faiseur', 'route': '/crm-faiseur'},
+    {'icon': Icons.favorite_rounded, 'title': 'Mes disciples', 'route': '/souls'},
+    {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports'},
+    {'icon': Icons.description_rounded, 'title': 'Rapport faiseur', 'route': '/reports/maker'},
+    {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
+    {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits'},
+    {'icon': Icons.route_rounded, 'title': 'Évangélisation', 'route': '/evangelism'},
+    {'icon': Icons.flag_rounded, 'title': 'Objectifs', 'route': '/objectives'},
+    {'icon': Icons.swap_horiz_rounded, 'title': 'Suivis parallèles', 'route': '/parallel-followups'},
+    {'icon': Icons.search_rounded, 'title': 'Recherche', 'route': '/search'},
+    {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
+    {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
+    {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
+    {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+  ];
+
+  // Espace CHEF DE FAMILLE — gestion de la famille uniquement
+  static const List<Map<String, Object>> _chefNav = [
+    {'icon': Icons.dashboard_rounded, 'title': 'Dashboard Chef', 'route': '/dashboard/chef-famille'},
+    {'icon': Icons.group_rounded, 'title': 'Familles', 'route': '/families'},
+    {'icon': Icons.favorite_rounded, 'title': 'Disciples', 'route': '/souls'},
+    {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports'},
+    {'icon': Icons.group_work_rounded, 'title': 'Rapport famille', 'route': '/reports/family'},
+    {'icon': Icons.star_rounded, 'title': 'Évaluations', 'route': '/evaluations'},
+    {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
+    {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
+    {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
+    {'icon': Icons.mail_rounded, 'title': 'Demandes', 'route': '/members/requests'},
+    {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
+    {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+  ];
+
+  // Espace MEMBRE — personnel
+  static const List<Map<String, Object>> _membreNav = [
+    {'icon': Icons.person_rounded, 'title': 'Mon espace', 'route': '/profile'},
+    {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
+    {'icon': Icons.emoji_events_rounded, 'title': 'Badges', 'route': '/badges'},
+    {'icon': Icons.calendar_today_rounded, 'title': 'Rendez-vous', 'route': '/appointments'},
+    {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
+    {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
+  ];
+
+  /// Retourne les éléments de navigation de l'espace métier du rôle donné.
+  static List<Map<String, Object>> _navForRole(String role) {
+    switch (role) {
+      case 'RESPONSABLE':
+        return _responsableNav;
+      case 'FAISEUR':
+        return _faiseurNav;
+      case 'CHEF_DE_FAMILLE':
+        return _chefNav;
+      case 'MEMBRE':
+        return _membreNav;
+      case 'PASTEUR':
+        // Pasteur = vue complète, sans la matrice des permissions (réservée Admin)
+        return _fullNav.where((item) => item['route'] != '/permissions').toList();
+      default:
+        return _fullNav; // ADMIN
+    }
+  }
 
   static const _roleLabels = {
     'ADMIN': 'Admin',
@@ -87,7 +168,7 @@ class _AppDrawerState extends State<AppDrawer> {
         auth.switchActiveRole(newRole);
         if (mounted) {
           Navigator.pop(context);
-          context.go('/dashboard');
+          context.go(roleHome(newRole));
         }
       }
     } catch (_) {
@@ -105,11 +186,10 @@ class _AppDrawerState extends State<AppDrawer> {
     final activeRole = auth.activeRole;
     final allRoles = auth.roles;
 
-    // Filter navigation items by user's roles
-    final filteredItems = _navItems.where((item) {
-      final itemRoles = item['roles'] as List<dynamic>;
-      return auth.hasAnyRole(itemRoles.cast<String>());
-    }).toList();
+    // Filtre STRICT par rôle actif : seul l'espace métier du rôle est affiché.
+    final filteredItems = activeRole.isNotEmpty
+        ? _navForRole(activeRole)
+        : _fullNav;
 
     return Drawer(
       child: Container(
@@ -240,7 +320,7 @@ class _AppDrawerState extends State<AppDrawer> {
 
             const SizedBox(height: 8),
 
-            // Navigation items
+            // Navigation items — espace métier du rôle actif
             ...filteredItems.map((item) => _navItem(
               context,
               item['icon'] as IconData,

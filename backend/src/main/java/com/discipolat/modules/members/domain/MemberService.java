@@ -323,8 +323,8 @@ public class MemberService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User", userId));
 
-        // Pasteur / admin : toutes les présences (même sans âme liée au compte)
-        if (user.getRoles().contains(UserRole.PASTEUR) || user.getRoles().contains(UserRole.ADMIN)) {
+        // Super-utilisateurs (pasteur/admin actifs) : toutes les présences (même sans âme liée au compte)
+        if (securityUtils.isSuperUser()) {
             return memberPresenceRepository.findAllByOrderBySemaineDesc()
                     .stream()
                     .map(p -> MemberPresenceResponse.from(p, presenceNom(p)))
@@ -386,19 +386,16 @@ public class MemberService {
         return toResponse(memberRequestRepository.save(req));
     }
 
-    /** Boîte de réception scopée par rôle : pasteur/admin tout, responsable ses départements, chef ses familles. */
+    /** Boîte de réception scopée par rôle ACTIF : super-utilisateurs tout, responsable ses départements, chef ses familles. */
     @Transactional(readOnly = true)
     public List<MemberRequestResponse> getRequestsInbox() {
         UUID userId = securityUtils.getCurrentUserId();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User", userId));
 
-        // Accumulation pour les rôles multiples (ex : responsable aussi chef de famille)
         List<MemberRequest> requests = new ArrayList<>();
-        if (user.getRoles().contains(UserRole.PASTEUR) || user.getRoles().contains(UserRole.ADMIN)) {
+        if (securityUtils.isSuperUser()) {
             requests.addAll(memberRequestRepository.findAllByOrderByCreatedAtDesc());
         } else {
-            if (user.getRoles().contains(UserRole.RESPONSABLE)) {
+            if (securityUtils.hasActiveRole("RESPONSABLE")) {
                 List<UUID> deptIds = departmentRepository.findByResponsableId(userId)
                         .stream().map(Department::getId).toList();
                 if (!deptIds.isEmpty()) {
@@ -406,7 +403,7 @@ public class MemberService {
                             .findByCibleAndDepartmentIdInOrderByCreatedAtDesc(MemberRequest.Cible.RESPONSABLE, deptIds));
                 }
             }
-            if (user.getRoles().contains(UserRole.CHEF_DE_FAMILLE)) {
+            if (securityUtils.hasActiveRole("CHEF_DE_FAMILLE")) {
                 List<UUID> famIds = familyRepository.findByChefFamilleId(userId)
                         .stream().map(Family::getId).toList();
                 if (!famIds.isEmpty()) {
@@ -422,28 +419,25 @@ public class MemberService {
                 .toList();
     }
 
-    /** Met à jour le statut d'une demande (seul le récepteur ciblé peut traiter). */
+    /** Met à jour le statut d'une demande (seul le récepteur ciblé du rôle actif peut traiter). */
     public MemberRequestResponse updateRequestStatus(UUID requestId, UpdateMemberRequestStatus payload) {
         UUID userId = securityUtils.getCurrentUserId();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User", userId));
 
         MemberRequest req = memberRequestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("MemberRequest", requestId));
 
-        // Permission : pasteur/admin partout, sinon le récepteur scopé
-        if (!user.getRoles().contains(UserRole.PASTEUR) && !user.getRoles().contains(UserRole.ADMIN)) {
+        // Permission : super-utilisateurs partout, sinon le récepteur scopé du rôle ACTIF
+        // (un faiseur/chef actif qui possède RESPONSABLE ne traite pas les demandes RESPONSABLE)
+        if (!securityUtils.isSuperUser()) {
             boolean allowed = switch (req.getCible()) {
-                case RESPONSABLE -> {
-                    List<UUID> deptIds = departmentRepository.findByResponsableId(userId)
-                            .stream().map(Department::getId).toList();
-                    yield req.getDepartmentId() != null && deptIds.contains(req.getDepartmentId());
-                }
-                case CHEF_DE_FAMILLE -> {
-                    List<UUID> famIds = familyRepository.findByChefFamilleId(userId)
-                            .stream().map(Family::getId).toList();
-                    yield req.getFamilyId() != null && famIds.contains(req.getFamilyId());
-                }
+                case RESPONSABLE -> securityUtils.hasActiveRole("RESPONSABLE")
+                        && req.getDepartmentId() != null
+                        && departmentRepository.findByResponsableId(userId)
+                                .stream().map(Department::getId).anyMatch(req.getDepartmentId()::equals);
+                case CHEF_DE_FAMILLE -> securityUtils.hasActiveRole("CHEF_DE_FAMILLE")
+                        && req.getFamilyId() != null
+                        && familyRepository.findByChefFamilleId(userId)
+                                .stream().map(Family::getId).anyMatch(req.getFamilyId()::equals);
                 case PASTEUR -> false;
             };
             if (!allowed) throw new org.springframework.security.access.AccessDeniedException("Vous ne pouvez pas traiter cette demande");
@@ -509,13 +503,17 @@ public class MemberService {
 
     /**
      * Vérifie que l'utilisateur courant peut gérer le département :
-     * pasteur/admin partout, responsable uniquement ses départements.
+     * super-utilisateurs partout, sinon le rôle ACTIF doit être RESPONSABLE
+     * (un faiseur/chef actif qui possède le rôle RESPONSABLE n'y a pas accès)
+     * et le département doit lui appartenir.
      */
     private void verifyDepartmentAccess(UUID userId, UUID deptId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User", userId));
-        if (user.getRoles().contains(UserRole.PASTEUR) || user.getRoles().contains(UserRole.ADMIN)) {
+        if (securityUtils.isSuperUser()) {
             return;
+        }
+        if (!securityUtils.hasActiveRole("RESPONSABLE")) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "La gestion du département requiert le mode Responsable");
         }
         boolean gere = departmentRepository.findByResponsableId(userId).stream()
                 .anyMatch(d -> d.getId().equals(deptId));
@@ -536,16 +534,16 @@ public class MemberService {
                 .toList();
     }
 
-    /** Âmes sous la responsabilité du rôle courant (pour la visibilité des présences). */
+    /** Âmes sous la responsabilité du rôle ACTIF courant (pour la visibilité des présences). */
     private List<UUID> scopedSoulIds(User user) {
-        if (user.getRoles().contains(UserRole.RESPONSABLE)) {
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
             List<UUID> deptIds = departmentRepository.findByResponsableId(user.getId())
                     .stream().map(Department::getId).toList();
             return deptIds.isEmpty() ? List.of()
                     : memberDepartmentRepository.findByDepartmentIdIn(deptIds)
                             .stream().map(MemberDepartment::getSoulId).distinct().toList();
         }
-        if (user.getRoles().contains(UserRole.CHEF_DE_FAMILLE)) {
+        if (securityUtils.hasActiveRole("CHEF_DE_FAMILLE")) {
             List<UUID> famIds = familyRepository.findByChefFamilleId(user.getId())
                     .stream().map(Family::getId).toList();
             return famIds.isEmpty() ? List.of()

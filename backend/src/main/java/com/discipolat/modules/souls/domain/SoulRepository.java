@@ -26,6 +26,7 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     List<Soul> findAllByFamilleId(UUID familleId);
     List<Soul> findByFamilleIdIn(List<UUID> familleIds);
     Page<Soul> findByFamilleIdIn(List<UUID> familleIds, Pageable pageable);
+    Page<Soul> findAllByIdIn(List<UUID> ids, Pageable pageable);
     List<Soul> findByFaiseurIdIn(List<UUID> faiseurIds);
     long countByFaiseurId(UUID faiseurId);
     long countByFamilleId(UUID familleId);

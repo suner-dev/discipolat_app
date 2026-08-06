@@ -31,6 +31,7 @@ public class Department {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
+    @Builder.Default
     private StatutEntite statut = StatutEntite.ACTIVE;
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -54,6 +54,7 @@ public class Alert {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
+    @Builder.Default
     private StatutAlerte statut = StatutAlerte.ACTIVE;
 
     @Column(name = "date_resolution")

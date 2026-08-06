@@ -32,6 +32,7 @@ public class Course {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "niveau", nullable = false)
+    @Builder.Default
     private Niveau niveau = Niveau.DEBUTANT;
 
     @Column(name = "duree_minutes")

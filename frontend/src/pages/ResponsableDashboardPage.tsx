@@ -4,8 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import {
   Building2, Users, UserPlus, Calendar, UserCheck, FileText, Activity,
-  BookOpen, Star, ChevronRight, Cake, CheckCircle, Clock, UserX,
-  Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2,
+  Star, ChevronRight, Cake, CheckCircle, Clock, UserX,
+  Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2, UserRound,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -105,6 +105,11 @@ export default function ResponsableDashboardPage() {
         presences: items,
       },
     });
+  };
+
+  /** Fait défiler la page jusqu'à la fiche de saisie des présences. */
+  const scrollToPresences = () => {
+    document.getElementById('saisie-presences')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   // Initialiser le formulaire à partir de la fiche chargée (une fois par semaine/département)
@@ -294,7 +299,7 @@ export default function ResponsableDashboardPage() {
           </div>
 
           {/* ==================== SAISIE DES PRÉSENCES ==================== */}
-          <div className="glass-card p-5 mb-6 animate-slide-up" style={{ animationDelay: '380ms' }}>
+          <div id="saisie-presences" className="glass-card p-5 mb-6 animate-slide-up scroll-mt-24" style={{ animationDelay: '380ms' }}>
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-lg">
@@ -416,25 +421,31 @@ export default function ResponsableDashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Members list */}
+            {/* Members list — actions centrées membre (fiche / présence / rapport) */}
             <div className="glass-card p-5 animate-slide-up">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-primary-500" />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Membres du département</h3>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Fiches membres</h3>
+                    <p className="text-[10px] text-gray-400">fiche · présence · rapport</p>
+                  </div>
                 </div>
-                <Link to={`/departments/${dashboard?.selectedDeptId}/members`} className="text-[10px] font-medium text-primary-600">
-                  Voir tout
+                <Link to={`/departments/${dashboard?.selectedDeptId}`} className="text-[10px] font-medium text-primary-600">
+                  Gérer les membres
                 </Link>
               </div>
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {(deptDetail?.membres ?? []).slice(0, 10).map((m: any) => (
-                  <Link
+                  <div
                     key={m.id}
-                    to={`/souls/${m.id}`}
-                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all"
+                    className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <Link
+                      to={`/souls/${m.id}`}
+                      title="Ouvrir la fiche membre"
+                      className="flex items-center gap-2 min-w-0 flex-1"
+                    >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0
                         ${m.statut === 'ACTIF' ? 'bg-emerald-500' : m.statut === 'EN_INTEGRATION' ? 'bg-blue-500' : m.statut === 'EN_VEILLE' ? 'bg-amber-500' : 'bg-red-500'}`}>
                         {m.nom?.split(' ').map((p: string) => p?.[0]).join('').slice(0, 2) || '?'}
@@ -446,9 +457,35 @@ export default function ResponsableDashboardPage() {
                           {m.faiseurNom ? ` · ${m.faiseurNom}` : ''}
                         </p>
                       </div>
+                    </Link>
+                    {/* Actions centrées membre */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/souls/${m.id}`)}
+                        title="Fiche membre"
+                        className="p-1.5 rounded-lg cursor-pointer text-gray-400 hover:text-primary-600 hover:bg-primary-500/10 transition-all"
+                      >
+                        <UserRound className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={scrollToPresences}
+                        title="Pointer sa présence"
+                        className="p-1.5 rounded-lg cursor-pointer text-gray-400 hover:text-sky-600 hover:bg-sky-500/10 transition-all"
+                      >
+                        <ClipboardCheck className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/departments/${dashboard?.selectedDeptId}/report`)}
+                        title="Rapport du département"
+                        className="p-1.5 rounded-lg cursor-pointer text-gray-400 hover:text-emerald-600 hover:bg-emerald-500/10 transition-all"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-                  </Link>
+                  </div>
                 ))}
                 {(deptDetail?.membres ?? []).length === 0 && (
                   <div className="text-center py-8">
@@ -507,23 +544,27 @@ export default function ResponsableDashboardPage() {
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Quick Actions — centrées sur la gestion des membres (HRM) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 animate-slide-up">
+            <button
+              type="button"
+              onClick={scrollToPresences}
+              className="glass-card p-4 text-center cursor-pointer hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200"
+            >
+              <ClipboardCheck className="w-5 h-5 text-sky-500 mx-auto mb-1" />
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Saisie des présences</span>
+            </button>
+            <Link to={`/departments/${dashboard?.selectedDeptId}`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+              <Users className="w-5 h-5 text-amber-500 mx-auto mb-1" />
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Fiches membres</span>
+            </Link>
+            <Link to={`/reports`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+              <FileText className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Rapports</span>
+            </Link>
             <Link to={`/events`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <Calendar className="w-5 h-5 text-primary-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Événements</span>
-            </Link>
-            <Link to={`/reports`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
-              <FileText className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Rapports</span>
-            </Link>
-            <Link to={`/prayers`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
-              <BookOpen className="w-5 h-5 text-violet-500 mx-auto mb-1" />
-              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Prières</span>
-            </Link>
-            <Link to={`/souls/new`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
-              <UserPlus className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Ajouter un membre</span>
             </Link>
           </div>
         </>

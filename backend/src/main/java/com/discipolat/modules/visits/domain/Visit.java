@@ -36,6 +36,7 @@ public class Visit {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
+    @Builder.Default
     private StatutVisite statut = StatutVisite.PLANIFIEE;
 
     @Column(name = "motif")

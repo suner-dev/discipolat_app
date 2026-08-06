@@ -16,6 +16,7 @@ import com.discipolat.modules.reports.domain.FamilyReportRepository;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.modules.souls.domain.SoulDepartment;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulNoteRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
@@ -951,20 +952,31 @@ public class DashboardService {
             List<Department> depts = departmentRepository.findByResponsableId(currentUserId);
             List<UUID> deptIds = depts.stream().map(Department::getId).toList();
 
-            List<Family> familles = familyRepository.findAll(); // Families independent from departments
-            List<UUID> familyIds = familles.stream().map(Family::getId).toList();
-
-            List<Soul> allSouls = familyIds.isEmpty() ? List.of() : soulRepository.findByFamilleIdIn(familyIds);
+            // Confidentiel : ne compter que les membres des départements du responsable
+            // (et non toutes les familles de l'église).
+            List<UUID> soulIds = deptIds.isEmpty() ? List.of()
+                    : soulDepartmentRepository.findByDepartmentIdIn(deptIds).stream()
+                            .filter(SoulDepartment::isActif)
+                            .map(SoulDepartment::getSoulId)
+                            .distinct()
+                            .toList();
+            List<Soul> allSouls = soulIds.isEmpty() ? List.of() : soulRepository.findAllById(soulIds);
             long actifs = allSouls.stream().filter(s -> s.getStatut() == StatutAme.ACTIF).count();
             long enIntegration = allSouls.stream().filter(s -> s.getStatut() == StatutAme.EN_INTEGRATION).count();
 
             Set<UUID> faiseurIds = allSouls.stream().map(Soul::getFaiseurId).collect(Collectors.toSet());
-            Set<UUID> chefIds = familles.stream().map(Family::getChefFamilleId).collect(Collectors.toSet());
+            // Chefs des familles auxquelles appartiennent les membres du département
+            Set<UUID> chefIds = allSouls.stream()
+                    .map(Soul::getFamilleId)
+                    .filter(Objects::nonNull)
+                    .map(fid -> familyRepository.findById(fid).map(Family::getChefFamilleId).orElse(null))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
             faiseurIds.addAll(chefIds);
 
             metrics.put("departements", depts.stream().map(d -> Map.<String, Object>of("id", d.getId(), "nom", d.getNom())).toList());
             metrics.put("totalDepartements", (long) depts.size());
-            metrics.put("totalFamilles", (long) familles.size());
+            metrics.put("totalFamilles", (long) allSouls.stream().map(Soul::getFamilleId).filter(Objects::nonNull).distinct().count());
             metrics.put("totalAmes", (long) allSouls.size());
             metrics.put("amesActives", actifs);
             metrics.put("amesEnIntegration", enIntegration);

@@ -13,9 +13,15 @@ import toast from 'react-hot-toast';
 export default function FamilyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const { hasRole } = useAuth();
+  const { user } = useAuth();
   const [showChiefModal, setShowChiefModal] = useState(false);
   const [newChiefId, setNewChiefId] = useState('');
+
+  // Espace métier : le rôle ACTIF détermine les actions autorisées.
+  const activeRole = user?.activeRole;
+  const canSetRisk = activeRole === 'PASTEUR' || activeRole === 'ADMIN';
+  const canChangeChief = activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE';
+  const canViewFaiseurPerf = activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE' || activeRole === 'FAISEUR';
 
   const { data: family, isLoading } = useQuery({
     queryKey: ['family', id],
@@ -167,12 +173,16 @@ export default function FamilyDetailPage() {
             </div>
           </div>
           <div className="flex gap-2 self-start">
-            <Link to={`/families/${id}/faiseur-performance`} className="btn-secondary btn-sm">
-              <BarChart3 className="w-4 h-4" /> Performance faiseurs
-            </Link>
-            <button onClick={() => setShowChiefModal(true)} className="btn-secondary btn-sm">
-              <UserCog className="w-4 h-4" /> Changer chef
-            </button>
+            {canViewFaiseurPerf && (
+              <Link to={`/families/${id}/faiseur-performance`} className="btn-secondary btn-sm">
+                <BarChart3 className="w-4 h-4" /> Performance faiseurs
+              </Link>
+            )}
+            {canChangeChief && (
+              <button onClick={() => setShowChiefModal(true)} className="btn-secondary btn-sm">
+                <UserCog className="w-4 h-4" /> Changer chef
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -352,7 +362,7 @@ export default function FamilyDetailPage() {
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-primary-500" /> Évaluation de risque
                 </h3>
-                {hasRole('PASTEUR') && (
+                {canSetRisk && (
                   <button
                     onClick={() => { setRiskLevel(risk.niveauActuel); setShowRiskModal(true); }}
                     className="btn-secondary btn-sm"

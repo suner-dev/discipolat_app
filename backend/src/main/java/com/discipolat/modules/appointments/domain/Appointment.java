@@ -44,6 +44,7 @@ public class Appointment {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
+    @Builder.Default
     private Statut statut = Statut.EN_ATTENTE;
 
     @Column(name = "reponse")

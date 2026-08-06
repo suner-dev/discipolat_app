@@ -6,14 +6,17 @@ import '../../widgets/glass_theme.dart';
 
 class Pastoral360Screen extends StatefulWidget {
   final String soulId;
-  const Pastoral360Screen({super.key, required this.soulId});
+  /// Permet d'injecter un ApiService mocké dans les tests widget.
+  final ApiService? apiService;
+
+  const Pastoral360Screen({super.key, required this.soulId, this.apiService});
 
   @override
   State<Pastoral360Screen> createState() => _Pastoral360ScreenState();
 }
 
 class _Pastoral360ScreenState extends State<Pastoral360Screen> with SingleTickerProviderStateMixin {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   Map<String, dynamic>? _dossier;
   bool _isLoading = true;
 

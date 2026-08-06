@@ -3,301 +3,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import {
-  LayoutDashboard,
-  Users,
-  Heart,
-  Building2,
-  FileText,
-  Activity,
-  Bell,
-  UserCog,
-  X,
-  CrossIcon,
-  BookOpen,
-  Calendar,
-  FolderOpen,
-  ChevronLeft,
-  Sparkles,
-  Church,
-  BarChart3,
-  AlertTriangle,
-  Search,
-  Shield,
-  Star as StarIcon,
-  User,
-  MessageSquare,
-  MessagesSquare,
-  Sprout,
-  Target,
-  DoorOpen,
-  Trophy,
-  GraduationCap,
-  CalendarClock,
-  Map as MapIcon,
-} from 'lucide-react';
+import { X, ChevronLeft, Church, Star as StarIcon } from 'lucide-react';
+import { navForRole, ROLE_META, type WorkspaceNavItem } from '@/workspaces';
 
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
 }
 
-const navigation = [
-  {
-    name: 'Espace Membre',
-    href: '/dashboard/membre',
-    icon: User,
-    roles: ['MEMBRE'],
-    subtitle: 'Mes informations',
-  },
-  {
-    name: 'Tableau de bord',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Vue d\'ensemble',
-  },
-  {
-    name: 'Recherche',
-    href: '/search',
-    icon: Search,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Recherche intelligente',
-  },
-  {
-    name: 'Âmes',
-    href: '/souls',
-    icon: Heart,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Disciples suivis',
-  },
-  {
-    name: 'Familles',
-    href: '/families',
-    icon: Users,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Groupes de disciples',
-  },
-  {
-    name: 'Pilotage Pasteur',
-    href: '/dashboard/pasteur',
-    icon: LayoutDashboard,
-    roles: ['ADMIN', 'PASTEUR'],
-    subtitle: 'Centre de commandement',
-  },
-  {
-    name: 'Dashboard Responsable',
-    href: '/dashboard/responsable',
-    icon: Building2,
-    roles: ['PASTEUR', 'RESPONSABLE'],
-    subtitle: 'Mon département',
-  },
-  {
-    name: 'CRM Faiseur',
-    href: '/crm/faiseur',
-    icon: Heart,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Suivi des disciples',
-  },
-  {
-    name: 'Dashboard Chef',
-    href: '/dashboard/chef-famille',
-    icon: Users,
-    roles: ['PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Ma famille',
-  },
-  {
-    name: 'Départements',
-    href: '/departments',
-    icon: Building2,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-    subtitle: 'Structure',
-  },
-  {
-    name: 'Rapports',
-    href: '/reports',
-    icon: FileText,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Hebdomadaires',
-  },
-  {
-    name: 'Aide urgente',
-    href: '/reports/urgent-aid',
-    icon: AlertTriangle,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-    subtitle: 'Demandes d\'aide',
-  },
-  {
-    name: 'Prières',
-    href: '/prayers',
-    icon: BookOpen,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Sujets & témoignages',
-  },
-  {
-    name: 'Espaces prière',
-    href: '/prayers/spaces',
-    icon: Shield,
-    roles: ['ADMIN', 'PASTEUR'],
-    subtitle: 'Par niveau de visibilité',
-  },
-  {
-    name: 'Actions de grâce',
-    href: '/prayers/actions-de-grace',
-    icon: Heart,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Prières exaucées',
-  },
-  {
-    name: 'Événements',
-    href: '/events',
-    icon: Calendar,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Calendrier',
-  },
-  {
-    name: 'Programme',
-    href: '/events/program',
-    icon: Calendar,
-    roles: ['ADMIN', 'PASTEUR'],
-    subtitle: 'Programme hebdomadaire',
-  },
-  {
-    name: 'Statistiques événements',
-    href: '/events/statistics',
-    icon: BarChart3,
-    roles: ['PASTEUR'],
-    subtitle: 'Indicateurs',
-  },
-  {
-    name: 'Types de programmes',
-    href: '/programs',
-    icon: Calendar,
-    roles: ['ADMIN', 'PASTEUR'],
-    subtitle: 'Configuration des présences',
-  },
-  {
-    name: 'Documents',
-    href: '/documents',
-    icon: FolderOpen,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Fichiers & rapports',
-  },
-  {
-    name: 'Évaluations',
-    href: '/evaluations',
-    icon: StarIcon,
-    roles: ['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Anonymes & feedback',
-  },
-  {
-    name: 'Retraits',
-    href: '/souls/retractions',
-    icon: AlertTriangle,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-    subtitle: 'Demandes de retrait',
-  },
-  {
-    name: 'Suivis parallèles',
-    href: '/parallel-followups',
-    icon: Activity,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Accompagnements',
-  },
-  {
-    name: 'Alertes',
-    href: '/alerts',
-    icon: Bell,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Notifications',
-  },
-  {
-    name: 'Demandes membres',
-    href: '/members/requests',
-    icon: MessageSquare,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
-    subtitle: 'Suggestions & présences',
-  },
-  {
-    name: 'Messagerie',
-    href: '/messages',
-    icon: MessagesSquare,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
-    subtitle: 'Conversations privées',
-  },
-  {
-    name: 'Évangélisation',
-    href: '/evangelism',
-    icon: Sprout,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Pipeline de croissance',
-  },
-  {
-    name: 'Objectifs',
-    href: '/objectives',
-    icon: Target,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Performances mesurées',
-  },
-  {
-    name: 'Visites',
-    href: '/visits',
-    icon: DoorOpen,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Planification & comptes rendus',
-  },
-  {
-    name: 'Badges',
-    href: '/badges',
-    icon: Trophy,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
-    subtitle: 'Récompenses & classements',
-  },
-  {
-    name: 'Formations',
-    href: '/trainings',
-    icon: GraduationCap,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
-    subtitle: 'Cours, quiz & certificats',
-  },
-  {
-    name: 'Rendez-vous',
-    href: '/appointments',
-    icon: CalendarClock,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
-    subtitle: 'Prises de RDV & validations',
-  },
-  {
-    name: 'Cartographie',
-    href: '/map',
-    icon: MapIcon,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-    subtitle: 'Carte des disciples',
-  },
-  {
-    name: 'Utilisateurs',
-    href: '/users',
-    icon: UserCog,
-    roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-    subtitle: 'Gestion des comptes',
-  },
-  {
-    name: 'Audit',
-    href: '/audit',
-    icon: Activity,
-    roles: ['ADMIN', 'PASTEUR'],
-    subtitle: 'Journal de bord',
-  },
-  {
-    name: 'Permissions',
-    href: '/permissions',
-    icon: UserCog,
-    roles: ['ADMIN'],
-    subtitle: 'Matrice des rôles',
-  },
-];
-
-function NavItem({ item, collapsed = false, onClick }: { item: typeof navigation[0]; collapsed?: boolean; onClick?: () => void }) {
+function NavItem({ item, collapsed = false, onClick }: { item: WorkspaceNavItem; collapsed?: boolean; onClick?: () => void }) {
   const location = useLocation();
   const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
 
@@ -371,9 +85,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     ? Object.values(myEval.statistiques).reduce((acc, s) => acc + (s.moyenne || 0), 0) / Object.keys(myEval.statistiques).length
     : null;
 
-  // Filter navigation by activeRole
-  const activeRole = user?.activeRole || user?.role;
-  const filteredNav = navigation.filter((item) => activeRole && item.roles.includes(activeRole));
+  // Espace métier du rôle actif : menus strictement dédiés au métier.
+  const activeRole = user?.activeRole || user?.role || 'FAISEUR';
+  const workspaceSections = navForRole(activeRole);
+  const meta = ROLE_META[activeRole as keyof typeof ROLE_META] || ROLE_META.FAISEUR;
 
   return (
     <>
@@ -407,17 +122,43 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           {/* Collapse toggle */}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="absolute -right-3 top-20 z-10 w-6 h-6 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 
+            className="absolute -right-3 top-[8.5rem] z-10 w-6 h-6 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 
                        flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200
                        hover:scale-110 active:scale-95"
           >
             <ChevronLeft className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
           </button>
 
+          {/* Bandeau espace métier (desktop) */}
+          <div className={`flex-shrink-0 px-3 pt-3 ${collapsed ? 'flex justify-center' : ''}`}>
+            <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border border-primary-500/15 dark:border-white/[0.06] bg-gradient-to-r from-primary-500/10 to-gold-500/5
+              ${collapsed ? 'justify-center p-2.5' : ''}`}>
+              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${meta.gradient} flex items-center justify-center shadow-sm flex-shrink-0`}>
+                <Church className="w-4 h-4 text-white drop-shadow-sm" />
+              </div>
+              {!collapsed && (
+                <div className="min-w-0 animate-fade-in">
+                  <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate leading-tight">{meta.label}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{meta.tagline}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Navigation */}
-          <nav className="flex-1 px-2.5 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
-            {filteredNav.map((item) => (
-              <NavItem key={item.href} item={item} collapsed={collapsed} />
+          <nav className="flex-1 px-2.5 py-3 overflow-y-auto overflow-x-hidden">
+            {workspaceSections.map((section) => (
+              <div key={section.title} className="mb-1">
+                {!collapsed && (
+                  <p className="px-3 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400/90 dark:text-gray-500">
+                    {section.title}
+                  </p>
+                )}
+                {collapsed && <div className="pt-3" />}
+                {section.items.map((item) => (
+                  <NavItem key={item.href} item={item} collapsed={collapsed} />
+                ))}
+              </div>
             ))}
           </nav>
 
@@ -498,9 +239,26 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </div>
 
           {/* Mobile navigation */}
-          <nav className="px-3 py-4 space-y-0.5 overflow-y-auto" style={{ height: 'calc(100% - 4rem)' }}>
-            {filteredNav.map((item) => (
-              <NavItem key={item.href} item={item} onClick={onClose} />
+          <nav className="px-3 py-3 overflow-y-auto" style={{ height: 'calc(100% - 4rem)' }}>
+            {/* Bandeau espace métier */}
+            <div className="flex items-center gap-2.5 mx-1 mt-1 mb-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-primary-500/10 to-gold-500/5 border border-primary-500/15 dark:border-white/[0.06]">
+              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${meta.gradient} flex items-center justify-center shadow-sm flex-shrink-0`}>
+                <Church className="w-4 h-4 text-white" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{meta.label}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{meta.tagline}</p>
+              </div>
+            </div>
+            {workspaceSections.map((section) => (
+              <div key={section.title} className="mb-1">
+                <p className="px-3 pt-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400/90 dark:text-gray-500">
+                  {section.title}
+                </p>
+                {section.items.map((item) => (
+                  <NavItem key={item.href} item={item} onClick={onClose} />
+                ))}
+              </div>
             ))}
           </nav>
         </div>

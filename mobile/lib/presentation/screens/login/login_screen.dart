@@ -56,7 +56,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (!mounted) return;
       // Notify the auth guard with full user data (multi-role)
       AuthState().setAuthenticated(true, userData: response.data as Map<String, dynamic>?);
-      context.go('/dashboard');
+      // Aller directement vers l'espace métier du rôle actif
+      context.go(roleHome(AuthState().activeRole));
     } on DioException catch (e) {
       String message;
       switch (e.type) {

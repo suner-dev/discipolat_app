@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
@@ -136,7 +137,21 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
             ),
       bottomNavigationBar: GlassBottomNav(currentIndex: _currentNavIndex, onTap: (i) {
         setState(() => _currentNavIndex = i);
-        final routes = ['/dashboard', '/souls', '/reports/maker', '/profile'];
+        // Barre de navigation sensible à l'espace métier du rôle actif
+        final role = AuthState().activeRole;
+        final List<String> routes;
+        switch (role) {
+          case 'RESPONSABLE':
+            routes = ['/dashboard/responsable', '/departments', '/members/requests', '/profile'];
+          case 'FAISEUR':
+            routes = ['/crm-faiseur', '/souls', '/reports/maker', '/profile'];
+          case 'CHEF_DE_FAMILLE':
+            routes = ['/dashboard/chef-famille', '/families', '/reports/family', '/profile'];
+          case 'MEMBRE':
+            routes = ['/profile', '/trainings', '/badges', '/appointments'];
+          default:
+            routes = ['/dashboard', '/souls', '/reports/maker', '/profile'];
+        }
         if (i < routes.length) context.go(routes[i]);
       }),
     );

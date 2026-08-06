@@ -45,6 +45,7 @@ public class MemberRequest {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
+    @Builder.Default
     private Statut statut = Statut.OUVERT;
 
     @Column(name = "department_id")

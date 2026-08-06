@@ -37,16 +37,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UUID userId = UUID.fromString(claims.getSubject());
             String role = claims.get("role", String.class);
 
-            // Multi-role: extract ALL roles from JWT as authorities
-            List<String> roles = jwtTokenProvider.extractRoles(token);
+            // ====================================================================
+            // ISOLATION DES ESPACES MÉTIERS
+            // Les autorités Spring ne proviennent QUE du rôle ACTIF (claim "role").
+            // Un utilisateur multi-rôles n'a accès qu'à l'espace métier courant :
+            // @PreAuthorize, hasRole() et hasAnyRole() évaluent donc le rôle actif
+            // (et non l'ensemble des rôles possédés), en cohérence avec le frontend
+            // et les contrôles de services (SecurityUtils.hasActiveRole/isSuperUser).
+            // L'Admin actif reçoit également ROLE_PASTEUR : les deux rôles sont
+            // des super-utilisateurs qui partagent la vue complète de l'application.
+            // ====================================================================
             List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-            if (roles != null && !roles.isEmpty()) {
-                for (String r : roles) {
-                    authorities.add(new SimpleGrantedAuthority("ROLE_" + r));
+            if (role != null && !role.isBlank()) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                if ("ADMIN".equals(role)) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_PASTEUR"));
                 }
             } else {
-                // Fallback: single role
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                // Fallback: single role from the roles claim (legacy tokens)
+                List<String> roles = jwtTokenProvider.extractRoles(token);
+                String fallback = (roles != null && !roles.isEmpty()) ? roles.get(0) : null;
+                if (fallback != null && !fallback.isBlank()) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + fallback));
+                }
             }
 
             // Store the raw JWT token in credentials for SecurityUtils to read

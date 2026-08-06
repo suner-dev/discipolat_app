@@ -8,6 +8,7 @@ import 'presentation/screens/souls/souls_list_screen.dart';
 import 'presentation/screens/souls/soul_detail_screen.dart';
 import 'presentation/screens/reports/maker_report_screen.dart';
 import 'presentation/screens/reports/family_report_screen.dart';
+import 'presentation/screens/reports/reports_screen.dart';
 import 'presentation/screens/families/families_list_screen.dart';
 import 'presentation/screens/alerts/alerts_list_screen.dart';
 import 'presentation/screens/notifications/notifications_screen.dart';
@@ -15,6 +16,7 @@ import 'presentation/screens/profile/profile_screen.dart';
 import 'presentation/screens/prayers/prayers_list_screen.dart';
 import 'presentation/screens/events/events_list_screen.dart';
 import 'presentation/screens/departments/departments_list_screen.dart';
+import 'presentation/screens/departments/department_report_screen.dart';
 import 'presentation/screens/evaluations/evaluations_screen.dart';
 import 'presentation/screens/search/search_screen.dart';
 import 'presentation/screens/souls/crm_faiseur_screen.dart';
@@ -113,15 +115,33 @@ class AuthState {
   }
 }
 
+/// Tableau de bord racine de chaque espace métier.
+/// Un changement de rôle = un changement complet de contexte de travail.
+String roleHome(String role) {
+  switch (role) {
+    case 'FAISEUR':
+      return '/crm-faiseur';
+    case 'RESPONSABLE':
+      return '/dashboard/responsable';
+    case 'CHEF_DE_FAMILLE':
+      return '/dashboard/chef-famille';
+    case 'MEMBRE':
+      return '/profile';
+    default:
+      return '/dashboard'; // ADMIN, PASTEUR
+  }
+}
+
 /// List of roles allowed per route.
 /// null = all authenticated users, [] = no one (public only).
 Map<String, List<String>> _routeRoles = {
   '/dashboard': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/dashboard/pasteur': ['ADMIN', 'PASTEUR'],
-  '/dashboard/chef-famille': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-  '/dashboard/responsable': ['PASTEUR', 'RESPONSABLE'],
+  '/dashboard/chef-famille': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE'],
+  '/dashboard/responsable': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/souls': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/families': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/reports/maker': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/reports/family': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/prayers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -132,11 +152,11 @@ Map<String, List<String>> _routeRoles = {
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/evaluations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/crm-faiseur': ['ADMIN', 'PASTEUR', 'FAISEUR'],
-  '/souls/:id/pastoral-360': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
-  '/search': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+  '/souls/:id/pastoral-360': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/search': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/users': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/permissions': ['ADMIN'],
-  '/documents': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+  '/documents': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/audit': ['ADMIN', 'PASTEUR'],
   '/appointments': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/visits': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -147,7 +167,7 @@ Map<String, List<String>> _routeRoles = {
   '/messages': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/parallel-followups': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/map': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-  '/members/requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'MEMBRE'],
+  '/members/requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
 };
 
 final appRouter = GoRouter(
@@ -167,13 +187,34 @@ final appRouter = GoRouter(
       return '/dashboard';
     }
 
-    // Role-based guard (checks activeRole + all roles)
+    // Garde par rôle ACTIF — isolation stricte des espaces métiers.
+    // Un utilisateur multi-rôles n'accède qu'à l'espace métier courant :
+    // changer de rôle change complètement l'application.
     if (auth.isAuthenticated && auth.activeRole.isNotEmpty) {
-      final basePath = '/' + (state.matchedLocation.split('/').length > 1 ? state.matchedLocation.split('/')[1] : '');
+      final role = auth.activeRole;
+
+      // 1) Chaque route n'est accessible que si le rôle ACTIF est autorisé.
+      final segments = state.matchedLocation.split('/');
+      final basePath = '/${segments.length > 1 ? segments[1] : ''}';
       final allowedRoles = _routeRoles[basePath];
-      // Check both activeRole and any of the user's roles
-      if (allowedRoles != null && !auth.hasAnyRole(allowedRoles)) {
-        return '/dashboard'; // Redirect unauthorized role to dashboard
+      if (allowedRoles != null && !auth.hasActiveRole(allowedRoles)) {
+        // L'Admin actif dispose des capacités du Pasteur (super-utilisateurs
+        // qui partagent la vue complète de l'application).
+        if (!(role == 'ADMIN' && allowedRoles.contains('PASTEUR'))) {
+          return roleHome(role); // Ramené vers son propre espace métier
+        }
+      }
+
+      // 2) Isolation des tableaux de bord : les rôles opérationnels sont
+      //    ramenés vers leur propre espace et ne peuvent pas ouvrir le
+      //    dashboard d'un autre métier (responsable, chef, faiseur, membre).
+      if (!auth.hasActiveRole(['ADMIN', 'PASTEUR'])) {
+        final home = roleHome(role);
+        final location = state.matchedLocation;
+        final otherHomes = ['/dashboard/responsable', '/dashboard/chef-famille', '/crm-faiseur'];
+        if (location == '/dashboard' || (otherHomes.contains(location) && location != home)) {
+          return home;
+        }
       }
     }
 
@@ -216,6 +257,11 @@ final appRouter = GoRouter(
       builder: (context, state) => SoulDetailScreen(
         soulId: state.pathParameters['id']!,
       ),
+    ),
+    GoRoute(
+      path: '/reports',
+      name: 'reports',
+      builder: (context, state) => const ReportsScreen(),
     ),
     GoRoute(
       path: '/reports/maker',
@@ -261,6 +307,13 @@ final appRouter = GoRouter(
       path: '/departments',
       name: 'departments',
       builder: (context, state) => const DepartmentsListScreen(),
+    ),
+    GoRoute(
+      path: '/departments/:id/report',
+      name: 'department-report',
+      builder: (context, state) => DepartmentReportScreen(
+        departmentId: state.pathParameters['id']!,
+      ),
     ),
     GoRoute(
       path: '/evaluations',
@@ -323,6 +376,11 @@ final appRouter = GoRouter(
       path: '/objectives',
       name: 'objectives',
       builder: (context, state) => const ObjectivesScreen(),
+    ),
+    GoRoute(
+      path: '/parallel-followups',
+      name: 'parallel-followups',
+      builder: (context, state) => const ParallelFollowupsScreen(),
     ),
     GoRoute(
       path: '/badges',

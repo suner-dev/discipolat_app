@@ -4,6 +4,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.notifications.domain.NotificationService;
@@ -17,7 +18,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -41,6 +48,10 @@ class SoulServiceTest {
     @Mock
     private FamilyRepository familyRepository;
     @Mock
+    private DepartmentRepository departmentRepository;
+    @Mock
+    private SoulDepartmentRepository soulDepartmentRepository;
+    @Mock
     private MakerReportRepository makerReportRepository;
     @Mock
     private EvaluationService evaluationService;
@@ -57,7 +68,8 @@ class SoulServiceTest {
     void setUp() {
         soulService = new SoulService(soulRepository, soulHistoryRepository,
                 soulNoteRepository, securityUtils, userRepository,
-                familyRepository, makerReportRepository, evaluationService,
+                familyRepository, departmentRepository, soulDepartmentRepository,
+                makerReportRepository, evaluationService,
                 notificationService);
 
         faiseurId = UUID.randomUUID();
@@ -136,6 +148,62 @@ class SoulServiceTest {
         assertNotNull(result);
         verify(soulRepository).save(any(Soul.class));
         verify(soulHistoryRepository).save(any(SoulHistory.class));
+    }
+
+    @Test
+    void findAll_WithoutFilters_SuperUser_ShouldReturnAllSouls() {
+        when(securityUtils.isSuperUser()).thenReturn(true);
+        when(soulRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(testSoul)));
+
+        Page<Soul> result = soulService.findAll(null, null, null, null, null, PageRequest.of(0, 20));
+
+        assertEquals(1, result.getTotalElements());
+        verify(soulRepository).findAll(any(Pageable.class));
+        verify(soulRepository, never()).findAllByIdIn(anyList(), any(Pageable.class));
+    }
+
+    @Test
+    void findAll_WithoutFilters_FaiseurActif_ShouldScopeToOwnSouls() {
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.hasActiveRole("FAISEUR")).thenReturn(true);
+        when(securityUtils.getCurrentUserId()).thenReturn(faiseurId);
+        when(soulRepository.findAllByFaiseurId(faiseurId)).thenReturn(List.of(testSoul));
+        when(soulRepository.findAllByIdIn(List.of(testSoul.getId()), PageRequest.of(0, 20)))
+                .thenReturn(new PageImpl<>(List.of(testSoul)));
+
+        Page<Soul> result = soulService.findAll(null, null, null, null, null, PageRequest.of(0, 20));
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals(testSoul.getId(), result.getContent().get(0).getId());
+        verify(soulRepository, never()).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void findAll_WithExplicitFaiseurId_NonSuperUser_ShouldNotExpandScope() {
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.hasActiveRole("FAISEUR")).thenReturn(true);
+        when(securityUtils.getCurrentUserId()).thenReturn(faiseurId);
+        when(soulRepository.findAllByFaiseurId(faiseurId)).thenReturn(List.of(testSoul));
+        when(soulRepository.findAllById(any())).thenReturn(List.of(testSoul));
+
+        // Paramètre faiseurId = un AUTRE faiseur : ne doit PAS élargir l'accès
+        Page<Soul> result = soulService.findAll(UUID.randomUUID(), null, null, null, null, PageRequest.of(0, 20));
+
+        assertEquals(0, result.getTotalElements());
+        verify(soulRepository, never()).findByFaiseurId(any(UUID.class), any(Pageable.class));
+    }
+
+    @Test
+    void search_SansAcces_ShouldReturnEmpty() {
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.getCurrentUserId()).thenReturn(faiseurId);
+        // Aucun rôle actif reconnu → aucune âme accessible
+
+        Page<Soul> result = soulService.findAll(null, null, null, null, "Marie", PageRequest.of(0, 20));
+
+        assertEquals(0, result.getTotalElements());
+        verify(soulRepository, never()).search(anyString(), any(Pageable.class));
     }
 
     @Test

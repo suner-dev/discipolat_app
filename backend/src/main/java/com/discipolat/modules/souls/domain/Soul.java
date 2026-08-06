@@ -62,6 +62,7 @@ public class Soul {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
+    @Builder.Default
     private StatutAme statut = StatutAme.EN_INTEGRATION;
 
     @Column(name = "faiseur_id", nullable = false)

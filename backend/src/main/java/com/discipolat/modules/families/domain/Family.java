@@ -37,6 +37,7 @@ public class Family {
     @Column(name = "date_creation", nullable = false)
     private LocalDate dateCreation;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
     private StatutEntite statut = StatutEntite.ACTIVE;
@@ -59,6 +60,7 @@ public class Family {
     @Column(name = "zone")
     private String zone;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "niveau_risque", nullable = false)
     private NiveauRisque niveauRisque = NiveauRisque.NORMAL;

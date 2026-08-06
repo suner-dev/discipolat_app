@@ -37,6 +37,7 @@ public class Badge {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "niveau", nullable = false)
+    @Builder.Default
     private Niveau niveau = Niveau.BRONZE;
 
     @Enumerated(EnumType.STRING)

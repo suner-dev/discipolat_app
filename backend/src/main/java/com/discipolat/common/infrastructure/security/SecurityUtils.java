@@ -67,6 +67,28 @@ public class SecurityUtils {
     }
 
     /**
+     * Vérifie si le rôle ACTIF de l'utilisateur fait partie des rôles donnés.
+     * Le rôle actif représente l'espace métier courant : les contrôles
+     * d'accès aux espaces doivent se baser sur lui (et non sur l'ensemble
+     * des rôles possédés).
+     */
+    public boolean hasActiveRole(String... roles) {
+        String activeRole = getCurrentUserRole();
+        if (activeRole == null) return false;
+        for (String r : roles) {
+            if (r.equals(activeRole)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Rôles super-utilisateurs : accès à tous les espaces métiers.
+     */
+    public boolean isSuperUser() {
+        return hasActiveRole("ADMIN", "PASTEUR");
+    }
+
+    /**
      * Returns ALL roles from JWT claims.
      */
     public List<String> getAllUserRoles() {

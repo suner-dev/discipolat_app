@@ -1,7 +1,6 @@
 package com.discipolat.modules.map.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
-import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
@@ -57,37 +56,43 @@ public class MapService {
     @Transactional(readOnly = true)
     public List<MapPointResponse> getMapPoints() {
         UUID userId = securityUtils.getCurrentUserId();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User", userId));
 
-        // Pasteur / admin : tout
-        if (user.getRoles().contains(UserRole.PASTEUR) || user.getRoles().contains(UserRole.ADMIN)) {
+        // Pasteur / admin actifs : tout
+        if (securityUtils.isSuperUser()) {
             return allPoints();
         }
 
         Set<UUID> soulIds = new HashSet<>();
         Set<UUID> familyIds = new HashSet<>();
 
-        if (user.getRoles().contains(UserRole.CHEF_DE_FAMILLE)) {
-            List<UUID> famIds = familyRepository.findByChefFamilleId(userId)
-                    .stream().map(Family::getId).toList();
-            familyIds.addAll(famIds);
-            soulIds.addAll(soulRepository.findByFamilleIdIn(famIds).stream()
+        if (securityUtils.hasActiveRole("CHEF_DE_FAMILLE")) {
+            // Union dédupliquée : source canonique familleGereeId + repli DB (chefFamilleId)
+            List<UUID> famIds = new ArrayList<>();
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null && user.getFamilleGereeId() != null) famIds.add(user.getFamilleGereeId());
+            familyRepository.findByChefFamilleId(userId).stream()
+                    .map(Family::getId).forEach(famIds::add);
+            List<UUID> distinctFamIds = famIds.stream().distinct().toList();
+            familyIds.addAll(distinctFamIds);
+            soulIds.addAll(soulRepository.findByFamilleIdIn(distinctFamIds).stream()
                     .filter(s -> !s.isDeleted()).map(Soul::getId).toList());
         }
 
-        if (user.getRoles().contains(UserRole.RESPONSABLE)) {
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
             List<UUID> deptIds = departmentRepository.findByResponsableId(userId)
                     .stream().map(Department::getId).toList();
             if (!deptIds.isEmpty()) {
-                familyIds.addAll(familyRepository.findAll()
-                        .stream().map(Family::getId).toList());
-                soulIds.addAll(memberDepartmentRepository.findByDepartmentIdIn(deptIds)
-                        .stream().map(MemberDepartment::getSoulId).toList());
+                List<UUID> deptSoulIds = memberDepartmentRepository.findByDepartmentIdIn(deptIds)
+                        .stream().map(MemberDepartment::getSoulId).toList();
+                soulIds.addAll(deptSoulIds);
+                // familles des membres du département (et non toutes les familles)
+                familyIds.addAll(soulRepository.findAllById(deptSoulIds).stream()
+                        .filter(s -> !s.isDeleted() && s.getFamilleId() != null)
+                        .map(Soul::getFamilleId).toList());
             }
         }
 
-        if (user.getRoles().contains(UserRole.FAISEUR)) {
+        if (securityUtils.hasActiveRole("FAISEUR")) {
             soulIds.addAll(soulRepository.findAllByFaiseurId(userId).stream()
                     .filter(s -> !s.isDeleted()).map(Soul::getId).toList());
             // familles des disciples du faiseur
@@ -101,16 +106,12 @@ public class MapService {
 
     @Transactional(readOnly = true)
     public MapPointResponse updateSoulCoordinates(UUID soulId, UpdateCoordinatesRequest request) {
-        UUID userId = securityUtils.getCurrentUserId();
         Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new EntityNotFoundException("Soul", soulId));
 
-        // Seuls pasteur/admin/responsable peuvent modifier les coordonnées
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User", userId));
-        boolean allowed = user.getRoles().contains(UserRole.PASTEUR)
-                || user.getRoles().contains(UserRole.ADMIN)
-                || (user.getRoles().contains(UserRole.RESPONSABLE) && isResponsableDe(soul));
+        // Seuls pasteur/admin actifs partout, responsable actif sur ses départements
+        boolean allowed = securityUtils.isSuperUser()
+                || (securityUtils.hasActiveRole("RESPONSABLE") && isResponsableDe(soul));
         if (!allowed) {
             throw new org.springframework.security.access.AccessDeniedException(
                     "Vous ne pouvez pas modifier la position de ce disciple");

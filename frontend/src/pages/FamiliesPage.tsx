@@ -9,7 +9,7 @@ import type { ColumnDef } from '@/types/table';
 import { Users, Plus, Building2, ChevronRight, BarChart3, AlertTriangle } from 'lucide-react';
 
 export default function FamiliesPage() {
-  const { hasRole } = useAuth();
+  const { user } = useAuth();
   const [page, setPage] = useState(0);
 
   const { data, isLoading } = useQuery({
@@ -106,7 +106,7 @@ export default function FamiliesPage() {
           <p className="page-subtitle">Organisation en familles de disciples</p>
         </div>
         <div className="flex gap-2 animate-fade-in">
-          {hasRole('PASTEUR') && (
+          {user?.activeRole === 'PASTEUR' && (
             <Link to="/families/compare" className="btn-secondary btn-sm">
               <BarChart3 className="w-4 h-4" />
               Comparer

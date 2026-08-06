@@ -5,14 +5,17 @@ import '../../widgets/glass_theme.dart';
 
 class SoulDetailScreen extends StatefulWidget {
   final String soulId;
-  const SoulDetailScreen({super.key, required this.soulId});
+  /// Permet d'injecter un ApiService mocké dans les tests widget.
+  final ApiService? apiService;
+
+  const SoulDetailScreen({super.key, required this.soulId, this.apiService});
 
   @override
   State<SoulDetailScreen> createState() => _SoulDetailScreenState();
 }
 
 class _SoulDetailScreenState extends State<SoulDetailScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   Soul? _soul;
   Map<String, dynamic>? _pastoral360;
   Map<String, dynamic>? _spiritualScore;
@@ -136,7 +139,7 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
                               const GlassDivider(),
                               _infoRow(Icons.phone_outlined, 'Téléphone', _soul!.telephone ?? '—'),
                               const GlassDivider(),
-                              _infoRow(Icons.calendar_today, 'Intégration', _soul!.dateIntegration ?? '—'),
+                              _infoRow(Icons.calendar_today, 'Intégration', _soul!.dateIntegration),
                               const GlassDivider(),
                               _infoRow(Icons.cake, 'Date de naissance', _soul!.dateNaissance ?? '—'),
                             ],

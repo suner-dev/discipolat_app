@@ -1,6 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { WORKSPACE_HOME, isSuperUser } from '@/workspaces';
+import type { UserRole } from '@/types';
 import MainLayout from '@/layouts/MainLayout';
 import AuthLayout from '@/layouts/AuthLayout';
 import LoginPage from '@/pages/LoginPage';
@@ -83,20 +85,16 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
 }
 
 /**
- * Tableau de bord racine : un membre pur (sans autre rôle) est redirigé
- * vers son Espace Membre ; les autres rôles gardent le dashboard général.
+ * Tableau de bord racine : chaque rôle est redirigé vers SON espace métier.
+ * Un changement de rôle = un changement complet de contexte de travail.
  */
 function DashboardGate() {
-  const { hasRole } = useAuth();
-  const isPureMembre =
-    hasRole('MEMBRE') &&
-    !hasRole('FAISEUR') &&
-    !hasRole('RESPONSABLE') &&
-    !hasRole('CHEF_DE_FAMILLE') &&
-    !hasRole('PASTEUR') &&
-    !hasRole('ADMIN');
-  if (isPureMembre) {
-    return <Navigate to="/dashboard/membre" replace />;
+  const { activeRole, user } = useAuth();
+  const currentRole = (activeRole || user?.role || 'FAISEUR') as UserRole;
+  // Super-utilisateurs (Admin / Pasteur) : dashboard général.
+  // Rôles opérationnels : redirection vers leur espace métier dédié.
+  if (!isSuperUser(currentRole)) {
+    return <Navigate to={WORKSPACE_HOME[currentRole] || '/dashboard'} replace />;
   }
   return <DashboardPage />;
 }
@@ -135,7 +133,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/dashboard/chef-famille" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}>
             <ChefFamilleDashboardPage />
           </ProtectedRoute>
         } />
@@ -175,7 +173,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/families/new" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
             <FamilyCreatePage />
           </ProtectedRoute>
         } />
@@ -205,7 +203,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/reports/maker" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
             <MakerReportPage />
           </ProtectedRoute>
         } />
@@ -215,7 +213,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/families/:id/faiseur-performance" element={
-          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <FamilyFaiseurPerformancePage />
           </ProtectedRoute>
         } />
@@ -325,7 +323,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/evaluations" element={
-          <ProtectedRoute roles={['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
             <EvaluationsPage />
           </ProtectedRoute>
         } />
@@ -355,12 +353,12 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/crm/faiseur" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
             <CrmFaiseurPage />
           </ProtectedRoute>
         } />
         <Route path="/events/statistics" element={
-          <ProtectedRoute roles={['PASTEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
             <EventStatisticsPage />
           </ProtectedRoute>
         } />

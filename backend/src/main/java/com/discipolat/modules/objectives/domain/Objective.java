@@ -35,6 +35,7 @@ public class Objective {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "periode", nullable = false)
+    @Builder.Default
     private Periode periode = Periode.MENSUEL;
 
     @Column(name = "actif", nullable = false)

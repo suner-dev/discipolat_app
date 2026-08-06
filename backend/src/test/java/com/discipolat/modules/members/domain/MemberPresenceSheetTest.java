@@ -1,6 +1,5 @@
 package com.discipolat.modules.members.domain;
 
-import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.exception.BadRequestException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
@@ -80,6 +79,8 @@ class MemberPresenceSheetTest {
 
         Department dept = Department.builder().id(deptId).nom("Chorale").responsableId(responsableId).build();
         when(departmentRepository.findByResponsableId(responsableId)).thenReturn(List.of(dept));
+        // Rôle actif RESPONSABLE (l'utilisateur agit en tant que responsable)
+        when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
     }
 
     private Soul soul() {
@@ -179,11 +180,21 @@ class MemberPresenceSheetTest {
     }
 
     @Test
-    void getDepartmentPresenceSheet_UnknownUser_ShouldThrow() {
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
-        when(userRepository.findById(any())).thenReturn(Optional.empty());
+    void getDepartmentPresenceSheet_WrongActiveRole_ShouldBeDenied() {
+        when(securityUtils.getCurrentUserId()).thenReturn(responsableId);
+        // L'utilisateur possède RESPONSABLE mais agit en tant qu'autre rôle → refusé
+        when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(false);
 
-        assertThrows(EntityNotFoundException.class,
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> memberService.getDepartmentPresenceSheet(deptId, LocalDate.now()));
+    }
+
+    @Test
+    void getDepartmentPresenceSheet_UnknownUser_ShouldBeDenied() {
+        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        // Utilisateur inconnu : aucun département administré → refusé directement,
+        // sans fetch préalable (aucune fuite d'existence du compte)
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
                 () -> memberService.getDepartmentPresenceSheet(deptId, LocalDate.now()));
     }
 }

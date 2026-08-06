@@ -1,5 +1,264 @@
 # Changelog
 
+## [3.0.8] - 2026-08-06
+
+### 🔒 Isolation des espaces métiers appliquée à TOUTE la chaîne (API → services → Web → Mobile)
+
+**Principe** : le rôle actif devient la seule source d'autorisation. Changer de rôle =
+changer d'application — sur le backend, les menus, les routes et les données.
+
+### 🎯 API (fix critique)
+- **`JwtAuthenticationFilter`** : les autorités Spring ne proviennent plus de **tous**
+  les rôles du JWT mais du **rôle ACTIF uniquement** (claim `role`). `@PreAuthorize`,
+  `hasRole()` et `hasAnyRole()` évaluent désormais l'espace métier courant — avant ce
+  fix, un multi-rôles (ex. FAISEUR + RESPONSABLE) pouvait appeler les API d'un autre
+  métier malgré les contrôles de services. L'**Admin actif** reçoit aussi `ROLE_PASTEUR`
+  (super-utilisateurs partageant la vue complète, cohérent avec `isSuperUser()`)
+
+### 🔒 Confidentiel — données des familles
+- **`FamilyController`** : garde classe ajoutée (les GET étaient **sans `@PreAuthorize`**
+  → n'importe quel utilisateur authentifié, même MEMBRE, pouvait lister/lire toutes les
+  familles)
+- **`FamilyService.findAll/findById` scopés par rôle actif** : super-utilisateurs = tout ;
+  chef = sa famille (`familleGereeId` + `findByChefFamilleId`) ; responsable = familles des
+  membres de **ses** départements (via `soul_departments`) ; faiseur = familles de ses
+  disciples. 403 en lecture hors espace
+- **`DashboardService.getCurrentUserMetrics`** : la branche RESPONSABLE comptait **toutes**
+  les familles de l'église → membres de ses départements uniquement
+
+### 🗂️ Web — rôle actif partout dans l'UI
+- Routes `/evaluations` et `/events/statistics` ouvertes à ADMIN (l'admin est
+  super-utilisateur et voit ces menus)
+- Les gates `hasRole(...)` (ensemble des rôles) remplacés par le **rôle actif** :
+  EventsPage (vue consolidée), ReportsPage (exports), FamiliesPage (comparer),
+  FamilyDetailPage (niveau de risque, changer chef, performance faiseurs)
+
+### 📱 Mobile
+- **Garde de routes `hasActiveRole`** (au lieu de `hasAnyRole`) : l'isolation s'applique à
+  **toutes** les routes et non plus seulement aux tableaux de bord — un FAISEUR actif
+  n'ouvre plus `/users`, `/departments`, `/evaluations`, etc.
+- `_routeRoles` aligné sur le web (rapport faiseur sans responsable/chef, documents + chef,
+  demande membres sans membre, pastoral-360 + chef, recherche + chef)
+
+### 🧪 Tests
+- **Nouveau `SecurityUtilsTest`** (7 tests) : rôle actif lu depuis le JWT, `hasActiveRole`
+  ignore les rôles non actifs, `isSuperUser` admin/pasteur uniquement
+- **Fix infra H2** : les entités utilisent `columnDefinition = "jsonb"` (production
+  PostgreSQL) — H2 ne connaît pas ce type → toute la suite backend échouait à la création
+  du schéma. `h2-init.sql` déclare `CREATE DOMAIN IF NOT EXISTS jsonb AS JSON`
+  (config test uniquement)
+
+### ✅ Validation
+- Backend : **128 tests Maven ✓** (0 échec, dont la suite complète rendue exécutable)
+- Frontend : **58 tests vitest ✓**, `tsc` propre
+- Mobile : **15 tests widget ✓**, `flutter analyze` sans nouvelle issue
+
+## [3.0.7] - 2026-08-06
+
+### 🧪 Mobile — test de régression de la route `/parallel-followups`
+- **Nouveau `mobile/test/parallel_followups_route_test.dart`** (2 tests) utilisant le
+  **routeur complet** (`appRouter` réel + singleton `AuthState` authentifié FAISEUR) :
+  - **Drawer → route** : redirect du login vers l'espace FAISEUR, ouverture du drawer
+    (`ScaffoldState.openDrawer()`), `scrollUntilVisible` vers l'entrée « Suivis
+    parallèles » (item ~9/14, hors écran), tap → l'écran se rend (onglets
+    « Actifs »/« Tous ») et **pas de page 404**
+  - **Navigation directe** : `appRouter.go('/parallel-followups')` après quitté la
+    cible (indépendance de l'ordre d'exécution, le singleton `appRouter` conservant
+    sa position entre les tests)
+- **Régressions** : si le `GoRoute` disparaissait à nouveau, les deux tests échoueraient
+  (l'écran `ParallelFollowupsScreen` rend des onglets que la page 404 n'a pas)
+
+### ✅ Validation
+- Mobile : **15/15 tests widget ✓** (1 + 9 + 3 + 2), `flutter analyze` propre
+
+## [3.0.6] - 2026-08-06
+
+### 🧪 Mobile — tests de navigation des routes à paramètres
+- **Nouveau `mobile/test/parameterized_routes_test.dart`** (3 tests) : navigation
+  réelle vers `/souls/:id`, `/souls/:id/pastoral-360` et `/departments/:id/report`
+  via un routeur de test, avec **preuve que le paramètre `:id` est transmis**
+  (fake ApiService enregistrant les chemins appelés : `/souls/soul-123`,
+  `/souls/soul-123/pastoral-360`, `/departments/dept-456/detail|report|kpi`) et
+  vérification du rendu réel (nom de l'âme, dossier 360°, rapport du département)
+  + assertions `findsNothing` sur les états d'erreur (pas de faux positif)
+- **Testabilité** : injection `ApiService?` optionnelle ajoutée à `SoulDetailScreen`,
+  `Pastoral360Screen` et `DepartmentReportScreen` (`widget.apiService ?? ApiService()`,
+  aucun changement de comportement en production)
+- **Détail technique** : maps de réponse typés `Map<String, dynamic>` (évite les échecs
+  de cast `Map<dynamic, dynamic>` en test), `initializeDateFormatting('fr_FR')` pour
+  intl dans Pastoral360, `indices` vides pour contourner RadarChart en test
+- **Lint** : correction d'un warning pré-existant dans `SoulDetailScreen`
+  (`dateIntegration` non-nullable → `?? '—'` mort supprimé)
+
+### ✅ Validation
+- Mobile : **13/13 tests widget ✓** (1 + 9 + 3), `flutter analyze` propre sur les
+  fichiers touchés
+
+## [3.0.5] - 2026-08-06
+
+### 🧭 Mobile — correction de la route morte `/parallel-followups`
+- **Bug** : `ParallelFollowupsScreen` était importé dans `app.dart` et le drawer pointait
+  vers `/parallel-followups`, mais **aucun `GoRoute` n'était enregistré** → tout lien
+  « Suivis parallèles » (vue super-utilisateurs et espace FAISEUR) tombait sur le 404
+- **Fix** : ajout du `GoRoute '/parallel-followups'` → `ParallelFollowupsScreen`
+  (le garde de rôle `/parallel-followups` = ADMIN/PASTEUR/RESPONSABLE/CHEF/FAISEUR
+  existait déjà et s'applique désormais réellement)
+- **Audit de routes** (revue) : vérification de chaque clé `_routeRoles` et de chaque
+  lien des 5 listes du drawer — `/parallel-followups` était la **seule** route morte ;
+  tous les imports d'écrans sont désormais utilisés (warning `unused_import` éliminé)
+- **Lint** : refactor du calcul `basePath` du redirect (concaténation → interpolation,
+  sémantique identique) — `app.dart` passe à **0 issue**
+
+### ✅ Validation
+- Mobile : `flutter analyze` propre sur `app.dart`, 10/10 tests widget ✓
+
+## [3.0.4] - 2026-08-06
+
+### 🧪 Mobile — tests widget du hub Rapports
+- **Nouveau `mobile/test/reports_screen_test.dart`** (9 tests) : statistiques de
+  complétion affichées (compteur 3/5, mini-stats Soumis/En attente/Taux), cartes de
+  navigation faiseur/famille, **isolation par rôle** (le RESPONSABLE voit la carte
+  « Rapport du département », le FAISEUR ne la voit pas), navigation réelle au tap
+  (placeholders GoRouter vérifiés), sélecteur de département en bottom sheet + accès
+  au rapport, état d'erreur qui **préserve la navigation** (parité web), et bouton
+  « Réessayer » qui recharge les stats
+- **Testabilité** : `ReportsScreen` accepte un `ApiService` optionnel injectable
+  (`widget.apiService ?? ApiService()`), aucun changement de comportement en production
+- **Conventions** : `AuthState` singleton remis à zéro en `setUp`/`tearDown`, fake
+  ApiService retournant de vraies `Response` Dio (aucun réseau, aucune dépendance
+  plugin), routeur de test minimal pour `context.go`
+
+### ✅ Validation
+- Mobile : **10/10 tests widget ✓** (1 existant + 9 nouveaux), `flutter analyze` propre
+
+## [3.0.3] - 2026-08-06
+
+### 📱 Mobile — écran « Rapport du département » pour le responsable
+- **Nouveau `department_report_screen.dart`** : équivalent mobile de la page web
+  `/departments/:id/report` — synthèse hebdomadaire (familles, rapports soumis,
+  présents, absents, présence globale), sorties/maintenus, **détail par famille**
+  (statut soumis/non soumis, présence, présents, absents, sorties, maintenus) et
+  carte « Indicateurs de la semaine » (taux de soumission, taux de présence,
+  rapports soumis/attendus, faiseurs actifs) avec sélecteur de semaine
+  (`showDatePicker`)
+- **Route `/departments/:id/report`** ajoutée dans `app.dart` (guard déjà couvert par
+  `/departments` = ADMIN/PASTEUR/RESPONSABLE ; les autres rôles restent bloqués)
+- **Hub Rapports** : nouvelle carte « Rapport du département » (visible RESPONSABLE +
+  super-utilisateurs) qui ouvre un **sélecteur de département** en bottom sheet —
+  départements administrés via `/departments/by-responsable/:id` pour le responsable,
+  tous les départements pour ADMIN/PASTEUR
+- **Robustesse** (point de revue) : les données critiques (détail + rapport) sont
+  chargées ensemble, le KPI est best-effort — un échec KPI ne masque plus le rapport
+
+### ✅ Validation
+- Mobile : `flutter analyze` sans nouvelle erreur sur les fichiers touchés
+
+## [3.0.2] - 2026-08-06
+
+### 📱 Mobile — écran « Rapports » pour le responsable
+- **Nouveau hub `/reports`** (`reports_screen.dart`) : équivalent mobile de la page web
+  `/reports` — statistiques de complétion hebdomadaire (`/dashboard/report-completion` :
+  soumis, en attente, taux avec anneau de progression) + cartes d'accès au rapport du
+  faiseur et au rapport de famille (parité avec le web)
+- **Route `/reports`** ouverte aux 5 rôles opérationnels (ADMIN/PASTEUR/RESPONSABLE/
+  CHEF_DE_FAMILLE/FAISEUR) ; `/reports/maker` ouvert au RESPONSABLE et CHEF_DE_FAMILLE
+  (aligné sur le GET backend et le web)
+- **Drawer** : entrée « Rapports » ajoutée à l'espace RESPONSABLE, à la vue
+  super-utilisateurs, ainsi qu'aux espaces **FAISEUR** et **CHEF_DE_FAMILLE**
+  (parité web : tous les rôles opérationnels ont le hub `/reports`, juste avant leur
+  rapport dédié faiseur/famille) ; les cartes de navigation restent accessibles même si le
+  chargement des stats échoue (comportement web)
+
+### ✅ Validation
+- Mobile : `flutter analyze` sans nouvelle erreur (issues restantes pré-existantes)
+
+## [3.0.1] - 2026-08-06
+
+### 🔒 Scoping des données aligné sur le rôle ACTIF (Search, Map, Member, Soul)
+
+**Principe** : les vérifications de visibilité ne se basent plus sur l'ensemble des rôles
+possédés (`getRoles().contains(...)`) mais sur le rôle **actif** (espace métier courant)
+via `SecurityUtils.isSuperUser()` / `hasActiveRole(...)` — un multi-rôles ne voit que les
+données de l'espace dans lequel il travaille.
+
+- **SoulService** : `findAll`/`filterSouls` scopés par rôle actif (faiseur → ses disciples,
+  chef → les âmes de sa famille, responsable → les membres de ses départements via
+  `soul_departments` actifs) ; la recherche est scopée aussi
+- **Fermeture IDOR** : les filtres explicites (`faiseurId`, `familleId`, `typeDisciple`,
+  `statut`) ne sont plus des ancres de confiance pour les non super-utilisateurs — ils sont
+  intersectés avec l'espace métier (filtrage en mémoire) ; les requêtes DB directes ne sont
+  autorisées qu'aux super-utilisateurs
+- **SearchService** : `getAccessibleSoulIds` réécrit — la branche RESPONSABLE fuyait
+  **toutes les familles** (elle itérait `familyRepository.findAll()`) → corrigée en membres
+  des départements administrés ; résultats utilisateurs réservés aux super-utilisateurs
+- **MapService** : points scopés par rôle actif ; correction de la fuite des familles du
+  responsable (toutes les familles → familles des membres du département) ; familles du
+  chef = union dédupliquée (`familleGereeId` + `findByChefFamilleId`) ; mise à jour des
+  coordonnées limitée à super-utilisateur ou responsable actif de l'âme
+- **MemberService** : présences scopées, boîte de réception et traitement des demandes
+  basés sur le rôle actif ; `verifyDepartmentAccess` exige désormais le mode RESPONSABLE
+  actif (un faiseur actif qui possède le rôle RESPONSABLE ne gère plus les présences)
+  ; `getMyDashboard` conserve les rôles complets (identité du membre, pas scoping)
+- **Tests** : `SoulServiceTest` +3 (super-utilisateur voit tout, faiseur scopé, IDOR non
+  élargi, recherche sans accès) ; `MemberPresenceSheetTest` +1 (rôle actif incorrect) et
+  mise à jour (utilisateur inconnu refusé en `AccessDeniedException` sans fuite d'existence)
+
+### ✅ Validation
+- Backend : **122 tests Maven** ✓ (0 échec), BUILD SUCCESS
+
+## [3.0.0] - 2026-08-06
+
+### 🏢 Restructuration des espaces métiers — chaque rôle = un environnement de travail indépendant
+
+**Principe** : un changement de rôle = un changement complet de contexte métier (dashboard,
+menus, raccourcis, statistiques, actions). Plus aucun mélange entre les métiers.
+
+### 🗂️ Web — espaces métiers strictement séparés
+- **Nouveau `frontend/src/workspaces.ts`** : config centralisée des espaces (home par rôle,
+  menus par sections, métadonnées visuelles). Sidebar réécrite : menus par sections dédiées
+  au métier actif + bandeau d'espace métier (desktop & mobile)
+- **RESPONSABLE** : logiciel de gestion des départements (HRM église) — pilotage,
+  départements, membres, présences/demandes, rapports, alertes, événements. Aucun menu
+  discipolat/familles/âmes/faiseurs
+- **FAISEUR** : uniquement le discipolat (CRM, disciples, rapports, prières, visites,
+  évangélisation, objectifs, suivis, recherche)
+- **CHEF DE FAMILLE** : uniquement sa famille (dashboard chef, familles, disciples,
+  rapports famille, évaluations, prières, événements, alertes, demandes)
+- **MEMBRE** : espace personnel (profil, formations, badges, RDV, messagerie)
+- **ADMIN / PASTEUR** : super-utilisateurs, vue complète par sections (permissions exclues pour Pasteur)
+- **DashboardGate** : `/dashboard` redirige vers l'espace du rôle actif
+  (RESPONSABLE → `/dashboard/responsable`, FAISEUR → `/crm/faiseur`, CHEF →
+  `/dashboard/chef-famille`, MEMBRE → `/dashboard/membre`)
+- **Routes durcies** : `/crm/faiseur` réservé FAISEUR+super, `/dashboard/chef-famille`
+  sans FAISEUR, `/reports/maker` sans chef, création de famille sans responsable
+- **Transition de rôle animée** : overlay plein écran (icône + label du nouvel espace) puis
+  redirection automatique vers le dashboard du rôle choisi
+- **Tests de transition de rôle** (`RoleWorkspaceRouting.test.tsx`, 19 tests) : redirection
+  DashboardGate vers chaque espace métier + isolation des routes (faiseur bloqué sur le
+  dashboard chef, chef/responsable bloqués sur le CRM faiseur, membre bloqué sur les âmes…)
+  + accès super-utilisateurs préservés + routes de données toujours accessibles
+
+### 📱 Mobile (Flutter)
+- **Drawer par espace métier** : filtre STRICT par rôle actif (corrige le bug `hasAnyRole`
+  qui affichait les menus de tous les rôles), listes dédiées par espace
+- **`roleHome()`** : redirection après login/switch vers l'espace du rôle
+- **Isolation des espaces dans le routeur** : un responsable/chef/faiseur/membre est ramené
+  vers son propre dashboard ; impossible d'ouvrir le dashboard d'un autre métier
+- **Bottom-nav sensible au rôle** + durcissement des routes dashboard/CRM
+
+### 🔒 Backend & API
+- `SecurityUtils.hasActiveRole(...)` + `SecurityUtils.isSuperUser()` : API d'infrastructure
+  pour les contrôles d'espace par rôle actif
+- `DashboardController` durci : `/dashboard/chef-famille` sans FAISEUR, `/dashboard/crm-faiseur`
+  réservé FAISEUR+super, `/dashboard/responsable` ouvert à ADMIN
+- Les données restent scopées côté serveur (services existants) — aucun bouton caché ne
+  protège les données, toutes les vérifications sont serveur
+
+### ✅ Validation
+- Frontend : 58 tests vitest ✓ (39 existants + 19 transition de rôle), `tsc -b` ✓
+- Backend : 117 tests Maven ✓ (BUILD SUCCESS)
+- Mobile : `flutter analyze` sans erreur
+
 ## [2.1.8] - 2026-08-03
 
 ### 💾 Backup PostgreSQL automatisé (mensuel, GitHub Actions)

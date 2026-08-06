@@ -70,14 +70,14 @@ public class DashboardController {
     }
 
     @GetMapping("/chef-famille")
-    @PreAuthorize("hasAnyRole('FAISEUR', 'CHEF_DE_FAMILLE', 'PASTEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CHEF_DE_FAMILLE', 'PASTEUR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getChefFamilleDashboard(
             @RequestParam(required = false) UUID familleId) {
         return ResponseEntity.ok(dashboardService.getChefFamilleDashboard(familleId));
     }
 
     @GetMapping("/responsable")
-    @PreAuthorize("hasAnyRole('RESPONSABLE', 'PASTEUR')")
+    @PreAuthorize("hasAnyRole('RESPONSABLE', 'PASTEUR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getResponsableDashboard(
             @RequestParam(required = false) UUID deptId) {
         return ResponseEntity.ok(dashboardService.getResponsableDashboard(deptId));
@@ -86,7 +86,7 @@ public class DashboardController {
     // ======================== PHASE 3: CRM FAISEUR ========================
 
     @GetMapping("/crm-faiseur")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('FAISEUR', 'PASTEUR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getCrmFaiseur() {
         return ResponseEntity.ok(dashboardService.getCrmFaiseurDashboard());
     }

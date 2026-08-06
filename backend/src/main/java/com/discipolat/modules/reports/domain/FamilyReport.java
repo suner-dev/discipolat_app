@@ -73,6 +73,7 @@ public class FamilyReport {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "statut_validation", nullable = false)
+    @Builder.Default
     private StatutValidation statutValidation = StatutValidation.BROUILLON;
 
     @Column(name = "date_soumission")

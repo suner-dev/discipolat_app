@@ -1,6 +1,5 @@
 package com.discipolat.modules.search.domain;
 
-import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.modules.discipline.domain.SoulDisciplineEventRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
@@ -20,6 +19,8 @@ import com.discipolat.modules.prayers.domain.PrayerRepository;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.modules.souls.domain.SoulDepartment;
+import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulExitRepository;
 import com.discipolat.modules.souls.domain.SoulHistoryRepository;
 import com.discipolat.modules.souls.domain.SoulNote;
@@ -57,6 +58,7 @@ public class SearchService {
     private final ParallelFollowupRepository parallelFollowupRepository;
     private final EvaluationService evaluationService;
     private final SoulDisciplineEventRepository disciplineEventRepository;
+    private final SoulDepartmentRepository soulDepartmentRepository;
     private final SecurityUtils securityUtils;
 
     public SearchService(SoulRepository soulRepository, UserRepository userRepository,
@@ -67,6 +69,7 @@ public class SearchService {
                          ParallelFollowupRepository parallelFollowupRepository,
                          EvaluationService evaluationService,
                          SoulDisciplineEventRepository disciplineEventRepository,
+                         SoulDepartmentRepository soulDepartmentRepository,
                          SecurityUtils securityUtils) {
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
@@ -81,6 +84,7 @@ public class SearchService {
         this.parallelFollowupRepository = parallelFollowupRepository;
         this.evaluationService = evaluationService;
         this.disciplineEventRepository = disciplineEventRepository;
+        this.soulDepartmentRepository = soulDepartmentRepository;
         this.securityUtils = securityUtils;
     }
 
@@ -115,9 +119,9 @@ public class SearchService {
                     .toList();
         }
 
-        // Also search users (faiseurs, chefs, responsables) if pasteur
+        // Also search users (faiseurs, chefs, responsables) if super-user (pasteur/admin actifs)
         List<Map<String, Object>> userResults = new ArrayList<>();
-        if (currentUser.getRoles().contains(UserRole.PASTEUR) || currentUser.getRoles().contains(UserRole.ADMIN)) {
+        if (securityUtils.isSuperUser()) {
             userRepository.findAll().stream()
                     .filter(u -> !u.isDeleted())
                     .filter(u -> matchesUserQuery(u, query))
@@ -485,35 +489,37 @@ public class SearchService {
     }
 
     /**
-     * Returns the set of soul IDs accessible to the current user, or null if all souls are accessible.
+     * Returns the set of soul IDs accessible to the ACTIVE role (current workspace),
+     * or null if all souls are accessible (super-users).
+     * Un utilisateur multi-rôles ne voit que les âmes de l'espace métier courant.
      */
     private Set<UUID> getAccessibleSoulIds(User currentUser) {
-        if (currentUser.getRoles().contains(UserRole.PASTEUR) || currentUser.getRoles().contains(UserRole.ADMIN)) {
+        if (securityUtils.isSuperUser()) {
             return null; // All souls
         }
 
         Set<UUID> accessibleIds = new HashSet<>();
 
-        if (currentUser.getRoles().contains(UserRole.RESPONSABLE)) {
-            // Get all departments managed by this responsable
-            List<Department> departments = departmentRepository.findByResponsableId(currentUser.getId());
-            for (Department dept : departments) {
-                List<Family> families = familyRepository.findAll();
-                for (Family fam : families) {
-                    List<Soul> souls = soulRepository.findAllByFamilleId(fam.getId());
-                    souls.stream().map(Soul::getId).forEach(accessibleIds::add);
-                }
+        // Responsable actif : membres de SES départements (et non toutes les familles)
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            List<UUID> deptIds = departmentRepository.findByResponsableId(currentUser.getId())
+                    .stream().map(Department::getId).toList();
+            if (!deptIds.isEmpty()) {
+                soulDepartmentRepository.findByDepartmentIdIn(deptIds).stream()
+                        .filter(SoulDepartment::isActif)
+                        .map(SoulDepartment::getSoulId)
+                        .forEach(accessibleIds::add);
             }
         }
 
-        // Chef de famille: their family's souls
-        if (currentUser.isEstChefDeFamille() && currentUser.getFamilleGereeId() != null) {
+        // Chef de famille actif : les âmes de la famille qu'il gère
+        if (securityUtils.hasActiveRole("CHEF_DE_FAMILLE") && currentUser.getFamilleGereeId() != null) {
             List<Soul> familySouls = soulRepository.findAllByFamilleId(currentUser.getFamilleGereeId());
             familySouls.stream().map(Soul::getId).forEach(accessibleIds::add);
         }
 
-        // FAISEUR: their own souls (if they have the FAISEUR role)
-        if (currentUser.getRoles().contains(UserRole.FAISEUR)) {
+        // FAISEUR actif : ses propres disciples
+        if (securityUtils.hasActiveRole("FAISEUR")) {
             List<Soul> mySouls = soulRepository.findAllByFaiseurId(currentUser.getId());
             mySouls.stream().map(Soul::getId).forEach(accessibleIds::add);
         }

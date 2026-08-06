@@ -46,6 +46,7 @@ public class ParallelFollowup {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
+    @Builder.Default
     private StatutSuiviParallele statut = StatutSuiviParallele.EN_COURS;
 
     @Column(name = "created_at", nullable = false, updatable = false)

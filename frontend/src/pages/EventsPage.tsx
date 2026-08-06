@@ -157,7 +157,7 @@ function eventForm(
 }
 
 export default function EventsPage() {
-  const { user, hasRole } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [view, setView] = useState<'list' | 'consolidated'>('list');
   const [page, setPage] = useState(0);
@@ -166,7 +166,8 @@ export default function EventsPage() {
   const [statutFilter, setStatutFilter] = useState<StatutEvenement | ''>('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const isPasteurOrAdmin = hasRole('PASTEUR') || hasRole('ADMIN');
+  // Espace métier : le rôle ACTIF détermine ce qui est visible (et non l'ensemble des rôles)
+  const isPasteurOrAdmin = user?.activeRole === 'PASTEUR' || user?.activeRole === 'ADMIN';
   const [showEdit, setShowEdit] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Evenement | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);

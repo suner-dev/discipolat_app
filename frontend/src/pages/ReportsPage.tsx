@@ -19,8 +19,12 @@ import {
 import toast from 'react-hot-toast';
 
 export default function ReportsPage() {
-  const { user, hasRole } = useAuth();
+  const { user } = useAuth();
   const { exportReport, isExporting } = useExportReport();
+
+  // Espace métier : les actions d'export consolidé ne sont visibles que pour
+  // les super-utilisateurs du rôle actif (Admin / Pasteur).
+  const isPasteurOrAdmin = user?.activeRole === 'PASTEUR' || user?.activeRole === 'ADMIN';
 
   const { data: completion } = useQuery({
     queryKey: ['reports', 'completion'],
@@ -88,7 +92,7 @@ export default function ReportsPage() {
           </div>
           <p className="page-subtitle">Gestion des rapports hebdomadaires</p>
         </div>
-        {hasRole('PASTEUR') && (
+        {isPasteurOrAdmin && (
           <div className="flex flex-wrap gap-2 animate-fade-in">
             <button onClick={() => window.print()} className="btn-secondary btn-sm">
               <Printer className="w-4 h-4" /> Imprimer

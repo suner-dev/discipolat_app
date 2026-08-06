@@ -21,4 +21,5 @@ public interface FamilyRepository extends JpaRepository<Family, UUID> {
     Page<Family> findAllByStatut(StatutEntite statut, Pageable pageable);
     java.util.Optional<Family> findByNom(String nom);
     List<Family> findByUserId(UUID userId);
+    Page<Family> findAllByIdIn(java.util.Collection<UUID> ids, Pageable pageable);
 }
