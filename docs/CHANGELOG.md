@@ -1,5 +1,78 @@
 # Changelog
 
+## [3.0.9] - 2026-08-06
+
+### 🔒 Scoping des rapports et événements par rôle actif (suite de 3.0.8)
+
+**Principe** : mêmes règles d'isolation que pour les familles (3.0.8) appliquées aux
+rapports hebdomadaires (faiseur + famille) et aux événements. Les filtres explicites
+(`faiseurId`, `familleId`) ne sont plus des ancres de confiance (anti-IDOR).
+
+### 🧩 Nouveau service partagé `WorkspaceScopeService`
+- **Une seule source de vérité** pour l'intersection des données avec l'espace métier
+  courant : `accessibleSoulIds()`, `accessibleFamilyIds()`, `accessibleFaiseurIds()`,
+  `canAccessSoul/Family/Faiseur(...)`, `isSuperUser()` — réutilisé par les rapports, les
+  événements et le dashboard (évite la duplication des requêtes de scoping)
+- Faiseur → ses disciples ; chef → les âmes de sa famille ; responsable → les membres de
+  ses départements (via `soul_departments` actifs) ; super-utilisateurs → tout
+
+### 📊 Rapports (MakerReport / FamilyReport / UrgentAid)
+- **`findMakerReports`** : un rôle opérationnel ne voit plus que les rapports de son espace
+  (intersection faiseur + âme). Les filtres `faiseurId`/`ameId` d'un autre espace renvoient
+  **vide** au lieu de fuiter (IDOR fermé)
+- **`findMakerReportById`** : accès refusé (403) hors espace — y compris le check
+  « soi-même » pour un faiseur
+- **`prefill`** : la liste des disciples d'un faiseur n'est plus exposée hors espace
+  (faiseur de l'espace ou soi-même uniquement)
+- **`submit`/`draft`** : `verifyCanReportFor` refuse de saisir un rapport pour un faiseur
+  hors espace (fin de la confiance aveugle au `faiseurId` du payload)
+- **`getUrgentAidRequests`** : un RESPONSABLE ne voit plus les demandes d'aide de toute
+  l'église — uniquement celles des faiseurs de ses départements
+- **Rapports famille** : `findFamilyReports`/`findFamilyReportsByFamily` scopés par
+  familles visibles ; `validate` refuse un rapport hors espace (403)
+- **Anti-usurpation `chefFamilleId`** : `submitFamilyReport` refuse qu'un rôle
+  opérationnel déclare un autre chef de famille que lui-même (le frontend envoie
+  `user.id`, le champ fourni n'est plus une ancre de confiance) ; les
+  super-utilisateurs conservent la soumission pour le compte du chef
+- **`MakerReportController`** : `GET /reports/maker-weekly/{id}` n'avait **aucun
+  `@PreAuthorize`** (tout utilisateur authentifié, même MEMBRE, lisait un rapport par ID) →
+  garde ajoutée alignée sur les autres endpoints
+
+### 🎉 Événements
+- **`findById`** : un événement lié à une famille hors espace → 403 (les événements
+  d'église sans famille restent visibles par tous)
+- **`findAll`** : pagination en mémoire après filtrage par espace pour les rôles
+  opérationnels (familles accessibles précalculées **une seule fois** — pas de requête
+  N par événement) ; `findByFamilleId` renvoie une page vide hors espace (pas de fuite)
+- **`create`/`update`/`delete`** : `canManageEvent` exige la visibilité de la famille ET
+  (organisateur, ou rôle RESPONSABLE/CHEF/PASTEUR/ADMIN dans une famille accessible) — un
+  FAISEUR ne peut plus modifier/supprimer n'importe quel événement
+- **Inscriptions** (`register`/`unregister`/`markAttendance`) : passent par `findById`
+  scopé — impossible de s'inscrire à un événement d'une famille hors espace
+
+### 📈 Dashboard
+- **`getReportCompletion`** : les stats globales de complétion ne sont plus exposées aux 5
+  rôles — un rôle opérationnel ne voit que le taux de complétion de **son** espace
+  (faiseurs de ses départements / de sa famille selon le rôle actif)
+
+### 🧪 Tests
+- **Nouveau `WorkspaceScopeServiceTest`** (8 tests) : scoping par rôle actif (faiseur,
+  chef, responsable), helpers `canAccess*` et `isSuperUser`
+- **Nouveau `ReportServiceTest`** (10 tests) : super-utilisateur voit tout, faiseur scopé,
+  filtre hors espace = vide (anti-IDOR), byId 403 hors espace, préfill/submit/validate
+  refusés hors espace, aide urgente scopée par département
+- **Nouveau `EventServiceTest`** (8 tests) : événement d'église visible par tous, famille
+  hors espace refusée (byId/create/update), findAll filtré, famille visible autorisée,
+  suppression par l'organisateur autorisée
+- `DashboardServiceTest` mis à jour pour le nouveau constructeur ; `@Builder.Default`
+  ajouté sur `SoulDepartment.actif` et `Event.nbInscrits` (bug builder → valeurs par
+  défaut perdues)
+
+### ✅ Validation
+- Backend : **156 tests Maven ✓** (0 échec)
+- Frontend : **58 tests vitest ✓**, `tsc` propre
+- Mobile : **15 tests widget ✓**
+
 ## [3.0.8] - 2026-08-06
 
 ### 🔒 Isolation des espaces métiers appliquée à TOUTE la chaîne (API → services → Web → Mobile)

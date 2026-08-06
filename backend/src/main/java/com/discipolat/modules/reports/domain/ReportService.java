@@ -8,10 +8,13 @@ import com.discipolat.modules.reports.api.SubmitMakerReportRequest;
 import com.discipolat.modules.parallelfollowups.domain.ParallelFollowupRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +32,7 @@ public class ReportService {
     private final MakerReportRepository makerReportRepository;
     private final FamilyReportRepository familyReportRepository;
     private final SecurityUtils securityUtils;
+    private final WorkspaceScopeService workspaceScope;
     private final SoulRepository soulRepository;
     private final UserRepository userRepository;
     private final ParallelFollowupRepository parallelFollowupRepository;
@@ -36,12 +40,14 @@ public class ReportService {
     public ReportService(MakerReportRepository makerReportRepository,
                          FamilyReportRepository familyReportRepository,
                          SecurityUtils securityUtils,
+                         WorkspaceScopeService workspaceScope,
                          SoulRepository soulRepository,
                          UserRepository userRepository,
                          ParallelFollowupRepository parallelFollowupRepository) {
         this.makerReportRepository = makerReportRepository;
         this.familyReportRepository = familyReportRepository;
         this.securityUtils = securityUtils;
+        this.workspaceScope = workspaceScope;
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.parallelFollowupRepository = parallelFollowupRepository;
@@ -51,6 +57,7 @@ public class ReportService {
      * Submit a maker report (RG-03: once submitted, locked and non-modifiable)
      */
     public MakerReport submitMakerReport(SubmitMakerReportRequest request) {
+        verifyCanReportFor(request.faiseurId());
         Optional<MakerReport> existing = makerReportRepository
                 .findByFaiseurIdAndAmeIdAndSemaine(request.faiseurId(), request.ameId(), request.semaine());
 
@@ -92,6 +99,7 @@ public class ReportService {
      * US-29: Save a maker report as draft (not submitted)
      */
     public MakerReport saveDraft(SubmitMakerReportRequest request) {
+        verifyCanReportFor(request.faiseurId());
         Optional<MakerReport> existing = makerReportRepository
                 .findByFaiseurIdAndAmeIdAndSemaine(request.faiseurId(), request.ameId(), request.semaine());
 
@@ -129,8 +137,20 @@ public class ReportService {
     }
 
     public MakerReport findMakerReportById(UUID id) {
-        return makerReportRepository.findById(id)
+        MakerReport report = makerReportRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("MakerReport", id));
+        // Espace métier : un rôle opérationnel ne lit que les rapports de son espace
+        // (les siens, ceux des faiseurs de sa famille / de ses départements).
+        if (!workspaceScope.isSuperUser()) {
+            UUID userId = securityUtils.getCurrentUserId();
+            boolean isOwn = report.getFaiseurId() != null && report.getFaiseurId().equals(userId);
+            if (!isOwn && !workspaceScope.canAccessFaiseur(report.getFaiseurId())
+                    && !workspaceScope.canAccessSoul(report.getAmeId())) {
+                throw new AccessDeniedException(
+                        "Accès refusé à ce rapport dans l'espace métier courant");
+            }
+        }
+        return report;
     }
 
     public MakerReport saveMakerReport(MakerReport report) {
@@ -140,14 +160,44 @@ public class ReportService {
     @Transactional(readOnly = true)
     public Page<MakerReport> findMakerReports(UUID faiseurId, UUID familleId, UUID ameId,
                                               LocalDate semaine, Pageable pageable) {
-        if (faiseurId != null && semaine != null)
-            return makerReportRepository.findByFaiseurId(faiseurId, pageable);
-        if (ameId != null) return makerReportRepository.findByAmeId(ameId, pageable);
-        if (semaine != null) return makerReportRepository.findBySemaine(semaine, pageable);
-        return makerReportRepository.findAll(pageable);
+        // Super-utilisateurs : filtres DB explicites sur tous les rapports
+        if (workspaceScope.isSuperUser()) {
+            if (faiseurId != null && semaine != null)
+                return makerReportRepository.findByFaiseurId(faiseurId, pageable);
+            if (ameId != null) return makerReportRepository.findByAmeId(ameId, pageable);
+            if (semaine != null) return makerReportRepository.findBySemaine(semaine, pageable);
+            return makerReportRepository.findAll(pageable);
+        }
+        // Non super-utilisateur : les filtres (faiseurId/ameId) ne sont PAS des
+        // ancres de confiance — intersection avec l'espace métier du rôle actif.
+        List<MakerReport> candidates;
+        if (faiseurId != null) candidates = makerReportRepository.findByFaiseurId(faiseurId, pageable).getContent();
+        else if (ameId != null) candidates = makerReportRepository.findByAmeId(ameId, pageable).getContent();
+        else if (semaine != null) candidates = makerReportRepository.findBySemaine(semaine, pageable).getContent();
+        else candidates = makerReportRepository.findAll(pageable).getContent();
+
+        Set<UUID> visibleFaiseurs = workspaceScope.accessibleFaiseurIds();
+        Set<UUID> visibleSouls = workspaceScope.accessibleSoulIds();
+        List<MakerReport> scoped = candidates.stream()
+                .filter(r -> visibleSouls.contains(r.getAmeId()) || visibleFaiseurs.contains(r.getFaiseurId()))
+                .toList();
+        return paginate(scoped, pageable);
     }
 
     public FamilyReport submitFamilyReport(SubmitFamilyReportRequest request) {
+        // Espace métier : on ne soumet un rapport que pour une famille visible.
+        if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessFamily(request.familleId())) {
+            throw new AccessDeniedException(
+                    "Accès refusé : cette famille n'appartient pas à votre espace métier");
+        }
+        // Anti-usurpation : un rôle opérationnel ne peut déclarer que SON propre chef
+        // de famille (le chef de la famille gérée est l'utilisateur courant). Les
+        // super-utilisateurs conservent le champ fourni (soumission pour le compte du chef).
+        if (!workspaceScope.isSuperUser()
+                && !request.chefFamilleId().equals(securityUtils.getCurrentUserId())) {
+            throw new AccessDeniedException(
+                    "Vous ne pouvez soumettre un rapport de famille qu'en votre propre nom");
+        }
         List<FamilyReport> existingReports = familyReportRepository.findByFamilleIdAndSemaine(
                 request.familleId(), request.semaine());
         FamilyReport report;
@@ -286,25 +336,47 @@ public class ReportService {
     @Transactional(readOnly = true)
     public Page<FamilyReport> findFamilyReports(UUID familleId, UUID chefFamilleId,
                                                 LocalDate semaine, Pageable pageable) {
-        if (familleId != null) return familyReportRepository.findByFamilleId(familleId, pageable);
-        if (chefFamilleId != null) return familyReportRepository.findByChefFamilleId(chefFamilleId, pageable);
-        if (semaine != null) return familyReportRepository.findBySemaine(semaine, pageable);
-        return familyReportRepository.findAll(pageable);
+        // Super-utilisateurs : filtres DB explicites sur tous les rapports
+        if (workspaceScope.isSuperUser()) {
+            if (familleId != null) return familyReportRepository.findByFamilleId(familleId, pageable);
+            if (chefFamilleId != null) return familyReportRepository.findByChefFamilleId(chefFamilleId, pageable);
+            if (semaine != null) return familyReportRepository.findBySemaine(semaine, pageable);
+            return familyReportRepository.findAll(pageable);
+        }
+        // Non super-utilisateur : intersection avec les familles de l'espace métier
+        Set<UUID> visibleFamilies = workspaceScope.accessibleFamilyIds();
+        List<FamilyReport> candidates;
+        if (familleId != null) candidates = familyReportRepository.findByFamilleId(familleId, pageable).getContent();
+        else if (chefFamilleId != null) candidates = familyReportRepository.findByChefFamilleId(chefFamilleId, pageable).getContent();
+        else if (semaine != null) candidates = familyReportRepository.findBySemaine(semaine, pageable).getContent();
+        else candidates = familyReportRepository.findAll(pageable).getContent();
+
+        List<FamilyReport> scoped = candidates.stream()
+                .filter(r -> visibleFamilies.contains(r.getFamilleId()))
+                .toList();
+        return paginate(scoped, pageable);
     }
 
     @Transactional(readOnly = true)
     public List<FamilyReport> findFamilyReportsByFamily(UUID familyId) {
+        verifyFamilyReportAccess(familyId);
         return familyReportRepository.findByFamilleIdOrderBySemaineDesc(familyId);
     }
 
     @Transactional(readOnly = true)
     public List<FamilyReport> findFamilyReportsByFamilyAndWeek(UUID familyId, LocalDate semaine) {
+        verifyFamilyReportAccess(familyId);
         return familyReportRepository.findByFamilleIdAndSemaineOrderByCreatedAtDesc(familyId, semaine);
     }
 
     public FamilyReport validateFamilyReport(UUID reportId, String validationType) {
         FamilyReport report = familyReportRepository.findById(reportId)
                 .orElseThrow(() -> new EntityNotFoundException("FamilyReport", reportId));
+        // Espace métier : on ne valide que les rapports des familles visibles.
+        if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessFamily(report.getFamilleId())) {
+            throw new AccessDeniedException(
+                    "Accès refusé : ce rapport ne concerne pas votre espace métier");
+        }
 
         if ("RESPONSABLE".equalsIgnoreCase(validationType)) {
             report.setStatutValidation(StatutValidation.VU_PAR_RESPONSABLE);
@@ -321,6 +393,15 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getPreFilledReport(UUID faiseurId) {
+        // Espace métier : on ne pré-remplit que pour soi (faiseur), pour un faiseur
+        // de sa famille (chef) ou de ses départements (responsable).
+        if (!workspaceScope.isSuperUser()) {
+            UUID userId = securityUtils.getCurrentUserId();
+            if (!faiseurId.equals(userId) && !workspaceScope.canAccessFaiseur(faiseurId)) {
+                throw new AccessDeniedException(
+                        "Accès refusé au pré-remplissage de ce faiseur");
+            }
+        }
         LocalDate currentWeek = LocalDate.now().with(java.time.DayOfWeek.MONDAY);
         List<Soul> souls = soulRepository.findAllByFaiseurId(faiseurId).stream()
                 .filter(s -> !s.isDeleted())
@@ -361,8 +442,12 @@ public class ReportService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getUrgentAidRequests(Boolean traite) {
         List<MakerReport> allReports = makerReportRepository.findAll();
+        // Espace métier : un responsable ne voit que les demandes d'aide des
+        // faiseurs de ses départements ; les super-utilisateurs voient tout.
+        Set<UUID> visibleFaiseurs = workspaceScope.isSuperUser() ? null : workspaceScope.accessibleFaiseurIds();
 
         return allReports.stream()
+                .filter(r -> visibleFaiseurs == null || visibleFaiseurs.contains(r.getFaiseurId()))
                 .filter(r -> r.getVieFaiseurDemandesAide() != null && !r.getVieFaiseurDemandesAide().isBlank())
                 .filter(r -> {
                     if (traite == null) return true; // No filter
@@ -390,5 +475,39 @@ public class ReportService {
                     return dateB.compareTo(dateA);
                 })
                 .toList();
+    }
+
+    // ========================================================================
+    // Isolation des espaces métiers (rôle actif)
+    // ========================================================================
+
+    /**
+     * Vérifie que le rôle actif peut saisir un rapport pour le faiseur donné :
+     * super-utilisateur, soi-même, ou un faiseur de l'espace métier courant
+     * (faiseurs de la famille pour le chef, des départements pour le responsable).
+     */
+    private void verifyCanReportFor(UUID faiseurId) {
+        if (workspaceScope.isSuperUser()) return;
+        UUID userId = securityUtils.getCurrentUserId();
+        if (faiseurId != null && (faiseurId.equals(userId) || workspaceScope.canAccessFaiseur(faiseurId))) {
+            return;
+        }
+        throw new AccessDeniedException(
+                "Vous ne pouvez pas saisir un rapport pour ce faiseur dans l'espace métier courant");
+    }
+
+    private void verifyFamilyReportAccess(UUID familleId) {
+        if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessFamily(familleId)) {
+            throw new AccessDeniedException(
+                    "Accès refusé aux rapports de cette famille dans l'espace métier courant");
+        }
+    }
+
+    /** Pagination en mémoire (résultats déjà filtrés côté service). */
+    private <T> Page<T> paginate(List<T> items, Pageable pageable) {
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), items.size());
+        List<T> content = start < items.size() ? items.subList(start, end) : List.of();
+        return new PageImpl<>(content, pageable, items.size());
     }
 }

@@ -69,6 +69,7 @@ public class MakerReportController {
     }
 
     @GetMapping("/maker-weekly/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<MakerReportResponse> getMakerReport(@PathVariable UUID id) {
         return ResponseEntity.ok(MakerReportResponse.from(reportService.findMakerReportById(id)));
     }

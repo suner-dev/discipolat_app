@@ -6,10 +6,13 @@ import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.notifications.domain.NotificationService;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,22 +34,31 @@ public class EventService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final SecurityUtils securityUtils;
+    private final WorkspaceScopeService workspaceScope;
 
     public EventService(EventRepository eventRepository,
                         EventRegistrationRepository registrationRepository,
                         WeeklyProgramTemplateRepository templateRepository,
                         UserRepository userRepository,
                         NotificationService notificationService,
-                        SecurityUtils securityUtils) {
+                        SecurityUtils securityUtils,
+                        WorkspaceScopeService workspaceScope) {
         this.eventRepository = eventRepository;
         this.registrationRepository = registrationRepository;
         this.templateRepository = templateRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.securityUtils = securityUtils;
+        this.workspaceScope = workspaceScope;
     }
 
     public Event create(Event event) {
+        // Espace métier : on ne crée un événement de famille que pour une famille visible.
+        if (event.getFamilleId() != null && !workspaceScope.isSuperUser()
+                && !workspaceScope.canAccessFamily(event.getFamilleId())) {
+            throw new AccessDeniedException(
+                    "Cet événement ne concerne pas votre espace métier");
+        }
         UUID currentUserId = securityUtils.getCurrentUserId();
         event.setOrganisateurId(currentUserId);
         event.setStatut("PLANIFIE");
@@ -76,44 +88,73 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public Event findById(UUID id) {
-        return eventRepository.findById(id)
+        Event event = eventRepository.findById(id)
                 .filter(e -> !e.isDeleted())
                 .orElseThrow(() -> new EntityNotFoundException("Event", id));
+        // Espace métier : un rôle opérationnel ne lit que les événements de ses familles
+        // (les événements d'église sans famille restent visibles par tous).
+        if (!canAccessEvent(event)) {
+            throw new AccessDeniedException(
+                    "Accès refusé à cet événement dans l'espace métier courant");
+        }
+        return event;
     }
 
     @Transactional(readOnly = true)
     public Page<Event> findAll(Pageable pageable) {
-        return eventRepository.findByStatutAndDeletedFalse("PLANIFIE", pageable);
+        if (workspaceScope.isSuperUser()) {
+            return eventRepository.findByStatutAndDeletedFalse("PLANIFIE", pageable);
+        }
+        return scopeEvents(eventRepository.findByStatutAndDeletedFalse("PLANIFIE", pageable).getContent(), pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<Event> findByFamilleId(UUID familleId, Pageable pageable) {
+        if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessFamily(familleId)) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
         return eventRepository.findByFamilleIdAndDeletedFalse(familleId, pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<Event> findByStatut(String statut, Pageable pageable) {
-        return eventRepository.findByStatutAndDeletedFalse(statut, pageable);
+        if (workspaceScope.isSuperUser()) {
+            return eventRepository.findByStatutAndDeletedFalse(statut, pageable);
+        }
+        return scopeEvents(eventRepository.findByStatutAndDeletedFalse(statut, pageable).getContent(), pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<Event> findByTypeEvenement(String typeEvenement, Pageable pageable) {
-        return eventRepository.findByTypeEvenementAndDeletedFalse(typeEvenement, pageable);
+        if (workspaceScope.isSuperUser()) {
+            return eventRepository.findByTypeEvenementAndDeletedFalse(typeEvenement, pageable);
+        }
+        return scopeEvents(eventRepository.findByTypeEvenementAndDeletedFalse(typeEvenement, pageable).getContent(), pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<Event> findUpcoming(Pageable pageable) {
-        return eventRepository.findByDateDebutBetweenAndDeletedFalse(
-                LocalDateTime.now(), LocalDateTime.now().plusDays(30), pageable);
+        if (workspaceScope.isSuperUser()) {
+            return eventRepository.findByDateDebutBetweenAndDeletedFalse(
+                    LocalDateTime.now(), LocalDateTime.now().plusDays(30), pageable);
+        }
+        return scopeEvents(eventRepository.findByDateDebutBetweenAndDeletedFalse(
+                LocalDateTime.now(), LocalDateTime.now().plusDays(30), pageable).getContent(), pageable);
     }
 
     @Transactional(readOnly = true)
     public List<Event> findUpcomingByFamille(UUID familleId) {
+        if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessFamily(familleId)) {
+            return List.of();
+        }
         return eventRepository.findByFamilleIdAndStatutAndDeletedFalse(familleId, "PLANIFIE");
     }
 
     public Event update(UUID id, Event updated) {
         Event event = findById(id);
+        if (!canManageEvent(event)) {
+            throw new AccessDeniedException("Vous ne pouvez pas modifier cet événement");
+        }
         if (updated.getTitre() != null) event.setTitre(updated.getTitre());
         if (updated.getDescription() != null) event.setDescription(updated.getDescription());
         if (updated.getLieu() != null) event.setLieu(updated.getLieu());
@@ -128,6 +169,9 @@ public class EventService {
 
     public void delete(UUID id) {
         Event event = findById(id);
+        if (!canManageEvent(event)) {
+            throw new AccessDeniedException("Vous ne pouvez pas supprimer cet événement");
+        }
         event.setDeleted(true);
         eventRepository.save(event);
     }
@@ -169,6 +213,7 @@ public class EventService {
     }
 
     public EventRegistration markAttendance(UUID eventId, UUID userId, boolean present) {
+        findById(eventId); // contrôle d'accès à l'événement
         EventRegistration registration = registrationRepository.findByEventIdAndUtilisateurId(eventId, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Registration", eventId));
         registration.setStatutInscription(present ? "PRESENT" : "ABSENT");
@@ -180,11 +225,15 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<EventRegistration> getRegistrations(UUID eventId) {
+        findById(eventId); // contrôle d'accès à l'événement
         return registrationRepository.findByEventId(eventId);
     }
 
     @Transactional(readOnly = true)
     public long countByFamilleId(UUID familleId) {
+        if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessFamily(familleId)) {
+            return 0;
+        }
         return eventRepository.countByFamilleIdAndDeletedFalse(familleId);
     }
 
@@ -403,8 +452,54 @@ public class EventService {
         LocalDateTime start = weekStart.atStartOfDay();
         LocalDateTime end = weekStart.plusDays(7).atStartOfDay();
         return eventRepository.findByDateDebutBetweenAndDeletedFalse(start, end).stream()
+                .filter(this::canAccessEvent)
                 .sorted(Comparator.comparing(Event::getDateDebut))
                 .toList();
+    }
+
+    // ========================================================================
+    // Isolation des espaces métiers (rôle actif)
+    // ========================================================================
+
+    /**
+     * Un événement est visible si l'utilisateur est super-utilisateur (Admin/Pasteur
+     * actifs), si c'est un événement d'église (sans famille), ou si sa famille
+     * appartient à l'espace métier courant.
+     */
+    private boolean canAccessEvent(Event event) {
+        if (workspaceScope.isSuperUser()) return true;
+        if (event.getFamilleId() == null) return true;
+        return workspaceScope.canAccessFamily(event.getFamilleId());
+    }
+
+    /**
+     * Modification / suppression : super-utilisateur, organisateur de l'événement,
+     * ou responsable/chef dont la famille (ou le département) gère l'événement.
+     */
+    private boolean canManageEvent(Event event) {
+        if (workspaceScope.isSuperUser()) return true;
+        UUID userId = securityUtils.getCurrentUserId();
+        if (event.getOrganisateurId() != null && event.getOrganisateurId().equals(userId)) return true;
+        if (event.getFamilleId() != null && workspaceScope.canAccessFamily(event.getFamilleId())) {
+            return securityUtils.hasActiveRole("RESPONSABLE", "CHEF_DE_FAMILLE", "PASTEUR", "ADMIN");
+        }
+        return false;
+    }
+
+    /**
+     * Pagination en mémoire des événements déjà filtrés par l'espace métier.
+     * Les familles accessibles sont précalculées UNE fois (évite N requêtes
+     * canAccessFamily en boucle sur chaque événement).
+     */
+    private Page<Event> scopeEvents(List<Event> candidates, Pageable pageable) {
+        Set<UUID> accessibleFamilies = workspaceScope.accessibleFamilyIds();
+        List<Event> scoped = candidates.stream()
+                .filter(e -> e.getFamilleId() == null || accessibleFamilies.contains(e.getFamilleId()))
+                .toList();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), scoped.size());
+        List<Event> content = start < scoped.size() ? scoped.subList(start, end) : List.of();
+        return new PageImpl<>(content, pageable, scoped.size());
     }
 
     private LocalDate getDateForDayOfWeek(LocalDate weekStart, String jourSemaine) {

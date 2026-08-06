@@ -46,6 +46,7 @@ public class Event {
     @Column(name = "limite_places")
     private Integer limitePlaces;
 
+    @Builder.Default
     @Column(name = "nb_inscrits", nullable = false)
     private Integer nbInscrits = 0;
 

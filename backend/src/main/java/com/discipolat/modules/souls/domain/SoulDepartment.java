@@ -33,6 +33,7 @@ public class SoulDepartment {
     @Column(name = "date_desaffectation")
     private LocalDateTime dateDesaffectation;
 
+    @Builder.Default
     @Column(name = "actif", nullable = false)
     private boolean actif = true;
 

@@ -20,6 +20,7 @@ import com.discipolat.modules.souls.domain.SoulDepartment;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulNoteRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
@@ -53,6 +54,7 @@ public class DashboardService {
     private final DepartmentRepository departmentRepository;
     private final SoulDepartmentRepository soulDepartmentRepository;
     private final SecurityUtils securityUtils;
+    private final WorkspaceScopeService workspaceScope;
 
     public DashboardService(SoulRepository soulRepository, UserRepository userRepository,
                            FamilyRepository familyRepository, MakerReportRepository makerReportRepository,
@@ -61,7 +63,8 @@ public class DashboardService {
                            ParallelFollowupRepository parallelFollowupRepository,
                            DepartmentRepository departmentRepository,
                            SoulDepartmentRepository soulDepartmentRepository,
-                           SecurityUtils securityUtils) {
+                           SecurityUtils securityUtils,
+                           WorkspaceScopeService workspaceScope) {
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.familyRepository = familyRepository;
@@ -73,6 +76,7 @@ public class DashboardService {
         this.departmentRepository = departmentRepository;
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.securityUtils = securityUtils;
+        this.workspaceScope = workspaceScope;
     }
 
     @Cacheable(value = "dashboardKpi", unless = "#result == null")
@@ -302,9 +306,19 @@ public class DashboardService {
         Map<String, Object> completion = new LinkedHashMap<>();
         LocalDate currentWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
-        long totalFaiseurs = userRepository.countByRole(UserRole.FAISEUR);
-        List<MakerReport> currentWeekReports = makerReportRepository.findBySemaine(currentWeek,
-                org.springframework.data.domain.PageRequest.of(0, 10000)).getContent();
+        long totalFaiseurs;
+        List<MakerReport> currentWeekReports;
+        if (workspaceScope.isSuperUser()) {
+            totalFaiseurs = userRepository.countByRole(UserRole.FAISEUR);
+            currentWeekReports = makerReportRepository.findBySemaine(currentWeek,
+                    org.springframework.data.domain.PageRequest.of(0, 10000)).getContent();
+        } else {
+            // Espace métier : complétion calculée uniquement sur les faiseurs du rôle actif
+            Set<UUID> visibleFaiseurs = workspaceScope.accessibleFaiseurIds();
+            totalFaiseurs = visibleFaiseurs.size();
+            currentWeekReports = visibleFaiseurs.isEmpty() ? List.of()
+                    : makerReportRepository.findByFaiseurIdInAndSemaine(new ArrayList<>(visibleFaiseurs), currentWeek);
+        }
 
         Set<UUID> faiseursWithReports = new HashSet<>();
         int totalReports = 0;
