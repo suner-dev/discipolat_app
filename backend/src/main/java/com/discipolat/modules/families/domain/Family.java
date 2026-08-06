@@ -1,5 +1,6 @@
 package com.discipolat.modules.families.domain;
 
+import com.discipolat.common.enums.NiveauRisque;
 import com.discipolat.common.enums.StatutEntite;
 import jakarta.persistence.*;
 import lombok.*;
@@ -57,6 +58,10 @@ public class Family {
 
     @Column(name = "zone")
     private String zone;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "niveau_risque", nullable = false)
+    private NiveauRisque niveauRisque = NiveauRisque.NORMAL;
 
     @PrePersist
     protected void onCreate() {

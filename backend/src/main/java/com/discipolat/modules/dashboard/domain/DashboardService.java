@@ -504,15 +504,22 @@ public class DashboardService {
         dashboard.put("suivisParallelesActifs", suivisActifs);
 
         // ==================== FAMILLES À RISQUE ====================
+        // Combine : niveau marqué manuellement par le pasteur (niveauRisque) +
+        // taux de présence hebdomadaire sous 50%.
         List<Map<String, Object>> famillesRisque = new ArrayList<>();
         for (Family fam : allFamilies) {
+            boolean niveauMarque = fam.getNiveauRisque() != null
+                    && fam.getNiveauRisque() != com.discipolat.common.enums.NiveauRisque.NORMAL;
             List<FamilyReport> frs = familyReportRepository.findByFamilleIdAndSemaine(fam.getId(), currentWeek);
-            if (!frs.isEmpty() && frs.get(0).getPresenceMoyenne() != null
-                    && frs.get(0).getPresenceMoyenne().doubleValue() < 50.0) {
+            Double tauxPresence = (!frs.isEmpty() && frs.get(0).getPresenceMoyenne() != null)
+                    ? frs.get(0).getPresenceMoyenne().doubleValue() : null;
+            if (niveauMarque || (tauxPresence != null && tauxPresence < 50.0)) {
                 Map<String, Object> fr = new LinkedHashMap<>();
                 fr.put("id", fam.getId());
                 fr.put("nom", fam.getNom());
-                fr.put("tauxPresence", frs.get(0).getPresenceMoyenne());
+                fr.put("tauxPresence", tauxPresence != null ? tauxPresence : 0.0);
+                fr.put("niveauRisque", fam.getNiveauRisque() != null
+                        ? fam.getNiveauRisque().name() : "NORMAL");
                 famillesRisque.add(fr);
             }
         }

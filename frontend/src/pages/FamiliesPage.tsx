@@ -4,29 +4,18 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
-import type { Family, Department, PageResponse } from '@/types';
+import type { Family, PageResponse } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { Users, Plus, Building2, ChevronRight, BarChart3 } from 'lucide-react';
+import { Users, Plus, Building2, ChevronRight, BarChart3, AlertTriangle } from 'lucide-react';
 
 export default function FamiliesPage() {
   const { hasRole } = useAuth();
   const [page, setPage] = useState(0);
-  const [deptFilter, setDeptFilter] = useState('');
-
-  const { data: departments } = useQuery({
-    queryKey: ['departments', 'all'],
-    queryFn: async () => {
-      const res = await api.get('/departments?size=100');
-      return res.data.content as Department[];
-    },
-  });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['families', page, deptFilter],
+    queryKey: ['families', page],
     queryFn: async () => {
-      const params = new URLSearchParams({ size: '20', page: String(page) });
-      if (deptFilter) params.set('departementId', deptFilter);
-      const res = await api.get(`/families?${params}`);
+      const res = await api.get(`/families?size=20&page=${page}`);
       return res.data as PageResponse<Family>;
     },
   });
@@ -67,6 +56,28 @@ export default function FamiliesPage() {
       ),
     },
     {
+      header: 'Risque',
+      cell: (family) => {
+        const niveau = family.niveauRisque || 'NORMAL';
+        const styles = {
+          NORMAL: 'badge-success',
+          SOUS_SURVEILLANCE: 'badge-warning',
+          A_RISQUE: 'badge-danger',
+        } as const;
+        const labels = {
+          NORMAL: 'Normale',
+          SOUS_SURVEILLANCE: 'Sous surveillance',
+          A_RISQUE: 'À risque',
+        } as const;
+        return (
+          <span className={`inline-flex items-center gap-1.5 ${styles[niveau]}`}>
+            {niveau !== 'NORMAL' && <AlertTriangle className="w-3 h-3" />}
+            {labels[niveau]}
+          </span>
+        );
+      },
+    },
+    {
       header: 'Création',
       cell: (family) => (
         <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -105,23 +116,6 @@ export default function FamiliesPage() {
             <Plus className="w-4 h-4" />
             Nouvelle famille
           </Link>
-        </div>
-      </div>
-
-      {/* Filter */}
-      <div className="glass-card p-4 mb-6 animate-slide-up">
-        <div className="flex items-center gap-3">
-          <Building2 className="w-4 h-4 text-gray-400" />
-          <select
-            value={deptFilter}
-            onChange={(e) => { setDeptFilter(e.target.value); setPage(0); }}
-            className="input w-auto"
-          >
-            <option value="">Tous les départements</option>
-            {departments?.map((dept) => (
-              <option key={dept.id} value={dept.id}>{dept.nom}</option>
-            ))}
-          </select>
         </div>
       </div>
 

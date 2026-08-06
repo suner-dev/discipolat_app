@@ -1,9 +1,12 @@
 package com.discipolat.modules.families.api;
 
 import com.discipolat.common.domain.BusinessRuleException;
+import com.discipolat.common.enums.NiveauRisque;
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.modules.families.domain.Family;
+import com.discipolat.modules.families.domain.FamilyRiskHistory;
+import com.discipolat.modules.families.domain.FamilyRiskService;
 import com.discipolat.modules.families.domain.FamilyService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
@@ -27,10 +30,13 @@ import java.util.UUID;
 public class FamilyController {
 
     private final FamilyService familyService;
+    private final FamilyRiskService familyRiskService;
     private final SoulRepository soulRepository;
 
-    public FamilyController(FamilyService familyService, SoulRepository soulRepository) {
+    public FamilyController(FamilyService familyService, FamilyRiskService familyRiskService,
+                            SoulRepository soulRepository) {
         this.familyService = familyService;
+        this.familyRiskService = familyRiskService;
         this.soulRepository = soulRepository;
     }
 
@@ -154,4 +160,32 @@ public class FamilyController {
     public ResponseEntity<FamilyResponse> restore(@PathVariable UUID id) {
         return ResponseEntity.ok(FamilyResponse.from(familyService.restore(id)));
     }
+
+    // ======================== FAMILLE À RISQUE ========================
+
+    /** Indice de risque calculé automatiquement pour une famille. */
+    @GetMapping("/{id}/risk")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    public ResponseEntity<Map<String, Object>> getRiskAssessment(@PathVariable UUID id) {
+        return ResponseEntity.ok(familyRiskService.getRiskAssessment(id));
+    }
+
+    /** Définition manuelle du niveau de risque par le pasteur. */
+    @PutMapping("/{id}/risk-level")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<FamilyResponse> setNiveauRisque(
+            @PathVariable UUID id,
+            @RequestBody SetRiskLevelRequest request) {
+        Family family = familyRiskService.setNiveauRisque(id, request.niveauRisque(), request.raison());
+        return ResponseEntity.ok(FamilyResponse.from(family));
+    }
+
+    /** Historique des changements de niveau de risque. */
+    @GetMapping("/{id}/risk-history")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<List<FamilyRiskHistory>> getRiskHistory(@PathVariable UUID id) {
+        return ResponseEntity.ok(familyRiskService.getRiskHistory(id));
+    }
+
+    public record SetRiskLevelRequest(NiveauRisque niveauRisque, String raison) {}
 }

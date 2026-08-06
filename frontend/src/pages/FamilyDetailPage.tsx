@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
-import type { Family, Soul, FamilyReport, User } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import type { Family, Soul, FamilyReport, User, FamilyRiskAssessment } from '@/types';
 import {
   ArrowLeft, Users, FileText, Heart, UserCog, Loader2, CheckCircle2, X,
-  Calendar, Crown, Sparkles, ChevronRight, Clock, BarChart3,
+  Calendar, Crown, Sparkles, ChevronRight, Clock, BarChart3, AlertTriangle, ShieldCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function FamilyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { hasRole } = useAuth();
   const [showChiefModal, setShowChiefModal] = useState(false);
   const [newChiefId, setNewChiefId] = useState('');
 
@@ -74,6 +76,34 @@ export default function FamilyDetailPage() {
     enabled: !!id,
   });
 
+  const { data: risk, refetch: refetchRisk } = useQuery({
+    queryKey: ['family', id, 'risk'],
+    queryFn: async () => {
+      const res = await api.get(`/families/${id}/risk`);
+      return res.data as FamilyRiskAssessment;
+    },
+    enabled: !!id,
+  });
+
+  const [riskLevel, setRiskLevel] = useState<'NORMAL' | 'SOUS_SURVEILLANCE' | 'A_RISQUE'>('NORMAL');
+  const [riskRaison, setRiskRaison] = useState('');
+  const [showRiskModal, setShowRiskModal] = useState(false);
+
+  const setRiskMutation = useMutation({
+    mutationFn: async ({ niveauRisque, raison }: { niveauRisque: string; raison: string }) => {
+      await api.put(`/families/${id}/risk-level`, { niveauRisque, raison });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family', id] });
+      queryClient.invalidateQueries({ queryKey: ['family', id, 'risk'] });
+      queryClient.invalidateQueries({ queryKey: ['families'] });
+      setShowRiskModal(false);
+      setRiskRaison('');
+      toast.success('Niveau de risque mis à jour');
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
   if (isLoading) {
     return (
       <div className="page-container">
@@ -117,6 +147,14 @@ export default function FamilyDetailPage() {
                 <span className={`badge text-xs ${family.statut === 'ACTIVE' ? 'badge-success' : 'badge-gray'}`}>
                   {family.statut === 'ACTIVE' ? 'Active' : 'Inactive'}
                 </span>
+                {family.niveauRisque && family.niveauRisque !== 'NORMAL' && (
+                  <span className={`badge text-xs ${
+                    family.niveauRisque === 'A_RISQUE' ? 'badge-danger' : 'badge-warning'
+                  }`}>
+                    <AlertTriangle className="w-3 h-3" />
+                    {family.niveauRisque === 'A_RISQUE' ? 'Famille à risque' : 'Sous surveillance'}
+                  </span>
+                )}
                 <span className="text-xs text-gray-400 flex items-center gap-1">
                   <Crown className="w-3 h-3 text-gold-500" />
                   Chef: {family.chefFamilleId?.slice(0, 12)}...
@@ -181,6 +219,79 @@ export default function FamilyDetailPage() {
         </div>
       )}
 
+      {/* Risk level modal */}
+      {showRiskModal && (
+        <div className="modal-overlay" onClick={() => setShowRiskModal(false)}>
+          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-900/30">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Niveau de risque</h3>
+                  <p className="text-xs text-gray-500">Définir le niveau de la famille {family.nom}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowRiskModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            <div className="modal-body space-y-4">
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1.5">Niveau</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['NORMAL', 'SOUS_SURVEILLANCE', 'A_RISQUE'] as const).map((niveau) => (
+                    <button
+                      key={niveau}
+                      onClick={() => setRiskLevel(niveau)}
+                      className={`p-3 rounded-xl border-2 text-xs font-semibold transition-all ${
+                        riskLevel === niveau
+                          ? niveau === 'A_RISQUE'
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                            : niveau === 'SOUS_SURVEILLANCE'
+                              ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
+                              : 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      {niveau === 'A_RISQUE' ? 'À risque' : niveau === 'SOUS_SURVEILLANCE' ? 'Sous surveillance' : 'Normal'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {risk && (
+                <div className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30 text-xs text-gray-500">
+                  Score calculé : <span className="font-semibold">{risk.scoreRisque}/100</span> · Niveau suggéré :{' '}
+                  <span className="font-semibold">{risk.niveauSuggere === 'A_RISQUE' ? 'À risque' : risk.niveauSuggere === 'SOUS_SURVEILLANCE' ? 'Sous surveillance' : 'Normal'}</span>
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1.5">Raison (optionnel)</p>
+                <textarea
+                  value={riskRaison}
+                  onChange={(e) => setRiskRaison(e.target.value)}
+                  className="input"
+                  rows={2}
+                  placeholder="Ex : 3 âmes perdues ce trimestre, taux de présence en chute"
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setShowRiskModal(false)} className="btn-secondary btn-sm">Annuler</button>
+              <button
+                onClick={() => setRiskMutation.mutate({ niveauRisque: riskLevel, raison: riskRaison })}
+                disabled={setRiskMutation.isPending}
+                className="btn-primary btn-sm"
+              >
+                {setRiskMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Stats card */}
@@ -233,6 +344,82 @@ export default function FamilyDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Risk assessment */}
+          {risk && (
+            <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '160ms' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-primary-500" /> Évaluation de risque
+                </h3>
+                {hasRole('PASTEUR') && (
+                  <button
+                    onClick={() => { setRiskLevel(risk.niveauActuel); setShowRiskModal(true); }}
+                    className="btn-secondary btn-sm"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Définir le niveau
+                  </button>
+                )}
+              </div>
+
+              {/* Score gauge */}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="relative w-16 h-16 flex-shrink-0">
+                  <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-100 dark:text-gray-700" />
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke={risk.scoreRisque >= 60 ? '#ef4444' : risk.scoreRisque >= 30 ? '#f59e0b' : '#22c55e'} strokeWidth="3" strokeDasharray={`${risk.scoreRisque} 100`} strokeLinecap="round" />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-900 dark:text-gray-100">
+                    {risk.scoreRisque}
+                  </span>
+                </div>
+                <div>
+                  <p className="stat-label">Indice de risque</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">0 (sain) à 100 (critique)</p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <span className={`badge text-[10px] ${risk.niveauActuel === 'NORMAL' ? 'badge-success' : risk.niveauActuel === 'SOUS_SURVEILLANCE' ? 'badge-warning' : 'badge-danger'}`}>
+                      Actuel : {risk.niveauActuel === 'A_RISQUE' ? 'À risque' : risk.niveauActuel === 'SOUS_SURVEILLANCE' ? 'Sous surveillance' : 'Normal'}
+                    </span>
+                    {risk.niveauSuggere !== risk.niveauActuel && (
+                      <span className={`badge text-[10px] ${risk.niveauSuggere === 'A_RISQUE' ? 'badge-danger' : risk.niveauSuggere === 'SOUS_SURVEILLANCE' ? 'badge-warning' : 'badge-success'}`}>
+                        Suggéré : {risk.niveauSuggere === 'A_RISQUE' ? 'À risque' : risk.niveauSuggere === 'SOUS_SURVEILLANCE' ? 'Sous surveillance' : 'Normal'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Indicators grid */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2.5 rounded-xl bg-white/30 dark:bg-gray-800/30">
+                  <p className="text-[10px] text-gray-400">Taux de présence</p>
+                  <p className={`text-sm font-semibold ${risk.tauxPresence < 65 ? 'text-red-500' : risk.tauxPresence < 80 ? 'text-amber-500' : 'text-green-600'}`}>{risk.tauxPresence}%</p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/30 dark:bg-gray-800/30">
+                  <p className="text-[10px] text-gray-400">Âmes perdues</p>
+                  <p className={`text-sm font-semibold ${risk.amesPerdues > 0 ? 'text-red-500' : 'text-green-600'}`}>{risk.amesPerdues}</p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/30 dark:bg-gray-800/30">
+                  <p className="text-[10px] text-gray-400">Nouveaux (30 j)</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{risk.nouveaux30j}</p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/30 dark:bg-gray-800/30">
+                  <p className="text-[10px] text-gray-400">En veille</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{risk.enVeille}</p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/30 dark:bg-gray-800/30">
+                  <p className="text-[10px] text-gray-400">Absences (4 sem.)</p>
+                  <p className={`text-sm font-semibold ${risk.absences4sem >= 4 ? 'text-red-500' : 'text-gray-900 dark:text-gray-100'}`}>{risk.absences4sem}</p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/30 dark:bg-gray-800/30">
+                  <p className="text-[10px] text-gray-400">Litiges / retards</p>
+                  <p className={`text-sm font-semibold ${risk.litiges + risk.retards > 0 ? 'text-amber-500' : 'text-gray-900 dark:text-gray-100'}`}>{risk.litiges} / {risk.retards}</p>
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-3">Évalué le {new Date(risk.evaluationDate).toLocaleDateString('fr-FR')} · {risk.totalSouls} âmes suivies</p>
+            </div>
+          )}
         </div>
 
         {/* Members & Reports */}

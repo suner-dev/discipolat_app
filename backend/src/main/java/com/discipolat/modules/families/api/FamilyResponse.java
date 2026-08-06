@@ -1,5 +1,6 @@
 package com.discipolat.modules.families.api;
 
+import com.discipolat.common.enums.NiveauRisque;
 import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.modules.families.domain.Family;
 import java.time.LocalDate;
@@ -19,6 +20,7 @@ public record FamilyResponse(
         Double latitude,
         Double longitude,
         String zone,
+        NiveauRisque niveauRisque,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -36,6 +38,7 @@ public record FamilyResponse(
                 family.getLatitude(),
                 family.getLongitude(),
                 family.getZone(),
+                family.getNiveauRisque(),
                 family.getCreatedAt(),
                 family.getUpdatedAt());
     }
@@ -54,6 +57,7 @@ public record FamilyResponse(
                 family.getLatitude(),
                 family.getLongitude(),
                 family.getZone(),
+                family.getNiveauRisque(),
                 family.getCreatedAt(),
                 family.getUpdatedAt());
     }

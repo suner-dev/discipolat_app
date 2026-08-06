@@ -73,8 +73,26 @@ export interface Family {
   latitude?: number;
   longitude?: number;
   zone?: string;
+  niveauRisque?: 'NORMAL' | 'SOUS_SURVEILLANCE' | 'A_RISQUE';
   createdAt: string;
   updatedAt: string;
+}
+
+export interface FamilyRiskAssessment {
+  familyId: string;
+  nom: string;
+  niveauActuel: 'NORMAL' | 'SOUS_SURVEILLANCE' | 'A_RISQUE';
+  niveauSuggere: 'NORMAL' | 'SOUS_SURVEILLANCE' | 'A_RISQUE';
+  scoreRisque: number;
+  tauxPresence: number;
+  amesPerdues: number;
+  nouveaux30j: number;
+  enVeille: number;
+  absences4sem: number;
+  litiges: number;
+  retards: number;
+  totalSouls: number;
+  evaluationDate: string;
 }
 
 export interface CreateFamilyRequest {
