@@ -1,13 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import api from '@/lib/api';
-import { useState } from 'react';
+import api, { getErrorMessage } from '@/lib/api';
+import { useState, useEffect } from 'react';
 import {
   Building2, Users, UserPlus, Calendar, UserCheck, FileText, Activity,
   BookOpen, Star, ChevronRight, Cake, CheckCircle, Clock, UserX,
-  Filter, RefreshCw, Heart,
+  Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import type { DepartmentPresenceRecord, ProgramType } from '@/types';
+
+const currentWeekMonday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.toISOString().split('T')[0];
+};
 
 const getGreeting = () => {
   const h = new Date().getHours();
@@ -24,7 +32,11 @@ const formatDate = (d?: string) => {
 export default function ResponsableDashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedDeptId, setSelectedDeptId] = useState<string | undefined>(undefined);
+  const [presenceSemaine, setPresenceSemaine] = useState(currentWeekMonday());
+  const [presenceType, setPresenceType] = useState('');
+  const [presenceSousType, setPresenceSousType] = useState('');
 
   const { data: dashboard, isLoading, refetch } = useQuery({
     queryKey: ['dashboard', 'responsable', selectedDeptId],
@@ -35,6 +47,79 @@ export default function ResponsableDashboardPage() {
       return res.data as any;
     },
   });
+
+  const activeDeptId = selectedDeptId ?? dashboard?.selectedDeptId;
+
+  // ==================== Saisie des présences (responsable) ====================
+  const { data: programTypes = [] } = useQuery({
+    queryKey: ['programs', 'active'],
+    queryFn: async () => (await api.get('/programs/active')).data as ProgramType[],
+  });
+
+  const { data: presenceSheet = [], isLoading: sheetLoading, refetch: refetchSheet } = useQuery({
+    queryKey: ['members', 'departments', activeDeptId, 'presences', presenceSemaine],
+    queryFn: async () => {
+      const res = await api.get(`/members/departments/${activeDeptId}/presences`, {
+        params: { semaine: presenceSemaine },
+      });
+      return res.data as DepartmentPresenceRecord[];
+    },
+    enabled: !!activeDeptId,
+  });
+
+  const [presenceForm, setPresenceForm] = useState<Record<string, boolean>>({});
+  const [presenceNotes, setPresenceNotes] = useState<Record<string, string>>({});
+
+  const presenceMutation = useMutation({
+    mutationFn: async ({ deptId, payload }: { deptId: string; payload: any }) => {
+      const res = await api.post(`/members/departments/${deptId}/presences`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Présences enregistrées ✅');
+      queryClient.invalidateQueries({ queryKey: ['members', 'departments', activeDeptId, 'presences'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'responsable'] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const submitPresences = () => {
+    if (!activeDeptId) return;
+    const items = presenceSheet
+      .filter((m) => presenceForm[m.soulId] !== undefined)
+      .map((m) => ({
+        soulId: m.soulId,
+        present: presenceForm[m.soulId] ?? false,
+        notes: presenceNotes[m.soulId] || undefined,
+      }));
+    if (items.length === 0) {
+      toast.error('Cochez au moins un membre avant d\'enregistrer');
+      return;
+    }
+    presenceMutation.mutate({
+      deptId: activeDeptId,
+      payload: {
+        semaine: presenceSemaine,
+        typeProgramme: presenceType || undefined,
+        sousProgramme: presenceSousType || undefined,
+        presences: items,
+      },
+    });
+  };
+
+  // Initialiser le formulaire à partir de la fiche chargée (une fois par semaine/département)
+  useEffect(() => {
+    setPresenceForm({});
+    setPresenceNotes({});
+    (presenceSheet ?? []).forEach((m) => {
+      setPresenceForm((f) => ({ ...f, [m.soulId]: m.present ?? false }));
+      if (m.notes) setPresenceNotes((n) => ({ ...n, [m.soulId]: m.notes as string }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDeptId, presenceSemaine, sheetLoading]);
+
+  const selectedProgram = programTypes.find((p) => p.code === presenceType);
+  const sousTypes = selectedProgram?.aSousProgrammes ? selectedProgram.sousProgrammes || [] : [];
 
   const stats = dashboard?.statistiques ?? {};
   const departements = dashboard?.departements ?? [];
@@ -206,6 +291,128 @@ export default function ResponsableDashboardPage() {
               </div>
               <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{stats.tauxCompletion ?? 0}%</span>
             </div>
+          </div>
+
+          {/* ==================== SAISIE DES PRÉSENCES ==================== */}
+          <div className="glass-card p-5 mb-6 animate-slide-up" style={{ animationDelay: '380ms' }}>
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-lg">
+                  <ClipboardCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Saisie des présences</h3>
+                  <p className="text-xs text-gray-400">Marquez la présence des membres de {dashboard?.selectedDeptNom} pour la semaine</p>
+                </div>
+              </div>
+              <span className="badge text-[10px] badge-info">{presenceSheet.length} membre{presenceSheet.length > 1 ? 's' : ''}</span>
+            </div>
+
+            {/* Filtres : semaine + programme */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
+              <div>
+                <label className="label">Semaine</label>
+                <input
+                  type="date"
+                  className="input"
+                  value={presenceSemaine}
+                  onChange={(e) => setPresenceSemaine(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label">Programme</label>
+                <select
+                  className="input"
+                  value={presenceType}
+                  onChange={(e) => { setPresenceType(e.target.value); setPresenceSousType(''); }}
+                >
+                  <option value="">Général</option>
+                  {programTypes.map((pt) => (
+                    <option key={pt.id} value={pt.code}>{pt.label}</option>
+                  ))}
+                </select>
+              </div>
+              {sousTypes.length > 0 && (
+                <div>
+                  <label className="label">Sous-programme</label>
+                  <select
+                    className="input"
+                    value={presenceSousType}
+                    onChange={(e) => setPresenceSousType(e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {sousTypes.map((st) => (
+                      <option key={st.id} value={st.label}>
+                        {st.label}{st.heureDebut ? ` · ${st.heureDebut.slice(0, 5)}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="flex items-end justify-end">
+                <button
+                  onClick={submitPresences}
+                  disabled={presenceMutation.isPending}
+                  className="btn-primary btn-sm w-full sm:w-auto"
+                >
+                  {presenceMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Enregistrer les présences
+                </button>
+              </div>
+            </div>
+
+            {/* Liste des membres avec case présent/absent */}
+            {sheetLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="skeleton h-14 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : presenceSheet.length === 0 ? (
+              <div className="text-center py-6">
+                <ClipboardCheck className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">Aucun membre à pointer pour cette semaine</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
+                {presenceSheet.map((m) => (
+                  <div key={m.soulId} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
+                    <button
+                      onClick={() => setPresenceForm((f) => ({ ...f, [m.soulId]: !(f[m.soulId] ?? false) }))}
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                        presenceForm[m.soulId]
+                          ? 'bg-emerald-500 text-white shadow-glow' 
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
+                      }`}
+                      title={presenceForm[m.soulId] ? 'Marquer absent' : 'Marquer présent'}
+                    >
+                      {presenceForm[m.soulId]
+                        ? <CheckCircle className="w-5 h-5" />
+                        : <UserX className="w-5 h-5" />}
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{m.nom}</p>
+                      <p className="text-[10px] text-gray-400 truncate">
+                        {m.familleNom ? `Famille ${m.familleNom}` : 'Sans famille'}
+                        {m.statut ? ` · ${m.statut.replace(/_/g, ' ').toLowerCase()}` : ''}
+                      </p>
+                    </div>
+                    {!m.userId && (
+                      <span className="badge text-[10px] badge-gray" title="Sans compte utilisateur lié">Pas de compte</span>
+                    )}
+                    <input
+                      className="input w-28 hidden sm:block"
+                      placeholder="Note"
+                      value={presenceNotes[m.soulId] || ''}
+                      onChange={(e) => setPresenceNotes((n) => ({ ...n, [m.soulId]: e.target.value }))}
+                    />
+                    <span className={`text-[10px] font-medium ${presenceForm[m.soulId] ? 'text-emerald-500' : 'text-red-400'}`}>
+                      {presenceForm[m.soulId] ? 'Présent' : 'Absent'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

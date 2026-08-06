@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -91,5 +92,27 @@ public class MemberController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<List<MemberPresenceResponse>> scopedPresences() {
         return ResponseEntity.ok(memberService.getScopedPresences());
+    }
+
+    // ============================================================
+    // Saisie des présences par le responsable (département)
+    // ============================================================
+
+    /** Fiche de présence du département : membres + présence de la semaine (saisie responsable). */
+    @GetMapping("/departments/{deptId}/presences")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<List<DepartmentPresenceRecord>> departmentPresenceSheet(
+            @PathVariable UUID deptId,
+            @RequestParam(required = false) LocalDate semaine) {
+        return ResponseEntity.ok(memberService.getDepartmentPresenceSheet(deptId, semaine));
+    }
+
+    /** Saisie groupée des présences du département pour la semaine. */
+    @PostMapping("/departments/{deptId}/presences")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<List<MemberPresenceResponse>> submitDepartmentPresences(
+            @PathVariable UUID deptId,
+            @Valid @RequestBody SubmitDepartmentPresenceRequest request) {
+        return ResponseEntity.ok(memberService.submitDepartmentPresences(deptId, request));
     }
 }

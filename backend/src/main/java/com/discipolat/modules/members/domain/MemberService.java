@@ -41,6 +41,7 @@ public class MemberService {
     private final FamilyRepository familyRepository;
     private final DepartmentRepository departmentRepository;
     private final MemberDepartmentRepository memberDepartmentRepository;
+    private final com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository;
     private final MemberPresenceRepository memberPresenceRepository;
     private final MemberRequestRepository memberRequestRepository;
     private final SecurityUtils securityUtils;
@@ -50,6 +51,7 @@ public class MemberService {
                          FamilyRepository familyRepository,
                          DepartmentRepository departmentRepository,
                          MemberDepartmentRepository memberDepartmentRepository,
+                         com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository,
                          MemberPresenceRepository memberPresenceRepository,
                          MemberRequestRepository memberRequestRepository,
                          SecurityUtils securityUtils) {
@@ -58,6 +60,7 @@ public class MemberService {
         this.familyRepository = familyRepository;
         this.departmentRepository = departmentRepository;
         this.memberDepartmentRepository = memberDepartmentRepository;
+        this.soulDepartmentRepository = soulDepartmentRepository;
         this.memberPresenceRepository = memberPresenceRepository;
         this.memberRequestRepository = memberRequestRepository;
         this.securityUtils = securityUtils;
@@ -208,6 +211,107 @@ public class MemberService {
         return MemberPresenceResponse.from(memberPresenceRepository.save(presence), fullName(userId));
     }
 
+    // ============================================================
+    // PHASE 2b — Saisie des présences par le responsable (département)
+    // ============================================================
+
+    /**
+     * Fiche de présence du département pour une semaine :
+     * liste les membres du département avec leur présence enregistrée (si saisie).
+     * Seul le responsable du département (ou pasteur/admin) peut y accéder.
+     */
+    @Transactional(readOnly = true)
+    public List<DepartmentPresenceRecord> getDepartmentPresenceSheet(UUID deptId, LocalDate semaine) {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        verifyDepartmentAccess(currentUserId, deptId);
+
+        LocalDate lundi = lundiDe(semaine != null ? semaine : LocalDate.now());
+        return departmentMembers(deptId).stream()
+                .map(soul -> {
+                    // Priorité à la saisie par soul_id (responsable), repli sur user_id (membre)
+                    MemberPresence presence = memberPresenceRepository.findBySoulIdAndSemaine(soul.getId(), lundi)
+                            .or(() -> soul.getUserId() != null
+                                    ? memberPresenceRepository.findByUserIdAndSemaine(soul.getUserId(), lundi)
+                                    : java.util.Optional.empty())
+                            .orElse(null);
+                    boolean saisie = presence != null;
+                    return new DepartmentPresenceRecord(
+                            soul.getId(),
+                            soul.getUserId(),
+                            soul.getNomComplet(),
+                            soul.getTelephone(),
+                            soul.getStatut() != null ? soul.getStatut().name() : null,
+                            soul.getFamilleId() != null
+                                    ? familyRepository.findById(soul.getFamilleId()).map(Family::getNom).orElse(null)
+                                    : null,
+                            soul.getFamilleId(),
+                            soul.getDateIntegration(),
+                            saisie,
+                            saisie ? presence.getPresent() : null,
+                            saisie ? presence.getPresences() : null,
+                            saisie ? presence.getNotes() : null,
+                            saisie ? presence.getTypeProgramme() : null,
+                            saisie ? presence.getSousProgramme() : null);
+                })
+                .toList();
+    }
+
+    /**
+     * Saisie groupée des présences d'un département pour une semaine.
+     * Le responsable coche présent/absent pour chaque membre.
+     */
+    public List<MemberPresenceResponse> submitDepartmentPresences(
+            UUID deptId, SubmitDepartmentPresenceRequest request) {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        verifyDepartmentAccess(currentUserId, deptId);
+
+        LocalDate lundi = lundiDe(request.semaine());
+        List<DepartmentPresenceRecord> sheet = getDepartmentPresenceSheet(deptId, lundi);
+        Map<UUID, DepartmentPresenceRecord> bySoulId = sheet.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        DepartmentPresenceRecord::soulId, r -> r, (a, b) -> a));
+
+        List<MemberPresenceResponse> results = new ArrayList<>();
+        for (SubmitDepartmentPresenceItem item : request.presences()) {
+            DepartmentPresenceRecord record = bySoulId.get(item.soulId());
+            if (record == null) {
+                throw new BadRequestException(
+                        "Ce membre n'appartient pas au département sélectionné : " + item.soulId());
+            }
+            // Âme sans compte utilisateur : présence pointée par soul_id (gérée par le responsable)
+            UUID userId = record.userId();
+            MemberPresence presence = memberPresenceRepository.findBySoulIdAndSemaine(record.soulId(), lundi)
+                    .or(() -> userId != null
+                            ? memberPresenceRepository.findByUserIdAndSemaine(userId, lundi)
+                            : java.util.Optional.empty())
+                    .orElseGet(() -> MemberPresence.builder()
+                            .soulId(record.soulId())
+                            .userId(userId)
+                            .semaine(lundi)
+                            .build());
+            presence.setSoulId(record.soulId());
+            presence.setPresent(item.present());
+            presence.setTypeProgramme(request.typeProgramme());
+            presence.setSousProgramme(request.sousProgramme());
+            // On garde la structure existante (programme label -> booléen) pour la compatibilité
+            Map<String, Boolean> presences = new LinkedHashMap<>();
+            if (request.typeProgramme() != null && !request.typeProgramme().isBlank()) {
+                presences.put(request.typeProgramme(), item.present());
+            } else if (item.presences() != null) {
+                presences.putAll(item.presences());
+            } else {
+                presences.put("Présent", item.present());
+            }
+            presence.setPresences(presences);
+            if (item.notes() != null) presence.setNotes(item.notes());
+
+            // Nom du membre : depuis le compte s'il existe, sinon depuis la fiche du département
+            String nom = userId != null ? fullName(userId) : record.nom();
+            results.add(MemberPresenceResponse.from(memberPresenceRepository.save(presence), nom));
+        }
+        return results;
+    }
+
     /**
      * Présences récentes des membres sous la responsabilité du rôle courant :
      * pasteur/admin = tous, responsable = membres de ses départements,
@@ -223,7 +327,7 @@ public class MemberService {
         if (user.getRoles().contains(UserRole.PASTEUR) || user.getRoles().contains(UserRole.ADMIN)) {
             return memberPresenceRepository.findAllByOrderBySemaineDesc()
                     .stream()
-                    .map(p -> MemberPresenceResponse.from(p, fullName(p.getUserId())))
+                    .map(p -> MemberPresenceResponse.from(p, presenceNom(p)))
                     .toList();
         }
 
@@ -232,7 +336,7 @@ public class MemberService {
 
         return memberPresenceRepository.findBySoulIdInOrderBySemaineDesc(soulIds)
                 .stream()
-                .map(p -> MemberPresenceResponse.from(p, fullName(p.getUserId())))
+                .map(p -> MemberPresenceResponse.from(p, presenceNom(p)))
                 .toList();
     }
 
@@ -365,6 +469,19 @@ public class MemberService {
                 .orElse("Membre");
     }
 
+    /** Nom du membre d'une présence : depuis le compte, sinon depuis l'âme (soul_id). */
+    private String presenceNom(MemberPresence p) {
+        if (p.getUserId() != null) {
+            String nom = fullName(p.getUserId());
+            if (!"Membre".equals(nom)) return nom;
+        }
+        return p.getSoulId() != null
+                ? soulRepository.findById(p.getSoulId())
+                        .map(Soul::getNomComplet)
+                        .orElse("Membre")
+                : "Membre";
+    }
+
     private Soul currentSoul(UUID userId) {
         return soulRepository.findAllByUserId(userId).stream()
                 .filter(s -> !s.isDeleted())
@@ -388,6 +505,35 @@ public class MemberService {
     /** Lundi de la semaine contenant la date donnée. */
     private LocalDate lundiDe(LocalDate date) {
         return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+    }
+
+    /**
+     * Vérifie que l'utilisateur courant peut gérer le département :
+     * pasteur/admin partout, responsable uniquement ses départements.
+     */
+    private void verifyDepartmentAccess(UUID userId, UUID deptId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
+        if (user.getRoles().contains(UserRole.PASTEUR) || user.getRoles().contains(UserRole.ADMIN)) {
+            return;
+        }
+        boolean gere = departmentRepository.findByResponsableId(userId).stream()
+                .anyMatch(d -> d.getId().equals(deptId));
+        if (!gere) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Vous ne gérez pas ce département");
+        }
+    }
+
+    /** Âmes actives membres d'un département (via soul_departments). */
+    private List<Soul> departmentMembers(UUID deptId) {
+        return soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId)
+                .stream()
+                .map(sd -> soulRepository.findById(sd.getSoulId()).orElse(null))
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isDeleted())
+                .sorted(Comparator.comparing(Soul::getNomComplet))
+                .toList();
     }
 
     /** Âmes sous la responsabilité du rôle courant (pour la visibilité des présences). */

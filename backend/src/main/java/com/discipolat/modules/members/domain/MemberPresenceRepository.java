@@ -18,6 +18,9 @@ public interface MemberPresenceRepository extends JpaRepository<MemberPresence, 
 
     Optional<MemberPresence> findByUserIdAndSemaine(UUID userId, LocalDate semaine);
 
+    /** Présence d'une âme pour une semaine (saisie par le responsable). */
+    Optional<MemberPresence> findBySoulIdAndSemaine(UUID soulId, LocalDate semaine);
+
     /** Présences des membres d'un groupe d'âmes (famille ou département), semaine la plus récente d'abord. */
     List<MemberPresence> findBySoulIdInOrderBySemaineDesc(List<UUID> soulIds);
 }

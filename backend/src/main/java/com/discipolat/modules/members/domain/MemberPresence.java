@@ -28,7 +28,8 @@ public class MemberPresence {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "user_id", nullable = false)
+    /** Compte utilisateur lié (nullable : les membres sans compte sont pointés par soul_id). */
+    @Column(name = "user_id")
     private UUID userId;
 
     @Column(name = "soul_id")

@@ -296,6 +296,23 @@ export interface ProgramType {
   sousProgrammes: ProgramSubType[];
 }
 
+export interface DepartmentPresenceRecord {
+  soulId: string;
+  userId?: string;
+  nom: string;
+  telephone?: string;
+  statut?: string;
+  familleNom?: string;
+  familleId?: string;
+  dateIntegration?: string;
+  presenceSaisie: boolean;
+  present?: boolean;
+  presences?: Record<string, boolean>;
+  notes?: string;
+  typeProgramme?: string;
+  sousProgramme?: string;
+}
+
 export type MemberRequestType = 'SUGGESTION' | 'RENDEZ_VOUS' | 'SIGNALEMENT';
 export type MemberRequestTarget = 'PASTEUR' | 'RESPONSABLE' | 'CHEF_DE_FAMILLE';
 export type MemberRequestStatus = 'OUVERT' | 'EN_COURS' | 'RESOLU' | 'REJETE';
