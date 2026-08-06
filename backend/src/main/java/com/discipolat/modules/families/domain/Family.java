@@ -24,11 +24,14 @@ public class Family {
     @Column(name = "nom", nullable = false)
     private String nom;
 
-    @Column(name = "departement_id", nullable = false)
-    private UUID departementId;
+    @Column(name = "user_id")
+    private UUID userId;
 
     @Column(name = "chef_famille_id", nullable = false)
     private UUID chefFamilleId;
+
+    @Column(name = "chef_adjoint_id")
+    private UUID chefAdjointId;
 
     @Column(name = "date_creation", nullable = false)
     private LocalDate dateCreation;

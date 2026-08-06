@@ -38,14 +38,11 @@ public class FamilyController {
     public ResponseEntity<PageResponse<FamilyResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) UUID departementId,
             @RequestParam(required = false) UUID chefFamilleId) {
         Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Family> families;
         if (chefFamilleId != null) {
             families = familyService.findByChefFamille(chefFamilleId, pageable);
-        } else if (departementId != null) {
-            families = familyService.findByDepartement(departementId, pageable);
         } else {
             families = familyService.findAll(pageable);
         }
@@ -60,25 +57,22 @@ public class FamilyController {
         return ResponseEntity.ok(FamilyResponse.from(familyService.findById(id)));
     }
 
+    /**
+     * Création d'une famille avec 2 cas :
+     * Cas 1 : Sélectionner un chef existant (chefFamilleId requis)
+     * Cas 2 : Créer immédiatement un nouveau chef (createNewChef = true + infos)
+     */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<FamilyResponse> create(@Valid @RequestBody CreateFamilyRequest request) {
-        Family family = Family.builder()
-                .nom(request.nom())
-                .departementId(request.departementId())
-                .chefFamilleId(request.chefFamilleId())
-                .build();
-        family = familyService.create(family);
+        Family family = familyService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(FamilyResponse.from(family));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<FamilyResponse> update(@PathVariable UUID id, @Valid @RequestBody CreateFamilyRequest request) {
-        Family family = familyService.findById(id);
-        family.setNom(request.nom());
-        family.setChefFamilleId(request.chefFamilleId());
-        family = familyService.update(family);
+        Family family = familyService.update(id, request);
         return ResponseEntity.ok(FamilyResponse.from(family));
     }
 
@@ -95,16 +89,10 @@ public class FamilyController {
     }
 
     @PatchMapping("/{id}/chief")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<FamilyResponse> reassignChief(@PathVariable UUID id, @RequestBody ReassignChiefRequest request) {
         familyService.reassignChef(id, request.newChefId());
         return ResponseEntity.ok(FamilyResponse.from(familyService.findById(id)));
-    }
-
-    @GetMapping("/by-departement/{departementId}")
-    public ResponseEntity<List<FamilyResponse>> findByDepartement(@PathVariable UUID departementId) {
-        List<Family> families = familyService.findByDepartement(departementId, Pageable.unpaged()).getContent();
-        return ResponseEntity.ok(families.stream().map(FamilyResponse::from).toList());
     }
 
     @GetMapping("/by-chef/{chefId}")

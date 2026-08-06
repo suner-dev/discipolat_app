@@ -40,7 +40,6 @@ public class BulkImportService {
         for (Map<String, Object> row : families) {
             try {
                 String nom = (String) row.get("nom");
-                UUID departementId = UUID.fromString((String) row.get("departementId"));
                 UUID chefFamilleId = UUID.fromString((String) row.get("chefFamilleId"));
 
                 if (familyRepository.findByNom(nom).isPresent()) {
@@ -50,7 +49,6 @@ public class BulkImportService {
 
                 Family family = Family.builder()
                         .nom(nom)
-                        .departementId(departementId)
                         .chefFamilleId(chefFamilleId)
                         .build();
                 familyRepository.save(family);

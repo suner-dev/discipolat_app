@@ -33,9 +33,20 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
       final scoreRes = await _apiService.get('/souls/${widget.soulId}/spiritual-score');
       final histRes = await _apiService.get('/souls/${widget.soulId}/history');
       if (mounted) {
+        final baseSoul = Soul.fromJson(soulRes.data as Map<String, dynamic>);
+        // Enrichir avec les infos d'encadrement de la fiche 360°
+        final p360 = p360Res.data as Map<String, dynamic>?;
+        final encadrement = p360?['encadrement'] as Map<String, dynamic>? ?? {};
+        final spirituel = p360?['spirituel'] as Map<String, dynamic>? ?? {};
+        final soul = baseSoul.withEncadrement(
+          faiseurNom: encadrement['faiseurNom'] as String?,
+          familleNom: encadrement['familleNom'] as String?,
+          departementNom: encadrement['departementNom'] as String?,
+          dateBapteme: spirituel['dateBapteme'] as String?,
+        );
         setState(() {
-          _soul = Soul.fromJson(soulRes.data as Map<String, dynamic>);
-          _pastoral360 = p360Res.data as Map<String, dynamic>?;
+          _soul = soul;
+          _pastoral360 = p360;
           _spiritualScore = scoreRes.data as Map<String, dynamic>?;
           _history = (histRes.data is List ? histRes.data : []) as List<dynamic>;
           _isLoading = false;

@@ -47,7 +47,7 @@ export default function FamiliesPage() {
               {family.nom}
             </p>
             <p className="text-xs text-gray-400">
-              {family.departementId ? 'Département rattaché' : 'Aucun département'}
+              Famille indépendante des départements
             </p>
           </div>
         </Link>

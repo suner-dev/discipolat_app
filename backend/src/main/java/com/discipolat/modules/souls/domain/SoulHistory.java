@@ -1,8 +1,11 @@
 package com.discipolat.modules.souls.domain;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -42,8 +45,9 @@ public class SoulHistory {
     @Column(name = "utilisateur_id")
     private UUID utilisateurId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata", columnDefinition = "jsonb")
-    private String metadata;
+    private Map<String, Object> metadata;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

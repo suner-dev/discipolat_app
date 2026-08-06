@@ -11,13 +11,14 @@ import java.util.UUID;
 
 @Repository
 public interface FamilyRepository extends JpaRepository<Family, UUID> {
-    Page<Family> findByDepartementId(UUID departementId, Pageable pageable);
-    Page<Family> findByDepartementIdAndStatut(UUID departementId, StatutEntite statut, Pageable pageable);
-    List<Family> findByDepartementId(UUID departementId);
-    List<Family> findByDepartementIdIn(List<UUID> departementIds);
+    // DepartementId methods REMOVED - families are now independent from departments
+    // Use soul_departments table instead for member-department relationships
+
     Page<Family> findByChefFamilleId(UUID chefFamilleId, Pageable pageable);
     List<Family> findByChefFamilleId(UUID chefFamilleId);
-    long countByDepartementIdAndStatut(UUID departementId, StatutEntite statut);
+    Page<Family> findByChefAdjointId(UUID chefAdjointId, Pageable pageable);
+    List<Family> findByChefAdjointId(UUID chefAdjointId);
     Page<Family> findAllByStatut(StatutEntite statut, Pageable pageable);
     java.util.Optional<Family> findByNom(String nom);
+    List<Family> findByUserId(UUID userId);
 }

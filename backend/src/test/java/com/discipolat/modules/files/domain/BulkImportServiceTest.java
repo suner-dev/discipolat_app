@@ -86,8 +86,10 @@ class BulkImportServiceTest {
 
     @Test
     void importFamilies_WithInvalidUUID_ShouldCaptureError() {
+        // Après la restructuration, une famille n'a plus de departementId :
+        // un chefFamilleId invalide doit déclencher une erreur capturée.
         List<Map<String, Object>> families = List.of(
-                Map.of("nom", "Famille C", "departementId", "not-a-uuid", "chefFamilleId", chefFamilleId.toString())
+                Map.of("nom", "Famille C", "chefFamilleId", "not-a-uuid")
         );
 
         Map<String, Object> result = bulkImportService.importFamilies(families);

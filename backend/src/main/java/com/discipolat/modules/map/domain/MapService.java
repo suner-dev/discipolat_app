@@ -80,7 +80,7 @@ public class MapService {
             List<UUID> deptIds = departmentRepository.findByResponsableId(userId)
                     .stream().map(Department::getId).toList();
             if (!deptIds.isEmpty()) {
-                familyIds.addAll(familyRepository.findByDepartementIdIn(deptIds)
+                familyIds.addAll(familyRepository.findAll()
                         .stream().map(Family::getId).toList());
                 soulIds.addAll(memberDepartmentRepository.findByDepartmentIdIn(deptIds)
                         .stream().map(MemberDepartment::getSoulId).toList());
@@ -157,7 +157,7 @@ public class MapService {
                     family.getId(), "FAMILY", family.getNom(),
                     family.getLatitude(), family.getLongitude(), family.getZone(),
                     family.getStatut().name(),
-                    null, departmentName(family.getDepartementId()), null));
+                    null, null, null));
         }
         return points;
     }
@@ -180,7 +180,7 @@ public class MapService {
                         family.getId(), "FAMILY", family.getNom(),
                         family.getLatitude(), family.getLongitude(), family.getZone(),
                         family.getStatut().name(),
-                        null, departmentName(family.getDepartementId()), null));
+                        null, null, null));
             }
         }
         return points;

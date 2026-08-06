@@ -78,8 +78,9 @@ public class DashboardController {
 
     @GetMapping("/responsable")
     @PreAuthorize("hasAnyRole('RESPONSABLE', 'PASTEUR')")
-    public ResponseEntity<Map<String, Object>> getResponsableDashboard() {
-        return ResponseEntity.ok(dashboardService.getResponsableDashboard());
+    public ResponseEntity<Map<String, Object>> getResponsableDashboard(
+            @RequestParam(required = false) UUID deptId) {
+        return ResponseEntity.ok(dashboardService.getResponsableDashboard(deptId));
     }
 
     // ======================== PHASE 3: CRM FAISEUR ========================

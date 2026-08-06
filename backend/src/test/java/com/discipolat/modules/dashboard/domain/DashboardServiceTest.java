@@ -52,6 +52,8 @@ class DashboardServiceTest {
     @Mock
     private ParallelFollowupRepository parallelFollowupRepository;
     @Mock
+    private com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository;
+    @Mock
     private SecurityUtils securityUtils;
 
     private DashboardService dashboardService;
@@ -64,6 +66,7 @@ class DashboardServiceTest {
                 makerReportRepository, familyReportRepository,
                 alertRepository, soulNoteRepository,
                 parallelFollowupRepository, departmentRepository,
+                soulDepartmentRepository,
                 securityUtils
         );
         userId = UUID.randomUUID();
@@ -116,7 +119,7 @@ class DashboardServiceTest {
         when(securityUtils.getCurrentUserId()).thenReturn(userId);
         when(departmentRepository.findByResponsableId(userId)).thenReturn(List.of());
 
-        var result = dashboardService.getResponsableDashboard();
+        var result = dashboardService.getResponsableDashboard(null);
 
         assertNotNull(result);
         assertTrue(result.containsKey("message"));

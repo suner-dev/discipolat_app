@@ -3,6 +3,7 @@ package com.discipolat.modules.alerts.api;
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.modules.alerts.domain.Alert;
 import com.discipolat.modules.alerts.domain.AlertService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -56,6 +57,13 @@ public class AlertController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<AlertResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(AlertResponse.from(alertService.findById(id)));
+    }
+
+    /** Création manuelle d'une alerte ciblée (pasteur, responsable, chef de famille, faiseur). */
+    @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<AlertResponse> createManual(@Valid @RequestBody CreateAlertRequest request) {
+        return ResponseEntity.ok(AlertResponse.from(alertService.createManual(request)));
     }
 
     @PatchMapping("/{id}/resolve")

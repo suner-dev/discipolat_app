@@ -30,6 +30,28 @@ public class AlertService {
         return alertRepository.save(alert);
     }
 
+    /**
+     * Création manuelle d'une alerte ciblée (personne, département, famille, groupe, église).
+     */
+    public Alert createManual(com.discipolat.modules.alerts.api.CreateAlertRequest request) {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        Alert alert = Alert.builder()
+                .typeAlerte("MANUEL")
+                .typeAlerteManuel(request.typeAlerteManuel())
+                .titre(request.titre())
+                .message(request.message())
+                .cible(request.cible())
+                .priorite(request.priorite() != null ? request.priorite() : "MOYENNE")
+                .ameId(request.ameId())
+                .faiseurId(request.faiseurId())
+                .familleId(request.familleId())
+                .departmentId(request.departmentId())
+                .dateDeclenchement(LocalDateTime.now())
+                .statut(StatutAlerte.ACTIVE)
+                .build();
+        return alertRepository.save(alert);
+    }
+
     @Transactional(readOnly = true)
     public Alert findById(UUID id) {
         return alertRepository.findById(id)

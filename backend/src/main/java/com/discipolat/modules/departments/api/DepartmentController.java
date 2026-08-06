@@ -48,15 +48,15 @@ public class DepartmentController {
         return ResponseEntity.ok(DepartmentResponse.from(department));
     }
 
+    /**
+     * Création d'un département avec 2 cas :
+     * Cas 1 : Sélectionner un responsable existant (responsableId requis)
+     * Cas 2 : Créer immédiatement un nouveau responsable (createNewResponsable = true + infos)
+     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<DepartmentResponse> create(@Valid @RequestBody CreateDepartmentRequest request) {
-        Department department = Department.builder()
-                .nom(request.nom())
-                .description(request.description())
-                .responsableId(request.responsableId())
-                .build();
-        department = departmentService.create(department);
+        Department department = departmentService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(DepartmentResponse.from(department));
     }
 

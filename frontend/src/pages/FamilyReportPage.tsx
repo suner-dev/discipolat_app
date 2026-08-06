@@ -118,7 +118,7 @@ export default function FamilyReportPage() {
         <select value={selectedFamilyId} onChange={(e) => setSelectedFamilyId(e.target.value)} className="input mt-1">
           <option value="">Choisir une famille...</option>
           {families?.map((f) => (
-            <option key={f.id} value={f.id}>{f.nom} {f.departementId ? '· ' + f.departementId.slice(0, 8) + '...' : ''}</option>
+            <option key={f.id} value={f.id}>{f.nom}</option>
           ))}
         </select>
       </div>

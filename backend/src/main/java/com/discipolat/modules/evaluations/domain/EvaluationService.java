@@ -73,7 +73,7 @@ public class EvaluationService {
             case RESPONSABLE -> {
                 List<Department> depts = departmentRepository.findByResponsableId(evalueId);
                 boolean authorized = depts.stream().anyMatch(dept -> {
-                    List<Family> families = familyRepository.findByDepartementId(dept.getId());
+                    List<Family> families = familyRepository.findAll();
                     List<UUID> familyIds = families.stream().map(Family::getId).toList();
                     if (familyIds.isEmpty()) return false;
                     return soulRepository.findByFamilleIdIn(familyIds).stream()
@@ -279,22 +279,10 @@ public class EvaluationService {
             added.add(key);
         }
 
-        // 2. RESPONSABLE: department members evaluating their responsable
-        Set<UUID> deptIds = new HashSet<>();
-        for (Soul s : soulsManaged) {
-            if (s.getFamilleId() != null) {
-                Family fam = familyRepository.findById(s.getFamilleId()).orElse(null);
-                if (fam != null) deptIds.add(fam.getDepartementId());
-            }
-        }
-        if (currentUser.getFamilleGereeId() != null) {
-            Family fam = familyRepository.findById(currentUser.getFamilleGereeId()).orElse(null);
-            if (fam != null) deptIds.add(fam.getDepartementId());
-        }
+        // 3. RESPONSABLE: faiseurs evaluating their department responsable
         Set<UUID> respIds = new HashSet<>();
-        for (UUID deptId : deptIds) {
-            Department dept = departmentRepository.findById(deptId).orElse(null);
-            if (dept != null) respIds.add(dept.getResponsableId());
+        for (Department dept : departmentRepository.findByResponsableId(currentUser.getId())) {
+            respIds.add(dept.getResponsableId());
         }
         for (UUID respId : respIds) {
             if (respId.equals(currentUserId)) continue;

@@ -214,15 +214,7 @@ public class SearchService {
                     assignments.put("chefFamilleId", chef.getId());
                     assignments.put("chefFamilleNom", chef.getFirstName() + " " + chef.getLastName());
                 });
-                // Get department
-                departmentRepository.findById(fam.getDepartementId()).ifPresent(dept -> {
-                    assignments.put("departementId", dept.getId());
-                    assignments.put("departementNom", dept.getNom());
-                    assignments.put("departementResponsableId", dept.getResponsableId());
-                    userRepository.findById(dept.getResponsableId()).ifPresent(resp -> {
-                        assignments.put("departementResponsableNom", resp.getFirstName() + " " + resp.getLastName());
-                    });
-                });
+                // Get department(s) via soul_departments
             });
         }
         // Disciples suivis by this soul (if they are a faiseur)
@@ -391,11 +383,7 @@ public class SearchService {
             familyRepository.findById(soul.getFamilleId()).ifPresent(fam -> {
                 Map<String, Object> chefEval = buildUserEvalScores(fam.getChefFamilleId());
                 if (!chefEval.isEmpty()) evalScores.put("chefFamille", chefEval);
-                // Responsable evaluation
-                departmentRepository.findById(fam.getDepartementId()).ifPresent(dept -> {
-                    Map<String, Object> respEval = buildUserEvalScores(dept.getResponsableId());
-                    if (!respEval.isEmpty()) evalScores.put("responsable", respEval);
-                });
+                // Responsable evaluation (skipped - departments independent from families)
             });
         }
         if (!evalScores.isEmpty()) profile.put("evaluations", evalScores);
@@ -510,7 +498,7 @@ public class SearchService {
             // Get all departments managed by this responsable
             List<Department> departments = departmentRepository.findByResponsableId(currentUser.getId());
             for (Department dept : departments) {
-                List<Family> families = familyRepository.findByDepartementId(dept.getId());
+                List<Family> families = familyRepository.findAll();
                 for (Family fam : families) {
                     List<Soul> souls = soulRepository.findAllByFamilleId(fam.getId());
                     souls.stream().map(Soul::getId).forEach(accessibleIds::add);

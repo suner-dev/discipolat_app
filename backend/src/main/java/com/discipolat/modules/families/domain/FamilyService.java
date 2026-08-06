@@ -4,7 +4,9 @@ import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.StatutEntite;
+import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.families.api.CreateFamilyRequest;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
@@ -13,6 +15,7 @@ import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,30 +34,115 @@ public class FamilyService {
     private final UserRepository userRepository;
     private final MakerReportRepository makerReportRepository;
     private final SecurityUtils securityUtils;
+    private final PasswordEncoder passwordEncoder;
 
     public FamilyService(FamilyRepository familyRepository,
                          FamilyChiefHistoryRepository chiefHistoryRepository,
                          SoulRepository soulRepository,
                          UserRepository userRepository,
                          MakerReportRepository makerReportRepository,
-                         SecurityUtils securityUtils) {
+                         SecurityUtils securityUtils,
+                         PasswordEncoder passwordEncoder) {
         this.familyRepository = familyRepository;
         this.chiefHistoryRepository = chiefHistoryRepository;
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.makerReportRepository = makerReportRepository;
         this.securityUtils = securityUtils;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public Family create(Family family) {
+    /**
+     * Création d'une famille avec 2 cas :
+     * Cas 1 : Sélectionner un chef existant (chefFamilleId requis)
+     * Cas 2 : Créer immédiatement un nouveau chef (createNewChef = true + infos)
+     */
+    public Family create(CreateFamilyRequest request) {
         // US-06: Check for unique family name
-        if (familyRepository.findByNom(family.getNom()).isPresent()) {
-            throw new BusinessRuleException("Une famille avec ce nom existe déjà: " + family.getNom(),
+        if (familyRepository.findByNom(request.nom()).isPresent()) {
+            throw new BusinessRuleException("Une famille avec ce nom existe déjà: " + request.nom(),
                     "DUPLICATE_FAMILY_NAME");
         }
-        family.setDateCreation(LocalDate.now());
-        family.setStatut(StatutEntite.ACTIVE);
-        return familyRepository.save(family);
+
+        UUID chefFamilleId;
+
+        // Cas 2 : Créer un nouveau chef
+        if (request.shouldCreateNewChef()) {
+            chefFamilleId = createNewChef(request);
+        } else if (request.chefFamilleId() != null) {
+            // Cas 1 : Sélectionner un chef existant
+            chefFamilleId = request.chefFamilleId();
+            User chef = userRepository.findById(chefFamilleId)
+                    .orElseThrow(() -> new EntityNotFoundException("User", chefFamilleId));
+            chef.setEstChefDeFamille(true);
+            userRepository.save(chef);
+        } else {
+            throw new BusinessRuleException(
+                    "Vous devez sélectionner un chef existant ou créer un nouveau chef.",
+                    "NO_CHIEF_SELECTED");
+        }
+
+        Family family = Family.builder()
+                .nom(request.nom())
+                .chefFamilleId(chefFamilleId)
+                .userId(chefFamilleId)
+                .chefAdjointId(request.chefAdjointId())
+                .dateCreation(LocalDate.now())
+                .statut(StatutEntite.ACTIVE)
+                .build();
+
+        Family savedFamily = familyRepository.save(family);
+
+        // Mettre à jour le user chef de famille
+        final UUID finalChefId = chefFamilleId;
+        userRepository.findById(finalChefId).ifPresent(chef -> {
+            chef.setEstChefDeFamille(true);
+            chef.setFamilleGereeId(savedFamily.getId());
+            userRepository.save(chef);
+        });
+
+        // Enregistrer dans l'historique
+        FamilyChiefHistory history = FamilyChiefHistory.builder()
+                .familleId(savedFamily.getId())
+                .ancienChefId(null)
+                .nouveauChefId(finalChefId)
+                .changedBy(securityUtils.getCurrentUserId())
+                .raison("Création de la famille")
+                .build();
+        chiefHistoryRepository.save(history);
+
+        return savedFamily;
+    }
+
+    /**
+     * Crée un nouveau chef de famille à partir des informations fournies.
+     */
+    private UUID createNewChef(CreateFamilyRequest request) {
+        // Vérifier que l'email n'existe pas déjà
+        if (userRepository.findByEmail(request.newChefEmail()).isPresent()) {
+            throw new BusinessRuleException(
+                    "Un compte avec cet email existe déjà: " + request.newChefEmail(),
+                    "DUPLICATE_EMAIL");
+        }
+
+        // Générer un mot de passe temporaire
+        String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+        String hashedPassword = passwordEncoder.encode(tempPassword);
+
+        User newChef = User.builder()
+                .email(request.newChefEmail())
+                .passwordHash(hashedPassword)
+                .firstName(request.newChefFirstName())
+                .lastName(request.newChefLastName())
+                .phone(request.newChefPhone())
+                .role(UserRole.CHEF_DE_FAMILLE)
+                .roles(new HashSet<>(Set.of(UserRole.CHEF_DE_FAMILLE)))
+                .estChefDeFamille(true)
+                .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE)
+                .build();
+
+        newChef = userRepository.save(newChef);
+        return newChef.getId();
     }
 
     @Transactional(readOnly = true)
@@ -69,11 +157,6 @@ public class FamilyService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Family> findByDepartement(UUID departementId, Pageable pageable) {
-        return familyRepository.findByDepartementId(departementId, pageable);
-    }
-
-    @Transactional(readOnly = true)
     public List<Family> findByChefFamille(UUID chefId) {
         return familyRepository.findByChefFamilleId(chefId);
     }
@@ -82,10 +165,15 @@ public class FamilyService {
         return familyRepository.findByChefFamilleId(chefId, pageable);
     }
 
-    public Family update(Family updated) {
-        Family existing = findById(updated.getId());
-        existing.setNom(updated.getNom());
-        existing.setChefFamilleId(updated.getChefFamilleId());
+    public Family update(UUID id, CreateFamilyRequest request) {
+        Family existing = findById(id);
+        existing.setNom(request.nom());
+        if (request.chefFamilleId() != null) {
+            existing.setChefFamilleId(request.chefFamilleId());
+        }
+        if (request.chefAdjointId() != null) {
+            existing.setChefAdjointId(request.chefAdjointId());
+        }
         return familyRepository.save(existing);
     }
 
@@ -193,6 +281,7 @@ public class FamilyService {
         tree.put("familyId", family.getId());
         tree.put("nom", family.getNom());
         tree.put("chefFamilleId", family.getChefFamilleId());
+        tree.put("chefAdjointId", family.getChefAdjointId());
 
         List<Soul> souls = soulRepository.findAllByFamilleId(familyId);
 
@@ -269,11 +358,6 @@ public class FamilyService {
         }
 
         return comparisons;
-    }
-
-    @Transactional(readOnly = true)
-    public long countByDepartement(UUID departementId) {
-        return familyRepository.countByDepartementIdAndStatut(departementId, StatutEntite.ACTIVE);
     }
 
     @Transactional(readOnly = true)

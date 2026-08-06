@@ -13,7 +13,9 @@ import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
+import com.discipolat.modules.users.domain.UserDepartmentRepository;
 import com.discipolat.modules.users.domain.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,29 +35,92 @@ public class DepartmentService {
     private final FamilyRepository familyRepository;
     private final SoulRepository soulRepository;
     private final UserRepository userRepository;
+    private final UserDepartmentRepository userDepartmentRepository;
     private final MakerReportRepository makerReportRepository;
     private final FamilyReportRepository familyReportRepository;
     private final SecurityUtils securityUtils;
+    private final PasswordEncoder passwordEncoder;
 
     public DepartmentService(DepartmentRepository departmentRepository,
                              FamilyRepository familyRepository,
                              SoulRepository soulRepository,
                              UserRepository userRepository,
+                             UserDepartmentRepository userDepartmentRepository,
                              MakerReportRepository makerReportRepository,
                              FamilyReportRepository familyReportRepository,
-                             SecurityUtils securityUtils) {
+                             SecurityUtils securityUtils,
+                             PasswordEncoder passwordEncoder) {
         this.departmentRepository = departmentRepository;
         this.familyRepository = familyRepository;
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
+        this.userDepartmentRepository = userDepartmentRepository;
         this.makerReportRepository = makerReportRepository;
         this.familyReportRepository = familyReportRepository;
         this.securityUtils = securityUtils;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Department create(Department department) {
         department.setStatut(StatutEntite.ACTIVE);
         return departmentRepository.save(department);
+    }
+
+    /**
+     * Création d'un département avec 2 cas :
+     * Cas 1 : Sélectionner un responsable existant (responsableId requis)
+     * Cas 2 : Créer immédiatement un nouveau responsable.
+     */
+    public Department create(com.discipolat.modules.departments.api.CreateDepartmentRequest request) {
+        UUID responsableId;
+        if (request.shouldCreateNewResponsable()) {
+            responsableId = createNewResponsable(request);
+        } else if (request.responsableId() != null) {
+            responsableId = request.responsableId();
+        } else {
+            throw new com.discipolat.common.domain.BusinessRuleException(
+                    "Vous devez sélectionner un responsable existant ou créer un nouveau responsable.",
+                    "NO_RESPONSABLE_SELECTED");
+        }
+
+        Department department = Department.builder()
+                .nom(request.nom())
+                .description(request.description())
+                .responsableId(responsableId)
+                .statut(StatutEntite.ACTIVE)
+                .build();
+        department = departmentRepository.save(department);
+
+        // Lier le responsable au département (table user_departments)
+        userDepartmentRepository.save(com.discipolat.modules.users.domain.UserDepartment.builder()
+                .userId(responsableId)
+                .departmentId(department.getId())
+                .roleDansDept("RESPONSABLE")
+                .build());
+
+        return department;
+    }
+
+    private UUID createNewResponsable(com.discipolat.modules.departments.api.CreateDepartmentRequest request) {
+        if (userRepository.findByEmail(request.newRespEmail()).isPresent()) {
+            throw new com.discipolat.common.domain.BusinessRuleException(
+                    "Un compte avec cet email existe déjà: " + request.newRespEmail(),
+                    "DUPLICATE_EMAIL");
+        }
+
+        String tempPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
+        User newResp = User.builder()
+                .email(request.newRespEmail())
+                .passwordHash(passwordEncoder.encode(tempPassword))
+                .firstName(request.newRespFirstName())
+                .lastName(request.newRespLastName())
+                .phone(request.newRespPhone())
+                .role(com.discipolat.common.domain.UserRole.RESPONSABLE)
+                .roles(new java.util.HashSet<>(java.util.Set.of(com.discipolat.common.domain.UserRole.RESPONSABLE)))
+                .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE)
+                .build();
+        newResp = userRepository.save(newResp);
+        return newResp.getId();
     }
 
     @Transactional(readOnly = true)
@@ -92,7 +157,7 @@ public class DepartmentService {
     public Map<String, Object> getDetail(UUID id) {
         Department dept = findById(id);
 
-        List<Family> families = familyRepository.findByDepartementId(id);
+        List<Family> families = familyRepository.findAll();
         List<Map<String, Object>> familyDetails = families.stream().map(family -> {
             Map<String, Object> fd = new LinkedHashMap<>();
             fd.put("id", family.getId());
@@ -139,7 +204,7 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDepartmentKpi(UUID deptId) {
-        List<Family> families = familyRepository.findByDepartementId(deptId);
+        List<Family> families = familyRepository.findAll();
         List<UUID> familyIds = families.stream().map(Family::getId).toList();
         List<Soul> allSouls = familyIds.isEmpty() ? List.of() : soulRepository.findByFamilleIdIn(familyIds);
 
@@ -222,7 +287,7 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public Page<Map<String, Object>> getDepartmentMembers(UUID deptId, Pageable pageable) {
-        List<Family> families = familyRepository.findByDepartementId(deptId);
+        List<Family> families = familyRepository.findAll();
         List<UUID> familyIds = families.stream().map(Family::getId).toList();
         Map<UUID, String> familyNames = families.stream().collect(Collectors.toMap(Family::getId, Family::getNom));
 
@@ -259,7 +324,7 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getUnassignedMembers(UUID deptId) {
-        List<Family> families = familyRepository.findByDepartementId(deptId);
+        List<Family> families = familyRepository.findAll();
         Set<UUID> faiseurIds = new HashSet<>();
         for (Family family : families) {
             faiseurIds.add(family.getChefFamilleId());
@@ -306,7 +371,7 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDepartmentReport(UUID deptId, LocalDate semaine) {
-        List<Family> families = familyRepository.findByDepartementId(deptId);
+        List<Family> families = familyRepository.findAll();
         List<UUID> familyIds = families.stream().map(Family::getId).toList();
 
         int totalPresents = 0;

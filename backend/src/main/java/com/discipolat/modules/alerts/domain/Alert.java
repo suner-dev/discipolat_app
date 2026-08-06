@@ -19,14 +19,29 @@ public class Alert {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "ame_id", nullable = false)
+    @Column(name = "ame_id")
     private UUID ameId;
 
-    @Column(name = "faiseur_id", nullable = false)
+    @Column(name = "faiseur_id")
     private UUID faiseurId;
 
     @Column(name = "famille_id")
     private UUID familleId;
+
+    @Column(name = "department_id")
+    private UUID departmentId;
+
+    @Column(name = "cible", nullable = false)
+    private String cible = "PERSONNE";
+
+    @Column(name = "priorite", nullable = false)
+    private String priorite = "MOYENNE";
+
+    @Column(name = "titre")
+    private String titre;
+
+    @Column(name = "type_alerte_manuel")
+    private String typeAlerteManuel;
 
     @Column(name = "type_alerte", nullable = false)
     private String typeAlerte;

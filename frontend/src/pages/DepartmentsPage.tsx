@@ -4,7 +4,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import type { Department, User, PageResponse } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { Building2, Plus, Pencil, Trash2, Loader2, X, Calendar } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, Loader2, X, Calendar, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function DepartmentsPage() {
@@ -13,7 +13,7 @@ export default function DepartmentsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Department | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ nom: '', description: '', responsableId: '' });
+  const [formData, setFormData] = useState({ nom: '', description: '', responsableId: '', createNewResponsable: false, newRespFirstName: '', newRespLastName: '', newRespEmail: '', newRespPhone: '' });
 
   const { data, isLoading } = useQuery({
     queryKey: ['departments', page],
@@ -75,7 +75,7 @@ export default function DepartmentsPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const resetForm = () => setFormData({ nom: '', description: '', responsableId: '' });
+  const resetForm = () => setFormData({ nom: '', description: '', responsableId: '', createNewResponsable: false, newRespFirstName: '', newRespLastName: '', newRespEmail: '', newRespPhone: '' });
 
   const openCreate = () => {
     setEditing(null);
@@ -85,7 +85,7 @@ export default function DepartmentsPage() {
 
   const openEdit = (dept: Department) => {
     setEditing(dept);
-    setFormData({ nom: dept.nom, description: dept.description || '', responsableId: dept.responsableId });
+    setFormData({ nom: dept.nom, description: dept.description || '', responsableId: dept.responsableId, createNewResponsable: false, newRespFirstName: '', newRespLastName: '', newRespEmail: '', newRespPhone: '' });
     setShowModal(true);
   };
 
@@ -229,20 +229,93 @@ export default function DepartmentsPage() {
                 />
               </div>
               <div>
-                <label className="label">Responsable *</label>
-                <select
-                  className="input"
-                  value={formData.responsableId}
-                  onChange={(e) => setFormData({ ...formData, responsableId: e.target.value })}
-                  required
-                >
-                  <option value="">Sélectionner un responsable...</option>
-                  {users?.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.firstName} {u.lastName} ({u.email})
-                    </option>
-                  ))}
-                </select>
+                <label className="label">Responsable</label>
+                {editing ? (
+                  <select
+                    className="input"
+                    value={formData.responsableId}
+                    onChange={(e) => setFormData({ ...formData, responsableId: e.target.value })}
+                    required
+                  >
+                    <option value="">Sélectionner un responsable...</option>
+                    {users?.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.firstName} {u.lastName} ({u.email})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, createNewResponsable: false })}
+                        className={`p-2.5 rounded-xl text-xs font-medium transition-all border-2
+                          ${!formData.createNewResponsable
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}
+                      >
+                        Sélectionner un responsable
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, createNewResponsable: true })}
+                        className={`p-2.5 rounded-xl text-xs font-medium transition-all border-2
+                          ${formData.createNewResponsable
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}
+                      >
+                        <UserPlus className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
+                        Créer un responsable
+                      </button>
+                    </div>
+                    {!formData.createNewResponsable ? (
+                      <select
+                        className="input"
+                        value={formData.responsableId}
+                        onChange={(e) => setFormData({ ...formData, responsableId: e.target.value })}
+                      >
+                        <option value="">Sélectionner un responsable...</option>
+                        {users?.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.firstName} {u.lastName} ({u.email})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input
+                          className="input"
+                          value={formData.newRespFirstName}
+                          onChange={(e) => setFormData({ ...formData, newRespFirstName: e.target.value })}
+                          placeholder="Prénom *"
+                        />
+                        <input
+                          className="input"
+                          value={formData.newRespLastName}
+                          onChange={(e) => setFormData({ ...formData, newRespLastName: e.target.value })}
+                          placeholder="Nom *"
+                        />
+                        <input
+                          type="email"
+                          className="input"
+                          value={formData.newRespEmail}
+                          onChange={(e) => setFormData({ ...formData, newRespEmail: e.target.value })}
+                          placeholder="Email *"
+                        />
+                        <input
+                          className="input"
+                          value={formData.newRespPhone}
+                          onChange={(e) => setFormData({ ...formData, newRespPhone: e.target.value })}
+                          placeholder="Téléphone"
+                        />
+                        <p className="text-[10px] text-gray-400 col-span-full">
+                          Le compte du responsable sera créé automatiquement avec le rôle RESPONSABLE et affecté à ce département.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">

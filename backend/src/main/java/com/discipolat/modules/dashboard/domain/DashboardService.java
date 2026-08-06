@@ -16,6 +16,7 @@ import com.discipolat.modules.reports.domain.FamilyReportRepository;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulNoteRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
@@ -35,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 public class DashboardService {
@@ -48,6 +50,7 @@ public class DashboardService {
     private final SoulNoteRepository soulNoteRepository;
     private final ParallelFollowupRepository parallelFollowupRepository;
     private final DepartmentRepository departmentRepository;
+    private final SoulDepartmentRepository soulDepartmentRepository;
     private final SecurityUtils securityUtils;
 
     public DashboardService(SoulRepository soulRepository, UserRepository userRepository,
@@ -56,6 +59,7 @@ public class DashboardService {
                            SoulNoteRepository soulNoteRepository,
                            ParallelFollowupRepository parallelFollowupRepository,
                            DepartmentRepository departmentRepository,
+                           SoulDepartmentRepository soulDepartmentRepository,
                            SecurityUtils securityUtils) {
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
@@ -66,6 +70,7 @@ public class DashboardService {
         this.soulNoteRepository = soulNoteRepository;
         this.parallelFollowupRepository = parallelFollowupRepository;
         this.departmentRepository = departmentRepository;
+        this.soulDepartmentRepository = soulDepartmentRepository;
         this.securityUtils = securityUtils;
     }
 
@@ -338,7 +343,7 @@ public class DashboardService {
     // PHASE 2: PASTEUR COMMAND CENTER
     // ========================================================================
 
-    @Cacheable(value = "dashboardKpi", unless = "#result == null")
+    @Cacheable(value = "dashboardKpi", key = "T(java.lang.String).valueOf(@securityUtils.getCurrentUserId()) + '-pasteur'", unless = "#result == null")
     public Map<String, Object> getPasteurDashboard() {
         UUID currentUserId = securityUtils.getCurrentUserId();
         User currentUser = userRepository.findById(currentUserId)
@@ -377,7 +382,7 @@ public class DashboardService {
         List<Department> allDepartements = departmentRepository.findAll();
         List<Map<String, Object>> deptCroissance = new ArrayList<>();
         for (Department dept : allDepartements) {
-            List<Family> familles = familyRepository.findByDepartementId(dept.getId());
+            List<Family> familles = familyRepository.findAll(); // Families independent from departments
             List<UUID> famIds = familles.stream().map(Family::getId).toList();
             long totalAmesDept = famIds.isEmpty() ? 0
                     : soulRepository.findByFamilleIdIn(famIds).stream().filter(s -> !s.isDeleted()).count();
@@ -412,7 +417,7 @@ public class DashboardService {
             Map<String, Object> f = new LinkedHashMap<>();
             f.put("id", fam.getId());
             f.put("nom", fam.getNom());
-            f.put("departementId", fam.getDepartementId());
+            f.put("departementId", null); // Departments linked via soul_departments
             f.put("totalAmes", (long) ames.size());
             f.put("actifs", actifsFam);
             f.put("enIntegration", enIntFam);
@@ -521,7 +526,7 @@ public class DashboardService {
     // PHASE 2: CHEF DE FAMILLE DASHBOARD
     // ========================================================================
 
-    @Cacheable(value = "dashboardKpi", unless = "#result == null")
+    @Cacheable(value = "dashboardKpi", key = "T(java.lang.String).valueOf(@securityUtils.getCurrentUserId()) + '-chef-' + T(java.util.Optional).ofNullable(#familleIdInput).orElse('default')", unless = "#result == null")
     public Map<String, Object> getChefFamilleDashboard(UUID familleIdInput) {
         UUID resolvedFamilleId = familleIdInput;
         if (resolvedFamilleId == null) {
@@ -545,7 +550,7 @@ public class DashboardService {
         Map<String, Object> infos = new LinkedHashMap<>();
         infos.put("id", family.getId());
         infos.put("nom", family.getNom());
-        infos.put("departementId", family.getDepartementId());
+        infos.put("departementId", null); // Departments linked via soul_departments
         infos.put("dateCreation", family.getDateCreation().toString());
         Optional<User> chef = userRepository.findById(family.getChefFamilleId());
         infos.put("chefNom", chef.map(u -> u.getFirstName() + " " + u.getLastName()).orElse("N/A"));
@@ -632,8 +637,8 @@ public class DashboardService {
     // PHASE 2: RESPONSABLE DASHBOARD
     // ========================================================================
 
-    @Cacheable(value = "dashboardKpi", unless = "#result == null")
-    public Map<String, Object> getResponsableDashboard() {
+    @Cacheable(value = "dashboardKpi", key = "T(java.lang.String).valueOf(@securityUtils.getCurrentUserId()) + '-resp-' + T(java.util.Optional).ofNullable(#deptIdInput).orElse('default')", unless = "#result == null")
+    public Map<String, Object> getResponsableDashboard(UUID deptIdInput) {
         UUID currentUserId = securityUtils.getCurrentUserId();
         Map<String, Object> dashboard = new LinkedHashMap<>();
         LocalDate currentWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
@@ -645,91 +650,131 @@ public class DashboardService {
             return dashboard;
         }
 
+        // Si plusieurs départements : le responsable choisit le département à administrer
         List<Map<String, Object>> deptList = new ArrayList<>();
+        Department selectedDept = null;
         for (Department dept : depts) {
             Map<String, Object> d = new LinkedHashMap<>();
             d.put("id", dept.getId());
             d.put("nom", dept.getNom());
             d.put("description", dept.getDescription());
             d.put("statut", dept.getStatut().name());
+            deptList.add(d);
+            if (deptIdInput != null && deptIdInput.equals(dept.getId())) {
+                selectedDept = dept;
+            }
+        }
+        // Par défaut : premier département
+        if (selectedDept == null) {
+            selectedDept = depts.get(0);
+        }
 
-            // Familles du département
-            List<Family> familles = familyRepository.findByDepartementId(dept.getId());
-            List<UUID> famIds = familles.stream().map(Family::getId).toList();
+        dashboard.put("departements", deptList);
+        dashboard.put("selectedDeptId", selectedDept.getId());
+        dashboard.put("selectedDeptNom", selectedDept.getNom());
 
-            // Âmes
-            List<Soul> allSouls = famIds.isEmpty() ? List.of() : soulRepository.findByFamilleIdIn(famIds);
-            long actifs = allSouls.stream().filter(s -> s.getStatut() == StatutAme.ACTIF).count();
-            long enInt = allSouls.stream().filter(s -> s.getStatut() == StatutAme.EN_INTEGRATION).count();
-            long veille = allSouls.stream().filter(s -> s.getStatut() == StatutAme.EN_VEILLE).count();
-            long decroche = allSouls.stream().filter(s -> s.getStatut() == StatutAme.DECROCHE).count();
+        // ==================== MEMBRES DU DÉPARTEMENT SÉLECTIONNÉ ====================
+        // Les membres sont liés au département via soul_departments (les âmes associées)
+        List<Soul> allSouls = soulDepartmentRepository.findByDepartmentIdAndActifTrue(selectedDept.getId())
+                .stream()
+                .map(sd -> soulRepository.findById(sd.getSoulId()).orElse(null))
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isDeleted())
+                .toList();
 
-            // Faiseurs
-            Set<UUID> faiseurIds = allSouls.stream().map(Soul::getFaiseurId).collect(Collectors.toSet());
-            Set<UUID> chefIds = familles.stream().map(Family::getChefFamilleId).collect(Collectors.toSet());
-            faiseurIds.addAll(chefIds);
+        long actifs = allSouls.stream().filter(s -> s.getStatut() == StatutAme.ACTIF).count();
+        long enInt = allSouls.stream().filter(s -> s.getStatut() == StatutAme.EN_INTEGRATION).count();
+        long veille = allSouls.stream().filter(s -> s.getStatut() == StatutAme.EN_VEILLE).count();
+        long decroche = allSouls.stream().filter(s -> s.getStatut() == StatutAme.DECROCHE).count();
 
-            // Présence
-            int presents = 0, totalPossibles = 0;
-            for (UUID fid : faiseurIds) {
-                List<MakerReport> reports = makerReportRepository.findByFaiseurIdAndSemaine(fid, currentWeek);
-                for (MakerReport r : reports) {
-                    if (r.getPresencesParCulte() != null) {
-                        for (Boolean p : r.getPresencesParCulte().values()) {
-                            totalPossibles++;
-                            if (p) presents++;
-                        }
+        // Nouveaux membres (intégrés dans les 30 derniers jours)
+        LocalDate cutoff = LocalDate.now().minusDays(30);
+        long nouveauxMembres = allSouls.stream()
+                .filter(s -> s.getDateIntegration() != null && s.getDateIntegration().isAfter(cutoff))
+                .count();
+
+        // Anniversaires du mois
+        int currentMonth = LocalDate.now().getMonthValue();
+        List<Map<String, Object>> anniversaires = allSouls.stream()
+                .filter(s -> s.getDateNaissance() != null && s.getDateNaissance().getMonthValue() == currentMonth)
+                .map(s -> Map.<String, Object>of(
+                        "id", s.getId(), "nom", s.getNomComplet(),
+                        "dateNaissance", s.getDateNaissance().toString()))
+                .toList();
+
+        // Membres (avec détail)
+        List<Map<String, Object>> members = allSouls.stream()
+                .map(s -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", s.getId());
+                    m.put("nom", s.getNomComplet());
+                    m.put("statut", s.getStatut().name());
+                    m.put("dateIntegration", s.getDateIntegration() != null ? s.getDateIntegration().toString() : null);
+                    m.put("familleId", s.getFamilleId());
+                    m.put("familleNom", s.getFamilleId() != null
+                            ? familyRepository.findById(s.getFamilleId()).map(Family::getNom).orElse(null)
+                            : null);
+                    m.put("faiseurId", s.getFaiseurId());
+                    m.put("faiseurNom", s.getFaiseurId() != null
+                            ? userRepository.findById(s.getFaiseurId()).map(u -> u.getFirstName() + " " + u.getLastName()).orElse(null)
+                            : null);
+                    m.put("chefFamilleId", s.getFamilleId() != null
+                            ? familyRepository.findById(s.getFamilleId()).map(Family::getChefFamilleId).orElse(null)
+                            : null);
+                    return m;
+                })
+                .toList();
+
+        // Présences (via les rapports des faiseurs des membres)
+        int presents = 0, totalPossibles = 0;
+        for (Soul s : allSouls) {
+            List<MakerReport> reports = makerReportRepository.findByAmeIdAndSemaine(s.getId(), currentWeek);
+            for (MakerReport r : reports) {
+                if (r.getPresencesParCulte() != null) {
+                    for (Boolean p : r.getPresencesParCulte().values()) {
+                        totalPossibles++;
+                        if (p) presents++;
                     }
                 }
             }
-            double tauxPresence = totalPossibles > 0 ? Math.round((double) presents / totalPossibles * 1000.0) / 10.0 : 0.0;
-
-            // Rapports
-            long rapportsSoumis = 0, rapportsAttendus = 0;
-            for (UUID fid : faiseurIds) {
-                List<MakerReport> reports = makerReportRepository.findByFaiseurIdAndSemaine(fid, currentWeek);
-                rapportsSoumis += reports.stream().filter(MakerReport::isSoumis).count();
-                rapportsAttendus += soulRepository.findAllByFaiseurId(fid).stream()
-                        .filter(s -> !s.isDeleted() && s.getStatut() != StatutAme.DECROCHE).count();
-            }
-
-            d.put("totalFamilles", (long) familles.size());
-            d.put("totalAmes", (long) allSouls.size());
-            d.put("actifs", actifs);
-            d.put("enIntegration", enInt);
-            d.put("enVeille", veille);
-            d.put("decroches", decroche);
-            d.put("totalFaiseurs", (long) faiseurIds.size());
-            d.put("tauxPresence", tauxPresence);
-            d.put("rapportsSoumis", rapportsSoumis);
-            d.put("rapportsAttendus", rapportsAttendus);
-            deptList.add(d);
         }
-        dashboard.put("departements", deptList);
+        double tauxPresence = totalPossibles > 0 ? Math.round((double) presents / totalPossibles * 1000.0) / 10.0 : 0.0;
+
+        // Rapports reçus
+        long rapportsSoumis = 0, rapportsAttendus = 0;
+        for (Soul s : allSouls) {
+            List<MakerReport> reports = makerReportRepository.findByAmeIdAndSemaine(s.getId(), currentWeek);
+            rapportsSoumis += reports.stream().filter(MakerReport::isSoumis).count();
+            rapportsAttendus += reports.size();
+        }
+
+        Map<String, Object> deptDetail = new LinkedHashMap<>();
+        deptDetail.put("totalMembres", (long) allSouls.size());
+        deptDetail.put("nouveauxMembres", nouveauxMembres);
+        deptDetail.put("actifs", actifs);
+        deptDetail.put("enIntegration", enInt);
+        deptDetail.put("enVeille", veille);
+        deptDetail.put("decroches", decroche);
+        deptDetail.put("tauxPresence", tauxPresence);
+        deptDetail.put("presents", presents);
+        deptDetail.put("absents", totalPossibles - presents);
+        deptDetail.put("rapportsSoumis", rapportsSoumis);
+        deptDetail.put("rapportsAttendus", rapportsAttendus);
+        deptDetail.put("anniversaires", anniversaires);
+        deptDetail.put("membres", members);
+        dashboard.put("departement", deptDetail);
 
         // ==================== STATISTIQUES GLOBALES ====================
         Map<String, Object> stats = new LinkedHashMap<>();
-        long totalFamilles = 0, totalAmes = 0, totalActifs = 0, totalFaiseurs = 0;
-        int totalPresents = 0, totalPossibles = 0;
-        long totalRapportsSoumis = 0, totalRapportsAttendus = 0;
-
-        for (Map<String, Object> d : deptList) {
-            totalFamilles += (Long) d.getOrDefault("totalFamilles", 0L);
-            totalAmes += (Long) d.getOrDefault("totalAmes", 0L);
-            totalActifs += (Long) d.getOrDefault("actifs", 0L);
-            totalFaiseurs += (Long) d.getOrDefault("totalFaiseurs", 0L);
-            totalRapportsSoumis += (Long) d.getOrDefault("rapportsSoumis", 0L);
-            totalRapportsAttendus += (Long) d.getOrDefault("rapportsAttendus", 0L);
-        }
-
-        stats.put("totalFamilles", totalFamilles);
-        stats.put("totalAmes", totalAmes);
-        stats.put("totalActifs", totalActifs);
-        stats.put("totalFaiseurs", totalFaiseurs);
-        stats.put("rapportsSoumis", totalRapportsSoumis);
-        stats.put("rapportsAttendus", totalRapportsAttendus);
-        double tauxCompletion = totalRapportsAttendus > 0
-                ? Math.round((double) totalRapportsSoumis / totalRapportsAttendus * 1000.0) / 10.0
+        stats.put("totalDepartements", (long) depts.size());
+        stats.put("totalMembres", (long) allSouls.size());
+        stats.put("totalActifs", actifs);
+        stats.put("nouveauxMembres", nouveauxMembres);
+        stats.put("tauxPresence", tauxPresence);
+        stats.put("rapportsSoumis", rapportsSoumis);
+        stats.put("rapportsAttendus", rapportsAttendus);
+        double tauxCompletion = rapportsAttendus > 0
+                ? Math.round((double) rapportsSoumis / rapportsAttendus * 1000.0) / 10.0
                 : 0.0;
         stats.put("tauxCompletion", tauxCompletion);
         dashboard.put("statistiques", stats);
@@ -899,7 +944,7 @@ public class DashboardService {
             List<Department> depts = departmentRepository.findByResponsableId(currentUserId);
             List<UUID> deptIds = depts.stream().map(Department::getId).toList();
 
-            List<Family> familles = deptIds.isEmpty() ? List.of() : familyRepository.findByDepartementIdIn(deptIds);
+            List<Family> familles = familyRepository.findAll(); // Families independent from departments
             List<UUID> familyIds = familles.stream().map(Family::getId).toList();
 
             List<Soul> allSouls = familyIds.isEmpty() ? List.of() : soulRepository.findByFamilleIdIn(familyIds);

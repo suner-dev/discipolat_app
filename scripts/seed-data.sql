@@ -174,12 +174,12 @@ INSERT INTO member_requests (id, user_id, type, cible, message, statut, departme
 -- 14. PRÉSENCES MEMBRES (6 présences)
 -- ============================================================
 INSERT INTO member_presences (id, user_id, soul_id, semaine, presences, notes, created_at) VALUES
-(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-06-30', '[{"jour":"Lundi","present":true},{"jour":"Mercredi","present":true},{"jour":"Vendredi","present":false},{"jour":"Dimanche","present":true}]'::jsonb, 'Absent vendredi.', NOW()),
-(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-07-07', '[{"jour":"Lundi","present":true},{"jour":"Mercredi","present":true},{"jour":"Vendredi","present":true},{"jour":"Dimanche","present":true}]'::jsonb, 'Parfaite !', NOW()),
-(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-07-14', '[{"jour":"Lundi","present":true},{"jour":"Mercredi","present":false},{"jour":"Vendredi","present":true},{"jour":"Dimanche","present":true}]'::jsonb, 'Absent merredi.', NOW()),
-(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-07-21', '[{"jour":"Lundi","present":true},{"jour":"Mercredi","present":true},{"jour":"Vendredi","present":true},{"jour":"Dimanche","present":false}]'::jsonb, 'Absent dimanche.', NOW()),
-(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-07-28', '[{"jour":"Lundi","present":true},{"jour":"Mercredi","present":true},{"jour":"Vendredi","present":true},{"jour":"Dimanche","present":true}]'::jsonb, 'Bonne reprise.', NOW()),
-(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-08-04', '[{"jour":"Lundi","present":true},{"jour":"Mercredi","present":true},{"jour":"Vendredi","present":false},{"jour":"Dimanche","present":true}]'::jsonb, NULL, NOW());
+(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-06-30', '{"Lundi":true,"Mercredi":true,"Vendredi":false,"Dimanche":true}'::jsonb, 'Absent vendredi.', NOW()),
+(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-07-07', '{"Lundi":true,"Mercredi":true,"Vendredi":true,"Dimanche":true}'::jsonb, 'Parfaite !', NOW()),
+(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-07-14', '{"Lundi":true,"Mercredi":false,"Vendredi":true,"Dimanche":true}'::jsonb, 'Absent merredi.', NOW()),
+(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-07-21', '{"Lundi":true,"Mercredi":true,"Vendredi":true,"Dimanche":false}'::jsonb, 'Absent dimanche.', NOW()),
+(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-07-28', '{"Lundi":true,"Mercredi":true,"Vendredi":true,"Dimanche":true}'::jsonb, 'Bonne reprise.', NOW()),
+(uuid_generate_v4(), '2cce3c59-629d-4a05-80ec-3857c0a3f3ab', 'd0000000-0000-0000-0000-000000000002', '2026-08-04', '{"Lundi":true,"Mercredi":true,"Vendredi":false,"Dimanche":true}'::jsonb, NULL, NOW());
 
 -- ============================================================
 -- 15. HISTORIQUE D'ÂMES (8 entrées)

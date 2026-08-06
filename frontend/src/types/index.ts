@@ -65,8 +65,9 @@ export interface CreateDepartmentRequest {
 export interface Family {
   id: string;
   nom: string;
-  departementId: string;
+  userId?: string;
   chefFamilleId: string;
+  chefAdjointId?: string;
   dateCreation: string;
   statut: EntityStatus;
   latitude?: number;
@@ -78,8 +79,14 @@ export interface Family {
 
 export interface CreateFamilyRequest {
   nom: string;
-  departementId: string;
   chefFamilleId: string;
+  chefAdjointId?: string;
+  userId?: string;
+  createNewChef?: boolean;
+  newChefFirstName?: string;
+  newChefLastName?: string;
+  newChefEmail?: string;
+  newChefPhone?: string;
 }
 
 export interface ReassignChiefRequest {
@@ -400,20 +407,43 @@ export interface CreateParallelFollowupRequest {
 export type TypeAlerte =
   | 'ABSENCE_48H'
   | 'RAPPORT_NON_SOUMIS'
-  | 'RAPPORT_FAMILLE_NON_SOUMIS';
+  | 'RAPPORT_FAMILLE_NON_SOUMIS'
+  | 'MANUEL';
 export type StatutAlerte = 'ACTIVE' | 'TRAITEE' | 'RESOLUE';
+export type CibleAlerte = 'PERSONNE' | 'DEPARTEMENT' | 'FAMILLE' | 'GROUPE' | 'EGLISE';
+export type PrioriteAlerte = 'BASSE' | 'MOYENNE' | 'HAUTE' | 'URGENTE';
 
 export interface Alert {
   id: string;
-  ameId: string;
-  faiseurId: string;
+  ameId?: string;
+  faiseurId?: string;
   familleId?: string;
+  departmentId?: string;
+  cible: CibleAlerte;
+  priorite: PrioriteAlerte;
+  titre?: string;
   typeAlerte: TypeAlerte;
+  typeAlerteManuel?: string;
   message: string;
   dateDeclenchement: string;
   statut: StatutAlerte;
   dateResolution?: string;
   resoluPar?: string;
+  ameNom?: string;
+  familleNom?: string;
+  departmentNom?: string;
+}
+
+export interface CreateAlertRequest {
+  typeAlerteManuel: string;
+  titre: string;
+  message: string;
+  cible: CibleAlerte;
+  priorite?: PrioriteAlerte;
+  ameId?: string;
+  faiseurId?: string;
+  familleId?: string;
+  departmentId?: string;
 }
 
 // Notification types

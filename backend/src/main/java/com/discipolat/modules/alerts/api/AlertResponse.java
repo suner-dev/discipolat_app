@@ -10,18 +10,29 @@ public record AlertResponse(
         UUID ameId,
         UUID faiseurId,
         UUID familleId,
+        UUID departmentId,
+        String cible,
+        String priorite,
+        String titre,
         String typeAlerte,
+        String typeAlerteManuel,
         String message,
         LocalDateTime dateDeclenchement,
         StatutAlerte statut,
         LocalDateTime dateResolution,
-        UUID resoluPar
+        UUID resoluPar,
+        String ameNom,
+        String familleNom,
+        String departmentNom
 ) {
     public static AlertResponse from(Alert alert) {
         return new AlertResponse(
                 alert.getId(), alert.getAmeId(), alert.getFaiseurId(),
-                alert.getFamilleId(), alert.getTypeAlerte(), alert.getMessage(),
+                alert.getFamilleId(), alert.getDepartmentId(),
+                alert.getCible(), alert.getPriorite(), alert.getTitre(),
+                alert.getTypeAlerte(), alert.getTypeAlerteManuel(), alert.getMessage(),
                 alert.getDateDeclenchement(), alert.getStatut(),
-                alert.getDateResolution(), alert.getResoluPar());
+                alert.getDateResolution(), alert.getResoluPar(),
+                null, null, null);
     }
 }
