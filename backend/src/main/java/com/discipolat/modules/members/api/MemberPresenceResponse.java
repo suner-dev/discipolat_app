@@ -14,12 +14,16 @@ public record MemberPresenceResponse(
         LocalDate semaine,
         Map<String, Boolean> presences,
         String notes,
+        String typeProgramme,
+        String sousProgramme,
+        Boolean present,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
     public static MemberPresenceResponse from(MemberPresence p, String nomMembre) {
         return new MemberPresenceResponse(
                 p.getId(), p.getUserId(), nomMembre, p.getSemaine(),
-                p.getPresences(), p.getNotes(), p.getCreatedAt(), p.getUpdatedAt());
+                p.getPresences(), p.getNotes(), p.getTypeProgramme(), p.getSousProgramme(),
+                p.getPresent(), p.getCreatedAt(), p.getUpdatedAt());
     }
 }

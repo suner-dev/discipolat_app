@@ -199,6 +199,11 @@ public class MemberService {
         if (soulId != null) presence.setSoulId(soulId);
         presence.setPresences(request.presences());
         presence.setNotes(request.notes());
+        presence.setTypeProgramme(request.typeProgramme());
+        presence.setSousProgramme(request.sousProgramme());
+        if (request.typeProgramme() != null && !request.presences().isEmpty()) {
+            presence.setPresent(request.presences().values().stream().allMatch(Boolean.TRUE::equals));
+        }
 
         return MemberPresenceResponse.from(memberPresenceRepository.save(presence), fullName(userId));
     }

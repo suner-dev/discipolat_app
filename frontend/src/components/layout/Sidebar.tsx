@@ -170,6 +170,13 @@ const navigation = [
     subtitle: 'Indicateurs',
   },
   {
+    name: 'Types de programmes',
+    href: '/programs',
+    icon: Calendar,
+    roles: ['ADMIN', 'PASTEUR'],
+    subtitle: 'Configuration des présences',
+  },
+  {
     name: 'Documents',
     href: '/documents',
     icon: FolderOpen,

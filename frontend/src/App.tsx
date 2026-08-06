@@ -43,6 +43,7 @@ import Pastoral360Page from '@/pages/Pastoral360Page';
 import CrmFaiseurPage from '@/pages/CrmFaiseurPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import WeeklyProgramPage from '@/pages/WeeklyProgramPage';
+import ProgramTypesPage from '@/pages/ProgramTypesPage';
 import EventStatisticsPage from '@/pages/EventStatisticsPage';
 import PrayerSpacesPage from '@/pages/PrayerSpacesPage';
 import EvaluationsPage from '@/pages/EvaluationsPage';
@@ -341,6 +342,11 @@ export default function App() {
         <Route path="/events/program" element={
           <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
             <WeeklyProgramPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/programs" element={
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProgramTypesPage />
           </ProtectedRoute>
         } />
         <Route path="/souls/:id/pastoral-360" element={

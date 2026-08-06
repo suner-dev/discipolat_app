@@ -13,6 +13,7 @@ import type {
   MemberRequestTarget,
   MemberRequestStatus,
   CreateMemberRequest,
+  ProgramType,
 } from '@/types';
 import {
   Sparkles, User, Mail, Phone, Calendar, GraduationCap, Briefcase, Heart,
@@ -36,9 +37,6 @@ const SITUATION_LABELS: Record<string, string> = {
 };
 
 const NIVEAU_ETUDES = ['Primaire', 'Secondaire', 'Baccalauréat', 'Licence', 'Master', 'Doctorat', 'Formation professionnelle', 'Autre'];
-
-/** Programmes hebdomadaires de l'église (saisie de présence par le membre). */
-const WEEKLY_PROGRAMS = ['Culte du dimanche', 'Culte du soir', 'Étude biblique', 'Prière', 'Évangélisation', 'Chorale'];
 
 const TYPE_LABELS: Record<MemberRequestType, string> = {
   SUGGESTION: '💡 Suggestion',
@@ -122,8 +120,19 @@ export default function MemberDashboardPage() {
     queryFn: async () => (await api.get('/members/me/presences')).data as MemberPresence[],
   });
 
+  // Types de programmes configurés par le pasteur (saisie flexible)
+  const { data: programTypes = [] } = useQuery({
+    queryKey: ['programs', 'active'],
+    queryFn: async () => (await api.get('/programs/active')).data as ProgramType[],
+  });
+
   const [presenceForm, setPresenceForm] = useState<Record<string, boolean>>({});
   const [presenceNotes, setPresenceNotes] = useState('');
+  const [presenceType, setPresenceType] = useState('');
+  const [presenceSousType, setPresenceSousType] = useState('');
+
+  const selectedProgramType = programTypes.find((p) => p.code === presenceType);
+  const sousTypes = selectedProgramType?.aSousProgrammes ? selectedProgramType.sousProgrammes || [] : [];
 
   const presenceMutation = useMutation({
     mutationFn: async (payload: SubmitPresenceRequest) => {
@@ -133,6 +142,9 @@ export default function MemberDashboardPage() {
     onSuccess: () => {
       toast.success('Votre présence a été enregistrée ✨');
       setPresenceNotes('');
+      setPresenceForm({});
+      setPresenceType('');
+      setPresenceSousType('');
       queryClient.invalidateQueries({ queryKey: ['members', 'me', 'presences'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -148,6 +160,8 @@ export default function MemberDashboardPage() {
       semaine: currentWeekMonday(),
       presences: presenceForm,
       notes: presenceNotes.trim() || undefined,
+      typeProgramme: presenceType || undefined,
+      sousProgramme: presenceSousType || undefined,
     });
   };
 
@@ -479,19 +493,58 @@ export default function MemberDashboardPage() {
                 Semaine du{' '}
                 {new Date(currentWeekMonday() + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
               </p>
+
+              {/* Programme (configuré par le pasteur) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label className="label">Programme</label>
+                  <select
+                    className="input"
+                    value={presenceType}
+                    onChange={(e) => {
+                      setPresenceType(e.target.value);
+                      setPresenceSousType('');
+                    }}
+                  >
+                    <option value="">Choisir un programme...</option>
+                    {programTypes.map((pt) => (
+                      <option key={pt.id} value={pt.code}>{pt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                {sousTypes.length > 0 && (
+                  <div>
+                    <label className="label">Sous-programme</label>
+                    <select
+                      className="input"
+                      value={presenceSousType}
+                      onChange={(e) => setPresenceSousType(e.target.value)}
+                    >
+                      <option value="">Choisir...</option>
+                      {sousTypes.map((st) => (
+                        <option key={st.id} value={st.label}>
+                          {st.label}{st.heureDebut ? ` · ${st.heureDebut.slice(0, 5)}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Programmes de la semaine cochables */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {WEEKLY_PROGRAMS.map((p) => (
+                {programTypes.map((pt) => (
                   <label
-                    key={p}
+                    key={pt.id}
                     className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/60 dark:bg-gray-900/40 border border-white/40 dark:border-white/[0.05] cursor-pointer hover:border-primary-400/50 hover:shadow-sm transition-all"
                   >
                     <input
                       type="checkbox"
-                      checked={!!presenceForm[p]}
-                      onChange={(e) => setPresenceForm((f) => ({ ...f, [p]: e.target.checked }))}
+                      checked={!!presenceForm[pt.label]}
+                      onChange={(e) => setPresenceForm((f) => ({ ...f, [pt.label]: e.target.checked }))}
                       className="w-4 h-4 rounded accent-primary-500"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-200">{p}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{pt.label}</span>
                   </label>
                 ))}
               </div>

@@ -260,6 +260,9 @@ export interface MemberPresence {
   semaine: string;
   presences: Record<string, boolean>;
   notes?: string;
+  typeProgramme?: string;
+  sousProgramme?: string;
+  present?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -268,6 +271,29 @@ export interface SubmitPresenceRequest {
   semaine: string;
   presences: Record<string, boolean>;
   notes?: string;
+  typeProgramme?: string;
+  sousProgramme?: string;
+}
+
+export interface ProgramSubType {
+  id: string;
+  label: string;
+  heureDebut?: string;
+  heureFin?: string;
+  actif: boolean;
+  ordre?: number;
+}
+
+export interface ProgramType {
+  id: string;
+  code: string;
+  label: string;
+  description?: string;
+  aSousProgrammes: boolean;
+  couleur?: string;
+  actif: boolean;
+  ordre?: number;
+  sousProgrammes: ProgramSubType[];
 }
 
 export type MemberRequestType = 'SUGGESTION' | 'RENDEZ_VOUS' | 'SIGNALEMENT';

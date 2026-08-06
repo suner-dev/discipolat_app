@@ -9,5 +9,7 @@ import java.util.Map;
 public record SubmitPresenceRequest(
         @NotNull LocalDate semaine,
         @NotNull Map<String, Boolean> presences,
-        @Size(max = 2000) String notes
+        @Size(max = 2000) String notes,
+        String typeProgramme,
+        String sousProgramme
 ) {}

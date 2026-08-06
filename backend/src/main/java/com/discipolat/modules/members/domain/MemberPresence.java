@@ -45,6 +45,17 @@ public class MemberPresence {
     @Column(name = "notes")
     private String notes;
 
+    /** Type de programme choisi (configuré par le pasteur) : DIMANCHE, CONVENTION, etc. */
+    @Column(name = "type_programme")
+    private String typeProgramme;
+
+    /** Sous-programme choisi (ex : Premier culte, Deuxième culte). */
+    @Column(name = "sous_programme")
+    private String sousProgramme;
+
+    @Column(name = "present")
+    private Boolean present;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
