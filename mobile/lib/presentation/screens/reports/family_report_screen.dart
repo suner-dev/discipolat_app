@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
@@ -37,6 +39,27 @@ class _FamilyReportScreenState extends State<FamilyReportScreen> {
     }
   }
 
+  Future<void> _exportPdf() async {
+    try {
+      final res = await _apiService.getBytes('/reports/export/consolidated-pdf');
+      final dir = await getApplicationDocumentsDirectory();
+      final date = DateTime.now().toIso8601String().substring(0, 10);
+      final file = File('${dir.path}/rapport-consolide-$date.html');
+      await file.writeAsBytes(res.data as List<int>);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Rapport enregistré : ${file.path}')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors de l\'export')),
+        );
+      }
+    }
+  }
+
   List<dynamic> get _filtered {
     if (_searchQuery.isEmpty) return _families;
     return _families.where((f) {
@@ -52,7 +75,7 @@ class _FamilyReportScreenState extends State<FamilyReportScreen> {
         title: const Text('Rapport famille'),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadFamilies),
-          IconButton(icon: const Icon(Icons.picture_as_pdf), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.picture_as_pdf), onPressed: _exportPdf),
         ],
       ),
       drawer: const AppDrawer(),

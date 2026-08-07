@@ -45,6 +45,21 @@ class _PrayersListScreenState extends State<PrayersListScreen> with SingleTicker
     }
   }
 
+  void _showCreateSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _CreatePrayerSheet(
+        apiService: _apiService,
+        onDone: () {
+          Navigator.pop(ctx);
+          _loadData();
+        },
+      ),
+    );
+  }
+
   Color _catColor(String? cat) {
     switch (cat) {
       case 'SANTE': return Colors.red;
@@ -76,7 +91,7 @@ class _PrayersListScreenState extends State<PrayersListScreen> with SingleTicker
       appBar: AppBar(
         title: const Text('Prières'),
         actions: [
-          IconButton(icon: const Icon(Icons.add), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.add), onPressed: _showCreateSheet),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -190,6 +205,167 @@ class _PrayersListScreenState extends State<PrayersListScreen> with SingleTicker
           ),
         );
       },
+    );
+  }
+}
+
+class _CreatePrayerSheet extends StatefulWidget {
+  const _CreatePrayerSheet({required this.apiService, required this.onDone});
+
+  final ApiService apiService;
+  final VoidCallback onDone;
+
+  @override
+  State<_CreatePrayerSheet> createState() => _CreatePrayerSheetState();
+}
+
+class _CreatePrayerSheetState extends State<_CreatePrayerSheet> {
+  final _titreCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  String _categorie = 'SPIRITUEL';
+  String _priorite = 'MOYENNE';
+  String _visibilite = 'PRIVEE';
+  bool _isProcessing = false;
+
+  @override
+  void dispose() {
+    _titreCtrl.dispose();
+    _descCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _create() async {
+    if (_titreCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le titre est requis')),
+      );
+      return;
+    }
+    setState(() => _isProcessing = true);
+    try {
+      await widget.apiService.post('/prayers', data: {
+        'titre': _titreCtrl.text.trim(),
+        'description': _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+        'categorie': _categorie,
+        'priorite': _priorite,
+        'visibilite': _visibilite,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Demande de prière ajoutée')),
+        );
+        widget.onDone();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors de la création')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF16213A),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 32, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Nouvelle demande de prière',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _titreCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Titre *',
+                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.06),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _descCtrl,
+                style: const TextStyle(color: Colors.white),
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.06),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _dropdown('Catégorie', _categorie, const ['SANTE', 'FAMILLE', 'TRAVAIL', 'SPIRITUEL', 'AUTRE'], (v) => setState(() => _categorie = v ?? _categorie)),
+              const SizedBox(height: 12),
+              _dropdown('Priorité', _priorite, const ['BASSE', 'MOYENNE', 'HAUTE'], (v) => setState(() => _priorite = v ?? _priorite)),
+              const SizedBox(height: 12),
+              _dropdown('Visibilité', _visibilite, const ['PRIVEE', 'PARTAGEE', 'GENERALE', 'PASTEUR_RESPONSABLE', 'FAISEUR'], (v) => setState(() => _visibilite = v ?? _visibilite)),
+              const SizedBox(height: 16),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: _isProcessing ? null : _create,
+                  icon: _isProcessing
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.add, size: 18),
+                  label: const Text('Créer'),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dropdown(String label, String value, List<String> options, ValueChanged<String?> onChanged) {
+    return Row(
+      children: [
+        Text('$label : ', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: DropdownButton<String>(
+            value: value,
+            dropdownColor: const Color(0xFF1E2A4A),
+            style: const TextStyle(color: Colors.white),
+            isExpanded: true,
+            items: options.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
+            onChanged: onChanged,
+          ),
+        ),
+      ],
     );
   }
 }

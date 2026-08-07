@@ -43,6 +43,42 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
+  Future<void> _forgotPassword() async {
+    final controller = TextEditingController();
+    final message = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E2A4A),
+        title: const Text('Mot de passe oublié', style: TextStyle(color: Colors.white, fontSize: 18)),
+        content: TextField(
+          controller: controller,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            labelText: 'Votre email',
+            labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Envoyer'),
+          ),
+        ],
+      ),
+    );
+    if (message == null || message.isEmpty) return;
+    try {
+      await _apiService.post('/auth/forgot-password', data: {'email': message});
+    } catch (_) {
+      // L'API renvoie toujours le même message pour ne pas divulguer l'existence d'un compte.
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Si cet email existe, un lien de réinitialisation a été envoyé.')),
+      );
+    }
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() { _isLoading = true; _error = null; });
@@ -201,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                   // Forgot password
                   TextButton(
-                    onPressed: () {},
+                    onPressed: _forgotPassword,
                     child: Text('Mot de passe oublié ?', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                   ),
 

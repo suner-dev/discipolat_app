@@ -37,6 +37,21 @@ class _EventsListScreenState extends State<EventsListScreen> {
     }
   }
 
+  void _showCreateSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _CreateEventSheet(
+        apiService: _apiService,
+        onDone: () {
+          Navigator.pop(ctx);
+          _loadData();
+        },
+      ),
+    );
+  }
+
   Color _typeColor(String? type) {
     switch (type) {
       case 'CULTE': return Colors.purple;
@@ -74,7 +89,7 @@ class _EventsListScreenState extends State<EventsListScreen> {
       appBar: AppBar(
         title: const Text('Événements'),
         actions: [
-          IconButton(icon: const Icon(Icons.add), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.add), onPressed: _showCreateSheet),
         ],
       ),
       drawer: const AppDrawer(),
@@ -230,6 +245,213 @@ class _EventsListScreenState extends State<EventsListScreen> {
             Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
             Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CreateEventSheet extends StatefulWidget {
+  const _CreateEventSheet({required this.apiService, required this.onDone});
+
+  final ApiService apiService;
+  final VoidCallback onDone;
+
+  @override
+  State<_CreateEventSheet> createState() => _CreateEventSheetState();
+}
+
+class _CreateEventSheetState extends State<_CreateEventSheet> {
+  final _titreCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final _lieuCtrl = TextEditingController();
+  String _type = 'CULTE';
+  DateTime _dateDebut = DateTime.now().add(const Duration(days: 1));
+  bool _isProcessing = false;
+
+  static const _types = ['CULTE', 'REUNION', 'SEMINAIRE', 'VISITE', 'EVANGELISATION', 'FORMATION', 'ANNIVERSAIRE', 'CELEBRATION'];
+
+  @override
+  void dispose() {
+    _titreCtrl.dispose();
+    _descCtrl.dispose();
+    _lieuCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dateDebut,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        _dateDebut = DateTime(picked.year, picked.month, picked.day, _dateDebut.hour, _dateDebut.minute);
+      });
+    }
+  }
+
+  Future<void> _create() async {
+    if (_titreCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le titre est requis')),
+      );
+      return;
+    }
+    setState(() => _isProcessing = true);
+    try {
+      await widget.apiService.post('/events', data: {
+        'typeEvenement': _type,
+        'titre': _titreCtrl.text.trim(),
+        'description': _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+        'lieu': _lieuCtrl.text.trim().isEmpty ? null : _lieuCtrl.text.trim(),
+        'dateDebut': _dateDebut.toIso8601String(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Événement créé')),
+        );
+        widget.onDone();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors de la création')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF16213A),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 32, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Nouvel événement',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _titreCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Titre *',
+                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.06),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _descCtrl,
+                style: const TextStyle(color: Colors.white),
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.06),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _lieuCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Lieu',
+                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.06),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Text('Type : ', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: DropdownButton<String>(
+                      value: _type,
+                      dropdownColor: const Color(0xFF1E2A4A),
+                      style: const TextStyle(color: Colors.white),
+                      isExpanded: true,
+                      items: _types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                      onChanged: (v) => setState(() => _type = v ?? _type),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: _pickDate,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 16, color: Colors.white.withValues(alpha: 0.5)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Début : ${_dateDebut.day.toString().padLeft(2, '0')}/${_dateDebut.month.toString().padLeft(2, '0')}/${_dateDebut.year}',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: _isProcessing ? null : _create,
+                  icon: _isProcessing
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.add, size: 18),
+                  label: const Text('Créer'),
+                ),
+              ]),
+            ],
+          ),
         ),
       ),
     );

@@ -75,6 +75,9 @@ class ApiService {
   Future<Response> get(String path, {Map<String, dynamic>? params}) =>
       _dio.get(path, queryParameters: params);
 
+  Future<Response> getBytes(String path, {Map<String, dynamic>? params}) =>
+      _dio.get(path, queryParameters: params, options: Options(responseType: ResponseType.bytes));
+
   Future<Response> post(String path, {dynamic data}) =>
       _dio.post(path, data: data);
 

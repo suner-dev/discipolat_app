@@ -52,13 +52,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  Future<void> _markAllRead() async {
+    try {
+      await _apiService.post('/notifications/mark-all-read');
+      if (mounted) {
+        setState(() => _unreadCount = 0);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Notifications marquées comme lues')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors du marquage')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
         actions: [
-          if (_unreadCount > 0) TextButton(onPressed: () {}, child: const Text('Tout marquer lu', style: TextStyle(fontSize: 12))),
+          if (_unreadCount > 0) TextButton(onPressed: _markAllRead, child: const Text('Tout marquer lu', style: TextStyle(fontSize: 12))),
         ],
       ),
       drawer: const AppDrawer(),
