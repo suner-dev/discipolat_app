@@ -117,6 +117,7 @@ const FULL_NAV: WorkspaceSection[] = [
     items: [
       { name: 'Âmes', href: '/souls', icon: Heart, subtitle: 'Disciples suivis' },
       { name: 'Familles', href: '/families', icon: Users, subtitle: 'Groupes de disciples' },
+      { name: 'Comparer familles', href: '/families/compare', icon: BarChart3, subtitle: 'Analyse croisée' },
       { name: 'CRM Faiseur', href: '/crm/faiseur', icon: HandHeart, subtitle: 'Suivi des disciples' },
       { name: 'Évangélisation', href: '/evangelism', icon: Sprout, subtitle: 'Pipeline de croissance' },
       { name: 'Suivis parallèles', href: '/parallel-followups', icon: Activity, subtitle: 'Accompagnements' },

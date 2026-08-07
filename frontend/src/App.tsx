@@ -77,7 +77,11 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
 
   // Check against activeRole; fallback to user.role for backward compatibility
   const currentRole = activeRole || user?.role;
-  if (roles && currentRole && !roles.includes(currentRole)) {
+  // Super-utilisateur : un Admin accède aux capacités Pasteur (cf. mobile).
+  const allowed = !roles
+    || (currentRole && (roles.includes(currentRole)
+        || (currentRole === 'ADMIN' && roles.includes('PASTEUR'))));
+  if (!allowed) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -308,7 +312,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/families/compare" element={
-          <ProtectedRoute roles={['PASTEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
             <CompareFamiliesPage />
           </ProtectedRoute>
         } />

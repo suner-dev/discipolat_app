@@ -14,7 +14,9 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrateur',
   PASTEUR: 'Pasteur',
   RESPONSABLE: 'Responsable de département',
+  CHEF_DE_FAMILLE: 'Chef de famille',
   FAISEUR: 'Faiseur de disciples',
+  MEMBRE: 'Membre',
 };
 
 const SITUATION_LABELS: Record<string, string> = {
@@ -165,7 +167,7 @@ export default function ProfilePage() {
     { icon: Phone, label: 'Téléphone', value: user.phone || '-', key: 'phone', readonly: false },
     { icon: Calendar, label: 'Date de naissance', value: user.dateNaissance ? new Date(user.dateNaissance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-', key: 'dateNaissance', readonly: false, type: 'date' as const },
     { icon: Heart, label: 'Situation familiale', value: user.situationFamiliale ? SITUATION_LABELS[user.situationFamiliale] || user.situationFamiliale : '-', key: 'situationFamiliale', readonly: false, type: 'select' as const },
-    { icon: Shield, label: 'Rôle', value: ROLE_LABELS[user.role], readonly: true },
+    { icon: Shield, label: 'Rôle', value: ROLE_LABELS[user.role] || user.role, readonly: true },
   ];
 
   return (
@@ -425,8 +427,8 @@ export default function ProfilePage() {
                   {user.firstName} {user.lastName}
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`badge text-xs ${user.role === 'PASTEUR' ? 'badge-info' : user.role === 'RESPONSABLE' ? 'badge-warning' : 'badge-success'}`}>
-                    {ROLE_LABELS[user.role]}
+                  <span className={`badge text-xs ${user.role === 'PASTEUR' || user.role === 'ADMIN' ? 'badge-info' : user.role === 'RESPONSABLE' || user.role === 'CHEF_DE_FAMILLE' ? 'badge-warning' : user.role === 'MEMBRE' ? 'badge-gray' : 'badge-success'}`}>
+                    {ROLE_LABELS[user.role] || user.role}
                   </span>
                   {user.estChefDeFamille && (
                     <span className="badge text-xs bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400 border border-gold-200/50">

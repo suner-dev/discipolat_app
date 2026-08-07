@@ -25,6 +25,7 @@ interface EvalStats {
 export default function EvaluationsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isPasteurOrAdmin = !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR'));
   const [activeTab, setActiveTab] = useState<'evaluate' | 'my-results' | 'all'>('evaluate');
   const [selectedPerson, setSelectedPerson] = useState<PersonToEvaluate | null>(null);
   const [note, setNote] = useState(0);
@@ -41,7 +42,7 @@ export default function EvaluationsPage() {
       const res = await api.get('/evaluations/to-evaluate');
       return res.data as PersonToEvaluate[];
     },
-    enabled: user?.role !== 'PASTEUR',
+    enabled: !isPasteurOrAdmin,
   });
 
   // My evaluation results
@@ -81,7 +82,7 @@ export default function EvaluationsPage() {
         parPersonne: { id: string; nom: string; moyenne: number; total: number }[];
       }>;
     },
-    enabled: user?.role === 'PASTEUR',
+    enabled: isPasteurOrAdmin,
   });
 
   // User detail (Pasteur)
@@ -218,7 +219,7 @@ export default function EvaluationsPage() {
       {/* Tabs */}
       <div className="glass-card p-1.5 mb-6 animate-slide-up">
         <div className="flex gap-1">
-          {user?.role !== 'PASTEUR' && (
+          {!isPasteurOrAdmin && (
             <button
               onClick={() => setActiveTab('evaluate')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
@@ -240,7 +241,7 @@ export default function EvaluationsPage() {
           >
             <BarChart3 className="w-4 h-4" /> Mes résultats
           </button>
-          {user?.role === 'PASTEUR' && (
+          {isPasteurOrAdmin && (
             <button
               onClick={() => setActiveTab('all')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
@@ -463,7 +464,7 @@ export default function EvaluationsPage() {
       )}
 
       {/* Tab: All evaluations (Pasteur) */}
-      {activeTab === 'all' && user?.role === 'PASTEUR' && (
+      {activeTab === 'all' && isPasteurOrAdmin && (
         <div className="animate-slide-up">
           {selectedUserForPasteur && userDetail ? (
             <div>

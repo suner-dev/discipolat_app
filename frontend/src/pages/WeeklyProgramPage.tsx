@@ -61,6 +61,7 @@ export default function WeeklyProgramPage() {
     heureFin: '', lieu: '', dureeMinutes: 120, couleur: '#16a34a',
   });
   const [showConfirmDelete, setShowConfirmDelete] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Evenement | null>(null);
 
   const weekParam = formatDate(currentWeekStart);
 
@@ -283,6 +284,7 @@ export default function WeeklyProgramPage() {
                   dayEvents.map((evt) => (
                     <div
                       key={evt.id}
+                      onClick={() => setSelectedEvent(evt)}
                       className="p-1.5 rounded-lg text-[10px] leading-tight cursor-pointer hover:scale-[1.02] transition-transform"
                       style={{
                         backgroundColor: `${TYPE_COLORS[evt.typeEvenement] || '#6b7280'}20`,
@@ -520,6 +522,56 @@ export default function WeeklyProgramPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Event detail modal */}
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div className="card p-6 w-full max-w-md mx-4 animate-slide-up" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white"
+                  style={{ backgroundColor: TYPE_COLORS[selectedEvent.typeEvenement] || '#6b7280' }}>
+                  {(() => { const Icon = TYPE_ICONS[selectedEvent.typeEvenement] || Church; return <Icon className="w-5 h-5" />; })()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{selectedEvent.titre}</h3>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider">{TYPE_LABELS[selectedEvent.typeEvenement] || selectedEvent.typeEvenement}</p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedEvent(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                <Clock className="w-4 h-4 text-gray-400" />
+                <span>
+                  {new Date(selectedEvent.dateDebut).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {' à '}
+                  {new Date(selectedEvent.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  {selectedEvent.dateFin && ` — ${new Date(selectedEvent.dateFin).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`}
+                </span>
+              </div>
+              {selectedEvent.lieu && (
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                  <MapPin className="w-4 h-4 text-gray-400" /> {selectedEvent.lieu}
+                </div>
+              )}
+              {selectedEvent.description && (
+                <p className="text-gray-600 dark:text-gray-300">{selectedEvent.description}</p>
+              )}
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs">
+                <span className="font-medium">{selectedEvent.nbInscrits}</span> inscrit(s)
+                {selectedEvent.limitePlaces && <span>· place limitée à {selectedEvent.limitePlaces}</span>}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

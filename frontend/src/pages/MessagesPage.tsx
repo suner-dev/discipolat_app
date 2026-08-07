@@ -56,6 +56,7 @@ export default function MessagesPage() {
   const [draft, setDraft] = useState('');
   const [newChatOpen, setNewChatOpen] = useState(false);
   const [userSearch, setUserSearch] = useState('');
+  const [conversationFilter, setConversationFilter] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: conversations = [], isLoading } = useQuery({
@@ -111,6 +112,14 @@ export default function MessagesPage() {
   });
 
   const activeConv = conversations.find((c) => c.id === activeConvId);
+
+  const filteredConversations = conversationFilter.trim()
+    ? conversations.filter((conv) => {
+        const q = conversationFilter.toLowerCase();
+        return (conv.otherUserName || '').toLowerCase().includes(q)
+          || (ROLE_LABELS[conv.otherUserRole] || conv.otherUserRole || '').toLowerCase().includes(q);
+      })
+    : conversations;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -168,6 +177,8 @@ export default function MessagesPage() {
                 id="filter-conversations"
                 className="input pl-10 !py-2 text-sm"
                 placeholder="Filtrer les conversations..."
+                value={conversationFilter}
+                onChange={(e) => setConversationFilter(e.target.value)}
               />
             </div>
             </div>
@@ -184,14 +195,16 @@ export default function MessagesPage() {
                     </div>
                   ))}
                 </div>
-              ) : conversations.length === 0 ? (
+              ) : filteredConversations.length === 0 ? (
                 <div className="p-8 text-center">
                   <MessageSquare className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Aucune conversation</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {conversationFilter.trim() ? 'Aucune conversation ne correspond au filtre' : 'Aucune conversation'}
+                  </p>
                   <p className="text-xs text-gray-400 mt-1">Cliquez sur « Nouvelle conversation » pour discuter</p>
                 </div>
               ) : (
-                conversations.map((conv) => (
+                filteredConversations.map((conv) => (
                   <button
                     key={conv.id}
                     onClick={() => setActiveConvId(conv.id)}

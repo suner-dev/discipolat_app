@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -69,6 +69,7 @@ function NavItem({ item, collapsed = false, onClick }: { item: WorkspaceNavItem;
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch evaluation score for the current user
   const { data: myEval } = useQuery({
@@ -166,9 +167,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <div className={`flex-shrink-0 border-t border-white/20 dark:border-white/[0.06] p-3
             ${collapsed ? 'flex justify-center' : ''}
           `}>
-            <div className={`flex items-center gap-3 rounded-xl transition-all duration-200
-              ${collapsed ? 'justify-center p-2' : 'px-3 py-2.5 hover:bg-white/40 dark:hover:bg-gray-800/30 cursor-pointer'}
-            `}>
+            <div
+              onClick={() => { onClose(); navigate('/profile'); }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); navigate('/profile'); } }}
+              className={`flex items-center gap-3 rounded-xl transition-all duration-200 cursor-pointer
+                ${collapsed ? 'justify-center p-2' : 'px-3 py-2.5 hover:bg-white/40 dark:hover:bg-gray-800/30'}
+              `}>
               <div className="relative flex-shrink-0">
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-sm">
                   <span className="text-sm font-bold text-white drop-shadow-sm">

@@ -11,14 +11,18 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrateur',
   PASTEUR: 'Pasteur',
   RESPONSABLE: 'Responsable',
+  CHEF_DE_FAMILLE: 'Chef de famille',
   FAISEUR: 'Faiseur de disciples',
+  MEMBRE: 'Membre',
 };
 
 const ROLE_BADGES: Record<string, string> = {
   ADMIN: 'badge-info',
   PASTEUR: 'badge-info',
   RESPONSABLE: 'badge-warning',
+  CHEF_DE_FAMILLE: 'badge-warning',
   FAISEUR: 'badge-success',
+  MEMBRE: 'badge-gray',
 };
 
 export default function UsersPage() {

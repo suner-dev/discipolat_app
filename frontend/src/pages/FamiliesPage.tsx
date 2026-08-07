@@ -106,16 +106,18 @@ export default function FamiliesPage() {
           <p className="page-subtitle">Organisation en familles de disciples</p>
         </div>
         <div className="flex gap-2 animate-fade-in">
-          {user?.activeRole === 'PASTEUR' && (
+          {(user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR') && (
             <Link to="/families/compare" className="btn-secondary btn-sm">
               <BarChart3 className="w-4 h-4" />
               Comparer
             </Link>
           )}
-          <Link to="/families/new" className="btn-primary btn-sm">
-            <Plus className="w-4 h-4" />
-            Nouvelle famille
-          </Link>
+          {(user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR') && (
+            <Link to="/families/new" className="btn-primary btn-sm">
+              <Plus className="w-4 h-4" />
+              Nouvelle famille
+            </Link>
+          )}
         </div>
       </div>
 
