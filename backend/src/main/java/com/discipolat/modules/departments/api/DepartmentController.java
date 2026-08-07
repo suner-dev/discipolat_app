@@ -19,6 +19,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/departments")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
 public class DepartmentController {
 
     private final DepartmentService departmentService;

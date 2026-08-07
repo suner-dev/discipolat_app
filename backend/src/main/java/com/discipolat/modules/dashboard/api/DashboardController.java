@@ -20,7 +20,7 @@ public class DashboardController {
     }
 
     @GetMapping("/kpi")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, Object>> getKPI(
             @RequestParam(required = false) LocalDate periodeDebut,
             @RequestParam(required = false) LocalDate periodeFin,
@@ -30,14 +30,14 @@ public class DashboardController {
     }
 
     @GetMapping("/presence-trend")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, Object>> getPresenceTrend(
             @RequestParam(defaultValue = "12") int mois) {
         return ResponseEntity.ok(dashboardService.getPresenceTrend(mois));
     }
 
     @GetMapping("/family-risk")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, Object>> getFamilyRisk(
             @RequestParam(defaultValue = "50") double seuil) {
         return ResponseEntity.ok(dashboardService.getFamilyRisk(seuil));

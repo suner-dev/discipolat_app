@@ -28,17 +28,20 @@ public class UserController {
     private final AuthService authService;
     private final SecurityUtils securityUtils;
     private final EvaluationService evaluationService;
+    private final com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService;
 
     public UserController(UserService userService, AuthService authService, SecurityUtils securityUtils,
-                          EvaluationService evaluationService) {
+                          EvaluationService evaluationService,
+                          com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService) {
         this.userService = userService;
         this.authService = authService;
         this.securityUtils = securityUtils;
         this.evaluationService = evaluationService;
+        this.workspaceScopeService = workspaceScopeService;
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<PageResponse<UserResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -64,6 +67,16 @@ public class UserController {
         boolean isOnlyFaiseur = userService.isOnlyRole(currentRole, "FAISEUR");
         if (isFaiseurActive && (role == null || !role.equals("FAISEUR"))) {
             users = userService.findByRolesContaining(UserRole.FAISEUR, pageable);
+        }
+
+        // Non super-utilisateur : restreindre aux faiseurs de l'espace métier + soi-même
+        if (!securityUtils.isSuperUser()) {
+            java.util.Set<UUID> accessible = new java.util.HashSet<>(workspaceScopeService.accessibleFaiseurIds());
+            accessible.add(securityUtils.getCurrentUserId());
+            java.util.List<User> scoped = users.getContent().stream()
+                    .filter(u -> accessible.contains(u.getId()))
+                    .toList();
+            users = new org.springframework.data.domain.PageImpl<>(scoped, pageable, scoped.size());
         }
 
         Page<UserResponse> response = users.map(UserResponse::from);

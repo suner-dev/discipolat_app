@@ -28,6 +28,7 @@ public class SoulRetractionRequestService {
     }
 
     public SoulRetractionRequest create(UUID ameId, String justification) {
+        soulService.assertAccessible(ameId);
         SoulRetractionRequest request = SoulRetractionRequest.builder()
                 .ameId(ameId)
                 .demandeurId(securityUtils.getCurrentUserId())
@@ -50,6 +51,7 @@ public class SoulRetractionRequestService {
 
     @Transactional(readOnly = true)
     public List<SoulRetractionRequest> findByAmeId(UUID ameId) {
+        soulService.assertAccessible(ameId);
         return repository.findByAmeIdOrderByCreatedAtDesc(ameId);
     }
 

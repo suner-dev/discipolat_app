@@ -16,13 +16,16 @@ public class SoulNoteService {
 
     private final SoulNoteRepository soulNoteRepository;
     private final SecurityUtils securityUtils;
+    private final SoulService soulService;
 
-    public SoulNoteService(SoulNoteRepository soulNoteRepository, SecurityUtils securityUtils) {
+    public SoulNoteService(SoulNoteRepository soulNoteRepository, SecurityUtils securityUtils, SoulService soulService) {
         this.soulNoteRepository = soulNoteRepository;
         this.securityUtils = securityUtils;
+        this.soulService = soulService;
     }
 
     public SoulNote create(SoulNote note) {
+        soulService.assertAccessible(note.getAmeId());
         note.setAuteurId(securityUtils.getCurrentUserId());
         return soulNoteRepository.save(note);
     }
@@ -36,6 +39,7 @@ public class SoulNoteService {
 
     @Transactional(readOnly = true)
     public List<SoulNote> findByAmeId(UUID ameId) {
+        soulService.assertAccessible(ameId);
         return soulNoteRepository.findByAmeIdAndDeletedFalseOrderByCreatedAtDesc(ameId);
     }
 
@@ -46,12 +50,14 @@ public class SoulNoteService {
 
     public SoulNote update(UUID id, String contenu) {
         SoulNote note = findById(id);
+        soulService.assertAccessible(note.getAmeId());
         note.setContenu(contenu);
         return soulNoteRepository.save(note);
     }
 
     public void delete(UUID id) {
         SoulNote note = findById(id);
+        soulService.assertAccessible(note.getAmeId());
         note.setDeleted(true);
         soulNoteRepository.save(note);
     }

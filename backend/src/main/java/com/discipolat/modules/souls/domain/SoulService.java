@@ -100,8 +100,52 @@ public class SoulService {
 
     @Transactional(readOnly = true)
     public Soul findById(UUID id) {
-        return soulRepository.findById(id)
+        Soul soul = soulRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Soul", id));
+        assertAccessible(soul);
+        return soul;
+    }
+
+    /**
+     * Vérifie que l'utilisateur courant peut accéder à l'âme donnée.
+     * Super-utilisateurs (Admin / Pasteur actifs) : accès total.
+     * Sinon, l'âme doit appartenir à l'espace métier du rôle actif :
+     * faiseur → ses disciples ; chef de famille → les âmes de SA famille ;
+     * responsable → les membres de SES départements ; membre → aucun.
+     */
+    public void assertAccessible(UUID soulId) {
+        Soul soul = soulRepository.findById(soulId).orElse(null);
+        if (soul != null) assertAccessible(soul);
+    }
+
+    /** Vérification d'accès sur une âme déjà chargée. */
+    private void assertAccessible(Soul soul) {
+        if (securityUtils.isSuperUser()) return;
+        if (!canAccessSoul(soul)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Accès refusé : cette âme n'appartient pas à votre espace métier");
+        }
+    }
+
+    private boolean canAccessSoul(Soul soul) {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        if (securityUtils.hasActiveRole("FAISEUR")) {
+            return currentUserId.equals(soul.getFaiseurId());
+        }
+        if (securityUtils.hasActiveRole("CHEF_DE_FAMILLE")) {
+            User user = userRepository.findById(currentUserId).orElse(null);
+            return user != null && user.getFamilleGereeId() != null
+                    && user.getFamilleGereeId().equals(soul.getFamilleId());
+        }
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            List<UUID> deptIds = departmentRepository.findByResponsableId(currentUserId)
+                    .stream().map(Department::getId).toList();
+            if (deptIds.isEmpty()) return false;
+            return soulDepartmentRepository.findByDepartmentIdIn(deptIds).stream()
+                    .filter(SoulDepartment::isActif)
+                    .anyMatch(sd -> sd.getSoulId().equals(soul.getId()));
+        }
+        return false;
     }
 
     @Transactional(readOnly = true)
@@ -252,16 +296,27 @@ public class SoulService {
 
     @Transactional(readOnly = true)
     public List<Soul> findByFaiseurId(UUID faiseurId) {
-        return soulRepository.findAllByFaiseurId(faiseurId);
+        if (securityUtils.isSuperUser()) return soulRepository.findAllByFaiseurId(faiseurId);
+        List<UUID> accessible = accessibleSoulIds();
+        if (accessible.isEmpty()) return List.of();
+        return soulRepository.findAllByFaiseurId(faiseurId).stream()
+                .filter(s -> accessible.contains(s.getId()))
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public List<Soul> findByFamilleId(UUID familleId) {
-        return soulRepository.findAllByFamilleId(familleId);
+        if (securityUtils.isSuperUser()) return soulRepository.findAllByFamilleId(familleId);
+        List<UUID> accessible = accessibleSoulIds();
+        if (accessible.isEmpty()) return List.of();
+        return soulRepository.findAllByFamilleId(familleId).stream()
+                .filter(s -> accessible.contains(s.getId()))
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public List<SoulHistoryResponse> getHistory(UUID soulId) {
+        assertAccessible(soulId);
         return soulHistoryRepository.findByAmeIdOrderByCreatedAtDesc(soulId)
                 .stream()
                 .map(h -> new SoulHistoryResponse(
@@ -324,7 +379,10 @@ public class SoulService {
      */
     @Transactional(readOnly = true)
     public List<Soul> findAllEnDifficulte() {
-        return soulRepository.findAll().stream()
+        List<Soul> candidates = securityUtils.isSuperUser()
+                ? soulRepository.findAll()
+                : soulRepository.findAllById(accessibleSoulIds());
+        return candidates.stream()
                 .filter(s -> !s.isDeleted())
                 .filter(s -> "EN_DIFFICULTE".equals(s.getEtatSpirituel())
                         || StatutAme.DECROCHE.equals(s.getStatut())

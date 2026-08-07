@@ -41,22 +41,26 @@ public class AiAssistantService {
     private final InteractionRepository interactionRepository;
     private final PrayerRepository prayerRepository;
     private final SpiritualScoreService spiritualScoreService;
+    private final com.discipolat.modules.souls.domain.SoulService soulService;
 
     public AiAssistantService(SoulRepository soulRepository,
                               MakerReportRepository makerReportRepository,
                               InteractionRepository interactionRepository,
                               PrayerRepository prayerRepository,
-                              SpiritualScoreService spiritualScoreService) {
+                              SpiritualScoreService spiritualScoreService,
+                              com.discipolat.modules.souls.domain.SoulService soulService) {
         this.soulRepository = soulRepository;
         this.makerReportRepository = makerReportRepository;
         this.interactionRepository = interactionRepository;
         this.prayerRepository = prayerRepository;
         this.spiritualScoreService = spiritualScoreService;
+        this.soulService = soulService;
     }
 
     /** Analyse intelligente d'une âme : signaux, suggestions, encouragement. */
     @Transactional(readOnly = true)
     public Map<String, Object> analyze(UUID soulId) {
+        soulService.assertAccessible(soulId);
         Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("Soul", soulId));
 
@@ -80,6 +84,7 @@ public class AiAssistantService {
     /** Résumé automatique de l'activité récente d'une âme. */
     @Transactional(readOnly = true)
     public String resume(UUID soulId) {
+        soulService.assertAccessible(soulId);
         Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("Soul", soulId));
         return buildResume(soul);
@@ -88,6 +93,7 @@ public class AiAssistantService {
     /** Encourager : verset/encouragement adapté à la situation. */
     @Transactional(readOnly = true)
     public Map<String, String> encouragement(UUID soulId) {
+        soulService.assertAccessible(soulId);
         Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("Soul", soulId));
         List<Map<String, Object>> signaux = detectSignaux(soul);

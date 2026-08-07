@@ -4,6 +4,7 @@ import com.discipolat.common.exception.BadRequestException;
 import com.discipolat.modules.favorites.domain.FavoriteEntityType;
 import com.discipolat.modules.favorites.domain.FavoriteService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/favorites")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
 public class FavoriteController {
 
     private final FavoriteService favoriteService;

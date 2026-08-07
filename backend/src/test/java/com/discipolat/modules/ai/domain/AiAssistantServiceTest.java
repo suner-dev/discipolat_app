@@ -35,6 +35,7 @@ class AiAssistantServiceTest {
     @Mock private InteractionRepository interactionRepository;
     @Mock private PrayerRepository prayerRepository;
     @Mock private SpiritualScoreService spiritualScoreService;
+    @Mock private com.discipolat.modules.souls.domain.SoulService soulService;
 
     @InjectMocks private AiAssistantService aiAssistantService;
 

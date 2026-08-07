@@ -40,6 +40,7 @@ public class DepartmentService {
     private final FamilyReportRepository familyReportRepository;
     private final SecurityUtils securityUtils;
     private final PasswordEncoder passwordEncoder;
+    private final com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository;
 
     public DepartmentService(DepartmentRepository departmentRepository,
                              FamilyRepository familyRepository,
@@ -49,7 +50,8 @@ public class DepartmentService {
                              MakerReportRepository makerReportRepository,
                              FamilyReportRepository familyReportRepository,
                              SecurityUtils securityUtils,
-                             PasswordEncoder passwordEncoder) {
+                             PasswordEncoder passwordEncoder,
+                             com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository) {
         this.departmentRepository = departmentRepository;
         this.familyRepository = familyRepository;
         this.soulRepository = soulRepository;
@@ -59,6 +61,7 @@ public class DepartmentService {
         this.familyReportRepository = familyReportRepository;
         this.securityUtils = securityUtils;
         this.passwordEncoder = passwordEncoder;
+        this.soulDepartmentRepository = soulDepartmentRepository;
     }
 
     public Department create(Department department) {
@@ -125,13 +128,38 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public Department findById(UUID id) {
-        return departmentRepository.findById(id)
+        Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Department", id));
+        assertAccessible(department);
+        return department;
+    }
+
+    /** Un responsable ne peut consulter que ses propres départements. */
+    private void assertAccessible(Department department) {
+        if (securityUtils.isSuperUser()) return;
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            boolean owned = departmentRepository.findByResponsableId(securityUtils.getCurrentUserId())
+                    .stream().anyMatch(d -> d.getId().equals(department.getId()));
+            if (!owned) {
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "Accès refusé : ce département ne fait pas partie de votre espace métier");
+            }
+            return;
+        }
+        throw new org.springframework.security.access.AccessDeniedException(
+                "Accès refusé : les départements ne font pas partie de votre espace métier");
     }
 
     @Transactional(readOnly = true)
     public Page<Department> findAll(Pageable pageable) {
-        return departmentRepository.findAll(pageable);
+        if (securityUtils.isSuperUser()) return departmentRepository.findAll(pageable);
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            List<UUID> deptIds = departmentRepository.findByResponsableId(securityUtils.getCurrentUserId())
+                    .stream().map(Department::getId).toList();
+            if (deptIds.isEmpty()) return Page.empty(pageable);
+            return departmentRepository.findAllByIdIn(deptIds, pageable);
+        }
+        return Page.empty(pageable);
     }
 
     public Department update(Department updated) {
@@ -153,11 +181,41 @@ public class DepartmentService {
         return departmentRepository.findByResponsableId(responsableId);
     }
 
+    // ========================================================================
+    // Scoping des données par département (deptId)
+    // ========================================================================
+
+    /** Ids des âmes rattachées au département (soul_departments actifs). */
+    private List<UUID> departmentSoulIds(UUID deptId) {
+        return soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId)
+                .stream().map(com.discipolat.modules.souls.domain.SoulDepartment::getSoulId).toList();
+    }
+
+    /** Âmes du département (hors soft-deleted). */
+    private List<Soul> departmentSouls(UUID deptId) {
+        List<UUID> ids = departmentSoulIds(deptId);
+        if (ids.isEmpty()) return List.of();
+        return soulRepository.findAllById(ids).stream()
+                .filter(s -> !s.isDeleted())
+                .toList();
+    }
+
+    /** Familles des membres du département (distinctes). */
+    private List<Family> departmentFamilies(UUID deptId) {
+        return departmentSouls(deptId).stream()
+                .map(Soul::getFamilleId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .map(familyId -> familyRepository.findById(familyId).orElse(null))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> getDetail(UUID id) {
         Department dept = findById(id);
 
-        List<Family> families = familyRepository.findAll();
+        List<Family> families = departmentFamilies(id);
         List<Map<String, Object>> familyDetails = families.stream().map(family -> {
             Map<String, Object> fd = new LinkedHashMap<>();
             fd.put("id", family.getId());
@@ -204,9 +262,10 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDepartmentKpi(UUID deptId) {
-        List<Family> families = familyRepository.findAll();
+        findById(deptId);
+        List<Family> families = departmentFamilies(deptId);
         List<UUID> familyIds = families.stream().map(Family::getId).toList();
-        List<Soul> allSouls = familyIds.isEmpty() ? List.of() : soulRepository.findByFamilleIdIn(familyIds);
+        List<Soul> allSouls = departmentSouls(deptId);
 
         Set<UUID> faiseurIds = allSouls.stream().map(Soul::getFaiseurId).collect(Collectors.toSet());
         Set<UUID> chefsIds = families.stream().map(Family::getChefFamilleId).collect(Collectors.toSet());
@@ -287,15 +346,17 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public Page<Map<String, Object>> getDepartmentMembers(UUID deptId, Pageable pageable) {
-        List<Family> families = familyRepository.findAll();
+        findById(deptId);
+        List<Family> families = departmentFamilies(deptId);
         List<UUID> familyIds = families.stream().map(Family::getId).toList();
         Map<UUID, String> familyNames = families.stream().collect(Collectors.toMap(Family::getId, Family::getNom));
 
-        if (familyIds.isEmpty()) {
+        List<UUID> soulIds = departmentSoulIds(deptId);
+        if (soulIds.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        Page<Soul> soulsPage = soulRepository.findByFamilleIdIn(familyIds, pageable);
+        Page<Soul> soulsPage = soulRepository.findAllByIdIn(soulIds, pageable);
 
         return soulsPage.map(soul -> {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -324,18 +385,17 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getUnassignedMembers(UUID deptId) {
-        List<Family> families = familyRepository.findAll();
+        findById(deptId);
+        List<Family> families = departmentFamilies(deptId);
+        List<UUID> familyIds = families.stream().map(Family::getId).toList();
         Set<UUID> faiseurIds = new HashSet<>();
         for (Family family : families) {
             faiseurIds.add(family.getChefFamilleId());
         }
-        // Also get all faiseurs from souls in department families
-        List<UUID> familyIds = families.stream().map(Family::getId).toList();
-        if (!familyIds.isEmpty()) {
-            List<Soul> familySouls = soulRepository.findByFamilleIdIn(familyIds);
-            for (Soul soul : familySouls) {
-                faiseurIds.add(soul.getFaiseurId());
-            }
+        // Also get all faiseurs from souls in the department
+        List<Soul> departmentSouls = departmentSouls(deptId);
+        for (Soul soul : departmentSouls) {
+            faiseurIds.add(soul.getFaiseurId());
         }
 
         if (faiseurIds.isEmpty()) return List.of();
@@ -371,7 +431,8 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDepartmentReport(UUID deptId, LocalDate semaine) {
-        List<Family> families = familyRepository.findAll();
+        findById(deptId);
+        List<Family> families = departmentFamilies(deptId);
         List<UUID> familyIds = families.stream().map(Family::getId).toList();
 
         int totalPresents = 0;

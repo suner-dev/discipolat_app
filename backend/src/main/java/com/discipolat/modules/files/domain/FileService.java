@@ -2,6 +2,7 @@ package com.discipolat.modules.files.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,26 +16,33 @@ public class FileService {
 
     private final FileEntityRepository fileRepository;
     private final SecurityUtils securityUtils;
+    private final WorkspaceScopeService workspaceScopeService;
 
-    public FileService(FileEntityRepository fileRepository, SecurityUtils securityUtils) {
+    public FileService(FileEntityRepository fileRepository, SecurityUtils securityUtils,
+                       WorkspaceScopeService workspaceScopeService) {
         this.fileRepository = fileRepository;
         this.securityUtils = securityUtils;
+        this.workspaceScopeService = workspaceScopeService;
     }
 
     public FileEntity upload(FileEntity file) {
+        if (file.getFamilleId() != null) assertFamilyAccessible(file.getFamilleId());
         file.setAuteurId(securityUtils.getCurrentUserId());
         return fileRepository.save(file);
     }
 
     @Transactional(readOnly = true)
     public FileEntity findById(UUID id) {
-        return fileRepository.findById(id)
+        FileEntity file = fileRepository.findById(id)
                 .filter(f -> !f.isDeleted())
                 .orElseThrow(() -> new EntityNotFoundException("File", id));
+        if (file.getFamilleId() != null) assertFamilyAccessible(file.getFamilleId());
+        return file;
     }
 
     @Transactional(readOnly = true)
     public Page<FileEntity> findByFamilleId(UUID familleId, Pageable pageable) {
+        assertFamilyAccessible(familleId);
         return fileRepository.findByFamilleIdAndDeletedFalse(familleId, pageable);
     }
 
@@ -60,5 +68,13 @@ public class FileService {
         FileEntity file = findById(id);
         file.setDeleted(true);
         fileRepository.save(file);
+    }
+
+    private void assertFamilyAccessible(UUID familleId) {
+        if (workspaceScopeService.isSuperUser()) return;
+        if (!workspaceScopeService.canAccessFamily(familleId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Accès refusé : cette famille ne fait pas partie de votre espace métier");
+        }
     }
 }

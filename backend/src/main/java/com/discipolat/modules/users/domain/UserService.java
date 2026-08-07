@@ -141,6 +141,7 @@ public class UserService {
     }
 
     public User create(User user, String rawPassword) {
+        assertCanAssignRoles(user.getRole(), user.getRoles());
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new BusinessRuleException("Email already exists: " + user.getEmail());
         }
@@ -171,6 +172,7 @@ public class UserService {
     }
 
     public User update(User updatedUser) {
+        assertCanAssignRoles(updatedUser.getRole(), updatedUser.getRoles());
         User existing = findById(updatedUser.getId());
         if (!existing.getEmail().equals(updatedUser.getEmail())
                 && userRepository.existsByEmail(updatedUser.getEmail())) {
@@ -244,6 +246,7 @@ public class UserService {
 
     /** Add a role to a user's roles set */
     public User addRole(UUID userId, UserRole role) {
+        assertCanAssignRoles(role, java.util.Set.of(role));
         User user = findById(userId);
         user.getRoles().add(role);
         user.markUpdated();
@@ -284,6 +287,7 @@ public class UserService {
         if (newRoles == null || newRoles.isEmpty()) {
             throw new BusinessRuleException("User must have at least one role");
         }
+        assertCanAssignRoles(newRoles.iterator().next(), newRoles);
         User user = findById(userId);
         user.setRoles(new HashSet<>(newRoles));
         // Ensure active role is valid
@@ -306,6 +310,28 @@ public class UserService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * Anti-escalation : le rôle actif limite les rôles qu'un utilisateur peut assigner.
+     * ADMIN : tout ; PASTEUR : tout sauf ADMIN ; RESPONSABLE : jamais ADMIN/PASTEUR/RESPONSABLE.
+     */
+    private void assertCanAssignRoles(UserRole primaryRole, Set<UserRole> roles) {
+        if (securityUtils.hasActiveRole("ADMIN")) return;
+        Set<UserRole> assigned = new HashSet<>();
+        if (primaryRole != null) assigned.add(primaryRole);
+        if (roles != null) assigned.addAll(roles);
+        if (assigned.contains(UserRole.ADMIN)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Seul un administrateur peut assigner le rôle ADMIN");
+        }
+        if (securityUtils.hasActiveRole("PASTEUR")) return;
+        if (assigned.stream().anyMatch(r -> r == UserRole.PASTEUR || r == UserRole.RESPONSABLE)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Vous ne pouvez pas assigner le rôle PASTEUR ou RESPONSABLE");
+        }
+        throw new org.springframework.security.access.AccessDeniedException(
+                "Opération non autorisée dans votre espace métier");
     }
 
     public User promoteToChefDeFamille(UUID userId, UUID familleId) {

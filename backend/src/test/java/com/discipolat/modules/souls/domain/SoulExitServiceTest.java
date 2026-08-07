@@ -26,6 +26,8 @@ class SoulExitServiceTest {
     private SoulRepository soulRepository;
     @Mock
     private SecurityUtils securityUtils;
+    @Mock
+    private SoulService soulService;
 
     private SoulExitService soulExitService;
     private UUID userId;
@@ -34,7 +36,7 @@ class SoulExitServiceTest {
 
     @BeforeEach
     void setUp() {
-        soulExitService = new SoulExitService(soulExitRepository, soulRepository, securityUtils);
+        soulExitService = new SoulExitService(soulExitRepository, soulRepository, securityUtils, soulService);
         userId = UUID.randomUUID();
         ameId = UUID.randomUUID();
         testSoul = Soul.builder()

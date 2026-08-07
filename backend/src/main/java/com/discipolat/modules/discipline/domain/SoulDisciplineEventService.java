@@ -16,16 +16,20 @@ public class SoulDisciplineEventService {
 
     private final SoulDisciplineEventRepository repository;
     private final SecurityUtils securityUtils;
+    private final com.discipolat.modules.souls.domain.SoulService soulService;
 
     public SoulDisciplineEventService(SoulDisciplineEventRepository repository,
-                                      SecurityUtils securityUtils) {
+                                      SecurityUtils securityUtils,
+                                      com.discipolat.modules.souls.domain.SoulService soulService) {
         this.repository = repository;
         this.securityUtils = securityUtils;
+        this.soulService = soulService;
     }
 
     public SoulDisciplineEvent create(UUID ameId, CategorieDiscipline categorie, String typeEvenement,
                                       String titre, String description, GraviteDiscipline gravite,
                                       LocalDate dateEvenement) {
+        soulService.assertAccessible(ameId);
         SoulDisciplineEvent event = SoulDisciplineEvent.builder()
                 .ameId(ameId)
                 .auteurId(securityUtils.getCurrentUserId())
@@ -43,28 +47,34 @@ public class SoulDisciplineEventService {
 
     @Transactional(readOnly = true)
     public SoulDisciplineEvent findById(UUID id) {
-        return repository.findById(id)
+        SoulDisciplineEvent event = repository.findById(id)
                 .filter(e -> !e.isDeleted())
                 .orElseThrow(() -> new EntityNotFoundException("SoulDisciplineEvent", id));
+        soulService.assertAccessible(event.getAmeId());
+        return event;
     }
 
     @Transactional(readOnly = true)
     public Page<SoulDisciplineEvent> findByAmeId(UUID ameId, Pageable pageable) {
+        soulService.assertAccessible(ameId);
         return repository.findByAmeIdAndDeletedFalse(ameId, pageable);
     }
 
     @Transactional(readOnly = true)
     public List<SoulDisciplineEvent> findByAmeId(UUID ameId) {
+        soulService.assertAccessible(ameId);
         return repository.findByAmeIdAndDeletedFalseOrderByCreatedAtDesc(ameId);
     }
 
     @Transactional(readOnly = true)
     public Page<SoulDisciplineEvent> findByAmeIdAndCategorie(UUID ameId, CategorieDiscipline categorie, Pageable pageable) {
+        soulService.assertAccessible(ameId);
         return repository.findByAmeIdAndCategorieAndDeletedFalse(ameId, categorie, pageable);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> getStats(UUID ameId) {
+        soulService.assertAccessible(ameId);
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("total", repository.countByAmeIdAndDeletedFalse(ameId));
         stats.put("nonResolus", repository.countByAmeIdAndResoluFalseAndDeletedFalse(ameId));

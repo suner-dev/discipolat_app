@@ -32,24 +32,28 @@ public class FamilyRiskService {
     private final MemberPresenceRepository presenceRepository;
     private final AlertRepository alertRepository;
     private final SecurityUtils securityUtils;
+    private final com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScope;
 
     public FamilyRiskService(FamilyRepository familyRepository,
                              FamilyRiskHistoryRepository riskHistoryRepository,
                              SoulRepository soulRepository,
                              MemberPresenceRepository presenceRepository,
                              AlertRepository alertRepository,
-                             SecurityUtils securityUtils) {
+                             SecurityUtils securityUtils,
+                             com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScope) {
         this.familyRepository = familyRepository;
         this.riskHistoryRepository = riskHistoryRepository;
         this.soulRepository = soulRepository;
         this.presenceRepository = presenceRepository;
         this.alertRepository = alertRepository;
         this.securityUtils = securityUtils;
+        this.workspaceScope = workspaceScope;
     }
 
     /** Indice de risque calculé automatiquement pour une famille (0-100) + détails. */
     @Transactional(readOnly = true)
     public Map<String, Object> getRiskAssessment(UUID familyId) {
+        assertFamilyAccessible(familyId);
         Family family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new EntityNotFoundException("Family", familyId));
 
@@ -171,6 +175,14 @@ public class FamilyRiskService {
     @Transactional(readOnly = true)
     public List<FamilyRiskHistory> getRiskHistory(UUID familyId) {
         return riskHistoryRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
+    }
+
+    /** Refuse l'accès à une famille hors du périmètre de l'utilisateur courant. */
+    private void assertFamilyAccessible(UUID familyId) {
+        if (securityUtils.isSuperUser()) return;
+        if (!workspaceScope.canAccessFamily(familyId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé : famille hors de votre périmètre");
+        }
     }
 
     /** Compte les alertes actives d'une famille dont le titre/message contient le motif. */

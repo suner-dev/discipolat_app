@@ -41,6 +41,8 @@ class FamilyRiskServiceTest {
     private AlertRepository alertRepository;
     @Mock
     private SecurityUtils securityUtils;
+    @Mock
+    private com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScope;
 
     private FamilyRiskService riskService;
     private UUID familyId;
@@ -48,9 +50,10 @@ class FamilyRiskServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(securityUtils.isSuperUser()).thenReturn(true);
         riskService = new FamilyRiskService(
                 familyRepository, riskHistoryRepository, soulRepository,
-                presenceRepository, alertRepository, securityUtils);
+                presenceRepository, alertRepository, securityUtils, workspaceScope);
         familyId = UUID.randomUUID();
         family = Family.builder()
                 .id(familyId)

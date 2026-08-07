@@ -17,19 +17,23 @@ public class SoulExitService {
     private final SoulExitRepository soulExitRepository;
     private final SoulRepository soulRepository;
     private final SecurityUtils securityUtils;
+    private final SoulService soulService;
 
     public SoulExitService(SoulExitRepository soulExitRepository,
-                            SoulRepository soulRepository,
-                            SecurityUtils securityUtils) {
+                           SoulRepository soulRepository,
+                           SecurityUtils securityUtils,
+                           SoulService soulService) {
         this.soulExitRepository = soulExitRepository;
         this.soulRepository = soulRepository;
         this.securityUtils = securityUtils;
+        this.soulService = soulService;
     }
 
     /**
      * US-22: Mark a soul as exited with required motif
      */
     public SoulExit markAsExited(UUID ameId, String motif, String motifDetail, boolean peutReintegrer) {
+        soulService.assertAccessible(ameId);
         Soul soul = soulRepository.findById(ameId)
                 .orElseThrow(() -> new EntityNotFoundException("Soul", ameId));
         UUID currentUserId = securityUtils.getCurrentUserId();
@@ -62,12 +66,14 @@ public class SoulExitService {
 
     @Transactional(readOnly = true)
     public SoulExit findLastExit(UUID ameId) {
+        soulService.assertAccessible(ameId);
         return soulExitRepository.findTopByAmeIdOrderByCreatedAtDesc(ameId)
                 .orElse(null);
     }
 
     @Transactional(readOnly = true)
     public List<SoulExit> findExitsForSoul(UUID ameId) {
+        soulService.assertAccessible(ameId);
         return soulExitRepository.findByAmeIdOrderByCreatedAtDesc(ameId);
     }
 }

@@ -60,6 +60,12 @@ public class NotificationService {
     public void markAsRead(UUID id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Notification", id));
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        boolean owner = notification.getDestinataireId().equals(currentUserId);
+        if (!owner && !securityUtils.isSuperUser()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Accès refusé : cette notification ne vous appartient pas");
+        }
         notification.setLu(true);
         notification.setDateLecture(LocalDateTime.now());
         notificationRepository.save(notification);

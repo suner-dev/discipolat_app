@@ -66,6 +66,7 @@ class SoulServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(securityUtils.isSuperUser()).thenReturn(true);
         soulService = new SoulService(soulRepository, soulHistoryRepository,
                 soulNoteRepository, securityUtils, userRepository,
                 familyRepository, departmentRepository, soulDepartmentRepository,
@@ -130,6 +131,19 @@ class SoulServiceTest {
         assertThrows(EntityNotFoundException.class, () ->
                 soulService.findById(nonExistentId)
         );
+    }
+
+    @Test
+    void findById_NonSuperUser_OutOfScope_ShouldThrowAccessDenied() {
+        when(soulRepository.findById(testSoul.getId())).thenReturn(Optional.of(testSoul));
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        when(securityUtils.hasActiveRole("FAISEUR")).thenReturn(false);
+        when(securityUtils.hasActiveRole("CHEF_DE_FAMILLE")).thenReturn(false);
+        when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(false);
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> soulService.findById(testSoul.getId()));
     }
 
     @Test

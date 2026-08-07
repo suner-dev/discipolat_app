@@ -15,6 +15,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/souls/{soulId}/notes")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
 public class SoulNoteController {
 
     private final SoulNoteService soulNoteService;

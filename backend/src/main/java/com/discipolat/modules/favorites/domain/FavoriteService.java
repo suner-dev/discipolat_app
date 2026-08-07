@@ -21,18 +21,22 @@ public class FavoriteService {
     private final FavoriteRepository favoriteRepository;
     private final SoulRepository soulRepository;
     private final SecurityUtils securityUtils;
+    private final com.discipolat.modules.souls.domain.SoulService soulService;
 
     public FavoriteService(FavoriteRepository favoriteRepository,
                            SoulRepository soulRepository,
-                           SecurityUtils securityUtils) {
+                           SecurityUtils securityUtils,
+                           com.discipolat.modules.souls.domain.SoulService soulService) {
         this.favoriteRepository = favoriteRepository;
         this.soulRepository = soulRepository;
         this.securityUtils = securityUtils;
+        this.soulService = soulService;
     }
 
     /** Bascule l'état favori. Retourne le nouvel état (true = ajouté). */
     public boolean toggle(FavoriteEntityType entityType, UUID entityId) {
         UUID userId = securityUtils.getCurrentUserId();
+        assertEntityAccessible(entityType, entityId);
         var existing = favoriteRepository.findByUserIdAndEntityTypeAndEntityId(userId, entityType, entityId);
         if (existing.isPresent()) {
             favoriteRepository.delete(existing.get());
@@ -47,6 +51,13 @@ public class FavoriteService {
     public boolean isFavorite(FavoriteEntityType entityType, UUID entityId) {
         return favoriteRepository.existsByUserIdAndEntityTypeAndEntityId(
                 securityUtils.getCurrentUserId(), entityType, entityId);
+    }
+
+    /** Une âme favorite doit appartenir à l'espace métier courant. */
+    private void assertEntityAccessible(FavoriteEntityType entityType, UUID entityId) {
+        if (entityType == FavoriteEntityType.SOUL) {
+            soulService.assertAccessible(entityId);
+        }
     }
 
     /** Âmes favorites de l'utilisateur, avec leurs noms pour l'affichage. */

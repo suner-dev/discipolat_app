@@ -23,6 +23,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/souls")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
 public class SoulController {
 
     private final SoulService soulService;
@@ -123,9 +124,7 @@ public class SoulController {
     public ResponseEntity<List<SoulResponse>> findByFamille(@PathVariable UUID familleId) {
         return ResponseEntity.ok(soulService.findByFamilleId(familleId)
                 .stream().map(SoulResponse::from).toList());
-    }
-
-    /** US-15: Auto-suggest least loaded faiseur for a family */
+    }    /** US-15: Auto-suggest least loaded faiseur for a family */
     @GetMapping("/suggest-faiseur/{familleId}")
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, UUID>> suggestFaiseur(@PathVariable UUID familleId) {
