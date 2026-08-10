@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.18.0] - 2026-08-10
+
+### 🔧 CI réparée — le script H2 plantait le contexte PostgreSQL (V47)
+
+**Problème** : depuis V41, **toutes** les runs GitHub Actions backend étaient
+rouges (13 erreurs sur `PerIpRateLimiterIntegrationTest` : ApplicationContext
+non chargé). `application-test.yml` déclarait `spring.sql.init.mode: always`
+avec `h2-init.sql` (syntaxe H2 : `CREATE DOMAIN jsonb`) ; or la CI surcharge
+`SPRING_DATASOURCE_URL` vers PostgreSQL, où cette syntaxe n'existe pas.
+
+### 🩹 Correctif (1 ligne de config + commentaire)
+- `spring.sql.init.mode: always` → **`embedded`** : le script H2 ne s'exécute
+  plus que sur la base embarquée des tests locaux ; en CI, `jsonb` est natif
+  PostgreSQL et le schéma vient de `jpa.ddl-auto` (`create-drop`)
+
+### ✅ Validation
+- `mvn verify` complet avec la config CI (Postgres + Redis) : **301 tests ✓**
+- `mvn test` local (H2) : **301 tests ✓** — les deux chemins verts
+
 ## [3.17.0] - 2026-08-10
 
 ### 📱 Messagerie mobile complète — fin du bouton mort « conversation » (V46)
