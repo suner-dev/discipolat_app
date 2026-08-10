@@ -1,5 +1,51 @@
 # Changelog
 
+## [3.16.0] - 2026-08-10
+
+### 📱 Écrans d'administration mobiles Modules & Menus de la plateforme + tests
+
+Complète le périmètre admin mobile signalé en 3.15.0 : les écrans **Modules**
+et **Menus** de la plateforme configurable existent désormais dans l'app
+Flutter (réservés ADMIN), avec les mêmes endpoints que les pages web.
+
+### ✨ Nouveaux écrans
+- **`PlatformModulesScreen`** (`/admin/modules`) : modules groupés par section
+  (ordre), badge Actif/Inactif, **toggle → `PUT /platform/modules/{key}`** avec
+  `{enabled}`, éditeur création/édition (`POST /platform/modules`,
+  `PUT /platform/modules/{key}/edit`), suppression avec dialogue de
+  confirmation (`DELETE /platform/modules/{key}`)
+- **`PlatformMenusScreen`** (`/admin/menus`) : entrées de menu groupées par
+  section, **réordonnancement haut/bas → `POST /platform/menus/reorder`** avec
+  `[{id, ordre, section}]`, **toggle → `PUT /platform/menus/{id}`** avec l'objet
+  complet, éditeur (clé, libellé, URL, icône, section, ordre, **chips de rôles
+  visibles**, **sélecteur de module** avec repli sécurisé si le module référencé
+  a disparu, visibilité active/masquée), suppression avec confirmation
+- **`platform_icons.dart`** : mapping des clés d'icônes stockées en base
+  (LayoutDashboard, Sparkles, Boxes, Heart…) vers les icônes Flutter
+
+### 🛡️ Routage & navigation
+- Routes `'/admin/modules'` et `'/admin/menus'` ajoutées, **réservées ADMIN**
+  (garde exacte avant le repli sur le chemin de base — renforce l'isolation des
+  routes `/dashboard/pasteur`, `/reports/maker` et consorts pour les rôles non
+  autorisés, conformément à la mission sécurité)
+- Drawer : entrées « Modules plateforme » / « Menus plateforme » visibles
+  uniquement pour ADMIN (filtre PASTEUR étendu)
+
+### 🧪 Tests (2 fichiers, 13 tests — suite mobile 51 → 64)
+- **`platform_modules_screen_test.dart`** (6 tests) : rendu groupé par section
+  avec statuts, état vide, **toggle → PUT + payload `enabled`**, **création →
+  POST avec payload complet**, **édition → PUT `/edit`**, **suppression →
+  dialogue → DELETE**
+- **`platform_menus_screen_test.dart`** (7 tests) : rendu groupé (libellés, URL,
+  rôles, module), état vide, **toggle → PUT avec l'objet complet**, **réordonnancement
+  → POST `/reorder` avec ids/ordre/section assertés**, création → POST, édition →
+  PUT, suppression → DELETE
+
+### ✅ Validation
+- **Mobile : 64 tests widget ✓, 0 échec** · `flutter analyze` sans nouvelle issue
+- Revue de code appliquée : repli `moduleKey` orphelin (crash dropdown évité),
+  contrôleurs pré-créés dans les éditeurs, payload de réordonnancement asserté
+
 ## [3.15.0] - 2026-08-10
 
 ### 📱 Tests widget des écrans d'administration mobiles (permissions, audit, workflow transfert)

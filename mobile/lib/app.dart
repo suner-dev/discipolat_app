@@ -39,6 +39,8 @@ import 'presentation/screens/transfers/transfers_list_screen.dart';
 import 'presentation/screens/transfers/transfer_detail_screen.dart';
 import 'presentation/screens/transfers/transfer_create_screen.dart';
 import 'presentation/screens/transfers/transfer_admin_screen.dart';
+import 'presentation/screens/platform/platform_modules_screen.dart';
+import 'presentation/screens/platform/platform_menus_screen.dart';
 import 'presentation/screens/not_found_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -174,6 +176,8 @@ Map<String, List<String>> _routeRoles = {
   '/members/requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
   '/transfers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/admin': ['ADMIN', 'PASTEUR'],
+  '/admin/modules': ['ADMIN'],
+  '/admin/menus': ['ADMIN'],
 };
 
 final appRouter = GoRouter(
@@ -200,9 +204,11 @@ final appRouter = GoRouter(
       final role = auth.activeRole;
 
       // 1) Chaque route n'est accessible que si le rôle ACTIF est autorisé.
+      //    Priorité à la route exacte (ex. /admin/modules réservé ADMIN), puis
+      //    repli sur le premier segment (ex. /souls/:id/pastoral-360).
       final segments = state.matchedLocation.split('/');
       final basePath = '/${segments.length > 1 ? segments[1] : ''}';
-      final allowedRoles = _routeRoles[basePath];
+      final allowedRoles = _routeRoles[state.matchedLocation] ?? _routeRoles[basePath];
       if (allowedRoles != null && !auth.hasActiveRole(allowedRoles)) {
         // L'Admin actif dispose des capacités du Pasteur (super-utilisateurs
         // qui partagent la vue complète de l'application).
@@ -434,6 +440,16 @@ final appRouter = GoRouter(
       path: '/admin/transfers',
       name: 'transfer-admin',
       builder: (context, state) => const TransferAdminScreen(),
+    ),
+    GoRoute(
+      path: '/admin/modules',
+      name: 'platform-modules',
+      builder: (context, state) => const PlatformModulesScreen(),
+    ),
+    GoRoute(
+      path: '/admin/menus',
+      name: 'platform-menus',
+      builder: (context, state) => const PlatformMenusScreen(),
     ),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),

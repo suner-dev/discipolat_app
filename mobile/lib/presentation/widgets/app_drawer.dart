@@ -53,6 +53,8 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},
     {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions'},
     {'icon': Icons.history_rounded, 'title': 'Audit', 'route': '/audit'},
+    {'icon': Icons.inventory_2_rounded, 'title': 'Modules plateforme', 'route': '/admin/modules'},
+    {'icon': Icons.menu_book_rounded, 'title': 'Menus plateforme', 'route': '/admin/menus'},
   ];
 
   // Espace RESPONSABLE — gestion des départements uniquement
@@ -127,8 +129,9 @@ class _AppDrawerState extends State<AppDrawer> {
       case 'MEMBRE':
         return _membreNav;
       case 'PASTEUR':
-        // Pasteur = vue complète, sans la matrice des permissions (réservée Admin)
-        return _fullNav.where((item) => item['route'] != '/permissions').toList();
+        // Pasteur = vue complète, sans la configuration plateforme réservée Admin
+        // (matrice des permissions, modules, menus).
+        return _fullNav.where((item) => !const {'/permissions', '/admin/modules', '/admin/menus'}.contains(item['route'])).toList();
       default:
         return _fullNav; // ADMIN
     }
