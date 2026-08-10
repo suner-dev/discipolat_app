@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
@@ -224,6 +223,107 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                                         Text('${dept['totalAmes'] ?? 0} âmes', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11)),
                                       ],
                                     ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+
+                      // Familles summary
+                      if (familles.isNotEmpty) ...[
+                        SectionTitle(title: 'Familles', icon: Icons.home_work_outlined),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 110,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: familles.length,
+                            itemBuilder: (_, i) {
+                              final f = familles[i] as Map<String, dynamic>;
+                              return Container(
+                                width: 170,
+                                margin: const EdgeInsets.only(right: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [AppColors.primary.withValues(alpha: 0.12), Colors.transparent],
+                                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(f['nom'] ?? '',
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    const Spacer(),
+                                    Row(children: [
+                                      Icon(Icons.people_alt, size: 12, color: Colors.white.withValues(alpha: 0.4)),
+                                      const SizedBox(width: 4),
+                                      Text('${f['actifs'] ?? 0} actifs · ${f['totalAmes'] ?? 0} âmes',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+                                    ]),
+                                    if ((f['tauxPresence'] as num?) != null) ...[
+                                      const SizedBox(height: 3),
+                                      Text('Présence ${f['tauxPresence']}%',
+                                          style: TextStyle(
+                                            color: (f['tauxPresence'] as num).toDouble() < 50 ? Colors.redAccent : Colors.greenAccent,
+                                            fontSize: 9,
+                                          )),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+
+                      // Faiseurs summary
+                      if (faiseurs.isNotEmpty) ...[
+                        SectionTitle(title: 'Faiseurs', icon: Icons.group_work_outlined),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 110,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: faiseurs.length,
+                            itemBuilder: (_, i) {
+                              final f = faiseurs[i] as Map<String, dynamic>;
+                              return Container(
+                                width: 170,
+                                margin: const EdgeInsets.only(right: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.teal.withValues(alpha: 0.12), Colors.transparent],
+                                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(f['nom'] ?? '',
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    if (f['estChef'] == true)
+                                      Text('Chef de famille',
+                                          style: TextStyle(color: const Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w600)),
+                                    const Spacer(),
+                                    Row(children: [
+                                      Icon(Icons.favorite, size: 12, color: Colors.white.withValues(alpha: 0.4)),
+                                      const SizedBox(width: 4),
+                                      Text('${f['actifs'] ?? 0} actifs · ${f['totalAmes'] ?? 0} âmes',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+                                    ]),
                                   ],
                                 ),
                               );

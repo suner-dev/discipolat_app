@@ -15,7 +15,8 @@ class _PrayersListScreenState extends State<PrayersListScreen> with SingleTicker
   late TabController _tabController;
   List<dynamic> _prayers = [];
   bool _isLoading = true;
-  String _filter = 'TOUS';
+  final _searchCtrl = TextEditingController();
+  String _search = '';
 
   @override
   void initState() {
@@ -27,7 +28,19 @@ class _PrayersListScreenState extends State<PrayersListScreen> with SingleTicker
   @override
   void dispose() {
     _tabController.dispose();
+    _searchCtrl.dispose();
     super.dispose();
+  }
+
+  /// Filtre par recherche texte (titre ou description).
+  List<dynamic> _applySearch(List<dynamic> items) {
+    final q = _search.trim().toLowerCase();
+    if (q.isEmpty) return items;
+    return items.where((p) {
+      final titre = ((p as Map)['titre'] ?? '').toString().toLowerCase();
+      final desc = ((p)['description'] ?? '').toString().toLowerCase();
+      return titre.contains(q) || desc.contains(q);
+    }).toList();
   }
 
   Future<void> _loadData() async {
@@ -106,16 +119,48 @@ class _PrayersListScreenState extends State<PrayersListScreen> with SingleTicker
       drawer: const AppDrawer(),
       body: _isLoading
           ? const ShimmerLoading(itemCount: 4)
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildList(_prayers.where((p) => (p as Map)['statut'] == 'EN_COURS').toList()),
-                  _buildList(_prayers.where((p) => (p as Map)['statut'] == 'EXAUCE').toList()),
-                  _buildList(_prayers),
-                ],
-              ),
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: (v) => setState(() => _search = v),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher une prière...',
+                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13),
+                      prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4), size: 20),
+                      suffixIcon: _search.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, color: Colors.white.withValues(alpha: 0.4), size: 18),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _search = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildList(_applySearch(_prayers.where((p) => (p as Map)['statut'] == 'EN_COURS').toList())),
+                        _buildList(_applySearch(_prayers.where((p) => (p as Map)['statut'] == 'EXAUCE').toList())),
+                        _buildList(_applySearch(_prayers)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }

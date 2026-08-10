@@ -50,12 +50,12 @@ class _FakeApiService extends ApiService {
 Response<dynamic> _json(String path, Object data) =>
     Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: data);
 
-const _MODULES = [
+const _modules = [
   {'key': 'DASHBOARD', 'label': 'Tableaux de bord', 'enabled': true},
   {'key': 'SOULS', 'label': 'Âmes & disciples', 'enabled': true},
 ];
 
-const _MENUS = [
+const _menus = [
   {
     'id': 'm1',
     'key': 'dashboard',
@@ -118,8 +118,8 @@ void main() {
 
   testWidgets('affiche les menus groupés par section avec libellés, URL, rôles et module', (tester) async {
     final api = _FakeApiService((path, params) {
-      if (path == '/platform/modules') return _json(path, _MODULES);
-      return _json(path, _MENUS);
+      if (path == '/platform/modules') return _json(path, _modules);
+      return _json(path, _menus);
     });
     await pumpScreen(tester, api);
 
@@ -144,8 +144,8 @@ void main() {
 
   testWidgets('bascule d’activation → PUT /platform/menus/{id} avec l’objet complet', (tester) async {
     final api = _FakeApiService((path, params) {
-      if (path == '/platform/modules') return _json(path, _MODULES);
-      return _json(path, _MENUS);
+      if (path == '/platform/modules') return _json(path, _modules);
+      return _json(path, _menus);
     });
     await pumpScreen(tester, api);
 
@@ -160,8 +160,8 @@ void main() {
 
   testWidgets('réordonne une section → POST /platform/menus/reorder', (tester) async {
     final api = _FakeApiService((path, params) {
-      if (path == '/platform/modules') return _json(path, _MODULES);
-      return _json(path, _MENUS);
+      if (path == '/platform/modules') return _json(path, _modules);
+      return _json(path, _menus);
     });
     await pumpScreen(tester, api);
 
@@ -181,8 +181,8 @@ void main() {
 
   testWidgets('crée un menu → POST /platform/menus avec le payload complet', (tester) async {
     final api = _FakeApiService((path, params) {
-      if (path == '/platform/modules') return _json(path, _MODULES);
-      return _json(path, _MENUS);
+      if (path == '/platform/modules') return _json(path, _modules);
+      return _json(path, _menus);
     });
     await pumpScreen(tester, api);
 
@@ -212,8 +212,8 @@ void main() {
 
   testWidgets('modifie un menu → PUT /platform/menus/{id}', (tester) async {
     final api = _FakeApiService((path, params) {
-      if (path == '/platform/modules') return _json(path, _MODULES);
-      return _json(path, _MENUS);
+      if (path == '/platform/modules') return _json(path, _modules);
+      return _json(path, _menus);
     });
     await pumpScreen(tester, api);
 
@@ -235,8 +235,8 @@ void main() {
 
   testWidgets('supprime avec confirmation → DELETE /platform/menus/{id}', (tester) async {
     final api = _FakeApiService((path, params) {
-      if (path == '/platform/modules') return _json(path, _MODULES);
-      return _json(path, _MENUS);
+      if (path == '/platform/modules') return _json(path, _modules);
+      return _json(path, _menus);
     });
     await pumpScreen(tester, api);
 

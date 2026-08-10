@@ -163,7 +163,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                           Row(children: [
                             Expanded(
                               child: DropdownButtonFormField<String>(
-                                value: _categorie,
+                                initialValue: _categorie,
                                 dropdownColor: const Color(0xFF111827),
                                 decoration: const InputDecoration(labelText: 'Catégorie'),
                                 items: _categorieLabels.entries.map((e) =>
@@ -213,7 +213,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                           ),
                           const SizedBox(height: 10),
                           DropdownButtonFormField<String>(
-                            value: _catFilter.isEmpty ? null : _catFilter,
+                            initialValue: _catFilter.isEmpty ? null : _catFilter,
                             dropdownColor: const Color(0xFF111827),
                             decoration: const InputDecoration(labelText: 'Catégorie'),
                             items: [

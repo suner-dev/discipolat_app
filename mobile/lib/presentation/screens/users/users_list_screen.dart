@@ -6,14 +6,17 @@ import '../../widgets/app_drawer.dart';
 
 
 class UsersListScreen extends StatefulWidget {
-  const UsersListScreen({super.key});
+  const UsersListScreen({super.key, this.apiService});
+
+  /// Permet d'injecter un ApiService mocké dans les tests widget.
+  final ApiService? apiService;
 
   @override
   State<UsersListScreen> createState() => _UsersListScreenState();
 }
 
 class _UsersListScreenState extends State<UsersListScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   List<dynamic> _users = [];
   List<dynamic> _workload = [];
   bool _isLoading = true;
@@ -171,7 +174,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
             decoration: const InputDecoration(labelText: 'Email', hintText: 'jean@email.com')),
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
-          value: _createRole, dropdownColor: const Color(0xFF111827),
+          initialValue: _createRole, dropdownColor: const Color(0xFF111827),
           decoration: const InputDecoration(labelText: 'Rôle'),
           items: ['FAISEUR', 'RESPONSABLE', 'PASTEUR', 'ADMIN'].map((r) =>
             DropdownMenuItem(value: r, child: Text(_roleLabels[r] ?? r)),
@@ -402,15 +405,18 @@ class _ActionModalState extends State<_ActionModal> {
     try {
       final id = widget.user['id'] as String;
       String? statutDemande;
-      if (widget.action == 'promote') await widget.apiService.patch('/users/$id/promote-faiseur');
-      else if (widget.action == 'demote') await widget.apiService.patch('/users/$id/demote', data: {'newRole': _demoteRole});
-      else if (widget.action == 'transfer') {
+      if (widget.action == 'promote') {
+        await widget.apiService.patch('/users/$id/promote-faiseur');
+      } else if (widget.action == 'demote') {
+        await widget.apiService.patch('/users/$id/demote', data: {'newRole': _demoteRole});
+      } else if (widget.action == 'transfer') {
         final res = await widget.apiService.patch('/users/$id/transfer', data: {
           'nouvelleFamilleId': _transferFamilleId, 'transfererAmes': _transferAmes,
         });
         statutDemande = (res.data is Map) ? (res.data as Map)['statut'] as String? : null;
+      } else if (widget.action == 'hardDelete') {
+        await widget.apiService.delete('/users/$id/hard-delete');
       }
-      else if (widget.action == 'hardDelete') await widget.apiService.delete('/users/$id/hard-delete');
       widget.onDone();
       if (mounted && widget.action == 'transfer') {
         final message = statutDemande == 'EXECUTE'
@@ -535,7 +541,7 @@ class _ActionModalState extends State<_ActionModal> {
           style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
       const SizedBox(height: 8),
       DropdownButtonFormField<String>(
-        value: _transferFamilleId.isEmpty ? null : _transferFamilleId,
+        initialValue: _transferFamilleId.isEmpty ? null : _transferFamilleId,
         dropdownColor: const Color(0xFF111827),
         decoration: const InputDecoration(hintText: 'Sélectionner une famille...'),
         items: _families.map((f) =>
@@ -562,7 +568,7 @@ class _ActionModalState extends State<_ActionModal> {
           style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
       const SizedBox(height: 8),
       DropdownButtonFormField<String>(
-        value: _demoteRole,
+        initialValue: _demoteRole,
         dropdownColor: const Color(0xFF111827),
         decoration: const InputDecoration(),
         items: ['RESPONSABLE', 'FAISEUR'].map((r) =>

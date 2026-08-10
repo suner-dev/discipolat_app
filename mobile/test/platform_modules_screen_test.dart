@@ -45,7 +45,7 @@ class _FakeApiService extends ApiService {
 Response<dynamic> _json(String path, Object data) =>
     Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: data);
 
-const _MODULES = [
+const _modules = [
   {
     'key': 'DASHBOARD',
     'label': 'Tableaux de bord',
@@ -100,7 +100,7 @@ void main() {
   }
 
   testWidgets('affiche les modules groupés par section avec statut', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _MODULES));
+    final api = _FakeApiService((path, params) => _json(path, _modules));
     await pumpScreen(tester, api);
 
     expect(find.text('Modules'), findsOneWidget);
@@ -121,7 +121,7 @@ void main() {
   });
 
   testWidgets('bascule d’activation → PUT /platform/modules/{key} avec enabled', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _MODULES));
+    final api = _FakeApiService((path, params) => _json(path, _modules));
     await pumpScreen(tester, api);
 
     // DASHBOARD est actif → on le désactive.
@@ -133,7 +133,7 @@ void main() {
   });
 
   testWidgets('crée un module → POST /platform/modules avec le payload complet', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _MODULES));
+    final api = _FakeApiService((path, params) => _json(path, _modules));
     await pumpScreen(tester, api);
 
     await tester.ensureVisible(find.text('Nouveau module'));
@@ -159,7 +159,7 @@ void main() {
   });
 
   testWidgets('modifie un module → PUT /platform/modules/{key}/edit', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _MODULES));
+    final api = _FakeApiService((path, params) => _json(path, _modules));
     await pumpScreen(tester, api);
 
     // Ouvrir l'éditeur depuis la carte DASHBOARD (icône crayon).
@@ -181,7 +181,7 @@ void main() {
   });
 
   testWidgets('supprime avec confirmation → DELETE /platform/modules/{key}', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _MODULES));
+    final api = _FakeApiService((path, params) => _json(path, _modules));
     await pumpScreen(tester, api);
 
     await tester.tap(find.byIcon(Icons.delete_rounded).first);

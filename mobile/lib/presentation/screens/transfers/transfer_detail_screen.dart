@@ -27,11 +27,13 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
     try {
       final res = await _apiService.get('/transfers/${widget.transferId}');
       final hist = await _apiService.get('/transfers/${widget.transferId}/history');
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _data = res.data as Map<String, dynamic>;
         _history = hist.data as List<dynamic>;
         _isLoading = false;
       });
+      }
     } catch (e) { if (mounted) setState(() => _isLoading = false); }
     // Documents disponibles (best-effort, pour l'édition des pièces jointes).
     try {

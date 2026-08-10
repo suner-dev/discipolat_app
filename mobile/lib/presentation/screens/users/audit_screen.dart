@@ -71,7 +71,7 @@ class _AuditScreenState extends State<AuditScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: DropdownButtonFormField<String>(
-              value: _entityFilter.isEmpty ? '' : _entityFilter,
+              initialValue: _entityFilter.isEmpty ? '' : _entityFilter,
               dropdownColor: const Color(0xFF111827),
               decoration: InputDecoration(
                 prefixIcon: Icon(Icons.filter_list, color: Colors.white.withValues(alpha: 0.4), size: 20),

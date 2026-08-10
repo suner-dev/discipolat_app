@@ -197,7 +197,7 @@ class _FamilyReportScreenState extends State<FamilyReportScreen> {
       children: [
         Icon(icon, color: Colors.white.withValues(alpha: 0.4), size: 16),
         const SizedBox(height: 2),
-        Text('$value', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
         Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
       ],
     );

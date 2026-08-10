@@ -66,7 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
       {'label': 'Rapports', 'value': '${_kpi!['rapportsSoumis'] ?? 0}/${_kpi!['rapportsEnAttente'] ?? 0}', 'icon': Icons.description, 'gradient': [Colors.teal, Colors.cyan], 'trend': null},
     ] : [
       {'label': 'Mes âmes', 'value': '${_kpi!['totalAmes'] ?? _kpi!['totalAmesFamille'] ?? 0}', 'icon': Icons.favorite, 'gradient': [Colors.red, Colors.pink], 'trend': null},
-      {'label': 'Rapport soumis', 'value': '${_kpi!['rapportSoumisCetteSemaine'] == true ? 'Oui' : 'Non'}', 'icon': Icons.description, 'gradient': [Colors.teal, Colors.cyan], 'trend': null},
+      {'label': 'Rapport soumis', 'value': _kpi!['rapportSoumisCetteSemaine'] == true ? 'Oui' : 'Non', 'icon': Icons.description, 'gradient': [Colors.teal, Colors.cyan], 'trend': null},
       {'label': 'Faiseurs', 'value': '${_kpi!['totalFaiseursFamille'] ?? 0}', 'icon': Icons.group, 'gradient': [Colors.blue, Colors.indigo], 'trend': null},
     ]) : [];
 

@@ -29,10 +29,12 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
   Future<void> _load() async {
     try {
       final res = await _apiService.get('/platform/modules');
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _modules = (res.data as List).map((e) => e as Map<String, dynamic>).toList();
         _isLoading = false;
       });
+      }
     } catch (_) { if (mounted) setState(() => _isLoading = false); }
   }
 
@@ -161,7 +163,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
                     child: Row(children: [
                       Switch(
                         value: enabled,
-                        activeColor: Colors.green,
+                        activeThumbColor: Colors.green,
                         onChanged: (v) => setSheetState(() => enabled = v),
                       ),
                       const SizedBox(width: 4),
@@ -225,7 +227,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
                           ],
                         ),
                       );
-                      if (ok == true) {
+                      if (ok == true && ctx.mounted) {
                         Navigator.pop(ctx);
                         await _delete(module['key'] as String, module['label'] as String? ?? '');
                       }
@@ -362,7 +364,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
           const SizedBox(width: 8),
           Switch(
             value: enabled,
-            activeColor: Colors.green,
+            activeThumbColor: Colors.green,
             onChanged: (v) => _toggle(m, v),
           ),
         ]),

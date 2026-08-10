@@ -30,10 +30,12 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
       if (_type.isNotEmpty) params['type'] = _type;
       final response = await _apiService.get('/transfers', params: params);
       final data = response.data as Map<String, dynamic>;
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _transfers = (data['content'] as List).map((e) => e as Map<String, dynamic>).toList();
         _isLoading = false;
       });
+      }
     } catch (e) { if (mounted) setState(() => _isLoading = false); }
   }
 
@@ -77,7 +79,7 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
           child: Row(children: [
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: _statut.isEmpty ? null : _statut,
+                initialValue: _statut.isEmpty ? null : _statut,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Statut', isDense: true),
                 items: [for (final e in kTransferStatusLabels.entries) DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis))],
@@ -87,7 +89,7 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: _type.isEmpty ? null : _type,
+                initialValue: _type.isEmpty ? null : _type,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Type', isDense: true),
                 items: [for (final e in kTransferTypeLabels.entries) DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis))],

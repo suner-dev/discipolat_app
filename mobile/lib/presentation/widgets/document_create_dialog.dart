@@ -44,7 +44,7 @@ Future<String?> showDocumentCreateDialog(BuildContext context, ApiService apiSer
             Row(children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: categorie,
+                  initialValue: categorie,
                   dropdownColor: const Color(0xFF111827),
                   decoration: const InputDecoration(labelText: 'Catégorie'),
                   items: categorieLabels.entries

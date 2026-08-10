@@ -27,10 +27,12 @@ class _TransferAdminScreenState extends State<TransferAdminScreen> {
   Future<void> _load() async {
     try {
       final res = await _apiService.get('/admin/transfers/workflows');
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _configs = (res.data as List).map((e) => e as Map<String, dynamic>).toList();
         _isLoading = false;
       });
+      }
     } catch (e) { if (mounted) setState(() => _isLoading = false); }
   }
 
@@ -235,7 +237,7 @@ class _TransferAdminScreenState extends State<TransferAdminScreen> {
                         ],
                       ),
                     );
-                    if (ok == true) {
+                    if (ok == true && ctx.mounted) {
                       Navigator.pop(ctx);
                       await _delete(config['id'] as String);
                     }

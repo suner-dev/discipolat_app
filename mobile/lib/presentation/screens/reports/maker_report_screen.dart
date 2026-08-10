@@ -21,7 +21,7 @@ class _MakerReportScreenState extends ConsumerState<MakerReportScreen> {
   List<Soul> _souls = [];
   bool _isLoading = true;
   bool _isOffline = false;
-  String _semaine = DateTime.now().toIso8601String().split('T')[0];
+  final String _semaine = DateTime.now().toIso8601String().split('T')[0];
 
   // Report data per soul
   final Map<String, Map<String, bool>> _presences = {};
@@ -52,9 +52,15 @@ class _MakerReportScreenState extends ConsumerState<MakerReportScreen> {
 
   @override
   void dispose() {
-    for (var c in _absenceCommentaires.values) c.dispose();
-    for (var c in _difficultes.values) c.dispose();
-    for (var c in _notes.values) c.dispose();
+    for (var c in _absenceCommentaires.values) {
+      c.dispose();
+    }
+    for (var c in _difficultes.values) {
+      c.dispose();
+    }
+    for (var c in _notes.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 

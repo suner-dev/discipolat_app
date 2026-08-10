@@ -37,11 +37,13 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
         final modulesRes = await _apiService.get('/platform/modules');
         modules = (modulesRes.data as List).map((e) => e as Map<String, dynamic>).toList();
       } catch (_) {/* les modules sont optionnels pour l'affichage */}
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _menus = (menusRes.data as List).map((e) => e as Map<String, dynamic>).toList();
         _modules = modules;
         _isLoading = false;
       });
+      }
     } catch (_) { if (mounted) setState(() => _isLoading = false); }
   }
 
@@ -206,7 +208,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
                 Row(children: [
                   Switch(
                     value: enabled,
-                    activeColor: Colors.green,
+                    activeThumbColor: Colors.green,
                     onChanged: (v) => setSheetState(() => enabled = v),
                   ),
                   const SizedBox(width: 4),
@@ -269,7 +271,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
                           ],
                         ),
                       );
-                      if (ok == true) {
+                      if (ok == true && ctx.mounted) {
                         Navigator.pop(ctx);
                         await _delete(menu['id'] as String, menu['label'] as String? ?? '');
                       }
@@ -436,7 +438,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Switch(
             value: enabled,
-            activeColor: Colors.green,
+            activeThumbColor: Colors.green,
             onChanged: (v) => _toggle(m, v),
           ),
           Row(mainAxisSize: MainAxisSize.min, children: [

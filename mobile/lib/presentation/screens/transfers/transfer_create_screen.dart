@@ -5,24 +5,24 @@ import '../../widgets/glass_theme.dart';
 import 'transfer_labels.dart';
 
 /// Méta par type de transfert : entité « personne concernée » et entité « cible ».
-class _TypeMeta {
+class TransferTypeMeta {
   final String personneType; // SOUL | USER
   final String personneLabel;
   final String targetKind; // FAMILLE | DEPARTEMENT | FAISEUR
   final String targetLabel;
-  const _TypeMeta(this.personneType, this.personneLabel, this.targetKind, this.targetLabel);
+  const TransferTypeMeta(this.personneType, this.personneLabel, this.targetKind, this.targetLabel);
 }
 
-const Map<String, _TypeMeta> kTypeMeta = {
-  'MEMBRE_DEPARTEMENT_TRANSFERT': _TypeMeta('SOUL', 'Membre (âme) à transférer', 'DEPARTEMENT', 'Département de destination'),
-  'MEMBRE_DEPARTEMENT_AJOUT': _TypeMeta('SOUL', 'Membre (âme) à ajouter', 'DEPARTEMENT', "Département d'ajout"),
-  'MEMBRE_DEPARTEMENT_RETRAIT': _TypeMeta('SOUL', 'Membre (âme) à retirer', 'DEPARTEMENT', 'Département de retrait'),
-  'DISCIPLE_FAMILLE_TRANSFERT': _TypeMeta('SOUL', 'Disciple (âme) à transférer', 'FAMILLE', 'Famille de destination'),
-  'FAISEUR_FAMILLE_TRANSFERT': _TypeMeta('USER', 'Faiseur à transférer', 'FAMILLE', 'Famille de destination'),
-  'CHEF_FAMILLE_TRANSFERT': _TypeMeta('USER', 'Nouveau chef de famille', 'FAMILLE', 'Famille concernée'),
-  'FAISEUR_DISCIPLE_CHANGEMENT': _TypeMeta('SOUL', 'Disciple (âme)', 'FAISEUR', 'Nouveau faiseur'),
-  'RESPONSABLE_DEPARTEMENT_CHANGEMENT': _TypeMeta('USER', 'Nouveau responsable', 'DEPARTEMENT', 'Département concerné'),
-  'CHEF_ADJOINT_CHANGEMENT': _TypeMeta('USER', 'Nouveau chef adjoint', 'FAMILLE', 'Famille concernée'),
+const Map<String, TransferTypeMeta> kTypeMeta = {
+  'MEMBRE_DEPARTEMENT_TRANSFERT': TransferTypeMeta('SOUL', 'Membre (âme) à transférer', 'DEPARTEMENT', 'Département de destination'),
+  'MEMBRE_DEPARTEMENT_AJOUT': TransferTypeMeta('SOUL', 'Membre (âme) à ajouter', 'DEPARTEMENT', "Département d'ajout"),
+  'MEMBRE_DEPARTEMENT_RETRAIT': TransferTypeMeta('SOUL', 'Membre (âme) à retirer', 'DEPARTEMENT', 'Département de retrait'),
+  'DISCIPLE_FAMILLE_TRANSFERT': TransferTypeMeta('SOUL', 'Disciple (âme) à transférer', 'FAMILLE', 'Famille de destination'),
+  'FAISEUR_FAMILLE_TRANSFERT': TransferTypeMeta('USER', 'Faiseur à transférer', 'FAMILLE', 'Famille de destination'),
+  'CHEF_FAMILLE_TRANSFERT': TransferTypeMeta('USER', 'Nouveau chef de famille', 'FAMILLE', 'Famille concernée'),
+  'FAISEUR_DISCIPLE_CHANGEMENT': TransferTypeMeta('SOUL', 'Disciple (âme)', 'FAISEUR', 'Nouveau faiseur'),
+  'RESPONSABLE_DEPARTEMENT_CHANGEMENT': TransferTypeMeta('USER', 'Nouveau responsable', 'DEPARTEMENT', 'Département concerné'),
+  'CHEF_ADJOINT_CHANGEMENT': TransferTypeMeta('USER', 'Nouveau chef adjoint', 'FAMILLE', 'Famille concernée'),
 };
 
 class TransferCreateScreen extends StatefulWidget {
@@ -63,10 +63,12 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
   Future<void> _loadConfigs() async {
     try {
       final res = await _apiService.get('/transfers/configurations');
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _configs = (res.data as List).map((e) => e as Map<String, dynamic>).toList();
         _loadingConfigs = false;
       });
+      }
     } catch (e) { if (mounted) setState(() => _loadingConfigs = false); }
   }
 
@@ -77,17 +79,19 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
       final families = await _apiService.get('/families', params: {'size': '200'});
       final departments = await _apiService.get('/departments', params: {'size': '200'});
       final files = await _apiService.get('/files', params: {'size': '100'});
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _souls = ((souls.data as Map)['content'] as List).map((e) => e as Map<String, dynamic>).toList();
         _users = ((users.data as Map)['content'] as List).map((e) => e as Map<String, dynamic>).toList();
         _families = ((families.data as Map)['content'] as List).map((e) => e as Map<String, dynamic>).toList();
         _departments = ((departments.data as Map)['content'] as List).map((e) => e as Map<String, dynamic>).toList();
         _files = ((files.data as Map)['content'] as List).map((e) => e as Map<String, dynamic>).toList();
       });
+      }
     } catch (_) {}
   }
 
-  _TypeMeta? get _meta => _type.isEmpty ? null : kTypeMeta[_type];
+  TransferTypeMeta? get _meta => _type.isEmpty ? null : kTypeMeta[_type];
 
   List<Map<String, dynamic>> get _personnes {
     final meta = _meta;
@@ -257,7 +261,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                   Text('Type de transfert *', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    value: _type.isEmpty ? null : _type,
+                    initialValue: _type.isEmpty ? null : _type,
                     isExpanded: true,
                     items: [
                       for (final c in availableTypes)
@@ -280,7 +284,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                     Text('${meta.personneLabel} *', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: _personneId.isEmpty ? null : _personneId,
+                      initialValue: _personneId.isEmpty ? null : _personneId,
                       isExpanded: true,
                       items: [for (final p in _personnes) DropdownMenuItem(value: p['id'] as String, child: Text(_entityName(p), overflow: TextOverflow.ellipsis))],
                       onChanged: (v) => setState(() => _personneId = v ?? ''),
@@ -289,7 +293,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                     Text('${meta.targetLabel} *', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: _targetId.isEmpty ? null : _targetId,
+                      initialValue: _targetId.isEmpty ? null : _targetId,
                       isExpanded: true,
                       items: [for (final c in _cibles) DropdownMenuItem(value: c['id'] as String, child: Text(_entityName(c), overflow: TextOverflow.ellipsis))],
                       onChanged: (v) => setState(() => _targetId = v ?? ''),
@@ -306,7 +310,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                     Text('Priorité', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: _priorite,
+                      initialValue: _priorite,
                       items: [for (final e in kPrioriteLabels.entries) DropdownMenuItem(value: e.key, child: Text(e.value))],
                       onChanged: (v) => setState(() => _priorite = v ?? 'MOYENNE'),
                     ),

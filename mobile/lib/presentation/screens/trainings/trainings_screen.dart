@@ -113,7 +113,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> with SingleTickerProv
         final titre = c['titre'] ?? c['title'] ?? 'Cours';
         final desc = c['description'] ?? '';
         final modules = c['nombreModules'] ?? c['modules'] ?? 0;
-        final enrolled = _enrollments.any((e) => (e as Map)['coursId'] == c['id'] || (e as Map)['courseId'] == c['id']);
+        final enrolled = _enrollments.any((e) => (e as Map)['coursId'] == c['id'] || (e)['courseId'] == c['id']);
         return GlassCard(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -172,7 +172,6 @@ class _TrainingsScreenState extends State<TrainingsScreen> with SingleTickerProv
       itemBuilder: (context, index) {
         final e = _enrollments[index] as Map<String, dynamic>;
         final titre = e['coursTitre'] ?? e['titre'] ?? 'Cours';
-        final progress = e['progression'] ?? e['progress'] ?? 0;
         final modulesCompleted = e['modulesComplete'] ?? 0;
         final totalModules = e['totalModules'] ?? 1;
         final ratio = totalModules > 0 ? modulesCompleted / totalModules : 0.0;

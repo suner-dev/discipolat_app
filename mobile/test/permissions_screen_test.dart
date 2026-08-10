@@ -28,7 +28,7 @@ class _FakeApiService extends ApiService {
 Response<dynamic> _json(String path, Object data) =>
     Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: data);
 
-const _PERMISSIONS = [
+const _permissions = [
   {'permission': 'USER_CREATE', 'role': 'ADMIN', 'enabled': false},
   {'permission': 'USER_CREATE', 'role': 'FAISEUR', 'enabled': false},
   {'permission': 'USER_READ', 'role': 'ADMIN', 'enabled': true},
@@ -55,7 +55,7 @@ void main() {
   }
 
   testWidgets('affiche la matrice : libellés, codes et colonnes par rôle', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _PERMISSIONS));
+    final api = _FakeApiService((path, params) => _json(path, _permissions));
     await pumpScreen(tester, api);
 
     expect(find.text('Permissions'), findsOneWidget);
@@ -82,7 +82,7 @@ void main() {
   });
 
   testWidgets('bascule une permission → PUT /permissions/{role}/{permission}', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _PERMISSIONS));
+    final api = _FakeApiService((path, params) => _json(path, _permissions));
     await pumpScreen(tester, api);
 
     // Première cellule désactivée (USER_CREATE / ADMIN) → icône close
@@ -93,7 +93,7 @@ void main() {
   });
 
   testWidgets('échec de mise à jour → SnackBar d’erreur', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _PERMISSIONS), failPuts: true);
+    final api = _FakeApiService((path, params) => _json(path, _permissions), failPuts: true);
     await pumpScreen(tester, api);
 
     await tester.tap(find.byIcon(Icons.close).first);

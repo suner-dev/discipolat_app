@@ -161,7 +161,7 @@ class _FamiliesListScreenState extends State<FamiliesListScreen> {
     );
   }
 
-  String dateStr(String d) => d.length >= 10 ? d.substring(5, 7) + '/' + d.substring(8, 10) : d;
+  String dateStr(String d) => d.length >= 10 ? '${d.substring(5, 7)}/${d.substring(8, 10)}' : d;
 
   Widget _miniStat(IconData icon, String label, String value) {
     return Column(

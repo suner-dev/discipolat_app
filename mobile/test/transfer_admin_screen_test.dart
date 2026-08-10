@@ -45,7 +45,7 @@ class _FakeApiService extends ApiService {
 Response<dynamic> _json(String path, Object data) =>
     Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: data);
 
-const _CONFIGS = [
+const _configs = [
   {
     'id': 'cfg-1',
     'label': 'Transfert faiseur',
@@ -99,7 +99,7 @@ void main() {
   }
 
   testWidgets('affiche les configurations avec statut et synthèse du circuit', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _CONFIGS));
+    final api = _FakeApiService((path, params) => _json(path, _configs));
     await pumpScreen(tester, api);
 
     expect(find.text('Workflow de transfert'), findsOneWidget);
@@ -119,7 +119,7 @@ void main() {
   });
 
   testWidgets('bascule d’activation → PATCH /admin/transfers/workflows/{id}/toggle', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _CONFIGS));
+    final api = _FakeApiService((path, params) => _json(path, _configs));
     await pumpScreen(tester, api);
 
     // cfg-1 est actif → icône power_settings_new (power_on)
@@ -130,7 +130,7 @@ void main() {
   });
 
   testWidgets('ouvre l’éditeur depuis une carte', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _CONFIGS));
+    final api = _FakeApiService((path, params) => _json(path, _configs));
     await pumpScreen(tester, api);
 
     await tester.tap(find.text('Transfert faiseur'));
@@ -144,7 +144,7 @@ void main() {
   });
 
   testWidgets('enregistre une configuration → PUT + SnackBar de confirmation', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _CONFIGS));
+    final api = _FakeApiService((path, params) => _json(path, _configs));
     await pumpScreen(tester, api);
 
     await tester.tap(find.text('Transfert faiseur'));
@@ -164,7 +164,7 @@ void main() {
   });
 
   testWidgets('supprime avec confirmation → dialogue « Oui » → DELETE', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _CONFIGS));
+    final api = _FakeApiService((path, params) => _json(path, _configs));
     await pumpScreen(tester, api);
 
     await tester.tap(find.text('Transfert faiseur'));
@@ -183,7 +183,7 @@ void main() {
   });
 
   testWidgets('suppression refusée (config utilisée) → SnackBar explicative', (tester) async {
-    final api = _FakeApiService((path, params) => _json(path, _CONFIGS), failDeletes: true);
+    final api = _FakeApiService((path, params) => _json(path, _configs), failDeletes: true);
     await pumpScreen(tester, api);
 
     await tester.tap(find.text('Transfert faiseur'));

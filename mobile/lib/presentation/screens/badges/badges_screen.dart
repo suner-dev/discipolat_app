@@ -122,6 +122,13 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
               Text(nom, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 2),
               Text(tier, style: TextStyle(color: _tierColor(tier), fontSize: 9, fontWeight: FontWeight.w600)),
+              if (dateObtention.toString().isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  dateObtention.toString().substring(0, 10),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 8),
+                ),
+              ],
             ],
           ),
         );
