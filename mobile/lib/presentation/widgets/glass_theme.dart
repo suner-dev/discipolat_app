@@ -142,6 +142,27 @@ class GlassTheme {
 }
 
 // ============================================
+// Shared helpers
+// ============================================
+
+/// Initiales d'un nom complet (« Marie Martin » → « MM »).
+String initialsFromName(String? name) {
+  if (name == null || name.trim().isEmpty) return '?';
+  final parts = name.trim().split(RegExp(r'\s+'));
+  if (parts.length >= 2) {
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+  return name.trim().substring(0, 1).toUpperCase();
+}
+
+/// Initiales à partir d'un objet utilisateur (firstName/lastName).
+String initialsFromUser(Map<String, dynamic> u) {
+  final first = (u['firstName'] as String? ?? '').trim();
+  final last = (u['lastName'] as String? ?? '').trim();
+  return initialsFromName('$first $last');
+}
+
+// ============================================
 // Reusable Glass Widgets
 // ============================================
 

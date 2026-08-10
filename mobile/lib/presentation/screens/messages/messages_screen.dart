@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import 'conversation_detail_screen.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -30,7 +31,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       if (mounted) {
         setState(() {
           _conversations = convRes.data as List<dynamic>? ?? [];
-          _unreadCount = unreadRes.data is int ? unreadRes.data : 0;
+          _unreadCount = (unreadRes.data is Map) ? (unreadRes.data as Map)['total'] as int? ?? 0 : 0;
           _isLoading = false;
         });
       }
@@ -39,10 +40,31 @@ class _MessagesScreenState extends State<MessagesScreen> {
     }
   }
 
-  String _initials(String? name) {
-    if (name == null || name.isEmpty) return '?';
-    final parts = name.split(' ');
-    return parts.length >= 2 ? '${parts[0][0]}${parts[1][0]}'.toUpperCase() : name.substring(0, 1).toUpperCase();
+  Future<void> _openConversation(Map<String, dynamic> conv) async {
+    final title = (conv['otherUserName'] ?? conv['nom'] ?? 'Conversation') as String;
+    final id = (conv['id'] as String?) ?? '';
+    if (id.isEmpty) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ConversationDetailScreen(conversationId: id, title: title, apiService: _apiService),
+      ),
+    );
+    _loadData(); // recalcule le compteur de non-lus après la lecture
+  }
+
+  void _startNewConversation() {
+    showStartConversationSheet(
+      context,
+      _apiService,
+      onStarted: (id, title) {
+        _loadData();
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ConversationDetailScreen(conversationId: id, title: title, apiService: _apiService),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -62,6 +84,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
             ],
           ],
         ),
+        actions: [
+          IconButton(icon: const Icon(Icons.add_comment_outlined), onPressed: _startNewConversation, tooltip: 'Nouvelle conversation'),
+        ],
       ),
       drawer: const AppDrawer(),
       body: _isLoading
@@ -101,7 +126,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               radius: 22,
                               backgroundColor: isGroup ? Colors.blue.withValues(alpha: 0.2) : Colors.teal.withValues(alpha: 0.2),
                               child: Text(
-                                isGroup ? '${_conversations.length}' : _initials(title),
+                                isGroup ? '${_conversations.length}' : initialsFromName(title),
                                 style: TextStyle(color: isGroup ? Colors.blue : Colors.teal, fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ),
@@ -141,9 +166,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                     child: Center(child: Text('$unread', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))),
                                   )
                                 : null,
-                            onTap: () {
-                              // Navigate to conversation detail (TODO: implement detail screen)
-                            },
+                            onTap: () => _openConversation(conv),
                           ),
                         );
                       },

@@ -1,5 +1,44 @@
 # Changelog
 
+## [3.17.0] - 2026-08-10
+
+### 📱 Messagerie mobile complète — fin du bouton mort « conversation » (V46)
+
+**Principe** : le tap sur une conversation de l'écran Messagerie ne faisait rien
+(`TODO: implement detail screen`). Le fil de discussion complet est désormais
+implémenté sur mobile, aligné sur le backend (`MessageController`) et la page web.
+
+### ✨ Nouveau `ConversationDetailScreen` (`/messages` → tap)
+- Fil de messages : bulles alignées (reçu à gauche avec nom de l'expéditeur,
+  envoyé à droite), horodatage, défilement automatique en bas
+- **Envoi** → `POST /messages/conversations/{id}/messages` avec `{content}`
+  (bouton désactivé quand vide, Enter = envoyer, rechargement après envoi)
+- **Marquage lu** → `PATCH /messages/conversations/{id}/read` à l'ouverture
+  (erreur avalée, n'interrompt jamais le chargement)
+- États : chargement (shimmer), vide (« dites bonjour ! »), erreur avec
+  « Réessayer »
+
+### 💬 Nouvelle conversation (capacité absente du mobile)
+- Bouton « Nouvelle conversation » (AppBar) → sélecteur de membres (recherche
+  par nom, exclusion de soi-même) → `POST /messages/conversations`
+  `{otherUserId}` puis ouverture directe du fil
+- **Bug fixé au passage** : le compteur de non-lus lisait `unreadRes.data is int`
+  alors que le backend renvoie `{total: N}` → le badge restait toujours à 0
+
+### 🧪 Tests (nouveau `conversation_detail_screen_test.dart`, 6 tests widget)
+- Rendu du fil (expéditeur reçu, contenu, pas de nom sur ses propres messages),
+  marquage lu → PATCH `/read`, envoi → POST avec le payload asserté, échec
+  d'envoi → SnackBar, état vide, erreur de chargement → « Réessayer »
+
+### 🔧 Hygiène (revue de code)
+- État du `StatefulBuilder` (recherche + démarrage) déclaré hors du builder :
+  la saisie n'était plus perdue à chaque rebuild
+- Helper partagé `initialsFromName`/`initialsFromUser` dans `glass_theme.dart`
+  (3 copies dupliquées supprimées)
+
+### ✅ Validation
+- Mobile : **79 tests widget ✓** (73 + 6), `flutter analyze` sans issue
+
 ## [3.16.0] - 2026-08-10
 
 ### 📱 Écrans d'administration mobiles Modules & Menus de la plateforme + tests
