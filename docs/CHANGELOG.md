@@ -1,5 +1,42 @@
 # Changelog
 
+## [3.13.0] - 2026-08-10
+
+### 🧪 Tests de régression API — contrôleurs d'administration de la plateforme configurable
+
+**Principe** : les 4 contrôleurs admin (identité, modules, menus, champs personnalisés)
+disposent désormais de tests d'intégration API qui exercent la **chaîne de sécurité réelle**
+(JWT + `@PreAuthorize`) — un futur changement de règle d'accès ou de contrat de réponse est
+détecté immédiatement, côté serveur.
+
+### 🧪 Nouveaux tests (3 fichiers, 39 tests)
+- **`SettingsControllerTest`** (10 tests) : `GET /public/settings` sans token → 200 avec
+  **uniquement les champs publics** (ni `id`, ni `contactNotes`), `GET /settings` par un
+  simple FAISEUR → 200 (la règle est `isAuthenticated()`, pas `hasRole('ADMIN')`), 401 sans
+  token, PUT par ADMIN → 200 + délégation au service (payload asserté), PUT par non-ADMIN →
+  403 **avec `verify(never)`** (preuve que le blocage est à la couche `@PreAuthorize`),
+  couleur hexadécimale invalide → 400 (validation bean), reset ADMIN → 200 / non-ADMIN → 403
+- **`PlatformConfigControllerTest`** (17 tests) : menus du rôle actif (FAISEUR) → 200,
+  gating avec état d'activation des modules, administration menus/modules réservée à
+  l'ADMIN (403 + `verify(never)` sur les tentatives non autorisées), création → 201 avec
+  payload asserté, édition → 200, suppression → 204, **réordonnancement `POST /menus/reorder`**
+  (ordre + section assertés via le service), bascule d'activation `PUT /modules/{key}`
+  (`enabled=false` transmis au service)
+- **`CustomFieldControllerTest`** (12 tests) : définitions filtrées par rôle (FAISEUR → 200),
+  paramètre `entiteType` manquant → 400, 401 sans token, `definitions/all` réservé ADMIN
+  (403 + `verify(never)`), création → 201 (entité + code + type assertés), édition → 200,
+  suppression → 204, bundle par entité → 200, **sauvegarde des valeurs → 200 avec le
+  payload reçu asserté** (corps transmis au service, pas perdu)
+
+### 🧪 Infrastructure de test partagée
+- **Nouveau `TestJwtConfig`** (`common/test`) : `@TestConfiguration` fournissant un
+  `JwtTokenProvider` RÉEL (clés RSA générées pour le test), importé par chaque test — la
+  chaîne de sécurité réelle (JwtAuthenticationFilter + SecurityConfig) signe et valide les
+  tokens comme en production, sans base de données
+
+### ✅ Validation
+- Backend : **301 tests Maven ✓** (262 + 39), 0 échec, `BUILD SUCCESS` — aucune régression
+
 ## [3.12.0] - 2026-08-10
 
 ### 🧪 Tests de régression — pages d'administration de la plateforme configurable
