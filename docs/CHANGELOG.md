@@ -1,5 +1,60 @@
 # Changelog
 
+## [3.14.0] - 2026-08-10
+
+### 🧪 Tests de régression — pages publiques & parcours d'authentification
+
+**Principe** : les pages publiques (landing, connexion, mot de passe oublié,
+récupération de mot de passe, 2FA) et les parcours d'authentification complets
+sont désormais couverts par des tests qui exercent les vraies routes, les vrais
+formulaires et les vrais appels API — chaque bouton, chaque validation et chaque
+redirection est vérifiée.
+
+### 🧪 Tests (5 fichiers, 34 tests)
+- **`LoginPage.test.tsx`** (10 tests, étendu) : rendu initial (3 tests conservés),
+  validation email invalide sans appel API, connexion réussie rôle unique
+  (POST `/auth/login` + payload + navigation `/dashboard`), **utilisateur 2FA →
+  navigation `/verify-2fa`**, sélecteur de rôle multi-rôles (switch-role + payload
+  + navigation, aucun rôle non possédé proposé), échec de connexion → message,
+  lien « Mot de passe oublié » → `/forgot-password`, toggle œil du mot de passe
+- **`ForgotPasswordPage.test.tsx`** (5 tests, nouveau) : rendu du formulaire,
+  bouton désactivé email vide, POST `/auth/forgot-password` avec le payload,
+  écran succès « Email envoyé ! », erreur API affichée, lien retour `/login`
+- **`ResetPasswordPage.test.tsx`** (8 tests, nouveau) : **token manquant →
+  « Lien invalide »** + lien vers `/forgot-password`, validations (longueur,
+  majuscule/minuscule/chiffre, confirmation) **sans appel API**, POST
+  `/auth/reset-password` avec `token` + `newPassword`, écran succès, bouton
+  « Se connecter » → `/login`, erreur API
+- **`TwoFactorChallengePage.test.tsx`** (7 tests, nouveau) : rendu du challenge,
+  **redirection `/dashboard` si 2FA désactivée**, filtrage du champ code
+  (chiffres seuls, max 6, bouton désactivé/enabled), POST `/auth/2fa/verify`
+  + toast de bienvenue + navigation, code invalide → message, erreur API,
+  **« Retour à la connexion » → logout + navigation `/login`**
+- **`AuthJourneys.test.tsx`** (4 tests, nouveau) : parcours **bout en bout sur les
+  vraies routes** (AuthLayout + AuthProvider réels) — landing → `/login`,
+  `/login` → mot de passe oublié → demande envoyée → retour connexion,
+  réinitialisation complète (lien avec token → nouveau mot de passe → connexion),
+  connexion réussie → dashboard avec JWT persisté (accessToken + rôle actif)
+
+### 🐛 Corrections réelles découvertes par les tests (2 bugs de navigation)
+- **`LoginPage`** : le garde `useEffect` (redirection `/dashboard` dès
+  `isAuthenticated`) écrivait la navigation `/verify-2fa` du flux 2FA — un
+  utilisateur 2FA était envoyé au dashboard **sans vérification**. Ajout d'un
+  marqueur `navigationHandledRef` : la navigation décidée par le formulaire
+  (dashboard / 2FA) n'est plus écrasée ; la redirection automatique vers le
+  dashboard reste active pour les visites directes d'un utilisateur connecté
+- **`TwoFactorChallengePage`** : le `navigate('/dashboard')` exécuté **pendant le
+  rendu** (quand `user` devient null) écrasait la navigation « Retour à la
+  connexion » → l'utilisateur rebondissait sur `/dashboard` après déconnexion.
+  Redirection déplacée dans un `useEffect` (déconnecté → `/login`, 2FA désactivée
+  → `/dashboard`) — comportement identique pour les autres cas, aucun rendu
+  parasite
+
+### ✅ Validation
+- Frontend : **146 tests vitest ✓** (115 → 146, +31), `tsc` propre — suite
+  complète verte hors les 2 flaky habituels (AdminCustomFields/AuditPage,
+  timeouts d'environnement non liés, verts en isolation)
+
 ## [3.13.0] - 2026-08-10
 
 ### 🧪 Tests de régression API — contrôleurs d'administration de la plateforme configurable

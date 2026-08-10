@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -63,9 +63,15 @@ export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
 
+  // Marqueur : la navigation post-connexion a déjà été décidée par le formulaire
+  // (dashboard, 2FA, sélecteur de rôle). Empêche le garde ci-dessous d'écraser
+  // une navigation plus spécifique (ex. /verify-2fa) quand isAuthenticated passe
+  // à true au même instant que la soumission.
+  const navigationHandledRef = useRef(false);
+
   // Already authenticated (and not in the middle of choosing a role) → go to dashboard
   useEffect(() => {
-    if (isAuthenticated && !showRoleSelector) {
+    if (isAuthenticated && !showRoleSelector && !navigationHandledRef.current) {
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, showRoleSelector, navigate]);
@@ -88,6 +94,9 @@ export default function LoginPage() {
         setShowRoleSelector(true);
         return;
       }
+
+      // La navigation est décidée ici : le garde useEffect ne doit pas la remplacer.
+      navigationHandledRef.current = true;
 
       if (result?.twoFactorEnabled) {
         navigate('/verify-2fa');

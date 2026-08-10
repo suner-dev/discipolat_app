@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,8 +28,21 @@ export default function TwoFactorChallengePage() {
     onError: (err) => setError(getErrorMessage(err)),
   });
 
-  if (!user?.twoFactorEnabled) {
-    navigate('/dashboard', { replace: true });
+  // Redirection hors du challenge, en useEffect (jamais pendant le rendu) :
+  // - utilisateur déconnecté (user null, ex. « Retour à la connexion ») → /login
+  // - utilisateur sans 2FA → /dashboard
+  // Avant ce correctif, le navigate() exécuté pendant le rendu écrasait la
+  // navigation explicite « Retour à la connexion » (logout → /login) : la page
+  // renvoyait alors vers /dashboard juste après la déconnexion.
+  useEffect(() => {
+    if (!user) {
+      navigate('/login', { replace: true });
+    } else if (!user.twoFactorEnabled) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (!user || !user.twoFactorEnabled) {
     return null;
   }
 
