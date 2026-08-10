@@ -166,4 +166,78 @@ describe('SoulCreatePage — champs personnalisés', () => {
       expect(apiPut).toHaveBeenCalledWith('/custom-fields/SOUL/soul-1', { 'cf-1': 'Français' });
     });
   });
+
+  it('rend en lecture seule un champ non éditable par le rôle actif et l\'exclut de la validation', async () => {
+    // Un champ dont rolesEcriture exclut FAISEUR (rôle actif par défaut).
+    const apiGetReadOnly = vi.fn((url: string) => {
+      if (url.includes('/custom-fields/definitions')) {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'cf-ro',
+              code: 'OBSERVATIONS',
+              label: 'Observations',
+              type: 'TEXTE',
+              obligatoire: true,
+              ordre: 1,
+              defaultValue: '',
+              options: null,
+              placeholder: 'Suivi pastoral',
+              rolesLecture: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+              rolesEcriture: ['ADMIN', 'PASTEUR'], // FAISEUR ne peut pas écrire
+              actif: true,
+            },
+            {
+              id: 'cf-editable',
+              code: 'LANGUE',
+              label: 'Langue',
+              type: 'TEXTE',
+              obligatoire: true,
+              ordre: 2,
+              defaultValue: '',
+              options: null,
+              placeholder: 'Ex : Français',
+              rolesLecture: [],
+              rolesEcriture: [],
+              actif: true,
+            },
+          ],
+        });
+      }
+      if (url.includes('/users')) {
+        return Promise.resolve({ data: { content: [{ id: 'faiseur-test', firstName: 'Fabrice', lastName: 'Faiseur', email: 'fabrice@test.com', role: 'FAISEUR', roles: ['FAISEUR'], activeRole: 'FAISEUR', estChefDeFamille: false, statut: 'ACTIVE', createdAt: '', updatedAt: '' }] } });
+      }
+      return Promise.resolve({ data: { content: [] } });
+    });
+    (apiGet as ReturnType<typeof vi.fn>).mockImplementation(apiGetReadOnly);
+
+    renderWithProviders();
+
+    await waitFor(() => {
+      expect(screen.getByText('Informations complémentaires')).toBeInTheDocument();
+    });
+
+    // Le champ non éditable est marqué lecture seule et désactivé.
+    expect(screen.getByText('(lecture seule)')).toBeInTheDocument();
+    const roContainer = screen.getByText('Observations').closest('div');
+    const roInput = roContainer?.querySelector('input');
+    expect(roInput).toBeDisabled();
+
+    // Champs standards + champ éditable requis.
+    changeInputByLabel('Nom *', 'Kabila');
+    const selects = screen.getAllByRole('combobox');
+    fireEvent.change(selects[3], { target: { value: 'faiseur-test' } });
+    fireEvent.change(screen.getByPlaceholderText('Ex : Français'), { target: { value: 'Français' } });
+
+    // La validation ne bloque pas sur le champ lecture seule (non rempli).
+    fireEvent.click(screen.getByRole('button', { name: /créer l'âme/i }));
+
+    await waitFor(() => {
+      expect(apiPost).toHaveBeenCalledTimes(1);
+    });
+    // Seul le champ éditable est envoyé.
+    await waitFor(() => {
+      expect(apiPut).toHaveBeenCalledWith('/custom-fields/SOUL/soul-1', { 'cf-editable': 'Français' });
+    });
+  });
 });

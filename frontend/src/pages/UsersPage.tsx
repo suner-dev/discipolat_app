@@ -477,6 +477,7 @@ export default function UsersPage() {
                     definitions={customFields.definitions}
                     values={customFields.values}
                     onChange={customFields.setValue}
+                    readOnlyFieldIds={customFields.readOnlyFieldIds}
                   />
                   {customFields.missingRequired.length > 0 && (
                     <p className="text-[11px] text-red-500">

@@ -1,5 +1,56 @@
 # Changelog
 
+## [3.10.0] - 2026-08-10
+
+### 🌱 Données de démonstration migrées vers la plateforme configurable (V39)
+
+**Principe** : les nouvelles tables de configuration (champs personnalisés V38, rôles
+V37) sont désormais peuplées avec des données d'exemple cohérentes avec le jeu de démo
+existant (V2) — l'admin voit immédiatement comment la plateforme s'adapte, sans devoir
+créer chaque configuration à la main.
+
+### 🗄️ Migration `V39__demo_seed_platform_config.sql`
+- **Champs personnalisés par défaut** (`custom_field_definitions`, 11 définitions) :
+  - `SOUL` — Langue parlée, Profession, Date de naissance, Niveau d'études (sélection),
+    Situation familiale (sélection), Talent/don, Observations (textarea, lecture/écriture
+    restreintes aux rôles pastoraux)
+  - `USER` — Téléphone secondaire, Profession
+  - `FAMILY` — Quartier · `DEPARTMENT` — Objectif de l'année
+- **Valeurs de démonstration** (`custom_field_values`) : remplies pour les âmes seedées
+  (Marie Dupont, Jean Martin, Sophie Bernard, Anne Robert, Claire Durand), les utilisateurs
+  seedés (pasteur, responsables, chef — téléphone secondaire, profession), la famille
+  Timothée (Quartier) et le département Jeunesse (Objectif de l'année) — le rendu des
+  formulaires dynamiques et des bundles est visible dès la connexion
+- **Rôles personnalisés exemples** (`platform_roles` non système + `role_permissions`) :
+  `SECRETAIRE`, `TRESORIER`, `RESPONSABLE_COMMUNICATION`, `INTERCESSEUR` — chacun avec
+  une matrice de permissions prête à l'emploi, visible dans la gestion des rôles
+  (PermissionsPage) et modifiable/duplicable sans code
+- Idempotent : `ON CONFLICT … DO NOTHING` partout (rejouable sans doublons)
+
+### 🔒 Sécurité — enforcement serveur de `roles_ecriture` + `roles_lecture` / `actif`
+- **`CustomFieldService.saveValues`** : le rôle ACTIF doit être autorisé à écrire chaque
+  champ (`roles_ecriture` vide = tous ; sinon liste de rôles). Les champs non éditables,
+  **illisibles** (cohérence lecture/écriture, défense en profondeur) ou **désactivés**
+  (`actif=false`) sont **silencieusement ignorés** : le formulaire principal ne peut pas
+  échouer à cause d'une restriction, et un appel direct à l'API
+  (`PUT /custom-fields/{type}/{id}`) ne peut pas écrire un champ réservé à d'autres rôles
+  (le champ `OBSERVATIONS` de la démo le démontre)
+- **Robustesse** : résolution des définitions en **une seule requête** (`findAllById`,
+  fin du N+1 par champ) ; clés non-UUID, définitions supprimées entre-temps et définitions
+  d'une autre entité sont ignorées sans abandonner la sauvegarde en bloc
+- **Web** : `useCustomFieldForm` expose `readOnlyFieldIds` (calculé sur `roles_ecriture` +
+  rôle actif) ; le renderer désactive ces champs avec la mention « (lecture seule) », les
+  exclut de la validation obligatoire et du payload envoyé — plus aucune perte silencieuse
+  de saisie côté interface
+- **Tests** : `CustomFieldServiceTest` étendu (11 tests — lecture seule, désactivé, autre
+  entité, UUID invalide, batch, valeurs vides) ; `SoulCustomFields.test.tsx` +1 (champ
+  lecture seule désactivé et exclu de la validation/sauvegarde) ; tests pré-existants
+  `PermissionServiceTest`/`UserServiceTest` corrigés (sémantique permissive documentée +
+  mock `findAllById` manquant)
+- **Validation réelle** : migration exécutée sur PostgreSQL 16 (Flyway V39 `success=true`)
+  + rejeu manuel idempotent vérifié (comptes inchangés : 11 définitions, 23 valeurs, 4 rôles) —
+  Backend : **260 tests Maven ✓** · Frontend : **93 tests vitest ✓**, `tsc` propre
+
 ## [3.9.0] - 2026-08-07
 
 ### 🔎 Journal d'audit — filtres utilisateur + plage de dates, export CSV

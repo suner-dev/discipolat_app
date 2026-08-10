@@ -125,8 +125,8 @@ class PermissionServiceTest {
 
     @Test
     void hasPermission_WithEnabledPermission_ShouldReturnTrue() {
-        String role = "FAISEUR";
-        String permission = "SOUL_CREATE";
+        String role = "faiseur";
+        String permission = "soul_create";
 
         when(jdbcTemplate.queryForList(anyString(), anyString(), anyString()))
                 .thenReturn(List.of(Map.of("enabled", true)));
@@ -134,14 +134,16 @@ class PermissionServiceTest {
         boolean result = permissionService.hasPermission(role, permission);
 
         assertTrue(result);
+        // Le rôle et la permission sont normalisés en majuscules.
         verify(jdbcTemplate).queryForList(
-                "SELECT enabled FROM role_permissions WHERE role = ? AND permission = ? AND enabled = true",
-                role, permission);
+                "SELECT enabled FROM role_permissions WHERE role = ? AND permission = ?",
+                "FAISEUR", "SOUL_CREATE");
     }
 
     @Test
     void hasPermission_WithDisabledPermission_ShouldReturnFalse() {
-        when(jdbcTemplate.queryForList(anyString(), anyString(), anyString())).thenReturn(List.of());
+        when(jdbcTemplate.queryForList(anyString(), anyString(), anyString()))
+                .thenReturn(List.of(Map.of("enabled", false)));
 
         boolean result = permissionService.hasPermission("FAISEUR", "FAMILY_DELETE");
 
@@ -149,11 +151,12 @@ class PermissionServiceTest {
     }
 
     @Test
-    void hasPermission_WithUnknownRole_ShouldReturnFalse() {
+    void hasPermission_WithUnknownRole_ShouldReturnTruePermissif() {
+        // Sémantique voulue : pas de ligne dans la matrice = permissif (rétrocompatibilité).
         when(jdbcTemplate.queryForList(anyString(), anyString(), anyString())).thenReturn(List.of());
 
         boolean result = permissionService.hasPermission("UNKNOWN", "ANY_PERMISSION");
 
-        assertFalse(result);
+        assertTrue(result);
     }
 }

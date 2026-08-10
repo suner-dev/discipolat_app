@@ -297,6 +297,7 @@ export default function SoulCreatePage() {
               definitions={customFields.definitions}
               values={customFields.values}
               onChange={customFields.setValue}
+              readOnlyFieldIds={customFields.readOnlyFieldIds}
             />
             {customFields.missingRequired.length > 0 && (
               <p className="text-xs text-red-500 mt-3">

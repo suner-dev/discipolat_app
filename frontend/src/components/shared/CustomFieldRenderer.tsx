@@ -18,6 +18,8 @@ interface Props {
   values: Record<string, string>;
   onChange: (fieldId: string, value: string) => void;
   readOnly?: boolean;
+  /** Champs visibles mais non éditables par le rôle actif (roles_ecriture). */
+  readOnlyFieldIds?: Set<string>;
 }
 
 /**
@@ -25,7 +27,7 @@ interface Props {
  * Types supportés : TEXTE, NOMBRE, DATE, DATE_HEURE, BOOLEEN, SELECTION,
  * SELECTION_MULTIPLE, FICHIER, IMAGE, TELEPHONE, EMAIL, URL, TEXTAREA.
  */
-export default function CustomFieldRenderer({ definitions, values, onChange, readOnly }: Props) {
+export default function CustomFieldRenderer({ definitions, values, onChange, readOnly, readOnlyFieldIds }: Props) {
   if (definitions.length === 0) return null;
 
   return (
@@ -33,10 +35,16 @@ export default function CustomFieldRenderer({ definitions, values, onChange, rea
       {definitions.map((def) => {
         const val = values[def.id] ?? def.value ?? def.defaultValue ?? '';
         const required = def.obligatoire;
+        const fieldReadOnly = readOnly || readOnlyFieldIds?.has(def.id) || false;
         const label = (
           <label className="label">
             {def.label}
             {required && <span className="text-red-500 ml-0.5">*</span>}
+            {fieldReadOnly && !readOnly && (
+              <span className="ml-1.5 text-[10px] font-medium text-gray-400 dark:text-gray-500">
+                (lecture seule)
+              </span>
+            )}
           </label>
         );
 
@@ -44,7 +52,7 @@ export default function CustomFieldRenderer({ definitions, values, onChange, rea
           value: val,
           onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
             onChange(def.id, e.target.value),
-          disabled: readOnly,
+          disabled: fieldReadOnly,
           placeholder: def.placeholder || '',
           className: 'input',
           id: `cf-${def.id}`,
@@ -62,7 +70,7 @@ export default function CustomFieldRenderer({ definitions, values, onChange, rea
                   role="switch"
                   aria-checked={val === 'true'}
                   onClick={() => onChange(def.id, val === 'true' ? 'false' : 'true')}
-                  disabled={readOnly}
+                  disabled={fieldReadOnly}
                   className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${val === 'true' ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${val === 'true' ? 'translate-x-5' : ''}`} />
@@ -87,7 +95,7 @@ export default function CustomFieldRenderer({ definitions, values, onChange, rea
                         const next = selected ? current.filter((x) => x !== opt) : [...current, opt];
                         onChange(def.id, next.join(','));
                       }}
-                      disabled={readOnly}
+                      disabled={fieldReadOnly}
                       className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${
                         selected
                           ? 'bg-primary-500/15 border-primary-500/30 text-primary-700 dark:text-primary-400'

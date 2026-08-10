@@ -152,9 +152,14 @@ class UserServiceTest {
     @Test
     void getFaiseurWorkload_SuperUser_ShouldReturnAllFaiseurs() {
         UUID faiseurId = UUID.randomUUID();
+        UUID faiseurId2 = UUID.randomUUID();
+        User faiseur1 = userWithRole(UserRole.FAISEUR);
+        faiseur1.setId(faiseurId);
+        User faiseur2 = userWithRole(UserRole.FAISEUR);
+        faiseur2.setId(faiseurId2);
         when(securityUtils.isSuperUser()).thenReturn(true);
-        when(userRepository.findByRole(UserRole.FAISEUR))
-                .thenReturn(java.util.List.of(userWithRole(UserRole.FAISEUR), userWithRole(UserRole.FAISEUR)));
+        when(userRepository.findByRole(UserRole.FAISEUR)).thenReturn(java.util.List.of(faiseur1, faiseur2));
+        when(userRepository.findAllById(any())).thenReturn(java.util.List.of(faiseur1, faiseur2));
         when(soulRepository.countByFaiseurId(any())).thenReturn(5L);
 
         var result = userService.getFaiseurWorkload(null);
