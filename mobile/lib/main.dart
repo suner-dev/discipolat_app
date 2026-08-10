@@ -5,6 +5,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'data/local/sync_service.dart';
 import 'data/local/database.dart';
+import 'data/models/branding.dart';
+import 'data/services/providers.dart';
 import 'presentation/widgets/glass_theme.dart';
 import 'app.dart';
 
@@ -19,11 +21,20 @@ void main() async {
   );
 }
 
-class DiscipolatApp extends ConsumerWidget {
+class DiscipolatApp extends ConsumerStatefulWidget {
   const DiscipolatApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DiscipolatApp> createState() => _DiscipolatAppState();
+}
+
+class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
+  /// Dernier branding appliqué à la palette (évite de re-dériver les couleurs
+  /// à chaque rebuild alors qu'elles n'ont pas changé).
+  Branding? _appliedBranding;
+
+  @override
+  Widget build(BuildContext context) {
     // Sync listener for connectivity changes
     ref.listen(connectivityProvider, (prev, next) {
       next.whenData((results) {
@@ -42,8 +53,21 @@ class DiscipolatApp extends ConsumerWidget {
       });
     });
 
+    // Thème dynamique : identité de l'église chargée depuis /public/settings.
+    // Dès que le branding arrive, la palette est dérivée PUIS le MaterialApp est
+    // reconstruit — le thème et tous les widgets lisent AppColors.primary au
+    // moment du build. En cas d'échec réseau, le branding par défaut est utilisé.
+    final branding = ref.watch(brandingProvider).valueOrNull;
+    if (branding != null && branding != _appliedBranding) {
+      _appliedBranding = branding;
+      AppColors.applyBranding(
+        branding.primaryColor,
+        accentColor: branding.accentColor,
+      );
+    }
+
     return MaterialApp.router(
-      title: 'Discipolat',
+      title: branding?.churchName ?? 'Discipolat',
       debugShowCheckedModeBanner: false,
       theme: GlassTheme.darkTheme,
       darkTheme: GlassTheme.darkTheme,

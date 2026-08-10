@@ -6,16 +6,62 @@ import 'package:flutter/material.dart';
 // ============================================
 
 /// Primary brand colors
+///
+/// Les trois variantes `primary`/`primaryLight`/`primaryDark` sont **mutables** :
+/// elles sont initialisées avec le vert Discipolat par défaut puis remplacées
+/// par l'identité de l'église chargée depuis `GET /api/v1/public/settings`
+/// (voir [AppColors.applyBranding]). Toute la palette en dérive à l'exécution.
 class AppColors {
-  static const primary = Color(0xFF16A34A);
-  static const primaryLight = Color(0xFF22C55E);
-  static const primaryDark = Color(0xFF15803D);
-  static const gold = Color(0xFFF59E0B);
-  static const goldLight = Color(0xFFFBBF24);
+  AppColors._();
+
+  /// Couleur par défaut — vert Discipolat.
+  static const defaultPrimary = Color(0xFF16A34A);
+  static const defaultGold = Color(0xFFF59E0B);
+  static const defaultGoldLight = Color(0xFFFBBF24);
   static const surface = Color(0xFFF8FAFC);
   static const surfaceDark = Color(0xFF030712);
   static const cardDark = Color(0xFF111827);
   static const cardLight = Color(0xFFFFFFFF);
+
+  static Color primary = defaultPrimary;
+  static Color primaryLight = const Color(0xFF22C55E);
+  static Color primaryDark = const Color(0xFF15803D);
+  static Color accent = defaultGold;
+  static Color accentLight = defaultGoldLight;
+
+  /// Couleur des boutons (bouton principal) — par défaut = couleur principale.
+  static Color button = defaultPrimary;
+
+  /// Police de caractères de l'église (null = police par défaut de l'app).
+  static String? fontFamily;
+
+  /// Applique l'identité de l'église à la palette : la couleur principale
+  /// pilote `primary`, `primaryLight` et `primaryDark` (nuances dérivées),
+  /// la couleur d'accent pilote `accent`/`accentLight`, et la couleur de
+  /// bouton pilote `button` si fournie.
+  static void applyBranding(
+    Color primaryColor, {
+    Color? accentColor,
+    Color? buttonColor,
+    String? font,
+  }) {
+    primary = primaryColor;
+    primaryLight = _lighten(primaryColor, 0.28);
+    primaryDark = _darken(primaryColor, 0.22);
+    if (accentColor != null) {
+      accent = accentColor;
+      accentLight = _lighten(accentColor, 0.24);
+    }
+    if (buttonColor != null) {
+      button = buttonColor;
+    } else {
+      button = primaryColor;
+    }
+    fontFamily = font;
+  }
+
+  static Color _lighten(Color color, double amount) => Color.lerp(color, Colors.white, amount) ?? color;
+  static Color _darken(Color color, double amount) => Color.lerp(color, Colors.black, amount) ?? color;
 }
 
 /// Dark glassmorphism theme
@@ -57,7 +103,7 @@ class GlassTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         labelStyle: const TextStyle(color: Colors.white60),
         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
@@ -65,7 +111,7 @@ class GlassTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.button,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),

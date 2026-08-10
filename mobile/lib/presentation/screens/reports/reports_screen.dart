@@ -362,7 +362,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         value: progress,
                         strokeWidth: 4,
                         backgroundColor: Colors.white.withValues(alpha: 0.08),
-                        valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                        valueColor: AlwaysStoppedAnimation(AppColors.primary),
                       ),
                     ),
                     Text(
@@ -395,7 +395,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: Colors.white.withValues(alpha: 0.08),
-                valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                valueColor: AlwaysStoppedAnimation(AppColors.primary),
                 minHeight: 3,
               ),
             ),

@@ -201,7 +201,7 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                                 ),
                                 Text(
                                   '${m['dateNaissance'] ?? ''}'.substring(5, 10),
-                                  style: const TextStyle(color: AppColors.gold, fontSize: 12),
+                                  style: TextStyle(color: AppColors.accent, fontSize: 12),
                                 ),
                               ],
                             ),
@@ -251,7 +251,7 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                                   ),
                                 ),
                                 if (isSelected)
-                                  const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
+                                  Icon(Icons.check_circle, color: AppColors.primary, size: 20),
                                 const Icon(Icons.chevron_right, color: Colors.white24),
                               ],
                             ),

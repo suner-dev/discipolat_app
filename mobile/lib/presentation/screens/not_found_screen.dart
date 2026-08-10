@@ -38,7 +38,7 @@ class NotFoundScreen extends StatelessWidget {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: [AppColors.primary, AppColors.primaryDark],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -56,7 +56,7 @@ class NotFoundScreen extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Error code
-                  const Text(
+                  Text(
                     '404',
                     style: TextStyle(
                       fontSize: 80,

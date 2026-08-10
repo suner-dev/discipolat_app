@@ -160,7 +160,7 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
                                       value: totalEtapes == 0 ? 0 : approbations / totalEtapes,
                                       minHeight: 4,
                                       backgroundColor: Colors.white.withValues(alpha: 0.08),
-                                      valueColor: const AlwaysStoppedAnimation(AppColors.primaryLight),
+                                      valueColor: AlwaysStoppedAnimation(AppColors.primaryLight),
                                     ),
                                   ),
                                   const SizedBox(height: 2),

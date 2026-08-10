@@ -248,7 +248,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text('${w['soulCount'] ?? 0} âmes',
-                    style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
               ),
             ]),
           );

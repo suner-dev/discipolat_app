@@ -467,7 +467,7 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 5),
-                  child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle)),
+                  child: Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -144,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     width: 88,
                     height: 88,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: [AppColors.primary, AppColors.primaryLight],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -253,9 +253,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.science, color: AppColors.gold, size: 16),
+                            Icon(Icons.science, color: AppColors.accent, size: 16),
                             const SizedBox(width: 6),
-                            Text('Comptes de test', style: TextStyle(color: AppColors.goldLight, fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text('Comptes de test', style: TextStyle(color: AppColors.accentLight, fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const SizedBox(height: 8),

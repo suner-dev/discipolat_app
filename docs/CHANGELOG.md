@@ -1,5 +1,92 @@
 # Changelog
 
+## [3.12.0] - 2026-08-10
+
+### 🧪 Tests de régression — pages d'administration de la plateforme configurable
+
+**Principe** : les 4 pages d'administration centralisée (identité, modules, menus,
+champs personnalisés) disposent désormais de tests de régression dédiés qui couvrent
+le rendu, chaque action CRUD et les chemins d'erreur — pour que la modularité de la
+plateforme ne régresse pas silencieusement.
+
+### 🗂️ Nouveaux fichiers de test (4 fichiers, 22 tests)
+- **`AdminSettingsPage.test.tsx`** (5 tests) : rendu du formulaire pré-rempli depuis
+  `/settings` (identité, couleurs, réseaux sociaux), enregistrement PUT `/settings` avec
+  le payload modifié, reset POST `/settings/reset`, modification d'une couleur de base,
+  **échec d'enregistrement → toast d'erreur**
+- **`PlatformModulesPage.test.tsx`** (5 tests) : modules groupés par section avec badges
+  clés uniques et état réel du toggle (`aria-checked`) du module désactivé, toggle PUT
+  `/platform/modules/{key}`, création POST via le modal (clé/libellé), suppression DELETE
+  avec confirmation, **échec du toggle → toast d'erreur**
+- **`PlatformMenusPage.test.tsx`** (6 tests) : menus groupés par section avec badges de
+  rôles et de modules, création POST via le modal, toggle PUT, réordonnancement POST
+  `/platform/menus/reorder` (assertion du tableau d'ordre échangé), suppression DELETE,
+  **échec de création → toast d'erreur**
+- **`AdminCustomFieldsPage.test.tsx`** (6 tests) : onglets par entité (Âmes/Utilisateurs)
+  avec rechargement des définitions au changement d'onglet, création POST (payload
+  entité + code + libellé), édition PUT (modal pré-rempli), suppression DELETE,
+  **échec de création → toast d'erreur**
+
+### 🧪 Conventions & robustesse
+- Convention `vi.hoisted` + mock du module `@/lib/api` aligné sur les autres tests ;
+  `react-hot-toast` mocké pour asserter les messages d'erreur (aucune dépendance DOM
+  du vrai toast)
+- Assertions précises (badges clés uniques, état `aria-checked`, payloads
+  `objectContaining`, ordre du réordonnancement) — pas d'assertions tautologiques
+- **Points de revue corrigés** : assertion faible `getAllByText('Transferts').length >= 1`
+  remplacée par badge clé unique + état du toggle ; ajout d'un test d'échec par fichier
+
+### ✅ Validation
+- Frontend : **115 tests vitest ✓** (93 + 22), `tsc` propre — suite complète verte
+  (les 2 tests flaky connus Pastoral360/AuditPage passent en isolation et dans la suite
+  complète)
+
+## [3.11.0] - 2026-08-10
+
+### 📱 Mobile — thème dynamique (branding église)
+
+**Principe** : l'application mobile applique désormais la palette de couleurs
+configurée dans l'administration web (ChurchSettings). À chaque démarrage, le
+client fetch `GET /api/v1/public/settings` et dérive les nuances — sans
+authentification, sans dépendance au code.
+
+### 🎨 Palette mutable (`AppColors` réécrit)
+- `AppColors.primary`/`primaryLight`/`primaryDark` passent de `static const` à
+  `static Color` mutable, initialisés avec le vert Discipolat (fallback)
+- `AppColors.applyBranding(Color primary, {Color? accentColor})` : dérive
+  `primaryLight` et `primaryDark` via `Color.lerp` (blanc/noir), et met à jour
+  `accent`/`accentLight` pour la couleur secondaire
+- `gold`/`goldLight` renommés en `accent`/`accentLight` pour cohérence sémantique
+- 11 usages `const` dans les écrans (login, 404, rapports, utilisateurs, dashboards,
+  transferts) dé-constés pour référencer les variables mutables
+
+### 🧩 Modèle `Branding` + provider
+- **`data/models/branding.dart`** : parse `PublicBrandingResponse` (churchName,
+  primaryColor, accentColor, fontFamily, etc.) + helper `colorFromHex` (fallback
+  typé, format `#RRGGBB`/`#AARRGGBB`)
+- **`data/services/providers.dart`** : `brandingProvider` (FutureProvider) fetch
+  `/public/settings` via l'ApiService existante ; toute erreur réseau → branding
+  par défaut (l'application démarre toujours)
+
+### 🏗️ Application dans `DiscipolatApp` (main.dart)
+- `DiscipolatApp` devient `ConsumerStatefulWidget` : watch `brandingProvider`,
+  applique `AppColors.applyBranding(...)` dès que le branding arrive, puis
+  reconstruit `MaterialApp.router` — le thème, les widgets et la `colorScheme`
+  lisent `AppColors.primary` au moment du build, donc la nouvelle couleur
+  s'applique à toute l'interface sans latence résiduelle
+- `title` de l'application alimenté par `churchName` (fallback `'Discipolat'`)
+
+### 🧪 Tests
+- **Nouveau `test/branding_theme_test.dart`** (7 tests) :
+  - 3 unit tests `colorFromHex` (format valide, sans dièse, invalide → fallback)
+  - 2 unit tests `Branding.fromJson` (contrat backend, valeurs par défaut)
+  - 2 unit tests `AppColors.applyBranding` (dérivation des nuances, thème suit)
+  - 2 tests widget : override du provider avec couleur personnalisée → vérifie
+    `AppColors.primary` mise à jour ; fallback quand le provider échoue
+- **widget_test.dart** inchangé (le provider retombe sur le branding par défaut)
+- **Suites existantes inchangées** : 34 tests widget ✓, `flutter analyze` sans
+  nouvelle issue
+
 ## [3.10.0] - 2026-08-10
 
 ### 🌱 Données de démonstration migrées vers la plateforme configurable (V39)
