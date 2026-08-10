@@ -5,7 +5,12 @@ spring:
     password:
   sql:
     init:
-      mode: always
+      # `embedded` : le script h2-init.sql (syntaxe H2 : CREATE DOMAIN jsonb)
+      # ne s'exécute que sur la base embarquée H2 des tests locaux. En CI,
+      # SPRING_DATASOURCE_URL pointe vers PostgreSQL (jsonb natif) : le script
+      # est ignoré et le schéma vient de jpa.ddl-auto (create-drop).
+      # Sans cela, la syntaxe H2 plantait le chargement du contexte CI.
+      mode: embedded
       schema-locations: classpath:h2-init.sql
   jpa:
     hibernate:
