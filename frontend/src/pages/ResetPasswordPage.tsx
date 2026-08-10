@@ -50,8 +50,8 @@ export default function ResetPasswordPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 mb-4">
           <AlertTriangle className="w-8 h-8 text-red-400" />
         </div>
-        <h2 className="text-xl font-bold text-white font-display">Lien invalide</h2>
-        <p className="text-sm text-gray-400">Ce lien de réinitialisation est invalide ou a expiré.</p>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white font-display">Lien invalide</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Ce lien de réinitialisation est invalide ou a expiré.</p>
         <div className="divider-glow my-4" />
         <Link to="/forgot-password"
           className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-medium text-sm
@@ -70,8 +70,8 @@ export default function ResetPasswordPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/20 mb-4">
           <CheckCircle2 className="w-8 h-8 text-green-400" />
         </div>
-        <h2 className="text-xl font-bold text-white font-display">Mot de passe réinitialisé !</h2>
-        <p className="text-sm text-gray-400">Votre mot de passe a été modifié avec succès.</p>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white font-display">Mot de passe réinitialisé !</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Votre mot de passe a été modifié avec succès.</p>
         <div className="divider-glow my-4" />
         <button onClick={() => navigate('/login')}
           className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-medium text-sm
@@ -91,10 +91,10 @@ export default function ResetPasswordPage() {
           <Shield className="w-3 h-3" />
           Sécurité
         </div>
-        <h2 className="text-2xl font-bold text-white font-display animate-slide-up">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display animate-slide-up">
           Nouveau mot de passe
         </h2>
-        <p className="mt-1.5 text-sm text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
+        <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
           Choisissez un mot de passe sécurisé
         </p>
       </div>
@@ -102,18 +102,18 @@ export default function ResetPasswordPage() {
       <form onSubmit={handleSubmit} className="space-y-5 animate-slide-up" style={{ animationDelay: '100ms' }}>
         {error && (
           <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
-            <p className="text-sm text-red-300">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-300">{error}</p>
           </div>
         )}
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1.5">Nouveau mot de passe</label>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">Nouveau mot de passe</label>
           <div className="relative group">
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
-              className="w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500
+              className="w-full rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500
                          px-4 py-3 pr-12 text-sm
                          focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20
                          transition-all duration-200"
@@ -125,7 +125,7 @@ export default function ResetPasswordPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -133,12 +133,12 @@ export default function ResetPasswordPage() {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1.5">Confirmer le mot de passe</label>
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">Confirmer le mot de passe</label>
           <input
             id="confirmPassword"
             type="password"
             autoComplete="new-password"
-            className="w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500
+            className="w-full rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500
                        px-4 py-3 text-sm
                        focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20
                        transition-all duration-200"

@@ -8,6 +8,8 @@ import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRiskHistory;
 import com.discipolat.modules.families.domain.FamilyRiskService;
 import com.discipolat.modules.families.domain.FamilyService;
+import com.discipolat.modules.transfers.api.TransferResponse;
+import com.discipolat.modules.transfers.domain.TransferBridgeService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import jakarta.validation.Valid;
@@ -33,12 +35,15 @@ public class FamilyController {
     private final FamilyService familyService;
     private final FamilyRiskService familyRiskService;
     private final SoulRepository soulRepository;
+    private final TransferBridgeService transferBridgeService;
 
     public FamilyController(FamilyService familyService, FamilyRiskService familyRiskService,
-                            SoulRepository soulRepository) {
+                            SoulRepository soulRepository,
+                            TransferBridgeService transferBridgeService) {
         this.familyService = familyService;
         this.familyRiskService = familyRiskService;
         this.soulRepository = soulRepository;
+        this.transferBridgeService = transferBridgeService;
     }
 
     @GetMapping
@@ -84,7 +89,7 @@ public class FamilyController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR') && @perm.has('FAMILY','DELETE')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable UUID id) {
         try {
             familyService.delete(id);
@@ -95,11 +100,15 @@ public class FamilyController {
         }
     }
 
+    /**
+     * US-07 : changement du chef de famille.
+     * Passe désormais par le MOTEUR DE WORKFLOW : demande soumise au circuit de
+     * validation configuré par le pasteur (exécution immédiate si circuit vide).
+     */
     @PatchMapping("/{id}/chief")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
-    public ResponseEntity<FamilyResponse> reassignChief(@PathVariable UUID id, @RequestBody ReassignChiefRequest request) {
-        familyService.reassignChef(id, request.newChefId());
-        return ResponseEntity.ok(FamilyResponse.from(familyService.findById(id)));
+    public ResponseEntity<TransferResponse> reassignChief(@PathVariable UUID id, @RequestBody ReassignChiefRequest request) {
+        return ResponseEntity.ok(transferBridgeService.reassignChef(id, request.newChefId()));
     }
 
     @GetMapping("/by-chef/{chefId}")

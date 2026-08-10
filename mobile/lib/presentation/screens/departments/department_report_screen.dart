@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/attachment_chips.dart';
 import '../../widgets/glass_theme.dart';
 
 /// Rapport hebdomadaire d'un département — équivalent mobile de la page web
@@ -468,6 +469,7 @@ class _DepartmentReportScreenState extends State<DepartmentReportScreen> {
     final absents = stats['totalAbsents'] as num?;
     final sorties = stats['totalSorties'] as num?;
     final maintenus = stats['totalMaintenus'] as num?;
+    final piecesJointes = (stats['piecesJointes'] as List<dynamic>?) ?? const [];
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -504,6 +506,7 @@ class _DepartmentReportScreenState extends State<DepartmentReportScreen> {
                 _familyStat('Maintenus', maintenus?.toString() ?? '-', Colors.blue),
               ],
             ),
+            if (piecesJointes.isNotEmpty) ...[const SizedBox(height: 10), AttachmentChips(pieces: piecesJointes)],
           ],
         ),
       ),

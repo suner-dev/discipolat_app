@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
@@ -194,6 +195,10 @@ class _UsersListScreenState extends State<UsersListScreen> {
   }
 
   Widget _buildWorkloadSection() {
+    // Le backend scope la charge de travail par rôle actif :
+    // responsable → faiseurs de ses départements ; super-utilisateurs → tous les faiseurs.
+    final isResponsable = AuthState().activeRole == 'RESPONSABLE';
+    final title = isResponsable ? 'Charge de travail de mon département' : 'Charge de travail des Faiseurs';
     return GlassCard(
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 16),
@@ -201,33 +206,53 @@ class _UsersListScreenState extends State<UsersListScreen> {
         Row(children: [
           Icon(Icons.bar_chart, color: AppColors.primary, size: 18),
           const SizedBox(width: 8),
-          const Text('Charge de travail', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-          const Spacer(),
+          Expanded(
+            child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          ),
           GestureDetector(onTap: () => setState(() => _showWorkload = false),
               child: Icon(Icons.expand_less, color: Colors.white38, size: 20)),
         ]),
         const SizedBox(height: 12),
-        ..._workload.take(6).map((w) => Container(
-          margin: const EdgeInsets.only(bottom: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(children: [
-            Expanded(child: Text('${w['faiseurName'] ?? '—'}',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12))),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text('${w['soulCount'] ?? 0} âmes',
-                  style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+        ..._workload.take(6).map((w) {
+          final charge = (w['charge'] as String?) ?? '';
+          final chargeColor = charge == 'SURCHARGÉ'
+              ? Colors.redAccent
+              : charge == 'LEGER' ? Colors.greenAccent : AppColors.primary;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ]),
-        )),
+            child: Row(children: [
+              Expanded(child: Text('${w['faiseurName'] ?? '—'}',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12))),
+              if (charge.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: chargeColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    charge == 'SURCHARGÉ' ? 'Surchargé' : charge == 'LEGER' ? 'Léger' : 'Normal',
+                    style: TextStyle(color: chargeColor, fontSize: 9, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('${w['soulCount'] ?? 0} âmes',
+                    style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+              ),
+            ]),
+          );
+        }),
       ]),
     );
   }
@@ -376,13 +401,23 @@ class _ActionModalState extends State<_ActionModal> {
     setState(() => _isProcessing = true);
     try {
       final id = widget.user['id'] as String;
+      String? statutDemande;
       if (widget.action == 'promote') await widget.apiService.patch('/users/$id/promote-faiseur');
       else if (widget.action == 'demote') await widget.apiService.patch('/users/$id/demote', data: {'newRole': _demoteRole});
-      else if (widget.action == 'transfer') await widget.apiService.patch('/users/$id/transfer', data: {
-        'nouvelleFamilleId': _transferFamilleId, 'transfererAmes': _transferAmes,
-      });
+      else if (widget.action == 'transfer') {
+        final res = await widget.apiService.patch('/users/$id/transfer', data: {
+          'nouvelleFamilleId': _transferFamilleId, 'transfererAmes': _transferAmes,
+        });
+        statutDemande = (res.data is Map) ? (res.data as Map)['statut'] as String? : null;
+      }
       else if (widget.action == 'hardDelete') await widget.apiService.delete('/users/$id/hard-delete');
       widget.onDone();
+      if (mounted && widget.action == 'transfer') {
+        final message = statutDemande == 'EXECUTE'
+            ? 'Faiseur transféré'
+            : 'Demande de transfert soumise pour validation';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      }
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur')));
     } finally { if (mounted) setState(() => _isProcessing = false); }

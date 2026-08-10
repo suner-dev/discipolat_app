@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.SoulExitRepository;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,12 +35,14 @@ public class UserService {
     private final SoulExitRepository soulExitRepository;
     private final SoulHistoryRepository soulHistoryRepository;
     private final AuditService auditService;
+    private final WorkspaceScopeService workspaceScopeService;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        SecurityUtils securityUtils, SoulRepository soulRepository,
                        SoulExitRepository soulExitRepository,
                        SoulHistoryRepository soulHistoryRepository,
-                       AuditService auditService) {
+                       AuditService auditService,
+                       WorkspaceScopeService workspaceScopeService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.securityUtils = securityUtils;
@@ -47,6 +50,7 @@ public class UserService {
         this.soulExitRepository = soulExitRepository;
         this.soulHistoryRepository = soulHistoryRepository;
         this.auditService = auditService;
+        this.workspaceScopeService = workspaceScopeService;
     }
 
     // ======================== US-12: PROMOTE TO FAISEUR ========================
@@ -380,18 +384,67 @@ public class UserService {
 
     // ======================== US-14: FAISEUR WORKLOAD ========================
 
+    /**
+     * Charge de travail des faiseurs, scopée par rôle actif :
+     * - super-utilisateurs (Admin/Pasteur) : tous les faiseurs (ou filtrés par familleId) ;
+     * - CHEF_DE_FAMILLE actif : les faiseurs de SA famille (familleGereeId) ;
+     * - RESPONSABLE actif : les faiseurs des membres de SES départements
+     *   (via WorkspaceScopeService.accessibleFaiseurIds) ;
+     * - tout autre rôle : liste vide (hors espace métier).
+     */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getFaiseurWorkload(UUID familleId) {
-        List<User> faiseurs = userRepository.findByRole(UserRole.FAISEUR);
-        List<Map<String, Object>> workloads = new ArrayList<>();
+        List<UUID> faiseurIds;
 
-        for (User faiseur : faiseurs) {
-            long soulCount = soulRepository.countByFaiseurId(faiseur.getId());
+        if (securityUtils.isSuperUser()) {
+            if (familleId != null) {
+                // Super-utilisateurs : faiseurs des âmes de la famille demandée
+                faiseurIds = soulRepository.findAllByFamilleId(familleId).stream()
+                        .filter(s -> !s.isDeleted() && s.getFaiseurId() != null)
+                        .map(Soul::getFaiseurId)
+                        .distinct()
+                        .toList();
+            } else {
+                faiseurIds = userRepository.findByRole(UserRole.FAISEUR).stream()
+                        .map(User::getId)
+                        .toList();
+            }
+        } else if (securityUtils.hasActiveRole("CHEF_DE_FAMILLE")) {
+            // Chef : uniquement les faiseurs de la famille qu'il gère.
+            UUID fam = userRepository.findById(securityUtils.getCurrentUserId())
+                    .map(User::getFamilleGereeId)
+                    .orElse(null);
+            if (fam == null) return List.of();
+            faiseurIds = soulRepository.findAllByFamilleId(fam).stream()
+                    .filter(s -> !s.isDeleted() && s.getFaiseurId() != null)
+                    .map(Soul::getFaiseurId)
+                    .distinct()
+                    .toList();
+        } else if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            // Responsable : faiseurs des membres de ses départements.
+            faiseurIds = workspaceScopeService.accessibleFaiseurIds().stream().toList();
+        } else {
+            return List.of();
+        }
+
+        if (faiseurIds.isEmpty()) return List.of();
+
+        Map<UUID, User> faiseursById = userRepository.findAllById(faiseurIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
+        List<Map<String, Object>> workloads = new ArrayList<>();
+        for (UUID faiseurId : faiseurIds) {
+            User faiseur = faiseursById.get(faiseurId);
+            if (faiseur == null) continue;
+
+            long soulCount = soulRepository.countByFaiseurId(faiseurId);
             Map<String, Object> workload = new LinkedHashMap<>();
             workload.put("faiseurId", faiseur.getId());
-            workload.put("nom", faiseur.getFirstName() + " " + faiseur.getLastName());
+            workload.put("faiseurName", faiseur.getFirstName() + " " + faiseur.getLastName());
             workload.put("email", faiseur.getEmail());
-            workload.put("nombreAmes", soulCount);
+            workload.put("soulCount", soulCount);
+            workload.put("familleId", familleId);
+            workload.put("familleName", null);
 
             // US-14: Indicator léger/normal/surchargé
             String indicator;
@@ -403,6 +456,9 @@ public class UserService {
             workloads.add(workload);
         }
 
+        // Les plus chargés en premier
+        workloads.sort(Comparator.comparingLong(
+                (Map<String, Object> w) -> (Long) w.get("soulCount")).reversed());
         return workloads;
     }
 
@@ -439,23 +495,4 @@ public class UserService {
         return history;
     }
 
-    // ======================== US-13: TRANSFER FAISEUR ========================
-
-    @Transactional(readOnly = true)
-    public User transferFaiseur(UUID faiseurId, UUID nouvelleFamilleId, boolean transfererAmes) {
-        User faiseur = findById(faiseurId);
-        UUID ancienneFamilleId = faiseur.getFamilleGereeId();
-        faiseur.setFamilleGereeId(nouvelleFamilleId);
-        userRepository.save(faiseur);
-
-        if (transfererAmes) {
-            List<Soul> souls = soulRepository.findAllByFaiseurId(faiseurId);
-            for (Soul soul : souls) {
-                soul.setFamilleId(nouvelleFamilleId);
-                soulRepository.save(soul);
-            }
-        }
-
-        return faiseur;
-    }
 }

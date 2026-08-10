@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,7 +7,7 @@ import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import type { User, Family } from '@/types';
-import { ArrowLeft, Save, Loader2, Heart } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Heart, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const soulSchema = z.object({
@@ -40,6 +40,9 @@ export default function SoulCreatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const preselectedFamilleId = searchParams.get('familleId') || '';
+  const preselectedFamilleNom = searchParams.get('familleNom') || '';
 
   const { data: faiseurs } = useQuery({
     queryKey: ['users', 'faiseurs'],
@@ -84,6 +87,7 @@ export default function SoulCreatePage() {
       typeDisciple: 'NOUVEL_ARRIVANT',
       dateIntegration: new Date().toISOString().split('T')[0],
       faiseurId: user?.id || '',
+      familleId: preselectedFamilleId || undefined,
       niveauCroissance: 1,
     },
   });
@@ -101,6 +105,21 @@ export default function SoulCreatePage() {
           <ArrowLeft className="w-4 h-4" />
           Retour aux âmes
         </Link>
+        {preselectedFamilleId && (
+          <div className="mb-4 flex items-center gap-3 p-3.5 rounded-xl bg-primary-50/70 dark:bg-primary-900/15 border border-primary-200/60 dark:border-primary-800/40 animate-slide-down">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0">
+              <Users className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Nouvelle âme dans {preselectedFamilleNom || 'la famille sélectionnée'}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                La famille est déjà assignée — vous pouvez la modifier si besoin
+              </p>
+            </div>
+          </div>
+        )}
         <div className="page-header">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">

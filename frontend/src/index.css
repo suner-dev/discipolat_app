@@ -8,8 +8,42 @@
 
 @layer base {
   :root {
+    /* Palette primaire (vert discipolat par défaut) — surchargée à l'exécution
+       par la configuration d'identité de l'église (voir lib/branding.ts). */
     --color-primary: 22 163 74;
+    --color-primary-50: 240 253 244;
+    --color-primary-100: 220 252 231;
+    --color-primary-200: 187 247 208;
+    --color-primary-300: 134 239 172;
+    --color-primary-400: 74 222 128;
+    --color-primary-500: 34 197 94;
+    --color-primary-600: 22 163 74;
+    --color-primary-700: 21 128 61;
+    --color-primary-800: 22 101 52;
+    --color-primary-900: 20 83 45;
+    --color-primary-950: 5 46 22;
+
+    /* Palette accent (ambre/gold par défaut) — pilotée par la marque. */
     --color-gold: 245 158 11;
+    --color-gold-50: 255 251 235;
+    --color-gold-100: 254 243 199;
+    --color-gold-200: 253 230 138;
+    --color-gold-300: 252 211 77;
+    --color-gold-400: 251 191 36;
+    --color-gold-500: 245 158 11;
+    --color-gold-600: 217 119 6;
+    --color-gold-700: 180 83 9;
+    --color-gold-800: 146 64 14;
+    --color-gold-900: 120 53 15;
+    --color-gold-950: 69 26 3;
+
+    /* Couleur des boutons (par défaut = primaire). */
+    --color-button: 22 163 74;
+
+    /* Typographie pilotée par la marque. */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Playfair Display', Georgia, serif;
+
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(255, 255, 255, 0.18);
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
@@ -145,6 +179,12 @@
   .btn-primary {
     @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500
            shadow-sm hover:shadow-md hover:shadow-primary-500/20 active:shadow-sm;
+    /* Couleur pilotée par la marque de l'église (--color-button). */
+    background-color: rgb(var(--color-button));
+  }
+
+  .btn-primary:hover {
+    background-color: rgb(var(--color-button-hover, 15 128 61));
   }
 
   .btn-secondary {
@@ -168,6 +208,10 @@
 
   .btn-sm {
     @apply px-3 py-1.5 text-xs rounded-lg;
+  }
+
+  .btn-md {
+    @apply px-4 py-2 text-sm rounded-xl;
   }
 
   .btn-lg {
@@ -528,6 +572,30 @@
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+/* ============================================
+   Scroll Reveal (IntersectionObserver)
+   ============================================ */
+
+.reveal {
+  opacity: 0;
+  transform: var(--reveal-transform, translateY(24px));
+  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0) translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
 /* ============================================

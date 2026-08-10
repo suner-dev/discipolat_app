@@ -23,6 +23,7 @@ class SyncService {
     String? notesComplementaires,
     int nbSorties = 0,
     int nbMaintenus = 0,
+    List<String>? fichierIds,
   }) async {
     final isOnline = _ref.read(isOnlineProvider);
     final draftId = const Uuid().v4();
@@ -55,6 +56,7 @@ class SyncService {
           notesComplementaires: notesComplementaires,
           nbSorties: nbSorties,
           nbMaintenus: nbMaintenus,
+          fichierIds: fichierIds,
         );
         await _db.markDraftSynced(draftId);
       } catch (e) {
@@ -69,6 +71,7 @@ class SyncService {
           'notesComplementaires': notesComplementaires,
           'nbSorties': nbSorties,
           'nbMaintenus': nbMaintenus,
+          if (fichierIds != null && fichierIds.isNotEmpty) 'fichierIds': fichierIds,
         });
       }
     } else {
@@ -83,6 +86,7 @@ class SyncService {
         'notesComplementaires': notesComplementaires,
         'nbSorties': nbSorties,
         'nbMaintenus': nbMaintenus,
+        if (fichierIds != null && fichierIds.isNotEmpty) 'fichierIds': fichierIds,
       });
     }
 
@@ -99,6 +103,7 @@ class SyncService {
     String? notesComplementaires,
     int nbSorties = 0,
     int nbMaintenus = 0,
+    List<String>? fichierIds,
   }) async {
     await _api.post('/reports/maker-weekly', data: {
       'ameId': ameId,
@@ -110,6 +115,7 @@ class SyncService {
       'notesComplementaires': notesComplementaires?.isNotEmpty == true ? notesComplementaires : null,
       'nbSorties': nbSorties,
       'nbMaintenus': nbMaintenus,
+      if (fichierIds != null && fichierIds.isNotEmpty) 'fichierIds': fichierIds,
     });
   }
 

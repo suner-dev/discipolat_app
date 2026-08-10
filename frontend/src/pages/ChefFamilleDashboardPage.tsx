@@ -6,7 +6,7 @@ import {
   Users, Heart, UserCheck, FileText, Activity, Bell, Calendar,
   BookOpen, Star, AlertTriangle, TrendingUp, TrendingDown,
   Loader2, Sparkles, ChevronRight, Church, Eye, CheckCircle,
-  Clock, UserX, XCircle, Search, GitBranch,
+  Clock, UserX, XCircle, Search, GitBranch, BarChart3,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -38,6 +38,18 @@ export default function ChefFamilleDashboardPage() {
       return res.data as any;
     },
     enabled: !!user,
+  });
+
+  // Charge de travail des faiseurs de SA famille (scopée côté serveur).
+  const { data: workload } = useQuery({
+    queryKey: ['users', 'workload', familleId],
+    queryFn: async () => {
+      const res = await api.get('/users/faiseur-workload', {
+        params: familleId ? { familleId } : undefined,
+      });
+      return res.data as { faiseurId: string; faiseurName: string; soulCount: number; charge?: string }[];
+    },
+    enabled: !!familleId,
   });
 
   const famille = dashboard?.famille ?? {};
@@ -198,6 +210,39 @@ export default function ChefFamilleDashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Charge de travail des faiseurs (US-14) */}
+          {workload && workload.length > 0 && (
+            <div className="glass-card p-6 mb-6 animate-slide-up" style={{ animationDelay: '110ms' }}>
+              <div className="flex items-center gap-2 mb-1">
+                <BarChart3 className="w-4 h-4 text-primary-500" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Charge de travail des Faiseurs</h3>
+              </div>
+              <p className="text-xs text-gray-400 mb-4">Répartition des disciples suivis par faiseur</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {workload.map((w) => {
+                  const style =
+                    w.charge === 'LEGER' ? 'bg-green-100/80 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200/60 dark:border-green-700/40'
+                    : w.charge === 'SURCHARGÉ' ? 'bg-red-100/80 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200/60 dark:border-red-700/40'
+                    : 'bg-blue-100/80 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200/60 dark:border-blue-700/40';
+                  const label =
+                    w.charge === 'LEGER' ? 'Léger'
+                    : w.charge === 'SURCHARGÉ' ? 'Surchargé'
+                    : 'Normal';
+                  return (
+                    <div key={w.faiseurId} className="p-3 rounded-xl bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-800/30 border border-gray-100 dark:border-gray-700/50">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={w.faiseurName}>{w.faiseurName}</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{w.soulCount}</p>
+                      <p className="text-[10px] text-gray-400">âmes suivies</p>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold border mt-1 ${style}`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Network View: Faiseurs */}
           <div className="glass-card p-6 mb-6 animate-slide-up" style={{ animationDelay: '120ms' }}>

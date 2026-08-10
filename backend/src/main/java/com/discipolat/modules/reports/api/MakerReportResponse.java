@@ -2,6 +2,7 @@ package com.discipolat.modules.reports.api;
 
 import com.discipolat.common.enums.MotifSortie;
 import com.discipolat.common.enums.RaisonAbsence;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.reports.domain.MakerReport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,9 +31,10 @@ public record MakerReportResponse(
         String notesComplementaires,
         boolean soumis,
         LocalDateTime dateSoumission,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        List<EntityAttachmentService.AttachmentItem> piecesJointes
 ) {
-    public static MakerReportResponse from(MakerReport report) {
+    public static MakerReportResponse from(MakerReport report, List<EntityAttachmentService.AttachmentItem> piecesJointes) {
         return new MakerReportResponse(
                 report.getId(), report.getFaiseurId(), report.getAmeId(),
                 report.getSemaine(),                report.getPresencesParCulte(),
@@ -43,6 +45,7 @@ public record MakerReportResponse(
                 report.getNbMaintenus(), report.getNbInvitesCulte(),
                 report.getVieFaiseurChallenges(), report.getVieFaiseurDemandesAide(),
                 report.getVieFaiseurSuggestions(), report.getNotesComplementaires(),
-                report.isSoumis(), report.getDateSoumission(), report.getCreatedAt());
+                report.isSoumis(), report.getDateSoumission(), report.getCreatedAt(),
+                piecesJointes != null ? piecesJointes : List.of());
     }
 }

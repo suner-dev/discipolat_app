@@ -2,6 +2,8 @@ package com.discipolat.modules.events.api;
 
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.modules.events.domain.Event;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.events.domain.EventRegistration;
 import com.discipolat.modules.events.domain.EventService;
 import com.discipolat.modules.events.domain.WeeklyProgramTemplate;
@@ -25,9 +27,16 @@ import java.util.UUID;
 public class EventController {
 
     private final EventService eventService;
+    private final EntityAttachmentService attachmentService;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, EntityAttachmentService attachmentService) {
         this.eventService = eventService;
+        this.attachmentService = attachmentService;
+    }
+
+    private EventResponse toResponse(Event event) {
+        return EventResponse.from(event,
+                attachmentService.itemsFor(EntityAttachment.EntityType.EVENT, event.getId()));
     }
 
     @PostMapping
@@ -44,13 +53,13 @@ public class EventController {
                 .familleId(request.familleId())
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(EventResponse.from(eventService.create(event)));
+                .body(toResponse(eventService.create(event, request.fichierIds())));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<EventResponse> findById(@PathVariable UUID id) {
-        return ResponseEntity.ok(EventResponse.from(eventService.findById(id)));
+        return ResponseEntity.ok(toResponse(eventService.findById(id)));
     }
 
     @GetMapping
@@ -76,7 +85,7 @@ public class EventController {
         } else {
             events = eventService.findAll(pageable);
         }
-        Page<EventResponse> response = events.map(EventResponse::from);
+        Page<EventResponse> response = events.map(this::toResponse);
         return ResponseEntity.ok(PageResponse.of(
                 response.getContent(), response.getNumber(), response.getSize(),
                 response.getTotalElements(), response.getTotalPages()));
@@ -97,7 +106,7 @@ public class EventController {
                 .statut(request.statut())
                 .compteRendu(request.compteRendu())
                 .build();
-        return ResponseEntity.ok(EventResponse.from(eventService.update(id, event)));
+        return ResponseEntity.ok(toResponse(eventService.update(id, event, request.fichierIds())));
     }
 
     @DeleteMapping("/{id}")
@@ -186,7 +195,7 @@ public class EventController {
         LocalDate weekStart = semaine != null ? LocalDate.parse(semaine)
                 : LocalDate.now().with(java.time.DayOfWeek.MONDAY);
         List<Event> events = eventService.generateWeekProgram(weekStart);
-        return ResponseEntity.ok(events.stream().map(EventResponse::from).toList());
+        return ResponseEntity.ok(events.stream().map(this::toResponse).toList());
     }
 
     /**
@@ -196,7 +205,7 @@ public class EventController {
     @PreAuthorize("hasRole('PASTEUR')")
     public ResponseEntity<List<EventResponse>> generateMonthProgram() {
         List<Event> events = eventService.generateMonthProgram();
-        return ResponseEntity.ok(events.stream().map(EventResponse::from).toList());
+        return ResponseEntity.ok(events.stream().map(this::toResponse).toList());
     }
 
     /**
@@ -209,7 +218,7 @@ public class EventController {
         LocalDate weekStart = semaine != null ? LocalDate.parse(semaine)
                 : LocalDate.now().with(java.time.DayOfWeek.MONDAY);
         List<Event> events = eventService.getWeekProgram(weekStart);
-        return ResponseEntity.ok(events.stream().map(EventResponse::from).toList());
+        return ResponseEntity.ok(events.stream().map(this::toResponse).toList());
     }
 
     // ======================== US-55: EVENT STATISTICS ========================

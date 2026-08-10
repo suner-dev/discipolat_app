@@ -2,6 +2,10 @@ package com.discipolat.modules.reports.domain;
 
 import com.discipolat.common.enums.StatutValidation;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
+import com.discipolat.modules.files.domain.EntityAttachmentRepository;
+import com.discipolat.modules.files.domain.FileEntityRepository;
 import com.discipolat.modules.parallelfollowups.domain.ParallelFollowupRepository;
 import com.discipolat.modules.reports.api.SubmitFamilyReportRequest;
 import com.discipolat.modules.reports.api.SubmitMakerReportRequest;
@@ -53,8 +57,13 @@ class ReportServiceTest {
     private UserRepository userRepository;
     @Mock
     private ParallelFollowupRepository parallelFollowupRepository;
+    @Mock
+    private EntityAttachmentRepository attachmentRepository;
+    @Mock
+    private FileEntityRepository fileEntityRepository;
 
     private ReportService reportService;
+    private EntityAttachmentService attachmentService;
 
     private final UUID userId = UUID.randomUUID();
     private final UUID faiseurId = UUID.randomUUID();
@@ -72,8 +81,9 @@ class ReportServiceTest {
 
     @BeforeEach
     void setUp() {
+        attachmentService = new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils);
         reportService = new ReportService(makerReportRepository, familyReportRepository, securityUtils,
-                workspaceScope, soulRepository, userRepository, parallelFollowupRepository);
+                workspaceScope, soulRepository, userRepository, parallelFollowupRepository, attachmentService);
 
         rapportMoi = new MakerReport();
         rapportMoi.setId(UUID.randomUUID());
@@ -180,7 +190,7 @@ class ReportServiceTest {
         when(securityUtils.getCurrentUserId()).thenReturn(userId);
 
         SubmitFamilyReportRequest request = new SubmitFamilyReportRequest(
-                familleId, UUID.randomUUID(), semaine, null, null, null, null, null, null, "Synthèse");
+                familleId, UUID.randomUUID(), semaine, null, null, null, null, null, null, "Synthèse", null);
 
         assertThrows(AccessDeniedException.class, () -> reportService.submitFamilyReport(request));
         verify(familyReportRepository, never()).save(any(FamilyReport.class));
@@ -216,7 +226,7 @@ class ReportServiceTest {
 
         SubmitMakerReportRequest request = new SubmitMakerReportRequest(
                 autreFaiseurId, ameId, semaine, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
 
         assertThrows(AccessDeniedException.class, () -> reportService.submitMakerReport(request));
     }

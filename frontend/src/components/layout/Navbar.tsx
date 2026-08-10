@@ -17,6 +17,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { WORKSPACE_HOME, ROLE_META, roleIcon } from '@/workspaces';
+import { useTheme } from '@/hooks/useTheme';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { Notification } from '@/types';
@@ -27,12 +28,7 @@ interface NavbarProps {
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('darkMode') === 'true';
-    }
-    return false;
-  });
+  const { darkMode, toggleTheme } = useTheme();
   const { user, logout, switchRole, roles, activeRole } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
@@ -64,15 +60,6 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('darkMode', String(darkMode));
-  }, [darkMode]);
 
   const { data: notifications } = useQuery({
     queryKey: ['notifications', 'unread'],
@@ -181,7 +168,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Dark mode toggle */}
           <button
-            onClick={() => setDarkMode(!darkMode)}
+            onClick={toggleTheme}
             className="relative p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                        hover:bg-gray-100/80 dark:hover:bg-gray-800/50 transition-all duration-200
                        hover:scale-105 active:scale-95 group"

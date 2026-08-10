@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
-import type { User, PageResponse, Family } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import type { User, PageResponse, Family, TransferRequest } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, Key, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, RefreshCw, Users, BarChart3, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -25,8 +26,22 @@ const ROLE_BADGES: Record<string, string> = {
   MEMBRE: 'badge-gray',
 };
 
+const CHARGE_LABELS: Record<string, string> = {
+  LEGER: 'Léger',
+  NORMAL: 'Normal',
+  'SURCHARGÉ': 'Surchargé',
+};
+
+const CHARGE_STYLES: Record<string, string> = {
+  LEGER: 'bg-green-100/80 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200/60 dark:border-green-700/40',
+  NORMAL: 'bg-blue-100/80 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200/60 dark:border-blue-700/40',
+  'SURCHARGÉ': 'bg-red-100/80 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200/60 dark:border-red-700/40',
+};
+
 export default function UsersPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isResponsable = user?.activeRole === 'RESPONSABLE';
   const [page, setPage] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -54,7 +69,7 @@ export default function UsersPage() {
     queryKey: ['users', 'workload'],
     queryFn: async () => {
       const res = await api.get('/users/faiseur-workload');
-      return res.data as { faiseurId: string; faiseurName: string; familleId?: string; familleName?: string; soulCount: number }[];
+      return res.data as { faiseurId: string; faiseurName: string; familleId?: string; familleName?: string; soulCount: number; charge?: string }[];
     },
   });
 
@@ -127,11 +142,16 @@ export default function UsersPage() {
 
   const transferMutation = useMutation({
     mutationFn: async ({ id, nouvelleFamilleId, transfererAmes }: { id: string; nouvelleFamilleId: string; transfererAmes: boolean }) => {
-      await api.patch(`/users/${id}/transfer`, { nouvelleFamilleId, transfererAmes });
+      const res = await api.patch(`/users/${id}/transfer`, { nouvelleFamilleId, transfererAmes });
+      return res.data as TransferRequest;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Faiseur transféré');
+      if (data.statut === 'EXECUTE') {
+        toast.success('Faiseur transféré');
+      } else {
+        toast.success('Demande de transfert soumise pour validation');
+      }
       setActionModal('');
       setSelectedUser(null);
     },
@@ -322,20 +342,32 @@ export default function UsersPage() {
         </button>
       </div>
 
-      {/* Workload section */}
+      {/* Workload section — scopée par rôle actif côté serveur
+          (responsable : faiseurs de ses départements ; super-utilisateurs : tous les faiseurs) */}
       {workload && workload.length > 0 && (
         <div className="glass-card p-5 mb-6">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-1">
             <BarChart3 className="w-4 h-4 text-primary-500" />
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Charge de travail des Faiseurs</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {isResponsable ? 'Charge de travail de mon département' : 'Charge de travail des Faiseurs'}
+            </h3>
           </div>
+          <p className="text-xs text-gray-400 mb-4">
+            {isResponsable
+              ? 'Faiseurs des membres de vos départements'
+              : 'Répartition des disciples suivis par faiseur'}
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {workload.map((w) => (
               <div key={w.faiseurId} className="p-3 rounded-xl bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-800/30 border border-gray-100 dark:border-gray-700/50">
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={w.faiseurName}>{w.faiseurName}</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{w.soulCount}</p>
                 <p className="text-[10px] text-gray-400">âmes suivies</p>
-                {w.familleName && <p className="text-[10px] text-gray-400 truncate">Famille: {w.familleName}</p>}
+                {w.charge && (
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold border mt-1 ${CHARGE_STYLES[w.charge] || CHARGE_STYLES.NORMAL}`}>
+                    {CHARGE_LABELS[w.charge] || w.charge}
+                  </span>
+                )}
               </div>
             ))}
           </div>

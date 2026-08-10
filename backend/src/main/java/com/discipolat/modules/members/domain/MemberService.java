@@ -8,6 +8,8 @@ import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.members.api.*;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
@@ -45,6 +47,7 @@ public class MemberService {
     private final MemberPresenceRepository memberPresenceRepository;
     private final MemberRequestRepository memberRequestRepository;
     private final SecurityUtils securityUtils;
+    private final EntityAttachmentService attachmentService;
 
     public MemberService(UserRepository userRepository,
                          SoulRepository soulRepository,
@@ -54,7 +57,8 @@ public class MemberService {
                          com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository,
                          MemberPresenceRepository memberPresenceRepository,
                          MemberRequestRepository memberRequestRepository,
-                         SecurityUtils securityUtils) {
+                         SecurityUtils securityUtils,
+                         EntityAttachmentService attachmentService) {
         this.userRepository = userRepository;
         this.soulRepository = soulRepository;
         this.familyRepository = familyRepository;
@@ -64,6 +68,7 @@ public class MemberService {
         this.memberPresenceRepository = memberPresenceRepository;
         this.memberRequestRepository = memberRequestRepository;
         this.securityUtils = securityUtils;
+        this.attachmentService = attachmentService;
     }
 
     // ============================================================
@@ -383,7 +388,9 @@ public class MemberService {
             req.setFamilyId(soul.getFamilleId());
         }
 
-        return toResponse(memberRequestRepository.save(req));
+        MemberRequest saved = memberRequestRepository.save(req);
+        attachmentService.replace(EntityAttachment.EntityType.MEMBER_REQUEST, saved.getId(), request.fichierIds());
+        return toResponse(saved);
     }
 
     /** Boîte de réception scopée par rôle ACTIF : super-utilisateurs tout, responsable ses départements, chef ses familles. */
@@ -567,6 +574,7 @@ public class MemberService {
         String famNom = r.getFamilyId() != null
                 ? familyRepository.findById(r.getFamilyId()).map(Family::getNom).orElse(null)
                 : null;
-        return MemberRequestResponse.from(r, auteurNom, traiteParNom, deptNom, famNom);
+        return MemberRequestResponse.from(r, auteurNom, traiteParNom, deptNom, famNom,
+                attachmentService.itemsFor(EntityAttachment.EntityType.MEMBER_REQUEST, r.getId()));
     }
 }

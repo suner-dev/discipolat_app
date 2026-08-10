@@ -39,6 +39,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'RAPPORT_NON_SOUMIS': return Colors.blue;
       case 'RAPPORT_FAMILLE_NON_SOUMIS': return Colors.purple;
       case 'ALERTE_ABSENCE': return Colors.red;
+      case 'TRANSFERT_DEMANDE': return Colors.teal;
+      case 'TRANSFERT_VALIDATION': return Colors.orange;
+      case 'TRANSFERT_VALIDEE': return Colors.teal;
+      case 'TRANSFERT_REFUSEE': return Colors.red;
+      case 'TRANSFERT_INFOS_DEMANDEES': return Colors.amber;
+      case 'TRANSFERT_CORRECTION': return Colors.amber;
+      case 'TRANSFERT_EXECUTEE': return Colors.green;
+      case 'TRANSFERT_ANNULEE': return Colors.blueGrey;
+      case 'TRANSFERT_DELAI_DEPASSE': return Colors.deepOrange;
       default: return Colors.grey;
     }
   }
@@ -48,6 +57,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'ABSENCE_48H': return Icons.warning_amber;
       case 'RAPPORT_NON_SOUMIS': return Icons.description;
       case 'ALERTE_ABSENCE': return Icons.person_off;
+      case 'TRANSFERT_DEMANDE': return Icons.edit_document;
+      case 'TRANSFERT_VALIDATION': return Icons.verified_user;
+      case 'TRANSFERT_VALIDEE': return Icons.verified;
+      case 'TRANSFERT_REFUSEE': return Icons.cancel;
+      case 'TRANSFERT_INFOS_DEMANDEES': return Icons.help_outline;
+      case 'TRANSFERT_CORRECTION': return Icons.refresh;
+      case 'TRANSFERT_EXECUTEE': return Icons.swap_horiz;
+      case 'TRANSFERT_ANNULEE': return Icons.block;
+      case 'TRANSFERT_DELAI_DEPASSE': return Icons.hourglass_bottom;
       default: return Icons.info;
     }
   }

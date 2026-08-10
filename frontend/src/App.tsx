@@ -5,6 +5,7 @@ import { WORKSPACE_HOME, isSuperUser } from '@/workspaces';
 import type { UserRole } from '@/types';
 import MainLayout from '@/layouts/MainLayout';
 import AuthLayout from '@/layouts/AuthLayout';
+import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import TwoFactorChallengePage from '@/pages/TwoFactorChallengePage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
@@ -59,6 +60,16 @@ import VisitsPage from '@/pages/VisitsPage';
 import BadgesPage from '@/pages/BadgesPage';
 import TrainingsPage from '@/pages/TrainingsPage';
 import AppointmentsPage from '@/pages/AppointmentsPage';
+import TransfersPage from '@/pages/TransfersPage';
+import TransferDetailPage from '@/pages/TransferDetailPage';
+import TransferCreatePage from '@/pages/TransferCreatePage';
+import TransferAdminPage from '@/pages/TransferAdminPage';
+import AdminSettingsPage from '@/pages/AdminSettingsPage';
+import PlatformModulesPage from '@/pages/PlatformModulesPage';
+import PlatformMenusPage from '@/pages/PlatformMenusPage';
+import ModuleUnavailablePage from '@/pages/ModuleUnavailablePage';
+import AdminDashboardPage from '@/pages/AdminDashboardPage';
+import AdminCustomFieldsPage from '@/pages/AdminCustomFieldsPage';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { isAuthenticated, user, isLoading, activeRole } = useAuth();
@@ -101,6 +112,25 @@ function DashboardGate() {
     return <Navigate to={WORKSPACE_HOME[currentRole] || '/dashboard'} replace />;
   }
   return <DashboardPage />;
+}
+
+/**
+ * Page d'accueil publique : landing glassmorphism si visiteur, dashboard si
+ * déjà authentifié.
+ */
+function HomeGate() {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="spinner h-8 w-8" />
+      </div>
+    );
+  }
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <LandingPage />;
 }
 
 export default function App() {
@@ -177,7 +207,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/families/new" element={
-          <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}>
             <FamilyCreatePage />
           </ProtectedRoute>
         } />
@@ -366,10 +396,60 @@ export default function App() {
             <EventStatisticsPage />
           </ProtectedRoute>
         } />
+        <Route path="/transfers" element={
+          <ProtectedRoute>
+            <TransfersPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/transfers/new" element={
+          <ProtectedRoute>
+            <TransferCreatePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/transfers/:id" element={
+          <ProtectedRoute>
+            <TransferDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/transfers" element={
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <TransferAdminPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings" element={
+          <ProtectedRoute roles={['ADMIN']}>
+            <AdminSettingsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/modules" element={
+          <ProtectedRoute roles={['ADMIN']}>
+            <PlatformModulesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/menus" element={
+          <ProtectedRoute roles={['ADMIN']}>
+            <PlatformMenusPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/module-unavailable" element={
+          <ProtectedRoute>
+            <ModuleUnavailablePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute roles={['ADMIN']}>
+            <AdminDashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/custom-fields" element={
+          <ProtectedRoute roles={['ADMIN']}>
+            <AdminCustomFieldsPage />
+          </ProtectedRoute>
+        } />
       </Route>
 
-      {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Page d'accueil publique (landing) — redirige vers /dashboard si connecté */}
+      <Route path="/" element={<HomeGate />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

@@ -5,6 +5,8 @@ import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
@@ -35,6 +37,7 @@ public class EventService {
     private final NotificationService notificationService;
     private final SecurityUtils securityUtils;
     private final WorkspaceScopeService workspaceScope;
+    private final EntityAttachmentService attachmentService;
 
     public EventService(EventRepository eventRepository,
                         EventRegistrationRepository registrationRepository,
@@ -42,7 +45,8 @@ public class EventService {
                         UserRepository userRepository,
                         NotificationService notificationService,
                         SecurityUtils securityUtils,
-                        WorkspaceScopeService workspaceScope) {
+                        WorkspaceScopeService workspaceScope,
+                        EntityAttachmentService attachmentService) {
         this.eventRepository = eventRepository;
         this.registrationRepository = registrationRepository;
         this.templateRepository = templateRepository;
@@ -50,9 +54,10 @@ public class EventService {
         this.notificationService = notificationService;
         this.securityUtils = securityUtils;
         this.workspaceScope = workspaceScope;
+        this.attachmentService = attachmentService;
     }
 
-    public Event create(Event event) {
+    public Event create(Event event, java.util.List<java.util.UUID> fichierIds) {
         // Espace métier : on ne crée un événement de famille que pour une famille visible.
         if (event.getFamilleId() != null && !workspaceScope.isSuperUser()
                 && !workspaceScope.canAccessFamily(event.getFamilleId())) {
@@ -64,6 +69,7 @@ public class EventService {
         event.setStatut("PLANIFIE");
         event.setNbInscrits(0);
         Event saved = eventRepository.save(event);
+        attachmentService.replace(EntityAttachment.EntityType.EVENT, saved.getId(), fichierIds);
 
         // Notify all PASTEUR users when a non-pasteur creates an event
         User currentUser = userRepository.findById(currentUserId).orElse(null);
@@ -150,7 +156,7 @@ public class EventService {
         return eventRepository.findByFamilleIdAndStatutAndDeletedFalse(familleId, "PLANIFIE");
     }
 
-    public Event update(UUID id, Event updated) {
+    public Event update(UUID id, Event updated, java.util.List<java.util.UUID> fichierIds) {
         Event event = findById(id);
         if (!canManageEvent(event)) {
             throw new AccessDeniedException("Vous ne pouvez pas modifier cet événement");
@@ -164,7 +170,9 @@ public class EventService {
         if (updated.getTypeEvenement() != null) event.setTypeEvenement(updated.getTypeEvenement());
         if (updated.getStatut() != null) event.setStatut(updated.getStatut());
         if (updated.getCompteRendu() != null) event.setCompteRendu(updated.getCompteRendu());
-        return eventRepository.save(event);
+        Event saved = eventRepository.save(event);
+        attachmentService.replace(EntityAttachment.EntityType.EVENT, saved.getId(), fichierIds);
+        return saved;
     }
 
     public void delete(UUID id) {

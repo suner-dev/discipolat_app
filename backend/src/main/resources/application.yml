@@ -99,6 +99,7 @@ app:
     report-reminder-cron: "0 0 8 * * MON"
     saturday-reminder-cron: "0 0 18 * * SAT"
     dashboard-metrics-cron: "0 0 2 * * *"
+    transfer-delay-check-cron: "0 0 * * * *"
 
 springdoc:
   api-docs:

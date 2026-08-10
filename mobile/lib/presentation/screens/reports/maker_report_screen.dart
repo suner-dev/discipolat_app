@@ -7,6 +7,7 @@ import '../../../data/local/database.dart';
 import '../../../data/local/sync_service.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/glass_theme.dart';
+import '../../widgets/attachment_picker_field.dart';
 
 class MakerReportScreen extends ConsumerStatefulWidget {
   const MakerReportScreen({super.key});
@@ -29,6 +30,7 @@ class _MakerReportScreenState extends ConsumerState<MakerReportScreen> {
   final Map<String, TextEditingController> _difficultes = {};
   final Map<String, TextEditingController> _notes = {};
   final Map<String, int> _nbSorties = {};
+  final Map<String, Set<String>> _fichierIds = {};
   final Map<String, bool> _submitted = {};
   final Map<String, bool> _syncing = {};
   final Map<String, bool> _expanded = {};
@@ -139,6 +141,7 @@ class _MakerReportScreenState extends ConsumerState<MakerReportScreen> {
       _difficultes.putIfAbsent(soul.id, () => TextEditingController());
       _notes.putIfAbsent(soul.id, () => TextEditingController());
       _nbSorties.putIfAbsent(soul.id, () => 0);
+      _fichierIds.putIfAbsent(soul.id, () => {});
       _submitted.putIfAbsent(soul.id, () => false);
       _syncing.putIfAbsent(soul.id, () => false);
       _expanded.putIfAbsent(soul.id, () => false);
@@ -158,6 +161,7 @@ class _MakerReportScreenState extends ConsumerState<MakerReportScreen> {
       difficultes: _difficultes[ameId]?.text,
       notesComplementaires: _notes[ameId]?.text,
       nbSorties: _nbSorties[ameId] ?? 0,
+      fichierIds: _fichierIds[ameId]?.toList() ?? [],
     );
     setState(() {
       _submitted[ameId] = true;
@@ -794,6 +798,18 @@ class _MakerReportScreenState extends ConsumerState<MakerReportScreen> {
             maxLines: 2,
           ),
           const SizedBox(height: 20),
+
+          // Pièces jointes (sélecteur partagé du module Fichiers) — masqué une fois soumis
+          if (!soumis) ...[
+            _buildSectionTitle('Pièces jointes', Icons.attach_file),
+            const SizedBox(height: 8),
+            AttachmentPickerField(
+              apiService: _apiService,
+              value: _fichierIds[ameId] ?? {},
+              onChanged: (ids) => setState(() => _fichierIds[ameId] = Set.of(ids)),
+            ),
+            const SizedBox(height: 20),
+          ],
 
           // Submit button
           if (!soumis)

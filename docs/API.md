@@ -27,6 +27,7 @@ Tous les endpoints (sauf `/auth/login` et `/auth/refresh`) nécessitent un token
 | POST | `/users` | Créer un utilisateur | PASTEUR, RESPONSABLE |
 | GET | `/users/{id}` | Détail d'un utilisateur | Authentifié |
 | PUT | `/users/{id}` | Modifier un utilisateur | PASTEUR |
+| PATCH | `/users/{id}/transfer` | Transférer un faiseur vers une famille (**workflow** — retourne la demande de transfert) | ADMIN, PASTEUR |
 
 ### Départements
 
@@ -46,7 +47,7 @@ Tous les endpoints (sauf `/auth/login` et `/auth/refresh`) nécessitent un token
 | POST | `/families` | Créer une famille | PASTEUR, RESPONSABLE |
 | GET | `/families/{id}` | Détail d'une famille | Tous |
 | PUT | `/families/{id}` | Modifier une famille | PASTEUR, RESPONSABLE |
-| PATCH | `/families/{id}/chief` | Changer le chef de famille | PASTEUR, RESPONSABLE |
+| PATCH | `/families/{id}/chief` | Changer le chef de famille (**workflow** — retourne la demande de transfert) | ADMIN, PASTEUR, CHEF_DE_FAMILLE |
 | DELETE | `/families/{id}` | Archiver une famille | PASTEUR, RESPONSABLE |
 
 ### Âmes (Disciples)
@@ -57,6 +58,7 @@ Tous les endpoints (sauf `/auth/login` et `/auth/refresh`) nécessitent un token
 | POST | `/souls` | Créer une âme | FAISEUR, CHEF |
 | GET | `/souls/{id}` | Détail d'une âme | Tous (scope adapté) |
 | PUT | `/souls/{id}` | Modifier une âme | FAISEUR assigné |
+| PATCH | `/souls/{id}/reassign` | Réaffecter l'âme à un autre faiseur (**workflow** — retourne la demande de transfert) | ADMIN, PASTEUR, RESPONSABLE |
 | DELETE | `/souls/{id}` | Archiver une âme | FAISEUR assigné |
 | GET | `/souls/{id}/history` | Historique d'une âme | Tous (scope adapté) |
 
@@ -100,6 +102,23 @@ Tous les endpoints (sauf `/auth/login` et `/auth/refresh`) nécessitent un token
 | GET | `/dashboard/kpi` | KPI consolidés | PASTEUR |
 | GET | `/dashboard/kpi/department/{id}` | KPI par département | PASTEUR, RESPONSABLE |
 | GET | `/dashboard/kpi/family/{id}` | KPI par famille | PASTEUR, RESPONSABLE, CHEF |
+
+### Workflow de transfert
+
+| Méthode | Endpoint | Description | Rôle requis |
+|---|---|---|---|
+| GET | `/transfers` | Liste des demandes (filtrée par statut/type, scopée par rôle actif) | Authentifié |
+| GET | `/transfers/configurations` | Types de transfert que je peux initier | Authentifié |
+| GET | `/transfers/{id}` | Détail d'une demande (circuit, décisions, pièces jointes) | Demandeur, concerné, validateur |
+| POST | `/transfers` | Créer une demande | Rôle initiateur (config) |
+| PUT | `/transfers/{id}` | Modifier un brouillon | Demandeur |
+| POST | `/transfers/{id}/submit` | Soumettre (exécution immédiate si circuit vide) | Demandeur |
+| POST | `/transfers/{id}/decide` | Décision motivée (approbation, refus, infos, correction) | Validateur (rôle actif) |
+| POST | `/transfers/{id}/cancel` | Annuler | Demandeur |
+| POST | `/transfers/{id}/archive` | Archiver | ADMIN, PASTEUR |
+| GET | `/transfers/{id}/history` | Historique immuable | Visibilité scopée |
+| GET | `/transfers/{id}/decisions` | Décisions | Visibilité scopée |
+| GET/PUT/POST/DELETE | `/admin/transfers/workflows` | Paramétrage du workflow (configs + étapes) | ADMIN, PASTEUR |
 
 ## Pagination
 

@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import {
   ArrowLeft, Heart, Activity, Clock, AlertTriangle, Star,
   MessageSquare, TrendingUp, TrendingDown, Sparkles, Users,
   Mail, Phone, Calendar, MapPin, Briefcase, Church, Shield,
-  CheckCircle, XCircle, ChevronRight, BookOpen, Gavel,
+  CheckCircle, XCircle, ChevronRight, BookOpen, Gavel, Paperclip,
 } from 'lucide-react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -105,6 +106,7 @@ export default function Pastoral360Page() {
   const timeline = dossier.timeline ?? [];
   const evaluations = dossier.evaluations ?? {};
   const notes = dossier.notes ?? [];
+  const piecesJointes = dossier.piecesJointes ?? [];
 
   const radarData = Object.entries(INDICE_LABELS)
     .filter(([key]) => key !== 'global')
@@ -319,6 +321,19 @@ export default function Pastoral360Page() {
           )}
         </div>
       </div>
+
+      {/* Pièces jointes */}
+      {piecesJointes.length > 0 && (
+        <div className="glass-card p-5 mb-6 animate-slide-up">
+          <div className="flex items-center gap-2 mb-4">
+            <Paperclip className="w-4 h-4 text-primary-500" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+              Pièces jointes · {piecesJointes.length}
+            </h3>
+          </div>
+          <AttachmentLinks pieces={piecesJointes} sourceKey="source" />
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="glass-card p-5 mb-6 animate-slide-up">

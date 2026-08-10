@@ -2,6 +2,7 @@ package com.discipolat.modules.reports.api;
 
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,5 +16,6 @@ public record SubmitFamilyReportRequest(
         Integer nbSuivisParalleles,
         Map<String, Object> suivisParallelesDetails,
         Map<String, Object> faiseursSansRapport,
-        String commentaireSynthese
+        String commentaireSynthese,
+        List<UUID> fichierIds
 ) {}

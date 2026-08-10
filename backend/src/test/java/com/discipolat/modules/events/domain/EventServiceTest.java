@@ -1,6 +1,9 @@
 package com.discipolat.modules.events.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.files.domain.EntityAttachmentRepository;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
+import com.discipolat.modules.files.domain.FileEntityRepository;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -47,8 +50,13 @@ class EventServiceTest {
     private SecurityUtils securityUtils;
     @Mock
     private WorkspaceScopeService workspaceScope;
+    @Mock
+    private EntityAttachmentRepository attachmentRepository;
+    @Mock
+    private FileEntityRepository fileEntityRepository;
 
     private EventService eventService;
+    private EntityAttachmentService attachmentService;
 
     private final UUID userId = UUID.randomUUID();
     private final UUID familleId = UUID.randomUUID();
@@ -59,8 +67,9 @@ class EventServiceTest {
 
     @BeforeEach
     void setUp() {
+        attachmentService = new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils);
         eventService = new EventService(eventRepository, registrationRepository, templateRepository,
-                userRepository, notificationService, securityUtils, workspaceScope);
+                userRepository, notificationService, securityUtils, workspaceScope, attachmentService);
 
         evenementFamille = Event.builder()
                 .id(UUID.randomUUID())
@@ -137,7 +146,7 @@ class EventServiceTest {
         when(eventRepository.findById(evenementFamille.getId())).thenReturn(Optional.of(evenementFamille));
 
         Event updated = Event.builder().titre("Nouveau titre").build();
-        assertThrows(AccessDeniedException.class, () -> eventService.update(evenementFamille.getId(), updated));
+        assertThrows(AccessDeniedException.class, () -> eventService.update(evenementFamille.getId(), updated, null));
     }
 
     @Test
@@ -165,7 +174,7 @@ class EventServiceTest {
                 .dateDebut(LocalDateTime.now().plusDays(2))
                 .build();
 
-        assertThrows(AccessDeniedException.class, () -> eventService.create(nouveau));
+        assertThrows(AccessDeniedException.class, () -> eventService.create(nouveau, null));
         verify(eventRepository, never()).save(any(Event.class));
     }
 }

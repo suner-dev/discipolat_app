@@ -22,10 +22,10 @@ export default function ForgotPasswordPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/20 mb-4">
             <CheckCircle2 className="w-8 h-8 text-green-400" />
           </div>
-          <h2 className="text-xl font-bold text-white font-display">Email envoyé !</h2>
-          <p className="mt-2 text-sm text-gray-400 leading-relaxed">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white font-display">Email envoyé !</h2>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
             Si un compte existe avec cette adresse, vous recevrez un email avec un lien
-            de réinitialisation valable <strong className="text-gray-300">30 minutes</strong>.
+            de réinitialisation valable <strong className="text-gray-600 dark:text-gray-300">30 minutes</strong>.
           </p>
         </div>
         <div className="divider-glow my-4" />
@@ -47,10 +47,10 @@ export default function ForgotPasswordPage() {
           <Shield className="w-3 h-3" />
           Mot de passe
         </div>
-        <h2 className="text-2xl font-bold text-white font-display animate-slide-up">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display animate-slide-up">
           Mot de passe oublié
         </h2>
-        <p className="mt-1.5 text-sm text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
+        <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
           Recevez un lien de réinitialisation par email
         </p>
       </div>
@@ -62,19 +62,19 @@ export default function ForgotPasswordPage() {
       >
         {mutation.isError && (
           <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
-            <p className="text-sm text-red-300">{getErrorMessage(mutation.error)}</p>
+            <p className="text-sm text-red-600 dark:text-red-300">{getErrorMessage(mutation.error)}</p>
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">Adresse email</label>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">Adresse email</label>
           <div className="relative group">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-primary-400 transition-colors" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400 transition-colors" />
             <input
               id="email"
               type="email"
               autoComplete="email"
-              className="w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500
+              className="w-full rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500
                          pl-10 pr-4 py-3 text-sm
                          focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20
                          transition-all duration-200"
@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
 
         <Link
           to="/login"
-          className="flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-primary-400 transition-colors group"
+          className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors group"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
           Retour à la connexion

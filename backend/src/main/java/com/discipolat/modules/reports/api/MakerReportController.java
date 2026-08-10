@@ -1,6 +1,8 @@
 package com.discipolat.modules.reports.api;
 
 import com.discipolat.common.infrastructure.api.PageResponse;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.ReportService;
 import com.discipolat.modules.reports.domain.ReportCorrection;
@@ -26,13 +28,26 @@ public class MakerReportController {
     private final ReportService reportService;
     private final ReportCorrectionRepository correctionRepository;
     private final SecurityUtils securityUtils;
+    private final EntityAttachmentService attachmentService;
 
     public MakerReportController(ReportService reportService,
                                   ReportCorrectionRepository correctionRepository,
-                                  SecurityUtils securityUtils) {
+                                  SecurityUtils securityUtils,
+                                  EntityAttachmentService attachmentService) {
         this.reportService = reportService;
         this.correctionRepository = correctionRepository;
         this.securityUtils = securityUtils;
+        this.attachmentService = attachmentService;
+    }
+
+    private MakerReportResponse toResponse(MakerReport report) {
+        return MakerReportResponse.from(report,
+                attachmentService.itemsFor(EntityAttachment.EntityType.MAKER_REPORT, report.getId()));
+    }
+
+    private FamilyReportResponse toFamilyResponse(com.discipolat.modules.reports.domain.FamilyReport report) {
+        return FamilyReportResponse.from(report,
+                attachmentService.itemsFor(EntityAttachment.EntityType.FAMILY_REPORT, report.getId()));
     }
 
     @GetMapping("/maker-weekly")
@@ -47,7 +62,7 @@ public class MakerReportController {
         Pageable pageable = PageRequest.of(page, Math.min(size, 50),
                 Sort.by(Sort.Direction.DESC, "semaine").and(Sort.by(Sort.Direction.DESC, "createdAt")));
         Page<MakerReport> reports = reportService.findMakerReports(faiseurId, familleId, ameId, semaine, pageable);
-        Page<MakerReportResponse> response = reports.map(MakerReportResponse::from);
+        Page<MakerReportResponse> response = reports.map(this::toResponse);
         return ResponseEntity.ok(PageResponse.of(
                 response.getContent(), response.getNumber(), response.getSize(),
                 response.getTotalElements(), response.getTotalPages()));
@@ -57,7 +72,7 @@ public class MakerReportController {
     @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<MakerReportResponse> submitMakerReport(@Valid @RequestBody SubmitMakerReportRequest request) {
         MakerReport report = reportService.submitMakerReport(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(MakerReportResponse.from(report));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(report));
     }
 
     /** US-29: Save report as draft */
@@ -65,13 +80,13 @@ public class MakerReportController {
     @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<MakerReportResponse> saveDraft(@Valid @RequestBody SubmitMakerReportRequest request) {
         MakerReport report = reportService.saveDraft(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(MakerReportResponse.from(report));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(report));
     }
 
     @GetMapping("/maker-weekly/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<MakerReportResponse> getMakerReport(@PathVariable UUID id) {
-        return ResponseEntity.ok(MakerReportResponse.from(reportService.findMakerReportById(id)));
+        return ResponseEntity.ok(toResponse(reportService.findMakerReportById(id)));
     }
 
     // ======================== US-26: PRE-FILLED REPORT ========================
@@ -147,7 +162,7 @@ public class MakerReportController {
                 Sort.by(Sort.Direction.DESC, "semaine").and(Sort.by(Sort.Direction.DESC, "createdAt")));
         Page<com.discipolat.modules.reports.domain.FamilyReport> reports =
                 reportService.findFamilyReports(familleId, chefFamilleId, semaine, pageable);
-        Page<FamilyReportResponse> response = reports.map(FamilyReportResponse::from);
+        Page<FamilyReportResponse> response = reports.map(this::toFamilyResponse);
         return ResponseEntity.ok(PageResponse.of(
                 response.getContent(), response.getNumber(), response.getSize(),
                 response.getTotalElements(), response.getTotalPages()));
@@ -157,7 +172,7 @@ public class MakerReportController {
     @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<FamilyReportResponse> submitFamilyReport(@Valid @RequestBody SubmitFamilyReportRequest request) {
         com.discipolat.modules.reports.domain.FamilyReport report = reportService.submitFamilyReport(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(FamilyReportResponse.from(report));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toFamilyResponse(report));
     }
 
     @GetMapping("/family-weekly/{familyId}")
@@ -171,7 +186,7 @@ public class MakerReportController {
         } else {
             reports = reportService.findFamilyReportsByFamily(familyId);
         }
-        return ResponseEntity.ok(reports.stream().map(FamilyReportResponse::from).toList());
+        return ResponseEntity.ok(reports.stream().map(this::toFamilyResponse).toList());
     }
 
     @PatchMapping("/family-weekly/{id}/validate")
@@ -181,6 +196,6 @@ public class MakerReportController {
             @RequestBody @Valid ValidateReportRequest request) {
         com.discipolat.modules.reports.domain.FamilyReport report =
                 reportService.validateFamilyReport(id, request.validationType());
-        return ResponseEntity.ok(FamilyReportResponse.from(report));
+        return ResponseEntity.ok(toFamilyResponse(report));
     }
 }

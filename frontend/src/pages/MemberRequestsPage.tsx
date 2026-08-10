@@ -13,6 +13,7 @@ import {
   Inbox, MessageSquare, CalendarCheck, CheckCircle2,
   XCircle, PlayCircle, Clock, ChevronRight, User, Building2, Users,
 } from 'lucide-react';
+import AttachmentLinks from '@/components/shared/AttachmentLinks';
 
 const TYPE_LABELS: Record<string, string> = {
   SUGGESTION: '💡 Suggestion',
@@ -185,6 +186,12 @@ export default function MemberRequestsPage() {
                     </div>
 
                     <p className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed flex-1">{r.message}</p>
+
+                    {r.piecesJointes && r.piecesJointes.length > 0 && (
+                      <div className="mt-2.5">
+                        <AttachmentLinks pieces={r.piecesJointes} />
+                      </div>
+                    )}
 
                     {/* Auteur + portée */}
                     <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap">

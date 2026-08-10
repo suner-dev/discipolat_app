@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/open_url.dart';
 
 class DocumentsScreen extends StatefulWidget {
   const DocumentsScreen({super.key});
@@ -22,7 +23,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
-  final _urlCtrl = TextEditingController();
+  final _cheminCtrl = TextEditingController();
   final _mimeCtrl = TextEditingController();
   final _tailleCtrl = TextEditingController(text: '0');
   String _categorie = 'AUTRE';
@@ -57,7 +58,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
   @override
   void dispose() {
-    _nameCtrl.dispose(); _descCtrl.dispose(); _urlCtrl.dispose(); _mimeCtrl.dispose(); _tailleCtrl.dispose();
+    _nameCtrl.dispose(); _descCtrl.dispose(); _cheminCtrl.dispose(); _mimeCtrl.dispose(); _tailleCtrl.dispose();
     super.dispose();
   }
 
@@ -81,12 +82,12 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       await _apiService.post('/files', data: {
         'nom': _nameCtrl.text.trim(),
         'description': _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
-        'url': _urlCtrl.text.trim(),
+        'chemin': _cheminCtrl.text.trim(),
         'categorie': _categorie,
-        'typeMime': _mimeCtrl.text.trim().isEmpty ? 'application/pdf' : _mimeCtrl.text.trim(),
+        'typeFichier': _mimeCtrl.text.trim().isEmpty ? 'application/pdf' : _mimeCtrl.text.trim(),
         'taille': int.tryParse(_tailleCtrl.text) ?? 0,
       });
-      _nameCtrl.clear(); _descCtrl.clear(); _urlCtrl.clear(); _mimeCtrl.clear(); _tailleCtrl.clear();
+      _nameCtrl.clear(); _descCtrl.clear(); _cheminCtrl.clear(); _mimeCtrl.clear(); _tailleCtrl.clear();
       _categorie = 'AUTRE';
       setState(() => _showCreate = false);
       _loadData();
@@ -156,8 +157,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                           TextField(controller: _descCtrl, maxLines: 2,
                               decoration: const InputDecoration(labelText: 'Description', hintText: 'Brève description...')),
                           const SizedBox(height: 10),
-                          TextField(controller: _urlCtrl,
-                              decoration: const InputDecoration(labelText: 'URL du fichier *', hintText: 'https://drive.google.com/...', prefixIcon: Icon(Icons.link, size: 16))),
+                          TextField(controller: _cheminCtrl,
+                              decoration: const InputDecoration(labelText: 'URL / chemin du fichier *', hintText: 'https://drive.google.com/...', prefixIcon: Icon(Icons.link, size: 16))),
                           const SizedBox(height: 10),
                           Row(children: [
                             Expanded(
@@ -287,7 +288,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                             // Download & Delete
                             Column(children: [
                               GestureDetector(
-                                onTap: () => _openUrl(f['url'] as String?),
+                                onTap: () => _openUrl(f['chemin'] as String?),
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
@@ -322,10 +323,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
   void _openUrl(String? url) {
     if (url == null) return;
-    // On mobile, we could launch a URL, but for simplicity, show snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Lien: $url')),
-    );
+    // Ouvre le lien dans un vrai navigateur (url_launcher) — SnackBar en échec.
+    showUrlLink(context, url);
   }
 
   Future<void> _deleteFile(String? id) async {

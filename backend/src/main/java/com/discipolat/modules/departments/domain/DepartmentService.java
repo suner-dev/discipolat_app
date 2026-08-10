@@ -6,6 +6,8 @@ import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.reports.domain.FamilyReport;
 import com.discipolat.modules.reports.domain.FamilyReportRepository;
 import com.discipolat.modules.reports.domain.MakerReport;
@@ -41,6 +43,7 @@ public class DepartmentService {
     private final SecurityUtils securityUtils;
     private final PasswordEncoder passwordEncoder;
     private final com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository;
+    private final EntityAttachmentService attachmentService;
 
     public DepartmentService(DepartmentRepository departmentRepository,
                              FamilyRepository familyRepository,
@@ -51,7 +54,8 @@ public class DepartmentService {
                              FamilyReportRepository familyReportRepository,
                              SecurityUtils securityUtils,
                              PasswordEncoder passwordEncoder,
-                             com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository) {
+                             com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository,
+                             EntityAttachmentService attachmentService) {
         this.departmentRepository = departmentRepository;
         this.familyRepository = familyRepository;
         this.soulRepository = soulRepository;
@@ -62,6 +66,7 @@ public class DepartmentService {
         this.securityUtils = securityUtils;
         this.passwordEncoder = passwordEncoder;
         this.soulDepartmentRepository = soulDepartmentRepository;
+        this.attachmentService = attachmentService;
     }
 
     public Department create(Department department) {
@@ -463,8 +468,12 @@ public class DepartmentService {
                 familleStats.put("totalMaintenus", latest.getTotalMaintenus());
                 familleStats.put("statutValidation", latest.getStatutValidation().name());
                 familleStats.put("soumis", true);
+                // Pièces jointes du rapport de famille (documents du module Fichiers)
+                familleStats.put("piecesJointes",
+                        attachmentService.itemsFor(EntityAttachment.EntityType.FAMILY_REPORT, latest.getId()));
             } else {
                 familleStats.put("soumis", false);
+                familleStats.put("piecesJointes", List.of());
             }
             statsParFamille.put(family.getId().toString(), familleStats);
         }

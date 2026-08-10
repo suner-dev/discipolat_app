@@ -11,5 +11,6 @@ public record UpdateEventRequest(
         Integer limitePlaces,
         String typeEvenement,
         String statut,
-        String compteRendu
+        String compteRendu,
+        java.util.List<java.util.UUID> fichierIds
 ) {}

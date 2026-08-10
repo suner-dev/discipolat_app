@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Family, Soul, FamilyReport, User, FamilyRiskAssessment } from '@/types';
+import type { Family, Soul, FamilyReport, User, FamilyRiskAssessment, TransferRequest } from '@/types';
 import {
   ArrowLeft, Users, FileText, Heart, UserCog, Loader2, CheckCircle2, X,
   Calendar, Crown, Sparkles, ChevronRight, Clock, BarChart3, AlertTriangle, ShieldCheck,
@@ -22,6 +22,7 @@ export default function FamilyDetailPage() {
   const canSetRisk = activeRole === 'PASTEUR' || activeRole === 'ADMIN';
   const canChangeChief = activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE';
   const canViewFaiseurPerf = activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE' || activeRole === 'FAISEUR';
+  const canAddSoul = activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE';
 
   const { data: family, isLoading } = useQuery({
     queryKey: ['family', id],
@@ -61,14 +62,19 @@ export default function FamilyDetailPage() {
 
   const reassignMutation = useMutation({
     mutationFn: async (newChefId: string) => {
-      await api.patch(`/families/${id}/chief`, { newChefId });
+      const res = await api.patch(`/families/${id}/chief`, { newChefId });
+      return res.data as TransferRequest;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['family', id] });
       queryClient.invalidateQueries({ queryKey: ['families'] });
       setShowChiefModal(false);
       setNewChiefId('');
-      toast.success('Chef de famille mis à jour');
+      if (data.statut === 'EXECUTE') {
+        toast.success('Chef de famille mis à jour');
+      } else {
+        toast.success('Demande de changement de chef soumise pour validation');
+      }
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -172,7 +178,12 @@ export default function FamilyDetailPage() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2 self-start">
+          <div className="flex gap-2 self-start flex-wrap">
+            {canAddSoul && (
+              <Link to={`/souls/new?familleId=${family.id}&familleNom=${encodeURIComponent(family.nom)}`} className="btn-primary btn-sm">
+                <Heart className="w-4 h-4" /> Ajouter une âme
+              </Link>
+            )}
             {canViewFaiseurPerf && (
               <Link to={`/families/${id}/faiseur-performance`} className="btn-secondary btn-sm">
                 <BarChart3 className="w-4 h-4" /> Performance faiseurs

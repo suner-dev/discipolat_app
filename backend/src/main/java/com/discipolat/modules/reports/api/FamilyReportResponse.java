@@ -1,10 +1,12 @@
 package com.discipolat.modules.reports.api;
 
 import com.discipolat.common.enums.StatutValidation;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.reports.domain.FamilyReport;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,9 +28,10 @@ public record FamilyReportResponse(
         String commentaireSynthese,
         StatutValidation statutValidation,
         LocalDateTime dateSoumission,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        List<EntityAttachmentService.AttachmentItem> piecesJointes
 ) {
-    public static FamilyReportResponse from(FamilyReport report) {
+    public static FamilyReportResponse from(FamilyReport report, List<EntityAttachmentService.AttachmentItem> piecesJointes) {
         return new FamilyReportResponse(
                 report.getId(), report.getFamilleId(), report.getChefFamilleId(),
                 report.getSemaine(), report.getStatsAgregees(),
@@ -37,6 +40,7 @@ public record FamilyReportResponse(
                 report.getRepartitionSorties(), report.getTotalMaintenus(),
                 report.getNbSuivisParalleles(), report.getSuivisParallelesDetails(),
                 report.getFaiseursSansRapport(), report.getCommentaireSynthese(),
-                report.getStatutValidation(), report.getDateSoumission(), report.getCreatedAt());
+                report.getStatutValidation(), report.getDateSoumission(), report.getCreatedAt(),
+                piecesJointes != null ? piecesJointes : List.of());
     }
 }

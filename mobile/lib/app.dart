@@ -35,6 +35,10 @@ import 'presentation/screens/messages/messages_screen.dart';
 import 'presentation/screens/parallel_followups/parallel_followups_screen.dart';
 import 'presentation/screens/map/map_screen.dart';
 import 'presentation/screens/members/member_requests_screen.dart';
+import 'presentation/screens/transfers/transfers_list_screen.dart';
+import 'presentation/screens/transfers/transfer_detail_screen.dart';
+import 'presentation/screens/transfers/transfer_create_screen.dart';
+import 'presentation/screens/transfers/transfer_admin_screen.dart';
 import 'presentation/screens/not_found_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -168,6 +172,8 @@ Map<String, List<String>> _routeRoles = {
   '/parallel-followups': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/map': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/members/requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  '/transfers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/admin': ['ADMIN', 'PASTEUR'],
 };
 
 final appRouter = GoRouter(
@@ -406,6 +412,28 @@ final appRouter = GoRouter(
       path: '/members/requests',
       name: 'member-requests',
       builder: (context, state) => const MemberRequestsScreen(),
+    ),
+    GoRoute(
+      path: '/transfers',
+      name: 'transfers',
+      builder: (context, state) => const TransfersListScreen(),
+    ),
+    GoRoute(
+      path: '/transfers/new',
+      name: 'transfer-create',
+      builder: (context, state) => const TransferCreateScreen(),
+    ),
+    GoRoute(
+      path: '/transfers/:id',
+      name: 'transfer-detail',
+      builder: (context, state) => TransferDetailScreen(
+        transferId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/admin/transfers',
+      name: 'transfer-admin',
+      builder: (context, state) => const TransferAdminScreen(),
     ),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),

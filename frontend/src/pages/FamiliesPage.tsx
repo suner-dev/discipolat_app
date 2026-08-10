@@ -112,7 +112,7 @@ export default function FamiliesPage() {
               Comparer
             </Link>
           )}
-          {(user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR') && (
+          {(user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR' || user?.activeRole === 'CHEF_DE_FAMILLE') && (
             <Link to="/families/new" className="btn-primary btn-sm">
               <Plus className="w-4 h-4" />
               Nouvelle famille

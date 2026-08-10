@@ -18,8 +18,10 @@ import type {
 import {
   Sparkles, User, Mail, Phone, Calendar, GraduationCap, Briefcase, Heart,
   Users, Building2, Camera, Edit3, Save, X, Loader2, MessageSquare,
-  ChevronRight, UserCheck, Church, Cake, CalendarCheck, Send,
+  ChevronRight, UserCheck, Church, Cake, CalendarCheck, Send, Paperclip,
 } from 'lucide-react';
+import AttachmentPicker from '@/components/shared/AttachmentPicker';
+import AttachmentLinks from '@/components/shared/AttachmentLinks';
 
 const STATUT_LABELS: Record<string, { label: string; badge: string }> = {
   MEMBRE: { label: 'Membre', badge: 'badge-info' },
@@ -175,7 +177,8 @@ export default function MemberDashboardPage() {
     type: MemberRequestType;
     cible: MemberRequestTarget;
     message: string;
-  }>({ type: 'SUGGESTION', cible: 'PASTEUR', message: '' });
+    fichierIds: string[];
+  }>({ type: 'SUGGESTION', cible: 'PASTEUR', message: '', fichierIds: [] });
 
   const requestMutation = useMutation({
     mutationFn: async (payload: CreateMemberRequest) => {
@@ -184,7 +187,7 @@ export default function MemberDashboardPage() {
     },
     onSuccess: () => {
       toast.success('Votre demande a été envoyée ✅');
-      setRequestForm({ type: 'SUGGESTION', cible: 'PASTEUR', message: '' });
+      setRequestForm({ type: 'SUGGESTION', cible: 'PASTEUR', message: '', fichierIds: [] });
       queryClient.invalidateQueries({ queryKey: ['members', 'me', 'requests'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -655,6 +658,15 @@ export default function MemberDashboardPage() {
               value={requestForm.message}
               onChange={(e) => setRequestForm({ ...requestForm, message: e.target.value })}
             />
+            <div className="mt-3">
+              <label className="label flex items-center gap-1.5">
+                <Paperclip className="w-3.5 h-3.5 text-primary-500" /> Pièces jointes
+              </label>
+              <AttachmentPicker
+                value={requestForm.fichierIds}
+                onChange={(ids) => setRequestForm({ ...requestForm, fichierIds: ids })}
+              />
+            </div>
             <button
               onClick={submitRequest}
               disabled={requestMutation.isPending || !requestForm.message.trim()}
@@ -690,6 +702,11 @@ export default function MemberDashboardPage() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-700 dark:text-gray-200 mt-2 leading-relaxed">{r.message}</p>
+                    {r.piecesJointes && r.piecesJointes.length > 0 && (
+                      <div className="mt-2">
+                        <AttachmentLinks pieces={r.piecesJointes} />
+                      </div>
+                    )}
                     {r.reponse && (
                       <div className="mt-2 p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-900/10 border border-emerald-200/50 dark:border-emerald-800/30 text-sm text-emerald-800 dark:text-emerald-300">
                         <strong>Réponse :</strong> {r.reponse}

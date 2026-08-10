@@ -6,6 +6,9 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.files.domain.EntityAttachmentRepository;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
+import com.discipolat.modules.files.domain.FileEntityRepository;
 import com.discipolat.modules.members.api.SubmitDepartmentPresenceItem;
 import com.discipolat.modules.members.api.SubmitDepartmentPresenceRequest;
 import com.discipolat.modules.souls.domain.Soul;
@@ -47,6 +50,8 @@ class MemberPresenceSheetTest {
     @Mock private MemberPresenceRepository memberPresenceRepository;
     @Mock private MemberRequestRepository memberRequestRepository;
     @Mock private SecurityUtils securityUtils;
+    @Mock private EntityAttachmentRepository attachmentRepository;
+    @Mock private FileEntityRepository fileEntityRepository;
 
     private MemberService memberService;
     private UUID responsableId;
@@ -59,7 +64,8 @@ class MemberPresenceSheetTest {
         memberService = new MemberService(
                 userRepository, soulRepository, familyRepository, departmentRepository,
                 memberDepartmentRepository, soulDepartmentRepository,
-                memberPresenceRepository, memberRequestRepository, securityUtils);
+                memberPresenceRepository, memberRequestRepository, securityUtils,
+                new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils));
         responsableId = UUID.randomUUID();
         deptId = UUID.randomUUID();
         soulId = UUID.randomUUID();

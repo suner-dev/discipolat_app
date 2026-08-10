@@ -4,8 +4,14 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
+import { PlatformProvider } from './contexts/PlatformContext';
+import { bootstrapBranding } from './lib/branding';
 import App from './App';
 import './index.css';
+
+// Application immédiate de l'identité en cache (anti-flash avant le fetch).
+bootstrapBranding();
 
 // Register PWA service worker
 if ('serviceWorker' in navigator) {
@@ -33,32 +39,36 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <App />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                borderRadius: '12px',
-                padding: '12px 16px',
-                fontSize: '14px',
-              },
-              success: {
-                iconTheme: {
-                  primary: '#16a34a',
-                  secondary: '#fff',
+        <SettingsProvider>
+          <AuthProvider>
+            <PlatformProvider>
+              <App />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  fontSize: '14px',
                 },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#dc2626',
-                  secondary: '#fff',
+                success: {
+                  iconTheme: {
+                    primary: '#16a34a',
+                    secondary: '#fff',
+                  },
                 },
-              },
-            }}
-          />
-        </AuthProvider>
+                error: {
+                  iconTheme: {
+                    primary: '#dc2626',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+            </PlatformProvider>
+          </AuthProvider>
+        </SettingsProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>

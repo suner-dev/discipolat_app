@@ -5,31 +5,34 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Palette dynamique : pilotée par les variables CSS --color-primary-*
+        // (valeurs par défaut dans index.css, surchargées à l'exécution par la
+        // configuration d'identité de l'église — voir lib/branding.ts).
         primary: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-          800: '#166534',
-          900: '#14532d',
-          950: '#052e16',
+          50: 'rgb(var(--color-primary-50) / <alpha-value>)',
+          100: 'rgb(var(--color-primary-100) / <alpha-value>)',
+          200: 'rgb(var(--color-primary-200) / <alpha-value>)',
+          300: 'rgb(var(--color-primary-300) / <alpha-value>)',
+          400: 'rgb(var(--color-primary-400) / <alpha-value>)',
+          500: 'rgb(var(--color-primary-500) / <alpha-value>)',
+          600: 'rgb(var(--color-primary-600) / <alpha-value>)',
+          700: 'rgb(var(--color-primary-700) / <alpha-value>)',
+          800: 'rgb(var(--color-primary-800) / <alpha-value>)',
+          900: 'rgb(var(--color-primary-900) / <alpha-value>)',
+          950: 'rgb(var(--color-primary-950) / <alpha-value>)',
         },
         gold: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
-          950: '#451a03',
+          50: 'rgb(var(--color-gold-50) / <alpha-value>)',
+          100: 'rgb(var(--color-gold-100) / <alpha-value>)',
+          200: 'rgb(var(--color-gold-200) / <alpha-value>)',
+          300: 'rgb(var(--color-gold-300) / <alpha-value>)',
+          400: 'rgb(var(--color-gold-400) / <alpha-value>)',
+          500: 'rgb(var(--color-gold-500) / <alpha-value>)',
+          600: 'rgb(var(--color-gold-600) / <alpha-value>)',
+          700: 'rgb(var(--color-gold-700) / <alpha-value>)',
+          800: 'rgb(var(--color-gold-800) / <alpha-value>)',
+          900: 'rgb(var(--color-gold-900) / <alpha-value>)',
+          950: 'rgb(var(--color-gold-950) / <alpha-value>)',
         },
         glass: {
           light: 'rgba(255, 255, 255, 0.7)',
@@ -39,8 +42,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Playfair Display', 'Georgia', 'serif'],
+        // Typographie pilotée par la marque de l'église (--font-sans / --font-display).
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['var(--font-display)', 'Playfair Display', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       animation: {

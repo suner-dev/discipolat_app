@@ -82,6 +82,10 @@ const mockDossier = {
   notes: [
     { id: 'note-1', contenu: 'Excellent suivi', auteurId: 'user-1', date: '2024-07-20T14:00:00Z' },
   ],
+  piecesJointes: [
+    { id: 'att-1', fileId: 'f1', nom: 'Synthèse suivi.pdf', url: 'https://drive/1.pdf', source: 'Rapport du 2024-07-22' },
+    { id: 'att-2', fileId: 'f2', nom: 'Compte rendu visite', url: 'https://drive/2.pdf', source: 'Rapport du 2024-07-15' },
+  ],
 };
 
 // Mock api
@@ -182,5 +186,16 @@ describe('Pastoral360Page', () => {
   it('renders private notes after loading', async () => {
     renderPage();
     expect(await screen.findByText('Excellent suivi')).toBeInTheDocument();
+  });
+
+  it('renders attachments with clickable links after loading', async () => {
+    renderPage();
+    expect(await screen.findByText('Pièces jointes · 2')).toBeInTheDocument();
+    const link = await screen.findByTitle('Synthèse suivi.pdf');
+    expect(link).toHaveAttribute('href', 'https://drive/1.pdf');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(await screen.findByText('Compte rendu visite')).toBeInTheDocument();
+    // Le contexte d'origine (source) est affiché sous le nom du document
+    expect(await screen.findByText('Rapport du 2024-07-22')).toBeInTheDocument();
   });
 });

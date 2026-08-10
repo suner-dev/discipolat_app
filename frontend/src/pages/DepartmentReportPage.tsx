@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import api from '@/lib/api';
+import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import {
   ArrowLeft, BarChart3, FileText, Users, Loader2, CheckCircle2,
   XCircle, TrendingUp, TrendingDown, Minus,
@@ -132,6 +133,7 @@ export default function DepartmentReportPage() {
                     <tr>
                       <th>Famille</th>
                       <th>Statut</th>
+                      <th>Pièces</th>
                       <th>Présence</th>
                       <th>Présents</th>
                       <th>Absents</th>
@@ -153,6 +155,9 @@ export default function DepartmentReportPage() {
                           ) : (
                             <span className="badge-warning text-xs"><Minus className="w-3 h-3 mr-1" />Non soumis</span>
                           )}
+                        </td>
+                        <td>
+                          <AttachmentLinks pieces={stats.piecesJointes} />
                         </td>
                         <td className="font-semibold">{stats.presenceMoyenne != null ? `${stats.presenceMoyenne}%` : '-'}</td>
                         <td>{stats.totalPresents ?? '-'}</td>

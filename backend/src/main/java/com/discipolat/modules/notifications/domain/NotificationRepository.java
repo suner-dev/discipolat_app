@@ -16,6 +16,11 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     Page<Notification> findByDestinataireIdAndLuFalseOrderByCreatedAtDesc(UUID destinataireId, Pageable pageable);
     long countByDestinataireIdAndLuFalse(UUID destinataireId);
 
+    /** Déduplication : une notification du même type pour la même entité et le même destinataire existe déjà. */
+    boolean existsByDestinataireIdAndTypeAndEntiteReferenceIdAndEntiteReferenceType(
+            UUID destinataireId, com.discipolat.common.enums.TypeNotification type,
+            UUID entiteReferenceId, String entiteReferenceType);
+
     @Modifying
     @Query("UPDATE Notification n SET n.lu = true, n.dateLecture = CURRENT_TIMESTAMP WHERE n.destinataireId = :userId AND n.lu = false")
     void markAllAsRead(@Param("userId") UUID userId);

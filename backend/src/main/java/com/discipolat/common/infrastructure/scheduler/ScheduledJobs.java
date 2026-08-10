@@ -2,6 +2,7 @@ package com.discipolat.common.infrastructure.scheduler;
 
 import com.discipolat.common.enums.StatutAlerte;
 import com.discipolat.common.enums.CanalNotification;
+import com.discipolat.common.enums.TransferStatus;
 import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.modules.alerts.domain.Alert;
@@ -12,8 +13,11 @@ import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.transfers.domain.TransferRequest;
+import com.discipolat.modules.transfers.domain.TransferRequestRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
+import com.discipolat.modules.notifications.domain.NotificationRepository;
 import com.discipolat.modules.workflow.domain.WorkflowService;
 import com.discipolat.modules.appointments.domain.AppointmentService;
 import com.discipolat.modules.events.domain.Event;
@@ -50,6 +54,8 @@ public class ScheduledJobs {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final WorkflowService workflowService;
     private final AppointmentService appointmentService;
+    private final TransferRequestRepository transferRequestRepository;
+    private final NotificationRepository notificationRepository;
 
     public ScheduledJobs(SoulRepository soulRepository, AlertRepository alertRepository,
                         NotificationService notificationService, MakerReportRepository makerReportRepository,
@@ -58,7 +64,9 @@ public class ScheduledJobs {
                         ActivationTokenRepository activationTokenRepository,
                         PasswordResetTokenRepository passwordResetTokenRepository,
                         WorkflowService workflowService,
-                        AppointmentService appointmentService) {
+                        AppointmentService appointmentService,
+                        TransferRequestRepository transferRequestRepository,
+                        NotificationRepository notificationRepository) {
         this.soulRepository = soulRepository;
         this.alertRepository = alertRepository;
         this.notificationService = notificationService;
@@ -70,6 +78,8 @@ public class ScheduledJobs {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.workflowService = workflowService;
         this.appointmentService = appointmentService;
+        this.transferRequestRepository = transferRequestRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     /**
@@ -262,6 +272,62 @@ public class ScheduledJobs {
     public void snapshotSpiritualScores() {
         int saved = workflowService.snapshotSpiritualScores();
         log.info("Spiritual score snapshot complete: {} souls recorded", saved);
+    }
+
+    /**
+     * Alerte le pasteur lorsque le délai de traitement d'une demande de transfert
+     * est dépassé (demande toujours EN_ATTENTE_VALIDATION ou VALIDATION_PARTIELLE
+     * après son delaiLimite).
+     *
+     * DÉDUPLICATION : une seule notification par demande et par pasteur (one-shot).
+     * Choix assumé : le pasteur est alerté une fois quand le délai est dépassé, pas
+     * à chaque passage du job — le demandeur et les validateurs suivent l'état dans
+     * l'espace Transferts. Une re-soumission après correction ne relance pas l'alerte.
+     */
+    @Scheduled(cron = "${app.scheduler.transfer-delay-check-cron}")
+    @Transactional
+    public void checkTransferDelays() {
+        log.info("Running transfer delay check...");
+        List<TransferRequest> overdue = transferRequestRepository
+                .findByStatutInAndDelaiLimiteBefore(
+                        java.util.List.of(TransferStatus.EN_ATTENTE_VALIDATION, TransferStatus.VALIDATION_PARTIELLE),
+                        LocalDateTime.now());
+        if (overdue.isEmpty()) {
+            return;
+        }
+        List<User> pasteurs = userRepository.findByRolesContaining(UserRole.PASTEUR);
+        if (pasteurs.isEmpty()) {
+            log.warn("No PASTEUR found to alert about {} overdue transfer requests", overdue.size());
+            return;
+        }
+        int sent = 0;
+        for (TransferRequest req : overdue) {
+            for (User pasteur : pasteurs) {
+                if (pasteur.isDeleted()) continue;
+                // Déduplication : ne pas re-notifier la même demande au même pasteur.
+                if (notificationRepository.existsByDestinataireIdAndTypeAndEntiteReferenceIdAndEntiteReferenceType(
+                        pasteur.getId(), TypeNotification.TRANSFERT_DELAI_DEPASSE,
+                        req.getId(), "TRANSFER")) {
+                    continue;
+                }
+                try {
+                    notificationService.create(
+                            pasteur.getId(), TypeNotification.TRANSFERT_DELAI_DEPASSE, CanalNotification.IN_APP,
+                            "⏰ Délai de validation dépassé",
+                            "La demande de transfert (" + req.getType().name()
+                                    + ") soumise le " + (req.getDateSoumission() != null ? req.getDateSoumission() : "—")
+                                    + " a dépassé son délai de traitement (" + req.getDelaiLimite() + ") et attend toujours une validation.",
+                            req.getId(), "TRANSFER");
+                    sent++;
+                } catch (Exception e) {
+                    // Une notification qui échoue ne doit pas annuler les alertes
+                    // aux autres pasteurs ni faire échouer le job.
+                    log.warn("Transfer delay notification failed for pasteur {} on request {}: {}",
+                            pasteur.getId(), req.getId(), e.getMessage());
+                }
+            }
+        }
+        log.info("Transfer delay check: {} overdue request(s), {} notification(s) sent", overdue.size(), sent);
     }
 
     /**

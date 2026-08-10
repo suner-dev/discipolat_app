@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../data/services/api_service.dart';
+import '../../widgets/attachment_chips.dart';
 import '../../widgets/glass_theme.dart';
 
 class Pastoral360Screen extends StatefulWidget {
@@ -57,6 +58,7 @@ class _Pastoral360ScreenState extends State<Pastoral360Screen> with SingleTicker
   List<Map<String, dynamic>> get _timeline => ((_dossier?['timeline'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
   Map<String, dynamic> get _evaluations => (_dossier?['evaluations'] as Map<String, dynamic>?) ?? {};
   List<Map<String, dynamic>> get _notes => ((_dossier?['notes'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
+  List<dynamic> get _piecesJointes => (_dossier?['piecesJointes'] as List<dynamic>?) ?? const [];
 
   static const _indiceLabels = {
     'santeSpirituelle': 'Santé\nspirituelle',
@@ -527,6 +529,28 @@ class _Pastoral360ScreenState extends State<Pastoral360Screen> with SingleTicker
                               ],
                             ),
                           ),
+                          const SizedBox(height: 16),
+
+                          // Pièces jointes (documents des rapports de suivi)
+                          if (_piecesJointes.isNotEmpty)
+                            GlassCard(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.attach_file, color: AppColors.primary, size: 18),
+                                      const SizedBox(width: 8),
+                                      Text('PIÈCES JOINTES · ${_piecesJointes.length}',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  AttachmentChips(pieces: _piecesJointes, sourceKey: 'source'),
+                                ],
+                              ),
+                            ),
                           const SizedBox(height: 16),
 
                           // Notes privées

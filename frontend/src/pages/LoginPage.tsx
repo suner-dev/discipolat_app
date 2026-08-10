@@ -120,10 +120,10 @@ export default function LoginPage() {
             <RotateCw className="w-3 h-3" />
             Choisissez un rôle
           </div>
-          <h2 className="text-2xl font-bold text-white font-display animate-slide-up">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display animate-slide-up">
             Bienvenue, {user.firstName} 🙌
           </h2>
-          <p className="mt-1.5 text-sm text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
+          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
             Vous avez plusieurs rôles. Sélectionnez celui à utiliser
           </p>
         </div>
@@ -146,8 +146,8 @@ export default function LoginPage() {
                   {roleIcons[r] || '🔘'}
                 </div>
                 <div className="flex-1">
-                  <p className="text-base font-semibold text-white">{roleLabels[r] || r}</p>
-                  <p className="text-sm text-gray-400 mt-0.5">{roleDescriptions[r] || ''}</p>
+                  <p className="text-base font-semibold text-gray-900 dark:text-white">{roleLabels[r] || r}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{roleDescriptions[r] || ''}</p>
                 </div>
                 {roleLoading && selectedRole === r ? (
                   <Loader2 className="w-5 h-5 animate-spin text-primary-400" />
@@ -159,7 +159,7 @@ export default function LoginPage() {
           ))}
         </div>
 
-        <p className="text-xs text-gray-500 text-center">
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
           Vous pourrez changer de rôle à tout moment depuis le menu
         </p>
       </div>
@@ -174,10 +174,10 @@ export default function LoginPage() {
           <Shield className="w-3 h-3" />
           Espace sécurisé
         </div>
-        <h2 className="text-2xl font-bold text-white font-display animate-slide-up">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display animate-slide-up">
           Connexion
         </h2>
-        <p className="mt-1.5 text-sm text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
+        <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
           Accédez à votre espace de gestion
         </p>
       </div>
@@ -189,7 +189,7 @@ export default function LoginPage() {
             <div className="p-1 rounded-lg bg-red-500/20">
               <LogIn className="w-3.5 h-3.5 text-red-400" />
             </div>
-            <p className="text-sm text-red-300">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-300">{error}</p>
           </div>
         </div>
       )}
@@ -197,7 +197,7 @@ export default function LoginPage() {
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 animate-slide-up" style={{ animationDelay: '100ms' }}>
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">
             Adresse email
           </label>
           <div className="relative group">
@@ -205,11 +205,11 @@ export default function LoginPage() {
               id="email"
               type="email"
               autoComplete="email"
-              className={`w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500
+              className={`w-full rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500
                          px-4 py-3 text-sm
                          focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20
                          transition-all duration-200
-                         group-hover:border-white/20
+                         group-hover:border-gray-300 dark:group-hover:border-white/20
                          ${errors.email ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
               placeholder="vous@email.com"
               {...register('email')}
@@ -225,7 +225,7 @@ export default function LoginPage() {
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="password" className="text-sm font-medium text-gray-300">
+            <label htmlFor="password" className="text-sm font-medium text-gray-600 dark:text-gray-300">
               Mot de passe
             </label>
           </div>
@@ -234,11 +234,11 @@ export default function LoginPage() {
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
-              className={`w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500
+              className={`w-full rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500
                          px-4 py-3 pr-12 text-sm
                          focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20
                          transition-all duration-200
-                         group-hover:border-white/20
+                         group-hover:border-gray-300 dark:group-hover:border-white/20
                          ${errors.password ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
               placeholder="••••••••"
               {...register('password')}
@@ -246,7 +246,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
               tabIndex={-1}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -288,7 +288,7 @@ export default function LoginPage() {
         <div className="text-center">
           <Link
             to="/forgot-password"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary-400 transition-colors group"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors group"
           >
             <HelpCircle className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
             Mot de passe oublié ?
@@ -299,16 +299,16 @@ export default function LoginPage() {
       {/* Divider */}
       <div className="relative animate-fade-in" style={{ animationDelay: '200ms' }}>
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-white/5" />
+          <div className="w-full border-t border-gray-200 dark:border-white/5" />
         </div>
         <div className="relative flex justify-center">
-          <span className="px-3 text-xs text-gray-500 bg-gray-900">Démonstration</span>
+          <span className="px-3 text-xs text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900">Démonstration</span>
         </div>
       </div>
 
       {/* Demo accounts */}
       <div className="animate-slide-up" style={{ animationDelay: '250ms' }}>
-        <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5">
+        <div className="p-3.5 rounded-xl bg-gray-100/70 dark:bg-white/[0.03] border border-gray-200/70 dark:border-white/5">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-3.5 h-3.5 text-gold-400" />
             <span className="text-xs font-medium text-gold-400">Comptes de test</span>
@@ -322,12 +322,12 @@ export default function LoginPage() {
               { role: 'Membre', email: 'membre@discipolat.com' },
             ].map((account) => (
               <div key={account.email} className="flex items-center justify-between text-xs">
-                <span className="text-gray-400">{account.role}</span>
-                <code className="text-gray-500 font-mono text-[11px]">{account.email}</code>
+                <span className="text-gray-500 dark:text-gray-400">{account.role}</span>
+                <code className="text-gray-400 dark:text-gray-500 font-mono text-[11px]">{account.email}</code>
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-gray-600 mt-2 text-center">Mot de passe : <code className="text-gray-500 font-mono">password123</code></p>
+          <p className="text-[11px] text-gray-500 dark:text-gray-600 mt-2 text-center">Mot de passe : <code className="text-gray-400 dark:text-gray-500 font-mono">password123</code></p>
         </div>
       </div>
     </div>

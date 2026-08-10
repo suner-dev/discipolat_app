@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/attachment_picker_field.dart';
+import '../../widgets/attachment_chips.dart';
 import '../../../data/services/api_service.dart';
 
 class EventsListScreen extends StatefulWidget {
@@ -221,6 +223,10 @@ class _EventsListScreenState extends State<EventsListScreen> {
                                 ],
                               ),
                             ],
+                            if (event['piecesJointes'] is List && (event['piecesJointes'] as List).isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              AttachmentChips(pieces: event['piecesJointes'] as List),
+                            ],
                           ],
                         ),
                       );
@@ -268,6 +274,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
   String _type = 'CULTE';
   DateTime _dateDebut = DateTime.now().add(const Duration(days: 1));
   bool _isProcessing = false;
+  final Set<String> _fichierIds = {};
 
   static const _types = ['CULTE', 'REUNION', 'SEMINAIRE', 'VISITE', 'EVANGELISATION', 'FORMATION', 'ANNIVERSAIRE', 'CELEBRATION'];
 
@@ -312,6 +319,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
         'description': _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
         'lieu': _lieuCtrl.text.trim().isEmpty ? null : _lieuCtrl.text.trim(),
         'dateDebut': _dateDebut.toIso8601String(),
+        if (_fichierIds.isNotEmpty) 'fichierIds': _fichierIds.toList(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -413,6 +421,14 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Text('Pièces jointes', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+              const SizedBox(height: 6),
+              AttachmentPickerField(
+                apiService: widget.apiService,
+                value: _fichierIds,
+                onChanged: (ids) => setState(() => _fichierIds..clear()..addAll(ids)),
               ),
               const SizedBox(height: 12),
               InkWell(

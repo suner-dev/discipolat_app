@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExportReport } from '@/hooks/useExportReport';
+import AttachmentPicker from '@/components/shared/AttachmentPicker';
+import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import type { FamilyReport, Family, MakerReport } from '@/types';
 import {
   FileText, Send, Loader2, CheckCircle2, AlertCircle, FileDown,
-  Sparkles, Users, BarChart3, Clock, ChevronDown,
+  Sparkles, Users, BarChart3, Clock, ChevronDown, Paperclip,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -18,6 +20,7 @@ export default function FamilyReportPage() {
 
   const [selectedFamilyId, setSelectedFamilyId] = useState('');
   const [commentaire, setCommentaire] = useState('');
+  const [fichierIds, setFichierIds] = useState<string[]>([]);
 
   const { data: families } = useQuery({
     queryKey: ['families', 'managed'],
@@ -51,6 +54,11 @@ export default function FamilyReportPage() {
     enabled: !!selectedFamilyId,
   });
 
+  // Recharge les pièces jointes existantes quand le rapport de famille change.
+  useEffect(() => {
+    setFichierIds(familyReport?.piecesJointes?.map(a => a.fileId) ?? []);
+  }, [familyReport]);
+
   const submitMutation = useMutation({
     mutationFn: async () => {
       await api.post('/reports/family-weekly', {
@@ -58,6 +66,7 @@ export default function FamilyReportPage() {
         chefFamilleId: user?.id,
         semaine,
         commentaireSynthese: commentaire,
+        fichierIds: fichierIds,
       });
     },
     onSuccess: () => {
@@ -215,6 +224,16 @@ export default function FamilyReportPage() {
               onChange={(e) => setCommentaire(e.target.value)}
               className="input" rows={4}
               placeholder="Appréciation qualitative globale de l'état de la famille..." />
+            <div className="mt-3">
+              <label className="label flex items-center gap-1.5">
+                <Paperclip className="w-3.5 h-3.5 text-primary-500" /> Pièces jointes
+              </label>
+              {familyReport?.statutValidation && ['SOUMIS', 'VU_PAR_RESPONSABLE', 'VU_PAR_PASTEUR'].includes(familyReport.statutValidation) ? (
+                <AttachmentLinks pieces={familyReport?.piecesJointes} />
+              ) : (
+                <AttachmentPicker value={fichierIds} onChange={setFichierIds} />
+              )}
+            </div>
           </div>
 
           {/* Actions */}

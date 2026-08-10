@@ -4,14 +4,31 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { X, ChevronLeft, Church, Star as StarIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { navForRole, ROLE_META, type WorkspaceNavItem } from '@/workspaces';
+import { useSettings } from '@/contexts/SettingsContext';
+import { usePlatformConfig, menusToSections } from '@/contexts/PlatformContext';
+import { resolveIcon } from '@/lib/menuIcons';
+import type { MenuEntry } from '@/types';
+
+interface NavItemData {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  subtitle: string;
+}
+
+interface NavSectionData {
+  title: string;
+  items: NavItemData[];
+}
 
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
 }
 
-function NavItem({ item, collapsed = false, onClick }: { item: WorkspaceNavItem; collapsed?: boolean; onClick?: () => void }) {
+function NavItem({ item, collapsed = false, onClick }: { item: NavItemData; collapsed?: boolean; onClick?: () => void }) {
   const location = useLocation();
   const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
 
@@ -66,8 +83,14 @@ function NavItem({ item, collapsed = false, onClick }: { item: WorkspaceNavItem;
   );
 }
 
+function menuToNav(menu: MenuEntry): NavItemData {
+  return { name: menu.label, href: menu.href, icon: resolveIcon(menu.icon), subtitle: '' };
+}
+
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user } = useAuth();
+  const { branding } = useSettings();
+  const { menus: configMenus } = usePlatformConfig();
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
 
@@ -87,8 +110,15 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     : null;
 
   // Espace métier du rôle actif : menus strictement dédiés au métier.
+  // Les menus sont pilotés par la configuration (backend) quand elle est
+  // disponible ; sinon repli sur la navigation statique (dégradé sans régression).
   const activeRole = user?.activeRole || user?.role || 'FAISEUR';
-  const workspaceSections = navForRole(activeRole);
+  const workspaceSections: NavSectionData[] = configMenus.length > 0
+    ? menusToSections(configMenus).map((s) => ({
+        title: s.title,
+        items: s.items.map(menuToNav),
+      }))
+    : navForRole(activeRole);
   const meta = ROLE_META[activeRole as keyof typeof ROLE_META] || ROLE_META.FAISEUR;
 
   return (
@@ -104,16 +134,20 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           `}>
             <div className="flex items-center gap-3">
               <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow">
-                <Church className="w-5 h-5 text-white drop-shadow-sm" />
+                {branding.logoUrl ? (
+                  <img src={branding.logoUrl} alt="" className="w-5 h-5 object-contain drop-shadow-sm" />
+                ) : (
+                  <Church className="w-5 h-5 text-white drop-shadow-sm" />
+                )}
                 <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gold-400 border-2 border-white dark:border-gray-900 animate-pulse-soft" />
               </div>
               {!collapsed && (
                 <div className="animate-fade-in">
                   <span className="text-base font-bold text-gray-900 dark:text-gray-100 font-display block leading-tight">
-                    Discipolat
+                    {branding.platformName}
                   </span>
                   <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium tracking-wider uppercase">
-                    Gestion
+                    {branding.churchName}
                   </span>
                 </div>
               )}
@@ -230,10 +264,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <div className="flex items-center justify-between h-16 px-5 border-b border-white/20 dark:border-white/[0.06]">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow">
-                <Church className="w-5 h-5 text-white" />
+                {branding.logoUrl ? (
+                  <img src={branding.logoUrl} alt="" className="w-5 h-5 object-contain" />
+                ) : (
+                  <Church className="w-5 h-5 text-white" />
+                )}
               </div>
               <span className="text-base font-bold text-gray-900 dark:text-gray-100 font-display">
-                Discipolat
+                {branding.platformName}
               </span>
             </div>
             <button

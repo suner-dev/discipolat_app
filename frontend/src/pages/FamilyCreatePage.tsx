@@ -5,8 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import type { User } from '@/types';
-import { ArrowLeft, Loader2, Save, Users, UserPlus, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Users, UserPlus, UserCheck, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const createFamilySchema = z.object({
@@ -26,7 +27,12 @@ type CreateFamilyForm = z.infer<typeof createFamilySchema>;
 export default function FamilyCreatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<'existing' | 'new'>('existing');
+  const { user } = useAuth();
+  // Le mode « Me désigner chef » n'est le défaut que pour un chef de famille ;
+  // pour ADMIN/PASTEUR, la sélection d'un chef existant reste le cas nominal.
+  const [mode, setMode] = useState<'self' | 'existing' | 'new'>(
+    user?.activeRole === 'CHEF_DE_FAMILLE' ? 'self' : 'existing'
+  );
 
   const {
     register,
@@ -47,7 +53,9 @@ export default function FamilyCreatePage() {
   const createMutation = useMutation({
     mutationFn: async (data: CreateFamilyForm) => {
       const payload: any = { nom: data.nom };
-      if (mode === 'existing') {
+      if (mode === 'self') {
+        payload.chefFamilleId = user?.id;
+      } else if (mode === 'existing') {
         payload.chefFamilleId = data.chefFamilleId;
       } else {
         payload.createNewChef = true;
@@ -70,6 +78,10 @@ export default function FamilyCreatePage() {
 
   const onSubmit = async (data: CreateFamilyForm) => {
     // Validation selon le mode
+    if (mode === 'self' && !user?.id) {
+      toast.error('Impossible de récupérer votre identité de chef de famille');
+      return;
+    }
     if (mode === 'existing' && !data.chefFamilleId) {
       toast.error('Sélectionnez un chef existant ou basculez en mode « créer un chef »');
       return;
@@ -122,7 +134,18 @@ export default function FamilyCreatePage() {
         {/* Mode selection */}
         <div className="card p-6">
           <label className="label">Chef de famille</label>
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setMode('self')}
+              className={`p-3 rounded-xl text-sm font-medium transition-all border-2
+                ${mode === 'self'
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300'}`}
+            >
+              <UserCheck className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+              Me désigner chef
+            </button>
             <button
               type="button"
               onClick={() => setMode('existing')}
@@ -146,6 +169,24 @@ export default function FamilyCreatePage() {
               Créer un nouveau chef
             </button>
           </div>
+
+          {mode === 'self' && (
+            <div className="p-4 rounded-xl bg-primary-50/70 dark:bg-primary-900/15 border border-primary-200/60 dark:border-primary-800/40">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
+                  <UserCheck className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Vous serez désigné chef de cette famille · {user?.email}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {mode === 'existing' ? (
             <>

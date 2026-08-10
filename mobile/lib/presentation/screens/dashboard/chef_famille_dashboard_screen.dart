@@ -15,6 +15,7 @@ class ChefFamilleDashboardScreen extends StatefulWidget {
 class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen> with SingleTickerProviderStateMixin {
   final _apiService = ApiService();
   Map<String, dynamic>? _dashboard;
+  List<dynamic> _workload = [];
   bool _isLoading = true;
 
   late final AnimationController _animCtrl;
@@ -39,8 +40,15 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
       final familleId = AuthState().familleGereeId;
       final response = await _apiService.get('/dashboard/chef-famille',
           params: familleId != null ? {'familleId': familleId} : null);
+      // Charge de travail des faiseurs de la famille (scopée côté serveur).
+      List<dynamic> workload = [];
+      try {
+        final workloadRes = await _apiService.get('/users/faiseur-workload',
+            params: familleId != null ? {'familleId': familleId} : null);
+        workload = (workloadRes.data as List?) ?? [];
+      } catch (_) {/* best-effort : la charge n'empêche pas l'affichage du dashboard */}
       if (mounted) {
-        setState(() { _dashboard = response.data as Map<String, dynamic>?; _isLoading = false; });
+        setState(() { _dashboard = response.data as Map<String, dynamic>?; _workload = workload; _isLoading = false; });
         _animCtrl.forward();
       }
     } catch (_) {
@@ -99,6 +107,53 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                         },
                       ),
                       const SizedBox(height: 16),
+
+                      // Charge de travail des faiseurs (US-14)
+                      if (_workload.isNotEmpty) ...[
+                        SectionTitle(title: 'Charge de travail des Faiseurs', icon: Icons.bar_chart),
+                        const SizedBox(height: 8),
+                        ..._workload.take(6).map((w) {
+                          final charge = (w['charge'] as String?) ?? '';
+                          final chargeColor = charge == 'SURCHARGÉ'
+                              ? Colors.redAccent
+                              : charge == 'LEGER' ? Colors.greenAccent : Colors.blueAccent;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.04),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(children: [
+                              Expanded(child: Text('${w['faiseurName'] ?? '—'}',
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12))),
+                              if (charge.isNotEmpty)
+                                Container(
+                                  margin: const EdgeInsets.only(right: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: chargeColor.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    charge == 'SURCHARGÉ' ? 'Surchargé' : charge == 'LEGER' ? 'Léger' : 'Normal',
+                                    style: TextStyle(color: chargeColor, fontSize: 9, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text('${w['soulCount'] ?? 0} âmes',
+                                    style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+                              ),
+                            ]),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                      ],
 
                       // Faiseurs network
                       if (faiseurs.isNotEmpty) ...[

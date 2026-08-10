@@ -5,9 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Soul, MakerReport, RaisonAbsence, MotifSortie } from '@/types';
 import {
   FileText, Send, Loader2, CheckCircle2, AlertCircle, Save, Clock,
-  Sparkles, Heart, UserCheck, XCircle,
+  Sparkles, Heart, UserCheck, XCircle, Paperclip,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import AttachmentPicker from '@/components/shared/AttachmentPicker';
+import AttachmentLinks from '@/components/shared/AttachmentLinks';
 
 const RAISON_ABSENCE_OPTIONS: { value: RaisonAbsence; label: string }[] = [
   { value: 'MALADIE', label: 'Maladie' },
@@ -40,6 +42,7 @@ interface ReportFormData {
   nbSorties: number;
   motifSortie?: MotifSortie;
   notesComplementaires?: string;
+  fichierIds?: string[];
 }
 
 export default function MakerReportPage() {
@@ -72,6 +75,7 @@ export default function MakerReportPage() {
           presencesParCulte: Object.fromEntries(CULTES.map(c => [c, true])),
           nbSorties: 0,
           notesComplementaires: '',
+          fichierIds: [],
         };
       }
       setReports(newReports);
@@ -150,9 +154,10 @@ export default function MakerReportPage() {
         nbSorties: existing.nbSorties || 0,
         motifSortie: existing.motifSortie,
         notesComplementaires: existing.notesComplementaires,
+        fichierIds: existing.piecesJointes?.map(a => a.fileId) ?? [],
       };
     }
-    return { ameId, presencesParCulte: Object.fromEntries(CULTES.map(c => [c, false])), nbSorties: 0 };
+    return { ameId, presencesParCulte: Object.fromEntries(CULTES.map(c => [c, false])), nbSorties: 0, fichierIds: [] };
   };
 
   const getReport = (ameId: string): ReportFormData => {
@@ -360,6 +365,23 @@ export default function MakerReportPage() {
                   <textarea value={report.notesComplementaires || ''}
                     onChange={(e) => updateReport(soul.id, { notesComplementaires: e.target.value })}
                     className="input" rows={2} placeholder="Notes additionnelles..." />
+                </div>
+
+                {/* Pièces jointes — lien en lecture seule si déjà soumis, sinon sélecteur */}
+                <div className="mt-4 p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
+                  <label className="label flex items-center gap-1.5">
+                    <Paperclip className="w-3.5 h-3.5 text-primary-500" /> Pièces jointes
+                  </label>
+                  <div className="mt-2">
+                    {soumis ? (
+                      <AttachmentLinks pieces={existingReports?.find(r => r.ameId === soul.id)?.piecesJointes} />
+                    ) : (
+                      <AttachmentPicker
+                        value={report.fichierIds || []}
+                        onChange={(ids) => updateReport(soul.id, { fichierIds: ids })}
+                      />
+                    )}
+                  </div>
                 </div>
 
                 {/* Submit */}

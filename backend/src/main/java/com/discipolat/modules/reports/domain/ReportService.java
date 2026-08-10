@@ -5,6 +5,8 @@ import com.discipolat.common.enums.StatutValidation;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.reports.api.SubmitFamilyReportRequest;
 import com.discipolat.modules.reports.api.SubmitMakerReportRequest;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.parallelfollowups.domain.ParallelFollowupRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
@@ -36,6 +38,7 @@ public class ReportService {
     private final SoulRepository soulRepository;
     private final UserRepository userRepository;
     private final ParallelFollowupRepository parallelFollowupRepository;
+    private final EntityAttachmentService attachmentService;
 
     public ReportService(MakerReportRepository makerReportRepository,
                          FamilyReportRepository familyReportRepository,
@@ -43,7 +46,8 @@ public class ReportService {
                          WorkspaceScopeService workspaceScope,
                          SoulRepository soulRepository,
                          UserRepository userRepository,
-                         ParallelFollowupRepository parallelFollowupRepository) {
+                         ParallelFollowupRepository parallelFollowupRepository,
+                         EntityAttachmentService attachmentService) {
         this.makerReportRepository = makerReportRepository;
         this.familyReportRepository = familyReportRepository;
         this.securityUtils = securityUtils;
@@ -51,6 +55,7 @@ public class ReportService {
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.parallelFollowupRepository = parallelFollowupRepository;
+        this.attachmentService = attachmentService;
     }
 
     /**
@@ -92,7 +97,9 @@ public class ReportService {
         report.setSoumis(true);
         report.setDateSoumission(LocalDateTime.now());
 
-        return makerReportRepository.save(report);
+        MakerReport saved = makerReportRepository.save(report);
+        attachmentService.replace(EntityAttachment.EntityType.MAKER_REPORT, saved.getId(), request.fichierIds());
+        return saved;
     }
 
     /**
@@ -133,7 +140,9 @@ public class ReportService {
         report.setNotesComplementaires(request.notesComplementaires());
         report.setSoumis(false);
 
-        return makerReportRepository.save(report);
+        MakerReport saved = makerReportRepository.save(report);
+        attachmentService.replace(EntityAttachment.EntityType.MAKER_REPORT, saved.getId(), request.fichierIds());
+        return saved;
     }
 
     public MakerReport findMakerReportById(UUID id) {
@@ -225,7 +234,9 @@ public class ReportService {
         report.setStatutValidation(StatutValidation.SOUMIS);
         report.setDateSoumission(LocalDateTime.now());
 
-        return familyReportRepository.save(report);
+        FamilyReport saved = familyReportRepository.save(report);
+        attachmentService.replace(EntityAttachment.EntityType.FAMILY_REPORT, saved.getId(), request.fichierIds());
+        return saved;
     }
 
     private void aggregateFamilyStats(FamilyReport report, UUID familleId, LocalDate semaine) {

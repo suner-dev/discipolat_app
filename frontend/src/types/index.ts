@@ -334,12 +334,14 @@ export interface MemberRequest {
   departmentNom?: string;
   familyId?: string;
   familyNom?: string;
+  piecesJointes?: TransferAttachment[];
 }
 
 export interface CreateMemberRequest {
   type: MemberRequestType;
   cible: MemberRequestTarget;
   message: string;
+  fichierIds?: string[];
 }
 
 export interface UpdateMemberRequestStatus {
@@ -387,6 +389,7 @@ export interface MakerReport {
   soumis: boolean;
   dateSoumission?: string;
   createdAt: string;
+  piecesJointes?: TransferAttachment[];
 }
 
 export interface SubmitMakerReportRequest {
@@ -402,6 +405,7 @@ export interface SubmitMakerReportRequest {
   motifSortie?: MotifSortie;
   nbMaintenus?: number;
   notesComplementaires?: string;
+  fichierIds?: string[];
 }
 
 export interface FamilyReport {
@@ -423,6 +427,7 @@ export interface FamilyReport {
   statutValidation: StatutValidation;
   dateSoumission?: string;
   createdAt: string;
+  piecesJointes?: TransferAttachment[];
 }
 
 export interface SubmitFamilyReportRequest {
@@ -430,6 +435,7 @@ export interface SubmitFamilyReportRequest {
   chefFamilleId: string;
   semaine: string;
   commentaireSynthese?: string;
+  fichierIds?: string[];
 }
 
 // Parallel followup types
@@ -515,7 +521,17 @@ export type TypeNotification =
   | 'RAPPORT_FAMILLE_NON_SOUMIS'
   | 'ALERTE_ABSENCE'
   | 'INFORMATION'
-  | 'PRIERE_EXAUCEE';
+  | 'PRIERE_EXAUCEE'
+  // Transferts (workflow configurable)
+  | 'TRANSFERT_DEMANDE'
+  | 'TRANSFERT_VALIDATION'
+  | 'TRANSFERT_VALIDEE'
+  | 'TRANSFERT_REFUSEE'
+  | 'TRANSFERT_INFOS_DEMANDEES'
+  | 'TRANSFERT_CORRECTION'
+  | 'TRANSFERT_EXECUTEE'
+  | 'TRANSFERT_ANNULEE'
+  | 'TRANSFERT_DELAI_DEPASSE';
 
 export interface Notification {
   id: string;
@@ -607,6 +623,7 @@ export interface Evenement {
   statut: StatutEvenement;
   dateCreation: string;
   updatedAt: string;
+  piecesJointes?: TransferAttachment[];
 }
 
 export interface CreateEventRequest {
@@ -618,6 +635,7 @@ export interface CreateEventRequest {
   lieu?: string;
   familleId?: string;
   limitePlaces?: number;
+  fichierIds?: string[];
 }
 
 export interface UpdateEventRequest {
@@ -629,6 +647,7 @@ export interface UpdateEventRequest {
   lieu?: string;
   limitePlaces?: number;
   statut?: StatutEvenement;
+  fichierIds?: string[];
 }
 
 export interface InscriptionEvenement {
@@ -648,8 +667,8 @@ export interface FileEntity {
   id: string;
   nom: string;
   description?: string;
-  url: string;
-  typeMime: string;
+  chemin: string;
+  typeFichier: string;
   taille: number;
   familleId?: string;
   evenementId?: string;
@@ -661,8 +680,8 @@ export interface FileEntity {
 export interface CreateFileRequest {
   nom: string;
   description?: string;
-  url: string;
-  typeMime: string;
+  chemin: string;
+  typeFichier: string;
   taille: number;
   familleId?: string;
   evenementId?: string;
@@ -1079,6 +1098,209 @@ export interface UpdateAppointmentStatusRequest {
   reponse?: string;
 }
 
+// ======================== Workflow de transfert (V37) ========================
+
+export type TransferType =
+  | 'MEMBRE_DEPARTEMENT_TRANSFERT'
+  | 'MEMBRE_DEPARTEMENT_AJOUT'
+  | 'MEMBRE_DEPARTEMENT_RETRAIT'
+  | 'DISCIPLE_FAMILLE_TRANSFERT'
+  | 'FAISEUR_FAMILLE_TRANSFERT'
+  | 'CHEF_FAMILLE_TRANSFERT'
+  | 'FAISEUR_DISCIPLE_CHANGEMENT'
+  | 'RESPONSABLE_DEPARTEMENT_CHANGEMENT'
+  | 'CHEF_ADJOINT_CHANGEMENT';
+
+export type TransferStatus =
+  | 'BROUILLON'
+  | 'SOUMIS'
+  | 'EN_ATTENTE_VALIDATION'
+  | 'VALIDATION_PARTIELLE'
+  | 'VALIDE'
+  | 'REFUSE'
+  | 'ANNULE'
+  | 'EXECUTE'
+  | 'ARCHIVE';
+
+export type DecisionType = 'APPROBATION' | 'REFUS' | 'DEMANDE_INFORMATIONS' | 'RENVOI_CORRECTION';
+export type PrioriteTransfert = 'BASSE' | 'MOYENNE' | 'HAUTE' | 'URGENTE';
+export type ValidationMode = 'SEQUENTIEL' | 'PARALLELE' | 'N_VALIDATIONS_REQUISES';
+
+export type AffectationType = 'FAMILLE' | 'DEPARTEMENT' | 'FAISEUR' | 'UTILISATEUR';
+
+export interface Affectation {
+  type: AffectationType;
+  id: string;
+  nom: string;
+}
+
+export interface TransferRequest {
+  id: string;
+  type: TransferType;
+  statut: TransferStatus;
+  personneId: string;
+  personneType: 'SOUL' | 'USER';
+  personneNom: string;
+  ancienneAffectation?: Affectation | null;
+  nouvelleAffectation: Affectation;
+  demandeurId: string;
+  demandeurNom?: string;
+  justification: string;
+  priorite: PrioriteTransfert;
+  commentaires?: string;
+  dateSoumission?: string;
+  dateExecution?: string;
+  delaiLimite?: string;
+  etapeCourante: number;
+  approbationsObtenues: number;
+  totalEtapes: number;
+  createdAt: string;
+}
+
+export interface CreateTransferRequest {
+  type: TransferType;
+  personneId: string;
+  personneType: 'SOUL' | 'USER';
+  ancienneAffectation?: Affectation;
+  nouvelleAffectation: Affectation;
+  justification: string;
+  priorite: PrioriteTransfert;
+  commentaires?: string;
+  fichierIds?: string[];
+}
+
+export interface TransferConfiguration {
+  id: string;
+  type: TransferType;
+  label: string;
+  description?: string;
+  actif: boolean;
+  rolesInitiateurs: string[];
+  canInitier: boolean;
+  etapes: string[];
+}
+
+export interface EtapeValidation {
+  id: string;
+  etapeOrdre: number;
+  rolesValidateurs: string[];
+  label: string;
+  description?: string;
+  requis: boolean;
+  validee: boolean;
+}
+
+export interface TransferDecision {
+  id: string;
+  validateurId: string;
+  validateurNom?: string;
+  roleValidateur?: string;
+  decision: DecisionType;
+  motivation?: string;
+  etapeOrdre: number;
+  createdAt: string;
+}
+
+export interface TransferAttachment {
+  id: string;
+  fileId: string;
+  nom?: string;
+  url?: string;
+  createdAt: string;
+}
+
+export interface TransferDetail {
+  transfert: TransferRequest;
+  etapes: EtapeValidation[];
+  decisions: TransferDecision[];
+  piecesJointes: TransferAttachment[];
+  peutValider: boolean;
+  roleActif: string;
+  modeValidation?: ValidationMode;
+}
+
+export interface TransferHistoryEntry {
+  id: string;
+  action: string;
+  ancienStatut?: string;
+  nouveauStatut?: string;
+  utilisateurId?: string;
+  utilisateurNom?: string;
+  roleActif?: string;
+  commentaire?: string;
+  ancienneValeur?: Record<string, unknown>;
+  nouvelleValeur?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface WorkflowStep {
+  id: string;
+  etapeOrdre: number;
+  rolesValidateurs: string[];
+  label: string;
+  description?: string;
+  requis: boolean;
+}
+
+export interface WorkflowConfig {
+  id: string;
+  transferType: TransferType;
+  label: string;
+  description?: string;
+  actif: boolean;
+  rolesInitiateurs: string[];
+  modeValidation: ValidationMode;
+  nombreValidationsRequises: number;
+  delaiTraitementHeures: number;
+  notificationsAuto: boolean;
+  modeleMessageDemande?: string;
+  modeleMessageValidation?: string;
+  modeleMessageRefus?: string;
+  modeleMessageExecution?: string;
+  reglesExecution?: Record<string, unknown>;
+  steps: WorkflowStep[];
+}
+
+export const TRANSFER_TYPE_LABELS: Record<TransferType, string> = {
+  MEMBRE_DEPARTEMENT_TRANSFERT: 'Transfert de membre entre départements',
+  MEMBRE_DEPARTEMENT_AJOUT: 'Ajout de membre dans un département',
+  MEMBRE_DEPARTEMENT_RETRAIT: 'Retrait de membre d\'un département',
+  DISCIPLE_FAMILLE_TRANSFERT: 'Transfert de disciple entre familles',
+  FAISEUR_FAMILLE_TRANSFERT: 'Transfert de faiseur entre familles',
+  CHEF_FAMILLE_TRANSFERT: 'Transfert de chef de famille',
+  FAISEUR_DISCIPLE_CHANGEMENT: 'Changement du faiseur d\'un disciple',
+  RESPONSABLE_DEPARTEMENT_CHANGEMENT: 'Changement du responsable d\'un département',
+  CHEF_ADJOINT_CHANGEMENT: 'Changement du chef adjoint d\'une famille',
+};
+
+export const TRANSFER_STATUS_LABELS: Record<TransferStatus, string> = {
+  BROUILLON: 'Brouillon',
+  SOUMIS: 'Soumis',
+  EN_ATTENTE_VALIDATION: 'En attente de validation',
+  VALIDATION_PARTIELLE: 'Validation partielle',
+  VALIDE: 'Validé',
+  REFUSE: 'Refusé',
+  ANNULE: 'Annulé',
+  EXECUTE: 'Exécuté',
+  ARCHIVE: 'Archivé',
+};
+
+export const DECISION_LABELS: Record<DecisionType, string> = {
+  APPROBATION: 'Approbation',
+  REFUS: 'Refus',
+  DEMANDE_INFORMATIONS: 'Demande d\'informations',
+  RENVOI_CORRECTION: 'Renvoi pour correction',
+};
+
+export const PRIORITE_LABELS: Record<PrioriteTransfert, string> = {
+  BASSE: 'Basse',
+  MOYENNE: 'Moyenne',
+  HAUTE: 'Haute',
+  URGENTE: 'Urgente',
+};
+
+export const ROLES: UserRole[] = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
+
 // ======================== Cartographie ========================
 
 export type MapPointType = 'SOUL' | 'FAMILY';
@@ -1100,6 +1322,107 @@ export interface UpdateCoordinatesRequest {
   latitude: number;
   longitude: number;
   zone?: string;
+}
+
+// ======================== Plateforme configurable (V38) ========================
+
+/** Identité publique de l'église (sans authentification) — pilotée par /api/v1/public/settings. */
+export interface PublicBranding {
+  churchName: string;
+  platformName: string;
+  slogan?: string;
+  description?: string;
+  logoUrl?: string;
+  faviconUrl?: string;
+  bannerUrl?: string;
+  primaryColor: string;
+  accentColor: string;
+  buttonColor: string;
+  fontFamily: string;
+  allowDarkMode: boolean;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  socialLinks?: Record<string, string>;
+}
+
+/** Vue complète des paramètres d'identité & de marque (authentifié). */
+export interface ChurchSettings extends PublicBranding {
+  id: string;
+  contactNotes?: string;
+}
+
+export type CustomFieldType =
+  | 'TEXTE' | 'NOMBRE' | 'DATE' | 'DATE_HEURE' | 'BOOLEEN' | 'SELECTION'
+  | 'SELECTION_MULTIPLE' | 'FICHIER' | 'IMAGE' | 'TELEPHONE' | 'EMAIL' | 'URL' | 'TEXTAREA';
+
+export interface CustomFieldDefinition {
+  id: string;
+  entiteType: 'SOUL' | 'USER' | 'DEPARTMENT' | 'FAMILY';
+  code: string;
+  label: string;
+  type: CustomFieldType;
+  obligatoire: boolean;
+  ordre: number;
+  options?: string[];
+  placeholder?: string;
+  defaultValue?: string;
+  rolesLecture: string[];
+  rolesEcriture: string[];
+  actif: boolean;
+}
+
+export interface CustomFieldValue {
+  fieldId: string;
+  value?: string | number | boolean | null;
+}
+
+export interface CustomFieldBundle {
+  definitions: CustomFieldDefinition[];
+  values: CustomFieldValue[];
+}
+
+// ======================== Modules & Menus configurables ========================
+
+export interface PlatformModule {
+  key: string;
+  label: string;
+  description?: string;
+  icon?: string;
+  enabled: boolean;
+  ordre: number;
+  /** Section (catégorie) de navigation, ex: 'Pilotage', 'Administration'. */
+  section: string;
+}
+
+export interface MenuEntry {
+  id: string;
+  key: string;
+  label: string;
+  href: string;
+  icon?: string;
+  section: string;
+  ordre: number;
+  roles: string[];
+  moduleKey?: string;
+  enabled: boolean;
+}
+
+// ======================== Rôles & permissions (T3) ========================
+
+export interface PlatformRole {
+  key: string;
+  label: string;
+  description?: string;
+  system: boolean;
+  permissions: string[];
+}
+
+export interface PermissionEntry {
+  role: string;
+  permission: string;
+  enabled: boolean;
 }
 
 // Pagination

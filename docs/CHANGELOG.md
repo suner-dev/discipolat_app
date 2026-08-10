@@ -1,5 +1,565 @@
 # Changelog
 
+## [3.9.0] - 2026-08-07
+
+### 🔎 Journal d'audit — filtres utilisateur + plage de dates, export CSV
+
+**Principe** : le pasteur/administrateur ne navigue plus dans un journal brut — il filtre
+par utilisateur, par entité et sur une plage de dates (serveur, paginé), et exporte le
+résultat en CSV pour archivage ou analyse externe.
+
+### ⚙️ Backend
+- **`AuditLogRepository.findFiltered`** : requête combinée `@Query` — chaque critère est
+  optionnel (`utilisateurId`, `entiteType`, `debut`, `fin` en `LocalDateTime`) ; les
+  filtres se cumulent (avant : logique exclusive `if/else` entre utilisateur et entité)
+- **`AuditService`** : `findFiltered(...)` (délégation) + `exportCsv(...)` — parcours
+  paginé de toutes les pages (plafonné à 50 000 lignes), **BOM UTF-8** pour Excel,
+  séparateur `;`, champs entre guillemets (échappement des `"`), résolution des **emails**
+  des utilisateurs (`UserRepository.findAllById`, une seule requête) et détail
+  ancienne/nouvelle valeur inclus dans la colonne Détails
+- **`AuditController`** : `GET /api/v1/audit` accepte désormais `debut`/`fin`
+  (`@DateTimeFormat(iso = DATE_TIME)`) en plus de `utilisateurId`/`entiteType` ;
+  **nouveau `GET /api/v1/audit/export`** (`text/csv`, `Content-Disposition` attachment,
+  mêmes filtres) — accès ADMIN/PASTEUR, journal toujours immuable (lecture seule)
+
+### 🗂️ Web
+- **`AuditPage`** : nouveau sélecteur « Tous les utilisateurs » (liste `/users?size=200`),
+  deux champs date « Du → Au » (validation croisée min/max), reset des filtres
+  (« Réinitialiser » visible dès qu'un filtre est actif)
+- **Noms réels dans le tableau** : la colonne Utilisateur affiche le nom complet résolu
+  via la liste des utilisateurs (fallback email puis id tronqué)
+- **Bouton « Exporter CSV »** (en-tête) : téléchargement via blob des journaux filtrés
+  (`journal-audit-YYYY-MM-DD.csv`), avec état de chargement
+
+### 🧪 Tests
+- **Nouveau `AuditServiceTest`** (5 tests) : délégation des critères combinés, critères
+  null, CSV avec BOM/en-tête/emails, fallback UUID sans utilisateur résolu, export vide =
+  en-tête seul
+- **Nouveau `AuditPage.test.tsx`** (6 tests) : rendu titre/entrées/filtres, nom résolu,
+  filtres utilisateur+entité (params API), plage de dates (ISO `debut`/`fin`), reset,
+  export CSV avec les filtres appliqués (blob + click simulé)
+- Backend : suite Maven ✓ (dont nouveau `AuditServiceTest`) · Frontend : **82 tests
+  vitest ✓** (76 + 6), `tsc` propre
+
+## [3.8.0] - 2026-08-07
+
+### 🏠 Page d'accueil glassmorphism + thème clair/sombre de la connexion + redesign Audit
+
+### 🏠 Page d'accueil publique (`/`)
+- **Nouvelle `LandingPage`** : héros avec titre dégradé, particules animées, glows, cartes de
+  fonctionnalités en verre (glassmorphism), section stats, CTA final et footer verre — fond
+  adaptatif clair/sombre avec toggle de thème
+- **`HomeGate`** (App.tsx) : `/` affiche la landing si visiteur non connecté, redirige vers
+  `/dashboard` si déjà authentifié
+
+### 🌗 Mode clair / sombre des pages d'authentification
+- **Nouveau hook partagé `useTheme`** (extrait du pattern Navbar : `localStorage.darkMode` +
+  classe `dark` sur `<html>`) — réutilisé par `Navbar` (refactor) et les pages auth
+- **`AuthLayout`** : fond, particules et carte verre adaptatifs (`bg-white/80` clair /
+  `bg-gray-900/70` sombre) + **toggle Soleil/Lune** en haut à droite (persisté)
+- **`LoginPage`**, **`ForgotPasswordPage`**, **`ResetPasswordPage`** : classes adaptatives
+  (inputs, labels, textes, divider, carte comptes de démo) — plus rien de codé en dur en sombre
+
+### 📋 Redesign du Journal d'audit (menu Pasteur → Administration)
+- **Nouveau design glassmorphism** : en-tête avec badge « Immuable », 4 cartes de statistiques
+  (total + créations/modifications/suppressions de la page), barre de filtres (recherche +
+  sélecteur d'entité) dans une carte verre
+- **Tableau stylé** : badges colorés par catégorie d'action (Création vert / Modification bleu /
+  Suppression rouge avec icônes), avatars utilisateur, libellés d'entité en français, état vide
+  élégant, pagination avec icônes et compteur
+- **Recherche client-side** (le backend `/audit` ne filtre pas par texte : il n'accepte que
+  `page`/`size`/`utilisateurId`/`entiteType`) — filtrage sur action, utilisateur, entité, détails
+
+### 🧪 Tests
+- **Nouveau `LandingPage.test.tsx`** (6 tests) : rendu du héros, boutons de connexion +
+  fonctionnalités, lien `/login`, **bascule du thème clair/sombre sur `<html>`** (landing),
+  toggle de l'AuthLayout avec LoginPage, restauration du thème persisté au montage
+- Frontend : **76 tests vitest ✓** (70 + 6), `tsc` propre — aucun test existant cassé
+  (Navbar refactorée vers `useTheme` sans changement de comportement)
+
+### 🔗 Liens de test en local
+- Frontend : `http://localhost:5173` · Backend : `http://localhost:8080` ·
+  Swagger : `http://localhost:8080/swagger-ui.html` (ADMIN/PASTEUR) ·
+  Health : `http://localhost:8080/actuator/health`
+- Comptes de démo (`password123`) : `pasteur@discipolat.com`, `responsable@discipolat.com`,
+  `chef@discipolat.com`, `faiseur@discipolat.com`, `membre@discipolat.com`, `admin@discipolat.com`
+- Docker : `docker compose up -d` (frontend :3000, API :8081) · Dev : `scripts/start-dev.sh`
+
+## [3.7.6] - 2026-08-07
+
+### 🌐 Ouverture des documents dans un vrai navigateur (url_launcher) sur mobile
+
+**Principe** : fin du SnackBar « Lien: … » — le tap sur une pièce jointe (chips) ou
+sur l'icône de téléchargement de l'écran Documents ouvre désormais le document dans le
+**navigateur externe** via `url_launcher` (`LaunchMode.externalApplication`). La SnackBar
+n'apparaît plus qu'en cas d'échec (URL invalide, aucune app capable de l'ouvrir, plugin
+indisponible) avec l'URL affichée pour ne pas laisser l'utilisateur sans retour.
+
+### ⚙️ Mobile
+- **Nouvelle dépendance `url_launcher: ^6.3.1`** (+ `url_launcher_platform_interface` en
+dev pour les tests)
+- **`open_url.dart` (`showUrlLink`)** réécrit : parse l'URI, `launchUrl` en mode
+`externalApplication`, gestion d'échec → SnackBar avec l'URL (chemin unique : retour
+`false` du lanceur ou exception ramenés à un seul test après `context.mounted`,
+point de revue)
+- **`documents_screen`** : `_openUrl` délègue au helper partagé (plus de copie du
+pattern SnackBar)
+- **Android** : `<queries>` ajouté avec `ACTION_VIEW` + schéma `https` (visibilité des
+navigateurs sur Android 11+, requise par url_launcher)
+
+### 🧪 Tests
+- `member_requests_screen_test` : nouveau fake `_FakeUrlLauncherPlatform` (étend
+`UrlLauncherPlatform`, enregistre les URLs, peut simuler un échec) — le test « tap »
+vérifie désormais que `launchUrl` est appelé avec la bonne URL **et** qu'aucune SnackBar
+n'apparaît ; nouveau test d'échec → SnackBar « Impossible d'ouvrir le lien: … »
+- **Hygiène de test (points de revue)** : `canLaunch` non utilisé retiré du fake ;
+l'instance statique `UrlLauncherPlatform` est restaurée en `tearDown` (pas de fuite
+vers les autres fichiers de test)
+- Mobile : **25 tests widget ✓**, `flutter analyze` sans nouvelle issue (seule reste
+l'info pré-existante `DropdownButtonFormField value:` sur documents_screen, ligne non touchée)
+
+## [3.7.5] - 2026-08-07
+
+### 🧪 Tests widget mobile — chips de pièces jointes sur l'écran Demandes
+
+**Principe** : l'affichage et l'interaction des chips de pièces jointes (`AttachmentChips`)
+sur `member_requests_screen` sont désormais couverts par des tests widget — y compris
+le tap qui ouvre le lien du document.
+
+- **`member_requests_screen`** : ajout de l'injection optionnelle `apiService`
+  (pattern de testabilité déjà utilisé par SoulDetail/Pastoral360/DepartmentReport,
+  aucun changement de comportement en production)
+- **Nouveau `mobile/test/member_requests_screen_test.dart`** (4 tests) :
+  - chips des pièces jointes affichées sur « Mes demandes » (deux documents nommés) ;
+  - aucune chip quand la demande n'a pas de pièces jointes (liste vide / clé absente) ;
+  - **tap sur une chip → SnackBar « Lien: … »** avec l'URL du document (`showUrlLink`, pump
+    borné pour ne pas attendre la disparition de la SnackBar) ;
+  - chips des demandes reçues visibles dans l'onglet « Reçues »
+
+### ✅ Validation
+- Mobile : **24 tests widget ✓** (20 + 4 nouveaux), `flutter analyze` sans nouvelle issue
+
+## [3.7.4] - 2026-08-07
+
+### 📄 Pièces jointes affichées sur le rapport du département et le dossier Pastoral 360°
+
+**Principe** : les pièces jointes enregistrées (module Fichiers) sont désormais visibles
+aussi là où elles servent de preuve/support : le rapport hebdomadaire du département
+(responsable) et le dossier Pastoral 360° (documents des rapports de suivi de l'âme).
+
+### ⚙️ Backend
+- **`DepartmentService.getDepartmentReport`** : chaque famille du `statsParFamille` expose
+  désormais `piecesJointes` (documents liés au rapport de famille, `FAMILY_REPORT`) —
+  liste vide si non soumis/aucune pièce
+- **`SoulService.getPastoral360`** : nouvelle section `piecesJointes` du dossier —
+  agrège les documents des rapports de suivi **SOUMIS** de l'âme (`MAKER_REPORT`,
+  triés par semaine décroissante), avec le contexte `source` (« Rapport du … »)
+  — les brouillons ne fuient pas dans le dossier (point de revue)
+- **`MakerReportRepository`** : nouvelle méthode `findAllByAmeIdAndSoumisTrueOrderBySemaineDesc`
+
+### 🗂️ Web
+- **`DepartmentReportPage`** : nouvelle colonne « Pièces » dans le tableau par famille
+  (composant partagé `AttachmentLinks`, liens cliquables)
+- **`Pastoral360Page`** : nouvelle carte « Pièces jointes » (compteur + liens cliquables
+  vers les documents, contexte « Rapport du … » affiché sous chaque document via
+  `AttachmentLinks sourceKey`)
+
+### 📱 Mobile
+- **`department_report_screen`** : chips `AttachmentChips` sous les stats de chaque carte
+  famille (pièces non vides)
+- **`pastoral_360_screen`** : nouvelle carte « PIÈCES JOINTES · N » avec chips cliquables
+  (contexte source via `AttachmentChips sourceKey`)
+
+### 🧪 Tests
+- Backend : `DepartmentServiceTest` +1 (piecesJointes par famille), `SoulServiceTest` +1
+  (agrégation des pièces du dossier) — **227 tests Maven ✓**
+- Web : nouveau `DepartmentReportPage.test.tsx` (4 tests : colonne Pièces, liens cliquables,
+  famille sans pièce sans lien) ; `Pastoral360Page.test.tsx` +1 (carte Pièces jointes +
+  `href`/`target`) — **70 tests vitest ✓**, `tsc` propre
+- Mobile : `parameterized_routes_test.dart` enrichi (mock pièces 360 + rapport département,
+  assertions chips) — **20 tests widget ✓**, `flutter analyze` sans nouvelle issue
+
+## [3.7.3] - 2026-08-07
+
+### 🔗 Pièces jointes visibles et cliquables sur les écrans de détail/liste (web + mobile)
+
+**Principe** : les pièces jointes enregistrées (module Fichiers) ne restent plus dans les
+formulaires — elles sont affichées **en lecture seule avec liens cliquables** sur les
+écrans qui les exposent : rapports soumis, événements, demandes membres.
+
+### 🗂️ Web
+- **Nouveau composant partagé `AttachmentLinks`** : chips cliquables (nom + trombone,
+  `href` vers le document, `target=_blank`) — réutilisé partout
+- **`MakerReportPage`** : rapport soumis → liens en lecture seule (le sélecteur ne reste
+  actif que sur un rapport non soumis)
+- **`FamilyReportPage`** : rapport SOUMIS → liens en lecture seule au lieu du sélecteur
+- **`EventsPage`** : nouvelle colonne « Pièces » dans le tableau (liens par événement)
+- **`MemberRequestsPage`** : liens sur les cartes de la boîte de réception
+- **`MemberDashboardPage`** : « Mes demandes » — le compteur devient les liens réels
+- **`TransferDetailPage`** : la liste des pièces devient cliquable (alignée sur le
+  composant partagé)
+
+### 📱 Mobile
+- **Nouveau helper `showUrlLink`** (même pattern que l'écran Documents : SnackBar avec
+  l'URL, sans plugin) — réutilisable
+- **Nouveau widget partagé `AttachmentChips`** (chips nom + trombone, tap = lien) —
+  utilisé par **`member_requests_screen`** (demandes envoyées et reçues) et
+  **`events_list_screen`** (cartes d'événements), sans duplication
+
+### 🔧 Corrections de revue
+- **`FamilyReportPage`** : les statuts `VU_PAR_RESPONSABLE` / `VU_PAR_PASTEUR` sont aussi
+  des rapports déjà soumis → liens en lecture seule (pas de sélecteur ré-éditable)
+- **Mobile** : extraction du widget partagé `AttachmentChips` (le bloc chips était
+  copié-collé entre les deux écrans)
+
+### 🧪 Tests
+- `EventsPage.test` +1 : la colonne « Pièces » rend des liens cliquables (`href`/`target`) ;
+  le test d'édition passe à `getAllByText` (le document apparaît désormais dans la colonne
+  ET dans le picker)
+- `FamilyReportPage.test` +1 : rapport SOUMIS → lien cliquable + sélecteur absent
+- Mobile : `flutter analyze` sans nouvelle issue · Frontend : **65 tests vitest ✓**, `tsc` propre
+
+## [3.7.2] - 2026-08-07
+
+### 🧪 Tests du sélecteur de pièces jointes partagé (web + mobile)
+
+- **Mobile — nouveau `test/attachment_picker_field_test.dart`** (5 tests widget) :
+  ouverture du sélecteur avec la liste des documents du module Fichiers (fake ApiService),
+  sélection multi + validation → `onChanged` reçoit les ids, décocher retire la pièce,
+  **création directe d'un document** (dialogue → POST `/files` avec le contrat réel
+  `chemin`/`typeFichier` → ajout automatique à la sélection), et état pré-sélectionné
+  (« Modifier les documents »). Le `selected` partagé est muté en place (comme les écrans
+  réels : `clear()..addAll(ids)`)
+- **Web — nouveau `test/EventsPage.test.tsx`** (3 tests) : section « Pièces jointes » dans
+  le formulaire, création d'événement envoyant les `fichierIds` cochés (POST `/events`),
+  édition pré-remplie depuis `piecesJointes` (PUT `/events/{id}` avec `fichierIds`)
+- **Web — nouveau `test/FamilyReportPage.test.tsx`** (2 tests) : sélecteur visible après
+  sélection d'une famille, pré-chargement des pièces du rapport backend et renvoi à la
+  soumission (POST `/reports/family-weekly` avec `fichierIds`)
+- **Correction du harness mobile** (bug trouvé par le test) : le helper `pumpPicker`
+  renvoyait le `Set` par valeur alors que `onChanged` réassignait la variable — les tests
+  de sélection échouaient à tort alors que le widget était correct (vérifié par
+  instrumentation) ; la mutation en place résout le piège
+
+### 🧪 Validation
+- Mobile : **20 tests widget ✓** (15 existants + 5 nouveaux), `flutter analyze` sans issue
+  sur les fichiers touchés
+- Frontend : **63 tests vitest ✓** (58 + 5 nouveaux), `tsc` propre
+
+## [3.7.1] - 2026-08-07
+
+### 🐛 Fix module Documents — alignement sur le contrat backend réel (`typeFichier`/`chemin`)
+
+**Principe** : la création de document via le module Documents (web + mobile) envoyait
+`url`/`typeMime`, des noms que le backend ne connaît pas (`CreateFileRequest` attend
+`typeFichier`/`chemin`) → toute création échouait (400). La création directe des pickers
+de pièces jointes utilisait déjà les bons noms ; le module Documents est désormais aligné.
+
+- **Web** : types `FileEntity`/`CreateFileRequest` (`url`/`typeMime` → `chemin`/`typeFichier`),
+  formulaire `DocumentsPage` (état initial, champ chemin, champ type MIME, validation) et
+  lien de téléchargement du tableau (`file.chemin`)
+- **Mobile** : `documents_screen` — payload POST `/files` (`chemin`/`typeFichier`),
+  contrôleur renommé `_cheminCtrl`, ouverture du lien de téléchargement depuis `chemin`
+
+### 🧪 Validation
+- Frontend : **58 tests vitest ✓**, `tsc` propre · Mobile : `flutter analyze` sans nouvelle issue
+
+> ✅ Le « Note contrat » du 3.6.0 est résolue : plus aucun formulaire n'utilise `url`/`typeMime`.
+
+## [3.7.0] - 2026-08-07
+
+### 🔗 Réutilisation du sélecteur de pièces jointes multi-documents (rapports, demandes membres, événements — web + mobile)
+
+**Principe** : fin du sélecteur réservé aux transferts. Un **mécanisme unique de pièces
+jointes** (table de liaison générique + sélecteur partagé) est désormais utilisé par
+**tous** les formulaires : rapports faiseur/famille, demandes membres, événements — et
+tout futur module — au lieu de systèmes parallèles.
+
+### ⚙️ Backend — liaison générique `entity_attachments` (migration V34)
+- **Nouvelle table `entity_attachments`** : une seule mécanique pour toutes les entités
+  (type + id d'entité + fileId + uploadedBy) — réutilisable sans nouvelle table par module
+- **Nouveau `EntityAttachmentService`** (module `files`) : `replace(entityType, entityId,
+  fichierIds)` en remplacement complet (delete + relink, comme les transferts) et
+  `itemsFor(...)` → `AttachmentItem { id, fileId, nom, url }` exposé en `piecesJointes`
+- **Rapports** : `SubmitMakerReportRequest` / `SubmitFamilyReportRequest` + `fichierIds`,
+  liaison dans `submit`/`draft`, `piecesJointes` dans `MakerReportResponse`/
+  `FamilyReportResponse` (tous les endpoints de lecture)
+- **Demandes membres** : `CreateMemberRequest` + `fichierIds`, liaison dans
+  `MemberService.createRequest`, `piecesJointes` dans `MemberRequestResponse`
+- **Événements** : `CreateEventRequest`/`UpdateEventRequest` + `fichierIds`, liaison dans
+  `create`/`update`, `piecesJointes` dans `EventResponse` (y compris le programme hebdo)
+- **Tests** : nouveau `EntityAttachmentServiceTest` (4 tests : remplacement complet,
+  ordre conservé, liste vide = tout retirer, fichier inexistant refusé) + mise à jour
+  de `ReportServiceTest`/`EventServiceTest`/`MemberPresenceSheetTest` (nouveaux
+  constructeurs/signatures) — Backend : **225 tests Maven ✓**
+
+### 🗂️ Web
+- **`TransferAttachmentPicker` renommé `AttachmentPicker`** (composant partagé générique,
+  création directe de document incluse) — les pages transfert (création + détail)
+  l'importent sous son nouveau nom, l'ancien composant est supprimé
+- **`MakerReportPage`** : section « Pièces jointes » par âme (enrichit `ReportFormData` +
+  brouillon localStorage) → `fichierIds` envoyé au POST, pièces existantes pré-chargées
+- **`FamilyReportPage`** : picker dans la carte synthèse → `fichierIds` au POST, pièces
+  existantes rechargées quand le rapport change
+- **`MemberDashboardPage`** : picker dans le formulaire « Suggestions, rendez-vous &
+  signalements » → `fichierIds` au POST `/members/me/requests` ; compteur de pièces
+  jointes sur « Mes demandes »
+- **`EventsPage`** : picker dans les formulaires création/édition → `fichierIds` au
+  POST/PUT, pré-remplissage à l'édition depuis `piecesJointes`
+- **Types** : `piecesJointes` sur `MakerReport`/`FamilyReport`/`MemberRequest`/`Evenement`
+  + `fichierIds` sur les requêtes de création/soumission
+
+### 📱 Mobile
+- **Nouveau widget partagé `AttachmentPickerField`** (chargement lazy de `GET /files`,
+  dialogue de sélection multi pré-cochée, chips retirables, création directe via
+  `document_create_dialog`, bouton « Valider la sélection »)
+- **`member_requests_screen`** : picker dans la feuille « Nouvelle demande » →
+  `fichierIds` au POST
+- **`events_list_screen`** (`_CreateEventSheet`) : picker dans la feuille de création →
+  `fichierIds` au POST
+- **`maker_report_screen`** : section « Pièces jointes » par âme — `fichierIds` transmis
+  via `SyncService.saveReportLocally` (payload en ligne **et** file d'attente hors-ligne,
+  aucune perte à la synchronisation)
+
+### 🔧 Corrections de revue
+- **Bug « retirer toutes les pièces » (web)** : `FamilyReportPage` et `EventsPage` (update)
+  transformaient une liste vide en `undefined` → le backend (`replace` à sémantique
+  « null = ne pas toucher ») conservait les anciennes pièces. Envoi du tableau brut
+  (`fichierIds: fichierIds`) : liste vide = tout retirer, cohérent avec MakerReportPage
+  et les transferts
+- **Mobile `maker_report_screen`** : section pièces jointes masquée une fois le rapport
+  soumis (cohérence avec les autres champs désactivés)
+- **Mobile `member_requests_screen`** : feuille « Nouvelle demande » enveloppée dans un
+  `SingleChildScrollView` (évite le débordement avec clavier ouvert + picker)
+
+### 🧪 Validation
+- Backend : **225 tests Maven ✓** · Frontend : **58 tests vitest ✓**, `tsc` propre
+- Mobile : `flutter analyze` sans nouvelle issue (seuls restent les warnings/info pré-existants)
+
+## [3.6.0] - 2026-08-07
+
+### ➕ Création directe d'un document depuis le formulaire de transfert (web + mobile)
+
+**Principe** : fin de l'aller-retour vers le module Documents — le demandeur crée un
+document et le sélectionne en une étape, depuis le sélecteur de pièces jointes de la
+demande de transfert (création et édition de brouillon).
+
+### 🗂️ Web
+- **`TransferAttachmentPicker`** (composant partagé) : bouton « Créer un document »
+  (ouvert ou dans le sélecteur) → formulaire inline (nom, URL/chemin, type MIME,
+  catégorie, taille) → POST `/files` avec le **contrat backend réel** (`typeFichier`,
+  `chemin`, `categorie`) → le document créé est **ajouté automatiquement à la sélection**
+  puis la liste est invalidée (react-query)
+
+### 📱 Mobile
+- **Nouveau widget partagé `document_create_dialog`** : dialogue de création (nom, URL,
+  catégorie, type MIME, taille) → POST `/files` → retourne l'id du fichier créé
+- Intégré au dialogue de sélection des pièces jointes du **create screen** et du
+  **détail** : « Créer un document » ajoute le fichier à la sélection courante et
+  recharge la liste des documents
+- **Accès création même liste vide** (point de revue) : le bouton « Choisir » du create
+  screen et le dialogue du détail restent accessibles quand le module Fichiers est vide
+  — le bouton « Créer un document » gère ce cas (feedback si nom/URL manquants)
+
+### 🧪 Validation
+- Frontend : **58 tests vitest ✓**, `tsc` propre
+- Mobile : `flutter analyze` sans nouvelle issue (seuls restent les `info`/warnings pré-existants)
+
+> ℹ️ **Note contrat** : la création directe utilise le contrat backend réel du module
+> Fichiers (`typeFichier`, `chemin`, `categorie`) — le module Documents web/mobile
+> envoyait encore `url`/`typeMime` (noms non reconnus par le backend) ; **corrigé en
+> 3.7.1** (alignement complet sur le contrat).
+
+## [3.5.0] - 2026-08-07
+
+### ✏️ Modification des pièces jointes d'un brouillon de transfert (détail web + mobile)
+
+**Principe** : le demandeur peut désormais ajouter/retirer les pièces jointes d'une demande
+en brouillon directement depuis l'écran de détail — le backend (PUT `/transfers/{id}` +
+`fichierIds`) existait déjà : il **remplace la liste complète** des liaisons
+(`deleteByTransferRequestId` + relink) et refuse toute demande hors BROUILLON.
+
+### 🗂️ Web
+- **Nouveau composant partagé `TransferAttachmentPicker`** (`components/shared`) : sélecteur
+  multi de documents (module Fichiers) avec pré-sélection, chips retirables et compteur —
+  réutilisé par le formulaire de création (refactor de la section inline) et par le détail
+- **`TransferDetailPage`** : bouton « Modifier » sur la carte Pièces jointes (visible
+  uniquement pour le demandeur d'une demande en BROUILLON) → picker pré-rempli avec les
+  pièces actuelles → PUT `/transfers/{id}` (liste complète, vide = tout retirer)
+
+### 📱 Mobile
+- **`transfer_detail_screen`** : bouton « Modifier » (brouillon + demandeur) → dialogue de
+  sélection multi pré-cochée (documents du module Fichiers) → PUT de remplacement puis
+  rechargement ; message clair si aucun document n'existe dans le module
+
+### 🧪 Tests
+- `TransferWorkflowServiceTest` +2 : remplacement complet des pièces jointes d'un brouillon
+  (delete + relink, ordre conservé) et refus de mise à jour hors BROUILLON (BusinessRule)
+- Backend : **221 tests Maven ✓** · Frontend : **58 tests vitest ✓**, `tsc` propre
+- Mobile : `flutter analyze` sans nouvelle issue
+
+## [3.4.0] - 2026-08-07
+
+### 📎 Pièces jointes dans le formulaire de demande de transfert (web + mobile)
+
+**Principe** : les pièces jointes ne sont plus réservées au détail — le demandeur sélectionne
+directement les documents (module Fichiers) lors de la création d'une demande de transfert.
+Le backend acceptait déjà `fichierIds` (`linkFiles` à la création) et le détail les affichait
+déjà ; seuls les formulaires de création ne les envoyaient pas.
+
+### 🗂️ Web
+- **`TransferCreatePage`** : section « Pièces jointes » — sélecteur multi de documents
+  (`GET /files`) avec checkboxes, chips des fichiers sélectionnés (retirable un par un),
+  compteur de pièces jointes et `fichierIds` envoyé dans le POST `/transfers`
+
+### 📱 Mobile
+- **`transfer_create_screen`** : rangée « Pièces jointes » avec compteur, dialogue de
+  sélection multi (checkboxes sur les documents du module Fichiers), liste des fichiers
+  attachés (retirables via l'icône ✕) et `fichierIds` envoyé dans la création
+
+### 🧪 Validation
+- Frontend : **58 tests vitest ✓**, `tsc` propre
+- Mobile : `flutter analyze` sans nouvelle issue (seuls restent les `info` pré-existants)
+
+## [3.3.0] - 2026-08-07
+
+### ⏰ Alerte automatique des délais de traitement dépassés (transferts)
+
+**Principe** : un job planifié surveille les demandes de transfert toujours en attente de
+validation après leur `delaiLimite` et alerte le pasteur — sans re-notifier une demande
+déjà signalée.
+
+### ⚙️ Backend
+- **Nouveau job `ScheduledJobs.checkTransferDelays()`** (cron configurable
+  `app.scheduler.transfer-delay-check-cron`, par défaut toutes les heures) :
+  - requête `findByStatutInAndDelaiLimiteBefore` sur les demandes
+    `EN_ATTENTE_VALIDATION` / `VALIDATION_PARTIELLE` dont le délai est dépassé ;
+  - notification `TRANSFERT_DELAI_DEPASSE` (IN_APP) à **tous les pasteurs**
+    (`findByRolesContaining(PASTEUR)`, multi-rôles inclus) avec l'id de la demande
+    en référence (`TRANSFER`) ;
+  - **déduplication** `existsByDestinataireIdAndTypeAndEntiteReferenceIdAndEntiteReferenceType`
+    : une seule notification par demande et par pasteur (one-shot, pas de spam à chaque
+    passage — choix documenté dans le job) ; une notification qui échoue ne bloque pas
+    les autres (try/catch par destinataire, comme `TransferWorkflowService.notifyUser`)
+- **Nouveau type** `TypeNotification.TRANSFERT_DELAI_DEPASSE`
+
+### 🗂️ Web & 📱 Mobile
+- Type `TypeNotification` frontend complété ; centre de notifications mobile : couleur
+  `deepOrange` + icône sablier pour `TRANSFERT_DELAI_DEPASSE`
+
+### 🧪 Tests
+- **Nouveau `ScheduledJobsTest`** (6 tests) : aucun retard → rien, retard notifié au
+  pasteur, validation partielle en retard, déduplication (pas de re-notification),
+  absence de pasteur → rien, N demandes × M pasteurs = N×M notifications
+- Backend : **219 tests Maven ✓** · Frontend : **58 tests vitest ✓**, `tsc` propre
+- Mobile : `flutter analyze` sans nouvelle issue
+
+## [3.2.0] - 2026-08-07
+
+### 🔗 Pont d'intégration — les transferts existants passent par le moteur de workflow
+
+**Principe** : fin des deux systèmes parallèles. Les anciennes mutations directes
+`transferFaiseur`, `reassignChef` et `reassign` (âme) ne modifient plus les données —
+elles créent et soumettent une **demande de transfert** au moteur de workflow configurable.
+Si le circuit de validation est vide, l'exécution reste automatique et immédiate ; sinon
+la demande attend les validations paramétrées par le pasteur puis s'exécute seule.
+
+### ⚙️ Backend
+- **Nouveau `TransferBridgeService`** : pont unique vers `TransferWorkflowService`
+  (create + submit) pour les 3 opérations héritées :
+  - `transferFaiseur` → `FAISEUR_FAMILLE_TRANSFERT` (règle d'exécution `transfererAmes`
+    transmise à la demande, fusionnée avec la config au moment de l'exécution)
+  - `reassignChef` → `CHEF_FAMILLE_TRANSFERT`
+  - `reassignSoul` → `FAISEUR_DISCIPLE_CHANGEMENT`
+- **Règles d'exécution par demande** : `CreateTransferRequest.reglesExecution` + colonne
+  `regles_execution` sur `transfer_requests` (migration V33) — la demande écrase la config
+  pour les clés qu'elle fournit, la config reste la source pour les autres
+- **Alignement des rôles initiateurs** : `CHEF_FAMILLE_TRANSFERT` accepte désormais
+  `CHEF_DE_FAMILLE` par défaut (l'ancien endpoint `/families/{id}/chief` y était ouvert)
+- **Endpoints réécrits** (retour = `TransferResponse`, plus l'entité) :
+  `PATCH /users/{id}/transfer`, `PATCH /families/{id}/chief`, `PATCH /souls/{id}/reassign`
+  — permissions `@PreAuthorize` conservées, contrôle réel par rôle ACTIF + config du workflow
+- **Anti-IDOR préservé** : le pont réapplique le scoping par espace métier
+  (`WorkspaceScopeService.canAccessFamily/Soul/Faiseur`) que les anciens `findById`
+  scopés garantissaient — un chef ne change que le chef de SA famille, un responsable
+  ne réaffecte que les âmes de SES départements (vers un faiseur de son espace)
+- **Suppression des mutations directes** : `UserService.transferFaiseur`,
+  `FamilyService.reassignChef`, `SoulService.reassign` (l'exécution est désormais
+  exclusivement assurée par `TransferExecutor` avec historiques + notifications)
+
+### 🗂️ Web & 📱 Mobile
+- `UsersPage` et `FamilyDetailPage` (web) et `users_list_screen` (mobile) : affichent le
+  retour du workflow — « Faiseur transféré / Chef mis à jour » si la demande a été exécutée
+  immédiatement, sinon « Demande de transfert soumise pour validation »
+
+### 🧪 Tests
+- **Nouveau `TransferBridgeServiceTest`** (10 tests) : type/personne/règles corrects pour
+  chaque opération, soumission exactement une fois, passage par le workflow, et
+  **anti-IDOR** (famille hors espace refusée, âme hors espace refusée, faiseur cible
+  hors espace refusé, cas légitimes autorisés)
+- `TransferWorkflowServiceTest` étendu (fusion config + règles de la demande) ;
+  `SoulServiceTest` aligné (constructeur sans `NotificationService`)
+- Backend : **213 tests Maven ✓** · Frontend : **58 tests vitest ✓**, `tsc` propre, build ✓
+- Mobile : **15 tests widget ✓**, `flutter analyze` sans nouvelle issue
+
+## [3.1.0] - 2026-08-07
+
+### 🔄 Workflow intelligent et configurable des transferts (migration V32)
+
+**Principe** : les transferts ne sont plus de simples actions techniques — ils suivent un
+**workflow métier** entièrement configurable par le pasteur, sécurisé et historisé. Le
+nombre d'étapes, les validateurs et les règles évoluent **sans modification de code**.
+
+### ⚙️ Moteur de workflow (backend — module `transfers`)
+- **Circuit de validation piloté par la base** : `transfer_workflow_configs`
+  (types autorisés, rôles initiateurs, mode SEQUENTIEL/PARALLELE/N_VALIDATIONS_REQUISES,
+  nombre requis, délais, notifications auto, modèles de messages, règles d'exécution JSON)
+  + `transfer_workflow_steps` (étapes ordonnées, rôles validateurs, caractère requis) —
+  **9 types de transfert seedés** par défaut (départements ×3, familles ×3, affectations ×3)
+- **Cycle de vie complet** : BROUILLON → SOUMIS → EN_ATTENTE_VALIDATION →
+  VALIDATION_PARTIELLE → VALIDE → **EXECUTE** (ou REFUSE / ANNULE), puis ARCHIVE — chaque
+  transition est historisée (`transfer_history`, immuable) et auditiée
+- **Demande de transfert** (`transfer_requests`) : type, personne concernée, affectations
+  actuelle/nouvelle (JSONB), demandeur, justification, priorité, commentaires, délai limite
+- **Décisions motivées** (`transfer_decisions`) : approbation, refus, demande
+  d'informations, renvoi pour correction — rôles non habilités → 403, double validation
+  bloquée
+- **Exécution automatique** (`TransferExecutor`) : mise à jour des relations (souls,
+  familles, départements, `soul_departments`, `member_departments`, `user_departments`),
+  historiques métier (`soul_history`, `family_chief_history`), notifications à toutes les
+  personnes concernées — aucune étape manuelle après la validation finale
+- **Paramétrage pasteur** (`/api/v1/admin/transfers/workflows`) : CRUD complet des
+  configurations et étapes, activation/désactivation, suppression protégée
+- **Notifications** sur chaque changement d'état (types `TRANSFERT_*`) ; journal d'audit
+  systématique ; visibilité scopée par rôle actif (demandeur, personne concernée, validateur)
+- **API** : `GET/POST /api/v1/transfers`, `PUT /{id}`, `POST /{id}/submit|decide|cancel|archive`,
+  `GET /{id}/history|decisions`, `GET /transfers/configurations`
+
+### 🗂️ Web
+- **`TransfersPage`** (`/transfers`) : liste filtrable (statut/type) avec progression des
+  validations, soumission et annulation
+- **`TransferDetailPage`** (`/transfers/:id`) : circuit de validation visuel, décisions,
+  timeline d'historique, pièces jointes, actions de validation motivées
+- **`TransferCreatePage`** (`/transfers/new`) : formulaire dynamique par type de transfert
+  (personne + cible selon le type), circuit affiché, soumission immédiate optionnelle
+- **`TransferAdminPage`** (`/admin/transfers`, ADMIN/PASTEUR) : éditeur complet du
+  workflow (étapes réordonnables, rôles, mode, délais, modèles de messages, règles JSON)
+- Navigation : section « Transferts » ajoutée aux espaces concernés
+
+### 📱 Mobile (Flutter)
+- Écrans **Transferts** (liste avec filtres + FAB), **détail** (circuit, décisions,
+  historique, dialogue de décision motivée), **création** (formulaire dynamique) et
+  **administration** du workflow — routes et gardes de rôle ajoutées, entrées du drawer
+  par espace métier, types de notification `TRANSFERT_*` colorés dans le centre de notifications
+
+### 🧪 Tests
+- **Nouveau `TransferWorkflowServiceTest`** (12 tests) : création/historisation,
+  exécution immédiate sans circuit, soumission avec circuit, approbation partielle,
+  approbation finale → exécution automatique, refus, renvoi pour correction + re-soumission,
+  rôle non habilité refusé, double validation bloquée, annulation, archive
+- Backend : **201 tests Maven ✓** · Frontend : **58 tests vitest ✓**, `tsc` propre, build ✓
+- Mobile : **15 tests widget ✓**, `flutter analyze` sans nouvelle issue
+
 ## [3.0.9] - 2026-08-06
 
 ### 🔒 Scoping des rapports et événements par rôle actif (suite de 3.0.8)

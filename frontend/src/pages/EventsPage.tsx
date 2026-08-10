@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable from '@/components/shared/DataTable';
+import AttachmentPicker from '@/components/shared/AttachmentPicker';
+import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import type { Evenement, PageResponse, TypeEvenement, StatutEvenement, User } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
@@ -26,6 +28,7 @@ import {
   ChevronRight,
   Sparkles,
   BellRing,
+  Paperclip,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -77,6 +80,7 @@ interface EventFormState {
   lieu: string;
   limitePlaces: number | undefined;
   statut?: StatutEvenement;
+  fichierIds: string[];
 }
 
 function eventForm(
@@ -145,6 +149,12 @@ function eventForm(
           </div>
         )}
       </div>
+      <div className="mt-4">
+        <label className="label flex items-center gap-1.5">
+          <Paperclip className="w-3.5 h-3.5 text-gray-400" /> Pièces jointes
+        </label>
+        <AttachmentPicker value={form.fichierIds} onChange={(ids) => update({ fichierIds: ids })} />
+      </div>
       <div className="flex justify-end gap-3 mt-4">
         {onCancel && <button onClick={onCancel} className="btn-secondary btn-sm">Annuler</button>}
         <button onClick={onSubmit} disabled={!form.titre || isPending} className="btn-primary btn-sm">
@@ -180,6 +190,7 @@ export default function EventsPage() {
     dateFin: '',
     lieu: '',
     limitePlaces: undefined as number | undefined,
+    fichierIds: [] as string[],
   });
   const [editEvent, setEditEvent] = useState({
     titre: '',
@@ -190,6 +201,7 @@ export default function EventsPage() {
     lieu: '',
     limitePlaces: undefined as number | undefined,
     statut: 'PLANIFIE' as StatutEvenement,
+    fichierIds: [] as string[],
   });
 
   const { data, isLoading } = useQuery({
@@ -211,13 +223,14 @@ export default function EventsPage() {
         dateFin: evt.dateFin || undefined,
         lieu: evt.lieu || undefined,
         limitePlaces: evt.limitePlaces || undefined,
+        fichierIds: evt.fichierIds,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       toast.success('Événement créé');
       setShowCreate(false);
-      setNewEvent({ titre: '', description: '', typeEvenement: 'REUNION', dateDebut: new Date().toISOString().slice(0, 16), dateFin: '', lieu: '', limitePlaces: undefined });
+      setNewEvent({ titre: '', description: '', typeEvenement: 'REUNION', dateDebut: new Date().toISOString().slice(0, 16), dateFin: '', lieu: '', limitePlaces: undefined, fichierIds: [] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -244,6 +257,7 @@ export default function EventsPage() {
         lieu: data.lieu || undefined,
         limitePlaces: data.limitePlaces || undefined,
         statut: data.statut,
+        fichierIds: data.fichierIds,
       });
     },
     onSuccess: () => {
@@ -338,6 +352,7 @@ export default function EventsPage() {
       lieu: evt.lieu || '',
       limitePlaces: evt.limitePlaces,
       statut: evt.statut,
+      fichierIds: evt.piecesJointes?.map(a => a.fileId) ?? [],
     });
     setShowEdit(true);
   };
@@ -396,6 +411,10 @@ export default function EventsPage() {
           {STATUT_LABELS[evt.statut]}
         </span>
       ),
+    },
+    {
+      header: 'Pièces',
+      cell: (evt) => <AttachmentLinks pieces={evt.piecesJointes} />,
     },
     {
       header: 'Actions',

@@ -269,41 +269,6 @@ public class FamilyService {
         familyRepository.save(family);
     }
 
-    // ======================== US-07: REASSIGN CHIEF WITH HISTORY ========================
-
-    public void reassignChef(UUID familyId, UUID newChefId) {
-        Family family = findById(familyId);
-        UUID oldChefId = family.getChefFamilleId();
-        UUID currentUserId = securityUtils.getCurrentUserId();
-
-        family.setChefFamilleId(newChefId);
-        familyRepository.save(family);
-
-        // US-07: Record chief change in history
-        FamilyChiefHistory history = FamilyChiefHistory.builder()
-                .familleId(familyId)
-                .ancienChefId(oldChefId != null && oldChefId.equals(newChefId) ? null : oldChefId)
-                .nouveauChefId(newChefId)
-                .changedBy(currentUserId)
-                .raison("Changement de chef de famille")
-                .build();
-        chiefHistoryRepository.save(history);
-
-        // Update user chef status
-        if (oldChefId != null) {
-            userRepository.findById(oldChefId).ifPresent(oldChef -> {
-                oldChef.setEstChefDeFamille(false);
-                oldChef.setFamilleGereeId(null);
-                userRepository.save(oldChef);
-            });
-        }
-        userRepository.findById(newChefId).ifPresent(newChef -> {
-            newChef.setEstChefDeFamille(true);
-            newChef.setFamilleGereeId(familyId);
-            userRepository.save(newChef);
-        });
-    }
-
     // ======================== US-10: FAMILY HISTORY ========================
 
     @Transactional(readOnly = true)

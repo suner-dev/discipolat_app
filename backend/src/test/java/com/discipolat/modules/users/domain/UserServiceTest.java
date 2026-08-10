@@ -3,9 +3,11 @@ package com.discipolat.modules.users.domain;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulExitRepository;
 import com.discipolat.modules.souls.domain.SoulHistoryRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,13 +42,16 @@ class UserServiceTest {
     private SoulHistoryRepository soulHistoryRepository;
     @Mock
     private AuditService auditService;
+    @Mock
+    private WorkspaceScopeService workspaceScopeService;
 
     private UserService userService;
 
     @BeforeEach
     void setUp() {
         userService = new UserService(userRepository, passwordEncoder, securityUtils,
-                soulRepository, soulExitRepository, soulHistoryRepository, auditService);
+                soulRepository, soulExitRepository, soulHistoryRepository, auditService,
+                workspaceScopeService);
     }
 
     private User userWithRole(UserRole role) {
@@ -140,5 +145,110 @@ class UserServiceTest {
         User result = userService.replaceRoles(target.getId(), Set.of(UserRole.MEMBRE, UserRole.ADMIN));
 
         assertTrue(result.getRoles().contains(UserRole.ADMIN));
+    }
+
+    // ======================== US-14: WORKLOAD SCOPING ========================
+
+    @Test
+    void getFaiseurWorkload_SuperUser_ShouldReturnAllFaiseurs() {
+        UUID faiseurId = UUID.randomUUID();
+        when(securityUtils.isSuperUser()).thenReturn(true);
+        when(userRepository.findByRole(UserRole.FAISEUR))
+                .thenReturn(java.util.List.of(userWithRole(UserRole.FAISEUR), userWithRole(UserRole.FAISEUR)));
+        when(soulRepository.countByFaiseurId(any())).thenReturn(5L);
+
+        var result = userService.getFaiseurWorkload(null);
+
+        assertEquals(2, result.size());
+        assertEquals(5L, result.get(0).get("soulCount"));
+        assertNotNull(result.get(0).get("faiseurName"));
+    }
+
+    @Test
+    void getFaiseurWorkload_SuperUserWithFamille_ShouldFilterByFamille() {
+        UUID familleId = UUID.randomUUID();
+        UUID faiseurId = UUID.randomUUID();
+        Soul soul = Soul.builder().id(UUID.randomUUID()).faiseurId(faiseurId).build();
+        when(securityUtils.isSuperUser()).thenReturn(true);
+        when(soulRepository.findAllByFamilleId(familleId)).thenReturn(java.util.List.of(soul));
+        User faiseur = userWithRole(UserRole.FAISEUR);
+        faiseur.setId(faiseurId);
+        when(userRepository.findAllById(any())).thenReturn(java.util.List.of(faiseur));
+        when(soulRepository.countByFaiseurId(faiseurId)).thenReturn(3L);
+
+        var result = userService.getFaiseurWorkload(familleId);
+
+        assertEquals(1, result.size());
+        assertEquals(faiseurId, result.get(0).get("faiseurId"));
+        assertEquals(familleId, result.get(0).get("familleId"));
+    }
+
+    @Test
+    void getFaiseurWorkload_ChefDeFamille_ShouldOnlySeeHisFamily() {
+        UUID userId = UUID.randomUUID();
+        UUID familleId = UUID.randomUUID();
+        UUID faiseurId = UUID.randomUUID();
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.hasActiveRole("CHEF_DE_FAMILLE")).thenReturn(true);
+        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        User chef = userWithRole(UserRole.CHEF_DE_FAMILLE);
+        chef.setId(userId);
+        chef.setFamilleGereeId(familleId);
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(chef));
+        Soul soul = Soul.builder().id(UUID.randomUUID()).faiseurId(faiseurId).build();
+        when(soulRepository.findAllByFamilleId(familleId)).thenReturn(java.util.List.of(soul));
+        User faiseur = userWithRole(UserRole.FAISEUR);
+        faiseur.setId(faiseurId);
+        when(userRepository.findAllById(any())).thenReturn(java.util.List.of(faiseur));
+        when(soulRepository.countByFaiseurId(faiseurId)).thenReturn(2L);
+
+        var result = userService.getFaiseurWorkload(familleId);
+
+        assertEquals(1, result.size());
+        assertEquals(faiseurId, result.get(0).get("faiseurId"));
+    }
+
+    @Test
+    void getFaiseurWorkload_Responsable_ShouldOnlySeeHisDepartments() {
+        UUID userId = UUID.randomUUID();
+        UUID faiseurId = UUID.randomUUID();
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.hasActiveRole("CHEF_DE_FAMILLE")).thenReturn(false);
+        when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
+        when(workspaceScopeService.accessibleFaiseurIds()).thenReturn(java.util.Set.of(faiseurId));
+        User faiseur = userWithRole(UserRole.FAISEUR);
+        faiseur.setId(faiseurId);
+        when(userRepository.findAllById(any())).thenReturn(java.util.List.of(faiseur));
+        when(soulRepository.countByFaiseurId(faiseurId)).thenReturn(9L);
+
+        var result = userService.getFaiseurWorkload(null);
+
+        assertEquals(1, result.size());
+        assertEquals("SURCHARGÉ", result.get(0).get("charge"));
+        assertEquals(9L, result.get(0).get("soulCount"));
+    }
+
+    @Test
+    void getFaiseurWorkload_OtherRole_ShouldReturnEmpty() {
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.hasActiveRole("CHEF_DE_FAMILLE")).thenReturn(false);
+        when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(false);
+
+        var result = userService.getFaiseurWorkload(null);
+
+        assertTrue(result.isEmpty());
+        verify(userRepository, never()).findByRole(UserRole.FAISEUR);
+    }
+
+    @Test
+    void getFaiseurWorkload_ResponsableWithoutAccessibleFaiseurs_ShouldReturnEmpty() {
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.hasActiveRole("CHEF_DE_FAMILLE")).thenReturn(false);
+        when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
+        when(workspaceScopeService.accessibleFaiseurIds()).thenReturn(java.util.Set.of());
+
+        var result = userService.getFaiseurWorkload(null);
+
+        assertTrue(result.isEmpty());
     }
 }

@@ -32,6 +32,12 @@ class _RecordingApiService extends ApiService {
         'timeline': <dynamic>[],
         'evaluations': <String, dynamic>{},
         'notes': <dynamic>[],
+        'piecesJointes': <dynamic>[
+          <String, dynamic>{
+            'id': 'att-1', 'fileId': 'f1', 'nom': 'Synthèse suivi.pdf', 'url': 'https://drive/1.pdf',
+            'source': 'Rapport du 2026-08-03',
+          },
+        ],
       });
     }
     if (pathNoQuery.startsWith('/souls/') && pathNoQuery.endsWith('/spiritual-score')) {
@@ -75,6 +81,9 @@ class _RecordingApiService extends ApiService {
             'totalAbsents': 0,
             'totalSorties': 0,
             'totalMaintenus': 0,
+            'piecesJointes': <dynamic>[
+              <String, dynamic>{'id': 'att-2', 'fileId': 'f2', 'nom': 'Rapport hebdo.pdf', 'url': 'https://drive/2.pdf'},
+            ],
           },
         },
       });
@@ -203,6 +212,11 @@ void main() {
     expect(find.text('Dossier Pastoral 360°'), findsOneWidget);
     expect(find.text('Jean Dupont'), findsWidgets);
     expect(find.text('Membre non trouvé'), findsNothing);
+    // Les pièces jointes des rapports de suivi sont affichées avec leurs liens
+    expect(find.text('PIÈCES JOINTES · 1'), findsOneWidget);
+    expect(find.text('Synthèse suivi.pdf'), findsOneWidget);
+    // Le contexte d'origine (source) est affiché sous le nom du document
+    expect(find.text('Rapport du 2026-08-03'), findsOneWidget);
     // Le paramètre :id a bien été transmis
     expect(api.requestedPaths, contains('/souls/soul-123/pastoral-360'));
   });
@@ -217,6 +231,8 @@ void main() {
     expect(find.text('Département A'), findsOneWidget);
     expect(find.text('Détail par famille'), findsOneWidget);
     expect(find.text('Famille Alpha'), findsOneWidget);
+    // Les pièces jointes du rapport de famille sont affichées dans la carte famille
+    expect(find.text('Rapport hebdo.pdf'), findsOneWidget);
     expect(find.text('Impossible de charger le rapport'), findsNothing);
     // Le paramètre :id a bien été transmis (3 appels avec le bon id)
     expect(api.requestedPaths, contains('/departments/dept-456/detail'));

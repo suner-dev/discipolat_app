@@ -4,14 +4,14 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
-import com.discipolat.common.enums.CanalNotification;
-import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
-import com.discipolat.modules.notifications.domain.NotificationService;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
+import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.api.CreateSoulRequest;
 import com.discipolat.modules.souls.api.SoulHistoryResponse;
@@ -22,8 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -36,8 +35,6 @@ import java.util.UUID;
 @Transactional
 public class SoulService {
 
-    private static final Logger log = LoggerFactory.getLogger(SoulService.class);
-
     private final SoulRepository soulRepository;
     private final SoulHistoryRepository soulHistoryRepository;
     private final SoulNoteRepository soulNoteRepository;
@@ -48,7 +45,7 @@ public class SoulService {
     private final SoulDepartmentRepository soulDepartmentRepository;
     private final MakerReportRepository makerReportRepository;
     private final EvaluationService evaluationService;
-    private final NotificationService notificationService;
+    private final EntityAttachmentService attachmentService;
 
     public SoulService(SoulRepository soulRepository, SoulHistoryRepository soulHistoryRepository,
                        SoulNoteRepository soulNoteRepository,
@@ -57,7 +54,7 @@ public class SoulService {
                        SoulDepartmentRepository soulDepartmentRepository,
                        MakerReportRepository makerReportRepository,
                        EvaluationService evaluationService,
-                       NotificationService notificationService) {
+                       EntityAttachmentService attachmentService) {
         this.soulRepository = soulRepository;
         this.soulHistoryRepository = soulHistoryRepository;
         this.soulNoteRepository = soulNoteRepository;
@@ -68,7 +65,7 @@ public class SoulService {
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.makerReportRepository = makerReportRepository;
         this.evaluationService = evaluationService;
-        this.notificationService = notificationService;
+        this.attachmentService = attachmentService;
     }
 
     public Soul create(CreateSoulRequest request) {
@@ -261,37 +258,6 @@ public class SoulService {
         soul.setDeleted(false);
         soul.setStatut(StatutAme.ACTIF);
         return soulRepository.save(soul);
-    }
-
-    public Soul reassign(UUID soulId, UUID newFaiseurId) {
-        Soul soul = findById(soulId);
-        UUID oldFaiseurId = soul.getFaiseurId();
-        soul.setFaiseurId(newFaiseurId);
-        soul = soulRepository.save(soul);
-        logHistory(soulId, "REAFFECTATION",
-                "Âme réaffectée du faiseur " + oldFaiseurId + " au faiseur " + newFaiseurId,
-                null, null, oldFaiseurId, newFaiseurId);
-
-        // US-21: Notify both faiseurs
-        try {
-            String soulName = soul.getNomComplet();
-            notificationService.create(
-                    newFaiseurId, TypeNotification.INFORMATION, CanalNotification.EMAIL,
-                    "Âme réaffectée",
-                    "L'âme " + soulName + " vous a été réaffectée pour suivi.",
-                    soulId, "SOUL");
-            if (oldFaiseurId != null && !oldFaiseurId.equals(newFaiseurId)) {
-                notificationService.create(
-                        oldFaiseurId, TypeNotification.INFORMATION, CanalNotification.EMAIL,
-                        "Âme retirée de votre suivi",
-                        "L'âme " + soulName + " a été réaffectée à un autre faiseur.",
-                        soulId, "SOUL");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to send reassignment notification: {}", e.getMessage());
-        }
-
-        return soul;
     }
 
     @Transactional(readOnly = true)
@@ -560,6 +526,23 @@ public class SoulService {
 
         spirituel.put("indices", indices);
         dossier.put("spirituel", spirituel);
+
+        // 8. PIÈCES JOINTES (documents des rapports de suivi SOUMIS de l'âme)
+        List<Map<String, Object>> piecesJointes = new java.util.ArrayList<>();
+        for (MakerReport rapport : makerReportRepository.findAllByAmeIdAndSoumisTrueOrderBySemaineDesc(soulId)) {
+            List<EntityAttachmentService.AttachmentItem> items = attachmentService.itemsFor(
+                    EntityAttachment.EntityType.MAKER_REPORT, rapport.getId());
+            for (EntityAttachmentService.AttachmentItem item : items) {
+                Map<String, Object> p = new java.util.LinkedHashMap<>();
+                p.put("id", item.id());
+                p.put("fileId", item.fileId());
+                p.put("nom", item.nom());
+                p.put("url", item.url());
+                p.put("source", "Rapport du " + rapport.getSemaine());
+                piecesJointes.add(p);
+            }
+        }
+        dossier.put("piecesJointes", piecesJointes);
 
         return dossier;
     }

@@ -5,6 +5,8 @@ import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.authentication.domain.AuthService;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
+import com.discipolat.modules.transfers.api.TransferResponse;
+import com.discipolat.modules.transfers.domain.TransferBridgeService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserService;
 import jakarta.validation.Valid;
@@ -29,15 +31,18 @@ public class UserController {
     private final SecurityUtils securityUtils;
     private final EvaluationService evaluationService;
     private final com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService;
+    private final TransferBridgeService transferBridgeService;
 
     public UserController(UserService userService, AuthService authService, SecurityUtils securityUtils,
                           EvaluationService evaluationService,
-                          com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService) {
+                          com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService,
+                          TransferBridgeService transferBridgeService) {
         this.userService = userService;
         this.authService = authService;
         this.securityUtils = securityUtils;
         this.evaluationService = evaluationService;
         this.workspaceScopeService = workspaceScopeService;
+        this.transferBridgeService = transferBridgeService;
     }
 
     @GetMapping
@@ -208,7 +213,7 @@ public class UserController {
     // ======================== US-14: FAISEUR WORKLOAD ========================
 
     @GetMapping("/faiseur-workload")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<List<Map<String, Object>>> getFaiseurWorkload(
             @RequestParam(required = false) UUID familleId) {
         return ResponseEntity.ok(userService.getFaiseurWorkload(familleId));
@@ -224,15 +229,20 @@ public class UserController {
 
     // ======================== US-13: TRANSFER FAISEUR ========================
 
+    /**
+     * US-13 : transfert d'un faiseur vers une autre famille.
+     * Passe désormais par le MOTEUR DE WORKFLOW : la demande est soumise au
+     * circuit de validation configuré par le pasteur (exécution immédiate si
+     * le circuit est vide). Retourne la demande de transfert.
+     */
     @PatchMapping("/{id}/transfer")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
-    public ResponseEntity<UserResponse> transferFaiseur(
+    public ResponseEntity<TransferResponse> transferFaiseur(
             @PathVariable UUID id,
             @RequestBody Map<String, Object> body) {
         UUID nouvelleFamilleId = UUID.fromString((String) body.get("nouvelleFamilleId"));
         boolean transfererAmes = body.containsKey("transfererAmes") && (Boolean) body.get("transfererAmes");
-        return ResponseEntity.ok(UserResponse.from(
-                userService.transferFaiseur(id, nouvelleFamilleId, transfererAmes)));
+        return ResponseEntity.ok(transferBridgeService.transferFaiseur(id, nouvelleFamilleId, transfererAmes));
     }
 
     // ======================== US-17: DEMOTE FAISEUR ========================
@@ -248,7 +258,7 @@ public class UserController {
     // ======================== US-57: RGPD HARD DELETE ========================
 
     @DeleteMapping("/{id}/hard-delete")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') && @perm.has('USER','DELETE')")
     public ResponseEntity<Map<String, String>> hardDelete(@PathVariable UUID id) {
         userService.hardDeleteUser(id);
         return ResponseEntity.ok(Map.of("message", "User permanently deleted"));

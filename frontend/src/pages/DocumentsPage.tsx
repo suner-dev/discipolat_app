@@ -41,7 +41,7 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
-const INITIAL_FORM = { nom: '', description: '', url: '', typeMime: 'application/pdf', taille: 0, categorie: 'AUTRE' as CategorieDocument };
+const INITIAL_FORM = { nom: '', description: '', chemin: '', typeFichier: 'application/pdf', taille: 0, categorie: 'AUTRE' as CategorieDocument };
 
 export default function DocumentsPage() {
   const { user } = useAuth();
@@ -130,7 +130,7 @@ export default function DocumentsPage() {
       header: 'Actions',
       cell: (file) => (
         <div className="flex items-center gap-1">
-          <a href={file.url} target="_blank" rel="noopener noreferrer"
+          <a href={file.chemin} target="_blank" rel="noopener noreferrer"
             className="btn-ghost btn-sm text-primary-600 hover:text-primary-700">
             <Download className="w-4 h-4" />
           </a>
@@ -194,10 +194,10 @@ export default function DocumentsPage() {
               <textarea className="input" rows={2} value={newFile.description} onChange={(e) => setNewFile({ ...newFile, description: e.target.value })} placeholder="Brève description..." />
             </div>
             <div className="sm:col-span-2">
-              <label className="label">URL du fichier *</label>
+              <label className="label">URL / chemin du fichier *</label>
               <div className="relative">
                 <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input className="input pl-10" value={newFile.url} onChange={(e) => setNewFile({ ...newFile, url: e.target.value })} placeholder="https://drive.google.com/..." />
+                <input className="input pl-10" value={newFile.chemin} onChange={(e) => setNewFile({ ...newFile, chemin: e.target.value })} placeholder="https://drive.google.com/..." />
               </div>
             </div>
             <div>
@@ -208,7 +208,7 @@ export default function DocumentsPage() {
             </div>
             <div>
               <label className="label">Type MIME</label>
-              <input className="input" value={newFile.typeMime} onChange={(e) => setNewFile({ ...newFile, typeMime: e.target.value })} />
+              <input className="input" value={newFile.typeFichier} onChange={(e) => setNewFile({ ...newFile, typeFichier: e.target.value })} />
             </div>
             <div>
               <label className="label">Taille (octets)</label>
@@ -218,7 +218,7 @@ export default function DocumentsPage() {
 
           <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/20 dark:border-white/[0.06]">
             <button onClick={() => setShowCreate(false)} className="btn-secondary btn-sm">Annuler</button>
-            <button onClick={() => createMutation.mutate(newFile)} disabled={!newFile.nom || !newFile.url || createMutation.isPending} className="btn-primary btn-sm">
+            <button onClick={() => createMutation.mutate(newFile)} disabled={!newFile.nom || !newFile.chemin || createMutation.isPending} className="btn-primary btn-sm">
               {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               Enregistrer
             </button>

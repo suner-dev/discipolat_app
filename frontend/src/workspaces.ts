@@ -29,6 +29,12 @@ import {
   Sparkles,
   Church,
   HandHeart,
+  ArrowLeftRight,
+  Workflow,
+  Palette,
+  Boxes,
+  Menu as MenuList,
+  SlidersHorizontal,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -151,6 +157,13 @@ const FULL_NAV: WorkspaceSection[] = [
     ],
   },
   {
+    title: 'Transferts',
+    items: [
+      { name: 'Demandes de transfert', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Workflow intelligent & validations' },
+      { name: 'Configuration workflow', href: '/admin/transfers', icon: Workflow, subtitle: 'Circuits de validation' },
+    ],
+  },
+  {
     title: 'Engagement & outils',
     items: [
       { name: 'Évaluations', href: '/evaluations', icon: StarIcon, subtitle: 'Anonymes & feedback' },
@@ -166,9 +179,14 @@ const FULL_NAV: WorkspaceSection[] = [
   {
     title: 'Administration',
     items: [
+      { name: 'Centre d\'administration', href: '/admin', icon: SlidersHorizontal, subtitle: 'Toute la configuration' },
+      { name: 'Identité & marque', href: '/admin/settings', icon: Palette, subtitle: 'Nom, logo & couleurs' },
       { name: 'Utilisateurs', href: '/users', icon: UserCog, subtitle: 'Gestion des comptes' },
       { name: 'Audit', href: '/audit', icon: Activity, subtitle: 'Journal de bord' },
       { name: 'Permissions', href: '/permissions', icon: Shield, subtitle: 'Matrice des rôles' },
+      { name: 'Modules', href: '/admin/modules', icon: Boxes, subtitle: 'Activer / désactiver' },
+      { name: 'Menus', href: '/admin/menus', icon: MenuList, subtitle: 'Configurer la navigation' },
+      { name: 'Champs personnalisés', href: '/admin/custom-fields', icon: FileText, subtitle: 'Champs des entités' },
     ],
   },
 ];
@@ -191,6 +209,7 @@ const RESPONSABLE_NAV: WorkspaceSection[] = [
       { name: 'Départements', href: '/departments', icon: Building2, subtitle: 'Structure & membres' },
       { name: 'Membres', href: '/users', icon: UserCog, subtitle: 'Comptes du département' },
       { name: 'Présences & demandes', href: '/members/requests', icon: MessageSquare, subtitle: 'Fiche hebdomadaire' },
+      { name: 'Transferts', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Demandes & validations' },
     ],
   },
   {
@@ -242,6 +261,7 @@ const FAISEUR_NAV: WorkspaceSection[] = [
     items: [
       { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Notifications' },
       { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier' },
+      { name: 'Transferts', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Demandes & validations' },
       { name: 'Documents', href: '/documents', icon: FolderOpen, subtitle: 'Fichiers & rapports' },
       { name: 'Messagerie', href: '/messages', icon: MessagesSquare, subtitle: 'Conversations privées' },
       { name: 'Profil', href: '/profile', icon: User, subtitle: 'Mes informations' },
@@ -272,6 +292,7 @@ const CHEF_FAMILLE_NAV: WorkspaceSection[] = [
       { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier' },
       { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Notifications' },
       { name: 'Demandes membres', href: '/members/requests', icon: MessageSquare, subtitle: 'Suggestions & présences' },
+      { name: 'Transferts', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Demandes & validations' },
     ],
   },
   {

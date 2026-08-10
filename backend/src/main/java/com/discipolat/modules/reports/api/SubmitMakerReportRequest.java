@@ -25,5 +25,6 @@ public record SubmitMakerReportRequest(
         String vieFaiseurChallenges,
         String vieFaiseurDemandesAide,
         String vieFaiseurSuggestions,
-        String notesComplementaires
+        String notesComplementaires,
+        List<UUID> fichierIds
 ) {}

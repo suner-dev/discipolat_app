@@ -8,5 +8,6 @@ import jakarta.validation.constraints.Size;
 public record CreateMemberRequest(
         @NotNull MemberRequest.Type type,
         @NotNull MemberRequest.Cible cible,
-        @NotBlank @Size(max = 2000) String message
+        @NotBlank @Size(max = 2000) String message,
+        java.util.List<java.util.UUID> fichierIds
 ) {}

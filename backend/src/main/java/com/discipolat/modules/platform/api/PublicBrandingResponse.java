@@ -1,0 +1,40 @@
+package com.discipolat.modules.platform.api;
+
+import com.discipolat.modules.platform.domain.ChurchSettings;
+
+import java.util.Map;
+
+/**
+ * Vue publique de l'identité (accessible sans authentification) :
+ * uniquement les informations de marque nécessaires au rendu du thème
+ * et de la landing page. Aucune donnée sensible.
+ */
+public record PublicBrandingResponse(
+        String churchName,
+        String platformName,
+        String slogan,
+        String description,
+        String logoUrl,
+        String faviconUrl,
+        String bannerUrl,
+        String primaryColor,
+        String accentColor,
+        String buttonColor,
+        String fontFamily,
+        boolean allowDarkMode,
+        String address,
+        String phone,
+        String email,
+        String website,
+        Map<String, String> socialLinks
+) {
+    public static PublicBrandingResponse from(ChurchSettings s) {
+        return new PublicBrandingResponse(
+                s.getChurchName(), s.getPlatformName(), s.getSlogan(), s.getDescription(),
+                s.getLogoUrl(), s.getFaviconUrl(), s.getBannerUrl(),
+                s.getPrimaryColor(), s.getAccentColor(), s.getButtonColor(),
+                s.getFontFamily(), s.isAllowDarkMode(),
+                s.getAddress(), s.getPhone(), s.getEmail(), s.getWebsite(),
+                s.getSocialLinks() != null ? s.getSocialLinks() : Map.of());
+    }
+}

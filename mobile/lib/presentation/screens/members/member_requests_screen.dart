@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/attachment_picker_field.dart';
+import '../../widgets/attachment_chips.dart';
 import '../../../data/services/api_service.dart';
 
 class MemberRequestsScreen extends StatefulWidget {
-  const MemberRequestsScreen({super.key});
+  const MemberRequestsScreen({super.key, this.apiService});
+
+  /// Permet d'injecter un ApiService mocké dans les tests widget.
+  final ApiService? apiService;
 
   @override
   State<MemberRequestsScreen> createState() => _MemberRequestsScreenState();
 }
 
 class _MemberRequestsScreenState extends State<MemberRequestsScreen> with SingleTickerProviderStateMixin {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   late TabController _tabController;
   List<dynamic> _myRequests = [];
   List<dynamic> _inbox = [];
@@ -20,6 +25,7 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
   String _selectedCible = 'PASTEUR';
   final _messageCtrl = TextEditingController();
   final _objetCtrl = TextEditingController();
+  final Set<String> _fichierIds = {};
 
   @override
   void initState() {
@@ -61,9 +67,11 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
         'cible': _selectedCible,
         'message': _messageCtrl.text.trim(),
         if (_objetCtrl.text.trim().isNotEmpty) 'objet': _objetCtrl.text.trim(),
+        if (_fichierIds.isNotEmpty) 'fichierIds': _fichierIds.toList(),
       });
       _messageCtrl.clear();
       _objetCtrl.clear();
+      _fichierIds.clear();
       _loadData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demande envoyée')));
@@ -89,10 +97,11 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
         padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             const Text('Nouvelle demande', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Row(
@@ -127,6 +136,14 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
               ),
             ),
+            const SizedBox(height: 12),
+            Text('Pièces jointes', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+            const SizedBox(height: 6),
+            AttachmentPickerField(
+              apiService: _apiService,
+              value: _fichierIds,
+              onChanged: (ids) => setState(() => _fichierIds..clear()..addAll(ids)),
+            ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -136,7 +153,8 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
                 child: const Text('Envoyer', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -277,6 +295,10 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
               ],
               const SizedBox(height: 6),
               Text(message, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13), maxLines: 3, overflow: TextOverflow.ellipsis),
+              if (r['piecesJointes'] is List && (r['piecesJointes'] as List).isNotEmpty) ...[
+                const SizedBox(height: 8),
+                AttachmentChips(pieces: r['piecesJointes'] as List),
+              ],
               if (!isOutbox && statut == 'OUVERT') ...[
                 const SizedBox(height: 10),
                 Row(

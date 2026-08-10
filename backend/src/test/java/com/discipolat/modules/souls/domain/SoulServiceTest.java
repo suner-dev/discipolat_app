@@ -7,7 +7,9 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
 import com.discipolat.modules.families.domain.FamilyRepository;
-import com.discipolat.modules.notifications.domain.NotificationService;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
+import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.api.CreateSoulRequest;
 import com.discipolat.modules.souls.api.UpdateSoulRequest;
@@ -25,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -56,7 +59,7 @@ class SoulServiceTest {
     @Mock
     private EvaluationService evaluationService;
     @Mock
-    private NotificationService notificationService;
+    private EntityAttachmentService attachmentService;
 
     private SoulService soulService;
 
@@ -70,8 +73,7 @@ class SoulServiceTest {
         soulService = new SoulService(soulRepository, soulHistoryRepository,
                 soulNoteRepository, securityUtils, userRepository,
                 familyRepository, departmentRepository, soulDepartmentRepository,
-                makerReportRepository, evaluationService,
-                notificationService);
+                makerReportRepository, evaluationService, attachmentService);
 
         faiseurId = UUID.randomUUID();
         familleId = UUID.randomUUID();
@@ -218,6 +220,32 @@ class SoulServiceTest {
 
         assertEquals(0, result.getTotalElements());
         verify(soulRepository, never()).search(anyString(), any(Pageable.class));
+    }
+
+    @Test
+    void getPastoral360_ShouldAggregateAttachmentsFromMakerReports() {
+        UUID reportId = UUID.randomUUID();
+        when(soulRepository.findById(testSoul.getId())).thenReturn(Optional.of(testSoul));
+        when(securityUtils.isSuperUser()).thenReturn(true);
+        when(userRepository.findById(faiseurId)).thenReturn(Optional.empty());
+        when(soulHistoryRepository.findByAmeIdOrderByCreatedAtDesc(testSoul.getId())).thenReturn(List.of());
+        when(soulNoteRepository.findByAmeIdAndDeletedFalseOrderByCreatedAtDesc(testSoul.getId())).thenReturn(List.of());
+        when(makerReportRepository.findByAmeIdAndSemaine(any(), any())).thenReturn(List.of());
+        when(makerReportRepository.findAllByAmeIdAndSoumisTrueOrderBySemaineDesc(testSoul.getId()))
+                .thenReturn(List.of(MakerReport.builder().id(reportId).semaine(LocalDate.now()).soumis(true).build()));
+        when(attachmentService.itemsFor(EntityAttachment.EntityType.MAKER_REPORT, reportId))
+                .thenReturn(List.of(new EntityAttachmentService.AttachmentItem(
+                        UUID.randomUUID(), UUID.randomUUID(), "Suivi.pdf", "https://drive/2")));
+
+        Map<String, Object> dossier = soulService.getPastoral360(testSoul.getId());
+
+        assertTrue(dossier.containsKey("piecesJointes"));
+        List<?> pieces = (List<?>) dossier.get("piecesJointes");
+        assertEquals(1, pieces.size());
+        assertEquals("Suivi.pdf", ((Map<?, ?>) pieces.get(0)).get("nom"));
+        assertEquals("https://drive/2", ((Map<?, ?>) pieces.get(0)).get("url"));
+        assertNotNull(((Map<?, ?>) pieces.get(0)).get("source"));
+        verify(attachmentService).itemsFor(EntityAttachment.EntityType.MAKER_REPORT, reportId);
     }
 
     @Test

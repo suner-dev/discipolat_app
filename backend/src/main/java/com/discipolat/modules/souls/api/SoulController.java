@@ -7,6 +7,8 @@ import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulExitService;
 import com.discipolat.modules.souls.domain.SoulService;
 import com.discipolat.modules.souls.domain.SoulRetractionRequestService;
+import com.discipolat.modules.transfers.api.TransferResponse;
+import com.discipolat.modules.transfers.domain.TransferBridgeService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,14 +32,17 @@ public class SoulController {
     private final SoulRetractionRequestService retractionRequestService;
     private final SoulExitService soulExitService;
     private final com.discipolat.modules.souls.domain.SpiritualScoreService spiritualScoreService;
+    private final TransferBridgeService transferBridgeService;
 
     public SoulController(SoulService soulService, SoulRetractionRequestService retractionRequestService,
                           SoulExitService soulExitService,
-                          com.discipolat.modules.souls.domain.SpiritualScoreService spiritualScoreService) {
+                          com.discipolat.modules.souls.domain.SpiritualScoreService spiritualScoreService,
+                          TransferBridgeService transferBridgeService) {
         this.soulService = soulService;
         this.retractionRequestService = retractionRequestService;
         this.soulExitService = soulExitService;
         this.spiritualScoreService = spiritualScoreService;
+        this.transferBridgeService = transferBridgeService;
     }
 
     @GetMapping
@@ -106,12 +111,16 @@ public class SoulController {
         return ResponseEntity.ok(soulService.getHistory(id));
     }
 
+    /**
+     * US-21 : réaffectation d'une âme à un autre faiseur.
+     * Passe désormais par le MOTEUR DE WORKFLOW : demande soumise au circuit de
+     * validation configuré par le pasteur (exécution immédiate si circuit vide).
+     */
     @PatchMapping("/{id}/reassign")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
-    public ResponseEntity<SoulResponse> reassign(
+    public ResponseEntity<TransferResponse> reassign(
             @PathVariable UUID id, @RequestBody @Valid ReassignSoulRequest request) {
-        Soul soul = soulService.reassign(id, request.newFaiseurId());
-        return ResponseEntity.ok(SoulResponse.from(soul));
+        return ResponseEntity.ok(transferBridgeService.reassignSoul(id, request.newFaiseurId()));
     }
 
     @GetMapping("/by-faiseur/{faiseurId}")
