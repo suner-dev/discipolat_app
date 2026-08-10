@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -6,9 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import type { User, Family } from '@/types';
-import { ArrowLeft, Save, Loader2, Heart, Users } from 'lucide-react';
+import type { User, Family, Soul } from '@/types';
+import { ArrowLeft, Save, Loader2, Heart, Users, ClipboardList } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
+import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
 
 const soulSchema = z.object({
   nom: z.string().min(1, 'Nom requis'),
@@ -60,17 +62,29 @@ export default function SoulCreatePage() {
     },
   });
 
+  // Champs personnalisés configurés par l'administration (type SOUL).
+  const customFields = useCustomFieldForm('SOUL');
+  // Résultat de la sauvegarde des champs (non fatale si échec secondaire).
+  const fieldsSavedRef = useRef(true);
+
   const createMutation = useMutation({
     mutationFn: async (data: SoulForm) => {
-      await api.post('/souls', {
+      const res = await api.post('/souls', {
         ...data,
         email: data.email || undefined,
         dateIntegration: data.dateIntegration || new Date().toISOString().split('T')[0],
       });
+      const soul = res.data as Soul;
+      // Sauvegarde des champs personnalisés après création de la fiche.
+      fieldsSavedRef.current = await customFields.save(soul.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['souls'] });
-      toast.success('Âme créée avec succès');
+      if (fieldsSavedRef.current) {
+        toast.success('Âme créée avec succès');
+      } else {
+        toast.error("Âme créée, mais les champs personnalisés n'ont pas pu être enregistrés");
+      }
       navigate('/souls');
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -95,6 +109,11 @@ export default function SoulCreatePage() {
   const typeDisciple = watch('typeDisciple');
 
   const onSubmit = (data: SoulForm) => {
+    // Validation des champs personnalisés obligatoires avant soumission.
+    if (customFields.missingRequired.length > 0) {
+      toast.error(`Champs personnalisés requis : ${customFields.missingRequired.join(', ')}`);
+      return;
+    }
     createMutation.mutate(data);
   };
 
@@ -263,6 +282,29 @@ export default function SoulCreatePage() {
             </div>
           </div>
         </div>
+
+        {/* Champs personnalisés (configurables par l'admin) */}
+        {customFields.definitions.length > 0 && (
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-primary-500" />
+              Informations complémentaires
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+              Champs ajoutés par votre église
+            </p>
+            <CustomFieldRenderer
+              definitions={customFields.definitions}
+              values={customFields.values}
+              onChange={customFields.setValue}
+            />
+            {customFields.missingRequired.length > 0 && (
+              <p className="text-xs text-red-500 mt-3">
+                Champs obligatoires à renseigner : {customFields.missingRequired.join(', ')}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Submit */}
         <div className="flex justify-end gap-3">

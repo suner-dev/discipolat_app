@@ -58,6 +58,7 @@ export default function CustomFieldRenderer({ definitions, values, onChange, rea
             ) : def.type === 'BOOLEEN' ? (
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   role="switch"
                   aria-checked={val === 'true'}
                   onClick={() => onChange(def.id, val === 'true' ? 'false' : 'true')}
@@ -115,7 +116,6 @@ export default function CustomFieldRenderer({ definitions, values, onChange, rea
             ) : (
               <input {...commonProps} type="text" />
             )}
-            {def.placeholder && !val && <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{def.placeholder}</p>}
           </div>
         );
       })}

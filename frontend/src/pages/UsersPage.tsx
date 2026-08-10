@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import { useAuth } from '@/contexts/AuthContext';
 import type { User, PageResponse, Family, TransferRequest } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, Key, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, RefreshCw, Users, BarChart3, Star } from 'lucide-react';
+import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, Key, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, RefreshCw, Users, BarChart3, Star, ClipboardList } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
+import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrateur',
@@ -101,14 +103,28 @@ export default function UsersPage() {
     enabled: !!selectedUser && actionModal === 'history',
   });
 
+  // Champs personnalisés configurés par l'administration (type USER).
+  // La requête n'est activée qu'à l'ouverture de la modale de création.
+  const customFields = useCustomFieldForm('USER', { enabled: showModal });
+  // Résultat de la sauvegarde des champs (non fatale si échec secondaire).
+  const fieldsSavedRef = useRef(true);
+
   const createMutation = useMutation({
     mutationFn: async () => {
-      await api.post('/users', formData);
+      const res = await api.post('/users', formData);
+      const created = res.data as User;
+      // Sauvegarde des champs personnalisés après création du compte.
+      fieldsSavedRef.current = await customFields.save(created.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Compte créé avec succès');
+      if (fieldsSavedRef.current) {
+        toast.success('Compte créé avec succès');
+      } else {
+        toast.error("Compte créé, mais les champs personnalisés n'ont pas pu être enregistrés");
+      }
       setShowModal(false);
+      customFields.reset();
       setFormData({ email: '', password: 'password123', firstName: '', lastName: '', role: 'FAISEUR' });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -336,7 +352,10 @@ export default function UsersPage() {
           </div>
           <p className="page-subtitle">Gestion des comptes et des rôles</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary btn-sm animate-scale-in">
+        <button
+          onClick={() => { customFields.reset(); setShowModal(true); }}
+          className="btn-primary btn-sm animate-scale-in"
+        >
           <Plus className="w-4 h-4" />
           Nouvel utilisateur
         </button>
@@ -411,7 +430,7 @@ export default function UsersPage() {
               </button>
             </div>
 
-            <div className="modal-body space-y-4">
+            <div className="modal-body space-y-4 max-h-[65vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label">Prénom</label>
@@ -447,6 +466,26 @@ export default function UsersPage() {
                 </div>
               </div>
 
+              {/* Champs personnalisés (configurables par l'admin) */}
+              {customFields.definitions.length > 0 && (
+                <div className="space-y-3 p-3.5 rounded-xl bg-white/50 dark:bg-gray-800/30 border border-gray-200/60 dark:border-gray-700/60">
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-primary-500" />
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Informations complémentaires</p>
+                  </div>
+                  <CustomFieldRenderer
+                    definitions={customFields.definitions}
+                    values={customFields.values}
+                    onChange={customFields.setValue}
+                  />
+                  {customFields.missingRequired.length > 0 && (
+                    <p className="text-[11px] text-red-500">
+                      Requis : {customFields.missingRequired.join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30">
                 <div className="flex items-start gap-2">
                   <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
@@ -460,7 +499,13 @@ export default function UsersPage() {
             <div className="modal-footer">
               <button onClick={() => setShowModal(false)} className="btn-secondary btn-sm">Annuler</button>
               <button
-                onClick={() => createMutation.mutate()}
+                onClick={() => {
+                  if (customFields.missingRequired.length > 0) {
+                    toast.error(`Champs requis : ${customFields.missingRequired.join(', ')}`);
+                    return;
+                  }
+                  createMutation.mutate();
+                }}
                 disabled={!formData.email || !formData.firstName || createMutation.isPending}
                 className="btn-primary btn-sm"
               >
