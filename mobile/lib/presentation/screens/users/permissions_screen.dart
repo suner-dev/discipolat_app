@@ -4,14 +4,17 @@ import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
 class PermissionsScreen extends StatefulWidget {
-  const PermissionsScreen({super.key});
+  const PermissionsScreen({super.key, this.apiService});
+
+  /// Permet d'injecter un ApiService mocké dans les tests widget.
+  final ApiService? apiService;
 
   @override
   State<PermissionsScreen> createState() => _PermissionsScreenState();
 }
 
 class _PermissionsScreenState extends State<PermissionsScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   List<Map<String, dynamic>> _permissions = [];
   bool _isLoading = true;
 

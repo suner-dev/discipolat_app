@@ -1,5 +1,47 @@
 # Changelog
 
+## [3.15.0] - 2026-08-10
+
+### 📱 Tests widget des écrans d'administration mobiles (permissions, audit, workflow transfert)
+
+**Principe et périmètre** : les écrans d'administration **settings / modules /
+menus n'existent pas dans l'app mobile** (la plateforme configurable est gérée
+sur le web ; le mobile ne consomme l'identité que **en lecture seule** via
+`GET /api/v1/public/settings` pour le thème — déjà couvert par
+`branding_theme_test`). Les tests couvrent donc les écrans d'administration qui
+existent réellement sur mobile : **Permissions**, **Journal d'audit** et
+**Workflow de transfert** (l'équivalent mobile des pages admin web).
+
+### 🧪 Tests (3 fichiers, 17 tests)
+- **`permissions_screen_test.dart`** (5 tests) : rendu de la matrice (libellés
+  français + codes, colonnes par rôle, cellules check/close — y compris les
+  cellules absentes par défaut à false), état vide « Aucune permission
+  configurée », **bascule → `PUT /permissions/{role}/{permission}`**, échec de
+  mise à jour → SnackBar, erreur de chargement → état vide sans crash
+- **`audit_screen_test.dart`** (5 tests) : rendu des entrées (action, utilisateur,
+  entité, détails), **filtre par entité → rechargement avec le paramètre
+  `entiteType`**, **pagination → rechargement avec `page=1`** et compteur
+  « Page 1 / 3 », état vide « Aucune entrée d'audit », erreur de chargement
+  (`initializeDateFormatting('fr_FR')` en setUpAll pour le rendu des dates)
+- **`transfer_admin_screen_test.dart`** (7 tests) : rendu des configurations
+  (badges Actif/Inactif, « SEQUENTIEL · 72h · 2 étape(s) »), état vide,
+  **bascule → `PATCH /admin/transfers/workflows/{id}/toggle`**, **ouverture de
+  l'éditeur** (rôles, mode, étapes), **enregistrement → PUT avec le payload
+  asserté** (mode, requis, délai) + SnackBar, **suppression avec dialogue de
+  confirmation → DELETE**, suppression refusée → SnackBar explicative
+
+### 🏗️ Testabilité (aucun changement de comportement)
+- `PermissionsScreen`, `AuditScreen`, `TransferAdminScreen` acceptent un
+  `ApiService? apiService` optionnel (`widget.apiService ?? ApiService()`),
+  alignés sur la convention existante de `ReportsScreen`/`SoulDetailScreen` —
+  la production instancie toujours `ApiService()`
+- Fake `ApiService` par fichier (pattern `reports_screen_test.dart`) avec
+  enregistrement des chemins PUT/PATCH/DELETE et des payloads
+
+### ✅ Validation
+- Mobile : **51 tests widget ✓** (34 + 17), `flutter analyze` sans nouvelle issue
+  sur les fichiers touchés
+
 ## [3.14.0] - 2026-08-10
 
 ### 🧪 Tests de régression — pages publiques & parcours d'authentification

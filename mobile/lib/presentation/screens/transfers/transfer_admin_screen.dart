@@ -7,14 +7,17 @@ const List<String> kRoles = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE
 const List<String> kModes = ['SEQUENTIEL', 'PARALLELE', 'N_VALIDATIONS_REQUISES'];
 
 class TransferAdminScreen extends StatefulWidget {
-  const TransferAdminScreen({super.key});
+  const TransferAdminScreen({super.key, this.apiService});
+
+  /// Permet d'injecter un ApiService mocké dans les tests widget.
+  final ApiService? apiService;
 
   @override
   State<TransferAdminScreen> createState() => _TransferAdminScreenState();
 }
 
 class _TransferAdminScreenState extends State<TransferAdminScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   List<Map<String, dynamic>> _configs = [];
   bool _isLoading = true;
 

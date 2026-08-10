@@ -5,14 +5,17 @@ import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
 class AuditScreen extends StatefulWidget {
-  const AuditScreen({super.key});
+  const AuditScreen({super.key, this.apiService});
+
+  /// Permet d'injecter un ApiService mocké dans les tests widget.
+  final ApiService? apiService;
 
   @override
   State<AuditScreen> createState() => _AuditScreenState();
 }
 
 class _AuditScreenState extends State<AuditScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   List<dynamic> _entries = [];
   bool _isLoading = true;
   int _page = 0;
