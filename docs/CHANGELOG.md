@@ -1,5 +1,62 @@
 # Changelog
 
+## [3.19.0] - 2026-08-11
+
+### 🧪 Bêta-testing public (V50) — feedback testeurs, comptes démo conditionnels, reset de l'environnement
+
+**Principe** : l'application passe au mode **produit** avec un environnement de
+bêta-test **public et isolé** (données 100 % fictives, jamais mélangées à la prod).
+Les comptes de démonstration ne sont visibles que lorsque le serveur les autorise
+(profil Spring `beta`) ; en production, aucun compte de test n'est affiché ni créé.
+
+### ⚙️ Backend
+- **`POST /api/v1/feedback`** (authentifié) : soumission de retour testeur — catégorie,
+  priorité, sujet, description, page, navigateur, OS, appareil, version d'app ;
+  `GET /api/v1/admin/feedback` + `/stats` (ADMIN/PASTEUR), `PATCH .../{id}/status` (ADMIN)
+- **`GET /api/v1/public/meta`** (public) : `appName`, `version`, `environment`, `betaMode`,
+  `demoAccountsEnabled` — pilote l'affichage du badge BÊTA et des comptes démo côté client
+- **`GET /api/v1/admin/beta/status` + `POST /api/v1/admin/beta/reset`** (ADMIN) : reset de
+  l'environnement — tronque les données testeurs, restaure `seed-demo.sql`, recrée les
+  comptes de démo. **Double garde** : refusé si environnement `prod` ET si le flag
+  `app.beta-testing.reset-enabled` n'est pas actif (profil beta uniquement)
+- **Migrations V40** (`feedbacks`) + **V41** (module `FEEDBACK` + menu `admin-feedback`,
+  configurables comme tout module)
+- **`DataInitializer`** : création des comptes démo **seulement** si
+  `seed-demo-accounts=true` (profil beta) — 7 comptes de test `password123`
+- **`seed-demo.sql`** (restauré par le reset) : 9 utilisateurs écosystème, 4 départements,
+  4 familles, 10 âmes, rapports, alerte — données entièrement fictives
+
+### 🗂️ Web
+- **`MetaContext`** + **`BetaBadge`** : badge BÊTA affiché uniquement en mode bêta
+  (Navbar, Landing, Login)
+- **`LoginPage`** : section « Comptes de démonstration (bêta) » affichée **uniquement si**
+  `demoAccountsEnabled` — plus jamais de données de test en production
+- **`FeedbackWidget`** : bouton flottant « Un retour ? » + modale (catégorie, priorité,
+  sujet, description, contexte technique auto)
+- **`AdminFeedbackPage`** (`/admin/feedback`) : stats (total/nouveaux/en cours/résolus/
+  rejetés), répartition par catégorie, filtres par statut, changement de statut,
+  panneau « Environnement de test » avec **reset** (profil beta uniquement)
+- **Bandeau « mode testeur »** dans MainLayout (env bêta uniquement, masquable)
+
+### 🧪 Tests & validation
+- **Nouveau `BetaResetServiceTest`** (3 tests) : refus du reset en `prod` (même flag forcé),
+  refus quand désactivé, statut correct — aucune requête destructive émise
+- **Vérification end-to-end réelle** (backend profil `beta` + Postgres dédié) :
+  `/public/meta` → betaMode ✓ ; connexion des 7 comptes démo ✓ ; changement de rôle ✓ ;
+  feedback → liste → stats ✓ ; **403 pour un MEMBRE sur les API admin** ✓ ; 401 sans
+  token ✓ ; **reset** → 4 départements/4 familles/10 âmes restaurés, feedbacks conservés ✓
+- **Isolation des données vérifiée en conditions réelles** : un responsable ne voit que ses
+  départements (403 sur les autres), un chef de famille ne voit que sa famille (403 ailleurs)
+- Backend : suite Maven ✓ · Frontend : **153 tests vitest ✓**, `tsc` propre, build ✓ ·
+  Mobile : `flutter analyze` sans issue, **79 tests widget ✓**
+
+### 🚀 Déploiement bêta (Render)
+- `render.yaml` : services **`discipolat-beta-db`** (Postgres isolé), **`discipolat-beta-api`**
+  (profil `beta`, image GHCR), **`discipolat-beta`** (frontend statique →
+  `https://discipolat-beta.onrender.com`) + workflow `deploy-beta.yml`
+- ⚠️ À faire côté utilisateur : **Sync Blueprint Render** + secrets GitHub
+  (`RENDER_API_KEY`, `RENDER_BETA_API_SERVICE_ID`) — voir DEPLOYMENT.md §8.7
+
 ## [3.18.0] - 2026-08-10
 
 ### 🔧 CI réparée — le script H2 plantait le contexte PostgreSQL (V47)
