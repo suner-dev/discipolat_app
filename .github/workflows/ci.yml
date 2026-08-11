@@ -153,12 +153,29 @@ jobs:
     needs: [docker]
     if: github.ref == 'refs/heads/main'
     steps:
+      - name: Check Render secrets
+        run: |
+          if [ -z "${{ secrets.RENDER_API_KEY }}" ] || [ -z "${{ secrets.RENDER_API_SERVICE_ID }}" ]; then
+            echo "::error::Secrets RENDER_API_KEY et RENDER_API_SERVICE_ID manquants."
+            echo "Ajoutez-les dans GitHub → Settings → Secrets and variables → Actions."
+            echo "- RENDER_API_KEY : Dashboard Render → Account Settings → API Keys"
+            echo "- RENDER_API_SERVICE_ID : Dashboard Render → discipolat-api → Settings → Service ID"
+            exit 1
+          fi
       - name: Trigger Render Deploy (API)
         run: |
-          curl -s -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_API_SERVICE_ID }}/deploys" \
+          HTTP_CODE=$(curl -s -o /tmp/render_deploy.json -w '%{http_code}' \
+            -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_API_SERVICE_ID }}/deploys" \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"clearCache": "do_not_clear"}'
+            -d '{"clearCache": "do_not_clear"}')
+          echo "Render API responded with HTTP $HTTP_CODE"
+          cat /tmp/render_deploy.json
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "202" ]; then
+            echo "::error::Render a refusé le déploiement (HTTP $HTTP_CODE). Vérifiez la clé API et le Service ID."
+            exit 1
+          fi
+          echo "::notice::Déploiement Render déclenché avec succès"
       # NB: le frontend (Static Site) se redéploie automatiquement à
       # chaque push sur main — aucun trigger API nécessaire.
       - name: Wait for Deployments
