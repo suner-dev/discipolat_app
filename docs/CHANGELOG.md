@@ -1,5 +1,31 @@
 # Changelog
 
+## [3.20.1] - 2026-08-11
+
+### 🧭 Audit produit — navigation par rôle, zéro bouton mort, performance des tableaux
+
+- **Correction navigation PASTEUR** : la sidebar ne propose plus les écrans
+  réservés à l'ADMIN (`/admin`, `/admin/settings`, `/admin/modules`,
+  `/admin/menus`, `/admin/custom-fields`, `/permissions`) — cliquer dessus
+  renvoyait vers `/dashboard` sans explication (bouton mort). Le mobile
+  filtrait déjà ; le web est maintenant aligné
+- **Vérification automatique des 51 liens frontend** vs routes déclarées :
+  zéro lien mort
+- **Croisement menus / gardes de routes pour les 6 rôles** : nouveaux tests
+  `workspaces.test.ts` (7 tests) — chaque rôle ne voit que des écrans qu'il
+  peut réellement ouvrir
+- **DataTable optimisée** (`components/shared/DataTable.tsx`) : tri mémoïsé
+  (plus de re-tri à chaque rendu), animation des lignes plafonnée à 20
+  (gros tableaux), pagination client **opt-in** `pageSize` avec réinitialisation
+  automatique de la page sur changement de données/tri — `DataTable.test.tsx`
+  (7 tests)
+- **CI plus robuste** : `testTimeout: 15000` dans `vitest.config.ts` — les
+  suites lourdes dépassaient le délai par défaut de 5 s sous charge parallèle
+  (faux échecs)
+- **Smoke test des parcours des 6 rôles** sur l'API bêta locale : connexion +
+  endpoint de l'espace métier → HTTP 200 pour ADMIN, PASTEUR, RESPONSABLE,
+  CHEF_DE_FAMILLE, FAISEUR, MEMBRE
+
 ## [3.20.0] - 2026-08-11
 
 ### 📱 Mobile — badge BÊTA + feedback testeur + comptes démo conditionnels (parité web V50)

@@ -333,6 +333,20 @@ const MEMBRE_NAV: WorkspaceSection[] = [
   },
 ];
 
+/**
+ * Routes réservées à l'Administration (rôle ADMIN uniquement).
+ * Le Pasteur voit la vue complète SAUF ces écrans : les cliquer le ferait
+ * rediriger vers /dashboard sans explication (bouton mort).
+ */
+const ADMIN_ONLY_HREFS = [
+  '/permissions',
+  '/admin',
+  '/admin/settings',
+  '/admin/modules',
+  '/admin/menus',
+  '/admin/custom-fields',
+];
+
 /** Retourne les menus de l'espace métier correspondant au rôle actif. */
 export function navForRole(activeRole: string | null | undefined): WorkspaceSection[] {
   switch (activeRole) {
@@ -347,10 +361,10 @@ export function navForRole(activeRole: string | null | undefined): WorkspaceSect
     case 'ADMIN':
       return FULL_NAV;
     case 'PASTEUR':
-      // Pasteur = vue complète, sans la matrice des permissions (réservée Admin).
+      // Pasteur = vue complète, sans les écrans réservés à l'Admin.
       return FULL_NAV.map((s) => ({
         ...s,
-        items: s.items.filter((i) => i.href !== '/permissions'),
+        items: s.items.filter((i) => !ADMIN_ONLY_HREFS.includes(i.href)),
       })).filter((s) => s.items.length > 0);
     default:
       return FULL_NAV;

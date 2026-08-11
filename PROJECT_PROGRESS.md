@@ -21,6 +21,7 @@ et monitoring.
 - [x] Audit sécurité live : isolation départements/familles, RBAC, garde-fous reset — OK
 - [x] Tests backend ajoutés : `BetaResetServiceTest` (3 — double garde reset) + `FeedbackControllerTest` (9) + `BetaAdminControllerTest` (6) — RBAC des nouveaux endpoints verrouillé
 - [x] **Mobile : badge BÊTA + feedback testeur + comptes démo conditionnels** (parité web 3.20.0) — 10 tests widget, **89 tests mobile ✓**, analyze sans issue
+- [x] **Audit produit (3.20.1)** : 0 lien mort (51 liens croisés), bug navigation PASTEUR corrigé (menus ADMIN retirés de la sidebar), DataTable optimisée (tri mémoïsé, pagination client opt-in, animations bornées), vitest `testTimeout: 15000` (faux échecs sous charge parallèle), smoke test des 6 rôles OK — **165 tests vitest ✓**
 - [ ] Déploiement bêta Render (services bêta dans render.yaml — **Sync Blueprint à faire par l'utilisateur**, pas de credentials Render dans l'environnement)
 - [ ] Vérification finale de l'URL publique + rapport final (bloqué sur le déploiement)
 

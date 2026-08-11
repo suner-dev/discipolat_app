@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ColumnDef } from '@/types/table';
 
 interface DataTableProps<T> {
@@ -9,13 +10,15 @@ interface DataTableProps<T> {
   emptyIcon?: React.ReactNode;
   sortable?: boolean;
   onRowClick?: (row: T) => void;
+  /** Pagination client optionnelle : nombre de lignes par page (opt-in, désactivé par défaut). */
+  pageSize?: number;
 }
 
 function SkeletonRow({ cells, index }: { cells: number; index: number }) {
   return (
     <tr
       className="animate-fade-in"
-      style={{ animationDelay: `${index * 50}ms` }}
+      style={{ animationDelay: `${Math.min(index, 20) * 50}ms` }}
     >
       {Array.from({ length: cells }).map((_, i) => (
         <td key={i} className="px-4 sm:px-6 py-4">
@@ -42,9 +45,17 @@ export default function DataTable<T extends { id: string }>({
   emptyIcon,
   sortable,
   onRowClick,
+  pageSize,
 }: DataTableProps<T>) {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(0);
+
+  // La page courante se réinitialise dès que les données ou le tri changent :
+  // éviter de rester « perdu » sur une page devenue hors limite ou obsolète.
+  useEffect(() => {
+    setPage(0);
+  }, [data, sortField, sortDir]);
 
   const handleSort = (accessor: keyof T | undefined) => {
     if (!sortable || !accessor) return;
@@ -57,15 +68,29 @@ export default function DataTable<T extends { id: string }>({
     }
   };
 
-  const sortedData = [...data].sort((a, b) => {
-    if (!sortField) return 0;
-    const aVal = (a as Record<string, unknown>)[sortField];
-    const bVal = (b as Record<string, unknown>)[sortField];
-    if (aVal == null) return 1;
-    if (bVal == null) return -1;
-    const cmp = String(aVal).localeCompare(String(bVal));
-    return sortDir === 'asc' ? cmp : -cmp;
-  });
+  // Tri mémoïsé : évite de recopier/re-trier le tableau à chaque rendu
+  // (recherche, modales, état local...) — O(n log n) seulement si data/tri change.
+  const sortedData = useMemo(() => {
+    if (!sortField) return data;
+    const copy = [...data];
+    copy.sort((a, b) => {
+      const aVal = (a as Record<string, unknown>)[sortField];
+      const bVal = (b as Record<string, unknown>)[sortField];
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      const cmp = String(aVal).localeCompare(String(bVal));
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return copy;
+  }, [data, sortField, sortDir]);
+
+  // Pagination client (opt-in via pageSize) : borne le DOM pour les gros tableaux.
+  const pageSizeSafe = pageSize ? Math.max(1, pageSize) : undefined;
+  const pageCount = pageSizeSafe ? Math.max(1, Math.ceil(sortedData.length / pageSizeSafe)) : 1;
+  const safePage = Math.min(page, pageCount - 1);
+  const visibleRows = pageSizeSafe
+    ? sortedData.slice(safePage * pageSizeSafe, safePage * pageSizeSafe + pageSizeSafe)
+    : sortedData;
 
   if (isLoading) {
     return (
@@ -126,12 +151,12 @@ export default function DataTable<T extends { id: string }>({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100/50 dark:divide-gray-800/30">
-            {sortedData.map((row, idx) => (
+            {visibleRows.map((row, idx) => (
               <tr
                 key={row.id}
                 onClick={() => onRowClick?.(row)}
                 className={`${onRowClick ? 'cursor-pointer' : ''} animate-fade-in`}
-                style={{ animationDelay: `${idx * 30}ms` }}
+                style={{ animationDelay: `${Math.min(idx, 20) * 30}ms` }}
               >
                 {columns.map((col, i) => (
                   <td key={i} className="px-4 sm:px-6 py-4">
@@ -143,6 +168,38 @@ export default function DataTable<T extends { id: string }>({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination client (visible uniquement si pageSize est fourni et nécessaire) */}
+      {pageSizeSafe && sortedData.length > pageSizeSafe && (
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-gray-100 dark:border-gray-800/60">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {safePage * pageSizeSafe + 1}–{Math.min((safePage + 1) * pageSizeSafe, sortedData.length)} sur {sortedData.length}
+          </p>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={safePage === 0}
+              className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              aria-label="Page précédente"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 tabular-nums">
+              {safePage + 1} / {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+              disabled={safePage >= pageCount - 1}
+              className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              aria-label="Page suivante"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

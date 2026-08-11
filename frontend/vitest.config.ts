@@ -14,6 +14,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Les gros fichiers transforment lentement sous charge parallèle (CI inclus) :
+    // 5 s par défaut provoquait des faux échecs (timeout) sur les suites lourdes.
+    testTimeout: 15000,
+    hookTimeout: 15000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
