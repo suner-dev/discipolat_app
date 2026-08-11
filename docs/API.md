@@ -120,6 +120,22 @@ Tous les endpoints (sauf `/auth/login` et `/auth/refresh`) nécessitent un token
 | GET | `/transfers/{id}/decisions` | Décisions | Visibilité scopée |
 | GET/PUT/POST/DELETE | `/admin/transfers/workflows` | Paramétrage du workflow (configs + étapes) | ADMIN, PASTEUR |
 
+### Bêta-testing & retours testeurs (V50)
+
+| Méthode | Endpoint | Description | Rôle requis |
+|---|---|---|---|
+| GET | `/public/meta` | Méta-données publiques (nom, version, environnement, betaMode, demoAccountsEnabled) — **aucun token** | Public |
+| POST | `/feedback` | Soumettre un retour (catégorie, priorité, sujet, description, page, navigateur, OS, appareil) | Authentifié |
+| GET | `/admin/feedback` | Liste des retours (les plus récents d'abord, email émetteur résolu) | ADMIN, PASTEUR |
+| GET | `/admin/feedback/stats` | Statistiques (total, par statut, par catégorie) | ADMIN, PASTEUR |
+| PATCH | `/admin/feedback/{id}/status` | Changer le statut (`NOUVEAU`/`EN_COURS`/`RESOLU`/`REJETE`) | ADMIN |
+| GET | `/admin/beta/status` | État de l'environnement (environment, resetEnabled) | ADMIN |
+| POST | `/admin/beta/reset` | Réinitialiser l'environnement bêta (tronque les données testeurs, restaure le seed démo, recrée les comptes) — **refusé en prod et si désactivé** | ADMIN (profil beta) |
+
+> 💡 Le reset bêta est protégé par une **double garde** : refus si
+> `app.environment=prod` ET refus si `app.beta-testing.reset-enabled` n'est pas
+> actif (seul le profil Spring `beta` l'active). Jamais accessible en production.
+
 ## Pagination
 
 Tous les endpoints GET qui retournent des listes supportent la pagination :
