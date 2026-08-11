@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:discipolat_mobile/app.dart';
@@ -29,9 +30,13 @@ void main() {
 
   testWidgets('drawer → /parallel-followups rend l’écran (pas la page 404)', (tester) async {
     await tester.pumpWidget(
-      MaterialApp.router(
-        theme: GlassTheme.darkTheme,
-        routerConfig: appRouter,
+      // ProviderScope requis : le drawer contient le badge BÊTA (ConsumerWidget
+      // branché sur metaProvider) — même arbre qu'en production (main.dart).
+      ProviderScope(
+        child: MaterialApp.router(
+          theme: GlassTheme.darkTheme,
+          routerConfig: appRouter,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -70,9 +75,11 @@ void main() {
 
   testWidgets('navigation directe vers /parallel-followups (sans le drawer)', (tester) async {
     await tester.pumpWidget(
-      MaterialApp.router(
-        theme: GlassTheme.darkTheme,
-        routerConfig: appRouter,
+      ProviderScope(
+        child: MaterialApp.router(
+          theme: GlassTheme.darkTheme,
+          routerConfig: appRouter,
+        ),
       ),
     );
     await tester.pumpAndSettle();

@@ -20,6 +20,7 @@ et monitoring.
 - [x] Vérification end-to-end locale du flux bêta complet (API profil `beta` + Postgres dédié)
 - [x] Audit sécurité live : isolation départements/familles, RBAC, garde-fous reset — OK
 - [x] Tests backend ajoutés : `BetaResetServiceTest` (3 — double garde reset) + `FeedbackControllerTest` (9) + `BetaAdminControllerTest` (6) — RBAC des nouveaux endpoints verrouillé
+- [x] **Mobile : badge BÊTA + feedback testeur + comptes démo conditionnels** (parité web 3.20.0) — 10 tests widget, **89 tests mobile ✓**, analyze sans issue
 - [ ] Déploiement bêta Render (services bêta dans render.yaml — **Sync Blueprint à faire par l'utilisateur**, pas de credentials Render dans l'environnement)
 - [ ] Vérification finale de l'URL publique + rapport final (bloqué sur le déploiement)
 
@@ -80,8 +81,8 @@ et monitoring.
 
 ## DERNIER COMMIT GIT
 
-- `cf8df41` feat: bêta-testing public V50 — feedback testeurs, meta plateforme, comptes démo conditionnels, reset env bêta, services Render bêta (DB/API/frontend isolés)
-- Travail non committé actuellement : `BetaResetServiceTest.java` (nouveau) + `docs/CHANGELOG.md` (entrée 3.19.0) + ce fichier
+- `2956527` docs: checkpoint — diagnostic déploiement bêta Render (services non créés)
+- Prochain commit : **3.20.0 mobile** (PlatformMeta + metaProvider + BetaBadge + feedback sheet + comptes démo conditionnels + 10 tests) — non encore poussé
 
 ## PROCESSUS LOCAUX LAISSÉS ACTIFS (session e2e du 2026-08-11)
 
@@ -102,7 +103,7 @@ et monitoring.
 
 ## AMÉLIORATIONS IDENTIFIÉES (non bloquantes)
 
-- Mobile (Flutter) : widget feedback + badge bêta (priorité basse — le mobile utilise la même API et fonctionne déjà).
+- ~~Mobile : widget feedback + badge bêta~~ → **FAIT en 3.20.0** (parité web complète).
 - Affichage de la version d'app dans le panneau admin feedback (déjà stockée côté serveur).
 
 ## NEXT ACTION

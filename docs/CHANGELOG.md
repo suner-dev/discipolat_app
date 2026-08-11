@@ -1,5 +1,51 @@
 # Changelog
 
+## [3.20.0] - 2026-08-11
+
+### 📱 Mobile — badge BÊTA + feedback testeur + comptes démo conditionnels (parité web V50)
+
+**Principe** : l'application mobile consomme désormais les mêmes méta-données
+publiques que le web (`GET /api/v1/public/meta`) : badge BÊTA, widget de retour
+testeur et comptes de démonstration conditionnels. **Fail-closed** : en
+production, aucun badge, aucun compte de test, aucun lien de feedback factice
+— parité stricte avec le comportement web.
+
+### ⚙️ Données & providers
+- **Nouveau modèle `PlatformMeta`** (`data/models/platform_meta.dart`) : parse
+  `/public/meta` (appName, version, environment, betaMode, demoAccountsEnabled)
+  avec des valeurs par défaut neutres (fail-closed)
+- **Nouveau `metaProvider`** (Riverpod) : fetch public au démarrage, retombe sur
+  l'environnement neutre en cas d'échec réseau — l'application démarre toujours
+
+### 🎨 UI
+- **Nouveau `BetaBadge`** (`widgets/beta_badge.dart`) : pastille « BÊTA » ambrée,
+  affichée uniquement si le serveur déclare le mode bêta — dans l'en-tête du
+  **AppDrawer** et sur le **LoginScreen**
+- **Nouvelle feuille de feedback** (`widgets/feedback_sheet.dart`) : entrée
+  « Un retour ? » dans le drawer (tout utilisateur authentifié) → feuille modale
+  avec catégorie (8), priorité (4), sujet (requis ≥ 3), description, et
+  **contexte technique automatique** (système, appareil, page) →
+  `POST /api/v1/feedback` + SnackBar succès/erreur
+- **LoginScreen : comptes de démonstration conditionnels** — la section
+  « Comptes de démonstration (bêta) » (7 comptes, admin + paul inclus) n'apparaît
+  que si `demoAccountsEnabled=true` ; **corrige une fuite de données de test en
+  production** (la section était affichée dans tous les environnements)
+
+### 🧪 Tests (nouveau `beta_feedback_test.dart`, 10 tests widget)
+- Badge BÊTA : masqué en prod, affiché en bêta
+- LoginScreen : comptes démo masqués en prod (fail-closed) / affichés en bêta
+  avec le badge
+- **Intégration drawer** : l'entrée « Un retour ? » ouvre réellement la feuille
+- Feuille : rendu des champs, sujet trop court → message sans envoi, soumission
+  → **payload complet asserté** (catégorie, priorité, sujet, description, page,
+  navigateur « App mobile », os, appareil), échec réseau → message + feuille
+  ouverte, changement de priorité transmis
+- Harness `parallel_followups_route_test` aligné sur l'arbre réel (ProviderScope)
+  — le drawer contient désormais un ConsumerWidget
+
+### ✅ Validation
+- Mobile : **89 tests widget ✓** (79 + 10), `flutter analyze` sans issue
+
 ## [3.19.0] - 2026-08-11
 
 ### 🧪 Bêta-testing public (V50) — feedback testeurs, comptes démo conditionnels, reset de l'environnement

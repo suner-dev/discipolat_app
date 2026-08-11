@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/providers.dart';
 import '../../../app.dart';
+import '../../widgets/beta_badge.dart';
 import '../../widgets/glass_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -155,13 +158,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     child: const Icon(Icons.church_rounded, color: Colors.white, size: 44),
                   ),
                   const SizedBox(height: 24),
-                  Text(
-                    'Discipolat',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: -0.5,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Discipolat',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Badge BÊTA — uniquement en environnement bêta (serveur-driven)
+                      const BetaBadge(),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -245,28 +258,40 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   GlassDivider(),
                   const SizedBox(height: 16),
 
-                  // Demo accounts
-                  GlassCard(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.science, color: AppColors.accent, size: 16),
-                            const SizedBox(width: 6),
-                            Text('Comptes de test', style: TextStyle(color: AppColors.accentLight, fontSize: 12, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        _demoAccount('Pasteur', 'pasteur@discipolat.com'),
-                        _demoAccount('Responsable', 'responsable@discipolat.com'),
-                        _demoAccount('Chef de famille', 'chef@discipolat.com'),
-                        _demoAccount('Faiseur', 'faiseur@discipolat.com'),
-                        _demoAccount('Membre', 'membre@discipolat.com'),
-                      ],
-                    ),
-                  ),
+                  // Comptes de démonstration — visibles UNIQUEMENT si le serveur les
+                  // autorise (profil bêta) : jamais de données de test en production.
+                  Consumer(builder: (context, ref, _) {
+                    final meta = ref.watch(metaProvider).valueOrNull;
+                    final showDemo = meta?.demoAccountsEnabled ?? false;
+                    if (!showDemo) return const SizedBox.shrink();
+                    return GlassCard(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.science, color: AppColors.accent, size: 16),
+                              const SizedBox(width: 6),
+                              Text('Comptes de démonstration (bêta)', style: TextStyle(color: AppColors.accentLight, fontSize: 12, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          _demoAccount('Admin (multi-rôles)', 'admin@discipolat.com'),
+                          _demoAccount('Pasteur', 'pasteur@discipolat.com'),
+                          _demoAccount('Responsable (multi-rôles)', 'responsable@discipolat.com'),
+                          _demoAccount('Chef de famille', 'chef@discipolat.com'),
+                          _demoAccount('Faiseur', 'faiseur@discipolat.com'),
+                          _demoAccount('Membre', 'membre@discipolat.com'),
+                          _demoAccount('Multi-rôles', 'paul@discipolat.com'),
+                          const SizedBox(height: 8),
+                          Text('Mot de passe : password123',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app.dart';
 import '../../data/services/api_service.dart';
+import 'beta_badge.dart';
+import 'feedback_sheet.dart';
 import 'glass_theme.dart';
 
 /// Éléments de navigation de chaque espace métier.
@@ -233,7 +235,18 @@ class _AppDrawerState extends State<AppDrawer> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Discipolat', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                            Row(
+                              children: [
+                                const Flexible(
+                                  child: Text('Discipolat',
+                                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis),
+                                ),
+                                const SizedBox(width: 8),
+                                // Badge BÊTA — uniquement en environnement bêta (serveur-driven)
+                                const BetaBadge(),
+                              ],
+                            ),
                             const SizedBox(height: 2),
                             Text(
                               auth.firstName != null ? '${auth.firstName} ${auth.lastName}' : auth.email ?? '',
@@ -335,6 +348,32 @@ class _AppDrawerState extends State<AppDrawer> {
               item['title'] as String,
               item['route'] as String,
             )),
+
+            const Divider(color: Colors.white12, height: 24),
+
+            // Retour testeur — disponible pour tout utilisateur authentifié
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.feedback_outlined, color: Color(0xFFF59E0B), size: 20),
+              ),
+              title: const Text('Un retour ?',
+                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              subtitle: Text('Bug, suggestion, problème…',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11),
+              ),
+              onTap: () {
+                // Route lue AVANT de fermer le drawer (context fiable).
+                final routeName = ModalRoute.of(context)?.settings.name;
+                Navigator.pop(context);
+                showFeedbackSheet(context, pageUrl: routeName);
+              },
+            ),
           ],
         ),
       ),
