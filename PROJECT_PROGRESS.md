@@ -19,7 +19,7 @@ et monitoring.
 - [x] V50 committée (`cf8df41`) et **poussée sur GitHub**
 - [x] Vérification end-to-end locale du flux bêta complet (API profil `beta` + Postgres dédié)
 - [x] Audit sécurité live : isolation départements/familles, RBAC, garde-fous reset — OK
-- [x] Test `BetaResetServiceTest` ajouté (3 tests — double garde reset)
+- [x] Tests backend ajoutés : `BetaResetServiceTest` (3 — double garde reset) + `FeedbackControllerTest` (9) + `BetaAdminControllerTest` (6) — RBAC des nouveaux endpoints verrouillé
 - [ ] Déploiement bêta Render (services bêta dans render.yaml — **Sync Blueprint à faire par l'utilisateur**, pas de credentials Render dans l'environnement)
 - [ ] Vérification finale de l'URL publique + rapport final (bloqué sur le déploiement)
 
@@ -83,6 +83,13 @@ et monitoring.
 - `cf8df41` feat: bêta-testing public V50 — feedback testeurs, meta plateforme, comptes démo conditionnels, reset env bêta, services Render bêta (DB/API/frontend isolés)
 - Travail non committé actuellement : `BetaResetServiceTest.java` (nouveau) + `docs/CHANGELOG.md` (entrée 3.19.0) + ce fichier
 
+## PROCESSUS LOCAUX LAISSÉS ACTIFS (session e2e du 2026-08-11)
+
+- API bêta locale : **port 8090** (profil `beta`, DB `discipolat_beta`) — logs `/tmp/beta-api.log`
+- Dev server frontend bêta : **port 5173** (`VITE_API_URL=http://localhost:8090`) — logs `/tmp/beta-web.log`
+- Base `discipolat_beta` créée dans le Postgres Docker local (5433) — réutilisable pour re-tester le flux
+- Arrêt : `pkill -f 'spring-boot:run'` et `pkill -f 'vite.*5173'` (ou les tuer par PID)
+
 ## PROBLÈMES CONNUS / BLOCAGES
 
 - **Déploiement bêta public** : nécessite l'action de l'utilisateur (Sync Blueprint Render + secrets GitHub `RENDER_API_KEY`, `RENDER_BETA_API_SERVICE_ID`). Aucun credential Render présent dans l'environnement de travail.
@@ -99,9 +106,10 @@ et monitoring.
 > **Reprise (à la prochaine session)** : demander à l'utilisateur de lancer le
 > **Sync Blueprint Render** (crée discipolat-beta-db, discipolat-beta-api,
 > discipolat-beta) puis de fournir les secrets GitHub `RENDER_API_KEY` et
-> `RENDER_BETA_API_SERVICE_ID`. Ensuite : pousser le commit V50.1
-> (BetaResetServiceTest + CHANGELOG 3.19.0) si ce n'est pas déjà fait, vérifier
-> l'URL publique `https://discipolat-beta.onrender.com` (connexion comptes démo,
-> feedback, reset), et fournir le rapport final (URL, comptes, rôles, version,
-> état des tests). Si l'utilisateur ne peut pas déployer : audit continu du
-> produit (zéro bouton mort, responsive, performance) et nouvelles corrections.
+> `RENDER_BETA_API_SERVICE_ID`. Ensuite : vérifier l'URL publique
+> `https://discipolat-beta.onrender.com` (connexion comptes démo, feedback,
+> reset), et fournir le rapport final (URL, comptes, rôles, version, état des
+> tests). Si l'utilisateur ne peut pas déployer : audit continu du produit
+> (zéro bouton mort, responsive, performance) et nouvelles corrections.
+> Le flux bêta complet a été vérifié en local (port 8090 + DB discipolat_beta,
+> services toujours actifs — voir « PROCESSUS LOCAUX LAISSÉS ACTIFS »).
