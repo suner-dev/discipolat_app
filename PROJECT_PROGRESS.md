@@ -92,7 +92,11 @@ et monitoring.
 
 ## PROBLÈMES CONNUS / BLOCAGES
 
-- **Déploiement bêta public** : nécessite l'action de l'utilisateur (Sync Blueprint Render + secrets GitHub `RENDER_API_KEY`, `RENDER_BETA_API_SERVICE_ID`). Aucun credential Render présent dans l'environnement de travail.
+- **Déploiement bêta public — VÉRIFIÉ le 2026-08-11 : les services bêta n'existent PAS encore sur Render.**
+  - `https://discipolat-beta.onrender.com` → 404 instantané ; `https://discipolat-beta-api.onrender.com/api/v1/public/meta` → 404 instantané (pas un cold start). DNS OK (CDN Render). Variantes de noms testées (beta-web, web-beta, beta-backend…) → 404 aussi.
+  - **Cause la plus probable** : le Sync Blueprint a échoué sur la limite du plan Free Render (1 base Postgres gratuite par workspace — `discipolat-db` occupe déjà le slot). Voir DEPLOYMENT.md §8.7.
+  - **Actions utilisateur** : (1) Dashboard Render → Blueprints → vérifier le statut/erreur du sync ; (2) créer `discipolat-beta-db` manuellement (plan Starter ~7 $/mois recommandé, ou passer `discipolat-db` en payant pour libérer le slot gratuit) ; (3) re-sync (ou créer manuellement `discipolat-beta-api` + `discipolat-beta`) ; (4) fournir les secrets GitHub `RENDER_API_KEY` / `RENDER_BETA_API_SERVICE_ID`.
+  - NB : `https://discipolat.onrender.com` (prod) est injoignable depuis cet environnement (timeout réseau sandbox — exemple.com répond 200 en 0,5 s ; prod 000/10 s) : non concluant pour l'état de la prod, rien n'a été modifié côté prod.
 - Limite plan Free Render : 1 Postgres gratuit/workspace → `discipolat-beta-db` peut nécessiter un plan Starter (~7 $/mois) si `discipolat-db` occupe déjà le slot gratuit.
 - Cold start API bêta (~1 min au premier accès) — volontaire (pas de keep-alive bêta, quota 750 h/mois).
 
@@ -103,13 +107,13 @@ et monitoring.
 
 ## NEXT ACTION
 
-> **Reprise (à la prochaine session)** : demander à l'utilisateur de lancer le
-> **Sync Blueprint Render** (crée discipolat-beta-db, discipolat-beta-api,
-> discipolat-beta) puis de fournir les secrets GitHub `RENDER_API_KEY` et
-> `RENDER_BETA_API_SERVICE_ID`. Ensuite : vérifier l'URL publique
-> `https://discipolat-beta.onrender.com` (connexion comptes démo, feedback,
-> reset), et fournir le rapport final (URL, comptes, rôles, version, état des
-> tests). Si l'utilisateur ne peut pas déployer : audit continu du produit
-> (zéro bouton mort, responsive, performance) et nouvelles corrections.
-> Le flux bêta complet a été vérifié en local (port 8090 + DB discipolat_beta,
-> services toujours actifs — voir « PROCESSUS LOCAUX LAISSÉS ACTIFS »).
+> **Reprise (à la prochaine session)** : l'utilisateur doit vérifier le statut du
+> **Sync Blueprint Render** (les services bêta n'existent pas — 404 sur les deux
+> URL, diagnostic du 2026-08-11 consigné ci-dessus). Causes probables : limite
+> Postgres gratuite du workspace (créer discipolat-beta-db manuellement, plan
+> Starter ~7 $/mois, ou passer la base de prod en payant) puis re-sync, ou
+> workspace/sync non effectué. Une fois les services créés : fournir les secrets
+> GitHub `RENDER_API_KEY` / `RENDER_BETA_API_SERVICE_ID`, vérifier l'URL publique
+> (connexion comptes démo, feedback, reset), fournir le rapport final.
+> En attendant : le flux bêta complet reste vérifié en local (port 8090 +
+> DB discipolat_beta — voir « PROCESSUS LOCAUX LAISSÉS ACTIFS »).
