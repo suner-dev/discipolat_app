@@ -70,6 +70,7 @@ import PlatformMenusPage from '@/pages/PlatformMenusPage';
 import ModuleUnavailablePage from '@/pages/ModuleUnavailablePage';
 import AdminDashboardPage from '@/pages/AdminDashboardPage';
 import AdminCustomFieldsPage from '@/pages/AdminCustomFieldsPage';
+import AdminFeedbackPage from '@/pages/AdminFeedbackPage';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { isAuthenticated, user, isLoading, activeRole } = useAuth();
@@ -444,6 +445,11 @@ export default function App() {
         <Route path="/admin/custom-fields" element={
           <ProtectedRoute roles={['ADMIN']}>
             <AdminCustomFieldsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/feedback" element={
+          <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <AdminFeedbackPage />
           </ProtectedRoute>
         } />
       </Route>

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   Palette, Boxes, Menu as MenuIcon, Shield, UserCog, Activity, FileText, PlusCircle,
-  ArrowRight, Sparkles,
+  ArrowRight, Sparkles, MessageSquareText,
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -12,6 +12,7 @@ const ADMIN_SECTIONS = [
   { href: '/admin/custom-fields', icon: FileText, title: 'Champs personnalisés', desc: 'Ajouter des champs aux entités (âmes, utilisateurs, départements, familles).', gradient: 'from-sky-500 to-blue-600' },
   { href: '/permissions', icon: Shield, title: 'Rôles & permissions', desc: 'Gérer les rôles, créer des rôles personnalisés et éditer la matrice.', gradient: 'from-rose-500 to-pink-600' },
   { href: '/users', icon: UserCog, title: 'Utilisateurs', desc: 'Créer, modifier et gérer les comptes utilisateurs.', gradient: 'from-teal-500 to-cyan-600' },
+  { href: '/admin/feedback', icon: MessageSquareText, title: 'Retours testeurs', desc: 'Bugs, suggestions et retours UX des testeurs — suivi et statuts.', gradient: 'from-indigo-500 to-violet-600' },
   { href: '/audit', icon: Activity, title: 'Audit', desc: 'Consulter le journal de bord complet des actions.', gradient: 'from-gray-500 to-slate-600' },
 ];
 

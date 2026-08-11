@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useSettings } from '@/contexts/SettingsContext';
+import BetaBadge from '@/components/beta/BetaBadge';
 import Reveal from '@/components/shared/Reveal';
 
 /* ============================================================
@@ -267,6 +268,7 @@ export default function LandingPage() {
             </nav>
 
             <div className="flex items-center gap-2.5">
+              <BetaBadge />
               <button
                 onClick={toggleTheme}
                 className="p-2.5 rounded-xl glass-strong text-gray-500 dark:text-gray-300 hover:scale-110 active:scale-95 transition-all duration-300"

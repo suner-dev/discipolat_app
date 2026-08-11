@@ -1,0 +1,58 @@
+name: Deploy Bêta to Render
+
+# ============================================================
+# Déploiement de l'ENVIRONNEMENT BÊTA-TESTING public (V50).
+#
+# - Le frontend bêta est un Static Site Render : il se redéploie
+#   automatiquement à chaque push sur main (aucune action requise).
+# - L'API bêta (image GHCR) est déclarée `autoDeploy: true` dans
+#   render.yaml : une nouvelle image `backend:latest` déclenche
+#   elle-même le redéploiement. Ce workflow ajoute un trigger
+#   explicite via l'API Render (filet de sécurité + déploiement manuel).
+#
+# Secrets GitHub requis (sinon le job se contente d'un avis) :
+#   RENDER_API_KEY            → Dashboard Render → Account Settings → API Keys
+#   RENDER_BETA_API_SERVICE_ID → Dashboard Render → discipolat-beta-api → Service ID
+#
+# NB : pas de keep-alive pour l'API bêta (quota Free 750 h/mois/workspace :
+# seule l'API de production reste éveillée 24/7). L'API bêta se réveille
+# au premier accès (cold start ~1 min) — acceptable pour du bêta-testing.
+# ============================================================
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # déclenchement manuel depuis l'onglet Actions
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-beta:
+    name: Trigger Render Beta API deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Render secrets
+        id: check
+        run: |
+          if [ -z "${{ secrets.RENDER_API_KEY }}" ] || [ -z "${{ secrets.RENDER_BETA_API_SERVICE_ID }}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Secrets RENDER_API_KEY / RENDER_BETA_API_SERVICE_ID absents → déploiement bêta ignoré. Le frontend statique bêta se redéploie quand même automatiquement."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Trigger Render Beta Deploy (API)
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          HTTP_CODE=$(curl -s -o /tmp/render_beta_deploy.json -w '%{http_code}' \
+            -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_BETA_API_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": "do_not_clear"}')
+          echo "Render API responded with HTTP $HTTP_CODE"
+          cat /tmp/render_beta_deploy.json
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "202" ]; then
+            echo "::error::Render a refusé le déploiement bêta (HTTP $HTTP_CODE). Vérifiez RENDER_BETA_API_SERVICE_ID."
+            exit 1
+          fi
+          echo "::notice::Déploiement bêta déclenché avec succès → https://discipolat-beta.onrender.com"

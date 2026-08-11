@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { PlatformProvider } from './contexts/PlatformContext';
+import { MetaProvider } from './contexts/MetaContext';
 import { bootstrapBranding } from './lib/branding';
 import App from './App';
 import './index.css';
@@ -42,30 +43,32 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <SettingsProvider>
           <AuthProvider>
             <PlatformProvider>
-              <App />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  fontSize: '14px',
-                },
-                success: {
-                  iconTheme: {
-                    primary: '#16a34a',
-                    secondary: '#fff',
-                  },
-                },
-                error: {
-                  iconTheme: {
-                    primary: '#dc2626',
-                    secondary: '#fff',
-                  },
-                },
-              }}
-            />
+              <MetaProvider>
+                <App />
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      fontSize: '14px',
+                    },
+                    success: {
+                      iconTheme: {
+                        primary: '#16a34a',
+                        secondary: '#fff',
+                      },
+                    },
+                    error: {
+                      iconTheme: {
+                        primary: '#dc2626',
+                        secondary: '#fff',
+                      },
+                    },
+                  }}
+                />
+              </MetaProvider>
             </PlatformProvider>
           </AuthProvider>
         </SettingsProvider>

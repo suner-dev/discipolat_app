@@ -1425,6 +1425,68 @@ export interface PermissionEntry {
   enabled: boolean;
 }
 
+// ======================== Bêta-testing & feedback (V50) ========================
+
+export interface PlatformMeta {
+  appName: string;
+  version: string;
+  environment: string;
+  betaMode: boolean;
+  demoAccountsEnabled: boolean;
+}
+
+export type FeedbackCategory =
+  | 'BUG'
+  | 'UX'
+  | 'SUGGESTION'
+  | 'FONCTIONNALITE_MANQUANTE'
+  | 'PERFORMANCE'
+  | 'TRADUCTION'
+  | 'AFFICHAGE'
+  | 'AUTRE';
+
+export type FeedbackPriority = 'BASSE' | 'MOYENNE' | 'HAUTE' | 'CRITIQUE';
+export type FeedbackStatus = 'NOUVEAU' | 'EN_COURS' | 'RESOLU' | 'REJETE';
+
+export interface Feedback {
+  id: string;
+  category: FeedbackCategory;
+  priority: FeedbackPriority;
+  subject: string;
+  description?: string;
+  pageUrl?: string;
+  browser?: string;
+  device?: string;
+  os?: string;
+  appVersion?: string;
+  status: FeedbackStatus;
+  createdBy?: string;
+  reporterEmail?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateFeedbackRequest {
+  category: FeedbackCategory;
+  priority?: FeedbackPriority;
+  subject: string;
+  description?: string;
+  pageUrl?: string;
+  userAgent?: string;
+  browser?: string;
+  device?: string;
+  os?: string;
+}
+
+export interface FeedbackStats {
+  total: number;
+  nouveaux: number;
+  enCours: number;
+  resolus: number;
+  rejetes: number;
+  parCategorie: Record<string, number>;
+}
+
 // Pagination
 export interface PageResponse<T> {
   content: T[];

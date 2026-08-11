@@ -56,6 +56,18 @@ spring:
       enabled: true
 
 app:
+  # Environnement de déploiement : dev | docker | beta | prod
+  # beta-mode active le badge BÊTA et les fonctionnalités de bêta-testing.
+  environment: ${APP_ENVIRONMENT:dev}
+  version: ${APP_VERSION:1.0.0}
+  beta-testing:
+    # Comptes de démonstration visibles sur l'écran de connexion (bêta uniquement)
+    demo-accounts-enabled: ${DEMO_ACCOUNTS_ENABLED:false}
+    # Création/activation des comptes de démonstration (DataInitializer) —
+    # VRAI uniquement en bêta. En prod : AUCUN compte de test n'est créé.
+    seed-demo-accounts: ${DEMO_SEED_ENABLED:false}
+    # Réinitialisation de l'environnement bêta (admin) — strictement inactif en prod
+    reset-enabled: ${BETA_RESET_ENABLED:false}
   jwt:
     private-key: ${JWT_PRIVATE_KEY:}
     public-key: ${JWT_PUBLIC_KEY:}
@@ -207,6 +219,19 @@ management:
   health:
     mail:
       enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: beta
+
+app:
+  environment: beta
+  beta-testing:
+    demo-accounts-enabled: true
+    seed-demo-accounts: true
+    reset-enabled: true
 
 ---
 spring:

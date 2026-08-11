@@ -607,6 +607,88 @@ psql "postgresql://<user>:<password>@<host>:5432/discipolat" < discipolat_backup
 
 ---
 
+## 8.7. Environnement de bêta-testing public (V50)
+
+> Objectif : permettre à des testeurs externes (quartiers, villes, pays)
+> d'utiliser l'application via une **URL publique**, sur des données
+> **entièrement fictives**, sans aucun accès à la production.
+
+### Architecture bêta (isolée de la prod)
+
+```
+                         ┌──────────────────────────┐
+                         │    GitHub (repo public)  │
+                         └───────────┬──────────────┘
+                                     │ push main → CI (tests + image GHCR)
+                ┌────────────────────┴────────────────────┐
+                ▼                                         ▼
+      PRODUCTION  (données RÉELLES)          BÊTA (données FICTIVES)
+      ┌──────────────────────────┐          ┌──────────────────────────┐
+      │ discipolat-db  (Postgres)│          │ discipolat-beta-db       │
+      │ discipolat-api (profil   │          │ discipolat-beta-api      │
+      │   prod)                  │          │   (profil beta)          │
+      │ discipolat  (static)     │          │ discipolat-beta (static) │
+      │ discipolat.onrender.com  │          │ discipolat-beta.onrender.com
+      └──────────────────────────┘          └──────────────────────────┘
+```
+
+### URLs
+
+| Environnement | Frontend | API |
+|---------------|----------|-----|
+| **Production** | https://discipolat.onrender.com | https://discipolat-api.onrender.com |
+| **Bêta public** | https://discipolat-beta.onrender.com | https://discipolat-beta-api.onrender.com |
+
+### Ce que le profil `beta` active
+
+- **Comptes de démonstration visibles** sur l'écran de connexion
+  (`GET /api/v1/public/meta` → `demoAccountsEnabled: true`) ;
+- **Badge BÊTA** + bandeau « environnement de test » dans l'application ;
+- **Reset de l'environnement** : `POST /api/v1/admin/beta/reset` (ADMIN) —
+  tronque les données testeurs, restaure le jeu de démo (V2) et recrée les
+  comptes de test. **Strictement désactivé en prod** (double garde : flag +
+  environnement) ;
+- **Widget de feedback** des testeurs → `POST /api/v1/feedback`, gestion
+  admin sur `/admin/feedback`.
+
+### Activer l'environnement bêta
+
+1. **Pousser** la V50 sur `main` (les services bêta sont déclarés dans
+   `render.yaml`).
+2. **Sync Blueprint** : Dashboard Render → Blueprints → **Sync** (crée
+   `discipolat-beta-db`, `discipolat-beta-api`, `discipolat-beta`).
+3. **Secrets** de l'API bêta (Dashboard Render → discipolat-beta-api →
+   Environment) : `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` (les mêmes valeurs
+   que la prod conviennent — ou des clés dédiées).
+4. **CI** : ajouter les secrets GitHub `RENDER_API_KEY` +
+   `RENDER_BETA_API_SERVICE_ID` pour activer le workflow `deploy-beta.yml`.
+
+> ⚠️ **Limite plan Free Render : 1 base PostgreSQL gratuite par workspace.**
+> Si `discipolat-db` occupe déjà le slot gratuit, `discipolat-beta-db` ne
+> pourra pas être provisionnée en Free. Options :
+> - créer la base bêta **manuellement** (New + → PostgreSQL, plan Starter
+>   ~7 $/mois recommandé) puis brancher l'API bêta dessus ;
+> - ou passer la base de prod en payant pour libérer le slot gratuit.
+>
+> ⚠️ **Cold start** : l'API bêta n'est PAS maintenue éveillée (quota
+> 750 h/mois/workspace déjà utilisé par la prod 24/7). Premier accès après
+> 15 min d'inactivité ≈ 1 min d'attente. Le frontend statique, lui, est
+> instantané partout dans le monde (CDN).
+
+### Comptes de démonstration (bêta)
+
+| Rôle | Email | Mot de passe |
+|------|-------|-------------|
+| **Admin** (ADMIN + PASTEUR) | admin@discipolat.com | password123 |
+| **Pasteur** | pasteur@discipolat.com | password123 |
+| **Responsable** (RESPONSABLE + FAISEUR) | responsable@discipolat.com | password123 |
+| **Chef de famille** (FAISEUR + CHEF_DE_FAMILLE) | chef@discipolat.com | password123 |
+| **Faiseur** | faiseur@discipolat.com | password123 |
+| **Membre** | membre@discipolat.com | password123 |
+| **Multi-rôles** (RESPONSABLE + CHEF_DE_FAMILLE + FAISEUR) | paul@discipolat.com | password123 |
+
+---
+
 ## 9. Performance — Éviter le cold start Render
 
 ### Problème

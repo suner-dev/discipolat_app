@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { MetaProvider } from '@/contexts/MetaContext';
 import LoginPage from '@/pages/LoginPage';
 
 const { apiGet, apiPost, apiPut, apiDelete, apiGetErrorMessage } = vi.hoisted(() => ({
@@ -57,13 +58,15 @@ function renderPage() {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/login']}>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/dashboard" element={<DashboardStub />} />
-            <Route path="/verify-2fa" element={<Verify2faStub />} />
-          </Routes>
-        </AuthProvider>
+        <MetaProvider>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/dashboard" element={<DashboardStub />} />
+              <Route path="/verify-2fa" element={<Verify2faStub />} />
+            </Routes>
+          </AuthProvider>
+        </MetaProvider>
       </MemoryRouter>
     </QueryClientProvider>
   );
@@ -82,7 +85,12 @@ describe('LoginPage', () => {
     document.documentElement.classList.remove('dark');
     queryClient.clear();
     vi.clearAllMocks();
-    apiGet.mockResolvedValue({ data: {} });
+    apiGet.mockImplementation(async (url: string) => {
+      if (url === '/public/meta') {
+        return { data: { betaMode: true, demoAccountsEnabled: true } };
+      }
+      return { data: {} };
+    });
     apiPut.mockResolvedValue({ data: {} });
     apiDelete.mockResolvedValue({ data: {} });
     apiPost.mockImplementation(async (url: string) => {
@@ -104,9 +112,36 @@ describe('LoginPage', () => {
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
   });
 
-  it('shows demo account hint', () => {
+  it('shows demo accounts + admin + multi-role accounts when the server enables them (beta)', async () => {
     renderPage();
-    expect(screen.getByText(/pasteur@discipolat.com/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/pasteur@discipolat.com/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/admin@discipolat.com/i)).toBeInTheDocument();
+    expect(screen.getByText(/paul@discipolat.com/i)).toBeInTheDocument();
+    expect(screen.getByText(/password123/)).toBeInTheDocument();
+  });
+
+  it('hides demo accounts when the server disables them (production)', async () => {
+    apiGet.mockImplementation(async (url: string) => {
+      if (url === '/public/meta') {
+        return { data: { betaMode: false, demoAccountsEnabled: false } };
+      }
+      return { data: {} };
+    });
+    renderPage();
+    // Le fetch du meta doit avoir eu le temps de s'appliquer (affichage conditionnel).
+    await waitFor(() => {
+      expect(screen.queryByText(/pasteur@discipolat.com/i)).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Comptes de démonstration/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the BÊTA badge in beta mode', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('Bêta')).toBeInTheDocument();
+    });
   });
 
   it('affiche une erreur de validation sans appel API si l email est invalide', async () => {

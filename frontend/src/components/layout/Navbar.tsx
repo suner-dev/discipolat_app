@@ -17,6 +17,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { WORKSPACE_HOME, ROLE_META, roleIcon } from '@/workspaces';
+import BetaBadge from '@/components/beta/BetaBadge';
 import { useTheme } from '@/hooks/useTheme';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -166,6 +167,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
         {/* Right section */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Badge BÊTA (environnement de test uniquement) */}
+          <BetaBadge className="hidden sm:inline-flex" />
+
           {/* Dark mode toggle */}
           <button
             onClick={toggleTheme}

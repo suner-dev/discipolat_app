@@ -23,6 +23,27 @@ databases:
       - source: 0.0.0.0/0
         description: everywhere
 
+  # ============================================================
+  # BÊTA-TESTING PUBLIC (V50) — base ISOLÉE de la production
+  # ============================================================
+  # Les testeurs externes n'ont JAMAIS accès aux données réelles :
+  # l'environnement bêta possède sa propre base (données fictives).
+  #
+  # ⚠️ Limite du plan Free Render : 1 base PostgreSQL gratuite par
+  # workspace. Si `discipolat-db` est déjà gratuite, cette base ne
+  # pourra pas être provisionnée gratuitement → créer la base
+  # manuellement (plan Starter ~7 $/mois recommandé) ou passer la
+  # base existante en payant (voir DEPLOYMENT.md §Bêta).
+  - name: discipolat-beta-db
+    databaseName: discipolat_beta
+    user: discipolat_beta
+    region: frankfurt
+    version: "16"
+    postgresMajorVersion: 16
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+
 redis:
   - name: discipolat-redis
     region: frankfurt
@@ -135,6 +156,112 @@ services:
         name: Content-Security-Policy
         value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.onrender.com; frame-ancestors 'none';"
     # Fallback SPA — le routage client (react-router) passe par /index.html
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # ============================================
+  # BÊTA-TESTING — API Spring Boot (profil beta)
+  # ============================================
+  # Profil `beta` : comptes de démonstration visibles, badge BÊTA,
+  # reset de l'environnement (admin) et données entièrement fictives.
+  # Image GHCR identique à la prod → même code, environnement distinct.
+  - type: web
+    name: discipolat-beta-api
+    runtime: image
+    repo: https://github.com/suner-dev/discipolat_app
+    region: frankfurt
+    plan: free
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: beta
+      - key: APP_ENVIRONMENT
+        value: beta
+      - key: APP_VERSION
+        value: 1.1.0
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: discipolat-beta-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: discipolat-beta-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: discipolat-beta-db
+          property: password
+      # Redis partagé avec la prod : uniquement des buckets de rate
+      # limiting (clés éphémères `rl:*`, aucune donnée sensible).
+      - key: REDIS_URL
+        fromService:
+          name: discipolat-redis
+          type: redis
+          property: connectionString
+      - key: JWT_PRIVATE_KEY
+        sync: false
+      - key: JWT_PUBLIC_KEY
+        sync: false
+      - key: MAIL_HOST
+        value: smtp.mailgun.org
+      - key: MAIL_PORT
+        value: "2525"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      # CORS + liens email → frontend bêta
+      - key: FRONTEND_URL
+        value: https://discipolat-beta.onrender.com
+      - key: FRONTEND_URL_BASE
+        value: https://discipolat-beta.onrender.com
+    image:
+      registry: ghcr.io
+      repository: suner-dev/discipolat_app/backend
+      tag: latest
+
+  # ============================================
+  # BÊTA-TESTING — Frontend React (Static Site CDN)
+  # ============================================
+  # Frontend séparé de la prod, pointant vers l'API bêta.
+  - type: web
+    name: discipolat-beta
+    runtime: static
+    repo: https://github.com/suner-dev/discipolat_app
+    branch: main
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22.11.0"
+      - key: SKIP_INSTALL_DEPS
+        value: "true"
+      - key: VITE_API_URL
+        value: https://discipolat-beta-api.onrender.com
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: "camera=(), microphone=(), geolocation=(), payment=()"
+      - path: /*
+        name: Strict-Transport-Security
+        value: "max-age=31536000; includeSubDomains; preload"
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.onrender.com; frame-ancestors 'none';"
     routes:
       - type: rewrite
         source: /*

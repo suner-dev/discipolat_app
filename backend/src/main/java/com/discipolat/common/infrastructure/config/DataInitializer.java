@@ -13,6 +13,7 @@ import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -39,6 +40,15 @@ public class DataInitializer implements CommandLineRunner {
     private final DepartmentRepository departmentRepository;
     private final MemberDepartmentRepository memberDepartmentRepository;
 
+    /**
+     * Activation du jeu de données de démonstration (comptes connus / mot de
+     * passe public). VRAI uniquement sur l'environnement bêta (profil `beta`).
+     * En production, AUCUN compte de démonstration n'est créé ni activé :
+     * on ne mélange jamais données réelles et données de test.
+     */
+    @Value("${app.beta-testing.seed-demo-accounts:false}")
+    private boolean seedDemoAccounts;
+
     public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder,
                            SoulRepository soulRepository,
                            DepartmentRepository departmentRepository,
@@ -56,13 +66,9 @@ public class DataInitializer implements CommandLineRunner {
         String encodedPassword = passwordEncoder.encode(DEFAULT_PASSWORD);
         int updatedCount = 0;
 
+        // Migration de données (applicable dans tous les environnements) :
+        // s'assure que les utilisateurs réels ont bien leur ensemble de rôles.
         for (User user : userRepository.findAll()) {
-            if ("PLACEHOLDER".equals(user.getPasswordHash())) {
-                user.setPasswordHash(encodedPassword);
-                userRepository.save(user);
-                updatedCount++;
-            }
-            // Migrate legacy users: ensure roles set has at least their primary role
             if (user.getRoles() == null || user.getRoles().isEmpty()) {
                 user.getRoles().add(user.getRole());
                 if (user.isEstChefDeFamille()) {
@@ -72,6 +78,19 @@ public class DataInitializer implements CommandLineRunner {
                     user.setActiveRole(user.getRole());
                 }
                 userRepository.save(user);
+            }
+        }
+
+        if (!seedDemoAccounts) {
+            log.info("ℹ️ Comptes de démonstration désactivés sur cet environnement (seed-demo-accounts=false).");
+            return;
+        }
+
+        for (User user : userRepository.findAll()) {
+            if ("PLACEHOLDER".equals(user.getPasswordHash())) {
+                user.setPasswordHash(encodedPassword);
+                userRepository.save(user);
+                updatedCount++;
             }
         }
 

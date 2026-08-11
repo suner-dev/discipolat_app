@@ -4,8 +4,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, roleLabels } from '@/contexts/AuthContext';
+import { usePlatformMeta } from '@/contexts/MetaContext';
+import BetaBadge from '@/components/beta/BetaBadge';
 import { getErrorMessage } from '@/lib/api';
-import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Sparkles, Shield, RotateCw, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Shield, RotateCw, ShieldCheck, FlaskConical } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide').min(1, 'Email requis'),
@@ -54,9 +56,20 @@ const roleBg = (r: string) => {
   }
 };
 
+const DEMO_ACCOUNTS = [
+  { role: 'Admin (multi-rôles)', email: 'admin@discipolat.com' },
+  { role: 'Pasteur', email: 'pasteur@discipolat.com' },
+  { role: 'Responsable (multi-rôles)', email: 'responsable@discipolat.com' },
+  { role: 'Chef de famille', email: 'chef@discipolat.com' },
+  { role: 'Faiseur', email: 'faiseur@discipolat.com' },
+  { role: 'Membre', email: 'membre@discipolat.com' },
+  { role: 'Multi-rôles', email: 'paul@discipolat.com' },
+];
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login, roles, user, switchRole, isAuthenticated } = useAuth();
+  const { meta } = usePlatformMeta();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [showRoleSelector, setShowRoleSelector] = useState(false);
@@ -179,9 +192,12 @@ export default function LoginPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-xs font-medium mb-4 animate-fade-in">
-          <Shield className="w-3 h-3" />
-          Espace sécurisé
+        <div className="inline-flex items-center gap-2.5 mb-4 animate-fade-in">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-xs font-medium">
+            <Shield className="w-3 h-3" />
+            Espace sécurisé
+          </span>
+          <BetaBadge />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display animate-slide-up">
           Connexion
@@ -305,40 +321,43 @@ export default function LoginPage() {
         </div>
       </form>
 
-      {/* Divider */}
-      <div className="relative animate-fade-in" style={{ animationDelay: '200ms' }}>
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200 dark:border-white/5" />
-        </div>
-        <div className="relative flex justify-center">
-          <span className="px-3 text-xs text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900">Démonstration</span>
-        </div>
-      </div>
+      {/* Comptes de démonstration — visibles UNIQUEMENT si le serveur les autorise
+          (profil bêta) : jamais de données de test mélangées à la production. */}
+      {meta.demoAccountsEnabled && (
+        <>
+          {/* Divider */}
+          <div className="relative animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200 dark:border-white/5" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-3 text-xs text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900">Démonstration</span>
+            </div>
+          </div>
 
-      {/* Demo accounts */}
-      <div className="animate-slide-up" style={{ animationDelay: '250ms' }}>
-        <div className="p-3.5 rounded-xl bg-gray-100/70 dark:bg-white/[0.03] border border-gray-200/70 dark:border-white/5">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-gold-400" />
-            <span className="text-xs font-medium text-gold-400">Comptes de test</span>
-          </div>
-          <div className="space-y-1.5">
-            {[
-              { role: 'Pasteur', email: 'pasteur@discipolat.com' },
-              { role: 'Responsable', email: 'responsable@discipolat.com' },
-              { role: 'Chef de famille', email: 'chef@discipolat.com' },
-              { role: 'Faiseur', email: 'faiseur@discipolat.com' },
-              { role: 'Membre', email: 'membre@discipolat.com' },
-            ].map((account) => (
-              <div key={account.email} className="flex items-center justify-between text-xs">
-                <span className="text-gray-500 dark:text-gray-400">{account.role}</span>
-                <code className="text-gray-400 dark:text-gray-500 font-mono text-[11px]">{account.email}</code>
+          {/* Demo accounts */}
+          <div className="animate-slide-up" style={{ animationDelay: '250ms' }}>
+            <div className="p-3.5 rounded-xl bg-gray-100/70 dark:bg-white/[0.03] border border-gray-200/70 dark:border-white/5">
+              <div className="flex items-center gap-2 mb-2">
+                <FlaskConical className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-xs font-medium text-amber-500">Comptes de démonstration (bêta)</span>
               </div>
-            ))}
+              <p className="text-[11px] text-gray-500 dark:text-gray-500 mb-2">
+                Données entièrement fictives — choisissez un espace et explorez librement.
+              </p>
+              <div className="space-y-1.5">
+                {DEMO_ACCOUNTS.map((account) => (
+                  <div key={account.email} className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500 dark:text-gray-400">{account.role}</span>
+                    <code className="text-gray-400 dark:text-gray-500 font-mono text-[11px]">{account.email}</code>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-500 dark:text-gray-600 mt-2 text-center">Mot de passe : <code className="text-gray-400 dark:text-gray-500 font-mono">password123</code></p>
+            </div>
           </div>
-          <p className="text-[11px] text-gray-500 dark:text-gray-600 mt-2 text-center">Mot de passe : <code className="text-gray-400 dark:text-gray-500 font-mono">password123</code></p>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

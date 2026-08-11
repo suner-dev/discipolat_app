@@ -250,7 +250,7 @@ export default function MapPage() {
           <span className="w-3 h-3 rounded-full bg-primary-500 inline-block" /> Famille
         </span>
         <span className="flex items-center gap-1.5">
-          <MapIcon className="w-3.5 h-3.5" /> OpenStreetMap — données de démonstration autour de Kinshasa
+          <MapIcon className="w-3.5 h-3.5" /> Fond de carte OpenStreetMap — localisation des disciples et familles
         </span>
       </div>
     </div>
