@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Church,
@@ -29,56 +28,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { useSettings } from '@/contexts/SettingsContext';
 import BetaBadge from '@/components/beta/BetaBadge';
 import Reveal from '@/components/shared/Reveal';
-
-/* ============================================================
-   Compteur animé (déclenché à l'entrée dans le viewport)
-   ============================================================ */
-function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    // Fallback jsdom / anciens navigateurs : afficher directement la valeur.
-    if (typeof IntersectionObserver === 'undefined') {
-      setDisplay(value);
-      return;
-    }
-
-    let raf = 0;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const duration = 1400;
-          const start = performance.now();
-          const tick = (now: number) => {
-            const p = Math.min((now - start) / duration, 1);
-            const eased = 1 - Math.pow(1 - p, 3);
-            setDisplay(Math.round(eased * value));
-            if (p < 1) raf = requestAnimationFrame(tick);
-          };
-          raf = requestAnimationFrame(tick);
-          observer.unobserve(el);
-        });
-      },
-      { threshold: 0.4 },
-    );
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(raf);
-    };
-  }, [value]);
-
-  return (
-    <span ref={ref}>
-      {display.toLocaleString('fr-FR')}{suffix}
-    </span>
-  );
-}
 
 /* ============================================================
    Données
@@ -186,11 +135,15 @@ const ROLES = [
   },
 ];
 
-const STATS = [
-  { icon: Users, value: 6, suffix: '', label: 'Espaces métiers dédiés' },
-  { icon: LayoutDashboard, value: 40, suffix: '+', label: 'Fonctionnalités intégrées' },
-  { icon: Bell, value: 24, suffix: '/7', label: 'Alertes automatiques' },
-  { icon: Shield, value: 100, suffix: '%', label: 'Confidentialité & audit' },
+// Points clés du produit — affirmations VÉRIFIABLES (aucun compteur fictif).
+// Les 6 espaces métiers correspondent aux 6 rôles de la plateforme ; le reste
+// décrit des capacités réelles (modules configurables, alertes planifiées,
+// isolation des données + journal d'audit immuable).
+const HIGHLIGHTS = [
+  { icon: Users, title: '6 espaces métiers dédiés', desc: 'Admin, pasteur, responsable, chef de famille, faiseur et membre — chacun son environnement.' },
+  { icon: LayoutDashboard, title: 'Plateforme modulaire', desc: 'Modules, menus, rôles et champs personnalisables par l\'administrateur, sans code.' },
+  { icon: Bell, title: 'Alertes automatiques', desc: 'Absences prolongées, décrochages et délais de validation détectés en continu.' },
+  { icon: Shield, title: 'Confidentialité & audit', desc: 'Données isolées par espace métier, journal d\'audit immuable et traçable.' },
 ];
 
 const TESTIMONIALS = [
@@ -329,17 +282,15 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
-          {/* ── Stats animées ── */}
+          {/* ── Points clés (capacités réelles, sans compteur fictif) ── */}
           <Reveal delay={320}>
-            <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
-              {STATS.map((s) => (
-                <div key={s.label} className="glass-card p-5 relative overflow-hidden group hover:-translate-y-1">
+            <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+              {HIGHLIGHTS.map((h) => (
+                <div key={h.title} className="glass-card p-5 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
                   <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary-500 to-gold-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <s.icon className="w-5 h-5 text-primary-500 mb-2.5 mx-auto" />
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 font-mono tracking-tight">
-                    <CountUp value={s.value} suffix={s.suffix} />
-                  </p>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">{s.label}</p>
+                  <h.icon className="w-5 h-5 text-primary-500 mb-2.5" />
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{h.title}</p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{h.desc}</p>
                 </div>
               ))}
             </div>
