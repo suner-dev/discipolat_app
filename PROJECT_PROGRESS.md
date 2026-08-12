@@ -15,13 +15,14 @@ et monitoring.
 
 - [x] Audit initial (backend, frontend web, CI, déploiement)
 - [x] Backend : module feedback (V40/V41), meta publique, beta admin/reset — **validé e2e**
-- [x] Frontend web : fonctionnalités bêta (badge, comptes démo conditionnels, widget feedback, panneau admin feedback, mode testeur) — **153 tests vitest ✓**
+- [x] Frontend web : fonctionnalités bêta (badge, comptes démo conditionnels, widget feedback, panneau admin feedback, mode testeur) — **167 tests vitest ✓**
 - [x] V50 committée (`cf8df41`) et **poussée sur GitHub**
 - [x] Vérification end-to-end locale du flux bêta complet (API profil `beta` + Postgres dédié)
 - [x] Audit sécurité live : isolation départements/familles, RBAC, garde-fous reset — OK
 - [x] Tests backend ajoutés : `BetaResetServiceTest` (3 — double garde reset) + `FeedbackControllerTest` (9) + `BetaAdminControllerTest` (6) — RBAC des nouveaux endpoints verrouillé
 - [x] **Mobile : badge BÊTA + feedback testeur + comptes démo conditionnels** (parité web 3.20.0) — 10 tests widget, **89 tests mobile ✓**, analyze sans issue
 - [x] **Audit produit (3.20.1)** : 0 lien mort (51 liens croisés), bug navigation PASTEUR corrigé (menus ADMIN retirés de la sidebar), DataTable optimisée (tri mémoïsé, pagination client opt-in, animations bornées), vitest `testTimeout: 15000` (faux échecs sous charge parallèle), smoke test des 6 rôles OK — **165 tests vitest ✓**
+- [x] **Perf (3.20.2)** : chargement par route (code splitting) — bundle initial **1.18 MB → 267 KB (80 KB gzip)**, fallback Suspense, pages chargées à la demande — **167 tests vitest ✓** (commit `fe001eb`)
 - [ ] Déploiement bêta Render (services bêta dans render.yaml — **Sync Blueprint à faire par l'utilisateur**, pas de credentials Render dans l'environnement)
 - [ ] Vérification finale de l'URL publique + rapport final (bloqué sur le déploiement)
 
@@ -119,3 +120,29 @@ et monitoring.
 > (connexion comptes démo, feedback, reset), fournir le rapport final.
 > En attendant : le flux bêta complet reste vérifié en local (port 8090 +
 > DB discipolat_beta — voir « PROCESSUS LOCAUX LAISSÉS ACTIFS »).
+
+---
+
+## SESSION 2026-08-12 (perf + préparation vérification)
+
+- **Perf (3.20.2)** : code splitting par route (React.lazy + Suspense) — bundle
+  initial **1.18 MB → 267 KB (80 KB gzip)**. `App.tsx` + test adapté
+  (RoleWorkspaceRouting : assertions « Tableau de bord » sous waitFor).
+  167 tests vitest ✓, tsc ✓, build ✓. Commit `fe001eb` poussé.
+- **Script de vérification** : `scripts/verify-beta.sh` — teste la chaîne
+  complète sur l'URL bêta publique dès qu'elle existe (meta, 7 comptes démo,
+  switch-role, feedback POST→GET→stats, RBAC 403/401, reset, isolation).
+- Choix utilisateur (ask_user) : **il fera lui-même le Sync Blueprint Render**.
+- État des URL vérifié : `discipolat-beta.onrender.com` et
+  `discipolat-beta-api.onrender.com` → **404 (services inexistants)** ; prod API
+  `/actuator/health` → **200 OK**.
+
+## NEXT ACTION (session 2026-08-12)
+
+> L'utilisateur exécute : **Dashboard Render → Blueprints → Sync** (ou crée
+> manuellement `discipolat-beta-db` + re-sync). Étapes exactes dans
+> `docs/DEPLOYMENT.md` §Bêta (activer l'environnement bêta). Une fois les
+> services créés, lancer `./scripts/verify-beta.sh` pour valider la chaîne
+> complète, ajouter les secrets GitHub RENDER_API_KEY /
+> RENDER_BETA_API_SERVICE_ID, vérifier l'URL publique et rédiger le rapport
+> final (comptes, rôles, fonctionnalités, version, tests, problèmes connus).
