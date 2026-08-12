@@ -158,8 +158,16 @@ et monitoring.
 - Contrat API feedback vérifié : `category`+`subject` obligatoires (le script
   initial envoyait `categorie`/`message` → 400 ; corrigé). Rate-limiting login
   (10/min/IP) observé en conditions réelles → script avec cache de tokens.
+- **ErrorBoundary des routes lazy** (`components/shared/ErrorBoundary.tsx`) :
+  si un chunk échoue à se charger (réseau instable), écran de récupération
+  avec bouton « Réessayer » au lieu d'une page blanche.
+- `verify-beta.sh` enrichi : vérif liste admin (`GET /admin/feedback`) +
+  invariant « le feedback survit au reset » → **18/18 checks ✓**.
+- Suite complète revalidée : **167 tests vitest ✓** (tsc ✓, build ✓),
+  319 tests backend ✓, 89 tests mobile ✓.
 - Commits poussés : `fe001eb` (code splitting), `73879ed` (script+checkpoint),
-  `6f113d2` (fix contrat feedback script).
+  `6f113d2` (fix contrat feedback script), `65f53cf` (checkpoint vérif),
+  `1b84008` (ErrorBoundary + script enrichi).
 
 ## NEXT ACTION (session 2026-08-12)
 
