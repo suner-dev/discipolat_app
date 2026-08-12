@@ -153,12 +153,17 @@ describe('DashboardGate — redirection vers l’espace métier du rôle actif',
   it('laisse PASTEUR sur le dashboard général', async () => {
     await expectRedirectTo('/dashboard', 'PASTEUR', '/dashboard');
     // Le titre du dashboard + l'item de navigation sont présents
-    expect(screen.getAllByText('Tableau de bord').length).toBeGreaterThan(0);
+    // (waitFor : le chunk de la page est chargé à la demande)
+    await waitFor(() => {
+      expect(screen.getAllByText('Tableau de bord').length).toBeGreaterThan(0);
+    });
   });
 
   it('laisse ADMIN sur le dashboard général', async () => {
     await expectRedirectTo('/dashboard', 'ADMIN', '/dashboard');
-    expect(screen.getAllByText('Tableau de bord').length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(screen.getAllByText('Tableau de bord').length).toBeGreaterThan(0);
+    });
   });
 
   it('rend l’espace métier ciblé (CRM Faiseur) après la redirection', async () => {
