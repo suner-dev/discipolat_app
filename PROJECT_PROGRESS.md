@@ -137,6 +137,30 @@ et monitoring.
   `discipolat-beta-api.onrender.com` → **404 (services inexistants)** ; prod API
   `/actuator/health` → **200 OK**.
 
+## SESSION 2026-08-12 (vérification réelle stack bêta locale)
+
+- **Stack bêta locale relancée** : API profil `beta` sur **:8090** (DB
+  `discipolat_beta`, Postgres Docker :5433) + frontend Vite sur **:5173**
+  (`VITE_API_URL=http://localhost:8090`).
+- **`./scripts/verify-beta.sh http://localhost:8090` → 16/16 checks ✓** :
+  - Meta `env=beta` + `demoAccountsEnabled=true` ✓
+  - 7 comptes démo connectés (`password123`) ✓
+  - Switch de rôle paul RESPONSABLE→CHEF_DE_FAMILLE → nouveau JWT ✓
+  - Feedback POST → id créé ; stats admin ✓
+  - RBAC : MEMBRE → /admin/feedback et /admin/beta/reset = **403** ; sans token = **401** ✓
+  - RESPONSABLE1 → /departments = 200 ✓
+  - Reset admin → `status:OK`, **71 tables tronquées**, seed restauré ✓
+- **Test navigateur réel (browser-use, Chrome)** sur la stack locale : landing
+  avec badge BÊTA ✓, page login avec comptes démo ✓, connexion
+  `faiseur@discipolat.com` ✓, dashboard CRM Faiseur ✓, navigation sidebar →
+  Rapports ✓, widget feedback flottant → modale (subject/category) ✓,
+  **0 erreur console** ✓.
+- Contrat API feedback vérifié : `category`+`subject` obligatoires (le script
+  initial envoyait `categorie`/`message` → 400 ; corrigé). Rate-limiting login
+  (10/min/IP) observé en conditions réelles → script avec cache de tokens.
+- Commits poussés : `fe001eb` (code splitting), `73879ed` (script+checkpoint),
+  `6f113d2` (fix contrat feedback script).
+
 ## NEXT ACTION (session 2026-08-12)
 
 > L'utilisateur exécute : **Dashboard Render → Blueprints → Sync** (ou crée
