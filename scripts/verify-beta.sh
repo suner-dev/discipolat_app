@@ -114,6 +114,14 @@ if echo "$ADMIN_STATS" | grep -qE '"total"|"parCategorie"|"parPriorite"|"parStat
 else
   ko "stats admin : $(echo "$ADMIN_STATS" | head -c 160)"
 fi
+FEEDBACK_ID=$(echo "$FB" | python3 -c 'import sys,json
+print(json.load(sys.stdin).get("id",""))' 2>/dev/null)
+ADMIN_LIST=$(curl -s -m 60 "$BASE/api/v1/admin/feedback" -H "Authorization: Bearer $A_TOKEN")
+if [ -n "$FEEDBACK_ID" ] && echo "$ADMIN_LIST" | grep -q "$FEEDBACK_ID"; then
+  ok "GET /admin/feedback → le retour créé est visible par l'admin"
+else
+  ko "GET /admin/feedback : $(echo "$ADMIN_LIST" | head -c 160)"
+fi
 
 # --- 5. Sécurité RBAC ------------------------------------------------------
 step "5. Sécurité RBAC (membre bloqué, sans token bloqué)"
@@ -145,6 +153,13 @@ if [ -n "$A_TOKEN" ]; then
   RST=$(curl -s -m 120 -X POST "$BASE/api/v1/admin/beta/reset" -H "Authorization: Bearer $A_TOKEN")
   if echo "$RST" | grep -q '"status":"OK"'; then
     ok "POST /admin/beta/reset → OK (${RST})"
+    # Invariant documenté : les retours testeurs SONT conservés après reset
+    AFTER=$(curl -s -m 60 "$BASE/api/v1/admin/feedback" -H "Authorization: Bearer $A_TOKEN")
+    if [ -n "$FEEDBACK_ID" ] && echo "$AFTER" | grep -q "$FEEDBACK_ID"; then
+      ok "le feedback survit au reset (invariant conservé)"
+    else
+      ko "feedback perdu après reset"
+    fi
   else
     ko "reset : $(echo "$RST" | head -c 200)"
   fi

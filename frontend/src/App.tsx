@@ -5,6 +5,7 @@ import { WORKSPACE_HOME, isSuperUser } from '@/workspaces';
 import type { UserRole } from '@/types';
 import MainLayout from '@/layouts/MainLayout';
 import AuthLayout from '@/layouts/AuthLayout';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
 /* ============================================================================
  * CHARGEMENT PAR ROUTE (code splitting)
@@ -154,8 +155,9 @@ function HomeGate() {
 
 export default function App() {
   return (
-    <Suspense fallback={<RouteFallback />}>
-      <Routes>
+    <ErrorBoundary>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
         {/* Auth routes */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
@@ -477,6 +479,7 @@ export default function App() {
         <Route path="/" element={<HomeGate />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </Suspense>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
