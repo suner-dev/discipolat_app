@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Soul, MakerReport, SoulHistoryEntry, SoulNote, Interaction, InteractionType, SpiritualScore, ScoreHistoryPoint, AiAnalysis, CreateInteractionRequest } from '@/types';
 import {
   ArrowLeft, Mail, Phone, Calendar, MapPin, Briefcase, FileText,
@@ -17,7 +18,14 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContai
 
 type Tab = 'info' | 'history' | 'notes' | 'reports' | 'discipline' | 'interactions';
 
-const STATUT_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const INTERACTION_TYPE_FALLBACK: Record<string, string> = {
+  APPEL: 'Appel', SMS: 'SMS', WHATSAPP: 'WhatsApp', EMAIL: 'Email', VISITE: 'Visite',
+  REUNION: 'Réunion', PRIERE: 'Prière', CONSEIL: 'Conseil', SUIVI: 'Suivi', PROGRAMME: 'Programme',
+};
+
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const STATUT_FALLBACK: Record<string, string> = {
   NOUVEAU_CONVERTI: 'Nouveau converti', NOUVEL_ARRIVANT: 'Nouvel arrivant',
   EN_INTEGRATION: 'En intégration', ACTIF: 'Actif', EN_VEILLE: 'En veille', DECROCHE: 'Décroché',
 };
@@ -34,6 +42,28 @@ const TYPE_STYLES: Record<string, string> = {
 export default function SoulDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
+
+  const statutLabel = (code: string) =>
+    dictionaries.label('SOUL_STATUS', code) || STATUT_FALLBACK[code] || code;
+  const typeLabel = (code: string) =>
+    dictionaries.label('SOUL_TYPE', code) || (code === 'NOUVEAU_CONVERTI' ? 'Nouveau converti' : 'Nouvel arrivant') || code;
+  const exitMotifEntries = useMemo(() => {
+    const configured = dictionaries.options('EXIT_MOTIF');
+    return configured.length > 0
+      ? configured.map((e) => ({ value: e.code, label: e.label }))
+      : [
+        { value: 'INTEGRE_AUTONOME', label: 'Intégré/autonome' }, { value: 'TRANSFERT', label: 'Transfert' },
+        { value: 'ABANDON', label: 'Abandon' }, { value: 'INJOIGNABLE_DURABLE', label: 'Injoignable durable' },
+        { value: 'DECES', label: 'Décès' }, { value: 'AUTRE', label: 'Autre' },
+      ];
+  }, [dictionaries]);
+  const interactionTypeEntries = useMemo(() => {
+    const configured = dictionaries.options('INTERACTION_TYPE');
+    return configured.length > 0
+      ? configured.map((e) => ({ code: e.code, label: e.label }))
+      : Object.entries(INTERACTION_TYPE_FALLBACK).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
 
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('info');
@@ -114,7 +144,8 @@ export default function SoulDetailPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const CATEGORIE_DISCIPLINE_LABELS: Record<string, string> = {
+  /** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+  const CATEGORIE_DISCIPLINE_FALLBACK: Record<string, string> = {
     COMPORTEMENT: 'Comportement', CONDUITE: 'Conduite', HABILLEMENT: 'Habillement',
     VIE_SPIRITUELLE: 'Vie spirituelle', PONCTUALITE: 'Ponctualité',
     PARTICIPATION: 'Participation', FIDELITE: 'Fidélité', ENGAGEMENT: 'Engagement',
@@ -129,6 +160,14 @@ export default function SoulDetailPage() {
     TEMOIGNAGE_CHEF: 'Témoignage chef',
     COMMENTAIRE_PASTORAL: 'Commentaire pastoral', AUTRE: 'Autre',
   };
+  const disciplineCategorieOptions = useMemo(() => {
+    const configured = dictionaries.options('DISCIPLINE_CATEGORIE');
+    return configured.length > 0
+      ? configured.map((e) => ({ value: e.code, label: e.label }))
+      : Object.entries(CATEGORIE_DISCIPLINE_FALLBACK).map(([value, label]) => ({ value, label }));
+  }, [dictionaries]);
+  const disciplineLabel = (code: string) =>
+    dictionaries.label('DISCIPLINE_CATEGORIE', code) || CATEGORIE_DISCIPLINE_FALLBACK[code] || code;
 
   const TYPE_EVENEMENT_LABELS: Record<string, string> = {
     REPROCHE: 'Reproche', SANCTION: 'Sanction', LITIGE: 'Litige',
@@ -169,11 +208,6 @@ export default function SoulDetailPage() {
   });
 
   // ======================== INTERACTIONS CRM ========================
-  const INTERACTION_TYPE_LABELS: Record<string, string> = {
-    APPEL: 'Appel', SMS: 'SMS', WHATSAPP: 'WhatsApp', EMAIL: 'Email', VISITE: 'Visite',
-    REUNION: 'Réunion', PRIERE: 'Prière', CONSEIL: 'Conseil', SUIVI: 'Suivi', PROGRAMME: 'Programme',
-  };
-
   const [interactionForm, setInteractionForm] = useState<{
     type: string; canal?: string; objet: string; contenu: string;
   }>({ type: 'APPEL', canal: undefined, objet: '', contenu: '' });
@@ -321,7 +355,7 @@ export default function SoulDetailPage() {
                 </span>
                 <span className={`inline-flex items-center gap-1 ${STATUT_STYLES[soul.statut] || 'badge-gray'}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${soul.statut === 'ACTIF' ? 'bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.5)]' : 'bg-gray-400'}`} />
-                  {STATUT_LABELS[soul.statut] || soul.statut}
+                  {statutLabel(soul.statut)}
                 </span>
               </div>
             </div>
@@ -374,9 +408,7 @@ export default function SoulDetailPage() {
           <div className="space-y-3">
             <select value={exitMotif} onChange={(e) => setExitMotif(e.target.value)} className="input">
               <option value="">Motif obligatoire...</option>
-              <option value="INTEGRE_AUTONOME">Intégré/autonome</option><option value="TRANSFERT">Transfert</option>
-              <option value="ABANDON">Abandon</option><option value="INJOIGNABLE_DURABLE">Injoignable durable</option>
-              <option value="DECES">Décès</option><option value="AUTRE">Autre</option>
+              {exitMotifEntries.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <textarea className="input" rows={2} value={exitMotifDetail} onChange={(e) => setExitMotifDetail(e.target.value)} placeholder="Détail (optionnel)..." />
             <div className="flex justify-end gap-2">
@@ -467,7 +499,7 @@ export default function SoulDetailPage() {
                   </div>
                   <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                     <p className="text-xs text-gray-400 mb-1">État spirituel</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{STATUT_LABELS[soul.statut] || soul.statut}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{statutLabel(soul.statut)}</p>
                   </div>
                   {soul.dateConversion && <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                     <p className="text-xs text-gray-400 mb-1">Date de conversion</p>
@@ -643,7 +675,7 @@ export default function SoulDetailPage() {
                     {Object.entries(disciplineStats.parCategorie).slice(0, 4).map(([cat, count]) => (
                       <div key={cat} className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30 text-center">
                         <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{count}</p>
-                        <p className="text-[10px] text-gray-400 truncate">{CATEGORIE_DISCIPLINE_LABELS[cat] || cat}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{disciplineLabel(cat)}</p>
                       </div>
                     ))}
                   </div>
@@ -664,8 +696,8 @@ export default function SoulDetailPage() {
                       <label className="label">Catégorie *</label>
                       <select className="input" value={disciplineForm.categorie}
                         onChange={(e) => setDisciplineForm({ ...disciplineForm, categorie: e.target.value })}>
-                        {Object.keys(CATEGORIE_DISCIPLINE_LABELS).map(k => (
-                          <option key={k} value={k}>{CATEGORIE_DISCIPLINE_LABELS[k]}</option>
+                        {disciplineCategorieOptions.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
                         ))}
                       </select>
                     </div>
@@ -739,7 +771,7 @@ export default function SoulDetailPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-2 text-[10px] text-gray-400 mb-1">
-                            <span className="font-medium">{CATEGORIE_DISCIPLINE_LABELS[d.categorie] || d.categorie}</span>
+                            <span className="font-medium">{disciplineLabel(d.categorie)}</span>
                             <span>•</span>
                             <span>{new Date(d.dateEvenement).toLocaleDateString('fr-FR')}</span>
                             {d.resolu ? (
@@ -796,7 +828,7 @@ export default function SoulDetailPage() {
                     <label className="label">Type *</label>
                     <select className="input" value={interactionForm.type}
                       onChange={(e) => setInteractionForm({ ...interactionForm, type: e.target.value })}>
-                      {Object.entries(INTERACTION_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      {interactionTypeEntries.map((o) => <option key={o.code} value={o.code}>{o.label}</option>)}
                     </select>
                   </div>
                   <div>
@@ -846,7 +878,7 @@ export default function SoulDetailPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className="badge-info text-[10px]">{INTERACTION_TYPE_LABELS[interaction.type] || interaction.type}</span>
+                            <span className="badge-info text-[10px]">{dictionaries.label('INTERACTION_TYPE', interaction.type) || INTERACTION_TYPE_FALLBACK[interaction.type] || interaction.type}</span>
                             {interaction.canal && <span className="text-[10px] text-gray-400 uppercase tracking-wider">{interaction.canal}</span>}
                             <span className="text-[10px] text-gray-400 flex items-center gap-1">
                               <Clock className="w-3 h-3" />
@@ -890,7 +922,7 @@ export default function SoulDetailPage() {
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10 dark:border-white/[0.04]">
                 <span className="text-xs text-gray-400">Statut</span>
-                <span className={STATUT_STYLES[soul.statut] || 'badge-gray'}>{STATUT_LABELS[soul.statut] || soul.statut}</span>
+                <span className={STATUT_STYLES[soul.statut] || 'badge-gray'}>{statutLabel(soul.statut)}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10 dark:border-white/[0.04]">
                 <span className="text-xs text-gray-400">Intégration</span>
@@ -1068,7 +1100,7 @@ export default function SoulDetailPage() {
             const allNotes = Object.values(scores);
             const totalAvg = allNotes.reduce((acc, s) => acc + (s.moyenne || 0), 0) / Math.max(allNotes.length, 1);
             const totalCount = allNotes.reduce((acc, s) => acc + s.total, 0);
-            const CATEGORIE_LABELS: Record<string, string> = {
+            const CATEGORIE_FALLBACK: Record<string, string> = {
               RESPONSABLE: 'Resp.', CHEF_FAMILLE: 'Chef', FAISEUR: 'Faiseur',
             };
             return (
@@ -1092,7 +1124,7 @@ export default function SoulDetailPage() {
                 <div className="space-y-1">
                   {Object.entries(scores).map(([cat, s]) => (
                     <div key={cat} className="flex items-center justify-between text-[11px]">
-                      <span className="text-gray-400">{CATEGORIE_LABELS[cat] || cat}</span>
+                      <span className="text-gray-400">{dictionaries.label('EVALUATION_CATEGORIE', cat) || CATEGORIE_FALLBACK[cat] || cat}</span>
                       <span className="text-gray-500">
                         {s.moyenne !== null && s.moyenne > 0 ? `${s.moyenne.toFixed(1)}/5` : '—'}
                         <span className="text-gray-400 ml-1">({s.total})</span>

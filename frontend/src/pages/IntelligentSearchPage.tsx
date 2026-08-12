@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { PageResponse, Soul, MakerReport, SoulHistoryEntry, SoulNote, Prayer } from '@/types';
 import {
   Search, Heart, X, Loader2, Sparkles, User, Mail, Phone, Calendar,
@@ -131,34 +132,39 @@ interface CompleteProfile {
 
 // ======================== Labels ========================
 
-const STATUT_LABELS: Record<string, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const STATUT_FALLBACK: Record<string, string> = {
   NOUVEAU_CONVERTI: 'Nouveau converti', NOUVEL_ARRIVANT: 'Nouvel arrivant',
   EN_INTEGRATION: 'En intégration', ACTIF: 'Actif', EN_VEILLE: 'En veille',
   DECROCHE: 'Décroché',
 };
 
-const TYPE_LABELS: Record<string, string> = {
+const TYPE_FALLBACK: Record<string, string> = {
   NOUVEL_ARRIVANT: 'Nouvel arrivant', NOUVEAU_CONVERTI: 'Nouveau converti',
 };
 
-const SPIRITUAL_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const SPIRITUAL_FALLBACK: Record<string, string> = {
   NOUVEAU_CONVERTI: 'Nouveau converti', EN_CROISSANCE: 'En croissance',
   MATURE: 'Mature', EN_DIFFICULTE: 'En difficulté',
 };
 
-const PRIORITE_LABELS: Record<string, { label: string; color: string }> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const PRIORITE_FALLBACK: Record<string, { label: string; color: string }> = {
   BASSE: { label: 'Basse', color: 'text-gray-500' },
   MOYENNE: { label: 'Moyenne', color: 'text-amber-500' },
   HAUTE: { label: 'Haute', color: 'text-red-500' },
 };
 
-const EVAL_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const EVAL_FALLBACK: Record<string, string> = {
   RESPONSABLE: 'Responsable',
   CHEF_FAMILLE: 'Chef de famille',
   FAISEUR: 'Faiseur',
 };
 
-const CATEGORIE_DISCIPLINE_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const CATEGORIE_DISCIPLINE_FALLBACK: Record<string, string> = {
   COMPORTEMENT: 'Comportement', CONDUITE: 'Conduite', HABILLEMENT: 'Habillement',
   VIE_SPIRITUELLE: 'Vie spirituelle', PONCTUALITE: 'Ponctualité',
   PARTICIPATION: 'Participation', FIDELITE: 'Fidélité', ENGAGEMENT: 'Engagement',
@@ -185,6 +191,7 @@ const GRAVITE_COLORS: Record<string, string> = {
 // ======================== Main Component ========================
 
 export default function IntelligentSearchPage() {
+  const dictionaries = useDictionaries();
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -351,6 +358,7 @@ export default function IntelligentSearchPage() {
 // ======================== Search Result Card ========================
 
 function SearchResultCard({ result, onSelect }: { result: SearchResult; onSelect: () => void }) {
+  const dictionaries = useDictionaries();
   const initials = result.prenom
     ? (result.prenom[0] + result.nom[0]).toUpperCase()
     : result.nom.slice(0, 2).toUpperCase();
@@ -375,7 +383,7 @@ function SearchResultCard({ result, onSelect }: { result: SearchResult; onSelect
           <div className="flex flex-wrap gap-1.5 mt-1">
             {result.type === 'AME' && result.statut && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                {STATUT_LABELS[result.statut] || result.statut}
+                {dictionaries.label('SOUL_STATUS', result.statut) || STATUT_FALLBACK[result.statut] || result.statut}
               </span>
             )}
             {result.type === 'UTILISATEUR' && result.role && (
@@ -425,6 +433,7 @@ function CompleteMemberProfile({
   onBack: () => void;
   isLoading: boolean;
 }) {
+  const dictionaries = useDictionaries();
   const p = profile.informationsPersonnelles;
   const e = profile.informationsEcclesiales;
   const a = profile.assignations;
@@ -447,9 +456,9 @@ function CompleteMemberProfile({
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{p.nomComplet}</h2>
               <div className="flex flex-wrap gap-2 mt-1.5">
-                <span className="badge-info text-xs">{TYPE_LABELS[e.typeDisciple] || e.typeDisciple}</span>
+                <span className="badge-info text-xs">{dictionaries.label('SOUL_TYPE', e.typeDisciple) || TYPE_FALLBACK[e.typeDisciple] || e.typeDisciple}</span>
                 <span className={`badge text-xs ${e.statut === 'ACTIF' ? 'badge-success' : 'badge-warning'}`}>
-                  {STATUT_LABELS[e.statut] || e.statut}
+                  {dictionaries.label('SOUL_STATUS', e.statut) || STATUT_FALLBACK[e.statut] || e.statut}
                 </span>
                 {p.age !== undefined && (
                   <span className="badge-gray text-xs">{p.age} ans</span>
@@ -511,7 +520,7 @@ function CompleteMemberProfile({
               </div>
               <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30 text-center">
                 <p className={`text-sm font-bold ${e.etatSpirituel === 'EN_DIFFICULTE' ? 'text-red-500' : 'text-green-500'}`}>
-                  {SPIRITUAL_LABELS[e.etatSpirituel] || e.etatSpirituel}
+                  {dictionaries.label('SPIRITUAL_LEVEL', e.etatSpirituel) || SPIRITUAL_FALLBACK[e.etatSpirituel] || e.etatSpirituel}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">État spirituel</p>
               </div>
@@ -660,8 +669,8 @@ function CompleteMemberProfile({
                   <div key={prayer.id} className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{prayer.titre}</p>
-                      <span className={`text-xs font-medium ${PRIORITE_LABELS[prayer.priorite]?.color || 'text-gray-500'}`}>
-                        {PRIORITE_LABELS[prayer.priorite]?.label || prayer.priorite}
+                      <span className={`text-xs font-medium ${PRIORITE_FALLBACK[prayer.priorite]?.color || 'text-gray-500'}`}>
+                        {dictionaries.label('PRAYER_PRIORITE', prayer.priorite) || PRIORITE_FALLBACK[prayer.priorite]?.label || prayer.priorite}
                       </span>
                     </div>
                     {prayer.description && (
@@ -796,7 +805,7 @@ function CompleteMemberProfile({
                       <div className="space-y-0.5">
                         {Object.entries(scores).map(([cat, s]) => (
                           <div key={cat} className="flex items-center justify-between text-[10px]">
-                            <span className="text-gray-400">{EVAL_LABELS[cat] || cat}</span>
+                            <span className="text-gray-400">{dictionaries.label('EVALUATION_CATEGORIE', cat) || EVAL_FALLBACK[cat] || cat}</span>
                             <span className="text-gray-500">
                               {s.moyenne !== null && s.moyenne > 0 ? `${s.moyenne.toFixed(1)}/5` : '—'}
                               <span className="text-gray-400 ml-0.5">({s.total})</span>
@@ -899,7 +908,7 @@ function CompleteMemberProfile({
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                      <span>{CATEGORIE_DISCIPLINE_LABELS[d.categorie] || d.categorie}</span>
+                      <span>{dictionaries.label('DISCIPLINE_CATEGORIE', d.categorie) || CATEGORIE_DISCIPLINE_FALLBACK[d.categorie] || d.categorie}</span>
                       <span>•</span>
                       <span>{new Date(d.dateEvenement).toLocaleDateString('fr-FR')}</span>
                       {d.resolu && <span className="text-green-600">✓ Résolu</span>}

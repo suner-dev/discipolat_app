@@ -8,8 +8,10 @@ import {
   FlaskConical, RotateCcw, ShieldOff,
 } from 'lucide-react';
 import type { Feedback, FeedbackStats, FeedbackStatus } from '@/types';
+import { useDictionaries } from '@/hooks/useDictionaries';
 
-const CATEGORY_LABELS: Record<string, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const CATEGORY_FALLBACK: Record<string, string> = {
   BUG: 'Bug',
   UX: 'UX',
   SUGGESTION: 'Suggestion',
@@ -20,7 +22,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   AUTRE: 'Autre',
 };
 
-const STATUS_LABELS: Record<FeedbackStatus, string> = {
+const STATUS_FALLBACK: Record<FeedbackStatus, string> = {
   NOUVEAU: 'Nouveau',
   EN_COURS: 'En cours',
   RESOLU: 'Résolu',
@@ -67,6 +69,7 @@ function StatCard({ icon: Icon, label, value, gradient }: {
 
 export default function AdminFeedbackPage() {
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
   const [statusFilter, setStatusFilter] = useState<'TOUS' | FeedbackStatus>('TOUS');
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
@@ -181,7 +184,7 @@ export default function AdminFeedbackPage() {
                     ? 'bg-primary-500/10 border-primary-500/30 text-primary-600 dark:text-primary-400'
                     : 'border-gray-200/70 dark:border-gray-700/50 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'}`}
               >
-                {s === 'TOUS' ? 'Tous' : STATUS_LABELS[s]}
+                {s === 'TOUS' ? 'Tous' : dictionaries.label('FEEDBACK_STATUS', s) || STATUS_FALLBACK[s] || s}
                 {s !== 'TOUS' && (
                   <span className="ml-1.5 text-[10px] opacity-70">
                     {stats ? (s === 'NOUVEAU' ? stats.nouveaux : s === 'EN_COURS' ? stats.enCours : s === 'RESOLU' ? stats.resolus : stats.rejetes) : ''}
@@ -226,7 +229,7 @@ export default function AdminFeedbackPage() {
                       </p>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 text-[11px] text-gray-400 dark:text-gray-500">
                         <span className="inline-flex items-center gap-1">
-                          {CATEGORY_LABELS[f.category] || f.category}
+                          {dictionaries.label('FEEDBACK_CATEGORIE', f.category) || CATEGORY_FALLBACK[f.category] || f.category}
                         </span>
                         {f.reporterEmail && <span>par {f.reporterEmail}</span>}
                         <span>{formatDate(f.createdAt)}</span>
@@ -246,7 +249,7 @@ export default function AdminFeedbackPage() {
                   {/* Statut */}
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${STATUS_STYLES[f.status] || ''}`}>
-                      {STATUS_LABELS[f.status] || f.status}
+                      {dictionaries.label('FEEDBACK_STATUS', f.status) || STATUS_FALLBACK[f.status] || f.status}
                     </span>
                     <select
                       className="input !py-1.5 !w-auto text-xs"
@@ -255,8 +258,11 @@ export default function AdminFeedbackPage() {
                       onChange={(e) => statusMutation.mutate({ id: f.id, status: e.target.value as FeedbackStatus })}
                       aria-label={`Changer le statut de « ${f.subject} »`}
                     >
-                      {(Object.keys(STATUS_LABELS) as FeedbackStatus[]).map((s) => (
-                        <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                      {(dictionaries.options('FEEDBACK_STATUS').length > 0
+                        ? dictionaries.options('FEEDBACK_STATUS')
+                        : Object.entries(STATUS_FALLBACK).map(([value, label]) => ({ code: value, label }))
+                      ).map((o) => (
+                        <option key={o.code} value={o.code}>{o.label}</option>
                       ))}
                     </select>
                   </div>
@@ -279,7 +285,7 @@ export default function AdminFeedbackPage() {
                 {categoryBreakdown.map(({ cat, count, pct }) => (
                   <div key={cat}>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-gray-600 dark:text-gray-300">{CATEGORY_LABELS[cat] || cat}</span>
+                      <span className="text-gray-600 dark:text-gray-300">{dictionaries.label('FEEDBACK_CATEGORIE', cat) || CATEGORY_FALLBACK[cat] || cat}</span>
                       <span className="font-mono text-gray-400">{count}</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">

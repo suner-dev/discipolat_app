@@ -187,6 +187,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Modules', href: '/admin/modules', icon: Boxes, subtitle: 'Activer / désactiver' },
       { name: 'Menus', href: '/admin/menus', icon: MenuList, subtitle: 'Configurer la navigation' },
       { name: 'Champs personnalisés', href: '/admin/custom-fields', icon: FileText, subtitle: 'Champs des entités' },
+      { name: 'Dictionnaires', href: '/admin/dictionaries', icon: BookOpen, subtitle: 'Types, statuts & catégories' },
     ],
   },
 ];
@@ -345,6 +346,7 @@ const ADMIN_ONLY_HREFS = [
   '/admin/modules',
   '/admin/menus',
   '/admin/custom-fields',
+  '/admin/dictionaries',
 ];
 
 /** Retourne les menus de l'espace métier correspondant au rôle actif. */

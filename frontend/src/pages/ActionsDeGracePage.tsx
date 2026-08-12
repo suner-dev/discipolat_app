@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Family } from '@/types';
 import { Heart, Sparkles, Loader2, Star, Filter } from 'lucide-react';
 
@@ -16,7 +17,8 @@ interface AnsweredPrayer {
   createdAt: string;
 }
 
-const CATEGORIE_LABELS: Record<string, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const CATEGORIE_FALLBACK: Record<string, string> = {
   SANTE: 'Santé',
   FAMILLE: 'Famille',
   TRAVAIL: 'Travail',
@@ -33,6 +35,7 @@ const CATEGORIE_COLORS: Record<string, string> = {
 };
 
 export default function ActionsDeGracePage() {
+  const dictionaries = useDictionaries();
   const [familleFilter, setFamilleFilter] = useState('');
 
   const { data: families } = useQuery({
@@ -95,7 +98,7 @@ export default function ActionsDeGracePage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{prayer.titre}</h3>
                   <span className="text-xs text-gray-400">
-                    {CATEGORIE_LABELS[prayer.categorie] || prayer.categorie}
+                    {dictionaries.label('GRATITUDE_CATEGORIE', prayer.categorie) || CATEGORIE_FALLBACK[prayer.categorie] || prayer.categorie}
                   </span>
                 </div>
                 {prayer.dateExaucee && (

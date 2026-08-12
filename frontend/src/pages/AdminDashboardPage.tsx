@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   Palette, Boxes, Menu as MenuIcon, Shield, UserCog, Activity, FileText, PlusCircle,
-  ArrowRight, Sparkles, MessageSquareText,
+  ArrowRight, Sparkles, MessageSquareText, BookOpen,
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -10,6 +10,7 @@ const ADMIN_SECTIONS = [
   { href: '/admin/modules', icon: Boxes, title: 'Modules', desc: 'Activer ou désactiver les grands modules de la plateforme.', gradient: 'from-violet-500 to-purple-600' },
   { href: '/admin/menus', icon: MenuIcon, title: 'Menus', desc: 'Configurer la navigation : ordre, libellé, icônes et rôles visibles.', gradient: 'from-amber-500 to-orange-600' },
   { href: '/admin/custom-fields', icon: FileText, title: 'Champs personnalisés', desc: 'Ajouter des champs aux entités (âmes, utilisateurs, départements, familles).', gradient: 'from-sky-500 to-blue-600' },
+  { href: '/admin/dictionaries', icon: BookOpen, title: 'Dictionnaires', desc: 'Types d\'événements, statuts, raisons d\'absence et catégories — adaptez chaque liste.', gradient: 'from-fuchsia-500 to-pink-600' },
   { href: '/permissions', icon: Shield, title: 'Rôles & permissions', desc: 'Gérer les rôles, créer des rôles personnalisés et éditer la matrice.', gradient: 'from-rose-500 to-pink-600' },
   { href: '/users', icon: UserCog, title: 'Utilisateurs', desc: 'Créer, modifier et gérer les comptes utilisateurs.', gradient: 'from-teal-500 to-cyan-600' },
   { href: '/admin/feedback', icon: MessageSquareText, title: 'Retours testeurs', desc: 'Bugs, suggestions et retours UX des testeurs — suivi et statuts.', gradient: 'from-indigo-500 to-violet-600' },

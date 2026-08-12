@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable from '@/components/shared/DataTable';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
-import type { Evenement, PageResponse, TypeEvenement, StatutEvenement, User } from '@/types';
+import { useDictionaries } from '@/hooks/useDictionaries';
+import type { Evenement, PageResponse, TypeEvenement, StatutEvenement, User, DictionaryEntry } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
   Calendar,
@@ -32,7 +33,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const TYPE_LABELS: Record<TypeEvenement, string> = {
+/** Repli (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const TYPE_LABELS: Record<string, string> = {
   SORTIE: 'Sortie',
   RETRAITE: 'Retraite',
   EVANGELISATION: 'Évangélisation',
@@ -48,23 +50,7 @@ const TYPE_LABELS: Record<TypeEvenement, string> = {
   AUTRE: 'Autre',
 };
 
-const TYPE_COLORS: Record<TypeEvenement, string> = {
-  SORTIE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  RETRAITE: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-  EVANGELISATION: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-  REUNION: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  VISITE: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
-  CONFERENCE: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
-  FORMATION: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-  ANNIVERSAIRE: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
-  CULTE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  ETUDE_BIBLIQUE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  VEILLEE: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-  PRIERE: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-  AUTRE: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-};
-
-const STATUT_LABELS: Record<StatutEvenement, string> = {
+const STATUT_LABELS: Record<string, string> = {
   PLANIFIE: 'Planifié',
   EN_COURS: 'En cours',
   TERMINE: 'Terminé',
@@ -90,7 +76,9 @@ function eventForm(
   submitLabel: string,
   onSubmit: () => void,
   isPending: boolean,
-  onCancel?: () => void
+  onCancel: () => void,
+  typeOptions: { code: string; label: string }[],
+  statusOptions: { code: string; label: string }[]
 ) {
   const isEdit = submitLabel !== 'Créer';
   return (
@@ -117,8 +105,8 @@ function eventForm(
         <div>
           <label className="label">Type *</label>
           <select className="input" value={form.typeEvenement} onChange={(e) => update({ typeEvenement: e.target.value as TypeEvenement })}>
-            {Object.entries(TYPE_LABELS).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
+            {typeOptions.map((o) => (
+              <option key={o.code} value={o.code}>{o.label}</option>
             ))}
           </select>
         </div>
@@ -142,8 +130,8 @@ function eventForm(
           <div>
             <label className="label">Statut</label>
             <select className="input" value={form.statut} onChange={(e) => update({ statut: e.target.value as StatutEvenement })}>
-              {Object.entries(STATUT_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
+              {statusOptions.map((o) => (
+                <option key={o.code} value={o.code}>{o.label}</option>
               ))}
             </select>
           </div>
@@ -169,6 +157,30 @@ function eventForm(
 export default function EventsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
+
+  /** Types configurés (dictionnaire) — sinon repli sur les valeurs par défaut. */
+  const typeEntries = useMemo<{ code: string; label: string; color?: string }[]>(() => {
+    const configured = dictionaries.options('EVENT_TYPE');
+    if (configured.length > 0) {
+      return configured.map((e: DictionaryEntry) => ({ code: e.code, label: e.label, color: e.color }));
+    }
+    return Object.entries(TYPE_LABELS).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
+
+  const typeLabel = (code: string) =>
+    dictionaries.label('EVENT_TYPE', code) || TYPE_LABELS[code] || code;
+
+  const statusEntries = useMemo<{ code: string; label: string }[]>(() => {
+    const configured = dictionaries.options('EVENT_STATUS');
+    if (configured.length > 0) {
+      return configured.map((e: DictionaryEntry) => ({ code: e.code, label: e.label }));
+    }
+    return Object.entries(STATUT_LABELS).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
+
+  const statusLabel = (code: string) =>
+    dictionaries.label('EVENT_STATUS', code) || STATUT_LABELS[code] || code;
   const [view, setView] = useState<'list' | 'consolidated'>('list');
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
@@ -372,8 +384,13 @@ export default function EventsPage() {
     {
       header: 'Type',
       cell: (evt) => (
-        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${TYPE_COLORS[evt.typeEvenement]}`}>
-          {TYPE_LABELS[evt.typeEvenement]}
+        <span
+          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+          style={dictionaries.color('EVENT_TYPE', evt.typeEvenement)
+            ? { backgroundColor: `${dictionaries.color('EVENT_TYPE', evt.typeEvenement)}22`, color: dictionaries.color('EVENT_TYPE', evt.typeEvenement) }
+            : undefined}
+        >
+          {typeLabel(evt.typeEvenement)}
         </span>
       ),
     },
@@ -407,8 +424,8 @@ export default function EventsPage() {
     {
       header: 'Statut',
       cell: (evt) => (
-        <span className={`badge ${evt.statut === 'PLANIFIE' ? 'badge-info' : evt.statut === 'TERMINE' ? 'badge-success' : evt.statut === 'ANNULE' ? 'badge-danger' : 'badge-warning'}`}>
-          {STATUT_LABELS[evt.statut]}
+        <span className="badge badge-info">
+          {statusLabel(evt.statut)}
         </span>
       ),
     },
@@ -498,10 +515,10 @@ export default function EventsPage() {
       </div>
 
       {/* Create form */}
-      {showCreate && eventForm('create', newEvent, (v) => setNewEvent({ ...newEvent, ...v }), 'Créer', () => createMutation.mutate(newEvent), createMutation.isPending, () => setShowCreate(false))}
+      {showCreate && eventForm('create', newEvent, (v) => setNewEvent({ ...newEvent, ...v }), 'Créer', () => createMutation.mutate(newEvent), createMutation.isPending, () => setShowCreate(false), typeEntries, statusEntries)}
 
       {/* Edit form */}
-      {showEdit && editingEvent && eventForm('edit', editEvent, (v) => setEditEvent({ ...editEvent, ...v }), 'Enregistrer', () => updateEventMutation.mutate({ id: editingEvent.id, data: editEvent }), updateEventMutation.isPending, () => { setShowEdit(false); setEditingEvent(null); })}
+      {showEdit && editingEvent && eventForm('edit', editEvent, (v) => setEditEvent({ ...editEvent, ...v }), 'Enregistrer', () => updateEventMutation.mutate({ id: editingEvent.id, data: editEvent }), updateEventMutation.isPending, () => { setShowEdit(false); setEditingEvent(null); }, typeEntries, statusEntries)}
 
       {/* Attendance modal */}
       {showAttendance && (
@@ -663,7 +680,7 @@ export default function EventsPage() {
               {Object.entries(consolidatedStats.parType).slice(0, 3).map(([type, count], i) => (
                 <div key={type} className="glass-card p-5 animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="stat-label">{TYPE_LABELS[type as TypeEvenement] || type}</span>
+                    <span className="stat-label">{typeLabel(type)}</span>
                     <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg">
                       <Sparkles className="w-4 h-4" />
                     </div>
@@ -719,8 +736,13 @@ export default function EventsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${TYPE_COLORS[evt.typeEvenement as TypeEvenement] || 'bg-gray-100 text-gray-800'}`}>
-                          {TYPE_LABELS[evt.typeEvenement as TypeEvenement] || evt.typeEvenement}
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                          style={dictionaries.color('EVENT_TYPE', evt.typeEvenement)
+                            ? { backgroundColor: `${dictionaries.color('EVENT_TYPE', evt.typeEvenement)}22`, color: dictionaries.color('EVENT_TYPE', evt.typeEvenement) }
+                            : undefined}
+                        >
+                          {typeLabel(evt.typeEvenement)}
                         </span>
                         {evt.nbInscrits > 0 && (
                           <span className="text-xs text-gray-400 flex items-center gap-1">
@@ -754,16 +776,15 @@ export default function EventsPage() {
               <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                 <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value as TypeEvenement | ''); setPage(0); }} className="input w-auto">
                   <option value="">Tous les types</option>
-                  {Object.entries(TYPE_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
+                  {typeEntries.map((o) => (
+                    <option key={o.code} value={o.code}>{o.label}</option>
                   ))}
                 </select>
                 <select value={statutFilter} onChange={(e) => { setStatutFilter(e.target.value as StatutEvenement | ''); setPage(0); }} className="input w-auto">
                   <option value="">Tous les statuts</option>
-                  <option value="PLANIFIE">Planifié</option>
-                  <option value="EN_COURS">En cours</option>
-                  <option value="TERMINE">Terminé</option>
-                  <option value="ANNULE">Annulé</option>
+                  {statusEntries.map((o) => (
+                    <option key={o.code} value={o.code}>{o.label}</option>
+                  ))}
                 </select>
               </div>
             )}

@@ -14,14 +14,17 @@ import {
   XCircle, PlayCircle, Clock, ChevronRight, User, Building2, Users,
 } from 'lucide-react';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
+import { useDictionaries } from '@/hooks/useDictionaries';
 
-const TYPE_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const TYPE_FALLBACK: Record<string, string> = {
   SUGGESTION: '💡 Suggestion',
   RENDEZ_VOUS: '📅 Rendez-vous',
   SIGNALEMENT: '⚠️ Signalement',
 };
 
-const CIBLE_LABELS: Record<string, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const CIBLE_FALLBACK: Record<string, string> = {
   PASTEUR: 'Pasteur',
   RESPONSABLE: 'Responsable',
   CHEF_DE_FAMILLE: 'Chef de famille',
@@ -34,7 +37,7 @@ const STATUS_BADGES: Record<MemberRequestStatus, string> = {
   REJETE: 'badge-error',
 };
 
-const STATUS_LABELS: Record<MemberRequestStatus, string> = {
+const STATUS_FALLBACK: Record<MemberRequestStatus, string> = {
   OUVERT: 'Ouvert',
   EN_COURS: 'En cours',
   RESOLU: 'Résolu',
@@ -56,6 +59,7 @@ const tauxPresence = (p: MemberPresence) => {
 
 export default function MemberRequestsPage() {
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'demandes' | 'presences'>('demandes');
   const [replyText, setReplyText] = useState<Record<string, string>>({});
@@ -174,10 +178,10 @@ export default function MemberRequestsPage() {
                   >
                     <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="badge text-[10px] badge-info">{TYPE_LABELS[r.type]}</span>
-                        <span className="badge text-[10px] badge-warning">{CIBLE_LABELS[r.cible]}</span>
+                        <span className="badge text-[10px] badge-info">{dictionaries.label('MEMBER_REQUEST_TYPE', r.type) || TYPE_FALLBACK[r.type] || r.type}</span>
+                        <span className="badge text-[10px] badge-warning">{dictionaries.label('MEMBER_REQUEST_TARGET', r.cible) || CIBLE_FALLBACK[r.cible] || r.cible}</span>
                         <span className={`badge text-[10px] ${STATUS_BADGES[r.statut]}`}>
-                          {STATUS_LABELS[r.statut]}
+                          {dictionaries.label('MEMBER_REQUEST_STATUS', r.statut) || STATUS_FALLBACK[r.statut] || r.statut}
                         </span>
                       </div>
                       <span className="text-[10px] text-gray-400">

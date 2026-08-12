@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { WeeklyProgramTemplate, Evenement, JourSemaine, TypeEvenement } from '@/types';
 import {
   Calendar, Plus, Save, Loader2, X, Clock, MapPin, Sparkles,
@@ -16,7 +17,8 @@ const JOUR_LABELS: Record<JourSemaine, string> = {
   JEUDI: 'Jeudi', VENDREDI: 'Vendredi', SAMEDI: 'Samedi', DIMANCHE: 'Dimanche',
 };
 
-const TYPE_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const TYPE_FALLBACK: Record<string, string> = {
   CULTE: 'Culte', ETUDE_BIBLIQUE: 'Étude biblique', VEILLEE: 'Veillée',
   PRIERE: 'Temps de prière', REUNION: 'Réunion', SORTIE: 'Sortie',
   RETRAITE: 'Retraite', EVANGELISATION: 'Évangélisation', VISITE: 'Visite',
@@ -51,6 +53,7 @@ function formatDate(d: Date): string {
 
 export default function WeeklyProgramPage() {
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getMonday(new Date()));
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
@@ -359,8 +362,11 @@ export default function WeeklyProgramPage() {
                           ...templateForm, typeEvenement: e.target.value,
                           couleur: DEFAULT_COLORS[e.target.value] || templateForm.couleur,
                         })}>
-                        {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                          <option key={k} value={k}>{v}</option>
+                        {(dictionaries.selectOptions('EVENT_TYPE').length > 0
+                          ? dictionaries.selectOptions('EVENT_TYPE')
+                          : Object.entries(TYPE_FALLBACK).map(([value, label]) => ({ value, label }))
+                        ).map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
                         ))}
                       </select>
                     </div>
@@ -539,7 +545,7 @@ export default function WeeklyProgramPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{selectedEvent.titre}</h3>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider">{TYPE_LABELS[selectedEvent.typeEvenement] || selectedEvent.typeEvenement}</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider">{dictionaries.label('EVENT_TYPE', selectedEvent.typeEvenement) || TYPE_FALLBACK[selectedEvent.typeEvenement] || selectedEvent.typeEvenement}</p>
                 </div>
               </div>
               <button onClick={() => setSelectedEvent(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors">

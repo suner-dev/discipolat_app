@@ -6,6 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { TransferDetail, TransferHistoryEntry, DecisionType, TransferStatus } from '@/types';
 import { TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS, DECISION_LABELS, PRIORITE_LABELS } from '@/types';
 import {
@@ -37,6 +38,7 @@ export default function TransferDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const [modal, setModal] = useState<DecisionType | null>(null);
   const [motivation, setMotivation] = useState('');
   const [editingPieces, setEditingPieces] = useState(false);
@@ -130,8 +132,8 @@ export default function TransferDetailPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="page-title mb-0">{TRANSFER_TYPE_LABELS[t.type]}</h1>
-                <span className={`badge ${STATUS_BADGE[t.statut]}`}>{TRANSFER_STATUS_LABELS[t.statut]}</span>
+                <h1 className="page-title mb-0">{dictionaries.label('TRANSFER_TYPE', t.type) || TRANSFER_TYPE_LABELS[t.type] || t.type}</h1>
+                <span className={`badge ${STATUS_BADGE[t.statut]}`}>{dictionaries.label('TRANSFER_STATUS', t.statut) || TRANSFER_STATUS_LABELS[t.statut] || t.statut}</span>
               </div>
               <p className="page-subtitle">Demande de {t.demandeurNom || '—'} · créée le {new Date(t.createdAt).toLocaleDateString('fr-FR')}</p>
             </div>
@@ -172,7 +174,7 @@ export default function TransferDetailPage() {
               <div>
                 <p className="text-xs text-gray-400 mb-1">Priorité</p>
                 <span className={`badge ${t.priorite === 'URGENTE' ? 'badge-danger' : t.priorite === 'HAUTE' ? 'badge-warning' : 'badge-gray'}`}>
-                  {PRIORITE_LABELS[t.priorite]}
+                  {dictionaries.label('TRANSFER_PRIORITE', t.priorite) || PRIORITE_LABELS[t.priorite] || t.priorite}
                 </span>
               </div>
               <div>
@@ -257,7 +259,7 @@ export default function TransferDetailPage() {
                       <span className={`badge text-[10px] ${
                         d.decision === 'APPROBATION' ? 'badge-success'
                         : d.decision === 'REFUS' ? 'badge-danger' : 'badge-warning'
-                      }`}>{DECISION_LABELS[d.decision]}</span>
+                      }`}>{dictionaries.label('TRANSFER_DECISION', d.decision) || DECISION_LABELS[d.decision] || d.decision}</span>
                     </div>
                     {d.motivation && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">« {d.motivation} »</p>}
                     <p className="text-xs text-gray-400 mt-1">{new Date(d.createdAt).toLocaleString('fr-FR')}</p>
@@ -348,8 +350,8 @@ export default function TransferDetailPage() {
                         {h.commentaire && <p className="text-xs text-gray-500 mt-0.5">« {h.commentaire} »</p>}
                         {h.nouveauStatut && (
                           <p className="text-[10px] text-gray-400 mt-0.5">
-                            {h.ancienStatut ? `${TRANSFER_STATUS_LABELS[h.ancienStatut as TransferStatus]} → ` : ''}
-                            {TRANSFER_STATUS_LABELS[h.nouveauStatut as TransferStatus]}
+                            {h.ancienStatut ? `${dictionaries.label('TRANSFER_STATUS', h.ancienStatut as TransferStatus) || TRANSFER_STATUS_LABELS[h.ancienStatut as TransferStatus] || h.ancienStatut} → ` : ''}
+                            {dictionaries.label('TRANSFER_STATUS', h.nouveauStatut as TransferStatus) || TRANSFER_STATUS_LABELS[h.nouveauStatut as TransferStatus] || h.nouveauStatut}
                           </p>
                         )}
                       </div>
@@ -368,7 +370,7 @@ export default function TransferDetailPage() {
           <div className="modal-content max-w-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {DECISION_LABELS[modal]}
+                {dictionaries.label('TRANSFER_DECISION', modal) || DECISION_LABELS[modal] || modal}
               </h3>
               <button onClick={() => { setModal(null); setMotivation(''); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <XCircle className="w-5 h-5 text-gray-400" />
@@ -401,7 +403,7 @@ export default function TransferDetailPage() {
                   : 'btn-secondary text-amber-600 border-amber-200'}`}
               >
                 {actionMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {DECISION_LABELS[modal]}
+                {dictionaries.label('TRANSFER_DECISION', modal) || DECISION_LABELS[modal] || modal}
               </button>
             </div>
           </div>

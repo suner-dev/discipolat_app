@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { TransferRequest, TransferStatus, TransferType } from '@/types';
 import { TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS, PRIORITE_LABELS } from '@/types';
 import type { ReactNode } from 'react';
@@ -53,6 +54,7 @@ const PRIORITY_STYLE: Record<string, string> = {
 export default function TransfersPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const [statut, setStatut] = useState('');
   const [type, setType] = useState('');
   const [page, setPage] = useState(0);
@@ -121,14 +123,20 @@ export default function TransfersPage() {
       <div className="flex flex-wrap gap-2 mb-6">
         <select value={statut} onChange={(e) => { setStatut(e.target.value); setPage(0); }} className="input w-auto">
           <option value="">Tous les statuts</option>
-          {Object.entries(TRANSFER_STATUS_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
+          {(dictionaries.options('TRANSFER_STATUS').length > 0
+            ? dictionaries.options('TRANSFER_STATUS')
+            : Object.entries(TRANSFER_STATUS_LABELS).map(([value, label]) => ({ code: value, label }))
+          ).map((o) => (
+            <option key={o.code} value={o.code}>{o.label}</option>
           ))}
         </select>
         <select value={type} onChange={(e) => { setType(e.target.value); setPage(0); }} className="input w-auto">
           <option value="">Tous les types</option>
-          {Object.entries(TRANSFER_TYPE_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
+          {(dictionaries.options('TRANSFER_TYPE').length > 0
+            ? dictionaries.options('TRANSFER_TYPE')
+            : Object.entries(TRANSFER_TYPE_LABELS).map(([value, label]) => ({ code: value, label }))
+          ).map((o) => (
+            <option key={o.code} value={o.code}>{o.label}</option>
           ))}
         </select>
       </div>
@@ -149,17 +157,17 @@ export default function TransfersPage() {
                 <Link to={`/transfers/${t.id}`} className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <span className={`badge text-[10px] ${STATUS_BADGE[t.statut]}`}>
-                      {STATUS_ICON[t.statut]} {TRANSFER_STATUS_LABELS[t.statut]}
+                      {STATUS_ICON[t.statut]} {dictionaries.label('TRANSFER_STATUS', t.statut) || TRANSFER_STATUS_LABELS[t.statut] || t.statut}
                     </span>
                     <span className={`badge text-[10px] ${PRIORITY_STYLE[t.priorite]}`}>
-                      <AlertTriangle className="w-3 h-3" /> {PRIORITE_LABELS[t.priorite]}
+                      <AlertTriangle className="w-3 h-3" /> {dictionaries.label('TRANSFER_PRIORITE', t.priorite) || PRIORITE_LABELS[t.priorite] || t.priorite}
                     </span>
                     <span className="text-xs text-gray-400">
                       {new Date(t.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {TRANSFER_TYPE_LABELS[t.type]}
+                    {dictionaries.label('TRANSFER_TYPE', t.type) || TRANSFER_TYPE_LABELS[t.type] || t.type}
                   </p>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                     <span><span className="text-gray-400">Personne :</span> <strong className="text-gray-700 dark:text-gray-300">{t.personneNom}</strong></span>

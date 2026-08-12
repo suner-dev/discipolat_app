@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { ParallelFollowup, Soul, PageResponse } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import { Activity, Plus, Loader2, X, UserPlus, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const RAISON_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const RAISON_FALLBACK: Record<string, string> = {
   TRANSFERT_EN_COURS: 'Transfert en cours',
   RENFORT: 'Renfort',
   VISITE: 'Visite',
@@ -17,6 +19,7 @@ const RAISON_LABELS: Record<string, string> = {
 
 export default function ParallelFollowupsPage() {
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
   const [page, setPage] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,6 +44,16 @@ export default function ParallelFollowupsPage() {
       return res.data.content as Soul[];
     },
   });
+
+  const raisonEntries = useMemo(() => {
+    const configured = dictionaries.options('FOLLOWUP_RAISON');
+    return configured.length > 0
+      ? configured.map((e) => ({ code: e.code, label: e.label }))
+      : Object.entries(RAISON_FALLBACK).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
+
+  const raisonLabel = (code: string) =>
+    dictionaries.label('FOLLOWUP_RAISON', code) || RAISON_FALLBACK[code] || code;
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -70,7 +83,7 @@ export default function ParallelFollowupsPage() {
     {
       header: 'Raison',
       cell: (f) => (
-        <span className="badge-info">{RAISON_LABELS[f.raison] || f.raison}</span>
+        <span className="badge-info">{raisonLabel(f.raison)}</span>
       ),
     },
     {
@@ -160,8 +173,8 @@ export default function ParallelFollowupsPage() {
               <div>
                 <label className="label">Raison</label>
                 <select className="input" value={formData.raison} onChange={(e) => setFormData({ ...formData, raison: e.target.value as any })}>
-                  {Object.entries(RAISON_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
+                  {raisonEntries.map((o) => (
+                    <option key={o.code} value={o.code}>{o.label}</option>
                   ))}
                 </select>
               </div>

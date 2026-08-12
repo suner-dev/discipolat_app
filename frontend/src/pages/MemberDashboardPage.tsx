@@ -22,14 +22,23 @@ import {
 } from 'lucide-react';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
+import { useDictionaries } from '@/hooks/useDictionaries';
 
-const STATUT_LABELS: Record<string, { label: string; badge: string }> = {
-  MEMBRE: { label: 'Membre', badge: 'badge-info' },
-  FAISEUR: { label: 'Faiseur de disciples', badge: 'badge-success' },
-  CHEF_DE_FAMILLE: { label: 'Chef de famille', badge: 'bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400 border border-gold-200/50' },
+const STATUT_BADGES: Record<string, string> = {
+  MEMBRE: 'badge-info',
+  FAISEUR: 'badge-success',
+  CHEF_DE_FAMILLE: 'bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400 border border-gold-200/50',
 };
 
-const SITUATION_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const STATUT_FALLBACK: Record<string, string> = {
+  MEMBRE: 'Membre',
+  FAISEUR: 'Faiseur de disciples',
+  CHEF_DE_FAMILLE: 'Chef de famille',
+};
+
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const SITUATION_FALLBACK: Record<string, string> = {
   CELIBATAIRE: 'Célibataire',
   MARIE: 'Marié(e)',
   DIVORCE: 'Divorcé(e)',
@@ -46,7 +55,8 @@ const TYPE_LABELS: Record<MemberRequestType, string> = {
   SIGNALEMENT: '⚠️ Signalement',
 };
 
-const CIBLE_LABELS: Record<MemberRequestTarget, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const CIBLE_FALLBACK: Record<MemberRequestTarget, string> = {
   PASTEUR: 'Pasteur',
   RESPONSABLE: 'Responsable',
   CHEF_DE_FAMILLE: 'Chef de famille',
@@ -59,7 +69,7 @@ const STATUS_BADGES: Record<MemberRequestStatus, string> = {
   REJETE: 'badge-error',
 };
 
-const STATUS_LABELS: Record<MemberRequestStatus, string> = {
+const STATUS_FALLBACK: Record<MemberRequestStatus, string> = {
   OUVERT: 'Ouvert',
   EN_COURS: 'En cours',
   RESOLU: 'Résolu',
@@ -91,6 +101,7 @@ const initials = (p?: MemberDashboard['user']) =>
 
 export default function MemberDashboardPage() {
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<UpdateMemberProfileRequest>({});
@@ -261,7 +272,8 @@ export default function MemberDashboardPage() {
   }
 
   const d = data;
-  const statut = STATUT_LABELS[d.statutMembre] || STATUT_LABELS.MEMBRE;
+  const statutLabel = dictionaries.label('USER_ROLE', d.statutMembre) || STATUT_FALLBACK[d.statutMembre] || d.statutMembre;
+  const statut = { label: statutLabel, badge: STATUT_BADGES[d.statutMembre] || 'badge-info' };
   const isParentCelibataire = form.situationFamiliale === 'PARENT_CELIBATAIRE';
 
   const infoRows = [
@@ -269,7 +281,7 @@ export default function MemberDashboardPage() {
     { icon: Calendar, label: 'Arrivée à l\'église', value: d.dateArriveeEglise ? new Date(d.dateArriveeEglise + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' },
     { icon: GraduationCap, label: 'Niveau d\'étude', value: d.soul?.niveauEtude || '—' },
     { icon: Briefcase, label: 'Profession', value: d.soul?.profession || '—' },
-    { icon: Heart, label: 'Situation familiale', value: d.user.situationFamiliale ? SITUATION_LABELS[d.user.situationFamiliale] || d.user.situationFamiliale : '—' },
+    { icon: Heart, label: 'Situation familiale', value: d.user.situationFamiliale ? dictionaries.label('SITUATION_FAMILIALE', d.user.situationFamiliale) || SITUATION_FALLBACK[d.user.situationFamiliale] || d.user.situationFamiliale : '—' },
     { icon: Users, label: 'Enfants', value: d.soul?.nbEnfants != null ? String(d.soul.nbEnfants) : '—' },
   ];
 
@@ -633,9 +645,12 @@ export default function MemberDashboardPage() {
                   value={requestForm.type}
                   onChange={(e) => setRequestForm({ ...requestForm, type: e.target.value as MemberRequestType })}
                 >
-                  <option value="SUGGESTION">💡 Suggestion</option>
-                  <option value="RENDEZ_VOUS">📅 Rendez-vous</option>
-                  <option value="SIGNALEMENT">⚠️ Signalement</option>
+                  {(dictionaries.selectOptions('MEMBER_REQUEST_TYPE').length > 0
+                    ? dictionaries.selectOptions('MEMBER_REQUEST_TYPE')
+                    : Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))
+                  ).map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -645,9 +660,12 @@ export default function MemberDashboardPage() {
                   value={requestForm.cible}
                   onChange={(e) => setRequestForm({ ...requestForm, cible: e.target.value as MemberRequestTarget })}
                 >
-                  <option value="PASTEUR">Pasteur (église)</option>
-                  <option value="RESPONSABLE">Mon responsable de département</option>
-                  <option value="CHEF_DE_FAMILLE">Mon chef de famille</option>
+                  {(dictionaries.selectOptions('MEMBER_REQUEST_TARGET').length > 0
+                    ? dictionaries.selectOptions('MEMBER_REQUEST_TARGET')
+                    : Object.entries(CIBLE_FALLBACK).map(([value, label]) => ({ value, label }))
+                  ).map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -691,10 +709,10 @@ export default function MemberDashboardPage() {
                   >
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="badge text-[10px] badge-info">{TYPE_LABELS[r.type]}</span>
-                        <span className="badge text-[10px] badge-warning">{CIBLE_LABELS[r.cible]}</span>
+                        <span className="badge text-[10px] badge-info">{dictionaries.label('MEMBER_REQUEST_TYPE', r.type) || TYPE_LABELS[r.type] || r.type}</span>
+                        <span className="badge text-[10px] badge-warning">{dictionaries.label('MEMBER_REQUEST_TARGET', r.cible) || CIBLE_FALLBACK[r.cible] || r.cible}</span>
                         <span className={`badge text-[10px] ${STATUS_BADGES[r.statut] || 'badge-warning'}`}>
-                          {STATUS_LABELS[r.statut] || r.statut}
+                          {dictionaries.label('MEMBER_REQUEST_STATUS', r.statut) || STATUS_FALLBACK[r.statut] || r.statut}
                         </span>
                       </div>
                       <span className="text-[10px] text-gray-400">
@@ -789,8 +807,11 @@ export default function MemberDashboardPage() {
                   onChange={(e) => setForm({ ...form, situationFamiliale: e.target.value })}
                 >
                   <option value="">Sélectionner...</option>
-                  {Object.entries(SITUATION_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
+                  {(dictionaries.selectOptions('SITUATION_FAMILIALE').length > 0
+                    ? dictionaries.selectOptions('SITUATION_FAMILIALE')
+                    : Object.entries(SITUATION_FALLBACK).map(([value, label]) => ({ value, label }))
+                  ).map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
               </div>

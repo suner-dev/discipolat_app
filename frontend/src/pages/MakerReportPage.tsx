@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Soul, MakerReport, RaisonAbsence, MotifSortie } from '@/types';
 import {
   FileText, Send, Loader2, CheckCircle2, AlertCircle, Save, Clock,
@@ -11,7 +12,8 @@ import toast from 'react-hot-toast';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 
-const RAISON_ABSENCE_OPTIONS: { value: RaisonAbsence; label: string }[] = [
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const RAISON_ABSENCE_FALLBACK: { value: RaisonAbsence; label: string }[] = [
   { value: 'MALADIE', label: 'Maladie' },
   { value: 'VOYAGE', label: 'Voyage' },
   { value: 'INDISPONIBILITE', label: 'Indisponibilité' },
@@ -20,7 +22,7 @@ const RAISON_ABSENCE_OPTIONS: { value: RaisonAbsence; label: string }[] = [
   { value: 'AUTRE', label: 'Autre' },
 ];
 
-const MOTIF_SORTIE_OPTIONS: { value: MotifSortie; label: string }[] = [
+const MOTIF_SORTIE_FALLBACK: { value: MotifSortie; label: string }[] = [
   { value: 'INTEGRE_AUTONOME', label: 'Intégré/autonome' },
   { value: 'TRANSFERT', label: 'Transfert' },
   { value: 'ABANDON', label: 'Abandon' },
@@ -29,8 +31,8 @@ const MOTIF_SORTIE_OPTIONS: { value: MotifSortie; label: string }[] = [
   { value: 'AUTRE', label: 'Autre' },
 ];
 
-const CULTES = ['Dimanche Matin', 'Mercredi Soir', 'Vendredi Soir'];
-const DIFFICULTES_CATEGORIES = ['SPIRITUEL', 'FAMILIAL', 'FINANCIER', 'SANTE', 'AUTRE'];
+const CULTES_FALLBACK = ['Dimanche Matin', 'Mercredi Soir', 'Vendredi Soir'];
+const DIFFICULTES_FALLBACK = ['SPIRITUEL', 'FAMILIAL', 'FINANCIER', 'SANTE', 'AUTRE'];
 
 interface ReportFormData {
   ameId: string;
@@ -49,6 +51,35 @@ export default function MakerReportPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const semaine = new Date().toISOString().split('T')[0];
+  const dictionaries = useDictionaries();
+
+  /** Cultes configurés (dictionnaire CULTE) — sinon repli sur les défauts. */
+  const cultes = useMemo(() => {
+    const configured = dictionaries.options('CULTE');
+    return configured.length > 0 ? configured.map((c) => c.label) : CULTES_FALLBACK;
+  }, [dictionaries]);
+
+  /** Raisons d'absence configurables. */
+  const absenceOptions = useMemo(() => {
+    const configured = dictionaries.options('ABSENCE_RAISON');
+    return configured.length > 0
+      ? configured.map((e) => ({ value: e.code as RaisonAbsence, label: e.label }))
+      : RAISON_ABSENCE_FALLBACK;
+  }, [dictionaries]);
+
+  /** Motifs de sortie configurables. */
+  const sortieOptions = useMemo(() => {
+    const configured = dictionaries.options('EXIT_MOTIF');
+    return configured.length > 0
+      ? configured.map((e) => ({ value: e.code as MotifSortie, label: e.label }))
+      : MOTIF_SORTIE_FALLBACK;
+  }, [dictionaries]);
+
+  /** Catégories de difficultés configurables. */
+  const difficultesCategories = useMemo(() => {
+    const configured = dictionaries.options('DIFFICULTE_CATEGORIE');
+    return configured.length > 0 ? configured.map((e) => e.code) : DIFFICULTES_FALLBACK;
+  }, [dictionaries]);
 
   const [reports, setReports] = useState<Record<string, ReportFormData>>({});
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -72,7 +103,7 @@ export default function MakerReportPage() {
       for (const entry of data) {
         newReports[entry.ameId] = {
           ameId: entry.ameId,
-          presencesParCulte: Object.fromEntries(CULTES.map(c => [c, true])),
+          presencesParCulte: Object.fromEntries(cultes.map(c => [c, true])),
           nbSorties: 0,
           notesComplementaires: '',
           fichierIds: [],
@@ -146,7 +177,7 @@ export default function MakerReportPage() {
     if (existing) {
       return {
         ameId: existing.ameId,
-        presencesParCulte: existing.presencesParCulte || Object.fromEntries(CULTES.map(c => [c, false])),
+        presencesParCulte: existing.presencesParCulte || Object.fromEntries(cultes.map(c => [c, false])),
         absenceRaison: existing.absenceRaison,
         absenceCommentaire: existing.absenceCommentaire,
         difficultesCategorie: existing.difficultesCategorie,
@@ -157,7 +188,7 @@ export default function MakerReportPage() {
         fichierIds: existing.piecesJointes?.map(a => a.fileId) ?? [],
       };
     }
-    return { ameId, presencesParCulte: Object.fromEntries(CULTES.map(c => [c, false])), nbSorties: 0, fichierIds: [] };
+    return { ameId, presencesParCulte: Object.fromEntries(cultes.map(c => [c, false])), nbSorties: 0, fichierIds: [] };
   };
 
   const getReport = (ameId: string): ReportFormData => {
@@ -287,7 +318,7 @@ export default function MakerReportPage() {
                       <UserCheck className="w-3.5 h-3.5 text-primary-500" /> Présence par culte
                     </label>
                     <div className="space-y-2 mt-2">
-                      {CULTES.map((culte) => (
+                      {cultes.map((culte) => (
                         <label key={culte}
                           className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${
                             report.presencesParCulte[culte]
@@ -315,8 +346,8 @@ export default function MakerReportPage() {
                       onChange={(e) => updateReport(soul.id, { difficultesCategorie: e.target.value })}
                       className="input text-sm mt-2">
                       <option value="">Catégorie...</option>
-                      {DIFFICULTES_CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>{cat.charAt(0) + cat.slice(1).toLowerCase()}</option>
+                      {difficultesCategories.map((cat) => (
+                        <option key={cat} value={cat}>{dictionaries.label('DIFFICULTE_CATEGORIE', cat) || cat.charAt(0) + cat.slice(1).toLowerCase()}</option>
                       ))}
                     </select>
                     <textarea value={report.difficultes || ''}
@@ -333,7 +364,7 @@ export default function MakerReportPage() {
                       onChange={(e) => updateReport(soul.id, { absenceRaison: e.target.value as RaisonAbsence })}
                       className="input text-sm mt-2">
                       <option value="">Sélectionner...</option>
-                      {RAISON_ABSENCE_OPTIONS.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+                      {absenceOptions.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
                     </select>
                     <textarea value={report.absenceCommentaire || ''}
                       onChange={(e) => updateReport(soul.id, { absenceCommentaire: e.target.value })}
@@ -353,7 +384,7 @@ export default function MakerReportPage() {
                         onChange={(e) => updateReport(soul.id, { motifSortie: e.target.value as MotifSortie })}
                         className="input mt-2 text-sm">
                         <option value="">Motif de sortie...</option>
-                        {MOTIF_SORTIE_OPTIONS.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+                        {sortieOptions.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
                       </select>
                     )}
                   </div>

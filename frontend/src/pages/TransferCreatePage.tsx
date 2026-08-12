@@ -8,6 +8,7 @@ import type {
   TransferType, Soul, Family, Department, User, TransferConfiguration, PrioriteTransfert,
 } from '@/types';
 import { TRANSFER_TYPE_LABELS } from '@/types';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import { ArrowLeft, ArrowLeftRight, Loader2, Send, User as UserIcon, Heart, Users, Building2, Paperclip } from 'lucide-react';
 
 interface PageResponse<T> {
@@ -35,6 +36,7 @@ const TYPE_META: Record<TransferType, {
 
 export default function TransferCreatePage() {
   const navigate = useNavigate();
+  const dictionaries = useDictionaries();
 
   const { data: configs, isLoading: loadingConfigs } = useQuery({
     queryKey: ['transfers-configurations'],
@@ -156,7 +158,7 @@ export default function TransferCreatePage() {
             >
               <option value="">Sélectionner un type...</option>
               {availableTypes.map(c => (
-                <option key={c.type} value={c.type}>{TRANSFER_TYPE_LABELS[c.type]}</option>
+                <option key={c.type} value={c.type}>{dictionaries.label('TRANSFER_TYPE', c.type) || TRANSFER_TYPE_LABELS[c.type] || c.type}</option>
               ))}
             </select>
             {type && (
@@ -227,10 +229,12 @@ export default function TransferCreatePage() {
                 <div>
                   <label className="label">Priorité</label>
                   <select className="input" value={priorite} onChange={(e) => setPriorite(e.target.value as PrioriteTransfert)}>
-                    <option value="BASSE">Basse</option>
-                    <option value="MOYENNE">Moyenne</option>
-                    <option value="HAUTE">Haute</option>
-                    <option value="URGENTE">Urgente</option>
+                    {(dictionaries.options('TRANSFER_PRIORITE').length > 0
+                      ? dictionaries.options('TRANSFER_PRIORITE')
+                      : [{ code: 'BASSE', label: 'Basse' }, { code: 'MOYENNE', label: 'Moyenne' }, { code: 'HAUTE', label: 'Haute' }, { code: 'URGENTE', label: 'Urgente' }]
+                    ).map((o) => (
+                      <option key={o.code} value={o.code}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>

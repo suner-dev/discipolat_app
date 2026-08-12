@@ -9,8 +9,10 @@ import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, Key, User as UserIco
 import toast from 'react-hot-toast';
 import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
 import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
+import { useDictionaries } from '@/hooks/useDictionaries';
 
-const ROLE_LABELS: Record<string, string> = {
+/** Repli (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const ROLE_FALLBACK: Record<string, string> = {
   ADMIN: 'Administrateur',
   PASTEUR: 'Pasteur',
   RESPONSABLE: 'Responsable',
@@ -28,9 +30,10 @@ const ROLE_BADGES: Record<string, string> = {
   MEMBRE: 'badge-gray',
 };
 
-const CHARGE_LABELS: Record<string, string> = {
+const CHARGE_FALLBACK: Record<string, string> = {
   LEGER: 'Léger',
   NORMAL: 'Normal',
+  SURCHARGE: 'Surchargé',
   'SURCHARGÉ': 'Surchargé',
 };
 
@@ -43,6 +46,7 @@ const CHARGE_STYLES: Record<string, string> = {
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const isResponsable = user?.activeRole === 'RESPONSABLE';
   const [page, setPage] = useState(0);
   const [showModal, setShowModal] = useState(false);
@@ -222,7 +226,7 @@ export default function UsersPage() {
       cell: (user) => (
         <div className="flex flex-wrap items-center gap-1">
           <span className={ROLE_BADGES[user.role] || 'badge-gray'}>
-            {ROLE_LABELS[user.role] || user.role}
+            {dictionaries.label('USER_ROLE', user.role) || ROLE_FALLBACK[user.role] || user.role}
           </span>
           {user.estChefDeFamille && (
             <span className="badge text-[10px] bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400 border border-gold-200/50 dark:border-gold-700/30">
@@ -251,7 +255,7 @@ export default function UsersPage() {
         const allNotes = Object.values(scores);
         const totalAvg = allNotes.reduce((acc, s) => acc + (s.moyenne || 0), 0) / Math.max(allNotes.length, 1);
         const totalCount = allNotes.reduce((acc, s) => acc + s.total, 0);
-        const CATEGORIE_LABELS: Record<string, string> = {
+        const CATEGORIE_FALLBACK: Record<string, string> = {
           RESPONSABLE: 'Responsable',
           CHEF_FAMILLE: 'Chef de famille',
           FAISEUR: 'Faiseur',
@@ -273,7 +277,7 @@ export default function UsersPage() {
                 <div className="space-y-1">
                   {Object.entries(scores).map(([cat, s]) => (
                     <div key={cat} className="flex items-center justify-between gap-3">
-                      <span className="text-gray-300">{CATEGORIE_LABELS[cat] || cat}</span>
+                      <span className="text-gray-300">{dictionaries.label('EVALUATION_CATEGORIE', cat) || CATEGORIE_FALLBACK[cat] || cat}</span>
                       <span className="font-medium">
                         {s.moyenne !== null && s.moyenne > 0
                           ? <>{s.moyenne.toFixed(1)} <span className="text-[10px] text-gray-400">/5</span></>
@@ -384,7 +388,7 @@ export default function UsersPage() {
                 <p className="text-[10px] text-gray-400">âmes suivies</p>
                 {w.charge && (
                   <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold border mt-1 ${CHARGE_STYLES[w.charge] || CHARGE_STYLES.NORMAL}`}>
-                    {CHARGE_LABELS[w.charge] || w.charge}
+                    {dictionaries.label('USER_CHARGE', w.charge) || CHARGE_FALLBACK[w.charge] || w.charge}
                   </span>
                 )}
               </div>
@@ -458,10 +462,14 @@ export default function UsersPage() {
                 <div className="relative">
                   <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
                   <select className="input pl-10" value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })}>
-                    <option value="FAISEUR">Faiseur de disciples</option>
-                    <option value="RESPONSABLE">Responsable de département</option>
-                    <option value="PASTEUR">Pasteur</option>
-                    <option value="ADMIN">Administrateur</option>
+                    {(dictionaries.options('USER_ROLE').length > 0
+                      // Rôles créables uniquement (CHEF_DE_FAMILLE est un rôle dérivé,
+                      // attribué via la gestion des familles — pas à la création).
+                      ? dictionaries.options('USER_ROLE').filter((o) => ROLE_FALLBACK[o.code])
+                      : Object.entries(ROLE_FALLBACK).map(([value, label]) => ({ code: value, label }))
+                    ).map((o) => (
+                      <option key={o.code} value={o.code}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>

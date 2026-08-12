@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import api, { getErrorMessage } from '@/lib/api';
 import {
   User, Mail, Shield, Calendar, CheckCircle, XCircle, Edit3, Save, X, Lock,
@@ -10,7 +11,8 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 
-const ROLE_LABELS: Record<string, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const ROLE_FALLBACK: Record<string, string> = {
   ADMIN: 'Administrateur',
   PASTEUR: 'Pasteur',
   RESPONSABLE: 'Responsable de département',
@@ -19,7 +21,7 @@ const ROLE_LABELS: Record<string, string> = {
   MEMBRE: 'Membre',
 };
 
-const SITUATION_LABELS: Record<string, string> = {
+const SITUATION_FALLBACK: Record<string, string> = {
   CELIBATAIRE: 'Célibataire',
   MARIE: 'Marié(e)',
   DIVORCE: 'Divorcé(e)',
@@ -30,6 +32,17 @@ const SITUATION_LABELS: Record<string, string> = {
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
+
+  const situationEntries = useMemo(() => {
+    const configured = dictionaries.options('SITUATION_FAMILIALE');
+    return configured.length > 0
+      ? configured.map((e) => ({ code: e.code, label: e.label }))
+      : Object.entries(SITUATION_FALLBACK).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
+
+  const situationLabel = (code?: string) =>
+    (code && (dictionaries.label('SITUATION_FAMILIALE', code) || SITUATION_FALLBACK[code])) || code || '-';
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -166,8 +179,8 @@ export default function ProfilePage() {
     { icon: Mail, label: 'Email', value: user.email, readonly: true },
     { icon: Phone, label: 'Téléphone', value: user.phone || '-', key: 'phone', readonly: false },
     { icon: Calendar, label: 'Date de naissance', value: user.dateNaissance ? new Date(user.dateNaissance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-', key: 'dateNaissance', readonly: false, type: 'date' as const },
-    { icon: Heart, label: 'Situation familiale', value: user.situationFamiliale ? SITUATION_LABELS[user.situationFamiliale] || user.situationFamiliale : '-', key: 'situationFamiliale', readonly: false, type: 'select' as const },
-    { icon: Shield, label: 'Rôle', value: ROLE_LABELS[user.role] || user.role, readonly: true },
+    { icon: Heart, label: 'Situation familiale', value: situationLabel(user.situationFamiliale), key: 'situationFamiliale', readonly: false, type: 'select' as const },
+    { icon: Shield, label: 'Rôle', value: dictionaries.label('USER_ROLE', user.role) || ROLE_FALLBACK[user.role] || user.role, readonly: true },
   ];
 
   return (
@@ -428,7 +441,7 @@ export default function ProfilePage() {
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className={`badge text-xs ${user.role === 'PASTEUR' || user.role === 'ADMIN' ? 'badge-info' : user.role === 'RESPONSABLE' || user.role === 'CHEF_DE_FAMILLE' ? 'badge-warning' : user.role === 'MEMBRE' ? 'badge-gray' : 'badge-success'}`}>
-                    {ROLE_LABELS[user.role] || user.role}
+                    {dictionaries.label('USER_ROLE', user.role) || ROLE_FALLBACK[user.role] || user.role}
                   </span>
                   {user.estChefDeFamille && (
                     <span className="badge text-xs bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400 border border-gold-200/50">
@@ -455,7 +468,7 @@ export default function ProfilePage() {
                   field.type === 'select' ? (
                     <select className="input mt-1" value={editData.situationFamiliale} onChange={(e) => setEditData({ ...editData, situationFamiliale: e.target.value })}>
                       <option value="">Sélectionner...</option>
-                      {Object.entries(SITUATION_LABELS).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
+                      {situationEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
                     </select>
                   ) : field.type === 'date' ? (
                     <input type="date" className="input mt-1" value={editData.dateNaissance} onChange={(e) => setEditData({ ...editData, dateNaissance: e.target.value })} />

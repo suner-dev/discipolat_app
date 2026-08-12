@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Soul, TypeDisciple, StatutAme } from '@/types';
 import { ArrowLeft, Loader2, Save, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -25,7 +26,8 @@ const editSoulSchema = z.object({
 
 type EditSoulForm = z.infer<typeof editSoulSchema>;
 
-const STATUT_OPTIONS: { value: StatutAme; label: string }[] = [
+/** Repli (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const STATUT_FALLBACK: { value: StatutAme; label: string }[] = [
   { value: 'NOUVEAU_CONVERTI', label: 'Nouveau converti' },
   { value: 'NOUVEL_ARRIVANT', label: 'Nouvel arrivant' },
   { value: 'EN_INTEGRATION', label: 'En intégration' },
@@ -38,6 +40,17 @@ export default function SoulEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
+
+  const typeEntries = useMemo(() => {
+    const configured = dictionaries.options('SOUL_TYPE');
+    return configured.length > 0 ? configured.map((e) => ({ code: e.code, label: e.label })) : [{ code: 'NOUVEL_ARRIVANT', label: 'Nouvel arrivant' }, { code: 'NOUVEAU_CONVERTI', label: 'Nouveau converti' }];
+  }, [dictionaries]);
+
+  const statutEntries = useMemo(() => {
+    const configured = dictionaries.options('SOUL_STATUS');
+    return configured.length > 0 ? configured.map((e) => ({ value: e.code as StatutAme, label: e.label })) : STATUT_FALLBACK;
+  }, [dictionaries]);
 
   const { data: soul, isLoading } = useQuery({
     queryKey: ['soul', id],
@@ -189,14 +202,13 @@ export default function SoulEditPage() {
             <div>
               <label className="label">Type de disciple</label>
               <select className="input" {...register('typeDisciple')}>
-                <option value="NOUVEL_ARRIVANT">Nouvel arrivant</option>
-                <option value="NOUVEAU_CONVERTI">Nouveau converti</option>
+                {typeEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
               </select>
             </div>
             <div>
               <label className="label">État spirituel</label>
               <select className="input" {...register('statut')}>
-                {STATUT_OPTIONS.map((opt) => (
+                {statutEntries.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>

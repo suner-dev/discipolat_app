@@ -446,11 +446,12 @@ public class UserService {
             workload.put("familleId", familleId);
             workload.put("familleName", null);
 
-            // US-14: Indicator léger/normal/surchargé
+            // US-14: Indicateur léger/normal/surchargé — codes normalisés sans
+            // accent pour correspondre au dictionnaire configurable USER_CHARGE.
             String indicator;
             if (soulCount <= 3) indicator = "LEGER";
             else if (soulCount <= 7) indicator = "NORMAL";
-            else indicator = "SURCHARGÉ";
+            else indicator = "SURCHARGE";
             workload.put("charge", indicator);
 
             workloads.add(workload);

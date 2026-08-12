@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { FileEntity } from '@/types';
 import { Paperclip, X, FileText, Plus, Loader2 } from 'lucide-react';
 
@@ -14,7 +15,8 @@ interface AttachmentPickerProps {
 
 const FILES_QUERY_KEY = ['attachment-picker-files'];
 
-const CATEGORIE_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const CATEGORIE_FALLBACK: Record<string, string> = {
   COMPTE_RENDU: 'Compte rendu',
   FORMATION: 'Formation',
   PHOTO: 'Photo',
@@ -28,6 +30,7 @@ const CATEGORIE_LABELS: Record<string, string> = {
  * transferts, rapports, demandes membres, événements.
  */
 export default function AttachmentPicker({ value, onChange }: AttachmentPickerProps) {
+  const dictionaries = useDictionaries();
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -140,7 +143,10 @@ export default function AttachmentPicker({ value, onChange }: AttachmentPickerPr
                   onChange={(e) => setTaille(e.target.value)}
                 />
                 <select className="input text-sm" value={categorie} onChange={(e) => setCategorie(e.target.value)}>
-                  {Object.entries(CATEGORIE_LABELS).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
+                  {(dictionaries.options('DOCUMENT_CATEGORIE').length > 0
+                    ? dictionaries.options('DOCUMENT_CATEGORIE')
+                    : Object.entries(CATEGORIE_FALLBACK).map(([code, label]) => ({ code, label }))
+                  ).map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
                 </select>
               </div>
               <div className="flex justify-end gap-2 pt-1">

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import DataTable from '@/components/shared/DataTable';
 import type { Prayer, PageResponse, CategoriePriere, PrioritePriere, VisibilitePriere } from '@/types';
 import type { ColumnDef } from '@/types/table';
@@ -69,7 +70,8 @@ const SPACES: SpaceTab[] = [
   },
 ];
 
-const CATEGORIE_LABELS: Record<CategoriePriere, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const CATEGORIE_FALLBACK: Record<CategoriePriere, string> = {
   SANTE: 'Santé', FAMILLE: 'Famille', TRAVAIL: 'Travail',
   SPIRITUEL: 'Spirituel', AUTRE: 'Autre',
 };
@@ -90,11 +92,12 @@ const PRIORITE_COLORS: Record<PrioritePriere, string> = {
   BASSE: 'text-gray-500', MOYENNE: 'text-amber-500', HAUTE: 'text-red-500',
 };
 
-const PRIORITE_LABELS: Record<PrioritePriere, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const PRIORITE_FALLBACK: Record<PrioritePriere, string> = {
   BASSE: 'Basse', MOYENNE: 'Moyenne', HAUTE: 'Haute',
 };
 
-const VIS_LABELS: Record<VisibilitePriere, string> = {
+const VIS_FALLBACK: Record<VisibilitePriere, string> = {
   GENERALE: 'Général',
   PASTEUR_RESPONSABLE: 'Pasteur + Resp.',
   FAISEUR: 'Chefs + Faiseurs',
@@ -111,6 +114,7 @@ const VIS_COLORS: Record<VisibilitePriere, string> = {
 };
 
 export default function PrayerSpacesPage() {
+  const dictionaries = useDictionaries();
   const [activeTab, setActiveTab] = useState<SpaceTab['key']>('ALL');
   const [page, setPage] = useState(0);
 
@@ -168,8 +172,8 @@ export default function PrayerSpacesPage() {
     {
       header: 'Catégorie',
       cell: (prayer) => (
-        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${CATEGORIE_COLORS[prayer.categorie]}`}>
-          {CATEGORIE_LABELS[prayer.categorie]}
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${CATEGORIE_COLORS[prayer.categorie] || 'bg-gray-100 text-gray-700'}`}>
+          {dictionaries.label('PRAYER_CATEGORIE', prayer.categorie) || CATEGORIE_FALLBACK[prayer.categorie] || prayer.categorie}
         </span>
       ),
     },
@@ -180,7 +184,7 @@ export default function PrayerSpacesPage() {
         return (
           <span className={`inline-flex items-center gap-1 text-xs font-medium ${PRIORITE_COLORS[prayer.priorite]}`}>
             <Icon className="w-3 h-3" />
-            {PRIORITE_LABELS[prayer.priorite]}
+            {dictionaries.label('PRAYER_PRIORITE', prayer.priorite) || PRIORITE_FALLBACK[prayer.priorite] || prayer.priorite}
           </span>
         );
       },
@@ -190,7 +194,7 @@ export default function PrayerSpacesPage() {
       cell: (prayer) => (
         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${VIS_COLORS[prayer.visibilite]}`}>
           {prayer.visibilite === 'PRIVEE' ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-          {VIS_LABELS[prayer.visibilite] || prayer.visibilite}
+          {dictionaries.label('PRAYER_VISIBILITE', prayer.visibilite) || VIS_FALLBACK[prayer.visibilite] || prayer.visibilite}
         </span>
       ),
     },

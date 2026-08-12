@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import type { WorkflowConfig, TransferType, ValidationMode, UserRole } from '@/types';
 import { TRANSFER_TYPE_LABELS, ROLES } from '@/types';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import {
   Loader2, Plus, Trash2, Save, Pencil, X, Workflow, Power, PowerOff, ChevronDown, ChevronUp, GripVertical,
 } from 'lucide-react';
@@ -101,6 +102,7 @@ function RolePicker({ value, onChange }: { value: UserRole[]; onChange: (v: User
 
 export default function TransferAdminPage() {
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
   const [editing, setEditing] = useState<ConfigDraft | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -221,7 +223,7 @@ export default function TransferAdminPage() {
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 dark:text-gray-100">{c.label}</p>
                     <p className="text-xs text-gray-500 truncate">
-                      {TRANSFER_TYPE_LABELS[c.transferType]} · {c.modeValidation} · {c.delaiTraitementHeures}h · {c.steps.length} étape(s)
+                      {dictionaries.label('TRANSFER_TYPE', c.transferType) || TRANSFER_TYPE_LABELS[c.transferType] || c.transferType} · {c.modeValidation} · {c.delaiTraitementHeures}h · {c.steps.length} étape(s)
                     </p>
                   </div>
                 </div>
@@ -307,13 +309,16 @@ export default function TransferAdminPage() {
                     disabled={!isNew}
                     onChange={(e) => {
                       const t = e.target.value as TransferType;
-                      setEditing({ ...editing, transferType: t, label: editing.label || TRANSFER_TYPE_LABELS[t] });
+                      setEditing({ ...editing, transferType: t, label: editing.label || dictionaries.label('TRANSFER_TYPE', t) || TRANSFER_TYPE_LABELS[t] || t });
                     }}
                   >
                     <option value="">Sélectionner...</option>
-                    {(Object.keys(TRANSFER_TYPE_LABELS) as TransferType[])
-                      .filter(t => isNew ? !usedTypes.has(t) : t === editing.transferType)
-                      .map(t => <option key={t} value={t}>{TRANSFER_TYPE_LABELS[t]}</option>)}
+                    {(dictionaries.options('TRANSFER_TYPE').length > 0
+                      ? dictionaries.options('TRANSFER_TYPE').filter((e) => isNew ? !usedTypes.has(e.code as TransferType) : e.code === editing.transferType)
+                      : (Object.keys(TRANSFER_TYPE_LABELS) as TransferType[])
+                          .filter(t => isNew ? !usedTypes.has(t) : t === editing.transferType)
+                          .map((t) => ({ code: t, label: TRANSFER_TYPE_LABELS[t] }))
+                    ).map((o) => <option key={o.code} value={o.code}>{o.label}</option>)}
                   </select>
                 </div>
                 <div>

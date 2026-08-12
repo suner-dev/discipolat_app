@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable from '@/components/shared/DataTable';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { FileEntity, PageResponse, CategorieDocument } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
@@ -11,28 +12,13 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const CATEGORIE_LABELS: Record<CategorieDocument, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const CATEGORIE_FALLBACK: Record<string, string> = {
   COMPTE_RENDU: 'Compte rendu',
   FORMATION: 'Formation',
   PHOTO: 'Photo',
   RESOURCES: 'Ressources',
   AUTRE: 'Autre',
-};
-
-const CATEGORIE_ICONS: Record<CategorieDocument, typeof FileText> = {
-  COMPTE_RENDU: FileText,
-  FORMATION: BookOpen,
-  PHOTO: Image,
-  RESOURCES: FolderOpen,
-  AUTRE: FileText,
-};
-
-const CATEGORIE_STYLES: Record<CategorieDocument, string> = {
-  COMPTE_RENDU: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200/50 dark:border-blue-700/30',
-  FORMATION: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300 border-violet-200/50 dark:border-violet-700/30',
-  PHOTO: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200/50 dark:border-green-700/30',
-  RESOURCES: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200/50 dark:border-amber-700/30',
-  AUTRE: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-200/50 dark:border-gray-600/30',
 };
 
 function formatFileSize(bytes: number): string {
@@ -46,12 +32,24 @@ const INITIAL_FORM = { nom: '', description: '', chemin: '', typeFichier: 'appli
 export default function DocumentsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState<CategorieDocument | ''>('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [newFile, setNewFile] = useState(INITIAL_FORM);
+
+  const categorieEntries = useMemo(() => {
+    const configured = dictionaries.options('DOCUMENT_CATEGORIE');
+    return configured.length > 0
+      ? configured.map((e) => ({ code: e.code, label: e.label, color: e.color }))
+      : Object.entries(CATEGORIE_FALLBACK).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
+
+  const categorieLabel = (code: string) =>
+    dictionaries.label('DOCUMENT_CATEGORIE', code) || CATEGORIE_FALLBACK[code] || code;
+  const categorieColor = (code: string) => dictionaries.color('DOCUMENT_CATEGORIE', code);
 
   const { data, isLoading } = useQuery({
     queryKey: ['files', page, search, catFilter],
@@ -92,10 +90,13 @@ export default function DocumentsPage() {
     {
       header: 'Document',
       cell: (file) => {
-        const Icon = CATEGORIE_ICONS[file.categorie] || FileText;
+        const Icon = FileText;
         return (
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-xl ${CATEGORIE_STYLES[file.categorie]}`}>
+            <div
+              className="p-2 rounded-xl bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              style={categorieColor(file.categorie) ? { backgroundColor: `${categorieColor(file.categorie)}22`, color: categorieColor(file.categorie) } : undefined}
+            >
               <Icon className="w-4 h-4" />
             </div>
             <div>
@@ -109,8 +110,11 @@ export default function DocumentsPage() {
     {
       header: 'Catégorie',
       cell: (file) => (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${CATEGORIE_STYLES[file.categorie]}`}>
-          {CATEGORIE_LABELS[file.categorie]}
+        <span
+          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border border-gray-200/60 dark:border-gray-700/60 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+          style={categorieColor(file.categorie) ? { backgroundColor: `${categorieColor(file.categorie)}22`, color: categorieColor(file.categorie) } : undefined}
+        >
+          {categorieLabel(file.categorie)}
         </span>
       ),
     },
@@ -203,7 +207,7 @@ export default function DocumentsPage() {
             <div>
               <label className="label">Catégorie</label>
               <select className="input" value={newFile.categorie} onChange={(e) => setNewFile({ ...newFile, categorie: e.target.value as CategorieDocument })}>
-                {Object.entries(CATEGORIE_LABELS).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
+                {categorieEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
               </select>
             </div>
             <div>
@@ -239,7 +243,7 @@ export default function DocumentsPage() {
           <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-white/20 dark:border-white/[0.06] animate-slide-up">
             <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value as CategorieDocument | ''); setPage(0); }} className="input w-auto">
               <option value="">Toutes catégories</option>
-              {Object.entries(CATEGORIE_LABELS).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
+              {categorieEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
             </select>
           </div>
         )}

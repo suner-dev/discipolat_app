@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable from '@/components/shared/DataTable';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Prayer, PageResponse, CategoriePriere, PrioritePriere, VisibilitePriere } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
@@ -25,7 +26,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const CATEGORIE_LABELS: Record<CategoriePriere, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const CATEGORIE_FALLBACK: Record<string, string> = {
   SANTE: 'Santé',
   FAMILLE: 'Famille',
   TRAVAIL: 'Travail',
@@ -33,15 +35,7 @@ const CATEGORIE_LABELS: Record<CategoriePriere, string> = {
   AUTRE: 'Autre',
 };
 
-const CATEGORIE_COLORS: Record<CategoriePriere, string> = {
-  SANTE: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
-  FAMILLE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  TRAVAIL: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-  SPIRITUEL: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
-  AUTRE: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-};
-
-const PRIORITE_LABELS: Record<PrioritePriere, string> = {
+const PRIORITE_FALLBACK: Record<string, string> = {
   BASSE: 'Basse',
   MOYENNE: 'Moyenne',
   HAUTE: 'Haute',
@@ -74,7 +68,9 @@ function createPrayerForm(
   submitLabel: string,
   onSubmit: () => void,
   isPending: boolean,
-  onCancel?: () => void
+  onCancel: () => void,
+  categorieOptions: { code: string; label: string }[],
+  prioriteOptions: { code: string; label: string }[]
 ) {
   return (
     <div key={key} className="card p-6 mb-6 animate-slide-up">
@@ -111,19 +107,13 @@ function createPrayerForm(
         <div>
           <label className="label">Catégorie</label>
           <select className="input" value={form.categorie} onChange={(e) => update({ categorie: e.target.value as CategoriePriere })}>
-            <option value="SANTE">Santé</option>
-            <option value="FAMILLE">Famille</option>
-            <option value="TRAVAIL">Travail</option>
-            <option value="SPIRITUEL">Spirituel</option>
-            <option value="AUTRE">Autre</option>
+            {categorieOptions.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
           </select>
         </div>
         <div>
           <label className="label">Priorité</label>
           <select className="input" value={form.priorite} onChange={(e) => update({ priorite: e.target.value as PrioritePriere })}>
-            <option value="BASSE">Basse</option>
-            <option value="MOYENNE">Moyenne</option>
-            <option value="HAUTE">Haute</option>
+            {prioriteOptions.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
           </select>
         </div>
         <div>
@@ -155,6 +145,7 @@ function createPrayerForm(
 export default function PrayersPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState<CategoriePriere | ''>('');
@@ -181,6 +172,26 @@ export default function PrayersPage() {
     priorite: 'MOYENNE' as PrioritePriere,
     visibilite: 'PARTAGEE' as VisibilitePriere,
   });
+
+  const categorieEntries = useMemo(() => {
+    const configured = dictionaries.options('PRAYER_CATEGORIE');
+    return configured.length > 0
+      ? configured.map((e) => ({ code: e.code, label: e.label, color: e.color }))
+      : Object.entries(CATEGORIE_FALLBACK).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
+
+  const prioriteEntries = useMemo(() => {
+    const configured = dictionaries.options('PRAYER_PRIORITE');
+    return configured.length > 0
+      ? configured.map((e) => ({ code: e.code, label: e.label }))
+      : Object.entries(PRIORITE_FALLBACK).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
+
+  const categorieLabel = (code: string) =>
+    dictionaries.label('PRAYER_CATEGORIE', code) || CATEGORIE_FALLBACK[code] || code;
+  const categorieColor = (code: string) => dictionaries.color('PRAYER_CATEGORIE', code);
+  const prioriteLabel = (code: string) =>
+    dictionaries.label('PRAYER_PRIORITE', code) || PRIORITE_FALLBACK[code] || code;
 
   const { data, isLoading } = useQuery({
     queryKey: ['prayers', page, search, catFilter, statutFilter, visibiliteFilter],
@@ -293,19 +304,22 @@ export default function PrayersPage() {
     {
       header: 'Catégorie',
       cell: (prayer) => (
-        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${CATEGORIE_COLORS[prayer.categorie]}`}>
-          {CATEGORIE_LABELS[prayer.categorie]}
+        <span
+          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+          style={categorieColor(prayer.categorie) ? { backgroundColor: `${categorieColor(prayer.categorie)}22`, color: categorieColor(prayer.categorie) } : undefined}
+        >
+          {categorieLabel(prayer.categorie)}
         </span>
       ),
     },
     {
       header: 'Priorité',
       cell: (prayer) => {
-        const Icon = PRIORITE_ICONS[prayer.priorite];
+        const Icon = prayer.priorite === 'HAUTE' ? Flame : prayer.priorite === 'MOYENNE' ? Star : Tag;
         return (
-          <span className={`inline-flex items-center gap-1 text-xs font-medium ${PRIORITE_COLORS[prayer.priorite]}`}>
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500">
             <Icon className="w-3 h-3" />
-            {PRIORITE_LABELS[prayer.priorite]}
+            {prioriteLabel(prayer.priorite)}
           </span>
         );
       },
@@ -409,10 +423,10 @@ export default function PrayersPage() {
       </div>
 
       {/* Create form */}
-      {showCreate && createPrayerForm('newPrayer', newPrayer, (v) => setNewPrayer({ ...newPrayer, ...v }), 'Créer', () => createMutation.mutate(newPrayer), createMutation.isPending)}
+      {showCreate && createPrayerForm('newPrayer', newPrayer, (v) => setNewPrayer({ ...newPrayer, ...v }), 'Créer', () => createMutation.mutate(newPrayer), createMutation.isPending, () => setShowCreate(false), categorieEntries, prioriteEntries)}
 
       {/* Edit form */}
-      {showEdit && editingPrayer && createPrayerForm('edit', editForm, (v) => setEditForm({ ...editForm, ...v }), 'Enregistrer', () => updateMutation.mutate({ id: editingPrayer.id, data: editForm }), updateMutation.isPending, () => { setShowEdit(false); setEditingPrayer(null); })}
+      {showEdit && editingPrayer && createPrayerForm('edit', editForm, (v) => setEditForm({ ...editForm, ...v }), 'Enregistrer', () => updateMutation.mutate({ id: editingPrayer.id, data: editForm }), updateMutation.isPending, () => { setShowEdit(false); setEditingPrayer(null); }, categorieEntries, prioriteEntries)}
 
       {/* Answer / témoignage modal */}
       {showAnswerForm && (
@@ -497,11 +511,7 @@ export default function PrayersPage() {
           <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value as CategoriePriere | ''); setPage(0); }} className="input w-auto">
               <option value="">Toutes catégories</option>
-              <option value="SANTE">Santé</option>
-              <option value="FAMILLE">Famille</option>
-              <option value="TRAVAIL">Travail</option>
-              <option value="SPIRITUEL">Spirituel</option>
-              <option value="AUTRE">Autre</option>
+              {categorieEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
             </select>
             <select value={statutFilter} onChange={(e) => { setStatutFilter(e.target.value); setPage(0); }} className="input w-auto">
               <option value="">Tous statuts</option>

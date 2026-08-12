@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Soul, PageResponse, TypeDisciple, StatutAme } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
@@ -18,27 +19,19 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const TYPE_LABELS: Record<TypeDisciple, string> = {
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const TYPE_FALLBACK: Record<string, string> = {
   NOUVEL_ARRIVANT: 'Nouvel arrivant',
   NOUVEAU_CONVERTI: 'Nouveau converti',
 };
 
-const STATUT_LABELS: Record<StatutAme, string> = {
+const STATUT_FALLBACK: Record<string, string> = {
   NOUVEAU_CONVERTI: 'Nouveau converti',
   NOUVEL_ARRIVANT: 'Nouvel arrivant',
   EN_INTEGRATION: 'En intégration',
   ACTIF: 'Actif',
   EN_VEILLE: 'En veille',
   DECROCHE: 'Décroché',
-};
-
-const STATUT_STYLES: Record<StatutAme, string> = {
-  NOUVEAU_CONVERTI: 'badge-success',
-  NOUVEL_ARRIVANT: 'badge-info',
-  EN_INTEGRATION: 'badge-warning',
-  ACTIF: 'badge-success',
-  EN_VEILLE: 'badge-gray',
-  DECROCHE: 'badge-danger',
 };
 
 export default function SoulsPage() {
@@ -49,6 +42,20 @@ export default function SoulsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState<'liste' | 'corbeille'>('liste');
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
+
+  const typeEntries = useMemo(() => {
+    const configured = dictionaries.options('SOUL_TYPE');
+    return configured.length > 0 ? configured.map((e) => ({ code: e.code, label: e.label })) : Object.entries(TYPE_FALLBACK).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
+
+  const statusEntries = useMemo(() => {
+    const configured = dictionaries.options('SOUL_STATUS');
+    return configured.length > 0 ? configured.map((e) => ({ code: e.code, label: e.label })) : Object.entries(STATUT_FALLBACK).map(([code, label]) => ({ code, label }));
+  }, [dictionaries]);
+
+  const typeLabel = (code: string) => dictionaries.label('SOUL_TYPE', code) || TYPE_FALLBACK[code] || code;
+  const statusLabel = (code: string) => dictionaries.label('SOUL_STATUS', code) || STATUT_FALLBACK[code] || code;
 
   const { data, isLoading } = useQuery({
     queryKey: ['souls', page, search, typeFilter, statutFilter, view],
@@ -124,15 +131,15 @@ export default function SoulsPage() {
       cell: (soul) => (
         <span className={soul.typeDisciple === 'NOUVEAU_CONVERTI' ? 'badge-success' : 'badge-info'}>
           <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${soul.typeDisciple === 'NOUVEAU_CONVERTI' ? 'bg-green-500' : 'bg-blue-500'}`} />
-          {TYPE_LABELS[soul.typeDisciple]}
+          {typeLabel(soul.typeDisciple)}
         </span>
       ),
     },
     {
       header: 'Statut',
       cell: (soul) => (
-        <span className={STATUT_STYLES[soul.statut]}>
-          {STATUT_LABELS[soul.statut]}
+        <span className="badge-info">
+          {statusLabel(soul.statut)}
         </span>
       ),
     },
@@ -226,8 +233,7 @@ export default function SoulsPage() {
                 className="input w-auto text-sm"
               >
                 <option value="">Tous</option>
-                <option value="NOUVEL_ARRIVANT">Nouvel arrivant</option>
-                <option value="NOUVEAU_CONVERTI">Nouveau converti</option>
+                {typeEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -238,10 +244,7 @@ export default function SoulsPage() {
                 className="input w-auto text-sm"
               >
                 <option value="">Tous</option>
-                <option value="ACTIF">Actif</option>
-                <option value="EN_INTEGRATION">En intégration</option>
-                <option value="EN_VEILLE">En veille</option>
-                <option value="DECROCHE">Décroché</option>
+                {statusEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
               </select>
             </div>
           </div>
@@ -281,7 +284,7 @@ export default function SoulsPage() {
                       <td className="font-medium text-gray-900 dark:text-gray-100">
                         {soul.prenom ? `${soul.prenom} ${soul.nom}` : soul.nom}
                       </td>
-                      <td className="text-sm text-gray-500">{TYPE_LABELS[soul.typeDisciple]}</td>
+                      <td className="text-sm text-gray-500">{typeLabel(soul.typeDisciple)}</td>
                       <td className="text-sm text-gray-500">{soul.email || '—'}</td>
                       <td className="text-sm text-gray-500">{soul.telephone || '—'}</td>
                       <td className="text-right">

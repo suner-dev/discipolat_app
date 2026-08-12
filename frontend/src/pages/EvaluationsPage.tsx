@@ -7,6 +7,7 @@ import {
   UserCheck, BarChart3, Send, AlertCircle, Heart, Eye,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useDictionaries } from '@/hooks/useDictionaries';
 
 interface PersonToEvaluate {
   id: string;
@@ -24,6 +25,7 @@ interface EvalStats {
 
 export default function EvaluationsPage() {
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
   const isPasteurOrAdmin = !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR'));
   const [activeTab, setActiveTab] = useState<'evaluate' | 'my-results' | 'all'>('evaluate');
@@ -112,9 +114,10 @@ export default function EvaluationsPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const CATEGORIE_LABELS: Record<string, string> = {
+  const CATEGORIE_FALLBACK: Record<string, string> = {
     RESPONSABLE: 'Responsable', CHEF_FAMILLE: 'Chef de famille', FAISEUR: 'Faiseur',
   };
+  const categorieLabel = (c: string) => dictionaries.label('EVALUATION_CATEGORIE', c) || CATEGORIE_FALLBACK[c] || c;
 
   const CATEGORIE_COLORS: Record<string, string> = {
     RESPONSABLE: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
@@ -267,7 +270,7 @@ export default function EvaluationsPage() {
                     Évaluer {selectedPerson.nom}
                   </h3>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${CATEGORIE_COLORS[selectedPerson.categorie]}`}>
-                    {CATEGORIE_LABELS[selectedPerson.categorie] || selectedPerson.categorie}
+                    {categorieLabel(selectedPerson.categorie)}
                   </span>
                 </div>
                 <button
@@ -336,7 +339,7 @@ export default function EvaluationsPage() {
                         <div className="flex-1">
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{person.nom}</p>
                           <span className={`inline-flex items-center text-xs font-medium ${CATEGORIE_COLORS[person.categorie]}`}>
-                            {CATEGORIE_LABELS[person.categorie]}
+                            {categorieLabel(person.categorie)}
                           </span>
                         </div>
                         <Star className="w-4 h-4 text-gray-300 group-hover:text-amber-400 transition-colors" />
@@ -377,7 +380,7 @@ export default function EvaluationsPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {Object.entries(myResults.statistiques).map(([cat, stats]) => (
-                  <div key={cat}>{renderStatsCard(CATEGORIE_LABELS[cat] || cat, stats, '')}</div>
+                  <div key={cat}>{renderStatsCard(categorieLabel(cat), stats, '')}</div>
                 ))}
               </div>
 
@@ -393,9 +396,12 @@ export default function EvaluationsPage() {
                     onChange={(e) => { setEvalCategorieFilter(e.target.value); setEvalPage(0); }}
                   >
                     <option value="">Toutes les catégories</option>
-                    <option value="RESPONSABLE">Responsable</option>
-                    <option value="CHEF_FAMILLE">Chef de famille</option>
-                    <option value="FAISEUR">Faiseur</option>
+                    {(dictionaries.options('EVALUATION_CATEGORIE').length > 0
+                      ? dictionaries.options('EVALUATION_CATEGORIE')
+                      : Object.entries(CATEGORIE_FALLBACK).map(([value, label]) => ({ code: value, label }))
+                    ).map((o) => (
+                      <option key={o.code} value={o.code}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
                 {evalListLoading ? (
@@ -411,7 +417,7 @@ export default function EvaluationsPage() {
                             ))}
                           </div>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${CATEGORIE_COLORS[ev.categorie] || ''}`}>
-                            {CATEGORIE_LABELS[ev.categorie] || ev.categorie}
+                            {categorieLabel(ev.categorie)}
                           </span>
                           {ev.commentaire && (
                             <p className="flex-1 text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -480,7 +486,7 @@ export default function EvaluationsPage() {
               {Object.keys(userDetail.statistiques).length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {Object.entries(userDetail.statistiques).map(([cat, stats]) => (
-                    <div key={cat}>{renderStatsCard(CATEGORIE_LABELS[cat] || cat, stats, '')}</div>
+                    <div key={cat}>{renderStatsCard(categorieLabel(cat), stats, '')}</div>
                   ))}
                 </div>
               ) : (
@@ -496,7 +502,7 @@ export default function EvaluationsPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${CATEGORIE_COLORS[cat]}`}>
-                        {CATEGORIE_LABELS[cat]}
+                        {categorieLabel(cat)}
                       </span>
                       <span className="text-sm text-gray-400">{data.totalEvaluations} évaluation{data.totalEvaluations > 1 ? 's' : ''}</span>
                     </div>

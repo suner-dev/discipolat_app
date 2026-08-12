@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { PageResponse, User } from '@/types';
 import {
   Activity,
@@ -35,7 +36,8 @@ interface AuditEntry {
   createdAt: string;
 }
 
-const ENTITY_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const ENTITY_FALLBACK: Record<string, string> = {
   USER: 'Utilisateur',
   FAMILY: 'Famille',
   SOUL: 'Âme',
@@ -77,6 +79,7 @@ function toIsoEnd(date: string) {
 }
 
 export default function AuditPage() {
+  const dictionaries = useDictionaries();
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
@@ -248,8 +251,11 @@ export default function AuditPage() {
               className="input pl-9 appearance-none"
             >
               <option value="">Toutes les entités</option>
-              {Object.entries(ENTITY_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
+              {(dictionaries.options('AUDIT_ENTITY').length > 0
+                ? dictionaries.options('AUDIT_ENTITY')
+                : Object.entries(ENTITY_FALLBACK).map(([code, label]) => ({ code, label }))
+              ).map((o) => (
+                <option key={o.code} value={o.code}>{o.label}</option>
               ))}
             </select>
           </div>
@@ -324,7 +330,7 @@ export default function AuditPage() {
                 ) : entries.map((entry) => {
                   const cat = actionCategory(entry.action);
                   const ActionIcon = ACTION_ICONS[cat];
-                  const entiteLabel = ENTITY_LABELS[entry.entiteType] || entry.entiteType;
+                  const entiteLabel = dictionaries.label('AUDIT_ENTITY', entry.entiteType) || ENTITY_FALLBACK[entry.entiteType] || entry.entiteType;
                   const userName = entry.emailUtilisateur || userMap.get(entry.utilisateurId) || entry.utilisateurId?.slice(0, 8);
                   return (
                     <tr key={entry.id}>

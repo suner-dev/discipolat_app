@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import {
   ArrowLeft, Heart, Activity, Clock, AlertTriangle, Star,
@@ -55,13 +56,25 @@ function IndiceGauge({ label, value, color, size = 'md' }: { label: string; valu
   );
 }
 
-const STATUT_LABELS: Record<string, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const STATUT_FALLBACK: Record<string, string> = {
   NOUVEAU_CONVERTI: 'Nouveau converti', NOUVEL_ARRIVANT: 'Nouvel arrivant',
   EN_INTEGRATION: 'En intégration', ACTIF: 'Actif', EN_VEILLE: 'En veille', DECROCHE: 'Décroché',
 };
 
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const SPIRITUAL_FALLBACK: Record<string, string> = {
+  NOUVEAU_CONVERTI: 'Nouveau converti', EN_CROISSANCE: 'En croissance',
+  MATURE: 'Mature', EN_DIFFICULTE: 'En difficulté',
+};
+
+const EVAL_FALLBACK: Record<string, string> = {
+  RESPONSABLE: 'Responsable', CHEF_FAMILLE: 'Chef de famille', FAISEUR: 'Faiseur',
+};
+
 export default function Pastoral360Page() {
   const { id } = useParams<{ id: string }>();
+  const dictionaries = useDictionaries();
 
   const { data: dossier, isLoading } = useQuery({
     queryKey: ['soul', id, 'pastoral-360'],
@@ -234,12 +247,14 @@ export default function Pastoral360Page() {
             <div className="flex justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
               <span className="text-xs text-gray-400">Statut</span>
               <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                {STATUT_LABELS[spirituel.statut] || spirituel.statut}
+                {dictionaries.label('SOUL_STATUS', spirituel.statut) || STATUT_FALLBACK[spirituel.statut] || spirituel.statut}
               </span>
             </div>
             <div className="flex justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
               <span className="text-xs text-gray-400">État spirituel</span>
-              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{spirituel.etatSpirituel}</span>
+              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                {dictionaries.label('SPIRITUAL_LEVEL', spirituel.etatSpirituel) || SPIRITUAL_FALLBACK[spirituel.etatSpirituel] || spirituel.etatSpirituel}
+              </span>
             </div>
             <div className="flex justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
               <span className="text-xs text-gray-400">Niveau croissance</span>
@@ -301,7 +316,7 @@ export default function Pastoral360Page() {
             <div className="space-y-2">
               {Object.entries(evaluations).map(([cat, data]: [string, any]) => (
                 <div key={cat} className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                  <span className="text-xs text-gray-400">{cat === 'FAISEUR' ? 'Faiseur' : cat === 'CHEF_FAMILLE' ? 'Chef' : cat === 'RESPONSABLE' ? 'Responsable' : cat}</span>
+                  <span className="text-xs text-gray-400">{dictionaries.label('EVALUATION_CATEGORIE', cat) || EVAL_FALLBACK[cat] || cat}</span>
                   <div className="flex items-center gap-2">
                     <div className="flex">
                       {[1,2,3,4,5].map(i => (

@@ -1383,6 +1383,28 @@ export interface CustomFieldBundle {
   values: CustomFieldValue[];
 }
 
+// ======================== Dictionnaires configurables (V52) ========================
+
+/**
+ * Entrée d'un dictionnaire de la plateforme. Les référentiels (types
+ * d'événements, statuts, raisons d'absence, catégories…) sont chargés
+ * depuis l'API et adaptables par l'admin — plus aucune liste codée en dur.
+ */
+export interface DictionaryEntry {
+  id: string;
+  dictKey: string;
+  code: string;
+  label: string;
+  description?: string;
+  color?: string;
+  ordre: number;
+  actif: boolean;
+  isDefault: boolean;
+}
+
+/** Dictionnaires groupés par clé (EVENT_TYPE, SOUL_STATUS…). */
+export type DictionariesMap = Record<string, DictionaryEntry[]>;
+
 // ======================== Modules & Menus configurables ========================
 
 export interface PlatformModule {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import toast from 'react-hot-toast';
 import {
   CalendarPlus,
@@ -20,7 +21,8 @@ import type {
   User,
 } from '@/types';
 
-const MOTIF_LABEL: Record<AppointmentMotif, string> = {
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const MOTIF_FALLBACK: Record<AppointmentMotif, string> = {
   CONSEIL: 'Conseil',
   CONFESSION: 'Confession',
   SUIVI: 'Suivi',
@@ -38,6 +40,7 @@ const STATUT_STYLE: Record<AppointmentStatut, { label: string; cls: string }> = 
 
 export default function AppointmentsPage() {
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
 
   const [showCreate, setShowCreate] = useState(false);
@@ -122,7 +125,7 @@ export default function AppointmentsPage() {
               </span>
             </div>
             <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
-              <Clock className="w-3 h-3" /> {formatDate(a.datePrevue)} · {MOTIF_LABEL[a.motif]} · {a.dureeMinutes} min
+              <Clock className="w-3 h-3" /> {formatDate(a.datePrevue)} · {dictionaries.label('APPOINTMENT_MOTIF', a.motif) || MOTIF_FALLBACK[a.motif] || a.motif} · {a.dureeMinutes} min
             </p>
             {a.objet && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{a.objet}</p>}
             {a.reponse && (
@@ -214,8 +217,11 @@ export default function AppointmentsPage() {
                 onChange={e => setForm({ ...form, motif: e.target.value as AppointmentMotif })}
                 className="input w-full"
               >
-                {(Object.keys(MOTIF_LABEL) as AppointmentMotif[]).map(m => (
-                  <option key={m} value={m}>{MOTIF_LABEL[m]}</option>
+                {(dictionaries.selectOptions('APPOINTMENT_MOTIF').length > 0
+                  ? dictionaries.selectOptions('APPOINTMENT_MOTIF')
+                  : Object.entries(MOTIF_FALLBACK).map(([value, label]) => ({ value, label }))
+                ).map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
             </div>

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import {
   MessageSquare, Send, Search, Loader2, ChevronLeft, Users,
   CheckCheck, X,
@@ -37,7 +38,8 @@ interface UserOption {
   role: string;
 }
 
-const ROLE_LABELS: Record<string, string> = {
+/** Repli (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const ROLE_FALLBACK: Record<string, string> = {
   ADMIN: 'Admin', PASTEUR: 'Pasteur', RESPONSABLE: 'Responsable',
   CHEF_DE_FAMILLE: 'Chef de famille', FAISEUR: 'Faiseur', MEMBRE: 'Membre',
 };
@@ -51,6 +53,7 @@ function formatTime(iso?: string) {
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -117,7 +120,7 @@ export default function MessagesPage() {
     ? conversations.filter((conv) => {
         const q = conversationFilter.toLowerCase();
         return (conv.otherUserName || '').toLowerCase().includes(q)
-          || (ROLE_LABELS[conv.otherUserRole] || conv.otherUserRole || '').toLowerCase().includes(q);
+          || (dictionaries.label('USER_ROLE', conv.otherUserRole) || ROLE_FALLBACK[conv.otherUserRole] || conv.otherUserRole || '').toLowerCase().includes(q);
       })
     : conversations;
 
@@ -237,7 +240,7 @@ export default function MessagesPage() {
                         {conv.lastMessage ? (conv.lastMessageSenderId === user?.id ? 'Vous : ' : '') + conv.lastMessage : 'Nouvelle conversation'}
                       </p>
                       <span className="text-[10px] text-gray-400">
-                        {ROLE_LABELS[conv.otherUserRole] || conv.otherUserRole}
+                        {dictionaries.label('USER_ROLE', conv.otherUserRole) || ROLE_FALLBACK[conv.otherUserRole] || conv.otherUserRole}
                       </span>
                     </div>
                   </button>
@@ -266,7 +269,7 @@ export default function MessagesPage() {
                       {activeConv.otherUserName}
                     </p>
                     <p className="text-[11px] text-gray-400">
-                      {ROLE_LABELS[activeConv.otherUserRole] || activeConv.otherUserRole}
+                      {dictionaries.label('USER_ROLE', activeConv.otherUserRole) || ROLE_FALLBACK[activeConv.otherUserRole] || activeConv.otherUserRole}
                     </p>
                   </div>
                 </div>
@@ -386,7 +389,7 @@ export default function MessagesPage() {
                         {u.firstName} {u.lastName}
                       </p>
                       <p className="text-[11px] text-gray-400">
-                        {ROLE_LABELS[u.role] || u.role}
+                        {dictionaries.label('USER_ROLE', u.role) || ROLE_FALLBACK[u.role] || u.role}
                       </p>
                     </div>
                   </button>

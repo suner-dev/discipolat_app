@@ -78,6 +78,7 @@ const ModuleUnavailablePage = lazy(() => import('@/pages/ModuleUnavailablePage')
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 const AdminCustomFieldsPage = lazy(() => import('@/pages/AdminCustomFieldsPage'));
 const AdminFeedbackPage = lazy(() => import('@/pages/AdminFeedbackPage'));
+const AdminDictionariesPage = lazy(() => import('@/pages/AdminDictionariesPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -471,6 +472,11 @@ export default function App() {
           <Route path="/admin/feedback" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminFeedbackPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/dictionaries" element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminDictionariesPage />
             </ProtectedRoute>
           } />
         </Route>

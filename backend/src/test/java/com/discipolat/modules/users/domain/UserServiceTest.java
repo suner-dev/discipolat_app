@@ -229,7 +229,7 @@ class UserServiceTest {
         var result = userService.getFaiseurWorkload(null);
 
         assertEquals(1, result.size());
-        assertEquals("SURCHARGÉ", result.get(0).get("charge"));
+        assertEquals("SURCHARGE", result.get(0).get("charge"));
         assertEquals(9L, result.get(0).get("soulCount"));
     }
 
