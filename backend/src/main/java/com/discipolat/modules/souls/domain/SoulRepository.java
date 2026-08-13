@@ -22,6 +22,12 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
             "OR LOWER(s.email) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(s.telephone) LIKE LOWER(CONCAT('%', :q, '%')))")
     Page<Soul> search(@org.springframework.data.repository.query.Param("q") String q, Pageable pageable);
 
+    @org.springframework.data.jpa.repository.Query("SELECT s FROM Soul s WHERE s.deleted = false AND s.id IN :ids AND " +
+            "(LOWER(s.nom) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(s.prenom) LIKE LOWER(CONCAT('%', :q, '%')) " +
+            "OR LOWER(s.email) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(s.telephone) LIKE LOWER(CONCAT('%', :q, '%')))")
+    Page<Soul> searchIn(@org.springframework.data.repository.query.Param("ids") List<UUID> ids,
+                        @org.springframework.data.repository.query.Param("q") String q, Pageable pageable);
+
     List<Soul> findAllByFaiseurId(UUID faiseurId);
     List<Soul> findAllByFamilleId(UUID familleId);
     List<Soul> findByFamilleIdIn(List<UUID> familleIds);

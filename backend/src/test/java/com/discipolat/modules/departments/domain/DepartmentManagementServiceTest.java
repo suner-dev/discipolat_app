@@ -1,6 +1,10 @@
 package com.discipolat.modules.departments.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
+import com.discipolat.common.enums.CanalNotification;
+import com.discipolat.common.enums.StatutAme;
+import com.discipolat.common.enums.TypeDisciple;
+import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.api.DepartmentAssignmentRequest;
 import com.discipolat.modules.departments.api.DepartmentTaskRequest;
@@ -18,6 +22,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDate;
@@ -29,6 +36,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -393,5 +402,113 @@ class DepartmentManagementServiceTest {
         assertThat(task.getStatut()).isEqualTo(DepartmentTask.TaskStatus.ANNULEE);
         verify(taskRepository, never()).delete(any());
         verify(activityRepository).save(any(DepartmentActivity.class));
+    }
+
+    // ======================= CANDIDATS (RECHERCHE) =======================
+
+    @Test
+    void findCandidates_superUserSearchesInDbAndExcludesExistingMembers() {
+        UUID memberId = UUID.randomUUID();
+        Soul member = Soul.builder().id(memberId).nom("Dupont").prenom("Jean")
+                .typeDisciple(TypeDisciple.NOUVEAU_CONVERTI).statut(StatutAme.ACTIF).build();
+        Soul candidate = Soul.builder().id(UUID.randomUUID()).nom("Martin").prenom("Paul")
+                .typeDisciple(TypeDisciple.NOUVEAU_CONVERTI).statut(StatutAme.ACTIF).build();
+        when(securityUtils.isSuperUser()).thenReturn(true);
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(SoulDepartment.builder().soulId(memberId).departmentId(deptId).actif(true).build()));
+        when(soulRepository.search(eq("martin"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(member, candidate)));
+
+        List<Map<String, Object>> result = service.findCandidates(deptId, "Martin");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).get("id")).isEqualTo(candidate.getId());
+        verify(soulRepository, never()).findAll();
+    }
+
+    @Test
+    void findCandidates_responsableScopesSearchToOwnDepartments() {
+        Soul candidate = Soul.builder().id(UUID.randomUUID()).nom("Martin").prenom("Paul")
+                .typeDisciple(TypeDisciple.NOUVEAU_CONVERTI).statut(StatutAme.ACTIF).build();
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
+        when(departmentService.findResponsableDepartments(any())).thenReturn(List.of(deptId));
+        when(soulDepartmentRepository.findByDepartmentIdIn(anyList()))
+                .thenReturn(List.of(SoulDepartment.builder().soulId(candidate.getId()).departmentId(deptId).actif(true).build()));
+        when(soulRepository.searchIn(anyList(), eq(""), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(candidate)));
+
+        List<Map<String, Object>> result = service.findCandidates(deptId, null);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).get("id")).isEqualTo(candidate.getId());
+        verify(soulRepository, never()).search(eq(""), any(Pageable.class));
+    }
+
+    // ======================= TÂCHES : NOTIFICATION (RE)ASSIGNATION =======================
+
+    @Test
+    void updateTask_doesNotRenotifyWhenAssigneeUnchanged() {
+        UUID memberId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        DepartmentTask task = DepartmentTask.builder().id(taskId).departmentId(deptId)
+                .titre("Tâche").assignedTo(memberId).build();
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(DepartmentTask.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        DepartmentTaskRequest request = new DepartmentTaskRequest("Tâche", null, null, memberId,
+                DepartmentTask.TaskPriority.MOYENNE, DepartmentTask.TaskStatus.EN_COURS, null, null, null);
+
+        service.updateTask(deptId, taskId, request);
+
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void updateTask_notifiesNewAssigneeOnReassignment() {
+        UUID oldAssignee = UUID.randomUUID();
+        UUID newAssignee = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        DepartmentTask task = DepartmentTask.builder().id(taskId).departmentId(deptId)
+                .titre("Tâche").assignedTo(oldAssignee).build();
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(DepartmentTask.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Soul newSoul = mock(Soul.class);
+        when(newSoul.getUserId()).thenReturn(userId);
+        when(soulRepository.findById(newAssignee)).thenReturn(Optional.of(newSoul));
+
+        DepartmentTaskRequest request = new DepartmentTaskRequest("Tâche", null, null, newAssignee,
+                DepartmentTask.TaskPriority.MOYENNE, DepartmentTask.TaskStatus.EN_COURS, null, null, null);
+
+        service.updateTask(deptId, taskId, request);
+
+        verify(notificationService).create(eq(userId), eq(TypeNotification.TACHE_ASSIGNEE),
+                eq(CanalNotification.IN_APP), any(), any(), eq(taskId), eq("TASK"));
+    }
+
+    // ======================= AFFECTATIONS : ANTI-DOUBLON SUR POSTE =======================
+
+    @Test
+    void assignMember_rejectsDuplicateActivePositionAssignment() {
+        UUID memberId = UUID.randomUUID();
+        UUID positionId = UUID.randomUUID();
+        Soul soul = mock(Soul.class);
+        when(soul.getNomComplet()).thenReturn("Jean Dupont");
+        when(soulRepository.findById(memberId)).thenReturn(Optional.of(soul));
+
+        DepartmentAssignment existing = DepartmentAssignment.builder()
+                .id(UUID.randomUUID()).departmentId(deptId).memberId(memberId)
+                .positionId(positionId).actif(true).build();
+        when(assignmentRepository.findByDepartmentIdAndMemberIdAndActifTrue(deptId, memberId))
+                .thenReturn(List.of(existing));
+
+        DepartmentAssignmentRequest request = new DepartmentAssignmentRequest(memberId, null, positionId,
+                DepartmentAssignment.AssignmentRole.MEMBRE, null, null);
+
+        assertThatThrownBy(() -> service.assignMember(deptId, request))
+                .isInstanceOf(BusinessRuleException.class);
+        verify(assignmentRepository, never()).save(any());
     }
 }

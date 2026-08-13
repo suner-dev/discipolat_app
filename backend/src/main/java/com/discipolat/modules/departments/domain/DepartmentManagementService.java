@@ -17,6 +17,8 @@ import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.SoulService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -357,12 +359,14 @@ public class DepartmentManagementService {
                 .collect(Collectors.toMap(DepartmentTeam::getId, DepartmentTeam::getNom));
         Map<UUID, String> positionNames = positionRepository.findByDepartmentIdOrderByNomAsc(departmentId).stream()
                 .collect(Collectors.toMap(DepartmentPosition::getId, DepartmentPosition::getNom));
-        return assignmentRepository.findByDepartmentId(departmentId).stream()
+        List<DepartmentAssignment> assignments = assignmentRepository.findByDepartmentId(departmentId);
+        Map<UUID, String> soulNames = soulNames(assignments.stream().map(DepartmentAssignment::getMemberId).toList());
+        return assignments.stream()
                 .map(a -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("id", a.getId());
                     m.put("memberId", a.getMemberId());
-                    m.put("memberNom", soulName(a.getMemberId()));
+                    m.put("memberNom", soulNames.get(a.getMemberId()));
                     m.put("teamId", a.getTeamId());
                     m.put("teamNom", a.getTeamId() != null ? teamNames.get(a.getTeamId()) : null);
                     m.put("positionId", a.getPositionId());
@@ -374,6 +378,14 @@ public class DepartmentManagementService {
                     return m;
                 })
                 .toList();
+    }
+
+    /** Noms complets groupés (évite le N+1 sur soulRepository.findById). */
+    private Map<UUID, String> soulNames(List<UUID> soulIds) {
+        List<UUID> distinctIds = soulIds.stream().filter(Objects::nonNull).distinct().toList();
+        if (distinctIds.isEmpty()) return Map.of();
+        return soulRepository.findAllById(distinctIds).stream()
+                .collect(Collectors.toMap(Soul::getId, Soul::getNomComplet));
     }
 
     public Map<String, Object> assignMember(UUID departmentId, DepartmentAssignmentRequest request) {
@@ -392,15 +404,16 @@ public class DepartmentManagementService {
         // dès qu'il contient des membres, l'affectation d'un membre extérieur est refusée.
         assertMemberBelongsToDepartment(departmentId, request.memberId(), soul);
 
-        // Anti-doublon : pas de seconde affectation active sur le même binôme
+        // Anti-doublon : pas de seconde affectation active sur la même équipe
         if (request.teamId() != null && assignmentRepository.existsByMemberIdAndTeamIdAndActifTrue(request.memberId(), request.teamId())) {
             throw new com.discipolat.common.domain.BusinessRuleException(
                     soul.getNomComplet() + " est déjà affecté à cette équipe", "ALREADY_ASSIGNED");
         }
-        if (request.teamId() == null) {
-            boolean hasTeamless = assignmentRepository.findByDepartmentIdAndMemberIdAndActifTrue(departmentId, request.memberId()).stream()
-                    .anyMatch(a -> a.getTeamId() == null && a.getPositionId() != null);
-            if (hasTeamless && request.positionId() != null) {
+        // Anti-doublon sur un poste : une seule affectation « sans équipe » par poste
+        if (request.teamId() == null && request.positionId() != null) {
+            boolean hasTeamlessPosition = assignmentRepository.findByDepartmentIdAndMemberIdAndActifTrue(departmentId, request.memberId()).stream()
+                    .anyMatch(a -> a.getTeamId() == null && request.positionId().equals(a.getPositionId()));
+            if (hasTeamlessPosition) {
                 throw new com.discipolat.common.domain.BusinessRuleException(
                         soul.getNomComplet() + " a déjà une affectation sur ce poste", "ALREADY_ASSIGNED");
             }
@@ -411,10 +424,6 @@ public class DepartmentManagementService {
             if (!team.getDepartmentId().equals(departmentId)) {
                 throw new com.discipolat.common.domain.BusinessRuleException(
                         "L'équipe doit appartenir au département", "TEAM_DEPARTMENT_MISMATCH");
-            }
-            if (assignmentRepository.existsByMemberIdAndTeamIdAndActifTrue(request.memberId(), request.teamId())) {
-                throw new com.discipolat.common.domain.BusinessRuleException(
-                        soul.getNomComplet() + " est déjà affecté à cette équipe", "ALREADY_ASSIGNED");
             }
         }
         if (request.positionId() != null) findPosition(departmentId, request.positionId());
@@ -555,18 +564,22 @@ public class DepartmentManagementService {
         long enRetard = all.stream().filter(DepartmentTask::isOverdue).count();
 
         // Charge de travail par membre (tâches ouvertes)
-        List<Map<String, Object>> charge = all.stream()
+        Map<UUID, Long> openByMember = all.stream()
                 .filter(DepartmentTask::isOpen)
                 .filter(t -> t.getAssignedTo() != null)
-                .collect(Collectors.groupingBy(DepartmentTask::getAssignedTo, Collectors.counting()))
-                .entrySet().stream()
+                .collect(Collectors.groupingBy(DepartmentTask::getAssignedTo, Collectors.counting()));
+        Map<UUID, Long> overdueByMember = all.stream()
+                .filter(DepartmentTask::isOverdue)
+                .filter(t -> t.getAssignedTo() != null)
+                .collect(Collectors.groupingBy(DepartmentTask::getAssignedTo, Collectors.counting()));
+        Map<UUID, String> memberNames = soulNames(openByMember.keySet().stream().toList());
+        List<Map<String, Object>> charge = openByMember.entrySet().stream()
                 .map(e -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("memberId", e.getKey());
-                    m.put("memberNom", soulName(e.getKey()));
+                    m.put("memberNom", memberNames.get(e.getKey()));
                     m.put("tachesOuvertes", e.getValue());
-                    m.put("enRetard", all.stream()
-                            .filter(t -> t.isOverdue() && e.getKey().equals(t.getAssignedTo())).count());
+                    m.put("enRetard", overdueByMember.getOrDefault(e.getKey(), 0L));
                     return m;
                 })
                 .sorted((a, b) -> Long.compare((long) b.get("tachesOuvertes"), (long) a.get("tachesOuvertes")))
@@ -634,6 +647,7 @@ public class DepartmentManagementService {
         task.setTitre(request.titre().trim());
         task.setDescription(request.description());
         task.setTeamId(request.teamId());
+        UUID previousAssignee = task.getAssignedTo();
         task.setAssignedTo(request.assignedTo());
         if (request.priorite() != null) task.setPriorite(request.priorite());
         if (request.statut() != null) task.setStatut(request.statut());
@@ -643,7 +657,10 @@ public class DepartmentManagementService {
         task = taskRepository.save(task);
         record(departmentId, "TASK_UPDATED", "TASK", taskId,
                 "Tâche « " + task.getTitre() + " » mise à jour (statut : " + task.getStatut().name() + ")");
-        notifyAssignee(task);
+        // Notification uniquement lors d'une (ré)assignation effective — pas à chaque mise à jour.
+        if (request.assignedTo() != null && !request.assignedTo().equals(previousAssignee)) {
+            notifyAssignee(task);
+        }
         return toTaskMap(task);
     }
 
@@ -734,14 +751,14 @@ public class DepartmentManagementService {
         assertCanManage(departmentId);
         List<UUID> existing = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
                 .map(SoulDepartment::getSoulId).toList();
-        List<Soul> all = securityUtils.isSuperUser()
-                ? soulRepository.findAll()
-                : soulRepository.findAllById(accessibleSoulIds());
         String q = query == null ? "" : query.trim().toLowerCase();
-        return all.stream()
-                .filter(s -> !s.isDeleted())
+        // Recherche en base (LIKE) : évite de charger toute la table puis filtrer en mémoire.
+        // 30 résultats pour compenser l'exclusion des membres déjà rattachés (fenêtre de 20).
+        Page<Soul> page = securityUtils.isSuperUser()
+                ? soulRepository.search(q, PageRequest.of(0, 30))
+                : soulRepository.searchIn(accessibleSoulIds(), q, PageRequest.of(0, 30));
+        return page.getContent().stream()
                 .filter(s -> !existing.contains(s.getId()))
-                .filter(s -> q.isEmpty() || matches(s, q))
                 .limit(20)
                 .map(s -> {
                     Map<String, Object> m = new LinkedHashMap<>();
@@ -777,13 +794,6 @@ public class DepartmentManagementService {
         return List.of();
     }
 
-    private boolean matches(Soul s, String q) {
-        return (s.getNom() != null && s.getNom().toLowerCase().contains(q))
-                || (s.getPrenom() != null && s.getPrenom().toLowerCase().contains(q))
-                || (s.getEmail() != null && s.getEmail().toLowerCase().contains(q))
-                || (s.getTelephone() != null && s.getTelephone().contains(q));
-    }
-
     /**
      * Ajoute une personne déjà inscrite au département. Crée le lien
      * soul_departments (traçabilité : qui, quand, depuis quel rôle),
@@ -806,7 +816,7 @@ public class DepartmentManagementService {
         String role = securityUtils.getCurrentUserRole();
         record(departmentId, "MEMBER_ADDED", "SOUL", memberId,
                 soul.getNomComplet() + " ajouté au département depuis le rôle " + role);
-        notifyDepartmentResponsables(departmentId, soul,
+        notifyDepartmentResponsables(departmentId, soul, TypeNotification.MEMBRE_AJOUTE,
                 "Nouveau membre dans votre département",
                 soul.getNomComplet() + " a été ajouté au département.");
         notifyMemberAddedToUser(departmentId, soul, "ajouté");
@@ -847,7 +857,7 @@ public class DepartmentManagementService {
                 .build());
         record(departmentId, "MEMBER_CREATED", "SOUL", soul.getId(),
                 "Membre « " + soul.getNomComplet() + " » créé et ajouté au département");
-        notifyDepartmentResponsables(departmentId, soul,
+        notifyDepartmentResponsables(departmentId, soul, TypeNotification.MEMBRE_AJOUTE,
                 "Nouveau membre dans votre département",
                 soul.getNomComplet() + " a été créé et ajouté au département.");
         notifyMemberAddedToUser(departmentId, soul, "ajouté");
@@ -874,7 +884,7 @@ public class DepartmentManagementService {
         }
         record(departmentId, "MEMBER_REMOVED", "SOUL", memberId,
                 soul.getNomComplet() + " retiré du département");
-        notifyDepartmentResponsables(departmentId, soul,
+        notifyDepartmentResponsables(departmentId, soul, TypeNotification.MEMBRE_RETIRE,
                 "Membre retiré du département",
                 soul.getNomComplet() + " a été retiré du département.");
     }
@@ -910,14 +920,15 @@ public class DepartmentManagementService {
                 departmentId, "DEPARTMENT");
     }
 
-    /** Notifie les responsables du département (ajout par pasteur/administrateur). */
-    private void notifyDepartmentResponsables(UUID departmentId, Soul soul, String titre, String message) {
+    /** Notifie les responsables du département (ajout/retrait par pasteur/administrateur). */
+    private void notifyDepartmentResponsables(UUID departmentId, Soul soul, TypeNotification type,
+                                              String titre, String message) {
         UUID responsableId = departmentService.findById(departmentId).getResponsableId();
         if (responsableId == null) return;
         UUID actorId = securityUtils.getCurrentUserId();
         if (responsableId.equals(actorId)) return;
         notificationService.create(
-                responsableId, TypeNotification.MEMBRE_AJOUTE, CanalNotification.IN_APP,
+                responsableId, type, CanalNotification.IN_APP,
                 titre,
                 message + " Responsable : vous pouvez consulter le profil et compléter ses informations.",
                 soul.getId(), "SOUL");
@@ -974,8 +985,9 @@ public class DepartmentManagementService {
 
         long actives = teamRepository.countByDepartmentIdAndStatut(departmentId, DepartmentTeam.TeamStatus.ACTIVE);
         long positions = positionRepository.countByDepartmentIdAndStatut(departmentId, DepartmentPosition.PositionStatus.ACTIVE);
-        long affectations = assignmentRepository.findByDepartmentIdAndActifTrue(departmentId).size();
-        long membresAffectes = assignmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
+        List<DepartmentAssignment> activeAssignments = assignmentRepository.findByDepartmentIdAndActifTrue(departmentId);
+        long affectations = activeAssignments.size();
+        long membresAffectes = activeAssignments.stream()
                 .map(DepartmentAssignment::getMemberId).distinct().count();
 
         Map<String, Object> org = new LinkedHashMap<>();
@@ -1001,8 +1013,7 @@ public class DepartmentManagementService {
     private void assertMemberBelongsToDepartment(UUID departmentId, UUID memberId, Soul soul) {
         if (securityUtils.isSuperUser()) return;
         if (soulDepartmentRepository.existsBySoulIdAndDepartmentIdAndActifTrue(memberId, departmentId)) return;
-        List<SoulDepartment> deptMembers = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId);
-        if (deptMembers.isEmpty()) return; // département vide : constitution libre
+        if (soulDepartmentRepository.countByDepartmentIdAndActifTrue(departmentId) == 0) return; // département vide : constitution libre
         throw new com.discipolat.common.domain.BusinessRuleException(
                 soul.getNomComplet() + " ne fait pas partie de ce département — affectation refusée",
                 "MEMBER_NOT_IN_DEPARTMENT");
@@ -1011,12 +1022,5 @@ public class DepartmentManagementService {
     private String soulName(UUID soulId) {
         if (soulId == null) return null;
         return soulRepository.findById(soulId).map(Soul::getNomComplet).orElse(null);
-    }
-
-    private String userName(UUID userId) {
-        if (userId == null) return null;
-        return userRepository.findById(userId)
-                .map(u -> u.getFirstName() + " " + u.getLastName())
-                .orElse(null);
     }
 }
