@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { Plus, Pencil, Trash2, Loader2, Save, GripVertical } from 'lucide-react';
 import type { CustomFieldDefinition } from '@/types';
+import { useDictionaries } from '@/hooks/useDictionaries';
 
 const ENTITY_TYPES = ['SOUL', 'USER', 'DEPARTMENT', 'FAMILY'];
 const FIELD_TYPES = ['TEXTE', 'NOMBRE', 'DATE', 'DATE_HEURE', 'BOOLEEN', 'SELECTION', 'SELECTION_MULTIPLE', 'FICHIER', 'IMAGE', 'TELEPHONE', 'EMAIL', 'URL', 'TEXTAREA'];
@@ -30,6 +31,7 @@ const EMPTY_FORM: DefForm = {
 
 export default function AdminCustomFieldsPage() {
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
   const [entityType, setEntityType] = useState('SOUL');
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -123,7 +125,7 @@ export default function AdminCustomFieldsPage() {
               <div className="text-xs text-gray-400 font-mono mt-0.5">{def.code} · {def.entiteType}</div>
               {def.rolesLecture.length > 0 && (
                 <div className="flex items-center gap-1 mt-1 flex-wrap">
-                  {def.rolesLecture.map((r) => <span key={r} className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border border-primary-200/50 dark:border-primary-700/30">{r}</span>)}
+                  {def.rolesLecture.map((r) => <span key={r} className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border border-primary-200/50 dark:border-primary-700/30">{dictionaries.label('USER_ROLE', r) || r}</span>)}
                 </div>
               )}
             </div>
@@ -193,7 +195,7 @@ export default function AdminCustomFieldsPage() {
                   {ROLES.map((r) => (
                     <button key={r} onClick={() => setForm({ ...form, rolesLecture: form.rolesLecture.includes(r) ? form.rolesLecture.filter((x) => x !== r) : [...form.rolesLecture, r] })}
                       className={`px-2 py-0.5 rounded text-xs font-medium border ${form.rolesLecture.includes(r) ? 'bg-primary-500/15 border-primary-500/30 text-primary-700' : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}>
-                      {r}
+                      {dictionaries.label('USER_ROLE', r) || r}
                     </button>
                   ))}
                 </div>
@@ -204,7 +206,7 @@ export default function AdminCustomFieldsPage() {
                   {ROLES.map((r) => (
                     <button key={r} onClick={() => setForm({ ...form, rolesEcriture: form.rolesEcriture.includes(r) ? form.rolesEcriture.filter((x) => x !== r) : [...form.rolesEcriture, r] })}
                       className={`px-2 py-0.5 rounded text-xs font-medium border ${form.rolesEcriture.includes(r) ? 'bg-primary-500/15 border-primary-500/30 text-primary-700' : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}>
-                      {r}
+                      {dictionaries.label('USER_ROLE', r) || r}
                     </button>
                   ))}
                 </div>

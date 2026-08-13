@@ -21,6 +21,7 @@ import BetaBadge from '@/components/beta/BetaBadge';
 import { useTheme } from '@/hooks/useTheme';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Notification } from '@/types';
 
 interface NavbarProps {
@@ -31,6 +32,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   const navigate = useNavigate();
   const { darkMode, toggleTheme } = useTheme();
   const { user, logout, switchRole, roles, activeRole } = useAuth();
+  const dictionaries = useDictionaries();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -244,7 +246,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                   <div className="mt-2 flex items-center gap-1.5">
                     <ShieldCheck className="w-3 h-3 text-primary-400" />
                     <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${roleColor(activeRole || user?.role || '')}`}>
-                      {roleLabels[activeRole || user?.role || ''] || activeRole || user?.role}
+                      {dictionaries.label('USER_ROLE', activeRole || user?.role)
+                        || roleLabels[activeRole || user?.role || '']
+                        || activeRole || user?.role}
                     </span>
                   </div>
                 </div>
@@ -296,7 +300,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                                 }`}
                             >
                               <span className={`w-2 h-2 rounded-full ${r === (activeRole || user?.role) ? 'bg-primary-400' : 'bg-gray-500'}`} />
-                              <span className="flex-1 text-left">{roleLabels[r] || r}</span>
+                              <span className="flex-1 text-left">{dictionaries.label('USER_ROLE', r) || roleLabels[r] || r}</span>
                               {r === (activeRole || user?.role) && (
                                 <span className="text-[9px] text-primary-400 font-semibold">ACTIF</span>
                               )}

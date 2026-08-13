@@ -424,6 +424,34 @@ public class DictionaryService {
                 row("IN_APP", "Dans l'application", "#3b82f6"),
                 row("EMAIL", "E-mail", "#8b5cf6"),
                 row("PUSH", "Notification push", "#06b6d4")));
+        map.put("DISCIPLINE_TYPE", rows(
+                row("REPROCHE", "Reproche", "#f59e0b"),
+                row("SANCTION", "Sanction", "#ef4444"),
+                row("LITIGE", "Litige", "#f59e0b"),
+                row("CONFLIT", "Conflit", "#ef4444"),
+                row("SCANDALE", "Scandale", "#ef4444"),
+                row("OBSERVATION", "Observation", "#3b82f6"),
+                row("TEMOIGNAGE", "Témoignage", "#22c55e"),
+                row("ENTRETIEN", "Entretien pastoral", "#06b6d4"),
+                row("RESOLUTION", "Résolution", "#22c55e"),
+                row("AUTRE", "Autre", "#6b7280")));
+        map.put("DISCIPLINE_GRAVITE", rows(
+                row("FAIBLE", "Faible", "#22c55e"),
+                row("MOYENNE", "Moyenne", "#f59e0b"),
+                row("GRAVE", "Grave", "#f97316"),
+                row("CRITIQUE", "Critique", "#ef4444")));
+        map.put("FEEDBACK_PRIORITE", rows(
+                row("BASSE", "Basse", "#94a3b8"),
+                row("MOYENNE", "Moyenne", "#3b82f6"),
+                row("HAUTE", "Haute", "#f59e0b"),
+                row("CRITIQUE", "Critique", "#ef4444")));
+        map.put("INTERACTION_CANAL", rows(
+                row("TELEPHONE", "Téléphone", "#3b82f6"),
+                row("WHATSAPP", "WhatsApp", "#22c55e"),
+                row("SMS", "SMS", "#06b6d4"),
+                row("EMAIL", "E-mail", "#a855f7"),
+                row("VIDEO", "Visioconférence", "#f59e0b"),
+                row("PRESENTIEL", "En présentiel", "#22c55e")));
         return map;
     }
 

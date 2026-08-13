@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { Menu, Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Save } from 'lucide-react';
 import type { MenuEntry, PlatformModule } from '@/types';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import { MENU_ICON_KEYS, resolveIcon } from '@/lib/menuIcons';
 
 const ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
@@ -25,6 +26,7 @@ const EMPTY_FORM: MenuForm = { key: '', label: '', href: '/', icon: 'Menu', sect
 
 export default function PlatformMenusPage() {
   const queryClient = useQueryClient();
+  const dictionaries = useDictionaries();
   const { refetch } = usePlatformConfig();
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<MenuForm | null>(null);
@@ -178,7 +180,7 @@ export default function PlatformMenusPage() {
                         {m.moduleKey && <span className="badge badge-info text-[10px]">{m.moduleKey}</span>}
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                        {m.roles.map((r) => <span key={r} className="px-1.5 py-0.5 text-[10px] font-medium rounded-full border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30">{r}</span>)}
+                        {m.roles.map((r) => <span key={r} className="px-1.5 py-0.5 text-[10px] font-medium rounded-full border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30">{dictionaries.label('USER_ROLE', r) || r}</span>)}
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -263,7 +265,7 @@ export default function PlatformMenusPage() {
                       onClick={() => setForm({ ...form, roles: form.roles.includes(r) ? form.roles.filter((x) => x !== r) : [...form.roles, r] })}
                       className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${form.roles.includes(r) ? 'bg-primary-500/15 border-primary-500/30 text-primary-700 dark:text-primary-400' : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'}`}
                     >
-                      {r}
+                      {dictionaries.label('USER_ROLE', r) || r}
                     </button>
                   ))}
                 </div>

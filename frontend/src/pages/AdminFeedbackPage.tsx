@@ -36,6 +36,13 @@ const STATUS_STYLES: Record<FeedbackStatus, string> = {
   REJETE: 'bg-gray-500/10 border-gray-500/20 text-gray-400',
 };
 
+/** Replis (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const PRIORITY_FALLBACK: Record<string, string> = {
+  BASSE: 'Basse',
+  MOYENNE: 'Moyenne',
+  HAUTE: 'Haute',
+  CRITIQUE: 'Critique',
+};
 const PRIORITY_STYLES: Record<string, string> = {
   BASSE: 'text-gray-400',
   MOYENNE: 'text-sky-400',
@@ -220,8 +227,13 @@ export default function AdminFeedbackPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{f.subject}</p>
-                        <span className={`text-[10px] font-bold uppercase ${PRIORITY_STYLES[f.priority] || ''}`}>
-                          {f.priority}
+                        <span
+                          className={`text-[10px] font-bold uppercase ${dictionaries.color('FEEDBACK_PRIORITE', f.priority) ? '' : (PRIORITY_STYLES[f.priority] || '')}`}
+                          style={dictionaries.color('FEEDBACK_PRIORITE', f.priority)
+                            ? { color: dictionaries.color('FEEDBACK_PRIORITE', f.priority) }
+                            : undefined}
+                        >
+                          {dictionaries.label('FEEDBACK_PRIORITE', f.priority) || PRIORITY_FALLBACK[f.priority] || f.priority}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">

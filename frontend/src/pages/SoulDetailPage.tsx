@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
@@ -169,19 +169,44 @@ export default function SoulDetailPage() {
   const disciplineLabel = (code: string) =>
     dictionaries.label('DISCIPLINE_CATEGORIE', code) || CATEGORIE_DISCIPLINE_FALLBACK[code] || code;
 
-  const TYPE_EVENEMENT_LABELS: Record<string, string> = {
+  /** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+  const TYPE_EVENEMENT_FALLBACK: Record<string, string> = {
     REPROCHE: 'Reproche', SANCTION: 'Sanction', LITIGE: 'Litige',
     CONFLIT: 'Conflit', SCANDALE: 'Scandale', OBSERVATION: 'Observation',
     TEMOIGNAGE: 'Témoignage', ENTRETIEN: 'Entretien pastoral',
     RESOLUTION: 'Résolution', AUTRE: 'Autre',
   };
+  const disciplineTypeOptions = useMemo(() => {
+    const configured = dictionaries.options('DISCIPLINE_TYPE');
+    return configured.length > 0
+      ? configured.map((e) => ({ value: e.code, label: e.label }))
+      : Object.entries(TYPE_EVENEMENT_FALLBACK).map(([value, label]) => ({ value, label }));
+  }, [dictionaries]);
+  const disciplineTypeLabel = (code: string) =>
+    dictionaries.label('DISCIPLINE_TYPE', code) || TYPE_EVENEMENT_FALLBACK[code] || code;
 
-  const GRAVITE_COLORS: Record<string, string> = {
-    FAIBLE: 'bg-green-100 text-green-700',
-    MOYENNE: 'bg-amber-100 text-amber-700',
-    GRAVE: 'bg-orange-100 text-orange-700',
-    CRITIQUE: 'bg-red-100 text-red-700',
+  /** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+  const GRAVITE_FALLBACK: Record<string, string> = {
+    FAIBLE: 'Faible', MOYENNE: 'Moyenne', GRAVE: 'Grave', CRITIQUE: 'Critique',
   };
+  const graviteOptions = useMemo(() => {
+    const configured = dictionaries.selectOptions('DISCIPLINE_GRAVITE');
+    return configured.length > 0 ? configured : Object.entries(GRAVITE_FALLBACK).map(([value, label]) => ({ value, label }));
+  }, [dictionaries]);
+  const graviteLabel = (code?: string) =>
+    (code && dictionaries.label('DISCIPLINE_GRAVITE', code)) || (code ? GRAVITE_FALLBACK[code] : '') || code || '';
+  const graviteColor = (code?: string) =>
+    code ? dictionaries.color('DISCIPLINE_GRAVITE', code) : undefined;
+
+  /** Canaux d'interaction configurables (dictionnaire INTERACTION_CANAL). */
+  const interactionCanalOptions = useMemo(() => {
+    const configured = dictionaries.selectOptions('INTERACTION_CANAL');
+    return configured.length > 0 ? configured : [
+      { value: 'TELEPHONE', label: 'Téléphone' }, { value: 'WHATSAPP', label: 'WhatsApp' },
+      { value: 'SMS', label: 'SMS' }, { value: 'EMAIL', label: 'E-mail' },
+      { value: 'VIDEO', label: 'Visioconférence' }, { value: 'PRESENTIEL', label: 'En présentiel' },
+    ];
+  }, [dictionaries]);
 
   // Fetch evaluation scores for the faiseur
   const faiseurIds = soul?.faiseurId ? soul.faiseurId : '';
@@ -211,6 +236,20 @@ export default function SoulDetailPage() {
   const [interactionForm, setInteractionForm] = useState<{
     type: string; canal?: string; objet: string; contenu: string;
   }>({ type: 'APPEL', canal: undefined, objet: '', contenu: '' });
+
+  // Si l'admin a désactivé la valeur par défaut, bascule sur la première option disponible.
+  useEffect(() => {
+    if (disciplineTypeOptions.length > 0 && !disciplineTypeOptions.some((o) => o.value === disciplineForm.typeEvenement)) {
+      setDisciplineForm((f) => ({ ...f, typeEvenement: disciplineTypeOptions[0].value }));
+    }
+    if (graviteOptions.length > 0 && !graviteOptions.some((o) => o.value === disciplineForm.gravite)) {
+      setDisciplineForm((f) => ({ ...f, gravite: graviteOptions[0].value }));
+    }
+    if (interactionTypeEntries.length > 0 && !interactionTypeEntries.some((o) => o.code === interactionForm.type)) {
+      setInteractionForm((f) => ({ ...f, type: interactionTypeEntries[0].code }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disciplineTypeOptions, graviteOptions, interactionTypeEntries]);
 
   const { data: interactions = [] } = useQuery({
     queryKey: ['soul', id, 'interactions'],
@@ -705,8 +744,8 @@ export default function SoulDetailPage() {
                       <label className="label">Type *</label>
                       <select className="input" value={disciplineForm.typeEvenement}
                         onChange={(e) => setDisciplineForm({ ...disciplineForm, typeEvenement: e.target.value })}>
-                        {Object.keys(TYPE_EVENEMENT_LABELS).map(k => (
-                          <option key={k} value={k}>{TYPE_EVENEMENT_LABELS[k]}</option>
+                        {disciplineTypeOptions.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
                         ))}
                       </select>
                     </div>
@@ -726,10 +765,9 @@ export default function SoulDetailPage() {
                       <label className="label">Gravité</label>
                       <select className="input" value={disciplineForm.gravite}
                         onChange={(e) => setDisciplineForm({ ...disciplineForm, gravite: e.target.value })}>
-                        <option value="FAIBLE">Faible</option>
-                        <option value="MOYENNE">Moyenne</option>
-                        <option value="GRAVE">Grave</option>
-                        <option value="CRITIQUE">Critique</option>
+                        {graviteOptions.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -765,8 +803,11 @@ export default function SoulDetailPage() {
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{d.titre}</span>
                             {d.gravite && (
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${GRAVITE_COLORS[d.gravite] || 'bg-gray-100 text-gray-600'}`}>
-                                {d.gravite}
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                                style={graviteColor(d.gravite) ? { backgroundColor: `${graviteColor(d.gravite)}22`, color: graviteColor(d.gravite) } : undefined}
+                              >
+                                {graviteLabel(d.gravite)}
                               </span>
                             )}
                           </div>
@@ -836,8 +877,8 @@ export default function SoulDetailPage() {
                     <select className="input" value={interactionForm.canal || ''}
                       onChange={(e) => setInteractionForm({ ...interactionForm, canal: e.target.value || undefined })}>
                       <option value="">—</option>
-                      {['TELEPHONE', 'WHATSAPP', 'SMS', 'EMAIL', 'VIDEO', 'PRESENTIEL'].map((c) => (
-                        <option key={c} value={c}>{c}</option>
+                      {interactionCanalOptions.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
                   </div>

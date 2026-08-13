@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import { usePlatformMeta } from '@/contexts/MetaContext';
-import { MessageSquareText, X, Loader2, Send, Bug, Lightbulb } from 'lucide-react';
+import { MessageSquareText, X, Loader2, Send } from 'lucide-react';
 import type { CreateFeedbackRequest, FeedbackCategory, FeedbackPriority } from '@/types';
 
 /**
@@ -16,18 +17,19 @@ import type { CreateFeedbackRequest, FeedbackCategory, FeedbackPriority } from '
  * Aucune donnée personnelle au-delà du compte connecté.
  */
 
-const CATEGORIES: { value: FeedbackCategory; label: string; icon: React.ElementType }[] = [
-  { value: 'BUG', label: 'Bug / problème technique', icon: Bug },
-  { value: 'UX', label: 'Problème d\'utilisation (UX)', icon: MessageSquareText },
-  { value: 'SUGGESTION', label: 'Suggestion d\'amélioration', icon: Lightbulb },
-  { value: 'FONCTIONNALITE_MANQUANTE', label: 'Fonctionnalité manquante', icon: Lightbulb },
-  { value: 'PERFORMANCE', label: 'Problème de performance', icon: MessageSquareText },
-  { value: 'TRADUCTION', label: 'Problème de traduction', icon: MessageSquareText },
-  { value: 'AFFICHAGE', label: 'Problème d\'affichage', icon: MessageSquareText },
-  { value: 'AUTRE', label: 'Autre', icon: MessageSquareText },
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const CATEGORY_FALLBACK: { value: FeedbackCategory; label: string }[] = [
+  { value: 'BUG', label: 'Bug / problème technique' },
+  { value: 'UX', label: 'Problème d\'utilisation (UX)' },
+  { value: 'SUGGESTION', label: 'Suggestion d\'amélioration' },
+  { value: 'FONCTIONNALITE_MANQUANTE', label: 'Fonctionnalité manquante' },
+  { value: 'PERFORMANCE', label: 'Problème de performance' },
+  { value: 'TRADUCTION', label: 'Problème de traduction' },
+  { value: 'AFFICHAGE', label: 'Problème d\'affichage' },
+  { value: 'AUTRE', label: 'Autre' },
 ];
 
-const PRIORITIES: { value: FeedbackPriority; label: string }[] = [
+const PRIORITY_FALLBACK: { value: FeedbackPriority; label: string }[] = [
   { value: 'BASSE', label: 'Basse' },
   { value: 'MOYENNE', label: 'Moyenne' },
   { value: 'HAUTE', label: 'Haute' },
@@ -60,6 +62,23 @@ function detectDevice(ua: string): string {
 export default function FeedbackWidget() {
   const { user, isAuthenticated } = useAuth();
   const { meta } = usePlatformMeta();
+  const dictionaries = useDictionaries();
+
+  /** Catégories configurables (dictionnaire FEEDBACK_CATEGORIE) — repli sinon. */
+  const categories = useMemo(() => {
+    const configured = dictionaries.selectOptions('FEEDBACK_CATEGORIE');
+    return configured.length > 0
+      ? configured.map((o) => ({ value: o.value as FeedbackCategory, label: o.label }))
+      : CATEGORY_FALLBACK;
+  }, [dictionaries]);
+
+  /** Priorités configurables (dictionnaire FEEDBACK_PRIORITE) — repli sinon. */
+  const priorities = useMemo(() => {
+    const configured = dictionaries.selectOptions('FEEDBACK_PRIORITE');
+    return configured.length > 0
+      ? configured.map((o) => ({ value: o.value as FeedbackPriority, label: o.label }))
+      : PRIORITY_FALLBACK;
+  }, [dictionaries]);
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<FeedbackCategory>('BUG');
   const [priority, setPriority] = useState<FeedbackPriority>('MOYENNE');
@@ -173,7 +192,7 @@ export default function FeedbackWidget() {
                     onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
                     className="input"
                   >
-                    {CATEGORIES.map((c) => (
+                    {categories.map((c) => (
                       <option key={c.value} value={c.value}>{c.label}</option>
                     ))}
                   </select>
@@ -185,7 +204,7 @@ export default function FeedbackWidget() {
                     onChange={(e) => setPriority(e.target.value as FeedbackPriority)}
                     className="input"
                   >
-                    {PRIORITIES.map((p) => (
+                    {priorities.map((p) => (
                       <option key={p.value} value={p.value}>{p.label}</option>
                     ))}
                   </select>

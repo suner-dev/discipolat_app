@@ -181,11 +181,9 @@ const CATEGORIE_DISCIPLINE_FALLBACK: Record<string, string> = {
   AUTRE: 'Autre',
 };
 
-const GRAVITE_COLORS: Record<string, string> = {
-  FAIBLE: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-  MOYENNE: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-  GRAVE: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-  CRITIQUE: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+/** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
+const GRAVITE_FALLBACK: Record<string, string> = {
+  FAIBLE: 'Faible', MOYENNE: 'Moyenne', GRAVE: 'Grave', CRITIQUE: 'Critique',
 };
 
 // ======================== Main Component ========================
@@ -902,8 +900,13 @@ function CompleteMemberProfile({
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{d.titre}</span>
                       {d.gravite && (
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${GRAVITE_COLORS[d.gravite] || 'bg-gray-100 text-gray-600'}`}>
-                          {d.gravite}
+                        <span
+                          className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                          style={dictionaries.color('DISCIPLINE_GRAVITE', d.gravite)
+                            ? { backgroundColor: `${dictionaries.color('DISCIPLINE_GRAVITE', d.gravite)}22`, color: dictionaries.color('DISCIPLINE_GRAVITE', d.gravite) }
+                            : undefined}
+                        >
+                          {dictionaries.label('DISCIPLINE_GRAVITE', d.gravite) || GRAVITE_FALLBACK[d.gravite] || d.gravite}
                         </span>
                       )}
                     </div>

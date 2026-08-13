@@ -52,6 +52,10 @@ const DICT_LABELS: Record<string, string> = {
   ALERT_STATUS: 'Statuts d\'alertes',
   NOTIFICATION_TYPE: 'Types de notifications',
   NOTIFICATION_CANAL: 'Canaux de notification',
+  DISCIPLINE_TYPE: 'Types d\'événements disciplinaires',
+  DISCIPLINE_GRAVITE: 'Gravité disciplinaire',
+  FEEDBACK_PRIORITE: 'Priorités de feedback',
+  INTERACTION_CANAL: 'Canaux d\'interaction CRM',
 };
 
 interface EntryForm {

@@ -80,6 +80,8 @@ const toDraft = (c: WorkflowConfig): ConfigDraft => ({
 });
 
 function RolePicker({ value, onChange }: { value: UserRole[]; onChange: (v: UserRole[]) => void }) {
+  // Libellés des rôles configurables (dictionnaire USER_ROLE) — les codes restent les clés système.
+  const dictionaries = useDictionaries();
   return (
     <div className="flex flex-wrap gap-1.5">
       {ROLES.map(r => (
@@ -93,7 +95,7 @@ function RolePicker({ value, onChange }: { value: UserRole[]; onChange: (v: User
               : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:border-gray-300'
           }`}
         >
-          {r}
+          {dictionaries.label('USER_ROLE', r) || r}
         </button>
       ))}
     </div>

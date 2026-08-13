@@ -15,6 +15,7 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type {
   Objective,
   ObjectiveProgress,
@@ -43,8 +44,12 @@ const ROLES: UserRole[] = ['FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE', 'PASTEUR
 
 export default function ObjectivesPage() {
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const isAdmin = !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR'));
   const queryClient = useQueryClient();
+
+  /** Libellé d'un rôle (dictionnaire USER_ROLE, repli sur le code). */
+  const roleLabel = (r: string) => dictionaries.label('USER_ROLE', r) || r.replace(/_/g, ' ');
 
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState<CreateObjectiveRequest>({
@@ -124,7 +129,7 @@ export default function ObjectivesPage() {
                 onChange={e => setForm({ ...form, role: e.target.value as UserRole })}
                 className="input w-full"
               >
-                {ROLES.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}
+                {ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
               </select>
             </div>
             <div>
@@ -239,7 +244,7 @@ export default function ObjectivesPage() {
                     {TYPE_META[o.type].label}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {o.role.replace(/_/g, ' ')} · {PERIODE_LABEL[o.periode]} · cible {o.cible}
+                    {roleLabel(o.role)} · {PERIODE_LABEL[o.periode]} · cible {o.cible}
                   </p>
                 </div>
               </div>
