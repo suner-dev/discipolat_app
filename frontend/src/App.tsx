@@ -27,6 +27,7 @@ const FamiliesPage = lazy(() => import('@/pages/FamiliesPage'));
 const FamilyDetailPage = lazy(() => import('@/pages/FamilyDetailPage'));
 const DepartmentsPage = lazy(() => import('@/pages/DepartmentsPage'));
 const DepartmentDetailPage = lazy(() => import('@/pages/DepartmentDetailPage'));
+const DepartmentManagementPage = lazy(() => import('@/pages/DepartmentManagementPage'));
 const DepartmentReportPage = lazy(() => import('@/pages/DepartmentReportPage'));
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
 const MakerReportPage = lazy(() => import('@/pages/MakerReportPage'));
@@ -253,6 +254,11 @@ export default function App() {
           <Route path="/departments/:id/report" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
               <DepartmentReportPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/departments/:id/manage" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <DepartmentManagementPage />
             </ProtectedRoute>
           } />
           <Route path="/reports" element={

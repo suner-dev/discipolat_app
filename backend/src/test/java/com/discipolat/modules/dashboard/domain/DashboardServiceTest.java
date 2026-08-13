@@ -56,6 +56,14 @@ class DashboardServiceTest {
     @Mock
     private com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScope;
     @Mock
+    private com.discipolat.modules.departments.domain.DepartmentTeamRepository departmentTeamRepository;
+    @Mock
+    private com.discipolat.modules.departments.domain.DepartmentPositionRepository departmentPositionRepository;
+    @Mock
+    private com.discipolat.modules.departments.domain.DepartmentAssignmentRepository departmentAssignmentRepository;
+    @Mock
+    private com.discipolat.modules.departments.domain.DepartmentTaskRepository departmentTaskRepository;
+    @Mock
     private SecurityUtils securityUtils;
 
     private DashboardService dashboardService;
@@ -69,6 +77,8 @@ class DashboardServiceTest {
                 alertRepository, soulNoteRepository,
                 parallelFollowupRepository, departmentRepository,
                 soulDepartmentRepository,
+                departmentTeamRepository, departmentPositionRepository,
+                departmentAssignmentRepository, departmentTaskRepository,
                 securityUtils, workspaceScope
         );
         userId = UUID.randomUUID();

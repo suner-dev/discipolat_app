@@ -131,10 +131,15 @@ export default function DepartmentDetailPage() {
           </div>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Rapport de département</span>
-          <Link to={`/departments/${id}/report`} className="btn-primary btn-sm mt-2 inline-flex">
-            <FileText className="w-4 h-4" /> Voir le rapport
-          </Link>
+          <span className="stat-label">Gestion & rapport</span>
+          <div className="flex items-center gap-2 mt-2">
+            <Link to={`/departments/${id}/manage`} className="btn-primary btn-sm inline-flex">
+              <Users className="w-4 h-4" /> Gérer
+            </Link>
+            <Link to={`/departments/${id}/report`} className="btn-ghost btn-sm inline-flex">
+              <FileText className="w-4 h-4" /> Rapport
+            </Link>
+          </div>
         </div>
       </div>
 

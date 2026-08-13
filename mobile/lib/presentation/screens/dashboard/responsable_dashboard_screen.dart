@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
@@ -170,6 +171,18 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                                   _statChip('Absents', '${dept['absents'] ?? 0}', Colors.orange),
                                   _statChip('Présence', '${dept['tauxPresence'] ?? 0}%', Colors.amber),
                                   _statChip('Rapports', '${dept['rapportsSoumis'] ?? 0}', Colors.purple),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: FilledButton.icon(
+                                      icon: const Icon(Icons.account_tree, size: 18),
+                                      label: const Text('Gestion du département'),
+                                      onPressed: () => context.go('/departments/$_selectedDeptId/manage'),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],

@@ -9,6 +9,10 @@ import com.discipolat.modules.alerts.domain.Alert;
 import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.authentication.domain.ActivationTokenRepository;
 import com.discipolat.modules.authentication.domain.PasswordResetTokenRepository;
+import com.discipolat.modules.departments.domain.Department;
+import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.departments.domain.DepartmentTask;
+import com.discipolat.modules.departments.domain.DepartmentTaskRepository;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
@@ -56,6 +60,8 @@ public class ScheduledJobs {
     private final AppointmentService appointmentService;
     private final TransferRequestRepository transferRequestRepository;
     private final NotificationRepository notificationRepository;
+    private final DepartmentTaskRepository departmentTaskRepository;
+    private final DepartmentRepository departmentRepository;
 
     public ScheduledJobs(SoulRepository soulRepository, AlertRepository alertRepository,
                         NotificationService notificationService, MakerReportRepository makerReportRepository,
@@ -66,7 +72,9 @@ public class ScheduledJobs {
                         WorkflowService workflowService,
                         AppointmentService appointmentService,
                         TransferRequestRepository transferRequestRepository,
-                        NotificationRepository notificationRepository) {
+                        NotificationRepository notificationRepository,
+                        DepartmentTaskRepository departmentTaskRepository,
+                        DepartmentRepository departmentRepository) {
         this.soulRepository = soulRepository;
         this.alertRepository = alertRepository;
         this.notificationService = notificationService;
@@ -80,6 +88,8 @@ public class ScheduledJobs {
         this.appointmentService = appointmentService;
         this.transferRequestRepository = transferRequestRepository;
         this.notificationRepository = notificationRepository;
+        this.departmentTaskRepository = departmentTaskRepository;
+        this.departmentRepository = departmentRepository;
     }
 
     /**
@@ -331,12 +341,67 @@ public class ScheduledJobs {
     }
 
     /**
-     * Calculate and cache dashboard metrics
+     * Calculates dashboard metrics
      */
     @Scheduled(cron = "${app.scheduler.dashboard-metrics-cron}")
     public void calculateDashboardMetrics() {
         log.info("Calculating dashboard metrics...");
         log.info("Dashboard metrics calculated successfully");
+    }
+
+    /**
+     * Alertes automatiques « tâche en retard » pour chaque département.
+     * Une fois par heure : les tâches ouvertes (à faire, en cours, bloquées)
+     * dont l'échéance est dépassée génèrent une alerte (department_id) et une
+     * notification au responsable du département. Déduplication : une
+     * notification par tâche et par responsable (one-shot).
+     */
+    @Scheduled(cron = "0 5 * * * *")
+    @Transactional
+    public void checkOverdueDepartmentTasks() {
+        log.info("Running overdue department task check...");
+        List<DepartmentTask> overdue = departmentTaskRepository
+                .findByStatutInAndEcheanceBefore(
+                        java.util.List.of(DepartmentTask.TaskStatus.A_FAIRE,
+                                DepartmentTask.TaskStatus.EN_COURS,
+                                DepartmentTask.TaskStatus.BLOQUEE),
+                        LocalDate.now());
+        if (overdue.isEmpty()) {
+            return;
+        }
+        int sent = 0;
+        for (DepartmentTask task : overdue) {
+            try {
+                Department department = departmentRepository.findById(task.getDepartmentId()).orElse(null);
+                if (department == null || department.isDeleted()) continue;
+                UUID responsableId = department.getResponsableId();
+                if (responsableId == null) continue;
+                if (notificationRepository.existsByDestinataireIdAndTypeAndEntiteReferenceIdAndEntiteReferenceType(
+                        responsableId, TypeNotification.TACHE_EN_RETARD, task.getId(), "TASK")) {
+                    continue;
+                }
+                alertRepository.save(Alert.builder()
+                        .ameId(task.getAssignedTo())
+                        .departmentId(task.getDepartmentId())
+                        .cible(task.getAssignedTo() != null ? "PERSONNE" : "DEPARTEMENT")
+                        .typeAlerte("TACHE_EN_RETARD")
+                        .message("Tâche en retard dans le département « " + department.getNom() + " » : "
+                                + task.getTitre() + " (échéance " + task.getEcheance() + ").")
+                        .dateDeclenchement(LocalDateTime.now())
+                        .statut(StatutAlerte.ACTIVE)
+                        .build());
+                notificationService.create(
+                        responsableId, TypeNotification.TACHE_EN_RETARD, CanalNotification.IN_APP,
+                        "⏰ Tâche en retard — " + department.getNom(),
+                        "La tâche « " + task.getTitre() + " » a dépassé son échéance ("
+                                + task.getEcheance() + ") et est toujours ouverte.",
+                        task.getId(), "TASK");
+                sent++;
+            } catch (Exception e) {
+                log.warn("Overdue task alert failed for task {}: {}", task.getId(), e.getMessage());
+            }
+        }
+        log.info("Overdue task check: {} overdue task(s), {} alert(s) sent", overdue.size(), sent);
     }
 
     /**

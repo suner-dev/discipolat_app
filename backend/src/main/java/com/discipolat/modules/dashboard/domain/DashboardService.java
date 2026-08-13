@@ -8,7 +8,15 @@ import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.departments.domain.Department;
+import com.discipolat.modules.departments.domain.DepartmentAssignment;
+import com.discipolat.modules.departments.domain.DepartmentAssignmentRepository;
+import com.discipolat.modules.departments.domain.DepartmentPosition;
+import com.discipolat.modules.departments.domain.DepartmentPositionRepository;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.departments.domain.DepartmentTask;
+import com.discipolat.modules.departments.domain.DepartmentTaskRepository;
+import com.discipolat.modules.departments.domain.DepartmentTeam;
+import com.discipolat.modules.departments.domain.DepartmentTeamRepository;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.parallelfollowups.domain.ParallelFollowupRepository;
 import com.discipolat.modules.reports.domain.FamilyReport;
@@ -53,6 +61,10 @@ public class DashboardService {
     private final ParallelFollowupRepository parallelFollowupRepository;
     private final DepartmentRepository departmentRepository;
     private final SoulDepartmentRepository soulDepartmentRepository;
+    private final DepartmentTeamRepository departmentTeamRepository;
+    private final DepartmentPositionRepository departmentPositionRepository;
+    private final DepartmentAssignmentRepository departmentAssignmentRepository;
+    private final DepartmentTaskRepository departmentTaskRepository;
     private final SecurityUtils securityUtils;
     private final WorkspaceScopeService workspaceScope;
 
@@ -63,6 +75,10 @@ public class DashboardService {
                            ParallelFollowupRepository parallelFollowupRepository,
                            DepartmentRepository departmentRepository,
                            SoulDepartmentRepository soulDepartmentRepository,
+                           DepartmentTeamRepository departmentTeamRepository,
+                           DepartmentPositionRepository departmentPositionRepository,
+                           DepartmentAssignmentRepository departmentAssignmentRepository,
+                           DepartmentTaskRepository departmentTaskRepository,
                            SecurityUtils securityUtils,
                            WorkspaceScopeService workspaceScope) {
         this.soulRepository = soulRepository;
@@ -75,6 +91,10 @@ public class DashboardService {
         this.parallelFollowupRepository = parallelFollowupRepository;
         this.departmentRepository = departmentRepository;
         this.soulDepartmentRepository = soulDepartmentRepository;
+        this.departmentTeamRepository = departmentTeamRepository;
+        this.departmentPositionRepository = departmentPositionRepository;
+        this.departmentAssignmentRepository = departmentAssignmentRepository;
+        this.departmentTaskRepository = departmentTaskRepository;
         this.securityUtils = securityUtils;
         this.workspaceScope = workspaceScope;
     }
@@ -770,6 +790,19 @@ public class DashboardService {
             rapportsAttendus += reports.size();
         }
 
+        // ==================== ORGANISATION & GESTION (Department Management) ====================
+        UUID deptId = selectedDept.getId();
+        long equipesActives = departmentTeamRepository.countByDepartmentIdAndStatut(deptId, DepartmentTeam.TeamStatus.ACTIVE);
+        long postesActifs = departmentPositionRepository.countByDepartmentIdAndStatut(deptId, DepartmentPosition.PositionStatus.ACTIVE);
+        List<DepartmentTask> deptTasks = departmentTaskRepository.findByDepartmentIdOrderByEcheanceAsc(deptId);
+        long tachesOuvertes = deptTasks.stream().filter(DepartmentTask::isOpen).count();
+        long tachesEnRetard = deptTasks.stream().filter(DepartmentTask::isOverdue).count();
+        long tachesTerminees = deptTasks.stream()
+                .filter(t -> t.getStatut() == DepartmentTask.TaskStatus.TERMINEE || t.getStatut() == DepartmentTask.TaskStatus.VALIDEE)
+                .count();
+        long membresAffectes = departmentAssignmentRepository.findByDepartmentIdAndActifTrue(deptId).stream()
+                .map(DepartmentAssignment::getMemberId).distinct().count();
+
         Map<String, Object> deptDetail = new LinkedHashMap<>();
         deptDetail.put("totalMembres", (long) allSouls.size());
         deptDetail.put("nouveauxMembres", nouveauxMembres);
@@ -784,6 +817,12 @@ public class DashboardService {
         deptDetail.put("rapportsAttendus", rapportsAttendus);
         deptDetail.put("anniversaires", anniversaires);
         deptDetail.put("membres", members);
+        deptDetail.put("equipesActives", equipesActives);
+        deptDetail.put("postesActifs", postesActifs);
+        deptDetail.put("tachesOuvertes", tachesOuvertes);
+        deptDetail.put("tachesEnRetard", tachesEnRetard);
+        deptDetail.put("tachesTerminees", tachesTerminees);
+        deptDetail.put("membresAffectes", membresAffectes);
         dashboard.put("departement", deptDetail);
 
         // ==================== STATISTIQUES GLOBALES ====================
@@ -795,6 +834,12 @@ public class DashboardService {
         stats.put("tauxPresence", tauxPresence);
         stats.put("rapportsSoumis", rapportsSoumis);
         stats.put("rapportsAttendus", rapportsAttendus);
+        stats.put("equipesActives", equipesActives);
+        stats.put("postesActifs", postesActifs);
+        stats.put("tachesOuvertes", tachesOuvertes);
+        stats.put("tachesEnRetard", tachesEnRetard);
+        stats.put("tachesTerminees", tachesTerminees);
+        stats.put("membresAffectes", membresAffectes);
         double tauxCompletion = rapportsAttendus > 0
                 ? Math.round((double) rapportsSoumis / rapportsAttendus * 1000.0) / 10.0
                 : 0.0;

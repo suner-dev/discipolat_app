@@ -4,8 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import {
   Building2, Users, UserPlus, Calendar, UserCheck, FileText, Activity,
-  Star, ChevronRight, Cake, CheckCircle, Clock, UserX,
-  Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2, UserRound,
+  Star, ChevronRight, Cake, CheckCircle, Clock, UserX, Network, AlertCircle,
+  Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2, UserRound, ListTodo,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -276,6 +276,28 @@ export default function ResponsableDashboardPage() {
               </div>
               <span className="stat-value text-pink-500">{anniversaires.length}</span>
               <span className="text-[10px] text-gray-400 mt-1 block">ce mois-ci</span>
+            </div>
+            <div className="stat-card animate-slide-up" style={{ animationDelay: '360ms' }}>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 opacity-60" />
+              <div className="flex items-start justify-between mb-3">
+                <span className="stat-label">Équipes</span>
+                <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg">
+                  <Network className="w-4 h-4" />
+                </div>
+              </div>
+              <span className="stat-value">{stats.equipesActives ?? 0}</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">actives · {stats.postesActifs ?? 0} postes</span>
+            </div>
+            <div className="stat-card animate-slide-up" style={{ animationDelay: '420ms' }}>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-rose-500 opacity-60" />
+              <div className="flex items-start justify-between mb-3">
+                <span className="stat-label">Tâches en retard</span>
+                <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-rose-500 text-white shadow-lg">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+              </div>
+              <span className="stat-value text-red-500">{stats.tachesEnRetard ?? 0}</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">{stats.tachesOuvertes ?? 0} ouvertes</span>
             </div>
           </div>
 
@@ -558,9 +580,13 @@ export default function ResponsableDashboardPage() {
               <Users className="w-5 h-5 text-amber-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Fiches membres</span>
             </Link>
-            <Link to={`/reports`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+            <Link to={`/departments/${dashboard?.selectedDeptId}/manage`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+              <Network className="w-5 h-5 text-orange-500 mx-auto mb-1" />
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Gestion & équipes</span>
+            </Link>
+            <Link to={`/departments/${dashboard?.selectedDeptId}/report`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <FileText className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Rapports</span>
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Rapport</span>
             </Link>
             <Link to={`/events`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <Calendar className="w-5 h-5 text-primary-500 mx-auto mb-1" />

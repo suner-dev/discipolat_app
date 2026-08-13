@@ -17,6 +17,8 @@ public interface SoulDepartmentRepository extends JpaRepository<SoulDepartment, 
 
     List<SoulDepartment> findByDepartmentId(UUID departmentId);
 
+    List<SoulDepartment> findBySoulIdAndDepartmentId(UUID soulId, UUID departmentId);
+
     List<SoulDepartment> findByDepartmentIdIn(List<UUID> departmentIds);
 
     long countByDepartmentIdAndActifTrue(UUID departmentId);

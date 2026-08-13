@@ -186,6 +186,13 @@ public class DepartmentService {
         return departmentRepository.findByResponsableId(responsableId);
     }
 
+    /** Ids des départements dont l'utilisateur courant est responsable. */
+    @Transactional(readOnly = true)
+    public List<UUID> findResponsableDepartments(UUID responsableId) {
+        return departmentRepository.findByResponsableId(responsableId)
+                .stream().map(Department::getId).toList();
+    }
+
     // ========================================================================
     // Scoping des données par département (deptId)
     // ========================================================================

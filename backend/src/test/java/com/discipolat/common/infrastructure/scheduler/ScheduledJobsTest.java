@@ -8,6 +8,10 @@ import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.appointments.domain.AppointmentService;
 import com.discipolat.modules.authentication.domain.ActivationTokenRepository;
 import com.discipolat.modules.authentication.domain.PasswordResetTokenRepository;
+import com.discipolat.modules.departments.domain.Department;
+import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.departments.domain.DepartmentTask;
+import com.discipolat.modules.departments.domain.DepartmentTaskRepository;
 import com.discipolat.modules.events.domain.EventRegistrationRepository;
 import com.discipolat.modules.events.domain.EventRepository;
 import com.discipolat.modules.notifications.domain.NotificationRepository;
@@ -27,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,6 +60,8 @@ class ScheduledJobsTest {
     @Mock private WorkflowService workflowService;
     @Mock private AppointmentService appointmentService;
     @Mock private TransferRequestRepository transferRequestRepository;
+    @Mock private DepartmentTaskRepository departmentTaskRepository;
+    @Mock private DepartmentRepository departmentRepository;
 
     private ScheduledJobs jobs;
 
@@ -65,7 +72,8 @@ class ScheduledJobsTest {
         jobs = new ScheduledJobs(soulRepository, alertRepository, notificationService,
                 makerReportRepository, userRepository, eventRepository, eventRegistrationRepository,
                 activationTokenRepository, passwordResetTokenRepository, workflowService,
-                appointmentService, transferRequestRepository, notificationRepository);
+                appointmentService, transferRequestRepository, notificationRepository,
+                departmentTaskRepository, departmentRepository);
     }
 
     private User pasteur() {
@@ -171,5 +179,39 @@ class ScheduledJobsTest {
 
         // 2 demandes × 2 pasteurs = 4 notifications
         verify(notificationService, times(4)).create(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void checkOverdueDepartmentTasks_NoResponsable_SkipsNotification() {
+        DepartmentTask task = DepartmentTask.builder().id(UUID.randomUUID())
+                .departmentId(UUID.randomUUID()).titre("Tâche en retard").build();
+        when(departmentTaskRepository.findByStatutInAndEcheanceBefore(any(), any()))
+                .thenReturn(List.of(task));
+        when(departmentRepository.findById(task.getDepartmentId())).thenReturn(Optional.empty());
+
+        jobs.checkOverdueDepartmentTasks();
+
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void checkOverdueDepartmentTasks_NotifiesResponsable() {
+        UUID responsableId = UUID.randomUUID();
+        DepartmentTask task = DepartmentTask.builder().id(UUID.randomUUID())
+                .departmentId(UUID.randomUUID()).titre("Tâche en retard").build();
+        Department dept = new Department();
+        dept.setResponsableId(responsableId);
+        when(departmentTaskRepository.findByStatutInAndEcheanceBefore(any(), any()))
+                .thenReturn(List.of(task));
+        when(departmentRepository.findById(task.getDepartmentId())).thenReturn(Optional.of(dept));
+        when(notificationRepository.existsByDestinataireIdAndTypeAndEntiteReferenceIdAndEntiteReferenceType(
+                responsableId, TypeNotification.TACHE_EN_RETARD, task.getId(), "TASK"))
+                .thenReturn(false);
+
+        jobs.checkOverdueDepartmentTasks();
+
+        verify(notificationService).create(
+                eq(responsableId), eq(TypeNotification.TACHE_EN_RETARD), eq(CanalNotification.IN_APP),
+                any(), any(), eq(task.getId()), eq("TASK"));
     }
 }
