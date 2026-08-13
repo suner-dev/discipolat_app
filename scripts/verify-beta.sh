@@ -150,18 +150,31 @@ fi
 # --- 7. Reset bêta (ADMIN) ------------------------------------------------
 step "7. Reset de l'environnement bêta (admin)"
 if [ -n "$A_TOKEN" ]; then
-  RST=$(curl -s -m 120 -X POST "$BASE/api/v1/admin/beta/reset" -H "Authorization: Bearer $A_TOKEN")
-  if echo "$RST" | grep -q '"status":"OK"'; then
-    ok "POST /admin/beta/reset → OK (${RST})"
-    # Invariant documenté : les retours testeurs SONT conservés après reset
-    AFTER=$(curl -s -m 60 "$BASE/api/v1/admin/feedback" -H "Authorization: Bearer $A_TOKEN")
-    if [ -n "$FEEDBACK_ID" ] && echo "$AFTER" | grep -q "$FEEDBACK_ID"; then
-      ok "le feedback survit au reset (invariant conservé)"
-    else
-      ko "feedback perdu après reset"
-    fi
+  # L'admin est multi-rôle (ADMIN + PASTEUR) : le reset n'est autorisé qu'avec
+  # le rôle ACTIF ADMIN. On bascule explicitement (comme le ferait un admin
+  # dans l'UI) avant d'exercer le reset.
+  SW=$(curl -s -m 60 -X POST "$BASE/api/v1/auth/switch-role" \
+    -H "Authorization: Bearer $A_TOKEN" -H "Content-Type: application/json" \
+    -d '{"role":"ADMIN"}')
+  ADMIN_TOKEN=$(echo "$SW" | python3 -c 'import sys,json
+try: print(json.load(sys.stdin).get("accessToken",""))
+except Exception: print("")' 2>/dev/null)
+  if [ -z "$ADMIN_TOKEN" ]; then
+    ko "switch-role admin → ADMIN : $(echo "$SW" | head -c 120)"
   else
-    ko "reset : $(echo "$RST" | head -c 200)"
+    RST=$(curl -s -m 120 -X POST "$BASE/api/v1/admin/beta/reset" -H "Authorization: Bearer $ADMIN_TOKEN")
+    if echo "$RST" | grep -q '"status":"OK"'; then
+      ok "POST /admin/beta/reset → OK (${RST})"
+      # Invariant documenté : les retours testeurs SONT conservés après reset
+      AFTER=$(curl -s -m 60 "$BASE/api/v1/admin/feedback" -H "Authorization: Bearer $ADMIN_TOKEN")
+      if [ -n "$FEEDBACK_ID" ] && echo "$AFTER" | grep -q "$FEEDBACK_ID"; then
+        ok "le feedback survit au reset (invariant conservé)"
+      else
+        ko "feedback perdu après reset"
+      fi
+    else
+      ko "reset : $(echo "$RST" | head -c 200)"
+    fi
   fi
 else
   ko "token admin introuvable (reset non testé)"
