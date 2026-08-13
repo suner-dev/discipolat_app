@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Alert, PageResponse, Soul, Department, Family, User } from '@/types';
 import {
   Bell,
@@ -23,7 +24,31 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const TYPE_FALLBACK: Record<string, string> = {
+  ABSENCE_48H: '🚨 Absence 48h',
+  ABSENCE_3_SEMAINES: '🚨 Décrochage 3 semaines',
+  RAPPORT_NON_SOUMIS: '📋 Rapport non soumis',
+  RAPPORT_FAMILLE_NON_SOUMIS: '📊 Rapport famille',
+  ALERTE_ABSENCE: '🚨 Alerte absence',
+  MANUEL: '📢',
+};
+
+const CIBLE_FALLBACK = ['PERSONNE', 'DEPARTEMENT', 'FAMILLE', 'GROUPE', 'EGLISE'];
+const PRIORITE_FALLBACK = [
+  { value: 'BASSE', label: 'Basse' },
+  { value: 'MOYENNE', label: 'Moyenne' },
+  { value: 'HAUTE', label: 'Haute' },
+  { value: 'URGENTE', label: 'Urgente' },
+];
+const STATUT_FALLBACK = [
+  { value: 'ACTIVE', label: 'Actives uniquement' },
+  { value: 'TRAITEE', label: 'Traitées uniquement' },
+  { value: 'RESOLUE', label: 'Résolues uniquement' },
+];
+
 export default function AlertsPage() {
+  const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('');
@@ -121,6 +146,57 @@ export default function AlertsPage() {
     }
   };
 
+  /** Libellé du type d'alerte (dictionnaire ALERT_TYPE, repli local sinon). */
+  const typeLabel = (alert: Alert) => {
+    if (alert.typeAlerte === 'MANUEL') {
+      return `📢 ${alert.titre || dictionaries.label('ALERT_TYPE', 'MANUEL') || TYPE_FALLBACK.MANUEL || 'Alerte manuelle'}`;
+    }
+    return dictionaries.label('ALERT_TYPE', alert.typeAlerte)
+      || TYPE_FALLBACK[alert.typeAlerte]
+      || alert.typeAlerte;
+  };
+
+  /** Badge du type d'alerte : couleur du dictionnaire si disponible. */
+  const typeBadgeClass = (type: string) => {
+    if (dictionaries.color('ALERT_TYPE', type)) return undefined;
+    return type === 'ABSENCE_48H' || type === 'ABSENCE_3_SEMAINES' || type === 'ALERTE_ABSENCE'
+      ? 'badge-danger'
+      : type === 'MANUEL' ? 'badge-primary' : 'badge-warning';
+  };
+
+  /** Cibles configurables (dictionnaire ALERT_CIBLE) — repli sinon. */
+  const cibleOptions = useMemo(() => {
+    const configured = dictionaries.options('ALERT_CIBLE');
+    return configured.length > 0 ? configured.map((e) => e.code) : CIBLE_FALLBACK;
+  }, [dictionaries]);
+
+  /** Priorités configurables (dictionnaire ALERT_PRIORITE) — repli sinon. */
+  const prioriteOptions = useMemo(() => {
+    const configured = dictionaries.selectOptions('ALERT_PRIORITE');
+    return configured.length > 0 ? configured : PRIORITE_FALLBACK;
+  }, [dictionaries]);
+
+  /** Filtres de statut configurables (dictionnaire ALERT_STATUS) — repli sinon. */
+  const statutFilters = useMemo(() => {
+    const configured = dictionaries.options('ALERT_STATUS');
+    if (configured.length > 0) {
+      return configured.map((e) => ({ value: e.code, label: `${e.label} uniquement` }));
+    }
+    return STATUT_FALLBACK;
+  }, [dictionaries]);
+
+  // Si l'admin a désactivé la cible/priorité par défaut, bascule sur la première option disponible.
+  useEffect(() => {
+    if (!showCreate) return;
+    if (cibleOptions.length > 0 && !cibleOptions.includes(alertForm.cible)) {
+      setAlertForm((f) => ({ ...f, cible: cibleOptions[0] }));
+    }
+    if (prioriteOptions.length > 0 && !prioriteOptions.some((o) => o.value === alertForm.priorite)) {
+      setAlertForm((f) => ({ ...f, priorite: prioriteOptions[0].value }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCreate, cibleOptions, prioriteOptions]);
+
   const activeAlerts = data?.content.filter(a => a.statut === 'ACTIVE') || [];
   const resolvedAlerts = data?.content.filter(a => a.statut === 'RESOLUE') || [];
 
@@ -147,8 +223,9 @@ export default function AlertsPage() {
             className="input w-auto"
           >
             <option value="">Toutes les alertes</option>
-            <option value="ACTIVE">Actives uniquement</option>
-            <option value="RESOLUE">Résolues uniquement</option>
+            {statutFilters.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
           </select>
           <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm">
             <Plus className="w-4 h-4" />
@@ -246,25 +323,33 @@ export default function AlertsPage() {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`badge text-[10px] ${
-                      alert.typeAlerte === 'ABSENCE_48H' ? 'badge-danger' : alert.typeAlerte === 'MANUEL' ? 'badge-primary' : 'badge-warning'
-                    }`}>
-                      {alert.typeAlerte === 'ABSENCE_48H' ? '🚨 Absence 48h' :
-                       alert.typeAlerte === 'RAPPORT_NON_SOUMIS' ? '📋 Rapport non soumis' :
-                       alert.typeAlerte === 'MANUEL' ? `📢 ${alert.titre || 'Alerte manuelle'}` :
-                       '📊 Rapport famille'}
+                    <span
+                      className={`badge text-[10px] ${typeBadgeClass(alert.typeAlerte) || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
+                      style={dictionaries.color('ALERT_TYPE', alert.typeAlerte)
+                        ? { backgroundColor: `${dictionaries.color('ALERT_TYPE', alert.typeAlerte)}22`, color: dictionaries.color('ALERT_TYPE', alert.typeAlerte) }
+                        : undefined}
+                    >
+                      {typeLabel(alert)}
                     </span>
                     <span className="inline-flex items-center gap-1 badge text-[10px] badge-gray">
-                      {getCibleIcon(alert.cible)} {alert.cible}
+                      {getCibleIcon(alert.cible)} {dictionaries.label('ALERT_CIBLE', alert.cible) || alert.cible}
                     </span>
-                    <span className={`badge text-[10px] ${
-                      alert.priorite === 'URGENTE' ? 'badge-danger' :
-                      alert.priorite === 'HAUTE' ? 'badge-warning' : 'badge-gray'
-                    }`}>
-                      {alert.priorite || 'MOYENNE'}
+                    <span
+                      className="badge text-[10px] bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                      style={dictionaries.color('ALERT_PRIORITE', alert.priorite)
+                        ? { backgroundColor: `${dictionaries.color('ALERT_PRIORITE', alert.priorite)}22`, color: dictionaries.color('ALERT_PRIORITE', alert.priorite) }
+                        : undefined}
+                    >
+                      {dictionaries.label('ALERT_PRIORITE', alert.priorite) || alert.priorite || 'MOYENNE'}
                     </span>
-                    <span className={`badge text-[10px] ${alert.statut === 'ACTIVE' ? 'badge-danger' : 'badge-success'}`}>
-                      {alert.statut === 'ACTIVE' ? 'Active' : 'Résolue'}
+                    <span
+                      className="badge text-[10px] bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                      style={dictionaries.color('ALERT_STATUS', alert.statut)
+                        ? { backgroundColor: `${dictionaries.color('ALERT_STATUS', alert.statut)}22`, color: dictionaries.color('ALERT_STATUS', alert.statut) }
+                        : undefined}
+                    >
+                      {dictionaries.label('ALERT_STATUS', alert.statut)
+                        || (alert.statut === 'ACTIVE' ? 'Active' : alert.statut === 'TRAITEE' ? 'Traitée' : 'Résolue')}
                     </span>
                   </div>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -372,10 +457,9 @@ export default function AlertsPage() {
                     value={alertForm.priorite}
                     onChange={(e) => setAlertForm({ ...alertForm, priorite: e.target.value })}
                   >
-                    <option value="BASSE">Basse</option>
-                    <option value="MOYENNE">Moyenne</option>
-                    <option value="HAUTE">Haute</option>
-                    <option value="URGENTE">Urgente</option>
+                    {prioriteOptions.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -403,7 +487,7 @@ export default function AlertsPage() {
               <div>
                 <label className="label">Cible</label>
                 <div className="grid grid-cols-5 gap-1.5">
-                  {['PERSONNE', 'DEPARTEMENT', 'FAMILLE', 'GROUPE', 'EGLISE'].map((c) => (
+                  {cibleOptions.map((c) => (
                     <button
                       key={c}
                       type="button"
@@ -414,7 +498,7 @@ export default function AlertsPage() {
                           : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}
                     >
                       {getCibleIcon(c)}
-                      {c}
+                      {dictionaries.label('ALERT_CIBLE', c) || c}
                     </button>
                   ))}
                 </div>

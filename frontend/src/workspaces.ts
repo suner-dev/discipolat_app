@@ -20,6 +20,7 @@ import {
   MessageSquare,
   MessagesSquare,
   Bell,
+  BellRing,
   FolderOpen,
   GraduationCap,
   Trophy,
@@ -169,7 +170,8 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Évaluations', href: '/evaluations', icon: StarIcon, subtitle: 'Anonymes & feedback' },
       { name: 'Demandes membres', href: '/members/requests', icon: MessageSquare, subtitle: 'Suggestions & présences' },
       { name: 'Documents', href: '/documents', icon: FolderOpen, subtitle: 'Fichiers & rapports' },
-      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Notifications' },
+      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
+      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Centre d\'alertes' },
       { name: 'Messagerie', href: '/messages', icon: MessagesSquare, subtitle: 'Conversations privées' },
       { name: 'Formations', href: '/trainings', icon: GraduationCap, subtitle: 'Cours, quiz & certificats' },
       { name: 'Badges', href: '/badges', icon: Trophy, subtitle: 'Récompenses & classements' },
@@ -218,7 +220,8 @@ const RESPONSABLE_NAV: WorkspaceSection[] = [
     items: [
       { name: 'Rapports', href: '/reports', icon: FileText, subtitle: 'Hebdomadaires' },
       { name: 'Aide urgente', href: '/reports/urgent-aid', icon: AlertTriangle, subtitle: "Demandes d'aide" },
-      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Notifications' },
+      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
+      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Centre d\'alertes' },
       { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier du département' },
     ],
   },
@@ -260,7 +263,8 @@ const FAISEUR_NAV: WorkspaceSection[] = [
   {
     title: 'Réseau & outils',
     items: [
-      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Notifications' },
+      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
+      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Centre d\'alertes' },
       { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier' },
       { name: 'Transferts', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Demandes & validations' },
       { name: 'Documents', href: '/documents', icon: FolderOpen, subtitle: 'Fichiers & rapports' },
@@ -291,7 +295,8 @@ const CHEF_FAMILLE_NAV: WorkspaceSection[] = [
       { name: 'Évaluations', href: '/evaluations', icon: StarIcon, subtitle: 'Anonymes & feedback' },
       { name: 'Prières', href: '/prayers', icon: BookOpen, subtitle: 'Sujets & témoignages' },
       { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier' },
-      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Notifications' },
+      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
+      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Centre d\'alertes' },
       { name: 'Demandes membres', href: '/members/requests', icon: MessageSquare, subtitle: 'Suggestions & présences' },
       { name: 'Transferts', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Demandes & validations' },
     ],
@@ -329,6 +334,7 @@ const MEMBRE_NAV: WorkspaceSection[] = [
   {
     title: 'Communauté',
     items: [
+      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
       { name: 'Messagerie', href: '/messages', icon: MessagesSquare, subtitle: 'Conversations privées' },
     ],
   },

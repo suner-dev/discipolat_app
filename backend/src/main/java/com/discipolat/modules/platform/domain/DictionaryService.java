@@ -377,6 +377,53 @@ public class DictionaryService {
                 row("TRANSFER", "Transfert", "#8b5cf6"),
                 row("EVENT", "Événement", "#ec4899"),
                 row("MEMBER_REQUEST", "Demande membre", "#6366f1")));
+        map.put("REPORT_STATUS", rows(
+                row("BROUILLON", "Brouillon", "#f59e0b"),
+                row("SOUMIS", "Soumis", "#22c55e"),
+                row("VU_PAR_RESPONSABLE", "Vu responsable", "#3b82f6"),
+                row("VU_PAR_PASTEUR", "Vu pasteur", "#8b5cf6")));
+        map.put("ALERT_TYPE", rows(
+                row("ABSENCE_48H", "Absence 48h", "#ef4444"),
+                row("ABSENCE_3_SEMAINES", "Décrochage 3 semaines", "#ef4444"),
+                row("RAPPORT_NON_SOUMIS", "Rapport non soumis", "#f59e0b"),
+                row("RAPPORT_FAMILLE_NON_SOUMIS", "Rapport famille non soumis", "#f59e0b"),
+                row("ALERTE_ABSENCE", "Alerte absence", "#ef4444"),
+                row("MANUEL", "Manuelle", "#8b5cf6")));
+        map.put("ALERT_CIBLE", rows(
+                row("PERSONNE", "Personne", "#3b82f6"),
+                row("DEPARTEMENT", "Département", "#a855f7"),
+                row("FAMILLE", "Famille", "#22c55e"),
+                row("GROUPE", "Groupe", "#f59e0b"),
+                row("EGLISE", "Église", "#06b6d4")));
+        map.put("ALERT_PRIORITE", rows(
+                row("BASSE", "Basse", "#94a3b8"),
+                row("MOYENNE", "Moyenne", "#3b82f6"),
+                row("HAUTE", "Haute", "#f59e0b"),
+                row("URGENTE", "Urgente", "#ef4444")));
+        map.put("ALERT_STATUS", rows(
+                row("ACTIVE", "Active", "#ef4444"),
+                row("TRAITEE", "Traitée", "#f59e0b"),
+                row("RESOLUE", "Résolue", "#22c55e")));
+        map.put("NOTIFICATION_TYPE", rows(
+                row("RAPPORT_NON_SOUMIS", "Rapport non soumis", "#f59e0b"),
+                row("ABSENCE_48H", "Absence 48h", "#ef4444"),
+                row("RAPPORT_FAMILLE_NON_SOUMIS", "Rapport famille non soumis", "#f59e0b"),
+                row("ALERTE_ABSENCE", "Alerte absence", "#ef4444"),
+                row("INFORMATION", "Information", "#3b82f6"),
+                row("PRIERE_EXAUCEE", "Prières exaucées", "#22c55e"),
+                row("TRANSFERT_DEMANDE", "Demande de transfert", "#3b82f6"),
+                row("TRANSFERT_VALIDATION", "Validation de transfert", "#8b5cf6"),
+                row("TRANSFERT_VALIDEE", "Transfert validé", "#22c55e"),
+                row("TRANSFERT_REFUSEE", "Transfert refusé", "#ef4444"),
+                row("TRANSFERT_INFOS_DEMANDEES", "Informations demandées", "#f59e0b"),
+                row("TRANSFERT_CORRECTION", "Correction demandée", "#f59e0b"),
+                row("TRANSFERT_EXECUTEE", "Transfert exécuté", "#22c55e"),
+                row("TRANSFERT_ANNULEE", "Transfert annulé", "#6b7280"),
+                row("TRANSFERT_DELAI_DEPASSE", "Délai de traitement dépassé", "#ef4444")));
+        map.put("NOTIFICATION_CANAL", rows(
+                row("IN_APP", "Dans l'application", "#3b82f6"),
+                row("EMAIL", "E-mail", "#8b5cf6"),
+                row("PUSH", "Notification push", "#06b6d4")));
         return map;
     }
 

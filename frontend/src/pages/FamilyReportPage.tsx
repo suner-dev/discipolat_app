@@ -3,17 +3,28 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExportReport } from '@/hooks/useExportReport';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import type { FamilyReport, Family, MakerReport } from '@/types';
 import {
   FileText, Send, Loader2, CheckCircle2, AlertCircle, FileDown,
   Sparkles, Users, BarChart3, Clock, ChevronDown, Paperclip,
+  type LucideIcon,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const STATUT_FALLBACK: Record<string, string> = {
+  BROUILLON: 'Brouillon',
+  SOUMIS: 'Soumis ✓',
+  VU_PAR_RESPONSABLE: 'Vu responsable',
+  VU_PAR_PASTEUR: 'Vu pasteur',
+};
+
 export default function FamilyReportPage() {
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
   const { exportReport, isExporting } = useExportReport();
   const semaine = new Date().toISOString().split('T')[0];
@@ -82,7 +93,12 @@ export default function FamilyReportPage() {
   const totalSoumis = makerReports?.filter((r) => r.soumis).length || 0;
   const totalAmes = makerReports?.length || 0;
 
+  /** Couleur du statut depuis le dictionnaire REPORT_STATUS (repli local sinon). */
+  const getStatutColor = (statut?: string) =>
+    dictionaries.color('REPORT_STATUS', statut);
+
   const getStatutStyle = (statut?: string) => {
+    if (dictionaries.color('REPORT_STATUS', statut)) return undefined;
     switch (statut) {
       case 'SOUMIS': return 'text-green-600';
       case 'VU_PAR_PASTEUR': return 'text-blue-600';
@@ -92,16 +108,35 @@ export default function FamilyReportPage() {
   };
 
   const getStatutLabel = (statut?: string) => {
+    if (statut && dictionaries.label('REPORT_STATUS', statut)) {
+      // Libellé configuré par l'admin — la coche reste dans le repli local uniquement.
+      return dictionaries.label('REPORT_STATUS', statut);
+    }
     switch (statut) {
-      case 'BROUILLON': return 'Brouillon';
-      case 'SOUMIS': return 'Soumis ✓';
-      case 'VU_PAR_RESPONSABLE': return 'Vu responsable';
-      case 'VU_PAR_PASTEUR': return 'Vu pasteur';
+      case 'BROUILLON': return STATUT_FALLBACK.BROUILLON;
+      case 'SOUMIS': return STATUT_FALLBACK.SOUMIS;
+      case 'VU_PAR_RESPONSABLE': return STATUT_FALLBACK.VU_PAR_RESPONSABLE;
+      case 'VU_PAR_PASTEUR': return STATUT_FALLBACK.VU_PAR_PASTEUR;
       default: return 'Non créé';
     }
   };
 
   const selectedFamily = families?.find(f => f.id === selectedFamilyId);
+
+  /** Cartes de statistiques (couleur du statut pilotée par le dictionnaire). */
+  const stats: Array<{
+    label: string;
+    value: string | number;
+    icon: LucideIcon;
+    gradient: string;
+    valueClass?: string;
+    valueColor?: string;
+  }> = [
+    { label: 'Âmes dans la famille', value: totalAmes, icon: Users, gradient: 'from-primary-500 to-primary-600' },
+    { label: 'Rapports soumis', value: `${totalSoumis}/${totalAmes}`, icon: FileText, gradient: totalSoumis === totalAmes ? 'from-green-500 to-emerald-500' : 'from-amber-500 to-orange-500' },
+    { label: 'Présents', value: totalPresents, icon: BarChart3, gradient: 'from-blue-500 to-indigo-500' },
+    { label: 'État du rapport', value: getStatutLabel(familyReport?.statutValidation), icon: CheckCircle2, gradient: 'from-violet-500 to-purple-500', valueClass: getStatutStyle(familyReport?.statutValidation), valueColor: getStatutColor(familyReport?.statutValidation) },
+  ];
 
   return (
     <div className="page-container">
@@ -136,12 +171,7 @@ export default function FamilyReportPage() {
         <>
           {/* Stats cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {[
-              { label: 'Âmes dans la famille', value: totalAmes, icon: Users, gradient: 'from-primary-500 to-primary-600' },
-              { label: 'Rapports soumis', value: `${totalSoumis}/${totalAmes}`, icon: FileText, gradient: totalSoumis === totalAmes ? 'from-green-500 to-emerald-500' : 'from-amber-500 to-orange-500' },
-              { label: 'Présents', value: totalPresents, icon: BarChart3, gradient: 'from-blue-500 to-indigo-500' },
-              { label: 'État du rapport', value: getStatutLabel(familyReport?.statutValidation), icon: CheckCircle2, gradient: 'from-violet-500 to-purple-500', valueClass: getStatutStyle(familyReport?.statutValidation) },
-            ].map((stat, i) => (
+            {stats.map((stat, i) => (
               <div key={stat.label} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 80}ms` }}>
                 <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.gradient} opacity-60`} />
                 <div className="flex items-start justify-between mb-2">
@@ -150,7 +180,7 @@ export default function FamilyReportPage() {
                     <stat.icon className="w-4 h-4" />
                   </div>
                 </div>
-                <p className={`stat-value text-xl sm:text-2xl ${stat.valueClass || ''}`}>{stat.value}</p>
+                <p className={`stat-value text-xl sm:text-2xl ${stat.valueClass || ''}`} style={stat.valueColor ? { color: stat.valueColor } : undefined}>{stat.value}</p>
                 {stat.label === 'Rapports soumis' && (
                   <div className="progress-bar mt-3">
                     <div className="progress-bar-fill" style={{ width: `${totalAmes > 0 ? (totalSoumis / totalAmes) * 100 : 0}%` }} />

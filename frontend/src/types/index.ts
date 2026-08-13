@@ -473,8 +473,10 @@ export interface CreateParallelFollowupRequest {
 // Alert types
 export type TypeAlerte =
   | 'ABSENCE_48H'
+  | 'ABSENCE_3_SEMAINES'
   | 'RAPPORT_NON_SOUMIS'
   | 'RAPPORT_FAMILLE_NON_SOUMIS'
+  | 'ALERTE_ABSENCE'
   | 'MANUEL';
 export type StatutAlerte = 'ACTIVE' | 'TRAITEE' | 'RESOLUE';
 export type CibleAlerte = 'PERSONNE' | 'DEPARTEMENT' | 'FAMILLE' | 'GROUPE' | 'EGLISE';

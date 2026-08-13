@@ -45,6 +45,13 @@ const DICT_LABELS: Record<string, string> = {
   AUDIT_ENTITY: 'Entités du journal d\'audit',
   APPOINTMENT_MOTIF: 'Motifs de rendez-vous',
   GRATITUDE_CATEGORIE: 'Catégories d\'actions de grâce',
+  REPORT_STATUS: 'Statuts de rapports',
+  ALERT_TYPE: 'Types d\'alertes',
+  ALERT_CIBLE: 'Cibles d\'alertes',
+  ALERT_PRIORITE: 'Priorités d\'alertes',
+  ALERT_STATUS: 'Statuts d\'alertes',
+  NOTIFICATION_TYPE: 'Types de notifications',
+  NOTIFICATION_CANAL: 'Canaux de notification',
 };
 
 interface EntryForm {

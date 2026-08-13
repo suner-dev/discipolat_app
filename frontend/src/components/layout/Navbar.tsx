@@ -187,10 +187,11 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
           {/* Notifications */}
           <Link
-            to="/alerts"
+            to="/notifications"
             className="relative p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                        hover:bg-gray-100/80 dark:hover:bg-gray-800/50 transition-all duration-200
                        hover:scale-105 active:scale-95 group"
+            title="Notifications"
           >
             {unreadCount > 0 ? (
               <BellRing className="w-4.5 h-4.5 animate-pulse-soft" />

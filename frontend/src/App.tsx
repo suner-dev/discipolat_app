@@ -33,6 +33,7 @@ const MakerReportPage = lazy(() => import('@/pages/MakerReportPage'));
 const FamilyReportPage = lazy(() => import('@/pages/FamilyReportPage'));
 const ParallelFollowupsPage = lazy(() => import('@/pages/ParallelFollowupsPage'));
 const AlertsPage = lazy(() => import('@/pages/AlertsPage'));
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 const UsersPage = lazy(() => import('@/pages/UsersPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const SoulCreatePage = lazy(() => import('@/pages/SoulCreatePage'));
@@ -297,6 +298,11 @@ export default function App() {
           <Route path="/alerts" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
               <AlertsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <NotificationsPage />
             </ProtectedRoute>
           } />
           <Route path="/members/requests" element={

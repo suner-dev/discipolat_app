@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Family, Soul, FamilyReport, User, FamilyRiskAssessment, TransferRequest } from '@/types';
 import {
   ArrowLeft, Users, FileText, Heart, UserCog, Loader2, CheckCircle2, X,
@@ -10,10 +11,19 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+const STATUT_FALLBACK: Record<string, string> = {
+  BROUILLON: 'Brouillon',
+  SOUMIS: 'Soumis',
+  VU_PAR_RESPONSABLE: 'Vu responsable',
+  VU_PAR_PASTEUR: 'Vu pasteur',
+};
+
 export default function FamilyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const dictionaries = useDictionaries();
   const [showChiefModal, setShowChiefModal] = useState(false);
   const [newChiefId, setNewChiefId] = useState('');
 
@@ -504,14 +514,15 @@ export default function FamilyDetailPage() {
                         Semaine du {new Date(report.semaine).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                       </span>
                     </div>
-                    <span className={`badge text-[10px] ${
-                      report.statutValidation === 'SOUMIS' ? 'badge-success' :
-                      report.statutValidation === 'VU_PAR_PASTEUR' ? 'badge-info' : 'badge-warning'
-                    }`}>
-                      {report.statutValidation === 'BROUILLON' ? 'Brouillon' :
-                       report.statutValidation === 'SOUMIS' ? 'Soumis' :
-                       report.statutValidation === 'VU_PAR_RESPONSABLE' ? 'Vu responsable' :
-                       'Vu pasteur'}
+                    <span
+                      className="badge text-[10px] bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                      style={dictionaries.color('REPORT_STATUS', report.statutValidation)
+                        ? { backgroundColor: `${dictionaries.color('REPORT_STATUS', report.statutValidation)}22`, color: dictionaries.color('REPORT_STATUS', report.statutValidation) }
+                        : undefined}
+                    >
+                      {dictionaries.label('REPORT_STATUS', report.statutValidation)
+                        || STATUT_FALLBACK[report.statutValidation]
+                        || report.statutValidation}
                     </span>
                   </div>
                 ))}
