@@ -112,7 +112,7 @@ public class TransferExecutor {
                     .filter(md -> md.getDepartmentId().equals(oldDeptId))
                     .forEach(memberDepartmentRepository::delete);
         }
-        affecterDept(soul.getId(), newDeptId);
+        affecterDept(soul.getId(), newDeptId, req.getDemandeurId());
         if (!memberDepartmentRepository.existsBySoulIdAndDepartmentId(soul.getId(), newDeptId)) {
             memberDepartmentRepository.save(MemberDepartment.builder()
                     .soulId(soul.getId()).departmentId(newDeptId).build());
@@ -129,7 +129,7 @@ public class TransferExecutor {
     private void addMemberDepartment(TransferRequest req, UUID deptId, Map<String, Object> reglesExecution) {
         Soul soul = soul(req.getPersonneId());
         Department dept = department(deptId);
-        affecterDept(soul.getId(), deptId);
+        affecterDept(soul.getId(), deptId, req.getDemandeurId());
         if (!memberDepartmentRepository.existsBySoulIdAndDepartmentId(soul.getId(), deptId)) {
             memberDepartmentRepository.save(MemberDepartment.builder()
                     .soulId(soul.getId()).departmentId(deptId).build());
@@ -309,7 +309,7 @@ public class TransferExecutor {
         return Boolean.parseBoolean(value.toString());
     }
 
-    private void affecterDept(UUID soulId, UUID deptId) {
+    private void affecterDept(UUID soulId, UUID deptId, UUID createdBy) {
         List<SoulDepartment> existing = soulDepartmentRepository.findBySoulId(soulId).stream()
                 .filter(sd -> sd.getDepartmentId().equals(deptId))
                 .toList();
@@ -317,11 +317,15 @@ public class TransferExecutor {
             soulDepartmentRepository.save(SoulDepartment.builder()
                     .soulId(soulId).departmentId(deptId)
                     .actif(true).dateAffectation(LocalDateTime.now())
+                    .createdBy(createdBy)
+                    .origine("TRANSFERT")
                     .build());
         } else {
             SoulDepartment sd = existing.get(0);
             sd.setActif(true);
             sd.setDateDesaffectation(null);
+            sd.setCreatedBy(createdBy);
+            sd.setOrigine("TRANSFERT");
             soulDepartmentRepository.save(sd);
         }
     }

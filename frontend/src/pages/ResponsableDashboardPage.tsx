@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   Building2, Users, UserPlus, Calendar, UserCheck, FileText, Activity,
   Star, ChevronRight, Cake, CheckCircle, Clock, UserX, Network, AlertCircle,
-  Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2, UserRound, ListTodo,
+  Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2, UserRound, ListTodo, ArrowLeftRight,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -130,6 +130,10 @@ export default function ResponsableDashboardPage() {
   const departements = dashboard?.departements ?? [];
   const deptDetail = dashboard?.departement ?? {};
   const anniversaires = deptDetail?.anniversaires ?? [];
+  const nouveauxRecents = deptDetail?.nouveauxRecents ?? [];
+  const membresSuivi = deptDetail?.membresSuivi ?? [];
+  const evenementsAvenir = deptDetail?.evenementsAvenir ?? [];
+  const alertes = deptDetail?.alertes ?? [];
 
   return (
     <div className="page-container">
@@ -592,6 +596,138 @@ export default function ResponsableDashboardPage() {
               <Calendar className="w-5 h-5 text-primary-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Événements</span>
             </Link>
+            <Link to={`/departments/${dashboard?.selectedDeptId}/stats`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+              <Activity className="w-5 h-5 text-violet-500 mx-auto mb-1" />
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Statistiques</span>
+            </Link>
+          </div>
+
+          {/* ==================== ALERTES & SUIVI ==================== */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            {/* Alertes intelligentes */}
+            <div className="glass-card p-5 animate-slide-up">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Alertes à traiter</h3>
+                </div>
+                <span className="badge text-[10px] badge-danger">{alertes.length}</span>
+              </div>
+              {alertes.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-6">Aucune alerte active 🎉</p>
+              ) : (
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {alertes.map((a: any) => (
+                    <div key={a.id} className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200/50 dark:border-red-500/20">
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{a.titre}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{a.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Nouveaux membres + à suivre */}
+            <div className="space-y-6">
+              <div className="glass-card p-5 animate-slide-up">
+                <div className="flex items-center gap-2 mb-4">
+                  <UserPlus className="w-4 h-4 text-blue-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouveaux membres (30 jours)</h3>
+                </div>
+                {nouveauxRecents.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-4">Aucun nouveau membre récent</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {nouveauxRecents.map((m: any) => (
+                      <Link
+                        key={m.id}
+                        to={`/departments/${dashboard?.selectedDeptId}/members/${m.id}`}
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                          {m.nom?.split(' ').map((p: string) => p?.[0]).join('').slice(0, 2) || '?'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{m.nom}</p>
+                          <p className="text-[10px] text-gray-400">
+                            intégré le {m.dateIntegration || '—'}
+                            {m.origine === 'SIGNUP' ? ' · inscription' : ''}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="glass-card p-5 animate-slide-up">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <UserX className="w-4 h-4 text-amber-500" />
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">À suivre cette semaine</h3>
+                  </div>
+                  <span className="badge text-[10px] badge-warning">{stats.membresSuivi ?? 0}</span>
+                </div>
+                {membresSuivi.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-4">Tous les membres ont un rapport cette semaine ✅</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                    {membresSuivi.map((m: any) => (
+                      <Link key={m.id} to={`/departments/${dashboard?.selectedDeptId}/members/${m.id}`} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
+                        <UserX className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="text-sm text-gray-800 dark:text-gray-200 truncate flex-1">{m.nom}</span>
+                        <span className="text-[9px] text-gray-400">{m.statut}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Événements à venir + transferts en attente */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div className="glass-card p-5 animate-slide-up">
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="w-4 h-4 text-primary-500" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Événements à venir (30 jours)</h3>
+              </div>
+              {evenementsAvenir.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">Aucun événement à venir</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {evenementsAvenir.map((ev: any) => (
+                    <Link key={ev.id} to="/events" className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
+                      <div className="p-2 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-300">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{ev.titre}</p>
+                        <p className="text-[10px] text-gray-400">{formatDate(ev.dateDebut?.slice(0, 10))}{ev.lieu ? ` · ${ev.lieu}` : ''}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="glass-card p-5 animate-slide-up">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ArrowLeftRight className="w-4 h-4 text-orange-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Transferts en attente</h3>
+                </div>
+                <span className={`badge text-[10px] ${stats.transfertsEnAttente > 0 ? 'badge-warning' : 'badge-gray'}`}>{stats.transfertsEnAttente ?? 0}</span>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                {stats.transfertsEnAttente > 0
+                  ? 'Des demandes de transfert concernant vos membres attendent une validation.'
+                  : 'Aucune demande de transfert en attente.'}
+              </p>
+              <Link to="/transfers" className="btn-ghost btn-xs">
+                Voir les demandes <ChevronRight className="w-3 h-3 ml-1" />
+              </Link>
+            </div>
           </div>
         </>
       )}

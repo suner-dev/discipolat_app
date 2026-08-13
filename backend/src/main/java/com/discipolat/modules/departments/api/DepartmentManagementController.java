@@ -1,14 +1,17 @@
 package com.discipolat.modules.departments.api;
 
+import com.discipolat.modules.departments.domain.DepartmentDossierService;
 import com.discipolat.modules.departments.domain.DepartmentManagementService;
 import com.discipolat.modules.departments.domain.DepartmentTask;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,9 +29,22 @@ import java.util.UUID;
 public class DepartmentManagementController {
 
     private final DepartmentManagementService managementService;
+    private final DepartmentDossierService dossierService;
+    private final com.discipolat.modules.departments.domain.DepartmentService departmentService;
 
-    public DepartmentManagementController(DepartmentManagementService managementService) {
+    public DepartmentManagementController(DepartmentManagementService managementService,
+                                          DepartmentDossierService dossierService,
+                                          com.discipolat.modules.departments.domain.DepartmentService departmentService) {
         this.managementService = managementService;
+        this.dossierService = dossierService;
+        this.departmentService = departmentService;
+    }
+
+    /** Nom du département normalisé pour le nom du fichier d'export. */
+    private String departmentServiceName(UUID departmentId) {
+        String nom = departmentService.findById(departmentId).getNom();
+        return nom == null ? departmentId.toString().substring(0, 8)
+                : nom.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
     }
 
     // ======================= VUE D'ENSEMBLE =======================
@@ -41,6 +57,94 @@ public class DepartmentManagementController {
     @GetMapping("/activity")
     public ResponseEntity<List<Map<String, Object>>> activity(@PathVariable UUID departmentId) {
         return ResponseEntity.ok(managementService.getActivity(departmentId));
+    }
+
+    // ======================= DOSSIER MEMBRE =======================
+
+    /** Dossier complet d'un membre du département (profil, affectations, tâches, présences…). */
+    @GetMapping("/members/{memberId}/dossier")
+    public ResponseEntity<Map<String, Object>> memberDossier(@PathVariable UUID departmentId,
+                                                              @PathVariable UUID memberId) {
+        return ResponseEntity.ok(dossierService.getMemberDossier(departmentId, memberId));
+    }
+
+    // ======================= NOTES MEMBRE =======================
+
+    @GetMapping("/members/{memberId}/notes")
+    public ResponseEntity<List<Map<String, Object>>> memberNotes(@PathVariable UUID departmentId,
+                                                                 @PathVariable UUID memberId) {
+        return ResponseEntity.ok(dossierService.listMemberNotes(departmentId, memberId));
+    }
+
+    @PostMapping("/members/{memberId}/notes")
+    public ResponseEntity<Map<String, Object>> addMemberNote(@PathVariable UUID departmentId,
+                                                             @PathVariable UUID memberId,
+                                                             @Valid @RequestBody DepartmentNoteRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(dossierService.addMemberNote(departmentId, memberId, request));
+    }
+
+    @DeleteMapping("/notes/{noteId}")
+    public ResponseEntity<Void> deleteMemberNote(@PathVariable UUID departmentId, @PathVariable UUID noteId) {
+        dossierService.deleteMemberNote(departmentId, noteId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ======================= ANNONCES (communication interne) =======================
+
+    @GetMapping("/announcements")
+    public ResponseEntity<List<Map<String, Object>>> announcements(@PathVariable UUID departmentId) {
+        return ResponseEntity.ok(dossierService.listAnnouncements(departmentId));
+    }
+
+    @PostMapping("/announcements")
+    public ResponseEntity<Map<String, Object>> createAnnouncement(@PathVariable UUID departmentId,
+                                                                  @Valid @RequestBody DepartmentAnnouncementRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(dossierService.createAnnouncement(departmentId, request));
+    }
+
+    @DeleteMapping("/announcements/{announcementId}")
+    public ResponseEntity<Void> deleteAnnouncement(@PathVariable UUID departmentId,
+                                                   @PathVariable UUID announcementId) {
+        dossierService.deleteAnnouncement(departmentId, announcementId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ======================= ALERTES INTELLIGENTES =======================
+
+    @GetMapping("/alerts/smart")
+    public ResponseEntity<List<Map<String, Object>>> smartAlerts(@PathVariable UUID departmentId) {
+        return ResponseEntity.ok(dossierService.getIntelligentAlerts(departmentId));
+    }
+
+    // ======================= STATISTIQUES =======================
+
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> stats(@PathVariable UUID departmentId) {
+        return ResponseEntity.ok(dossierService.getDepartmentStats(departmentId));
+    }
+
+    // ======================= EXPORT / IMPORT MEMBRES =======================
+
+    /** Export CSV des membres du département (respecte les permissions). */
+    @GetMapping(value = "/members/export", produces = "text/csv;charset=UTF-8")
+    public ResponseEntity<String> exportMembers(@PathVariable UUID departmentId) {
+        String csv = dossierService.exportMembersCsv(departmentId);
+        String departmentNom = departmentServiceName(departmentId);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=membres-" + departmentNom + ".csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .body(csv);
+    }
+
+    /** Import CSV des membres : preview (aucune écriture) ou import effectif. */
+    @PostMapping("/members/import")
+    public ResponseEntity<Map<String, Object>> importMembers(@PathVariable UUID departmentId,
+                                                             @RequestParam(defaultValue = "false") boolean preview,
+                                                             @Valid @RequestBody DepartmentImportRequest request) {
+        return ResponseEntity.ok(dossierService.importMembers(departmentId, request.rows(), preview));
     }
 
     // ======================= MEMBRES =======================

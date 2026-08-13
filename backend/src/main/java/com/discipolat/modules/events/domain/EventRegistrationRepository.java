@@ -13,4 +13,7 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
     Optional<EventRegistration> findByEventIdAndUtilisateurId(UUID eventId, UUID utilisateurId);
     long countByEventIdAndStatutInscription(UUID eventId, String statut);
     long countByUtilisateurIdAndStatutInscription(UUID userId, String statut);
+
+    /** Inscriptions d'un utilisateur (événements auxquels il participe). */
+    List<EventRegistration> findByUtilisateurId(UUID userId);
 }

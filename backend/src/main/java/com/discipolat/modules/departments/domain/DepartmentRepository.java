@@ -17,4 +17,6 @@ public interface DepartmentRepository extends JpaRepository<Department, UUID> {
     List<Department> findByResponsableId(UUID responsableId);
     long countByStatut(StatutEntite statut);
     Page<Department> findAllByIdIn(java.util.List<UUID> ids, Pageable pageable);
+
+    List<Department> findAllByIdIn(java.util.Collection<UUID> ids);
 }

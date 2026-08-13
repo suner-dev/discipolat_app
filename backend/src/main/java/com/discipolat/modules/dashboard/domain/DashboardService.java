@@ -5,7 +5,12 @@ import com.discipolat.common.enums.StatutAlerte;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.StatutSuiviParallele;
 import com.discipolat.common.enums.TypeDisciple;
+import com.discipolat.modules.alerts.domain.Alert;
 import com.discipolat.modules.alerts.domain.AlertRepository;
+import com.discipolat.common.enums.TransferStatus;
+import com.discipolat.modules.events.domain.Event;
+import com.discipolat.modules.events.domain.EventRegistrationRepository;
+import com.discipolat.modules.events.domain.EventRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentAssignment;
@@ -18,7 +23,10 @@ import com.discipolat.modules.departments.domain.DepartmentTaskRepository;
 import com.discipolat.modules.departments.domain.DepartmentTeam;
 import com.discipolat.modules.departments.domain.DepartmentTeamRepository;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.members.domain.MemberPresence;
+import com.discipolat.modules.members.domain.MemberPresenceRepository;
 import com.discipolat.modules.parallelfollowups.domain.ParallelFollowupRepository;
+import com.discipolat.modules.transfers.domain.TransferRequestRepository;
 import com.discipolat.modules.reports.domain.FamilyReport;
 import com.discipolat.modules.reports.domain.FamilyReportRepository;
 import com.discipolat.modules.reports.domain.MakerReport;
@@ -65,6 +73,10 @@ public class DashboardService {
     private final DepartmentPositionRepository departmentPositionRepository;
     private final DepartmentAssignmentRepository departmentAssignmentRepository;
     private final DepartmentTaskRepository departmentTaskRepository;
+    private final MemberPresenceRepository memberPresenceRepository;
+    private final TransferRequestRepository transferRequestRepository;
+    private final EventRepository eventRepository;
+    private final EventRegistrationRepository eventRegistrationRepository;
     private final SecurityUtils securityUtils;
     private final WorkspaceScopeService workspaceScope;
 
@@ -79,6 +91,10 @@ public class DashboardService {
                            DepartmentPositionRepository departmentPositionRepository,
                            DepartmentAssignmentRepository departmentAssignmentRepository,
                            DepartmentTaskRepository departmentTaskRepository,
+                           MemberPresenceRepository memberPresenceRepository,
+                           TransferRequestRepository transferRequestRepository,
+                           EventRepository eventRepository,
+                           EventRegistrationRepository eventRegistrationRepository,
                            SecurityUtils securityUtils,
                            WorkspaceScopeService workspaceScope) {
         this.soulRepository = soulRepository;
@@ -95,6 +111,10 @@ public class DashboardService {
         this.departmentPositionRepository = departmentPositionRepository;
         this.departmentAssignmentRepository = departmentAssignmentRepository;
         this.departmentTaskRepository = departmentTaskRepository;
+        this.memberPresenceRepository = memberPresenceRepository;
+        this.transferRequestRepository = transferRequestRepository;
+        this.eventRepository = eventRepository;
+        this.eventRegistrationRepository = eventRegistrationRepository;
         this.securityUtils = securityUtils;
         this.workspaceScope = workspaceScope;
     }
@@ -823,6 +843,106 @@ public class DashboardService {
         deptDetail.put("tachesEnRetard", tachesEnRetard);
         deptDetail.put("tachesTerminees", tachesTerminees);
         deptDetail.put("membresAffectes", membresAffectes);
+
+        // ==================== VUE RESPONSABLE ENRICHIE ====================
+
+        // Nouveaux membres récents (30 jours), les plus récents d'abord
+        List<Map<String, Object>> nouveauxRecents = allSouls.stream()
+                .filter(s -> s.getDateIntegration() != null && s.getDateIntegration().isAfter(cutoff))
+                .sorted(Comparator.comparing(Soul::getDateIntegration).reversed())
+                .limit(5)
+                .map(s -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", s.getId());
+                    m.put("nom", s.getNomComplet());
+                    m.put("statut", s.getStatut().name());
+                    m.put("dateIntegration", s.getDateIntegration().toString());
+                    m.put("dateAffectation", soulDepartmentRepository.findBySoulIdAndDepartmentId(s.getId(), deptId)
+                            .stream().findFirst().map(sd -> sd.getDateAffectation() != null ? sd.getDateAffectation().toLocalDate().toString() : null)
+                            .orElse(null));
+                    m.put("origine", soulDepartmentRepository.findBySoulIdAndDepartmentId(s.getId(), deptId)
+                            .stream().findFirst().map(SoulDepartment::getOrigine).orElse(null));
+                    return m;
+                })
+                .toList();
+        deptDetail.put("nouveauxRecents", nouveauxRecents);
+
+        // Présence de la semaine : fiches de présence (saisie responsable)
+        List<UUID> soulIds = allSouls.stream().map(Soul::getId).toList();
+        List<MemberPresence> weekRecords = soulIds.isEmpty() ? List.of()
+                : memberPresenceRepository.findBySoulIdInOrderBySemaineDesc(soulIds).stream()
+                        .filter(r -> r.getSemaine().equals(currentWeek))
+                        .toList();
+        Set<UUID> pointedIds = weekRecords.stream().map(MemberPresence::getSoulId).collect(Collectors.toSet());
+        long absentsSemaine = weekRecords.stream().filter(r -> !Boolean.TRUE.equals(r.getPresent())).count();
+        long nonPointes = allSouls.stream().map(Soul::getId).filter(id -> !pointedIds.contains(id)).count();
+        deptDetail.put("absentsSemaine", absentsSemaine);
+        deptDetail.put("nonPointes", nonPointes);
+        deptDetail.put("pointesSemaine", (long) weekRecords.size());
+
+        // Membres à suivre : sans rapport soumis cette semaine
+        List<Map<String, Object>> membresSuivi = allSouls.stream()
+                .filter(s -> makerReportRepository.findByAmeIdAndSemaine(s.getId(), currentWeek).stream()
+                        .noneMatch(MakerReport::isSoumis))
+                .limit(8)
+                .map(s -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", s.getId());
+                    m.put("nom", s.getNomComplet());
+                    m.put("statut", s.getStatut().name());
+                    return m;
+                })
+                .toList();
+        deptDetail.put("membresSuivi", membresSuivi);
+
+        // Transferts en attente concernant les membres du département
+        List<UUID> deptSoulIds = allSouls.stream().map(Soul::getId).toList();
+        long transfertsEnAttente = transferRequestRepository.findAll().stream()
+                .filter(t -> (t.getStatut() == TransferStatus.EN_ATTENTE_VALIDATION
+                        || t.getStatut() == TransferStatus.VALIDATION_PARTIELLE))
+                .filter(t -> deptSoulIds.contains(t.getPersonneId()))
+                .count();
+        deptDetail.put("transfertsEnAttente", transfertsEnAttente);
+
+        // Événements à venir (30 jours) liés au département
+        LocalDateTime now = LocalDateTime.now();
+        UUID responsableId = selectedDept.getResponsableId();
+        List<Event> upcoming = eventRepository.findByDateDebutBetweenAndDeletedFalse(now, now.plusDays(30));
+        Set<UUID> memberUserIds = allSouls.stream().map(Soul::getUserId).filter(Objects::nonNull).collect(Collectors.toSet());
+        List<Map<String, Object>> evenementsAvenir = upcoming.stream()
+                .filter(ev -> (responsableId != null && responsableId.equals(ev.getOrganisateurId()))
+                        || eventRegistrationRepository.findByEventId(ev.getId()).stream()
+                                .anyMatch(r -> memberUserIds.contains(r.getUtilisateurId())))
+                .map(ev -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", ev.getId());
+                    m.put("titre", ev.getTitre());
+                    m.put("lieu", ev.getLieu());
+                    m.put("dateDebut", ev.getDateDebut() != null ? ev.getDateDebut().toString() : null);
+                    m.put("statut", ev.getStatut());
+                    return m;
+                })
+                .limit(8)
+                .toList();
+        deptDetail.put("evenementsAvenir", evenementsAvenir);
+
+        // Alertes actives du département (manuel + intelligentes)
+        List<Alert> activeAlerts = alertRepository.findAll().stream()
+                .filter(a -> a.getStatut() == StatutAlerte.ACTIVE
+                        && (deptId.equals(a.getDepartmentId()) || (a.getAmeId() != null && deptSoulIds.contains(a.getAmeId()))))
+                .sorted(Comparator.comparing(Alert::getDateDeclenchement).reversed())
+                .toList();
+        List<Map<String, Object>> alertesList = activeAlerts.stream().limit(5).map(a -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", a.getId());
+            m.put("typeAlerte", a.getTypeAlerte());
+            m.put("titre", a.getTitre());
+            m.put("message", a.getMessage());
+            m.put("priorite", a.getPriorite());
+            m.put("dateDeclenchement", a.getDateDeclenchement().toString());
+            return m;
+        }).toList();
+        deptDetail.put("alertes", alertesList);
         dashboard.put("departement", deptDetail);
 
         // ==================== STATISTIQUES GLOBALES ====================
@@ -840,6 +960,12 @@ public class DashboardService {
         stats.put("tachesEnRetard", tachesEnRetard);
         stats.put("tachesTerminees", tachesTerminees);
         stats.put("membresAffectes", membresAffectes);
+        stats.put("absentsSemaine", absentsSemaine);
+        stats.put("nonPointes", nonPointes);
+        stats.put("transfertsEnAttente", transfertsEnAttente);
+        stats.put("evenementsAvenir", (long) evenementsAvenir.size());
+        stats.put("alertesActives", (long) activeAlerts.size());
+        stats.put("membresSuivi", (long) membresSuivi.size());
         double tauxCompletion = rapportsAttendus > 0
                 ? Math.round((double) rapportsSoumis / rapportsAttendus * 1000.0) / 10.0
                 : 0.0;

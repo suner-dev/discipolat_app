@@ -18,4 +18,6 @@ public interface DepartmentAssignmentRepository extends JpaRepository<Department
     boolean existsByMemberIdAndTeamIdAndActifTrue(UUID memberId, UUID teamId);
 
     List<DepartmentAssignment> findByDepartmentIdAndMemberIdAndActifTrue(UUID departmentId, UUID memberId);
+
+    List<DepartmentAssignment> findByDepartmentIdAndMemberId(UUID departmentId, UUID memberId);
 }

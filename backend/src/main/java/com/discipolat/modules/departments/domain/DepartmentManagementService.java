@@ -812,6 +812,8 @@ public class DepartmentManagementService {
                 .soulId(memberId)
                 .departmentId(departmentId)
                 .actif(true)
+                .createdBy(securityUtils.getCurrentUserId())
+                .origine("MANUEL")
                 .build());
         String role = securityUtils.getCurrentUserRole();
         record(departmentId, "MEMBER_ADDED", "SOUL", memberId,
@@ -854,6 +856,8 @@ public class DepartmentManagementService {
                 .soulId(soul.getId())
                 .departmentId(departmentId)
                 .actif(true)
+                .createdBy(securityUtils.getCurrentUserId())
+                .origine("MANUEL")
                 .build());
         record(departmentId, "MEMBER_CREATED", "SOUL", soul.getId(),
                 "Membre « " + soul.getNomComplet() + " » créé et ajouté au département");

@@ -37,6 +37,14 @@ public class SoulDepartment {
     @Column(name = "actif", nullable = false)
     private boolean actif = true;
 
+    /** Compte utilisateur à l'origine du rattachement (traçabilité). */
+    @Column(name = "created_by")
+    private java.util.UUID createdBy;
+
+    /** Origine du rattachement : MANUEL | SIGNUP | TRANSFERT. */
+    @Column(name = "origine")
+    private String origine;
+
     @PrePersist
     protected void onCreate() {
         if (this.dateAffectation == null) {

@@ -193,6 +193,26 @@ public class DepartmentService {
                 .stream().map(Department::getId).toList();
     }
 
+    /**
+     * Départements parmi une liste d'ids, scoped à l'espace métier courant
+     * (super-utilisateur : tous ; responsable : les siens).
+     */
+    @Transactional(readOnly = true)
+    public List<Department> findAllIn(java.util.Collection<UUID> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        if (securityUtils.isSuperUser()) {
+            return departmentRepository.findAllByIdIn(ids);
+        }
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            Set<UUID> owned = departmentRepository.findByResponsableId(securityUtils.getCurrentUserId())
+                    .stream().map(Department::getId).collect(Collectors.toSet());
+            return departmentRepository.findAllByIdIn(ids).stream()
+                    .filter(d -> owned.contains(d.getId()))
+                    .toList();
+        }
+        return List.of();
+    }
+
     // ========================================================================
     // Scoping des données par département (deptId)
     // ========================================================================

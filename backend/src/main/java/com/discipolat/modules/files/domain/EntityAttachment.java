@@ -21,7 +21,7 @@ import java.util.UUID;
 public class EntityAttachment {
 
     /** Types d'entités métier pouvant porter des pièces jointes. */
-    public enum EntityType { MAKER_REPORT, FAMILY_REPORT, MEMBER_REQUEST, EVENT }
+    public enum EntityType { MAKER_REPORT, FAMILY_REPORT, MEMBER_REQUEST, EVENT, DEPARTMENT_MEMBER }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

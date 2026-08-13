@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -33,6 +34,12 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     List<Soul> findByFamilleIdIn(List<UUID> familleIds);
     Page<Soul> findByFamilleIdIn(List<UUID> familleIds, Pageable pageable);
     Page<Soul> findAllByIdIn(List<UUID> ids, Pageable pageable);
+
+    /** Détection de doublons à l'import (email). */
+    Optional<Soul> findByEmailIgnoreCaseAndDeletedFalse(String email);
+
+    /** Détection de doublons à l'import (téléphone). */
+    Optional<Soul> findByTelephoneAndDeletedFalse(String telephone);
     List<Soul> findByFaiseurIdIn(List<UUID> faiseurIds);
     long countByFaiseurId(UUID faiseurId);
     long countByFamilleId(UUID familleId);

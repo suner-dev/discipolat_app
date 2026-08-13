@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
@@ -59,9 +60,17 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
     final org = overview['org'] as Map<String, dynamic>? ?? {};
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestion du département'), actions: [
-        IconButton(icon: const Icon(Icons.refresh), onPressed: _reload),
-      ]),
+      appBar: AppBar(
+        title: const Text('Gestion du département'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            tooltip: 'Statistiques',
+            onPressed: () => context.go('/departments/${widget.departmentId}/stats'),
+          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _reload),
+        ],
+      ),
       drawer: const AppDrawer(),
       body: _isLoading
           ? const ShimmerLoading(itemCount: 5)

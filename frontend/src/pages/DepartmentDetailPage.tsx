@@ -1,18 +1,84 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import api from '@/lib/api';
-import type { Soul } from '@/types';
+import api, { getErrorMessage } from '@/lib/api';
+import toast from 'react-hot-toast';
 import {
   Building2, Users, Heart, ArrowLeft, Mail, UserCog,
   ChevronRight, Loader2, AlertTriangle, BarChart3, FileText,
-  CheckCircle2, XCircle, Clock, AlertCircle, Search,
+  CheckCircle2, XCircle, Clock, AlertCircle, Search, Download, Upload, FolderOpen,
 } from 'lucide-react';
 
 export default function DepartmentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [memberSearch, setMemberSearch] = useState('');
+  const [importPreview, setImportPreview] = useState<any[] | null>(null);
+  const [importCounts, setImportCounts] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ==================== EXPORT CSV ====================
+  const exportMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.get(`/departments/${id}/members/export`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const disposition = res.headers['content-disposition'] || '';
+      const match = disposition.match(/filename=([^;]+)/);
+      link.download = match ? match[1].replace(/"/g, '') : `membres-${id}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  // ==================== IMPORT CSV ====================
+  const importMutation = useMutation({
+    mutationFn: async ({ rows, preview }: { rows: any[]; preview: boolean }) => {
+      const res = await api.post(`/departments/${id}/members/import?preview=${preview}`, { rows });
+      return res.data as any;
+    },
+    onSuccess: (data, vars) => {
+      if (vars.preview) {
+        setImportCounts(data);
+        setImportPreview(data.resultats || []);
+      } else {
+        toast.success(`Import terminé : ${data.cree} créés, ${data.doublon} doublons, ${data.erreur} erreurs ✅`);
+        setImportPreview(null);
+        setImportCounts(null);
+        queryClient.invalidateQueries({ queryKey: ['department', id, 'members'] });
+        queryClient.invalidateQueries({ queryKey: ['department', id, 'detail'] });
+      }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const handleCsvFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || '');
+      const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+      if (lines.length === 0) {
+        toast.error('Fichier vide');
+        return;
+      }
+      const header = lines[0].split(';').map((h) => h.trim().toLowerCase());
+      const rows = lines.slice(1).map((line) => {
+        const cells = line.split(';').map((c) => c.replace(/"/g, '').trim());
+        const row: Record<string, string> = {};
+        header.forEach((h, i) => {
+          if (h) row[h] = cells[i] || '';
+        });
+        return row;
+      });
+      importMutation.mutate({ rows, preview: true });
+    };
+    reader.readAsText(file);
+  };
 
   const { data: dept, isLoading } = useQuery({
     queryKey: ['department', id],
@@ -132,9 +198,12 @@ export default function DepartmentDetailPage() {
         </div>
         <div className="stat-card">
           <span className="stat-label">Gestion & rapport</span>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             <Link to={`/departments/${id}/manage`} className="btn-primary btn-sm inline-flex">
               <Users className="w-4 h-4" /> Gérer
+            </Link>
+            <Link to={`/departments/${id}/stats`} className="btn-ghost btn-sm inline-flex">
+              <BarChart3 className="w-4 h-4" /> Stats
             </Link>
             <Link to={`/departments/${id}/report`} className="btn-ghost btn-sm inline-flex">
               <FileText className="w-4 h-4" /> Rapport
@@ -230,21 +299,87 @@ export default function DepartmentDetailPage() {
 
       {/* Members table */}
       <div className="glass-card p-6 mb-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Heart className="w-5 h-5 text-rose-500" />
             Membres du département ({members.length})
           </h2>
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="flex flex-wrap items-center gap-2">
             <input
-              className="input pl-9 py-1.5 text-sm"
-              placeholder="Rechercher un membre..."
-              value={memberSearch}
-              onChange={(e) => setMemberSearch(e.target.value)}
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleCsvFile(f);
+                e.target.value = '';
+              }}
             />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importMutation.isPending}
+              className="btn-secondary btn-sm cursor-pointer"
+              title="Importer des membres depuis un CSV (nom;prenom;email;telephone;profession;ville;equipe;poste)"
+            >
+              {importMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Importer CSV
+            </button>
+            <button
+              onClick={() => exportMutation.mutate()}
+              disabled={exportMutation.isPending}
+              className="btn-secondary btn-sm cursor-pointer"
+              title="Exporter les membres en CSV"
+            >
+              {exportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Exporter
+            </button>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                className="input pl-9 py-1.5 text-sm w-full sm:w-56"
+                placeholder="Rechercher un membre..."
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+              />
+            </div>
           </div>
         </div>
+
+        {/* Import preview */}
+        {importPreview && (
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 mb-4">
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Prévisualisation de l'import
+              </h3>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="badge badge-success text-[10px]">{importCounts?.cree ?? 0} à créer</span>
+                <span className="badge badge-warning text-[10px]">{importCounts?.doublon ?? 0} doublons</span>
+                <span className="badge badge-danger text-[10px]">{importCounts?.erreur ?? 0} erreurs</span>
+              </div>
+            </div>
+            <div className="max-h-48 overflow-y-auto mb-3">
+              {importPreview.map((r, i) => (
+                <div key={i} className="flex items-center gap-2 py-1 px-2 text-xs rounded-lg hover:bg-white/40 dark:hover:bg-gray-800/30">
+                  <span className={`w-2 h-2 rounded-full ${r.statut === 'CREER' ? 'bg-emerald-500' : r.statut === 'DOUBLON' ? 'bg-amber-500' : 'bg-red-500'}`} />
+                  <span className="font-medium text-gray-800 dark:text-gray-200">{r.nom} {r.prenom || ''}</span>
+                  <span className="text-gray-400">{r.email || r.telephone || ''}</span>
+                  {r.equipe && <span className="badge badge-info text-[9px]">{r.equipe}</span>}
+                  {r.message && <span className="text-gray-400 italic">{r.message}</span>}
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => { setImportPreview(null); setImportCounts(null); }} className="btn-ghost btn-xs cursor-pointer">Annuler</button>
+              <button
+                onClick={() => importMutation.mutate({ rows: importPreview.filter((r) => r.statut === 'CREER').map((r) => ({ nom: r.nom, prenom: r.prenom, email: r.email, telephone: r.telephone, equipe: r.equipe, poste: r.poste })), preview: false })}
+                disabled={importMutation.isPending || (importCounts?.cree ?? 0) === 0}
+                className="btn-primary btn-xs cursor-pointer"
+              >
+                <CheckCircle2 className="w-3 h-3" /> Confirmer l'import
+              </button>
+            </div>
+          </div>
+        )}
         {filteredMembers.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="data-table">
@@ -260,7 +395,7 @@ export default function DepartmentDetailPage() {
               </thead>
               <tbody>
                 {filteredMembers.map((m: any) => (
-                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 cursor-pointer" onClick={() => navigate(`/souls/${m.id}`)}>
+                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 cursor-pointer" onClick={() => navigate(`/departments/${id}/members/${m.id}`)}>
                     <td className="font-medium text-gray-900 dark:text-gray-100">{m.nom}</td>
                     <td>
                       {m.familleNom ? (
@@ -278,7 +413,17 @@ export default function DepartmentDetailPage() {
                         {m.typeDisciple === 'NOUVEAU_CONVERTI' ? 'Nv converti' : 'Nv arrivant'}
                       </span>
                     </td>
-                    <td><ChevronRight className="w-4 h-4 text-gray-400" /></td>
+                    <td className="flex items-center gap-2 justify-end">
+                      <Link
+                        to={`/departments/${id}/members/${m.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="btn-ghost btn-xs inline-flex"
+                        title="Dossier de gestion du membre"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" /> Dossier
+                      </Link>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </td>
                   </tr>
                 ))}
               </tbody>

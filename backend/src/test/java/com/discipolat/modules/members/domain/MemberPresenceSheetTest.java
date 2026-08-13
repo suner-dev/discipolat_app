@@ -104,7 +104,7 @@ class MemberPresenceSheetTest {
         when(securityUtils.getCurrentUserId()).thenReturn(responsableId);
         Soul s = soul();
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
-                .thenReturn(List.of(new SoulDepartment(soulId, deptId, LocalDateTime.now(), null, true)));
+                .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).departmentId(deptId).dateAffectation(LocalDateTime.now()).actif(true).build()));
         when(soulRepository.findById(soulId)).thenReturn(Optional.of(s));
         when(memberPresenceRepository.findByUserIdAndSemaine(any(), any())).thenReturn(Optional.empty());
 
@@ -129,7 +129,7 @@ class MemberPresenceSheetTest {
         when(securityUtils.getCurrentUserId()).thenReturn(responsableId);
         Soul s = soul();
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
-                .thenReturn(List.of(new SoulDepartment(soulId, deptId, LocalDateTime.now(), null, true)));
+                .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).departmentId(deptId).dateAffectation(LocalDateTime.now()).actif(true).build()));
         when(soulRepository.findById(soulId)).thenReturn(Optional.of(s));
         when(memberPresenceRepository.findByUserIdAndSemaine(any(), any())).thenReturn(Optional.empty());
         when(memberPresenceRepository.save(any(MemberPresence.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -156,7 +156,7 @@ class MemberPresenceSheetTest {
                 .dateIntegration(LocalDate.now().minusMonths(1))
                 .build();
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
-                .thenReturn(List.of(new SoulDepartment(soulId, deptId, LocalDateTime.now(), null, true)));
+                .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).departmentId(deptId).dateAffectation(LocalDateTime.now()).actif(true).build()));
         when(soulRepository.findById(soulId)).thenReturn(Optional.of(s));
         when(memberPresenceRepository.findBySoulIdAndSemaine(any(), any())).thenReturn(Optional.empty());
         when(memberPresenceRepository.save(any(MemberPresence.class))).thenAnswer(inv -> inv.getArgument(0));

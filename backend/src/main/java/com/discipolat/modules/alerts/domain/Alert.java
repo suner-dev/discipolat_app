@@ -32,9 +32,11 @@ public class Alert {
     private UUID departmentId;
 
     @Column(name = "cible", nullable = false)
+    @Builder.Default
     private String cible = "PERSONNE";
 
     @Column(name = "priorite", nullable = false)
+    @Builder.Default
     private String priorite = "MOYENNE";
 
     @Column(name = "titre")

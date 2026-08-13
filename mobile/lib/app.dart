@@ -18,6 +18,7 @@ import 'presentation/screens/events/events_list_screen.dart';
 import 'presentation/screens/departments/departments_list_screen.dart';
 import 'presentation/screens/departments/department_report_screen.dart';
 import 'presentation/screens/departments/department_management_screen.dart';
+import 'presentation/screens/departments/department_stats_screen.dart';
 import 'presentation/screens/evaluations/evaluations_screen.dart';
 import 'presentation/screens/search/search_screen.dart';
 import 'presentation/screens/souls/crm_faiseur_screen.dart';
@@ -158,6 +159,7 @@ Map<String, List<String>> _routeRoles = {
   '/notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/:id/manage': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/departments/:id/stats': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/evaluations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/crm-faiseur': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/souls/:id/pastoral-360': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -333,6 +335,13 @@ final appRouter = GoRouter(
       path: '/departments/:id/manage',
       name: 'department-manage',
       builder: (context, state) => DepartmentManagementScreen(
+        departmentId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/departments/:id/stats',
+      name: 'department-stats',
+      builder: (context, state) => DepartmentStatsScreen(
         departmentId: state.pathParameters['id']!,
       ),
     ),
