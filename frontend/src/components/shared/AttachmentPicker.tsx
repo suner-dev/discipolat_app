@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { useAuth } from '@/contexts/AuthContext';
 import type { FileEntity } from '@/types';
 import { Paperclip, X, FileText, Plus, Loader2 } from 'lucide-react';
 
@@ -24,12 +25,23 @@ const CATEGORIE_FALLBACK: Record<string, string> = {
   AUTRE: 'Autre',
 };
 
+/** Rôles ayant accès au module Fichiers (miroir du @PreAuthorize backend). */
+const FILES_ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'];
+
+/** Le rôle actif peut-il utiliser le module Fichiers ? */
+export function canAccessFilesModule(role: string | null | undefined): boolean {
+  return FILES_ROLES.includes(role ?? '');
+}
+
 /**
  * Sélecteur multi de pièces jointes (module Fichiers — références, pas d'upload
  * binaire) avec création directe d'un document. Réutilisé par tous les formulaires :
  * transferts, rapports, demandes membres, événements.
+ * Uniquement rendu pour les rôles autorisés sur le module Fichiers (le backend
+ * renvoie 403 aux autres, ex. MEMBRE) : évite boutons morts et erreurs console.
  */
 export default function AttachmentPicker({ value, onChange }: AttachmentPickerProps) {
+  const { user } = useAuth();
   const dictionaries = useDictionaries();
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -41,10 +53,17 @@ export default function AttachmentPicker({ value, onChange }: AttachmentPickerPr
   const [categorie, setCategorie] = useState('AUTRE');
   const queryClient = useQueryClient();
 
+  const canAccessFiles = canAccessFilesModule(user?.role);
+
   const { data: files } = useQuery({
     queryKey: FILES_QUERY_KEY,
     queryFn: async () => (await api.get('/files?size=100')).data.content as FileEntity[],
+    enabled: canAccessFiles,
   });
+
+  if (!canAccessFiles) {
+    return null;
+  }
 
   const toggle = (id: string, checked: boolean) => {
     onChange(checked ? [...value, id] : value.filter(x => x !== id));

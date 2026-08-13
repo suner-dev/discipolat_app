@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
+import { canAccessFilesModule } from '@/components/shared/AttachmentPicker';
 import { useDictionaries } from '@/hooks/useDictionaries';
 
 const STATUT_BADGES: Record<string, string> = {
@@ -676,15 +677,17 @@ export default function MemberDashboardPage() {
               value={requestForm.message}
               onChange={(e) => setRequestForm({ ...requestForm, message: e.target.value })}
             />
-            <div className="mt-3">
-              <label className="label flex items-center gap-1.5">
-                <Paperclip className="w-3.5 h-3.5 text-primary-500" /> Pièces jointes
-              </label>
-              <AttachmentPicker
-                value={requestForm.fichierIds}
-                onChange={(ids) => setRequestForm({ ...requestForm, fichierIds: ids })}
-              />
-            </div>
+            {canAccessFilesModule(user?.role) && (
+              <div className="mt-3">
+                <label className="label flex items-center gap-1.5">
+                  <Paperclip className="w-3.5 h-3.5 text-primary-500" /> Pièces jointes
+                </label>
+                <AttachmentPicker
+                  value={requestForm.fichierIds}
+                  onChange={(ids) => setRequestForm({ ...requestForm, fichierIds: ids })}
+                />
+              </div>
+            )}
             <button
               onClick={submitRequest}
               disabled={requestMutation.isPending || !requestForm.message.trim()}

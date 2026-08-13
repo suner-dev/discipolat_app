@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -40,10 +42,38 @@ public class FileService {
         return file;
     }
 
+    /**
+     * Périmètre famille effectif pour une liste de fichiers :
+     * <ul>
+     *   <li>{@code null} : aucun filtre famille (super-utilisateur — tout voir) ;</li>
+     *   <li>vide : rien de visible (aucune famille accessible) ;</li>
+     *   <li>sinon : ids des familles accessibles de l'espace métier courant.</li>
+     * </ul>
+     * Un {@code familleId} explicite vérifie d'abord l'accès à cette famille.
+     * Les fichiers « globaux » ({@code familleId} nul) restent réservés aux
+     * super-utilisateurs dans les listes (bibliothèque Documents).
+     */
+    private Collection<UUID> effectiveFamilyScope(UUID requestedFamilleId) {
+        if (requestedFamilleId != null) {
+            assertFamilyAccessible(requestedFamilleId);
+            return List.of(requestedFamilleId);
+        }
+        if (workspaceScopeService.isSuperUser()) {
+            return null;
+        }
+        return workspaceScopeService.accessibleFamilyIds();
+    }
+
     @Transactional(readOnly = true)
     public Page<FileEntity> findByFamilleId(UUID familleId, Pageable pageable) {
-        assertFamilyAccessible(familleId);
-        return fileRepository.findByFamilleIdAndDeletedFalse(familleId, pageable);
+        var scope = effectiveFamilyScope(familleId);
+        if (scope == null) {
+            return fileRepository.findByFamilleIdAndDeletedFalse(null, pageable);
+        }
+        if (scope.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return fileRepository.findByFamilleIdInAndDeletedFalse(scope, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -53,7 +83,14 @@ public class FileService {
 
     @Transactional(readOnly = true)
     public Page<FileEntity> findByCategorie(String categorie, Pageable pageable) {
-        return fileRepository.findByCategorieAndDeletedFalse(categorie, pageable);
+        var scope = effectiveFamilyScope(null);
+        if (scope == null) {
+            return fileRepository.findByCategorieAndDeletedFalse(categorie, pageable);
+        }
+        if (scope.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return fileRepository.findByCategorieAndFamilleIdInAndDeletedFalse(categorie, scope, pageable);
     }
 
     public FileEntity update(UUID id, FileEntity updated) {
@@ -71,6 +108,7 @@ public class FileService {
     }
 
     private void assertFamilyAccessible(UUID familleId) {
+        if (familleId == null) return;
         if (workspaceScopeService.isSuperUser()) return;
         if (!workspaceScopeService.canAccessFamily(familleId)) {
             throw new org.springframework.security.access.AccessDeniedException(
