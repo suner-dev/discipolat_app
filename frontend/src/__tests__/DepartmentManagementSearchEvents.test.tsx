@@ -35,6 +35,9 @@ const mockEvents = {
     { id: 'e1', titre: 'Convention départementale', typeEvenement: 'REUNION', statut: 'PLANIFIE', dateDebut: '2026-09-01T09:00:00' },
   ],
 };
+const mockSettings = {
+  departmentId: 'dept-1', absenceSeuil: 2, absencePeriode: 3, inactiviteMois: 3, tacheRetardAlerte: true,
+};
 
 vi.mock('@/lib/api', () => {
   const mockApiInstance = {
@@ -44,6 +47,7 @@ vi.mock('@/lib/api', () => {
       if (url.includes('/members')) return Promise.resolve({ data: mockMembers });
       if (url.includes('/management')) return Promise.resolve({ data: mockManagement });
       if (url.includes('/events/department/')) return Promise.resolve({ data: mockEvents });
+      if (url.includes('/settings')) return Promise.resolve({ data: mockSettings });
       return Promise.resolve({ data: {} });
     }),
     post: vi.fn().mockResolvedValue({ data: {} }),
@@ -112,5 +116,45 @@ describe('DepartmentManagementPage — recherche globale & événements', () => 
     const payload = (api.post as any).mock.calls[0][1];
     expect(payload.departmentId).toBe('dept-1');
     expect(payload.titre).toBe('Sortie d’évangélisation');
+  });
+
+  it('affiche et enregistre les seuils d\'alertes depuis l\'onglet Paramètres', async () => {
+    const { default: api } = await import('@/lib/api');
+    renderPage();
+    fireEvent.click(await screen.findByText('Paramètres'));
+
+    expect(await screen.findByText(/Seuils des alertes intelligentes/)).toBeInTheDocument();
+    // La valeur chargée depuis le serveur (mois d'inactivité = 3)
+    const inactivite = screen.getByLabelText('Mois sans présence (0–24)');
+    fireEvent.change(inactivite, { target: { value: '6' } });
+
+    fireEvent.click(screen.getByText("Enregistrer les paramètres"));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/departments/dept-1/settings', expect.anything()));
+    const payload = (api.put as any).mock.calls[0][1];
+    expect(payload.inactiviteMois).toBe(6);
+    expect(payload.absenceSeuil).toBe(2);
+  });
+
+  it('crée une équipe temporaire liée à un événement du département', async () => {
+    const { default: api } = await import('@/lib/api');
+    renderPage();
+    fireEvent.click(await screen.findByText('Nouvelle équipe'));
+
+    const typeSelect = screen.getByLabelText('Type');
+    fireEvent.change(typeSelect, { target: { value: 'EQUIPE_TEMPORAIRE' } });
+
+    // Le sélecteur d'événement apparaît avec les événements du département
+    const eventSelect = await screen.findByLabelText(/Événement lié/);
+    await screen.findByRole('option', { name: 'Convention départementale' });
+    fireEvent.change(eventSelect, { target: { value: 'e1' } });
+
+    const nom = screen.getByLabelText(/Nom de l'équipe/);
+    fireEvent.change(nom, { target: { value: 'Équipe logistique' } });
+    fireEvent.click(screen.getByText("Créer l'équipe"));
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/departments/dept-1/teams', expect.anything()));
+    const payload = (api.post as any).mock.calls[0][1];
+    expect(payload.eventId).toBe('e1');
+    expect(payload.type).toBe('EQUIPE_TEMPORAIRE');
   });
 });

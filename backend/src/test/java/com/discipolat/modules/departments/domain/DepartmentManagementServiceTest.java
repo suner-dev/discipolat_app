@@ -98,7 +98,7 @@ class DepartmentManagementServiceTest {
     void createTeam_savesTeamAndRecordsActivity() {
         DepartmentTeamRequest request = new DepartmentTeamRequest("Son", null,
                 DepartmentTeam.TeamType.EQUIPE_PERMANENTE, null, null, "Assurer le son",
-                null, null, null);
+                null, null, null, null);
         UUID teamId = UUID.randomUUID();
 
         when(teamRepository.save(any(DepartmentTeam.class))).thenAnswer(inv -> {
@@ -124,7 +124,7 @@ class DepartmentManagementServiceTest {
         when(teamRepository.findById(parentId)).thenReturn(Optional.of(parent));
 
         DepartmentTeamRequest request = new DepartmentTeamRequest("Enfant", parentId,
-                DepartmentTeam.TeamType.SOUS_DEPARTEMENT, null, null, null, null, null, null);
+                DepartmentTeam.TeamType.SOUS_DEPARTEMENT, null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> service.createTeam(deptId, request))
                 .isInstanceOf(BusinessRuleException.class);
@@ -137,10 +137,52 @@ class DepartmentManagementServiceTest {
         when(teamRepository.findById(teamId)).thenReturn(Optional.of(team));
 
         DepartmentTeamRequest request = new DepartmentTeamRequest("Vidéo", teamId,
-                DepartmentTeam.TeamType.SOUS_DEPARTEMENT, null, null, null, null, null, null);
+                DepartmentTeam.TeamType.SOUS_DEPARTEMENT, null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> service.updateTeam(deptId, teamId, request))
                 .isInstanceOf(BusinessRuleException.class);
+    }
+
+    @Test
+    void createTeam_lieeAUnEvenementDuDepartement_ok() {
+        UUID eventId = UUID.randomUUID();
+        com.discipolat.modules.events.domain.Event event = com.discipolat.modules.events.domain.Event.builder()
+                .id(eventId).departmentId(deptId).titre("Convention").build();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        UUID teamId = UUID.randomUUID();
+        when(teamRepository.save(any(DepartmentTeam.class))).thenAnswer(inv -> {
+            DepartmentTeam t = inv.getArgument(0);
+            t.setId(teamId);
+            return t;
+        });
+        when(assignmentRepository.findByDepartmentIdAndActifTrue(deptId)).thenReturn(List.of());
+
+        DepartmentTeamRequest request = new DepartmentTeamRequest("Logistique", null,
+                DepartmentTeam.TeamType.EQUIPE_TEMPORAIRE, null, null, null, null,
+                LocalDate.now(), LocalDate.now().plusDays(2), eventId);
+
+        Map<String, Object> result = service.createTeam(deptId, request);
+
+        assertThat(result.get("id")).isEqualTo(teamId);
+        ArgumentCaptor<DepartmentTeam> captor = ArgumentCaptor.forClass(DepartmentTeam.class);
+        verify(teamRepository).save(captor.capture());
+        assertThat(captor.getValue().getEventId()).isEqualTo(eventId);
+    }
+
+    @Test
+    void createTeam_evenementDunAutreDepartement_refuse() {
+        UUID eventId = UUID.randomUUID();
+        com.discipolat.modules.events.domain.Event event = com.discipolat.modules.events.domain.Event.builder()
+                .id(eventId).departmentId(UUID.randomUUID()).titre("Autre département").build();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+
+        DepartmentTeamRequest request = new DepartmentTeamRequest("Logistique", null,
+                DepartmentTeam.TeamType.EQUIPE_TEMPORAIRE, null, null, null, null,
+                null, null, eventId);
+
+        assertThatThrownBy(() -> service.createTeam(deptId, request))
+                .isInstanceOf(BusinessRuleException.class);
+        verify(teamRepository, never()).save(any(DepartmentTeam.class));
     }
 
     @Test

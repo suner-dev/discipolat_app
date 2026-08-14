@@ -7,7 +7,7 @@ import {
   Building2, ArrowLeft, Network, Briefcase, Users2, ListTodo, History,
   Plus, Pencil, Archive, Trash2, UserPlus, Loader2, CheckCircle2,
   Clock, AlertTriangle, CalendarDays, ChevronRight, ChevronDown, Save,
-  X, Star, Flag, FolderTree, Activity, ListChecks, Boxes, Search,
+  X,  Star, Flag, FolderTree, Activity, ListChecks, Boxes, Search, Settings,
 } from 'lucide-react';
 
 type Team = {
@@ -28,6 +28,7 @@ const TABS = [
   { key: 'checklists', label: 'Checklists', icon: ListChecks },
   { key: 'inventory', label: 'Inventaire', icon: Boxes },
   { key: 'events', label: 'Événements', icon: CalendarDays },
+  { key: 'settings', label: 'Paramètres', icon: Settings },
   { key: 'activity', label: 'Activité', icon: History },
 ] as const;
 
@@ -174,18 +175,19 @@ export default function DepartmentManagementPage() {
       </div>
 
       {tab === 'org' && (
-        <OrganisationTab teams={teams} rootTeams={rootTeams} members={members} onChanged={invalidate} />
+        <OrganisationTab deptId={id || ''} teams={teams} rootTeams={rootTeams} members={members} onChanged={invalidate} />
       )}
-      {tab === 'positions' && <PositionsTab positions={positions} onChanged={invalidate} />}
+      {tab === 'positions' && <PositionsTab deptId={id || ''} positions={positions} onChanged={invalidate} />}
       {tab === 'assignments' && (
-        <AssignmentsTab assignments={assignments} teams={teams} positions={positions} members={members} onChanged={invalidate} />
+        <AssignmentsTab deptId={id || ''} assignments={assignments} teams={teams} positions={positions} members={members} onChanged={invalidate} />
       )}
       {tab === 'tasks' && (
-        <TasksTab taskStats={taskStats} teams={teams} members={members} onChanged={invalidate} />
+        <TasksTab deptId={id || ''} taskStats={taskStats} teams={teams} members={members} onChanged={invalidate} />
       )}
       {tab === 'checklists' && <ChecklistsTab deptId={id || ''} onChanged={invalidate} />}
       {tab === 'inventory' && <InventoryTab deptId={id || ''} onChanged={invalidate} />}
       {tab === 'events' && <EventsTab deptId={id || ''} onChanged={invalidate} />}
+      {tab === 'settings' && <SettingsTab deptId={id || ''} />}
       {tab === 'activity' && <ActivityTab activity={activity} />}
     </div>
   );
@@ -195,7 +197,7 @@ export default function DepartmentManagementPage() {
 // ORGANISATION — arbre des équipes / sous-départements
 // ============================================================
 
-function TeamNode({ team, teams, depth = 0 }: { team: Team; teams: Team[]; depth?: number }) {
+function TeamNode({ team, teams, depth = 0, deptId }: { team: Team; teams: Team[]; depth?: number; deptId: string }) {
   const children = teams.filter((t) => t.parentId === team.id);
   const [open, setOpen] = useState(depth < 1);
 
@@ -236,37 +238,33 @@ function TeamNode({ team, teams, depth = 0 }: { team: Team; teams: Team[]; depth
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <TeamActions team={team} teams={teams} onChanged={() => {}} />
+          <TeamActions team={team} teams={teams} deptId={deptId} onChanged={() => {}} />
         </div>
       </div>
-      {open && children.map((c) => <TeamNode key={c.id} team={c} teams={teams} depth={depth + 1} />)}
+      {open && children.map((c) => <TeamNode key={c.id} team={c} teams={teams} depth={depth + 1} deptId={deptId} />)}
     </div>
   );
 }
 
-function TeamActions({ team, teams, onChanged }: { team: Team; teams: Team[]; onChanged: () => void }) {
+function TeamActions({ team, teams, deptId, onChanged }: { team: Team; teams: Team[]; deptId: string; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
   const queryClient = useQueryClient();
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['department'] });
 
   const archiveMutation = useMutation({
     mutationFn: async () => {
-      await api.delete(`/departments/${getDeptId()}/teams/${team.id}`);
+      await api.delete(`/departments/${deptId}/teams/${team.id}`);
     },
     onSuccess: () => { toast.success('Équipe archivée'); invalidate(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
-
-  function getDeptId() {
-    const m = window.location.pathname.match(/^\/departments\/([^/]+)\/manage/);
-    return m ? m[1] : '';
-  }
 
   if (editing) {
     return (
       <EditTeamForm
         team={team}
         teams={teams}
+        deptId={deptId}
         onDone={() => { setEditing(false); invalidate(); }}
       />
     );
@@ -286,7 +284,7 @@ function TeamActions({ team, teams, onChanged }: { team: Team; teams: Team[]; on
   );
 }
 
-function EditTeamForm({ team, teams, onDone }: { team: Team; teams: Team[]; onDone: () => void }) {
+function EditTeamForm({ team, teams, deptId, onDone }: { team: Team; teams: Team[]; deptId: string; onDone: () => void }) {
   const queryClient = useQueryClient();
   const [nom, setNom] = useState(team.nom);
   const [parentId, setParentId] = useState(team.parentId || '');
@@ -296,18 +294,13 @@ function EditTeamForm({ team, teams, onDone }: { team: Team; teams: Team[]; onDo
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      await api.put(`/departments/${getDeptId()}/teams/${team.id}`, {
+      await api.put(`/departments/${deptId}/teams/${team.id}`, {
         nom, parentId: parentId || null, type, objectif: objectif || null, dateFin: dateFin || null,
       });
     },
     onSuccess: () => { toast.success('Équipe modifiée ✅'); queryClient.invalidateQueries({ queryKey: ['department'] }); onDone(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
-
-  function getDeptId() {
-    const m = window.location.pathname.match(/^\/departments\/([^/]+)\/manage/);
-    return m ? m[1] : '';
-  }
 
   return (
     <div className="flex items-center gap-2">
@@ -323,7 +316,7 @@ function EditTeamForm({ team, teams, onDone }: { team: Team; teams: Team[]; onDo
   );
 }
 
-function OrganisationTab({ teams, rootTeams, members, onChanged }: { teams: Team[]; rootTeams: Team[]; members: any[]; onChanged: () => void }) {
+function OrganisationTab({ teams, rootTeams, members, deptId, onChanged }: { teams: Team[]; rootTeams: Team[]; members: any[]; deptId: string; onChanged: () => void }) {
   const [showCreate, setShowCreate] = useState(false);
   return (
     <div className="glass-card p-5">
@@ -337,7 +330,7 @@ function OrganisationTab({ teams, rootTeams, members, onChanged }: { teams: Team
         </button>
       </div>
       {showCreate && (
-        <CreateTeamForm teams={teams} members={members} onDone={() => { setShowCreate(false); onChanged(); }} />
+        <CreateTeamForm deptId={deptId} teams={teams} members={members} onDone={() => { setShowCreate(false); onChanged(); }} />
       )}
       <div className="mt-2 space-y-1">
         {rootTeams.length === 0 && (
@@ -346,13 +339,13 @@ function OrganisationTab({ teams, rootTeams, members, onChanged }: { teams: Team
             <p className="text-sm text-gray-400">Aucune équipe — créez votre premier sous-département ou équipe</p>
           </div>
         )}
-        {rootTeams.map((t) => <TeamNode key={t.id} team={t} teams={teams} />)}
+        {rootTeams.map((t) => <TeamNode key={t.id} team={t} teams={teams} deptId={deptId} />)}
       </div>
     </div>
   );
 }
 
-function CreateTeamForm({ teams, members, onDone }: { teams: Team[]; members: any[]; onDone: () => void }) {
+function CreateTeamForm({ teams, members, deptId, onDone }: { teams: Team[]; members: any[]; deptId: string; onDone: () => void }) {
   const queryClient = useQueryClient();
   const [nom, setNom] = useState('');
   const [type, setType] = useState('EQUIPE_PERMANENTE');
@@ -360,54 +353,74 @@ function CreateTeamForm({ teams, members, onDone }: { teams: Team[]; members: an
   const [objectif, setObjectif] = useState('');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
+  const [eventId, setEventId] = useState('');
+
+  const { data: deptEvents = [] } = useQuery({
+    queryKey: ['department', deptId, 'events'],
+    queryFn: async () => (await api.get(`/events/department/${deptId}?size=100`)).data?.content ?? [],
+    enabled: !!deptId && type === 'EQUIPE_TEMPORAIRE',
+  });
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      await api.post(`/departments/${getDeptId()}/teams`, {
+      await api.post(`/departments/${deptId}/teams`, {
         nom, type, parentId: parentId || null, objectif: objectif || null,
-        dateDebut: dateDebut || null, dateFin: dateFin || null,
+        dateDebut: dateDebut || null, dateFin: dateFin || null, eventId: eventId || null,
       });
     },
     onSuccess: () => { toast.success('Équipe créée ✅'); queryClient.invalidateQueries({ queryKey: ['department'] }); onDone(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  function getDeptId() {
-    const m = window.location.pathname.match(/^\/departments\/([^/]+)\/manage/);
-    return m ? m[1] : '';
-  }
+  const selectEvent = (id: string) => {
+    setEventId(id);
+    const ev = deptEvents.find((e: any) => e.id === id);
+    if (ev?.dateDebut && !dateDebut) setDateDebut(ev.dateDebut.slice(0, 10));
+    if (ev?.dateFin && !dateFin) setDateFin(ev.dateFin.slice(0, 10));
+  };
 
   return (
     <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 mb-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
-          <label className="label">Nom de l'équipe *</label>
-          <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex : Son, Vidéo, Convention 2026…" />
+          <label className="label" htmlFor="team-nom">Nom de l'équipe *</label>
+          <input id="team-nom" className="input" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex : Son, Vidéo, Convention 2026…" />
         </div>
         <div>
-          <label className="label">Type</label>
-          <select className="input" value={type} onChange={(e) => setType(e.target.value)}>
+          <label className="label" htmlFor="team-type">Type</label>
+          <select id="team-type" className="input" value={type} onChange={(e) => setType(e.target.value)}>
             {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
         <div>
-          <label className="label">Équipe parente</label>
-          <select className="input" value={parentId} onChange={(e) => setParentId(e.target.value)}>
+          <label className="label" htmlFor="team-parent">Équipe parente</label>
+          <select id="team-parent" className="input" value={parentId} onChange={(e) => setParentId(e.target.value)}>
             <option value="">— Aucune (racine) —</option>
             {teams.map((t) => <option key={t.id} value={t.id}>{t.nom}</option>)}
           </select>
         </div>
         {type === 'EQUIPE_TEMPORAIRE' && (
-          <div className="grid grid-cols-2 gap-2">
+          <>
             <div>
-              <label className="label">Début</label>
-              <input type="date" className="input" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
+              <label className="label" htmlFor="team-event">Événement lié (optionnel)</label>
+              <select id="team-event" className="input" value={eventId} onChange={(e) => selectEvent(e.target.value)}>
+                <option value="">— Aucun événement —</option>
+                {deptEvents.map((ev: any) => (
+                  <option key={ev.id} value={ev.id}>{ev.titre}</option>
+                ))}
+              </select>
             </div>
-            <div>
-              <label className="label">Fin</label>
-              <input type="date" className="input" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="label">Début</label>
+                <input type="date" className="input" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
+              </div>
+              <div>
+                <label className="label">Fin</label>
+                <input type="date" className="input" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+              </div>
             </div>
-          </div>
+          </>
         )}
         <div className="sm:col-span-2 lg:col-span-4">
           <label className="label">Objectif</label>
@@ -429,7 +442,7 @@ function CreateTeamForm({ teams, members, onDone }: { teams: Team[]; members: an
 // POSTES
 // ============================================================
 
-function PositionsTab({ positions, onChanged }: { positions: Position[]; onChanged: () => void }) {
+function PositionsTab({ positions, deptId, onChanged }: { positions: Position[]; deptId: string; onChanged: () => void }) {
   const queryClient = useQueryClient();
   const [nom, setNom] = useState('');
   const [description, setDescription] = useState('');
@@ -437,21 +450,16 @@ function PositionsTab({ positions, onChanged }: { positions: Position[]; onChang
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      await api.post(`/departments/${getDeptId()}/positions`, { nom, description: description || null, competencesRequises: competences || null });
+      await api.post(`/departments/${deptId}/positions`, { nom, description: description || null, competencesRequises: competences || null });
     },
     onSuccess: () => { toast.success('Poste créé ✅'); setNom(''); setDescription(''); setCompetences(''); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
   const archiveMutation = useMutation({
-    mutationFn: async (positionId: string) => api.delete(`/departments/${getDeptId()}/positions/${positionId}`),
+    mutationFn: async (positionId: string) => api.delete(`/departments/${deptId}/positions/${positionId}`),
     onSuccess: () => { toast.success('Poste archivé'); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
-
-  function getDeptId() {
-    const m = window.location.pathname.match(/^\/departments\/([^/]+)\/manage/);
-    return m ? m[1] : '';
-  }
 
   return (
     <div className="glass-card p-5">
@@ -516,8 +524,8 @@ function PositionsTab({ positions, onChanged }: { positions: Position[]; onChang
 // AFFECTATIONS
 // ============================================================
 
-function AssignmentsTab({ assignments, teams, positions, members, onChanged }: {
-  assignments: Assignment[]; teams: Team[]; positions: Position[]; members: any[]; onChanged: () => void;
+function AssignmentsTab({ assignments, teams, positions, members, deptId, onChanged }: {
+  assignments: Assignment[]; teams: Team[]; positions: Position[]; members: any[]; deptId: string; onChanged: () => void;
 }) {
   const queryClient = useQueryClient();
   const [memberId, setMemberId] = useState('');
@@ -528,7 +536,7 @@ function AssignmentsTab({ assignments, teams, positions, members, onChanged }: {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      await api.post(`/departments/${getDeptId()}/assignments`, {
+      await api.post(`/departments/${deptId}/assignments`, {
         memberId, teamId: teamId || null, positionId: positionId || null, role, dateDebut: dateDebut || null,
       });
     },
@@ -536,15 +544,10 @@ function AssignmentsTab({ assignments, teams, positions, members, onChanged }: {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
   const endMutation = useMutation({
-    mutationFn: async (assignmentId: string) => api.delete(`/departments/${getDeptId()}/assignments/${assignmentId}`),
+    mutationFn: async (assignmentId: string) => api.delete(`/departments/${deptId}/assignments/${assignmentId}`),
     onSuccess: () => { toast.success('Affectation terminée'); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
-
-  function getDeptId() {
-    const m = window.location.pathname.match(/^\/departments\/([^/]+)\/manage/);
-    return m ? m[1] : '';
-  }
 
   const activeAssignments = assignments.filter((a) => a.actif);
   const inactiveAssignments = assignments.filter((a) => !a.actif);
@@ -651,14 +654,14 @@ function AssignmentsTab({ assignments, teams, positions, members, onChanged }: {
 // TÂCHES
 // ============================================================
 
-function TasksTab({ taskStats, teams, members, onChanged }: {
-  taskStats: any; teams: Team[]; members: any[]; onChanged: () => void;
+function TasksTab({ taskStats, teams, members, deptId, onChanged }: {
+  taskStats: any; teams: Team[]; members: any[]; deptId: string; onChanged: () => void;
 }) {
   const queryClient = useQueryClient();
   const { data: tasks = [] } = useQuery({
-    queryKey: ['department', getDeptId(), 'tasks'],
-    queryFn: async () => (await api.get(`/departments/${getDeptId()}/tasks`)).data as Task[],
-    enabled: !!getDeptId(),
+    queryKey: ['department', deptId, 'tasks'],
+    queryFn: async () => (await api.get(`/departments/${deptId}/tasks`)).data as Task[],
+    enabled: !!deptId,
   });
   const [titre, setTitre] = useState('');
   const [teamId, setTeamId] = useState('');
@@ -669,7 +672,7 @@ function TasksTab({ taskStats, teams, members, onChanged }: {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      await api.post(`/departments/${getDeptId()}/tasks`, {
+      await api.post(`/departments/${deptId}/tasks`, {
         titre, teamId: teamId || null, assignedTo: assignedTo || null, priorite, echeance: echeance || null,
       });
     },
@@ -679,22 +682,18 @@ function TasksTab({ taskStats, teams, members, onChanged }: {
 
   const updateMutation = useMutation({
     mutationFn: async ({ taskId, data }: { taskId: string; data: any }) =>
-      (await api.put(`/departments/${getDeptId()}/tasks/${taskId}`, data)).data,
+      (await api.put(`/departments/${deptId}/tasks/${taskId}`, data)).data,
     onSuccess: () => invalidateAll(),
     onError: (err) => toast.error(getErrorMessage(err)),
   });
   const deleteMutation = useMutation({
-    mutationFn: async (taskId: string) => api.delete(`/departments/${getDeptId()}/tasks/${taskId}`),
+    mutationFn: async (taskId: string) => api.delete(`/departments/${deptId}/tasks/${taskId}`),
     onSuccess: () => { toast.success('Tâche supprimée'); invalidateAll(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  function getDeptId() {
-    const m = window.location.pathname.match(/^\/departments\/([^/]+)\/manage/);
-    return m ? m[1] : '';
-  }
   function invalidateAll() {
-    queryClient.invalidateQueries({ queryKey: ['department', getDeptId(), 'tasks'] });
+    queryClient.invalidateQueries({ queryKey: ['department', deptId, 'tasks'] });
     queryClient.invalidateQueries({ queryKey: ['department'] });
     onChanged();
   }
@@ -1483,6 +1482,129 @@ function EventsTab({ deptId, onChanged }: { deptId: string; onChanged: () => voi
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================================
+// PARAMÈTRES — seuils configurables des alertes intelligentes
+// ============================================================
+
+function SettingsTab({ deptId }: { deptId: string }) {
+  const queryClient = useQueryClient();
+  const [absenceSeuil, setAbsenceSeuil] = useState(2);
+  const [absencePeriode, setAbsencePeriode] = useState(3);
+  const [inactiviteMois, setInactiviteMois] = useState(3);
+  const [tacheRetardAlerte, setTacheRetardAlerte] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+
+  const { isLoading } = useQuery({
+    queryKey: ['department', deptId, 'settings'],
+    queryFn: async () => {
+      const res = await api.get(`/departments/${deptId}/settings`);
+      const s = res.data ?? {};
+      setAbsenceSeuil(s.absenceSeuil ?? 2);
+      setAbsencePeriode(s.absencePeriode ?? 3);
+      setInactiviteMois(s.inactiviteMois ?? 3);
+      setTacheRetardAlerte(s.tacheRetardAlerte ?? true);
+      setLoaded(true);
+      return s;
+    },
+    enabled: !!deptId,
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      await api.put(`/departments/${deptId}/settings`, {
+        absenceSeuil, absencePeriode, inactiviteMois, tacheRetardAlerte,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Seuils d\'alertes enregistrés ✅');
+      queryClient.invalidateQueries({ queryKey: ['department', deptId, 'settings'] });
+      queryClient.invalidateQueries({ queryKey: ['department', deptId, 'alerts'] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const num = (v: string) => {
+    const n = Number(v);
+    return Number.isNaN(n) ? 0 : n;
+  };
+
+  return (
+    <div className="glass-card p-5">
+      <div className="flex items-center gap-2 mb-1">
+        <Settings className="w-4 h-4 text-primary-500" />
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Paramètres du département</h3>
+      </div>
+      <p className="text-xs text-gray-400 mb-4">
+        Seuils des alertes intelligentes — aucun paramètre n'est codé en dur : les règles
+        lisent ces valeurs. Modifiez-les puis enregistrez.
+      </p>
+
+      {isLoading && !loaded ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary-500" /></div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Absences répétées</p>
+            </div>
+            <p className="text-[11px] text-gray-400 mb-3">
+              Alerte HAUTE quand un membre est absent au moins N fois sur la période (en semaines).
+            </p>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="label" htmlFor="absence-seuil">Absences requises (1–10)</label>
+                <input id="absence-seuil" type="number" min={1} max={10} className="input" value={absenceSeuil}
+                  onChange={(e) => setAbsenceSeuil(num(e.target.value))} />
+              </div>
+              <div className="flex-1">
+                <label className="label" htmlFor="absence-periode">Période en semaines (1–12)</label>
+                <input id="absence-periode" type="number" min={1} max={12} className="input" value={absencePeriode}
+                  onChange={(e) => setAbsencePeriode(num(e.target.value))} />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40">
+            <div className="flex items-center gap-2 mb-1">
+              <Activity className="w-4 h-4 text-emerald-500" />
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Inactivité</p>
+            </div>
+            <p className="text-[11px] text-gray-400 mb-3">
+              Alerte MOYENNE quand un membre n'a aucune fiche de présence depuis N mois (0 = désactivé).
+            </p>
+            <div className="flex-1">
+              <label className="label" htmlFor="inactivite-mois">Mois sans présence (0–24)</label>
+              <input id="inactivite-mois" type="number" min={0} max={24} className="input" value={inactiviteMois}
+                onChange={(e) => setInactiviteMois(num(e.target.value))} />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 sm:col-span-2">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={tacheRetardAlerte}
+                onChange={(e) => setTacheRetardAlerte(e.target.checked)}
+                className="w-4 h-4 accent-amber-500 cursor-pointer" />
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Activer l'alerte « tâche en retard »
+              </span>
+            </label>
+            <p className="text-[11px] text-gray-400 mt-1">
+              Alerte MOYENNE quand une tâche affectée dépasse son échéance.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}
+        className="btn-primary btn-sm mt-4 cursor-pointer">
+        {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+        Enregistrer les paramètres
+      </button>
     </div>
   );
 }

@@ -52,6 +52,10 @@ public class DepartmentTeam {
     @Builder.Default
     private TeamType type = TeamType.EQUIPE_PERMANENTE;
 
+    /** Événement du département auquel cette équipe temporaire est rattachée (null sinon). */
+    @Column(name = "event_id")
+    private UUID eventId;
+
     /** Responsable de l'équipe (compte utilisateur). */
     @Column(name = "chef_id")
     private UUID chefId;

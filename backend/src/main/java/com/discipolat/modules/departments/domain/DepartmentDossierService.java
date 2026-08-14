@@ -88,6 +88,7 @@ public class DepartmentDossierService {
     private final TransferRequestRepository transferRequestRepository;
     private final EntityAttachmentService attachmentService;
     private final NotificationService notificationService;
+    private final DepartmentSettingsService settingsService;
 
     public DepartmentDossierService(DepartmentService departmentService,
                                     DepartmentTeamRepository teamRepository,
@@ -114,7 +115,8 @@ public class DepartmentDossierService {
                                     AlertRepository alertRepository,
                                     TransferRequestRepository transferRequestRepository,
                                     EntityAttachmentService attachmentService,
-                                    NotificationService notificationService) {
+                                    NotificationService notificationService,
+                                    DepartmentSettingsService settingsService) {
         this.departmentService = departmentService;
         this.teamRepository = teamRepository;
         this.positionRepository = positionRepository;
@@ -141,6 +143,7 @@ public class DepartmentDossierService {
         this.transferRequestRepository = transferRequestRepository;
         this.attachmentService = attachmentService;
         this.notificationService = notificationService;
+        this.settingsService = settingsService;
     }
 
     /** Vérifie que le département existe et appartient à l'espace métier de l'utilisateur. */
@@ -947,23 +950,28 @@ public class DepartmentDossierService {
     // ========================================================================
 
     /**
-     * Génère les alertes automatiques du département (absence répétée, tâche en
-     * retard) puis retourne les alertes actives du département. Les alertes sont
-     * dédupliquées par (type, âme, département) : on ne crée jamais deux alertes
-     * identiques tant que la précédente n'a pas été résolue.
+     * Génère les alertes automatiques du département (absence répétée, inactivité,
+     * tâche en retard) puis retourne les alertes actives du département. Les
+     * seuils sont lus depuis le paramétrage du département ({@code settings})
+     * — jamais de constantes hardcodées. Les alertes sont dédupliquées par
+     * (type, âme, département) : on ne crée jamais deux alertes identiques
+     * tant que la précédente n'a pas été résolue.
      */
     public List<Map<String, Object>> getIntelligentAlerts(UUID departmentId) {
         assertCanManage(departmentId);
+        com.discipolat.modules.departments.domain.DepartmentSetting settings =
+                settingsService.effectiveSettings(departmentId);
         List<SoulDepartment> links = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId);
         if (links.isEmpty()) return List.of();
         List<Soul> souls = soulRepository.findAllById(links.stream().map(SoulDepartment::getSoulId).toList());
 
-        // Règle 1 : absence répétée (2 absences sur les 3 dernières fiches de présence)
+        // Règle 1 : absence répétée (seuil + période configurables)
         for (Soul soul : souls) {
             List<MemberPresence> records = presenceRepository.findBySoulIdInOrderBySemaineDesc(List.of(soul.getId()));
-            if (records.size() >= 3) {
-                long absences = records.stream().limit(3).filter(r -> !Boolean.TRUE.equals(r.getPresent())).count();
-                if (absences >= 2
+            if (records.size() >= settings.getAbsencePeriode()) {
+                long absences = records.stream().limit(settings.getAbsencePeriode())
+                        .filter(r -> !Boolean.TRUE.equals(r.getPresent())).count();
+                if (absences >= settings.getAbsenceSeuil()
                         && !alertRepository.existsByDepartmentIdAndAmeIdAndTypeAlerteAndStatut(
                                 departmentId, soul.getId(), "ABSENCE_REPETEE", StatutAlerte.ACTIVE)) {
                     alertRepository.save(Alert.builder()
@@ -974,7 +982,8 @@ public class DepartmentDossierService {
                             .typeAlerte("ABSENCE_REPETEE")
                             .titre("Absences répétées — " + soul.getNomComplet())
                             .message(soul.getNomComplet() + " est absent(e) sur " + absences
-                                    + " des 3 dernières semaines. Un suivi est recommandé.")
+                                    + " des " + settings.getAbsencePeriode()
+                                    + " dernières semaines. Un suivi est recommandé.")
                             .dateDeclenchement(LocalDateTime.now())
                             .statut(StatutAlerte.ACTIVE)
                             .build());
@@ -982,10 +991,40 @@ public class DepartmentDossierService {
             }
         }
 
-        // Règle 2 : tâches en retard
+        // Règle 2 : inactivité (aucune fiche de présence depuis N mois, 0 = désactivée)
+        if (settings.getInactiviteMois() > 0) {
+            LocalDate cutoff = LocalDate.now().minusMonths(settings.getInactiviteMois());
+            Map<UUID, LocalDate> joinDate = links.stream().collect(Collectors.toMap(
+                    SoulDepartment::getSoulId,
+                    l -> l.getDateAffectation() != null ? l.getDateAffectation().toLocalDate() : LocalDate.now()));
+            for (Soul soul : souls) {
+                List<MemberPresence> records = presenceRepository.findBySoulIdInOrderBySemaineDesc(List.of(soul.getId()));
+                boolean inactive = records.isEmpty()
+                        ? joinDate.getOrDefault(soul.getId(), LocalDate.now()).isBefore(cutoff)
+                        : records.get(0).getSemaine().isBefore(cutoff);
+                if (inactive
+                        && !alertRepository.existsByDepartmentIdAndAmeIdAndTypeAlerteAndStatut(
+                                departmentId, soul.getId(), "INACTIVITE", StatutAlerte.ACTIVE)) {
+                    alertRepository.save(Alert.builder()
+                            .departmentId(departmentId)
+                            .ameId(soul.getId())
+                            .cible("PERSONNE")
+                            .priorite("MOYENNE")
+                            .typeAlerte("INACTIVITE")
+                            .titre("Membre inactif — " + soul.getNomComplet())
+                            .message(soul.getNomComplet() + " n'a aucune fiche de présence depuis "
+                                    + settings.getInactiviteMois() + " mois. Un accompagnement est recommandé.")
+                            .dateDeclenchement(LocalDateTime.now())
+                            .statut(StatutAlerte.ACTIVE)
+                            .build());
+                }
+            }
+        }
+
+        // Règle 3 : tâches en retard (activable/désactivable)
         List<DepartmentTask> tasks = taskRepository.findByDepartmentIdOrderByEcheanceAsc(departmentId);
         for (DepartmentTask task : tasks) {
-            if (task.isOverdue() && task.getAssignedTo() != null
+            if (settings.isTacheRetardAlerte() && task.isOverdue() && task.getAssignedTo() != null
                     && !alertRepository.existsByDepartmentIdAndAmeIdAndTypeAlerteAndStatut(
                             departmentId, task.getAssignedTo(), "TACHE_EN_RETARD", StatutAlerte.ACTIVE)) {
                 alertRepository.save(Alert.builder()

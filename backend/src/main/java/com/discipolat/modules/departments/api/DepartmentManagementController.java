@@ -32,15 +32,18 @@ public class DepartmentManagementController {
     private final DepartmentManagementService managementService;
     private final DepartmentDossierService dossierService;
     private final DepartmentReportingService reportingService;
+    private final com.discipolat.modules.departments.domain.DepartmentSettingsService settingsService;
     private final com.discipolat.modules.departments.domain.DepartmentService departmentService;
 
     public DepartmentManagementController(DepartmentManagementService managementService,
                                           DepartmentDossierService dossierService,
                                           DepartmentReportingService reportingService,
+                                          com.discipolat.modules.departments.domain.DepartmentSettingsService settingsService,
                                           com.discipolat.modules.departments.domain.DepartmentService departmentService) {
         this.managementService = managementService;
         this.dossierService = dossierService;
         this.reportingService = reportingService;
+        this.settingsService = settingsService;
         this.departmentService = departmentService;
     }
 
@@ -120,6 +123,19 @@ public class DepartmentManagementController {
     @GetMapping("/alerts/smart")
     public ResponseEntity<List<Map<String, Object>>> smartAlerts(@PathVariable UUID departmentId) {
         return ResponseEntity.ok(dossierService.getIntelligentAlerts(departmentId));
+    }
+
+    // ======================= PARAMÉTRAGE (seuils d'alertes) =======================
+
+    @GetMapping("/settings")
+    public ResponseEntity<Map<String, Object>> settings(@PathVariable UUID departmentId) {
+        return ResponseEntity.ok(settingsService.getSettings(departmentId));
+    }
+
+    @PutMapping("/settings")
+    public ResponseEntity<Map<String, Object>> updateSettings(@PathVariable UUID departmentId,
+                                                              @RequestBody Map<String, Object> values) {
+        return ResponseEntity.ok(settingsService.updateSettings(departmentId, values));
     }
 
     // ======================= STATISTIQUES =======================

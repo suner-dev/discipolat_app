@@ -100,6 +100,8 @@ class DepartmentDossierServiceTest {
     private EntityAttachmentService attachmentService;
     @Mock
     private NotificationService notificationService;
+    @Mock
+    private DepartmentSettingsService settingsService;
 
     private DepartmentDossierService service;
     private final UUID deptId = UUID.randomUUID();
@@ -113,7 +115,9 @@ class DepartmentDossierServiceTest {
                 soulRepository, soulDepartmentRepository, soulNoteRepository, userRepository, familyRepository,
                 securityUtils, presenceRepository, disciplineRepository, makerReportRepository, evaluationRepository,
                 eventRegistrationRepository, eventRepository, alertRepository, transferRequestRepository,
-                attachmentService, notificationService);
+                attachmentService, notificationService, settingsService);
+        lenient().when(settingsService.effectiveSettings(deptId)).thenReturn(
+                DepartmentSetting.builder().departmentId(deptId).build());
         lenient().when(departmentService.findById(deptId)).thenReturn(new Department());
         lenient().when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
         lenient().when(userRepository.findById(any(UUID.class))).thenReturn(Optional.empty());

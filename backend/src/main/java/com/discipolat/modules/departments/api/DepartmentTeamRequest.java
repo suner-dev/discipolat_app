@@ -19,6 +19,8 @@ public record DepartmentTeamRequest(
         String objectif,
         String description,
         LocalDate dateDebut,
-        LocalDate dateFin
+        LocalDate dateFin,
+        /** Événement du département auquel rattacher une équipe temporaire. */
+        UUID eventId
 ) {
 }

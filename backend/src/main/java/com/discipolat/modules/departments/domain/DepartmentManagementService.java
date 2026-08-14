@@ -149,15 +149,30 @@ public class DepartmentManagementService {
 
         Map<UUID, Long> counts = assignmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
                 .collect(Collectors.groupingBy(DepartmentAssignment::getTeamId, Collectors.counting()));
-        return teams.stream().map(t -> toTeamMap(t, counts, userNames)).toList();
+
+        // Chargement groupé des titres d'événements liés (évite N+1)
+        Map<UUID, String> eventNames = new HashMap<>();
+        List<UUID> eventIds = teams.stream().map(DepartmentTeam::getEventId).filter(Objects::nonNull).distinct().toList();
+        if (!eventIds.isEmpty()) {
+            eventRepository.findAllById(eventIds).forEach(e -> eventNames.put(e.getId(), e.getTitre()));
+        }
+
+        return teams.stream().map(t -> toTeamMap(t, counts, userNames, eventNames)).toList();
     }
 
     private Map<String, Object> toTeamMap(DepartmentTeam t, Map<UUID, Long> counts, Map<UUID, String> userNames) {
+        return toTeamMap(t, counts, userNames, Map.of());
+    }
+
+    private Map<String, Object> toTeamMap(DepartmentTeam t, Map<UUID, Long> counts, Map<UUID, String> userNames,
+                                          Map<UUID, String> eventNames) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", t.getId());
         m.put("nom", t.getNom());
         m.put("parentId", t.getParentId());
         m.put("type", t.getType().name());
+        m.put("eventId", t.getEventId());
+        m.put("eventTitre", t.getEventId() != null ? eventNames.get(t.getEventId()) : null);
         m.put("chefId", t.getChefId());
         m.put("chefNom", t.getChefId() != null ? userNames.get(t.getChefId()) : null);
         m.put("adjointId", t.getAdjointId());
@@ -195,11 +210,13 @@ public class DepartmentManagementService {
     public Map<String, Object> createTeam(UUID departmentId, DepartmentTeamRequest request) {
         assertCanManage(departmentId);
         validateParent(departmentId, request.parentId(), null);
+        validateEventLink(departmentId, request.eventId());
         DepartmentTeam team = DepartmentTeam.builder()
                 .departmentId(departmentId)
                 .parentId(request.parentId())
                 .nom(request.nom().trim())
                 .type(request.type() != null ? request.type() : DepartmentTeam.TeamType.EQUIPE_PERMANENTE)
+                .eventId(request.eventId())
                 .chefId(request.chefId())
                 .adjointId(request.adjointId())
                 .objectif(request.objectif())
@@ -223,9 +240,11 @@ public class DepartmentManagementService {
             throw new org.springframework.security.access.AccessDeniedException("Accès refusé : équipe hors de votre espace métier");
         }
         validateParent(departmentId, request.parentId(), teamId);
+        validateEventLink(departmentId, request.eventId());
         team.setNom(request.nom().trim());
         team.setParentId(request.parentId());
         if (request.type() != null) team.setType(request.type());
+        team.setEventId(request.eventId());
         team.setChefId(request.chefId());
         team.setAdjointId(request.adjointId());
         team.setObjectif(request.objectif());
@@ -237,6 +256,20 @@ public class DepartmentManagementService {
                 "Équipe « " + team.getNom() + " » modifiée");
         return toTeamMap(team, assignmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
                 .collect(Collectors.groupingBy(DepartmentAssignment::getTeamId, Collectors.counting())), Map.of());
+    }
+
+    /**
+     * Valide le rattachement d'une équipe à un événement : l'événement doit
+     * exister et appartenir au département ; l'équipe devient temporaire.
+     */
+    private void validateEventLink(UUID departmentId, UUID eventId) {
+        if (eventId == null) return;
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("Event", eventId));
+        if (!departmentId.equals(event.getDepartmentId())) {
+            throw new com.discipolat.common.domain.BusinessRuleException(
+                    "L'événement doit appartenir au même département", "EVENT_DEPARTMENT_MISMATCH");
+        }
     }
 
     /** Archivage (récursif : la sous-hiérarchie est archivée, les affectations clôturées). */
