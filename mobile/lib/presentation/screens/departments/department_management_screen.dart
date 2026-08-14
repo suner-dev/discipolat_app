@@ -9,23 +9,34 @@ import '../../../data/services/api_service.dart';
 /// travail), Affectations membres → équipes/postes et Journal d'activité.
 class DepartmentManagementScreen extends StatefulWidget {
   final String departmentId;
+  final ApiService? apiService;
 
-  const DepartmentManagementScreen({super.key, required this.departmentId});
+  const DepartmentManagementScreen({super.key, required this.departmentId, this.apiService});
 
   @override
   State<DepartmentManagementScreen> createState() => _DepartmentManagementScreenState();
 }
 
 class _DepartmentManagementScreenState extends State<DepartmentManagementScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
+  final _searchCtrl = TextEditingController();
   Map<String, dynamic>? _overview;
   bool _isLoading = true;
   List<dynamic> _members = [];
+  Map<String, dynamic> _searchResults = const {};
+  bool _searching = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -45,6 +56,41 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Recherche globale dans le département (membres, équipes, postes, tâches,
+  /// événements) — déclenchée à partir de 2 caractères, données réelles.
+  Future<void> _runSearch(String value) async {
+    final q = value.trim();
+    if (q.length < 2) {
+      if (mounted) {
+        setState(() {
+          _searchResults = const {};
+          _searchQuery = '';
+          _searching = false;
+        });
+      }
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _searchQuery = q;
+        _searching = true;
+      });
+    }
+    try {
+      final res = await _apiService.get('/departments/${widget.departmentId}/search',
+          params: {'q': q});
+      if (mounted && _searchCtrl.text.trim() == q) {
+        setState(() {
+          _searchResults = (res.data is Map ? res.data : <String, dynamic>{})
+              as Map<String, dynamic>;
+          _searching = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _searching = false);
     }
   }
 
@@ -80,81 +126,226 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
       body: _isLoading
           ? const ShimmerLoading(itemCount: 5)
           : DefaultTabController(
-              length: 5,
+              length: 6,
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GlassCard(
-                            padding: const EdgeInsets.all(10),
-                            child: Column(
-                              children: [
-                                Text('${org['equipesActives'] ?? 0}',
-                                    style: const TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold)),
-                                Text('Équipes', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
-                              ],
-                            ),
-                          ),
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      style: const TextStyle(color: Colors.white),
+                      onChanged: (v) => _runSearch(v),
+                      decoration: InputDecoration(
+                        hintText: 'Recherche rapide : membre, équipe, tâche…',
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13),
+                        prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4)),
+                        isDense: true,
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.08),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: GlassCard(
-                            padding: const EdgeInsets.all(10),
-                            child: Column(
-                              children: [
-                                Text('${org['postesActifs'] ?? 0}',
-                                    style: const TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
-                                Text('Postes', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: GlassCard(
-                            padding: const EdgeInsets.all(10),
-                            child: Column(
-                              children: [
-                                Text('${org['membresAffectes'] ?? 0}',
-                                    style: const TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
-                                Text('Affectés', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                  TabBar(
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    labelColor: Colors.white,
-                    indicatorColor: AppColors.accent,
-                    tabs: const [
-                      Tab(icon: Icon(Icons.group, size: 20), text: 'Membres'),
-                      Tab(icon: Icon(Icons.account_tree, size: 20), text: 'Organisation'),
-                      Tab(icon: Icon(Icons.checklist, size: 20), text: 'Tâches'),
-                      Tab(icon: Icon(Icons.group_add, size: 20), text: 'Affectations'),
-                      Tab(icon: Icon(Icons.history, size: 20), text: 'Activité'),
-                    ],
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        _MembersTab(deptId: _deptId, members: _members),
-                        _OrganisationTab(overview: overview, deptId: _deptId, onChanged: _reload),
-                        _TasksTab(overview: overview, members: _members, deptId: _deptId, onChanged: _reload),
-                        _AssignmentsTab(overview: overview, members: _members, deptId: _deptId, onChanged: _reload),
-                        _ActivityTab(activity: overview['activity'] as List<dynamic>? ?? []),
+                  if (_searchQuery.isNotEmpty)
+                    _SearchResultsPanel(
+                      query: _searchQuery,
+                      results: _searchResults,
+                      searching: _searching,
+                      deptId: _deptId,
+                      onClear: () {
+                        _searchCtrl.clear();
+                        setState(() {
+                          _searchResults = const {};
+                          _searchQuery = '';
+                          _searching = false;
+                        });
+                      },
+                    )
+                  else ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GlassCard(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                children: [
+                                  Text('${org['equipesActives'] ?? 0}',
+                                      style: const TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold)),
+                                  Text('Équipes', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: GlassCard(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                children: [
+                                  Text('${org['postesActifs'] ?? 0}',
+                                      style: const TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
+                                  Text('Postes', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: GlassCard(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                children: [
+                                  Text('${org['membresAffectes'] ?? 0}',
+                                      style: const TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
+                                  Text('Affectés', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TabBar(
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      labelColor: Colors.white,
+                      indicatorColor: AppColors.accent,
+                      tabs: const [
+                        Tab(icon: Icon(Icons.group, size: 20), text: 'Membres'),
+                        Tab(icon: Icon(Icons.account_tree, size: 20), text: 'Organisation'),
+                        Tab(icon: Icon(Icons.checklist, size: 20), text: 'Tâches'),
+                        Tab(icon: Icon(Icons.group_add, size: 20), text: 'Affectations'),
+                        Tab(icon: Icon(Icons.event, size: 20), text: 'Événements'),
+                        Tab(icon: Icon(Icons.history, size: 20), text: 'Activité'),
                       ],
                     ),
-                  ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _MembersTab(deptId: _deptId, members: _members),
+                          _OrganisationTab(overview: overview, deptId: _deptId, onChanged: _reload),
+                          _TasksTab(overview: overview, members: _members, deptId: _deptId, onChanged: _reload),
+                          _AssignmentsTab(overview: overview, members: _members, deptId: _deptId, onChanged: _reload),
+                          _EventsTab(deptId: _deptId, apiService: _apiService, onChanged: _reload),
+                          _ActivityTab(activity: overview['activity'] as List<dynamic>? ?? []),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
+    );
+  }
+}
+
+// ============================================================
+// RECHERCHE GLOBALE — résultats par catégorie (données réelles)
+// ============================================================
+
+class _SearchResultsPanel extends StatelessWidget {
+  final String query;
+  final Map<String, dynamic> results;
+  final bool searching;
+  final String deptId;
+  final VoidCallback onClear;
+
+  const _SearchResultsPanel({
+    required this.query,
+    required this.results,
+    required this.searching,
+    required this.deptId,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (searching) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final sections = <(String, String, IconData, Color, List<dynamic>)>[
+      ('membres', 'Membres', Icons.person, Colors.green, results['membres'] as List<dynamic>? ?? []),
+      ('equipes', 'Équipes', Icons.account_tree, Colors.amber, results['equipes'] as List<dynamic>? ?? []),
+      ('postes', 'Postes', Icons.work, Colors.blue, results['postes'] as List<dynamic>? ?? []),
+      ('taches', 'Tâches', Icons.checklist, Colors.purple, results['taches'] as List<dynamic>? ?? []),
+      ('evenements', 'Événements', Icons.event, Colors.orange, results['evenements'] as List<dynamic>? ?? []),
+    ];
+    final total = results['total'] as int? ?? 0;
+    return Expanded(
+      child: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  total > 0 ? '$total résultat(s) pour « $query »' : 'Aucun résultat pour « $query »',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.5), size: 18),
+                onPressed: onClear,
+              ),
+            ],
+          ),
+          if (total == 0)
+            GlassCard(
+              padding: const EdgeInsets.all(24),
+              child: Text('Essayez un nom, un poste, une équipe, une tâche ou un événement.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+            )
+          else
+            ...sections.where((s) => s.$5.isNotEmpty).map((s) {
+              final (_, label, icon, color, items) = s;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                    child: Text('$label (${items.length})',
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5)),
+                  ),
+                  ...items.map((r) {
+                    final item = r as Map<String, dynamic>;
+                    final label = '${item['titre'] ?? item['nom'] ?? item['nomComplet'] ?? ''}';
+                    return GlassCard(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.all(12),
+                      onTap: item['id'] != null
+                          ? () => context.go('/departments/$deptId/members/${item['id']}')
+                          : null,
+                      child: Row(
+                        children: [
+                          Icon(icon, color: color, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                          ),
+                          Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              );
+            }),
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 }
@@ -323,6 +514,23 @@ class _OrganisationTab extends StatelessWidget {
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
                   ],
                 ),
+                if (team['eventTitre'] != null) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(Icons.event, size: 12, color: Colors.orange.withValues(alpha: 0.8)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text('Événement : ${team['eventTitre']}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: Colors.orange.withValues(alpha: 0.8),
+                                fontSize: 11)),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -334,87 +542,168 @@ class _OrganisationTab extends StatelessWidget {
 
   Future<void> _showCreateTeam(BuildContext context, List<Map<String, dynamic>> teams) async {
     final nomCtrl = TextEditingController();
+    final dateDebutCtrl = TextEditingController();
+    final dateFinCtrl = TextEditingController();
     String type = 'EQUIPE_PERMANENTE';
     String? parentId;
     String objectif = '';
+    String? eventId;
+    List<Map<String, dynamic>> deptEvents = [];
+    bool eventsLoading = false;
 
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          backgroundColor: AppColors.cardDark,
-          title: const Text('Nouvelle équipe', style: TextStyle(color: Colors.white)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nomCtrl,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: "Nom de l'équipe"),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: type,
-                dropdownColor: AppColors.cardDark,
-                style: const TextStyle(color: Colors.white),
-                items: const [
-                  DropdownMenuItem(value: 'SOUS_DEPARTEMENT', child: Text('Sous-département', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'EQUIPE_PERMANENTE', child: Text('Équipe permanente', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'EQUIPE_TEMPORAIRE', child: Text('Équipe temporaire', style: TextStyle(color: Colors.white))),
-                ],
-                onChanged: (v) => setState(() => type = v ?? type),
-                decoration: const InputDecoration(labelText: 'Type'),
-              ),
-              if (teams.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String?>(
-                  initialValue: parentId,
-                  dropdownColor: AppColors.cardDark,
-                  style: const TextStyle(color: Colors.white),
-                  items: [
-                    const DropdownMenuItem<String?>(value: null, child: Text('— Aucune (racine) —', style: TextStyle(color: Colors.white))),
-                    ...teams.map((t) => DropdownMenuItem<String?>(
-                          value: t['id'] as String?,
-                          child: Text('${t['nom']}', style: const TextStyle(color: Colors.white)),
-                        )),
+        builder: (ctx, setState) {
+          Future<void> loadEvents() async {
+            if (deptEvents.isNotEmpty || eventsLoading) return;
+            setState(() => eventsLoading = true);
+            try {
+              final res = await ApiService().get('/events/department/$deptId', params: {'size': '100'});
+              if (ctx.mounted) {
+                setState(() {
+                  deptEvents = ((res.data is Map ? res.data['content'] : res.data) as List<dynamic>? ?? [])
+                      .map((e) => e as Map<String, dynamic>)
+                      .toList();
+                  eventsLoading = false;
+                });
+              }
+            } catch (_) {
+              if (ctx.mounted) setState(() => eventsLoading = false);
+            }
+          }
+
+          return AlertDialog(
+            backgroundColor: AppColors.cardDark,
+            title: const Text('Nouvelle équipe', style: TextStyle(color: Colors.white)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nomCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: "Nom de l'équipe"),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: type,
+                    dropdownColor: AppColors.cardDark,
+                    style: const TextStyle(color: Colors.white),
+                    items: const [
+                      DropdownMenuItem(value: 'SOUS_DEPARTEMENT', child: Text('Sous-département', style: TextStyle(color: Colors.white))),
+                      DropdownMenuItem(value: 'EQUIPE_PERMANENTE', child: Text('Équipe permanente', style: TextStyle(color: Colors.white))),
+                      DropdownMenuItem(value: 'EQUIPE_TEMPORAIRE', child: Text('Équipe temporaire', style: TextStyle(color: Colors.white))),
+                    ],
+                    onChanged: (v) {
+                      setState(() => type = v ?? type);
+                      if (v == 'EQUIPE_TEMPORAIRE') loadEvents();
+                    },
+                    decoration: const InputDecoration(labelText: 'Type'),
+                  ),
+                  if (teams.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String?>(
+                      initialValue: parentId,
+                      dropdownColor: AppColors.cardDark,
+                      style: const TextStyle(color: Colors.white),
+                      items: [
+                        const DropdownMenuItem<String?>(value: null, child: Text('— Aucune (racine) —', style: TextStyle(color: Colors.white))),
+                        ...teams.map((t) => DropdownMenuItem<String?>(
+                              value: t['id'] as String?,
+                              child: Text('${t['nom']}', style: const TextStyle(color: Colors.white)),
+                            )),
+                      ],
+                      onChanged: (v) => setState(() => parentId = v),
+                      decoration: const InputDecoration(labelText: 'Équipe parente'),
+                    ),
                   ],
-                  onChanged: (v) => setState(() => parentId = v),
-                  decoration: const InputDecoration(labelText: 'Équipe parente'),
-                ),
-              ],
-              const SizedBox(height: 12),
-              TextField(
-                style: const TextStyle(color: Colors.white),
-                onChanged: (v) => objectif = v,
-                decoration: const InputDecoration(labelText: 'Objectif (optionnel)'),
+                  if (type == 'EQUIPE_TEMPORAIRE') ...[
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String?>(
+                      initialValue: eventId,
+                      dropdownColor: AppColors.cardDark,
+                      style: const TextStyle(color: Colors.white),
+                      items: [
+                        const DropdownMenuItem<String?>(value: null, child: Text('— Aucun événement —', style: TextStyle(color: Colors.white))),
+                        ...deptEvents.map((e) => DropdownMenuItem<String?>(
+                              value: e['id'] as String?,
+                              child: Text(e['titre'] as String? ?? '',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.white)),
+                            )),
+                      ],
+                      onChanged: (v) {
+                        setState(() {
+                          eventId = v;
+                          final ev = deptEvents.where((e) => e['id'] == v).firstOrNull;
+                          if (ev != null) {
+                            if (dateDebutCtrl.text.isEmpty && ev['dateDebut'] != null) {
+                              dateDebutCtrl.text = ev['dateDebut'].toString().substring(0, 10);
+                            }
+                            if (dateFinCtrl.text.isEmpty && ev['dateFin'] != null) {
+                              dateFinCtrl.text = ev['dateFin'].toString().substring(0, 10);
+                            }
+                          }
+                        });
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Événement lié (optionnel)',
+                        helperText: eventsLoading ? 'Chargement des événements…' : null,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dateDebutCtrl,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(labelText: 'Date début (AAAA-MM-JJ)'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dateFinCtrl,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(labelText: 'Date fin (AAAA-MM-JJ)'),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    style: const TextStyle(color: Colors.white),
+                    onChanged: (v) => objectif = v,
+                    decoration: const InputDecoration(labelText: 'Objectif (optionnel)'),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+              FilledButton(
+                onPressed: () async {
+                  final api = ApiService();
+                  try {
+                    await api.post('/departments/$deptId/teams', data: {
+                      'nom': nomCtrl.text.trim(),
+                      'type': type,
+                      'parentId': parentId,
+                      'objectif': objectif.isEmpty ? null : objectif,
+                      'eventId': type == 'EQUIPE_TEMPORAIRE' ? eventId : null,
+                      'dateDebut': dateDebutCtrl.text.trim().isEmpty ? null : dateDebutCtrl.text.trim(),
+                      'dateFin': dateFinCtrl.text.trim().isEmpty ? null : dateFinCtrl.text.trim(),
+                    });
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    onChanged();
+                  } catch (_) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(content: Text('Échec de la création de l\'équipe')));
+                    }
+                  }
+                },
+                child: const Text('Créer'),
               ),
             ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
-            FilledButton(
-              onPressed: () async {
-                final api = ApiService();
-                try {
-                  await api.post('/departments/$deptId/teams', data: {
-                    'nom': nomCtrl.text.trim(),
-                    'type': type,
-                    'parentId': parentId,
-                    'objectif': objectif.isEmpty ? null : objectif,
-                  });
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  onChanged();
-                } catch (_) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                        const SnackBar(content: Text('Échec de la création de l\'équipe')));
-                  }
-                }
-              },
-              child: const Text('Créer'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -805,6 +1094,270 @@ class _AssignmentsTab extends StatelessWidget {
                 }
               },
               child: const Text('Affecter'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// ÉVÉNEMENTS DU DÉPARTEMENT — liste + création (departmentId)
+// ============================================================
+
+class _EventsTab extends StatelessWidget {
+  final String deptId;
+  final ApiService apiService;
+  final VoidCallback onChanged;
+
+  const _EventsTab({required this.deptId, required this.apiService, required this.onChanged});
+
+  static const _types = ['REUNION', 'SORTIE', 'RETRAITE', 'EVANGELISATION', 'VISITE', 'CONFERENCE', 'FORMATION', 'AUTRE'];
+  static const _typeLabels = {
+    'REUNION': 'Réunion', 'SORTIE': 'Sortie', 'RETRAITE': 'Retraite',
+    'EVANGELISATION': 'Évangélisation', 'VISITE': 'Visite', 'CONFERENCE': 'Conférence',
+    'FORMATION': 'Formation', 'ANNIVERSAIRE': 'Anniversaire', 'AUTRE': 'Autre',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: apiService.get('/events/department/$deptId', params: {'size': '100'}),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const ShimmerLoading(itemCount: 3);
+        }
+        final events = (snapshot.hasError
+                ? <dynamic>[]
+                : (snapshot.data?.data is Map ? snapshot.data?.data['content'] : snapshot.data?.data) as List<dynamic>? ??
+                    [])
+            .map((e) => e as Map<String, dynamic>)
+            .toList();
+        final upcoming = events
+            .where((e) => e['statut'] == 'PLANIFIE' || e['statut'] == 'EN_COURS')
+            .toList()
+          ..sort((a, b) => '${a['dateDebut']}'.compareTo('${b['dateDebut']}'));
+        final past = events
+            .where((e) => e['statut'] == 'TERMINE' || e['statut'] == 'ANNULE')
+            .toList()
+          ..sort((a, b) => '${b['dateDebut']}'.compareTo('${a['dateDebut']}'));
+
+        return RefreshIndicator(
+          onRefresh: () async => onChanged(),
+          child: ListView(
+            padding: const EdgeInsets.all(12),
+            children: [
+              SectionTitle(
+                title: 'Événements du département',
+                icon: Icons.event,
+                trailing: IconButton(
+                  icon: const Icon(Icons.add_circle, color: Colors.amber),
+                  onPressed: () => _showCreateEvent(context),
+                ),
+              ),
+              Text('À venir (${upcoming.length})',
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              if (upcoming.isEmpty)
+                GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Text('Aucun événement planifié. Créez le premier événement de votre département.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                )
+              else
+                ...upcoming.map((e) => _eventCard(context, e)),
+              if (past.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text('Passés (${past.length})',
+                    style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                ...past.map((e) => _eventCard(context, e)),
+              ],
+              const SizedBox(height: 80),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _eventCard(BuildContext context, Map<String, dynamic> e) {
+    final type = '${e['typeEvenement'] ?? 'AUTRE'}';
+    final statut = '${e['statut'] ?? 'PLANIFIE'}';
+    final statutColor = statut == 'TERMINE'
+        ? Colors.green
+        : statut == 'ANNULE'
+            ? Colors.grey
+            : statut == 'EN_COURS'
+                ? Colors.amber
+                : Colors.blue;    final dateStr = e['dateDebut']?.toString().substring(0, 16).replaceAll('T', ' ') ?? '';
+    return GlassCard(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.event, color: Colors.orange, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('${e['titre'] ?? ''}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+              ),
+              StatusBadge(label: statut, color: statutColor),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            children: [
+              _meta(Icons.label, _typeLabels[type] ?? type),
+
+              if (dateStr.isNotEmpty) _meta(Icons.access_time, dateStr),
+              if (e['lieu'] != null && e['lieu'].toString().isNotEmpty)
+                _meta(Icons.location_on, e['lieu'] as String),
+              if (e['description'] != null && e['description'].toString().isNotEmpty)
+                _meta(Icons.notes, '${e['description']}', expanded: true),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _meta(IconData icon, String text, {bool expanded = false}) {
+    return Row(
+      mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.4)),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showCreateEvent(BuildContext context) async {
+    final titreCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final lieuCtrl = TextEditingController();
+    String type = 'REUNION';
+    DateTime dateDebut = DateTime.now().add(const Duration(days: 7));
+
+    Future<void> pickDate() async {
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: dateDebut,
+        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+        lastDate: DateTime.now().add(const Duration(days: 365)),
+        builder: (context, child) => Theme(data: ThemeData.dark(), child: child!),
+      );
+      if (picked != null) {
+        dateDebut = DateTime(picked.year, picked.month, picked.day, dateDebut.hour, dateDebut.minute);
+      }
+    }
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          backgroundColor: AppColors.cardDark,
+          title: const Text('Nouvel événement du département', style: TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titreCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Titre *'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: type,
+                  dropdownColor: AppColors.cardDark,
+                  style: const TextStyle(color: Colors.white),
+                  items: _types
+                      .map((t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(_typeLabels[t] ?? t, style: const TextStyle(color: Colors.white)),
+                          ))
+                      .toList(),
+                  onChanged: (v) => setState(() => type = v ?? type),
+                  decoration: const InputDecoration(labelText: 'Type'),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.calendar_today, color: Colors.amber),
+                  title: Text(
+                    dateDebut.toString().substring(0, 16).replaceAll('T', ' '),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  trailing: const Text('Modifier', style: TextStyle(color: Colors.amber)),
+                  onTap: () async {
+                    await pickDate();
+                    if (ctx.mounted) setState(() {});
+                  },
+                ),
+                TextField(
+                  controller: lieuCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Lieu (optionnel)'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Description (optionnelle)'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+            FilledButton(
+              onPressed: () async {
+                if (titreCtrl.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Le titre est requis')));
+                  return;
+                }
+                final api = apiService;
+                try {
+                  await api.post('/events', data: {
+                    'typeEvenement': type,
+                    'titre': titreCtrl.text.trim(),
+                    'description': descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
+                    'lieu': lieuCtrl.text.trim().isEmpty ? null : lieuCtrl.text.trim(),
+                    'dateDebut': dateDebut.toIso8601String(),
+                    'departmentId': deptId,
+                  });
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  onChanged();
+                } catch (_) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(content: Text('Échec de la création de l\'événement')));
+                  }
+                }
+              },
+              child: const Text('Créer'),
             ),
           ],
         ),
