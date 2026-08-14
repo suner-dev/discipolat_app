@@ -4,13 +4,14 @@ import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
   Megaphone, Bell, Loader2, Plus, Send, Trash2, AlertTriangle, Clock,
-  UserPlus, Target, CheckCircle2,
+  UserPlus, Target, CheckCircle2, Users2,
 } from 'lucide-react';
 
 const CIBLE_LABELS: Record<string, string> = {
   TOUS: 'Tout le département',
   EQUIPE: 'Une équipe',
   POSTE: 'Un poste',
+  MEMBRES: 'Certains membres',
 };
 
 const ALERT_LABELS: Record<string, string> = {
@@ -25,6 +26,7 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
   const [cible, setCible] = useState('TOUS');
   const [teamId, setTeamId] = useState('');
   const [positionId, setPositionId] = useState('');
+  const [memberIds, setMemberIds] = useState<string[]>([]);
 
   const { data: announcements = [] } = useQuery({
     queryKey: ['department', deptId, 'announcements'],
@@ -46,6 +48,17 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
   const teams: any[] = overview?.teams ?? [];
   const positions: any[] = overview?.positions ?? [];
 
+  const { data: membersPage } = useQuery({
+    queryKey: ['department', deptId, 'members'],
+    queryFn: async () => (await api.get(`/departments/${deptId}/members?size=200`)).data as any,
+    enabled: !!deptId && cible === 'MEMBRES',
+  });
+  const members: any[] = membersPage?.content ?? [];
+
+  const toggleMember = (id: string) => {
+    setMemberIds((prev) => prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]);
+  };
+
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['department', deptId, 'announcements'] });
     queryClient.invalidateQueries({ queryKey: ['department', deptId, 'alerts', 'smart'] });
@@ -57,12 +70,13 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
         titre: titre.trim(), message: message.trim(), cible,
         teamId: cible === 'EQUIPE' && teamId ? teamId : null,
         positionId: cible === 'POSTE' && positionId ? positionId : null,
+        memberIds: cible === 'MEMBRES' ? memberIds : null,
       });
       return res.data;
     },
     onSuccess: () => {
       toast.success('Annonce publiée ✅');
-      setTitre(''); setMessage(''); setCible('TOUS'); setTeamId(''); setPositionId('');
+      setTitre(''); setMessage(''); setCible('TOUS'); setTeamId(''); setPositionId(''); setMemberIds([]);
       invalidate();
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -96,15 +110,15 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
               <textarea className="input" rows={2} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Contenu de l'annonce…" />
             </div>
             <div>
-              <label className="label">Cible</label>
-              <select className="input" value={cible} onChange={(e) => setCible(e.target.value)}>
+              <label className="label" htmlFor="annonce-cible">Cible</label>
+              <select id="annonce-cible" className="input" value={cible} onChange={(e) => setCible(e.target.value)}>
                 {Object.entries(CIBLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             {cible === 'EQUIPE' && (
               <div>
-                <label className="label">Équipe *</label>
-                <select className="input" value={teamId} onChange={(e) => setTeamId(e.target.value)}>
+                <label className="label" htmlFor="annonce-equipe">Équipe *</label>
+                <select id="annonce-equipe" className="input" value={teamId} onChange={(e) => setTeamId(e.target.value)}>
                   <option value="">— Choisir —</option>
                   {teams.filter((t) => t.statut === 'ACTIVE').map((t) => (
                     <option key={t.id} value={t.id}>{t.nom}</option>
@@ -114,8 +128,8 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
             )}
             {cible === 'POSTE' && (
               <div>
-                <label className="label">Poste *</label>
-                <select className="input" value={positionId} onChange={(e) => setPositionId(e.target.value)}>
+                <label className="label" htmlFor="annonce-poste">Poste *</label>
+                <select id="annonce-poste" className="input" value={positionId} onChange={(e) => setPositionId(e.target.value)}>
                   <option value="">— Choisir —</option>
                   {positions.filter((p) => p.statut === 'ACTIVE').map((p) => (
                     <option key={p.id} value={p.id}>{p.nom}</option>
@@ -124,9 +138,28 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
               </div>
             )}
           </div>
+          {cible === 'MEMBRES' && (
+            <div className="mt-3">
+              <label className="label">Membres ciblés ({memberIds.length} sélectionné{memberIds.length > 1 ? 's' : ''}) *</label>
+              {members.length === 0 ? (
+                <p className="text-xs text-gray-400">Chargement des membres…</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto p-2 rounded-xl bg-white/60 dark:bg-gray-900/40 border border-gray-200/60 dark:border-gray-700/40">
+                  {members.map((m) => (
+                    <label key={m.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg px-2 py-1.5">
+                      <input type="checkbox" checked={memberIds.includes(m.id)} onChange={() => toggleMember(m.id)}
+                        className="w-3.5 h-3.5 accent-amber-500 cursor-pointer" />
+                      <Users2 className="w-3 h-3 text-gray-400 shrink-0" />
+                      <span className="truncate">{m.nomComplet}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <button
             onClick={() => createMutation.mutate()}
-            disabled={!titre.trim() || !message.trim() || createMutation.isPending || (cible === 'EQUIPE' && !teamId) || (cible === 'POSTE' && !positionId)}
+            disabled={!titre.trim() || !message.trim() || createMutation.isPending || (cible === 'EQUIPE' && !teamId) || (cible === 'POSTE' && !positionId) || (cible === 'MEMBRES' && memberIds.length === 0)}
             className="btn-primary btn-sm mt-3 cursor-pointer"
           >
             {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Publier
@@ -149,6 +182,7 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
                     <p className="text-[10px] text-gray-400 mt-1">
                       {a.auteurNom || ''} · {new Date(a.createdAt).toLocaleDateString('fr-FR')}
                       {a.teamNom ? ` · ${a.teamNom}` : ''}{a.positionNom ? ` · ${a.positionNom}` : ''}
+                      {a.cible === 'MEMBRES' ? ` · ${a.nbMembres ?? 0} membre${(a.nbMembres ?? 0) > 1 ? 's' : ''} ciblé${(a.nbMembres ?? 0) > 1 ? 's' : ''}` : ''}
                     </p>
                   </div>
                   <button

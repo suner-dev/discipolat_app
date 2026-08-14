@@ -626,7 +626,9 @@ public class DepartmentDossierService {
         return annonces.stream()
                 .filter(a -> a.getCible() == DepartmentAnnouncement.Cible.TOUS
                         || (a.getCible() == DepartmentAnnouncement.Cible.EQUIPE && a.getTeamId() != null && teamIds.contains(a.getTeamId()))
-                        || (a.getCible() == DepartmentAnnouncement.Cible.POSTE && a.getPositionId() != null && positionIds.contains(a.getPositionId())))
+                        || (a.getCible() == DepartmentAnnouncement.Cible.POSTE && a.getPositionId() != null && positionIds.contains(a.getPositionId()))
+                        || (a.getCible() == DepartmentAnnouncement.Cible.MEMBRES
+                                && a.getMemberIds() != null && a.getMemberIds().contains(memberId)))
                 .map(a -> toAnnouncementMap(a))
                 .toList();
     }
@@ -641,6 +643,8 @@ public class DepartmentDossierService {
         m.put("teamNom", a.getTeamId() != null ? teamRepository.findById(a.getTeamId()).map(DepartmentTeam::getNom).orElse(null) : null);
         m.put("positionId", a.getPositionId());
         m.put("positionNom", a.getPositionId() != null ? positionRepository.findById(a.getPositionId()).map(DepartmentPosition::getNom).orElse(null) : null);
+        m.put("memberIds", a.getMemberIds() != null ? new ArrayList<>(a.getMemberIds()) : List.of());
+        m.put("nbMembres", a.getMemberIds() != null ? a.getMemberIds().size() : 0);
         m.put("auteurNom", userName(a.getAuteurId()));
         m.put("createdAt", ts(a.getCreatedAt()));
         return m;
@@ -728,6 +732,20 @@ public class DepartmentDossierService {
                         "Le poste doit appartenir au département", "POSITION_DEPARTMENT_MISMATCH");
             }
         }
+        Set<UUID> memberIds = new java.util.HashSet<>();
+        if (cible == DepartmentAnnouncement.Cible.MEMBRES) {
+            if (request.memberIds() == null || request.memberIds().isEmpty()) {
+                throw new com.discipolat.common.domain.BusinessRuleException(
+                        "Cible MEMBRES : au moins un membre est requis", "ANNOUNCEMENT_MEMBERS_REQUIRED");
+            }
+            for (UUID memberId : request.memberIds()) {
+                if (!soulDepartmentRepository.existsBySoulIdAndDepartmentIdAndActifTrue(memberId, departmentId)) {
+                    throw new com.discipolat.common.domain.BusinessRuleException(
+                            "Le membre ciblé n'appartient pas au département", "ANNOUNCEMENT_MEMBER_NOT_IN_DEPARTMENT");
+                }
+            }
+            memberIds.addAll(request.memberIds());
+        }
         DepartmentAnnouncement announcement = DepartmentAnnouncement.builder()
                 .departmentId(departmentId)
                 .auteurId(securityUtils.getCurrentUserId())
@@ -736,6 +754,7 @@ public class DepartmentDossierService {
                 .cible(cible)
                 .teamId(cible == DepartmentAnnouncement.Cible.EQUIPE ? request.teamId() : null)
                 .positionId(cible == DepartmentAnnouncement.Cible.POSTE ? request.positionId() : null)
+                .memberIds(memberIds)
                 .build();
         announcement = announcementRepository.save(announcement);
         activityRepository.save(DepartmentActivity.builder()

@@ -3,6 +3,7 @@ package com.discipolat.modules.departments.domain;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.api.DepartmentChecklistItemRequest;
 import com.discipolat.modules.departments.api.DepartmentChecklistRequest;
+import com.discipolat.modules.departments.api.DepartmentDocumentRequest;
 import com.discipolat.modules.departments.api.DepartmentEquipmentRequest;
 import com.discipolat.modules.departments.api.DepartmentReportRequest;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,7 @@ public class DepartmentReportingService {
     private final DepartmentChecklistRepository checklistRepository;
     private final DepartmentChecklistItemRepository checklistItemRepository;
     private final DepartmentEquipmentRepository equipmentRepository;
+    private final DepartmentDocumentRepository documentRepository;
     private final DepartmentMemberObjectiveRepository objectiveRepository;
     private final SecurityUtils securityUtils;
 
@@ -48,6 +50,7 @@ public class DepartmentReportingService {
                                       DepartmentChecklistRepository checklistRepository,
                                       DepartmentChecklistItemRepository checklistItemRepository,
                                       DepartmentEquipmentRepository equipmentRepository,
+                                      DepartmentDocumentRepository documentRepository,
                                       DepartmentMemberObjectiveRepository objectiveRepository,
                                       SecurityUtils securityUtils) {
         this.departmentService = departmentService;
@@ -56,6 +59,7 @@ public class DepartmentReportingService {
         this.checklistRepository = checklistRepository;
         this.checklistItemRepository = checklistItemRepository;
         this.equipmentRepository = equipmentRepository;
+        this.documentRepository = documentRepository;
         this.objectiveRepository = objectiveRepository;
         this.securityUtils = securityUtils;
     }
@@ -348,6 +352,88 @@ public class DepartmentReportingService {
         DepartmentEquipment equipment = equipmentRepository.findByIdAndDepartmentId(equipmentId, departmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Équipement introuvable"));
         equipmentRepository.delete(equipment);
+    }
+
+    // ========================================================================
+    // DOCUMENTATION DU DÉPARTEMENT (procédures, guides, formulaires…)
+    // ========================================================================
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listDocuments(UUID departmentId) {
+        requireDepartment(departmentId);
+        return documentRepository.findByDepartmentIdOrderByCreatedAtDesc(departmentId).stream()
+                .map(this::toDocumentMap)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> documentStats(UUID departmentId) {
+        requireDepartment(departmentId);
+        List<DepartmentDocument> actifs = documentRepository.findByDepartmentIdOrderByCreatedAtDesc(departmentId).stream()
+                .filter(d -> d.getStatut() == DepartmentDocument.DocumentStatus.ACTIF)
+                .toList();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("total", (long) actifs.size());
+        for (DepartmentDocument.DocumentType type : DepartmentDocument.DocumentType.values()) {
+            m.put(type.name(), actifs.stream().filter(d -> d.getType() == type).count());
+        }
+        return m;
+    }
+
+    @Transactional
+    public Map<String, Object> createDocument(UUID departmentId, DepartmentDocumentRequest request) {
+        requireDepartment(departmentId);
+        DepartmentDocument doc = DepartmentDocument.builder()
+                .departmentId(departmentId)
+                .titre(request.titre().trim())
+                .type(request.type() != null ? request.type() : DepartmentDocument.DocumentType.DOCUMENT)
+                .description(request.description())
+                .url(request.url())
+                .statut(DepartmentDocument.DocumentStatus.ACTIF)
+                .createdBy(securityUtils.getCurrentUserId())
+                .build();
+        documentRepository.save(doc);
+        return toDocumentMap(doc);
+    }
+
+    @Transactional
+    public Map<String, Object> updateDocument(UUID departmentId, UUID documentId, DepartmentDocumentRequest request) {
+        requireDepartment(departmentId);
+        DepartmentDocument doc = documentRepository.findById(documentId)
+                .filter(d -> d.getDepartmentId().equals(departmentId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable"));
+        doc.setTitre(request.titre().trim());
+        if (request.type() != null) doc.setType(request.type());
+        doc.setDescription(request.description());
+        doc.setUrl(request.url());
+        if (request.statut() != null) {
+            doc.setStatut(DepartmentDocument.DocumentStatus.valueOf(request.statut()));
+        }
+        documentRepository.save(doc);
+        return toDocumentMap(doc);
+    }
+
+    @Transactional
+    public void deleteDocument(UUID departmentId, UUID documentId) {
+        requireDepartment(departmentId);
+        DepartmentDocument doc = documentRepository.findById(documentId)
+                .filter(d -> d.getDepartmentId().equals(departmentId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable"));
+        documentRepository.delete(doc);
+    }
+
+    private Map<String, Object> toDocumentMap(DepartmentDocument d) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", d.getId());
+        m.put("departmentId", d.getDepartmentId());
+        m.put("titre", d.getTitre());
+        m.put("type", d.getType().name());
+        m.put("description", d.getDescription());
+        m.put("url", d.getUrl());
+        m.put("statut", d.getStatut().name());
+        m.put("createdBy", d.getCreatedBy());
+        m.put("createdAt", d.getCreatedAt() != null ? d.getCreatedAt().toString() : null);
+        return m;
     }
 
     // ========================================================================

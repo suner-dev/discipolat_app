@@ -44,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class DepartmentDossierServiceTest {
@@ -337,7 +338,7 @@ class DepartmentDossierServiceTest {
                 DepartmentTeam.builder().id(teamId).departmentId(otherDept).nom("Autre").build()));
 
         DepartmentAnnouncementRequest request = new DepartmentAnnouncementRequest(
-                "Répétition", "Présence à 8h", DepartmentAnnouncement.Cible.EQUIPE, teamId, null);
+                "Répétition", "Présence à 8h", DepartmentAnnouncement.Cible.EQUIPE, teamId, null, null);
 
         try {
             service.createAnnouncement(deptId, request);
@@ -349,9 +350,46 @@ class DepartmentDossierServiceTest {
     }
 
     @Test
+    void createAnnouncement_cibleMembres_avecMembreHorsDepartement_refuse() {
+        UUID otherMember = UUID.randomUUID();
+        when(soulDepartmentRepository.existsBySoulIdAndDepartmentIdAndActifTrue(otherMember, deptId)).thenReturn(false);
+
+        DepartmentAnnouncementRequest request = new DepartmentAnnouncementRequest(
+                "Rappel", "Répétition samedi", DepartmentAnnouncement.Cible.MEMBRES, null, null,
+                List.of(otherMember));
+
+        assertThatThrownBy(() -> service.createAnnouncement(deptId, request))
+                .isInstanceOf(com.discipolat.common.domain.BusinessRuleException.class);
+        verify(announcementRepository, never()).save(any());
+    }
+
+    @Test
+    void createAnnouncement_cibleMembres_valideEtSauvegarde() {
+        UUID memberA = UUID.randomUUID();
+        when(soulDepartmentRepository.existsBySoulIdAndDepartmentIdAndActifTrue(memberA, deptId)).thenReturn(true);
+        when(announcementRepository.save(any(DepartmentAnnouncement.class))).thenAnswer(inv -> {
+            DepartmentAnnouncement a = inv.getArgument(0);
+            a.setId(UUID.randomUUID());
+            a.setCreatedAt(LocalDateTime.now());
+            return a;
+        });
+
+        DepartmentAnnouncementRequest request = new DepartmentAnnouncementRequest(
+                "Rappel", "Répétition samedi", DepartmentAnnouncement.Cible.MEMBRES, null, null,
+                List.of(memberA));
+
+        Map<String, Object> annonce = service.createAnnouncement(deptId, request);
+
+        assertThat(annonce.get("cible")).isEqualTo("MEMBRES");
+        ArgumentCaptor<DepartmentAnnouncement> captor = ArgumentCaptor.forClass(DepartmentAnnouncement.class);
+        verify(announcementRepository).save(captor.capture());
+        assertThat(captor.getValue().getMemberIds()).contains(memberA);
+    }
+
+    @Test
     void createAnnouncement_savesForAllMembers() {
         DepartmentAnnouncementRequest request = new DepartmentAnnouncementRequest(
-                "Répétition", "Présence à 8h", DepartmentAnnouncement.Cible.TOUS, null, null);
+                "Répétition", "Présence à 8h", DepartmentAnnouncement.Cible.TOUS, null, null, null);
         when(announcementRepository.save(any(DepartmentAnnouncement.class))).thenAnswer(inv -> {
             DepartmentAnnouncement a = inv.getArgument(0);
             a.setId(UUID.randomUUID());

@@ -3,6 +3,7 @@ package com.discipolat.modules.departments.domain;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.api.DepartmentChecklistItemRequest;
 import com.discipolat.modules.departments.api.DepartmentChecklistRequest;
+import com.discipolat.modules.departments.api.DepartmentDocumentRequest;
 import com.discipolat.modules.departments.api.DepartmentEquipmentRequest;
 import com.discipolat.modules.departments.api.DepartmentReportRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,8 @@ class DepartmentReportingServiceTest {
     @Mock
     private DepartmentEquipmentRepository equipmentRepository;
     @Mock
+    private DepartmentDocumentRepository documentRepository;
+    @Mock
     private DepartmentMemberObjectiveRepository objectiveRepository;
     @Mock
     private SecurityUtils securityUtils;
@@ -50,7 +53,7 @@ class DepartmentReportingServiceTest {
     @BeforeEach
     void setUp() {
         service = new DepartmentReportingService(departmentService, dossierService, reportRepository,
-                checklistRepository, checklistItemRepository, equipmentRepository,
+                checklistRepository, checklistItemRepository, equipmentRepository, documentRepository,
                 objectiveRepository, securityUtils);
         deptId = UUID.randomUUID();
         userId = UUID.randomUUID();
@@ -60,6 +63,58 @@ class DepartmentReportingServiceTest {
         dept.setNom("Audiovisuel");
         lenient().when(departmentService.findById(deptId)).thenReturn(dept);
         lenient().when(securityUtils.getCurrentUserId()).thenReturn(userId);
+    }
+
+    // ======================= DOCUMENTATION =======================
+
+    @Test
+    void createDocument_savesAndReturns() {
+        DepartmentDocumentRequest request = new DepartmentDocumentRequest(
+                "Procédure d'accueil", DepartmentDocument.DocumentType.PROCEDURE,
+                "Accueil des nouveaux membres", "https://docs/procedure-accueil.pdf", null);
+        UUID docId = UUID.randomUUID();
+        when(documentRepository.save(any(DepartmentDocument.class))).thenAnswer(inv -> {
+            DepartmentDocument d = inv.getArgument(0);
+            d.setId(docId);
+            d.setCreatedAt(java.time.LocalDateTime.now());
+            return d;
+        });
+
+        Map<String, Object> doc = service.createDocument(deptId, request);
+
+        assertThat(doc.get("id")).isEqualTo(docId);
+        assertThat(doc.get("type")).isEqualTo("PROCEDURE");
+        assertThat(doc.get("statut")).isEqualTo("ACTIF");
+        verify(documentRepository).save(any(DepartmentDocument.class));
+    }
+
+    @Test
+    void updateDocument_refuseDocumentDunAutreDepartement() {
+        UUID docId = UUID.randomUUID();
+        DepartmentDocument other = DepartmentDocument.builder()
+                .id(docId).departmentId(UUID.randomUUID()).titre("Autre").build();
+        when(documentRepository.findById(docId)).thenReturn(Optional.of(other));
+
+        DepartmentDocumentRequest request = new DepartmentDocumentRequest(
+                "Guide", DepartmentDocument.DocumentType.GUIDE, null, null, null);
+
+        assertThatThrownBy(() -> service.updateDocument(deptId, docId, request))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(documentRepository, never()).save(any(DepartmentDocument.class));
+    }
+
+    @Test
+    void listDocuments_retourneLesDocumentsDuDepartement() {
+        DepartmentDocument doc = DepartmentDocument.builder()
+                .id(UUID.randomUUID()).departmentId(deptId).titre("Guide son")
+                .type(DepartmentDocument.DocumentType.GUIDE).statut(DepartmentDocument.DocumentStatus.ACTIF)
+                .build();
+        when(documentRepository.findByDepartmentIdOrderByCreatedAtDesc(deptId)).thenReturn(List.of(doc));
+
+        List<Map<String, Object>> docs = service.listDocuments(deptId);
+
+        assertThat(docs).hasSize(1);
+        assertThat(docs.get(0).get("titre")).isEqualTo("Guide son");
     }
 
     // ======================= RAPPORTS =======================

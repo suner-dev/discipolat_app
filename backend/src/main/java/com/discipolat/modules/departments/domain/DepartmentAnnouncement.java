@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -20,7 +21,7 @@ import java.util.UUID;
 public class DepartmentAnnouncement {
 
     public enum Cible {
-        TOUS, EQUIPE, POSTE
+        TOUS, EQUIPE, POSTE, MEMBRES
     }
 
     @Id
@@ -49,6 +50,13 @@ public class DepartmentAnnouncement {
 
     @Column(name = "position_id")
     private UUID positionId;
+
+    /** Membres ciblés (cible MEMBRES). */
+    @ElementCollection
+    @CollectionTable(name = "department_announcement_members",
+            joinColumns = @JoinColumn(name = "announcement_id"))
+    @Column(name = "member_id")
+    private Set<UUID> memberIds = new java.util.HashSet<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

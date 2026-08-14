@@ -491,4 +491,37 @@ public class DepartmentManagementController {
         reportingService.deleteEquipment(departmentId, equipmentId);
         return ResponseEntity.noContent().build();
     }
+
+    // ======================= DOCUMENTATION DU DÉPARTEMENT =======================
+
+    @GetMapping("/documents")
+    public ResponseEntity<List<Map<String, Object>>> documents(@PathVariable UUID departmentId) {
+        return ResponseEntity.ok(reportingService.listDocuments(departmentId));
+    }
+
+    @GetMapping("/documents/stats")
+    public ResponseEntity<Map<String, Object>> documentStats(@PathVariable UUID departmentId) {
+        return ResponseEntity.ok(reportingService.documentStats(departmentId));
+    }
+
+    @PostMapping("/documents")
+    public ResponseEntity<Map<String, Object>> createDocument(@PathVariable UUID departmentId,
+                                                              @Valid @RequestBody DepartmentDocumentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reportingService.createDocument(departmentId, request));
+    }
+
+    @PutMapping("/documents/{documentId}")
+    public ResponseEntity<Map<String, Object>> updateDocument(@PathVariable UUID departmentId,
+                                                              @PathVariable UUID documentId,
+                                                              @Valid @RequestBody DepartmentDocumentRequest request) {
+        return ResponseEntity.ok(reportingService.updateDocument(departmentId, documentId, request));
+    }
+
+    @DeleteMapping("/documents/{documentId}")
+    public ResponseEntity<Void> deleteDocument(@PathVariable UUID departmentId,
+                                               @PathVariable UUID documentId) {
+        reportingService.deleteDocument(departmentId, documentId);
+        return ResponseEntity.noContent().build();
+    }
 }

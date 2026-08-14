@@ -38,6 +38,13 @@ const mockEvents = {
 const mockSettings = {
   departmentId: 'dept-1', absenceSeuil: 2, absencePeriode: 3, inactiviteMois: 3, tacheRetardAlerte: true,
 };
+const mockDocuments = {
+  content: undefined,
+};
+const mockDocumentsList = [
+  { id: 'd1', titre: "Procédure d'accueil", type: 'PROCEDURE', statut: 'ACTIF', createdAt: '2026-08-01T10:00:00' },
+];
+const mockDocumentStats = { total: 1, PROCEDURE: 1, GUIDE: 0, DOCUMENT: 0, FORMULAIRE: 0, COMPTE_RENDU: 0, RESSOURCE: 0 };
 
 vi.mock('@/lib/api', () => {
   const mockApiInstance = {
@@ -48,7 +55,9 @@ vi.mock('@/lib/api', () => {
       if (url.includes('/management')) return Promise.resolve({ data: mockManagement });
       if (url.includes('/events/department/')) return Promise.resolve({ data: mockEvents });
       if (url.includes('/settings')) return Promise.resolve({ data: mockSettings });
-      return Promise.resolve({ data: {} });
+      if (url.includes('/documents/stats')) return Promise.resolve({ data: mockDocumentStats });
+      if (url.includes('/documents')) return Promise.resolve({ data: mockDocumentsList });
+      return Promise.resolve({ data: mockDocuments });
     }),
     post: vi.fn().mockResolvedValue({ data: {} }),
     put: vi.fn().mockResolvedValue({ data: {} }),
@@ -133,6 +142,23 @@ describe('DepartmentManagementPage — recherche globale & événements', () => 
     const payload = (api.put as any).mock.calls[0][1];
     expect(payload.inactiviteMois).toBe(6);
     expect(payload.absenceSeuil).toBe(2);
+  });
+
+  it('gère la documentation du département (ajout + liste par type)', async () => {
+    const { default: api } = await import('@/lib/api');
+    renderPage();
+    fireEvent.click(await screen.findByText('Documentation'));
+
+    expect(await screen.findByText("Procédure d'accueil")).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Ajouter un document'));
+    fireEvent.change(screen.getByLabelText('Titre *'), { target: { value: 'Guide son' } });
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'GUIDE' } });
+    fireEvent.click(screen.getByText('Ajouter'));
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/departments/dept-1/documents', expect.anything()));
+    const payload = (api.post as any).mock.calls[0][1];
+    expect(payload.titre).toBe('Guide son');
+    expect(payload.type).toBe('GUIDE');
   });
 
   it('crée une équipe temporaire liée à un événement du département', async () => {
