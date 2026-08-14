@@ -283,6 +283,30 @@ maintenable, documenté).
 
 ---
 
+## SESSION 2026-08-14 (fin) — diagnostic déploiement bêta Render (2e vérification)
+
+- **Services bêta : toujours inexistants** — `https://discipolat-beta.onrender.com`
+  et `https://discipolat-beta-api.onrender.com/api/v1/public/meta` → **404 instantané**
+  (pas un cold start). Le Sync Blueprint Render n'a jamais créé les services.
+- **Pipeline GitHub vérifié via l'API** (token local `repo`+`workflow`) :
+  - `CI/CD` : Backend ✓ · Frontend ✓ · Docker Build & Push ✓ · **Deploy to Render ✗**
+    (`##[error]Secrets RENDER_API_KEY et RENDER_API_SERVICE_ID manquants`)
+  - `Deploy Bêta to Render` : run « success » mais step **Trigger skipped**
+    (`RENDER_API_KEY` / `RENDER_BETA_API_SERVICE_ID` absents)
+  - **0 secret GitHub défini** (`GET /actions/secrets` → total_count 0).
+- **`verify-beta.sh` validé 18/18 ✓** contre une stack bêta locale relancée
+  (API profil `beta` sur :8090, base `discipolat_beta` — script `launch-beta.sh`,
+  log `beta-api.log`) : meta beta, 7 comptes démo, switch-role, feedback,
+  RBAC 403/401, isolation départements, reset (88 tables) + invariant feedback
+  conservé. Le script est prêt à tourner contre l'URL publique dès sa création.
+- **Blocage (2 causes)** : (1) services bêta jamais créés sur Render — Sync
+  Blueprint à faire par l'utilisateur (Dashboard Render → Blueprints) ;
+  (2) secrets GitHub absents : `RENDER_API_KEY`, `RENDER_API_SERVICE_ID`
+  (prod) et `RENDER_BETA_API_SERVICE_ID` (bêta).
+- Processus locaux actifs : API prod locale :8080 (log `backend-run.log`),
+  API bêta locale :8090 (`launch-beta.sh` / `beta-api.log`), Vite :5173,
+  Postgres :5433, Redis :6379, MailHog :8026.
+
 ## SESSION 2026-08-14 (fin) — parité mobile : événements, équipes liées, recherche globale
 
 - **Onglet « Événements »** dans `DepartmentManagementScreen` : liste À venir/Passés
