@@ -98,7 +98,7 @@ class _DepartmentMemberDossierScreenState
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                 )
               : DefaultTabController(
-                  length: 6,
+                  length: 8,
                   child: Column(
                     children: [
                       _header(context, profil, dossier),
@@ -113,6 +113,8 @@ class _DepartmentMemberDossierScreenState
                           Tab(icon: Icon(Icons.description, size: 20), text: 'Rapports'),
                           Tab(icon: Icon(Icons.sticky_note_2, size: 20), text: 'Notes'),
                           Tab(icon: Icon(Icons.folder_open, size: 20), text: 'Documents'),
+                          Tab(icon: Icon(Icons.campaign, size: 20), text: 'Annonces'),
+                          Tab(icon: Icon(Icons.swap_horiz, size: 20), text: 'Transferts'),
                           Tab(icon: Icon(Icons.history, size: 20), text: 'Activité'),
                         ],
                       ),
@@ -149,6 +151,12 @@ class _DepartmentMemberDossierScreenState
                             _DocumentsTab(
                               documents: dossier['documents'] as List<dynamic>? ?? [],
                               notesDisciple: dossier['notesDisciple'] as List<dynamic>? ?? [],
+                            ),
+                            _AnnoncesTab(
+                              items: dossier['annonces'] as List<dynamic>? ?? [],
+                            ),
+                            _TransfertsTab(
+                              items: dossier['transferts'] as List<dynamic>? ?? [],
                             ),
                             _ActiviteTab(
                               items: dossier['activite'] as List<dynamic>? ?? [],
@@ -1120,6 +1128,164 @@ class _DocumentsTab extends StatelessWidget {
                     ],
                   ),
                 )),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// ANNONCES
+// ============================================================
+
+class _AnnoncesTab extends StatelessWidget {
+  final List<dynamic> items;
+
+  const _AnnoncesTab({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final list = items.map((a) => a as Map<String, dynamic>).toList();
+
+    return RefreshIndicator(
+      onRefresh: () async {},
+      child: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          SectionTitle(
+              title: 'Annonces du département pour ce membre',
+              icon: Icons.campaign),
+          if (list.isEmpty)
+            GlassCard(
+              padding: const EdgeInsets.all(24),
+              child: Text('Aucune annonce ciblée',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+            )
+          else
+            ...list.map((a) => GlassCard(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  borderColor: Colors.amber.withValues(alpha: 0.35),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${a['titre'] ?? ''}',
+                          style: const TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                      const SizedBox(height: 2),
+                      Text('${a['message'] ?? ''}',
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${a['auteurNom'] ?? ''} · ${a['createdAt'] ?? ''}'
+                        '${a['teamNom'] != null ? ' · ${a['teamNom']}' : ''}'
+                        '${a['positionNom'] != null ? ' · ${a['positionNom']}' : ''}',
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.35), fontSize: 10),
+                      ),
+                    ],
+                  ),
+                )),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// TRANSFERTS
+// ============================================================
+
+const _transfertBadgeColors = <String, Color>{
+  'BROUILLON': Colors.white70,
+  'SOUMIS': Colors.lightBlue,
+  'EN_ATTENTE_VALIDATION': Colors.amber,
+  'VALIDATION_PARTIELLE': Colors.amber,
+  'VALIDE': Colors.lightBlue,
+  'EXECUTE': Colors.green,
+  'REFUSE': Colors.red,
+  'ANNULE': Colors.grey,
+  'ARCHIVE': Colors.grey,
+};
+
+class _TransfertsTab extends StatelessWidget {
+  final List<dynamic> items;
+
+  const _TransfertsTab({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final list = items.map((t) => t as Map<String, dynamic>).toList();
+
+    return RefreshIndicator(
+      onRefresh: () async {},
+      child: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          SectionTitle(
+              title: 'Historique des mouvements (${list.length})',
+              icon: Icons.swap_horiz),
+          if (list.isEmpty)
+            GlassCard(
+              padding: const EdgeInsets.all(24),
+              child: Text('Aucun transfert enregistré',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+            )
+          else
+            ...list.map((t) {
+              final statut = t['statut']?.toString() ?? '';
+              final ancienne = t['ancienneAffectation'] as Map?;
+              final nouvelle = t['nouvelleAffectation'] as Map?;
+              return GlassCard(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${t['type'] ?? ''}'.replaceAll('_', ' '),
+                            style: const TextStyle(
+                                color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
+                        ),
+                        StatusBadge(
+                          label: statut.replaceAll('_', ' '),
+                          color: _transfertBadgeColors[statut] ?? Colors.white70,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${ancienne?['nom'] != null ? 'de « ${ancienne!['nom']} » ' : ''}'
+                      '${nouvelle?['nom'] != null ? 'vers « ${nouvelle!['nom']} »' : ''}'
+                      '${t['demandeurNom'] != null ? ' · par ${t['demandeurNom']}' : ''}',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                    ),
+                    if (t['justification'] != null)
+                      Text('${t['justification']}',
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic)),
+                    const SizedBox(height: 2),
+                    Text(
+                      t['dateSoumission'] != null
+                          ? 'Soumis le ${t['dateSoumission']}'
+                          : 'Créé le ${t['createdAt'] ?? ''}',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10),
+                    ),
+                  ],
+                ),
+              );
+            }),
           const SizedBox(height: 80),
         ],
       ),

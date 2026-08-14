@@ -56,6 +56,7 @@ const mockKpi = {
 vi.mock('@/lib/api', () => {
   const mockApiInstance = {
     get: vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/reports/list')) return Promise.resolve({ data: [] });
       if (url.includes('/report')) return Promise.resolve({ data: mockReport });
       if (url.includes('/kpi')) return Promise.resolve({ data: mockKpi });
       return Promise.resolve({ data: { id: 'dept-1', nom: 'Département A' } });

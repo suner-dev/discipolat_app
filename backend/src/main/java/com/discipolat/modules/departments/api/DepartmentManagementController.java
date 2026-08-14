@@ -2,6 +2,7 @@ package com.discipolat.modules.departments.api;
 
 import com.discipolat.modules.departments.domain.DepartmentDossierService;
 import com.discipolat.modules.departments.domain.DepartmentManagementService;
+import com.discipolat.modules.departments.domain.DepartmentReportingService;
 import com.discipolat.modules.departments.domain.DepartmentTask;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -30,13 +31,16 @@ public class DepartmentManagementController {
 
     private final DepartmentManagementService managementService;
     private final DepartmentDossierService dossierService;
+    private final DepartmentReportingService reportingService;
     private final com.discipolat.modules.departments.domain.DepartmentService departmentService;
 
     public DepartmentManagementController(DepartmentManagementService managementService,
                                           DepartmentDossierService dossierService,
+                                          DepartmentReportingService reportingService,
                                           com.discipolat.modules.departments.domain.DepartmentService departmentService) {
         this.managementService = managementService;
         this.dossierService = dossierService;
+        this.reportingService = reportingService;
         this.departmentService = departmentService;
     }
 
@@ -337,6 +341,131 @@ public class DepartmentManagementController {
     @DeleteMapping("/reports/{reportId}")
     public ResponseEntity<Void> deleteMemberReport(@PathVariable UUID departmentId, @PathVariable UUID reportId) {
         dossierService.deleteMemberReport(departmentId, reportId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ======================= RAPPORTS DE DÉPARTEMENT (synthèses sauvegardées) =======================
+
+    /** Liste des rapports du département (synthèses sauvegardées). */
+    @GetMapping("/reports/list")
+    public ResponseEntity<List<Map<String, Object>>> departmentReports(@PathVariable UUID departmentId) {
+        return ResponseEntity.ok(reportingService.listReports(departmentId));
+    }
+
+    /** Génère et sauvegarde une synthèse du département sur les données réelles. */
+    @PostMapping("/reports/generate")
+    public ResponseEntity<Map<String, Object>> generateDepartmentReport(@PathVariable UUID departmentId,
+                                                                        @Valid @RequestBody DepartmentReportRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reportingService.generateReport(departmentId, request));
+    }
+
+    /** Sauvegarde un rapport rédigé manuellement. */
+    @PostMapping("/reports")
+    public ResponseEntity<Map<String, Object>> saveDepartmentReport(@PathVariable UUID departmentId,
+                                                                    @Valid @RequestBody DepartmentReportRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reportingService.saveManualReport(departmentId, request));
+    }
+
+    @DeleteMapping("/reports/saved/{reportId}")
+    public ResponseEntity<Void> deleteDepartmentReport(@PathVariable UUID departmentId,
+                                                       @PathVariable UUID reportId) {
+        reportingService.deleteReport(departmentId, reportId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Export CSV d'un rapport de département. */
+    @GetMapping(value = "/reports/saved/{reportId}/export", produces = "text/csv;charset=UTF-8")
+    public ResponseEntity<String> exportDepartmentReport(@PathVariable UUID departmentId,
+                                                         @PathVariable UUID reportId) {
+        String csv = reportingService.exportReportCsv(departmentId, reportId);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=rapport-departement.csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .body(csv);
+    }
+
+    // ======================= CHECKLISTS =======================
+
+    @GetMapping("/checklists")
+    public ResponseEntity<List<Map<String, Object>>> checklists(@PathVariable UUID departmentId,
+                                                                @RequestParam(required = false) String cibleType,
+                                                                @RequestParam(required = false) UUID cibleId) {
+        return ResponseEntity.ok(reportingService.listChecklists(departmentId, cibleType, cibleId));
+    }
+
+    @PostMapping("/checklists")
+    public ResponseEntity<Map<String, Object>> createChecklist(@PathVariable UUID departmentId,
+                                                               @Valid @RequestBody DepartmentChecklistRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reportingService.createChecklist(departmentId, request));
+    }
+
+    @PutMapping("/checklists/{checklistId}")
+    public ResponseEntity<Map<String, Object>> updateChecklist(@PathVariable UUID departmentId,
+                                                               @PathVariable UUID checklistId,
+                                                               @Valid @RequestBody DepartmentChecklistRequest request) {
+        return ResponseEntity.ok(reportingService.updateChecklist(departmentId, checklistId, request));
+    }
+
+    @PostMapping("/checklists/{checklistId}/items")
+    public ResponseEntity<Map<String, Object>> addChecklistItem(@PathVariable UUID departmentId,
+                                                                @PathVariable UUID checklistId,
+                                                                @Valid @RequestBody DepartmentChecklistItemRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reportingService.addChecklistItem(departmentId, checklistId, request));
+    }
+
+    @PutMapping("/checklists/{checklistId}/items/{itemId}")
+    public ResponseEntity<Map<String, Object>> toggleChecklistItem(@PathVariable UUID departmentId,
+                                                                   @PathVariable UUID checklistId,
+                                                                   @PathVariable UUID itemId,
+                                                                   @Valid @RequestBody DepartmentChecklistItemRequest request) {
+        return ResponseEntity.ok(reportingService.toggleChecklistItem(departmentId, checklistId, itemId, request));
+    }
+
+    @DeleteMapping("/checklists/{checklistId}/items/{itemId}")
+    public ResponseEntity<Void> deleteChecklistItem(@PathVariable UUID departmentId,
+                                                    @PathVariable UUID checklistId,
+                                                    @PathVariable UUID itemId) {
+        reportingService.deleteChecklistItem(departmentId, checklistId, itemId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/checklists/{checklistId}")
+    public ResponseEntity<Void> deleteChecklist(@PathVariable UUID departmentId,
+                                                @PathVariable UUID checklistId) {
+        reportingService.deleteChecklist(departmentId, checklistId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ======================= INVENTAIRE MATÉRIEL =======================
+
+    @GetMapping("/equipment")
+    public ResponseEntity<List<Map<String, Object>>> equipment(@PathVariable UUID departmentId) {
+        return ResponseEntity.ok(reportingService.listEquipment(departmentId));
+    }
+
+    @PostMapping("/equipment")
+    public ResponseEntity<Map<String, Object>> createEquipment(@PathVariable UUID departmentId,
+                                                               @Valid @RequestBody DepartmentEquipmentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reportingService.createEquipment(departmentId, request));
+    }
+
+    @PutMapping("/equipment/{equipmentId}")
+    public ResponseEntity<Map<String, Object>> updateEquipment(@PathVariable UUID departmentId,
+                                                               @PathVariable UUID equipmentId,
+                                                               @Valid @RequestBody DepartmentEquipmentRequest request) {
+        return ResponseEntity.ok(reportingService.updateEquipment(departmentId, equipmentId, request));
+    }
+
+    @DeleteMapping("/equipment/{equipmentId}")
+    public ResponseEntity<Void> deleteEquipment(@PathVariable UUID departmentId,
+                                                @PathVariable UUID equipmentId) {
+        reportingService.deleteEquipment(departmentId, equipmentId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -7,7 +7,7 @@ import {
   Building2, ArrowLeft, Network, Briefcase, Users2, ListTodo, History,
   Plus, Pencil, Archive, Trash2, UserPlus, Loader2, CheckCircle2,
   Clock, AlertTriangle, CalendarDays, ChevronRight, ChevronDown, Save,
-  X, Star, Flag, FolderTree, Activity,
+  X, Star, Flag, FolderTree, Activity, ListChecks, Boxes,
 } from 'lucide-react';
 
 type Team = {
@@ -25,6 +25,8 @@ const TABS = [
   { key: 'positions', label: 'Postes', icon: Briefcase },
   { key: 'assignments', label: 'Affectations', icon: Users2 },
   { key: 'tasks', label: 'Tâches', icon: ListTodo },
+  { key: 'checklists', label: 'Checklists', icon: ListChecks },
+  { key: 'inventory', label: 'Inventaire', icon: Boxes },
   { key: 'activity', label: 'Activité', icon: History },
 ] as const;
 
@@ -160,6 +162,8 @@ export default function DepartmentManagementPage() {
       {tab === 'tasks' && (
         <TasksTab taskStats={taskStats} teams={teams} members={members} onChanged={invalidate} />
       )}
+      {tab === 'checklists' && <ChecklistsTab onChanged={invalidate} />}
+      {tab === 'inventory' && <InventoryTab onChanged={invalidate} />}
       {tab === 'activity' && <ActivityTab activity={activity} />}
     </div>
   );
@@ -854,6 +858,382 @@ function ActivityTab({ activity }: { activity: ActivityItem[] }) {
                   {a.actorNom ? `par ${a.actorNom} · ` : ''}{new Date(a.createdAt).toLocaleString('fr-FR')}
                 </p>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// CHECKLISTS — listes de contrôle (préparation événement, tâche…)
+// ============================================================
+
+type Checklist = {
+  id: string; titre: string; cibleType: string; cibleId?: string | null;
+  statut: string; progression: number; createdAt?: string;
+  items: { id: string; libelle: string; fait: boolean }[];
+};
+
+function getDeptIdFromPath() {
+  const m = window.location.pathname.match(/^\/departments\/([^/]+)\/manage/);
+  return m ? m[1] : '';
+}
+
+function ChecklistsTab({ onChanged }: { onChanged: () => void }) {
+  const queryClient = useQueryClient();
+  const [titre, setTitre] = useState('');
+  const [cibleType, setCibleType] = useState('GENERAL');
+  const [items, setItems] = useState<string[]>(['', '']);
+  const deptId = getDeptIdFromPath();
+
+  const { data: checklists = [], isLoading } = useQuery({
+    queryKey: ['department', deptId, 'checklists'],
+    queryFn: async () => (await api.get(`/departments/${deptId}/checklists`)).data as Checklist[],
+    enabled: !!deptId,
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['department', deptId, 'checklists'] });
+    onChanged();
+  };
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      await api.post(`/departments/${deptId}/checklists`, {
+        titre, cibleType,
+        items: items.map((i) => i.trim()).filter(Boolean),
+      });
+    },
+    onSuccess: () => {
+      toast.success('Checklist créée ✅');
+      setTitre(''); setItems(['', '']);
+      invalidate();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const addItemMutation = useMutation({
+    mutationFn: async ({ checklistId, libelle }: { checklistId: string; libelle: string }) =>
+      api.post(`/departments/${deptId}/checklists/${checklistId}/items`, { libelle }),
+    onSuccess: invalidate,
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const toggleItemMutation = useMutation({
+    mutationFn: async ({ checklistId, itemId, fait }: { checklistId: string; itemId: string; fait: boolean }) =>
+      api.put(`/departments/${deptId}/checklists/${checklistId}/items/${itemId}`, { fait }),
+    onSuccess: invalidate,
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const closeMutation = useMutation({
+    mutationFn: async (checklistId: string) =>
+      api.put(`/departments/${deptId}/checklists/${checklistId}`, { statut: 'TERMINEE' }),
+    onSuccess: () => { toast.success('Checklist terminée'); invalidate(); },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (checklistId: string) =>
+      api.delete(`/departments/${deptId}/checklists/${checklistId}`),
+    onSuccess: () => { toast.success('Checklist supprimée'); invalidate(); },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: async ({ checklistId, itemId }: { checklistId: string; itemId: string }) =>
+      api.delete(`/departments/${deptId}/checklists/${checklistId}/items/${itemId}`),
+    onSuccess: invalidate,
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  if (isLoading) {
+    return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="glass-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <ListChecks className="w-4 h-4 text-primary-500" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouvelle checklist</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="label">Titre *</label>
+            <input className="input" value={titre} onChange={(e) => setTitre(e.target.value)}
+              placeholder="Ex : Préparation du culte de dimanche" />
+          </div>
+          <div>
+            <label className="label">Cible</label>
+            <select className="input" value={cibleType} onChange={(e) => setCibleType(e.target.value)}>
+              <option value="GENERAL">Général</option>
+              <option value="TACHE">Tâche</option>
+              <option value="EVENEMENT">Événement</option>
+              <option value="EQUIPE">Équipe</option>
+              <option value="MEMBRE">Membre</option>
+            </select>
+          </div>
+        </div>
+        <div className="space-y-2 mb-3">
+          {items.map((item, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input className="input flex-1" value={item}
+                onChange={(e) => setItems(items.map((v, i) => (i === idx ? e.target.value : v)))}
+                placeholder={`Élément ${idx + 1} — ex : Sono testée`} />
+              {items.length > 1 && (
+                <button onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                  className="p-2 rounded-lg text-gray-400 hover:text-red-500 cursor-pointer">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ))}
+          <button onClick={() => setItems([...items, ''])} className="text-xs text-primary-600 dark:text-primary-300 flex items-center gap-1 cursor-pointer">
+            <Plus className="w-3.5 h-3.5" /> Ajouter un élément
+          </button>
+        </div>
+        <button onClick={() => createMutation.mutate()} disabled={!titre.trim() || createMutation.isPending}
+          className="btn-primary btn-sm cursor-pointer">
+          <Plus className="w-4 h-4" /> Créer la checklist
+        </button>
+      </div>
+
+      {checklists.length === 0 ? (
+        <div className="text-center py-8">
+          <ListChecks className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+          <p className="text-sm text-gray-400">Aucune checklist pour le moment</p>
+        </div>
+      ) : (
+        checklists.map((c) => (
+          <div key={c.id} className="glass-card p-4">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className={`text-sm font-semibold ${c.statut === 'TERMINEE' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'}`}>{c.titre}</span>
+              <span className={`badge text-[9px] ${c.statut === 'TERMINEE' ? 'badge-success' : 'badge-info'}`}>
+                {c.statut === 'TERMINEE' ? 'Terminée' : c.cibleType === 'GENERAL' ? 'Générale' : c.cibleType.toLowerCase()}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all"
+                  style={{ width: `${c.progression}%` }} />
+              </div>
+              <span className="text-[10px] text-gray-500">{c.progression}%</span>
+            </div>
+            <div className="space-y-1.5">
+              {c.items.map((item) => (
+                <div key={item.id} className="flex items-center gap-2 group">
+                  <input type="checkbox" checked={item.fait}
+                    onChange={() => toggleItemMutation.mutate({ checklistId: c.id, itemId: item.id, fait: !item.fait })}
+                    className="w-4 h-4 accent-amber-500 cursor-pointer" />
+                  <span className={`flex-1 text-sm ${item.fait ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-200'}`}>{item.libelle}</span>
+                  <button onClick={() => deleteItemMutation.mutate({ checklistId: c.id, itemId: item.id })}
+                    className="p-1 rounded text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-3">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const input = e.currentTarget.querySelector('input') as HTMLInputElement;
+                if (input.value.trim()) addItemMutation.mutate({ checklistId: c.id, libelle: input.value.trim() });
+                input.value = '';
+              }} className="flex-1 flex gap-2">
+                <input className="input py-1.5 text-xs flex-1" placeholder="Ajouter un élément…" />
+              </form>
+              {c.statut !== 'TERMINEE' && (
+                <button onClick={() => closeMutation.mutate(c.id)} className="btn-ghost btn-sm text-xs cursor-pointer">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Terminer
+                </button>
+              )}
+              <button onClick={() => deleteMutation.mutate(c.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// INVENTAIRE — matériel du département
+// ============================================================
+
+type Equipment = {
+  id: string; nom: string; description?: string; quantite: number;
+  etat: string; responsableId?: string | null; affecteAId?: string | null;
+  localisation?: string; dateAcquisition?: string;
+};
+
+const ETAT_LABELS: Record<string, string> = {
+  NEUF: 'Neuf', BON: 'Bon état', USAGE: 'Usage', REPARATION: 'En réparation', HORS_SERVICE: 'Hors service',
+};
+const ETAT_COLORS: Record<string, string> = {
+  NEUF: 'badge-success', BON: 'badge-info', USAGE: 'badge-gray', REPARATION: 'badge-warning', HORS_SERVICE: 'badge-danger',
+};
+
+function InventoryTab({ onChanged }: { onChanged: () => void }) {
+  const queryClient = useQueryClient();
+  const deptId = getDeptIdFromPath();
+  const [nom, setNom] = useState('');
+  const [description, setDescription] = useState('');
+  const [quantite, setQuantite] = useState(1);
+  const [etat, setEtat] = useState('BON');
+  const [localisation, setLocalisation] = useState('');
+  const [editing, setEditing] = useState<Equipment | null>(null);
+
+  const { data: equipment = [], isLoading } = useQuery({
+    queryKey: ['department', deptId, 'equipment'],
+    queryFn: async () => (await api.get(`/departments/${deptId}/equipment`)).data as Equipment[],
+    enabled: !!deptId,
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['department', deptId, 'equipment'] });
+    onChanged();
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = { nom, description: description || null, quantite, etat, localisation: localisation || null };
+      if (editing) {
+        await api.put(`/departments/${deptId}/equipment/${editing.id}`, payload);
+      } else {
+        await api.post(`/departments/${deptId}/equipment`, payload);
+      }
+    },
+    onSuccess: () => {
+      toast.success(editing ? 'Équipement modifié ✅' : 'Équipement ajouté ✅');
+      setNom(''); setDescription(''); setQuantite(1); setEtat('BON'); setLocalisation(''); setEditing(null);
+      invalidate();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (equipmentId: string) => api.delete(`/departments/${deptId}/equipment/${equipmentId}`),
+    onSuccess: () => { toast.success('Équipement supprimé'); invalidate(); },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  if (isLoading) {
+    return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>;
+  }
+
+  const totalItems = equipment.reduce((sum, e) => sum + e.quantite, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="stat-card p-3 text-center">
+          <span className="stat-label text-[10px]">Équipements</span>
+          <p className="stat-value text-xl">{equipment.length}</p>
+        </div>
+        <div className="stat-card p-3 text-center">
+          <span className="stat-label text-[10px]">Articles au total</span>
+          <p className="stat-value text-xl">{totalItems}</p>
+        </div>
+        <div className="stat-card p-3 text-center">
+          <span className="stat-label text-[10px]">En réparation</span>
+          <p className="stat-value text-xl text-amber-500">{equipment.filter((e) => e.etat === 'REPARATION').length}</p>
+        </div>
+        <div className="stat-card p-3 text-center">
+          <span className="stat-label text-[10px]">Hors service</span>
+          <p className="stat-value text-xl text-red-500">{equipment.filter((e) => e.etat === 'HORS_SERVICE').length}</p>
+        </div>
+      </div>
+
+      <div className="glass-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Boxes className="w-4 h-4 text-primary-500" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {editing ? `Modifier « ${editing.nom} »` : 'Nouvel équipement'}
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div>
+            <label className="label">Nom *</label>
+            <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex : Caméra Sony A7" />
+          </div>
+          <div>
+            <label className="label">Quantité</label>
+            <input type="number" min={1} className="input" value={quantite}
+              onChange={(e) => setQuantite(Math.max(1, Number(e.target.value) || 1))} />
+          </div>
+          <div>
+            <label className="label">État</label>
+            <select className="input" value={etat} onChange={(e) => setEtat(e.target.value)}>
+              {Object.entries(ETAT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-2">
+            <label className="label">Description</label>
+            <input className="input" value={description} onChange={(e) => setDescription(e.target.value)}
+              placeholder="Marque, modèle, caractéristiques…" />
+          </div>
+          <div>
+            <label className="label">Localisation</label>
+            <input className="input" value={localisation} onChange={(e) => setLocalisation(e.target.value)} placeholder="Ex : Salle 3, studio…" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mt-4">
+          <button onClick={() => saveMutation.mutate()} disabled={!nom.trim() || saveMutation.isPending}
+            className="btn-primary btn-sm cursor-pointer">
+            <Save className="w-4 h-4" /> {editing ? 'Enregistrer' : 'Ajouter'}
+          </button>
+          {editing && (
+            <button onClick={() => { setEditing(null); setNom(''); setDescription(''); setQuantite(1); setEtat('BON'); setLocalisation(''); }}
+              className="btn-ghost btn-sm cursor-pointer">
+              <X className="w-4 h-4" /> Annuler
+            </button>
+          )}
+        </div>
+      </div>
+
+      {equipment.length === 0 ? (
+        <div className="text-center py-8">
+          <Boxes className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+          <p className="text-sm text-gray-400">Aucun équipement enregistré</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {equipment.map((e) => (
+            <div key={e.id} className="glass-card p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-2 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-300 shrink-0">
+                    <Boxes className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{e.nom}</p>
+                    <span className={`badge text-[9px] ${ETAT_COLORS[e.etat] || 'badge-gray'}`}>{ETAT_LABELS[e.etat] || e.etat}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => {
+                    setEditing(e);
+                    setNom(e.nom); setDescription(e.description || ''); setQuantite(e.quantite);
+                    setEtat(e.etat); setLocalisation(e.localisation || '');
+                  }} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all cursor-pointer" title="Modifier">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => deleteMutation.mutate(e.id)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer" title="Supprimer">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center gap-2 text-[11px] text-gray-500">
+                <span>×{e.quantite}</span>
+                {e.localisation && <><span>·</span><span className="truncate">{e.localisation}</span></>}
+              </div>
+              {e.description && <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{e.description}</p>}
             </div>
           ))}
         </div>

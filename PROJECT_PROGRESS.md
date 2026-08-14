@@ -228,14 +228,33 @@ dossier membre web + mobile partiel).
   (rapports responsable). NB : Mockito + JDK récents → erreurs sporadiques
   « class redefinition » sur transferts/objectifs en exécution complète,
   **passent en isolation** (flakiness environnementale, pas un bug de code).
-- Frontend web : `tsc --noEmit` ✓ (lint ESLint cassé au niveau de l'outil :
-  message de migration, indépendant du code).
+- Frontend web : `tsc -b` ✓, **167 tests vitest ✓**, `npm run build` ✓.
 - Mobile : **96 tests ✓** (89 + 7), `flutter analyze` sans issue.
+
+### Bloc 2026-08-14 committé (`6f70ac2`)
+
+- **V53/V54 + objectifs/rapports membre** : commit `6f70ac2` (26 fichiers,
+  +4452). Détails ci-dessus. Tests complets relancés : backend 385 ✓,
+  frontend 167 ✓, mobile 96 ✓.
+- **Fix `Alert.priorite`** (`@Builder.Default`) : le scheduler
+  « tâches en retard » échouait en production (violation NOT NULL de la
+  colonne `priorite` — la valeur par défaut Java n'était pas appliquée par
+  Lombok `@Builder`). Validé en e2e réel : le run scheduler crée désormais
+  les alertes sans erreur (2 alertes TACHE_EN_RETARD créées, 0 erreur).
+- **Vérification e2e réelle** (backend beta local :8080, DB :5433) :
+  création membre → dossier complet (18 sections) → notes → annonces →
+  stats → export CSV → import preview+effectif → équipes (permanentes +
+  sous-départements) → postes → affectations → tâches → candidats →
+  objectifs → rapports → dashboard responsable → **permissions**
+  (responsable1 ne voit que SES 2 départements, 404/403 ailleurs). ✓
 
 ### Prochaines actions possibles
 
-- Pousser le WIP (objectifs + rapports + dossier mobile) — non committé.
-- Améliorations mobiles : onglets Annonces/Transferts/Documents du dossier.
+- Pousser le WIP (objectifs + rapports + dossier mobile) — **FAIT** (`6f70ac2`).
+- Continuer le DMS : rapports de département (hebdo/mensuel synthèse auto),
+  checklists, inventaire matériel, recherche globale, paramétrage des
+  workflows de transfert, améliorations mobiles (annonces/transferts/
+documents du dossier).
 
 ## SESSION 2026-08-14 (suite) — parité mobile complète du DMS
 
@@ -281,3 +300,78 @@ Parité de `DepartmentDetailPage` web :
 - Backend et web inchangés (aucune modification).
 
 
+## SESSION 2026-08-14 (bloc V55) — rapports de département, checklists, inventaire
+
+### Rapports de département (synthèses sauvegardées + export CSV)
+
+- **Migration V55** (`department_reports`) : types HEBDOMADAIRE / MENSUEL /
+  TRIMESTRIEL / ANNUEL / EVENEMENT / INCIDENT / DISCIPLINE / ACTIVITE /
+  EFFECTIF / ASSIDUITE / PERFORMANCE / SYNTHESE, statuts BROUILLON / SOUMIS /
+  ARCHIVE, période début/fin, contenu texte.
+- **Backend** `DepartmentReportingService` :
+  - `POST /departments/{id}/reports/generate` — génère une **synthèse sur les
+    données réelles** (effectif, actifs, nouveaux 30 j, intégration/décrochés,
+    assiduité + taux, tâches ouvertes/terminées/en retard, objectifs de
+    progression, discipline par catégorie, équipes, événements à venir) et la
+    sauvegarde. Période calculée selon le type (semaine lundi→dimanche, mois,
+    trimestre, année, ou personnalisée).
+  - `POST /departments/{id}/reports` — sauvegarde d'un bilan rédigé manuellement.
+  - `GET /departments/{id}/reports/list` · `DELETE .../reports/saved/{id}` ·
+    `GET .../reports/saved/{id}/export` (CSV : en-têtes + période + contenu).
+- **Frontend web** `DepartmentReportPage` : section « Synthèses sauvegardées »
+  (choix du type → générer, liste des rapports, badge Soumis/Brouillon, export
+  CSV par téléchargement, suppression).
+
+### Checklists du département
+
+- **Migration V55** (`department_checklists` + `department_checklist_items`,
+  cascade DELETE) : cibles GENERAL / TACHE / EVENEMENT / EQUIPE / MEMBRE,
+  statut OUVERTE / TERMINEE, items ordonnés avec `fait`.
+- **Backend** : CRUD complet (création avec items, renommage/statut, ajout d'item,
+  **toggle avec clôture automatique quand tous les items sont cochés**,
+  suppression d'item et de checklist), progression 0–100 % calculée.
+- **Frontend web** : onglet **Checklists** de la gestion du département (création
+  multi-items, cible, cochage, progression, ajout d'élément, terminer/supprimer).
+- **Mobile** : écran « Outils & rapports » (onglets Rapports / Checklists /
+  Inventaire) — voir plus bas.
+
+### Inventaire matériel du département
+
+- **Migration V55** (`department_equipment`) : nom, description, quantité, état
+  (NEUF / BON / USAGE / REPARATION / HORS_SERVICE), responsable, affectation à
+  un membre, localisation, date d'acquisition, traçabilité `created_by`.
+- **Backend** : CRUD complet dans `DepartmentReportingService`.
+- **Frontend web** : onglet **Inventaire** de la gestion (KPIs : équipements,
+  articles, en réparation, hors service ; grille de cartes avec état coloré,
+  modification/suppression).
+- **Mobile** : onglet Inventaire de l'écran Outils.
+
+### Mobile — écran `DepartmentToolsScreen` (`/departments/:id/tools`)
+
+- 3 onglets : **Rapports** (liste des synthèses + génération), **Checklists**
+  (création multi-items, cochage), **Inventaire** (CRUD équipements).
+- Bouton « Outils » (icône inventaire) ajouté à la gestion de département.
+- Dossier membre : onglets **Annonces** et **Transferts** ajoutés (parité web).
+
+### Fix découvert en test e2e réel
+
+- `DepartmentChecklistItemRequest` : `libelle @NotBlank` cassait le toggle
+  (seul `fait` envoyé) → contrainte retirée, validation manuelle à l'ajout.
+
+### Vérification e2e réelle (backend beta :8080, V55 appliquée)
+
+- Génération synthèse hebdomadaire → contenu réel (2 membres, 1 actif, 2
+  nouveaux 30 j, taux présence, 2 tâches, 1 objectif, 4 équipes) ✓
+- Liste rapports, export CSV ✓ · checklist (création 3 items → toggle → add) ✓
+- Inventaire : création + mise à jour (état/quantité/localisation) ✓
+- Rapport manuel (INCIDENT, statut SOUMIS) ✓
+- **Permissions** : responsable → 200 sur SES départements, **404 sur les
+  départements d'un autre responsable** (reports/checklists/equipment) ✓
+
+### État des tests (2026-08-14, bloc V55)
+
+- Backend : **396 tests ✓** (385 + 11 nouveaux `DepartmentReportingServiceTest`)
+- Frontend web : `tsc -b` ✓ · **167 tests vitest ✓** · `npm run build` ✓
+  (mock `/reports/list` ajouté au test `DepartmentReportPage`)
+- Mobile : `flutter analyze` **0 issue** · **99 tests ✓** (96 + 3 nouveaux
+  `department_tools_screen_test`)

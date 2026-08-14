@@ -68,6 +68,11 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
             tooltip: 'Statistiques',
             onPressed: () => context.go('/departments/${widget.departmentId}/stats'),
           ),
+          IconButton(
+            icon: const Icon(Icons.inventory_2),
+            tooltip: 'Rapports · Checklists · Inventaire',
+            onPressed: () => context.go('/departments/${widget.departmentId}/tools'),
+          ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _reload),
         ],
       ),

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
+import toast from 'react-hot-toast';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import {
   ArrowLeft, BarChart3, FileText, Users, Loader2, CheckCircle2,
-  XCircle, TrendingUp, TrendingDown, Minus,
+  XCircle, TrendingUp, TrendingDown, Minus, Sparkles, Download, Trash2, Save, CalendarRange,
 } from 'lucide-react';
 
 export default function DepartmentReportPage() {
@@ -181,6 +182,8 @@ export default function DepartmentReportPage() {
         </div>
       )}
 
+      <SavedReportsSection departmentId={id || ''} />
+
       {/* KPI reference */}
       {kpi && (
         <div className="glass-card p-5 mt-6">
@@ -212,6 +215,156 @@ export default function DepartmentReportPage() {
               <p className="text-lg font-bold">{kpi.totalFaiseurs}</p>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// SYNTHÈSES SAUVEGARDÉES — génération, liste, export CSV
+// ============================================================
+
+type SavedReport = {
+  id: string; titre: string; type: string; periodeDebut?: string;
+  periodeFin?: string; contenu: string; statut: string; createdAt?: string;
+};
+
+const REPORT_TYPE_LABELS: Record<string, string> = {
+  HEBDOMADAIRE: 'Hebdomadaire',
+  MENSUEL: 'Mensuel',
+  TRIMESTRIEL: 'Trimestriel',
+  ANNUEL: 'Annuel',
+  EVENEMENT: 'Événement',
+  ACTIVITE: 'Activité',
+  EFFECTIF: 'Effectif',
+  ASSIDUITE: 'Assiduité',
+  PERFORMANCE: 'Performance',
+  SYNTHESE: 'Synthèse',
+};
+
+function SavedReportsSection({ departmentId }: { departmentId: string }) {
+  const queryClient = useQueryClient();
+  const [type, setType] = useState('HEBDOMADAIRE');
+
+  const { data: saved = [], isLoading } = useQuery({
+    queryKey: ['department', departmentId, 'reports', 'saved'],
+    queryFn: async () => (await api.get(`/departments/${departmentId}/reports/list`)).data as SavedReport[],
+    enabled: !!departmentId,
+  });
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['department', departmentId, 'reports', 'saved'] });
+
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/departments/${departmentId}/reports/generate`, { type });
+      return res.data as SavedReport;
+    },
+    onSuccess: (r) => {
+      toast.success(`Synthèse « ${r.titre} » générée ✅`);
+      invalidate();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (reportId: string) => api.delete(`/departments/${departmentId}/reports/saved/${reportId}`),
+    onSuccess: () => { toast.success('Rapport supprimé'); invalidate(); },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  function downloadCsv(reportId: string) {
+    api.get(`/departments/${departmentId}/reports/saved/${reportId}/export`, { responseType: 'blob' })
+      .then((res) => {
+        const url = URL.createObjectURL(res.data as Blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'rapport-departement.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('Export CSV téléchargé 📥');
+      })
+      .catch((err) => toast.error(getErrorMessage(err)));
+  }
+
+  return (
+    <div className="glass-card p-6 mt-6 animate-slide-up">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+        <Sparkles className="w-5 h-5 text-primary-500" />
+        Synthèses sauvegardées
+      </h2>
+
+      {/* Génération */}
+      <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 mb-5">
+        <p className="text-xs text-gray-500 mb-3">
+          Génère un rapport de synthèse calculé sur les données réelles du département
+          (effectif, assiduité, tâches, progression, discipline, équipes, événements).
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <select className="input sm:w-56" value={type} onChange={(e) => setType(e.target.value)}>
+            {Object.entries(REPORT_TYPE_LABELS).map(([k, v]) => (
+              <option key={k} value={k}>{v}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => generateMutation.mutate()}
+            disabled={generateMutation.isPending}
+            className="btn-primary btn-sm cursor-pointer"
+          >
+            {generateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Générer et sauvegarder
+          </button>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>
+      ) : saved.length === 0 ? (
+        <div className="text-center py-8">
+          <FileText className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+          <p className="text-sm text-gray-400">Aucune synthèse sauvegardée — générez la première ci-dessus</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {saved.map((r) => (
+            <div key={r.id} className="flex items-start gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40">
+              <div className="p-2 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-300 shrink-0">
+                <FileText className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{r.titre}</span>
+                  <span className={`badge text-[9px] ${r.statut === 'SOUMIS' ? 'badge-success' : 'badge-gray'}`}>
+                    {r.statut === 'SOUMIS' ? 'Soumis' : 'Brouillon'}
+                  </span>
+                  <span className="badge text-[9px] badge-info">{REPORT_TYPE_LABELS[r.type] || r.type}</span>
+                </div>
+                {r.periodeDebut && (
+                  <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
+                    <CalendarRange className="w-3 h-3" />
+                    {r.periodeDebut} → {r.periodeFin}
+                  </p>
+                )}
+                <p className="text-[11px] text-gray-500 mt-1 whitespace-pre-line line-clamp-3">{r.contenu}</p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => downloadCsv(r.id)}
+                  title="Exporter en CSV"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => deleteMutation.mutate(r.id)}
+                  title="Supprimer"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
