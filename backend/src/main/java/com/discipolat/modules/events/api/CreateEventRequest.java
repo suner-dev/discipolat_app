@@ -16,5 +16,6 @@ public record CreateEventRequest(
         LocalDateTime dateFin,
         Integer limitePlaces,
         UUID familleId,
+        UUID departmentId,
         List<UUID> fichierIds
 ) {}

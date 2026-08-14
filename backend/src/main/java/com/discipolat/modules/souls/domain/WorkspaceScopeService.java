@@ -155,6 +155,22 @@ public class WorkspaceScopeService {
         return ids;
     }
 
+    /** Ids des départements accessibles dans l'espace métier courant (responsable). */
+    public Set<UUID> accessibleDepartmentIds() {
+        UUID userId = securityUtils.getCurrentUserId();
+        Set<UUID> ids = new HashSet<>();
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            departmentRepository.findByResponsableId(userId).stream()
+                    .map(Department::getId)
+                    .forEach(ids::add);
+        }
+        return ids;
+    }
+
+    public boolean canAccessDepartment(UUID departmentId) {
+        return departmentId != null && accessibleDepartmentIds().contains(departmentId);
+    }
+
     public boolean canAccessSoul(UUID soulId) {
         return soulId != null && accessibleSoulIds().contains(soulId);
     }

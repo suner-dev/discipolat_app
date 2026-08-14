@@ -177,4 +177,122 @@ class EventServiceTest {
         assertThrows(AccessDeniedException.class, () -> eventService.create(nouveau, null));
         verify(eventRepository, never()).save(any(Event.class));
     }
+
+    // ======================== ÉVÉNEMENTS DE DÉPARTEMENT ========================
+
+    private final UUID departmentId = UUID.randomUUID();
+    private final UUID autreDepartmentId = UUID.randomUUID();
+
+    @Test
+    void findById_evenementDeSonDepartement_autorise() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        when(workspaceScope.canAccessDepartment(departmentId)).thenReturn(true);
+        Event evenementDept = Event.builder()
+                .id(UUID.randomUUID())
+                .organisateurId(userId)
+                .departmentId(departmentId)
+                .titre("Convention du département")
+                .dateDebut(LocalDateTime.now().plusDays(5))
+                .build();
+        when(eventRepository.findById(evenementDept.getId())).thenReturn(Optional.of(evenementDept));
+
+        assertEquals(evenementDept.getId(), eventService.findById(evenementDept.getId()).getId());
+    }
+
+    @Test
+    void findById_evenementDunAutreDepartement_refuse() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        when(workspaceScope.canAccessDepartment(autreDepartmentId)).thenReturn(false);
+        Event evenementAutreDept = Event.builder()
+                .id(UUID.randomUUID())
+                .organisateurId(UUID.randomUUID())
+                .departmentId(autreDepartmentId)
+                .titre("Événement d'un autre département")
+                .dateDebut(LocalDateTime.now().plusDays(2))
+                .build();
+        when(eventRepository.findById(evenementAutreDept.getId())).thenReturn(Optional.of(evenementAutreDept));
+
+        assertThrows(AccessDeniedException.class, () -> eventService.findById(evenementAutreDept.getId()));
+    }
+
+    @Test
+    void findByDepartmentId_departementHorsEspace_pageVide() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        when(workspaceScope.canAccessDepartment(autreDepartmentId)).thenReturn(false);
+
+        Page<Event> result = eventService.findByDepartmentId(autreDepartmentId, PageRequest.of(0, 20));
+
+        assertEquals(0, result.getTotalElements());
+        verify(eventRepository, never()).findByDepartmentIdAndDeletedFalse(any(UUID.class), any(Pageable.class));
+    }
+
+    @Test
+    void findByDepartmentId_departementGere_retourneLesEvenements() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        when(workspaceScope.canAccessDepartment(departmentId)).thenReturn(true);
+        Event e1 = Event.builder().id(UUID.randomUUID()).organisateurId(userId)
+                .departmentId(departmentId).titre("Répétition")
+                .dateDebut(LocalDateTime.now().plusDays(1)).build();
+        when(eventRepository.findByDepartmentIdAndDeletedFalse(departmentId, PageRequest.of(0, 20)))
+                .thenReturn(new PageImpl<>(List.of(e1)));
+
+        Page<Event> result = eventService.findByDepartmentId(departmentId, PageRequest.of(0, 20));
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals(e1.getId(), result.getContent().get(0).getId());
+    }
+
+    @Test
+    void findAll_filtreLesEvenementsDesAutresDepartements() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        Event evenementAutreDept = Event.builder()
+                .id(UUID.randomUUID())
+                .organisateurId(UUID.randomUUID())
+                .departmentId(autreDepartmentId)
+                .titre("Événement d'un autre département")
+                .dateDebut(LocalDateTime.now().plusDays(2))
+                .build();
+        when(eventRepository.findByStatutAndDeletedFalse("PLANIFIE", PageRequest.of(0, 20)))
+                .thenReturn(new PageImpl<>(List.of(evenementEglise, evenementAutreDept)));
+        when(workspaceScope.accessibleFamilyIds()).thenReturn(java.util.Set.of());
+        when(workspaceScope.accessibleDepartmentIds()).thenReturn(java.util.Set.of(departmentId));
+
+        Page<Event> result = eventService.findAll(PageRequest.of(0, 20));
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals(evenementEglise.getId(), result.getContent().get(0).getId());
+    }
+
+    @Test
+    void create_departementHorsEspace_refuse() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        when(workspaceScope.canAccessDepartment(autreDepartmentId)).thenReturn(false);
+
+        Event nouveau = Event.builder()
+                .departmentId(autreDepartmentId)
+                .titre("Événement interdit")
+                .dateDebut(LocalDateTime.now().plusDays(2))
+                .build();
+
+        assertThrows(AccessDeniedException.class, () -> eventService.create(nouveau, null));
+        verify(eventRepository, never()).save(any(Event.class));
+    }
+
+    @Test
+    void create_departementGere_autorise() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        when(workspaceScope.canAccessDepartment(departmentId)).thenReturn(true);
+        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        Event nouveau = Event.builder()
+                .departmentId(departmentId)
+                .titre("Convention 2026")
+                .dateDebut(LocalDateTime.now().plusDays(10))
+                .build();
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Event saved = eventService.create(nouveau, null);
+
+        assertEquals("PLANIFIE", saved.getStatut());
+        verify(eventRepository).save(nouveau);
+    }
 }

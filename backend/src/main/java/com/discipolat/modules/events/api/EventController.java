@@ -51,6 +51,7 @@ public class EventController {
                 .dateFin(request.dateFin())
                 .limitePlaces(request.limitePlaces())
                 .familleId(request.familleId())
+                .departmentId(request.departmentId())
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(toResponse(eventService.create(event, request.fichierIds())));
@@ -60,6 +61,22 @@ public class EventController {
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<EventResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(toResponse(eventService.findById(id)));
+    }
+
+    /** Événements rattachés à un département (espace Responsable). */
+    @GetMapping("/department/{departmentId}")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<PageResponse<EventResponse>> findByDepartmentId(
+            @PathVariable UUID departmentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50),
+                Sort.by(Sort.Direction.DESC, "dateDebut"));
+        Page<EventResponse> response = eventService.findByDepartmentId(departmentId, pageable)
+                .map(this::toResponse);
+        return ResponseEntity.ok(PageResponse.of(
+                response.getContent(), response.getNumber(), response.getSize(),
+                response.getTotalElements(), response.getTotalPages()));
     }
 
     @GetMapping
@@ -105,6 +122,7 @@ public class EventController {
                 .typeEvenement(request.typeEvenement())
                 .statut(request.statut())
                 .compteRendu(request.compteRendu())
+                .departmentId(request.departmentId())
                 .build();
         return ResponseEntity.ok(toResponse(eventService.update(id, event, request.fichierIds())));
     }

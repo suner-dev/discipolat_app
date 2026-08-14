@@ -71,6 +71,8 @@ class DepartmentManagementServiceTest {
     private NotificationService notificationService;
     @Mock
     private SoulService soulService;
+    @Mock
+    private com.discipolat.modules.events.domain.EventRepository eventRepository;
 
     private DepartmentManagementService service;
     private final UUID deptId = UUID.randomUUID();
@@ -79,7 +81,8 @@ class DepartmentManagementServiceTest {
     void setUp() {
         service = new DepartmentManagementService(departmentService, teamRepository, positionRepository,
                 assignmentRepository, taskRepository, activityRepository, objectiveRepository, soulRepository,
-                soulDepartmentRepository, userRepository, securityUtils, notificationService, soulService);
+                soulDepartmentRepository, userRepository, securityUtils, notificationService, soulService,
+                eventRepository);
         // L'accès au département est toujours accordé par défaut (assertCanManage)
         lenient().when(departmentService.findById(deptId)).thenReturn(new Department());
         // Identité de l'acteur pour le journal d'activité
@@ -591,5 +594,58 @@ class DepartmentManagementServiceTest {
 
         verify(objectiveRepository).delete(objective);
         verify(activityRepository).save(any(DepartmentActivity.class));
+    }
+
+    // ======================= RECHERCHE GLOBALE =======================
+
+    @Test
+    void searchAll_sansRequete_retourneDesListesVides() {
+        Map<String, Object> result = service.searchAll(deptId, "   ");
+
+        assertThat(result.get("membres")).isEqualTo(List.of());
+        assertThat(result.get("equipes")).isEqualTo(List.of());
+        assertThat(result.get("taches")).isEqualTo(List.of());
+        assertThat(result.get("evenements")).isEqualTo(List.of());
+        assertThat(result.get("total")).isEqualTo(0L);
+    }
+
+    @Test
+    void searchAll_retourneLesResultatsParCategorie() {
+        UUID soulId = UUID.randomUUID();
+        com.discipolat.modules.souls.domain.Soul soul = com.discipolat.modules.souls.domain.Soul.builder()
+                .id(soulId).nom("Dupont").prenom("Jean")
+                .statut(com.discipolat.common.enums.StatutAme.ACTIF)
+                .typeDisciple(com.discipolat.common.enums.TypeDisciple.NOUVEAU_CONVERTI)
+                .build();
+        when(soulRepository.searchIn(any(), eq("joh"), any(Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(soul)));
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(com.discipolat.modules.souls.domain.SoulDepartment.builder()
+                        .soulId(soulId).build()));
+
+        com.discipolat.modules.departments.domain.DepartmentTeam team = com.discipolat.modules.departments.domain.DepartmentTeam.builder()
+                .id(UUID.randomUUID()).departmentId(deptId).nom("Johanne")
+                .type(com.discipolat.modules.departments.domain.DepartmentTeam.TeamType.EQUIPE_PERMANENTE)
+                .statut(com.discipolat.modules.departments.domain.DepartmentTeam.TeamStatus.ACTIVE)
+                .build();
+        when(teamRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of(team));
+
+        com.discipolat.modules.departments.domain.DepartmentTask task = com.discipolat.modules.departments.domain.DepartmentTask.builder()
+                .id(UUID.randomUUID()).departmentId(deptId).titre("Répéter pour Johanne")
+                .priorite(com.discipolat.modules.departments.domain.DepartmentTask.TaskPriority.HAUTE)
+                .statut(com.discipolat.modules.departments.domain.DepartmentTask.TaskStatus.EN_COURS)
+                .build();
+        when(taskRepository.findByDepartmentIdOrderByEcheanceAsc(deptId)).thenReturn(List.of(task));
+        when(positionRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedFalse(deptId, "joh"))
+                .thenReturn(List.of());
+
+        Map<String, Object> result = service.searchAll(deptId, "Joh");
+
+        assertThat((List<?>) result.get("membres")).hasSize(1);
+        assertThat((List<?>) result.get("equipes")).hasSize(1);
+        assertThat((List<?>) result.get("taches")).hasSize(1);
+        assertThat((List<?>) result.get("postes")).isEmpty();
+        assertThat(result.get("total")).isEqualTo(3L);
     }
 }

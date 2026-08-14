@@ -58,9 +58,15 @@ public class EventService {
     }
 
     public Event create(Event event, java.util.List<java.util.UUID> fichierIds) {
-        // Espace métier : on ne crée un événement de famille que pour une famille visible.
+        // Espace métier : on ne crée un événement de famille/département que pour
+        // une famille ou un département visible dans l'espace du rôle actif.
         if (event.getFamilleId() != null && !workspaceScope.isSuperUser()
                 && !workspaceScope.canAccessFamily(event.getFamilleId())) {
+            throw new AccessDeniedException(
+                    "Cet événement ne concerne pas votre espace métier");
+        }
+        if (event.getDepartmentId() != null && !workspaceScope.isSuperUser()
+                && !workspaceScope.canAccessDepartment(event.getDepartmentId())) {
             throw new AccessDeniedException(
                     "Cet événement ne concerne pas votre espace métier");
         }
@@ -123,6 +129,14 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Event> findByDepartmentId(UUID departmentId, Pageable pageable) {
+        if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessDepartment(departmentId)) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+        return eventRepository.findByDepartmentIdAndDeletedFalse(departmentId, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public Page<Event> findByStatut(String statut, Pageable pageable) {
         if (workspaceScope.isSuperUser()) {
             return eventRepository.findByStatutAndDeletedFalse(statut, pageable);
@@ -170,6 +184,7 @@ public class EventService {
         if (updated.getTypeEvenement() != null) event.setTypeEvenement(updated.getTypeEvenement());
         if (updated.getStatut() != null) event.setStatut(updated.getStatut());
         if (updated.getCompteRendu() != null) event.setCompteRendu(updated.getCompteRendu());
+        if (updated.getDepartmentId() != null) event.setDepartmentId(updated.getDepartmentId());
         Event saved = eventRepository.save(event);
         attachmentService.replace(EntityAttachment.EntityType.EVENT, saved.getId(), fichierIds);
         return saved;
@@ -243,6 +258,14 @@ public class EventService {
             return 0;
         }
         return eventRepository.countByFamilleIdAndDeletedFalse(familleId);
+    }
+
+    @Transactional(readOnly = true)
+    public long countByDepartmentId(UUID departmentId) {
+        if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessDepartment(departmentId)) {
+            return 0;
+        }
+        return eventRepository.countByDepartmentIdAndDeletedFalse(departmentId);
     }
 
     // ======================== CONSOLIDATED VIEW (US-06) ========================
@@ -476,8 +499,15 @@ public class EventService {
      */
     private boolean canAccessEvent(Event event) {
         if (workspaceScope.isSuperUser()) return true;
-        if (event.getFamilleId() == null) return true;
-        return workspaceScope.canAccessFamily(event.getFamilleId());
+        // Événement d'église (ni famille ni département) : visible par tous.
+        if (event.getFamilleId() == null && event.getDepartmentId() == null) return true;
+        if (event.getFamilleId() != null && !workspaceScope.canAccessFamily(event.getFamilleId())) {
+            return false;
+        }
+        if (event.getDepartmentId() != null && !workspaceScope.canAccessDepartment(event.getDepartmentId())) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -491,6 +521,9 @@ public class EventService {
         if (event.getFamilleId() != null && workspaceScope.canAccessFamily(event.getFamilleId())) {
             return securityUtils.hasActiveRole("RESPONSABLE", "CHEF_DE_FAMILLE", "PASTEUR", "ADMIN");
         }
+        if (event.getDepartmentId() != null && workspaceScope.canAccessDepartment(event.getDepartmentId())) {
+            return securityUtils.hasActiveRole("RESPONSABLE", "PASTEUR", "ADMIN");
+        }
         return false;
     }
 
@@ -501,8 +534,10 @@ public class EventService {
      */
     private Page<Event> scopeEvents(List<Event> candidates, Pageable pageable) {
         Set<UUID> accessibleFamilies = workspaceScope.accessibleFamilyIds();
+        Set<UUID> accessibleDepartments = workspaceScope.accessibleDepartmentIds();
         List<Event> scoped = candidates.stream()
                 .filter(e -> e.getFamilleId() == null || accessibleFamilies.contains(e.getFamilleId()))
+                .filter(e -> e.getDepartmentId() == null || accessibleDepartments.contains(e.getDepartmentId()))
                 .toList();
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), scoped.size());

@@ -9,6 +9,8 @@ import com.discipolat.modules.departments.api.DepartmentCreateMemberRequest;
 import com.discipolat.modules.departments.api.DepartmentPositionRequest;
 import com.discipolat.modules.departments.api.DepartmentTaskRequest;
 import com.discipolat.modules.departments.api.DepartmentTeamRequest;
+import com.discipolat.modules.events.domain.Event;
+import com.discipolat.modules.events.domain.EventRepository;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulDepartment;
@@ -53,6 +55,7 @@ public class DepartmentManagementService {
     private final SecurityUtils securityUtils;
     private final NotificationService notificationService;
     private final SoulService soulService;
+    private final EventRepository eventRepository;
 
     public DepartmentManagementService(DepartmentService departmentService,
                                        DepartmentTeamRepository teamRepository,
@@ -66,7 +69,8 @@ public class DepartmentManagementService {
                                        UserRepository userRepository,
                                        SecurityUtils securityUtils,
                                        NotificationService notificationService,
-                                       SoulService soulService) {
+                                       SoulService soulService,
+                                       EventRepository eventRepository) {
         this.departmentService = departmentService;
         this.teamRepository = teamRepository;
         this.positionRepository = positionRepository;
@@ -80,6 +84,7 @@ public class DepartmentManagementService {
         this.securityUtils = securityUtils;
         this.notificationService = notificationService;
         this.soulService = soulService;
+        this.eventRepository = eventRepository;
     }
 
     /** Vérifie que le département existe et appartient à l'espace métier de l'utilisateur. */
@@ -775,6 +780,105 @@ public class DepartmentManagementService {
                     return m;
                 })
                 .toList();
+    }
+
+    /**
+     * Recherche globale dans le département : membres, équipes, postes, tâches
+     * et événements. Chaque catégorie est limitée à 10 résultats et les données
+     * viennent réellement de la base (jamais de résultats fictifs).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> searchAll(UUID departmentId, String query) {
+        assertCanManage(departmentId);
+        String q = query == null ? "" : query.trim().toLowerCase();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("membres", List.of());
+        result.put("equipes", List.of());
+        result.put("postes", List.of());
+        result.put("taches", List.of());
+        result.put("evenements", List.of());
+        if (q.isEmpty()) {
+            result.put("total", 0L);
+            return result;
+        }
+
+        // Membres du département (recherche en base LIKE, périmètre = membres actifs)
+        List<UUID> deptSoulIds = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
+                .map(SoulDepartment::getSoulId).toList();
+        List<Map<String, Object>> members = new ArrayList<>();
+        if (!deptSoulIds.isEmpty()) {
+            soulRepository.searchIn(deptSoulIds, q, PageRequest.of(0, 10)).getContent().forEach(s -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", s.getId());
+                m.put("nomComplet", s.getNomComplet());
+                m.put("telephone", s.getTelephone());
+                m.put("email", s.getEmail());
+                m.put("statut", s.getStatut().name());
+                m.put("typeDisciple", s.getTypeDisciple().name());
+                members.add(m);
+            });
+        }
+        result.put("membres", members);
+
+        // Équipes
+        List<Map<String, Object>> teams = teamRepository.findByDepartmentIdOrderByNomAsc(departmentId).stream()
+                .filter(t -> t.getNom() != null && t.getNom().toLowerCase().contains(q))
+                .limit(10)
+                .map(t -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", t.getId());
+                    m.put("nom", t.getNom());
+                    m.put("type", t.getType().name());
+                    m.put("statut", t.getStatut().name());
+                    m.put("nbMembres", assignmentRepository.findByTeamId(t.getId()).stream().filter(DepartmentAssignment::isActif).count());
+                    return m;
+                })
+                .toList();
+        result.put("equipes", teams);
+
+        // Postes
+        List<Map<String, Object>> positions = positionRepository.findByDepartmentIdOrderByNomAsc(departmentId).stream()
+                .filter(p -> p.getNom() != null && p.getNom().toLowerCase().contains(q))
+                .limit(10)
+                .map(p -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", p.getId());
+                    m.put("nom", p.getNom());
+                    m.put("description", p.getDescription());
+                    m.put("statut", p.getStatut().name());
+                    return m;
+                })
+                .toList();
+        result.put("postes", positions);
+
+        // Tâches
+        List<Map<String, Object>> tasks = taskRepository.findByDepartmentIdOrderByEcheanceAsc(departmentId).stream()
+                .filter(t -> (t.getTitre() != null && t.getTitre().toLowerCase().contains(q))
+                        || (t.getDescription() != null && t.getDescription().toLowerCase().contains(q)))
+                .limit(10)
+                .map(this::toTaskMap)
+                .toList();
+        result.put("taches", tasks);
+
+        // Événements du département
+        List<Map<String, Object>> events = eventRepository
+                .findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedFalse(departmentId, q).stream()
+                .limit(10)
+                .map(e -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", e.getId());
+                    m.put("titre", e.getTitre());
+                    m.put("typeEvenement", e.getTypeEvenement());
+                    m.put("dateDebut", e.getDateDebut() != null ? e.getDateDebut().toString() : null);
+                    m.put("lieu", e.getLieu());
+                    m.put("statut", e.getStatut());
+                    return m;
+                })
+                .toList();
+        result.put("evenements", events);
+
+        result.put("total", (long) (members.size() + teams.size() + positions.size() + tasks.size() + events.size()));
+        return result;
     }
 
     /** Âmes accessibles à l'espace métier courant (rôle actif). */

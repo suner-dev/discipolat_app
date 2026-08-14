@@ -25,6 +25,9 @@ public class Event {
     @Column(name = "famille_id")
     private UUID familleId;
 
+    @Column(name = "department_id")
+    private UUID departmentId;
+
     @Column(name = "type_evenement", nullable = false)
     private String typeEvenement;
 

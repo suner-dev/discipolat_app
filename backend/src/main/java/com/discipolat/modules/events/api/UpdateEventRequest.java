@@ -12,5 +12,6 @@ public record UpdateEventRequest(
         String typeEvenement,
         String statut,
         String compteRendu,
+        java.util.UUID departmentId,
         java.util.List<java.util.UUID> fichierIds
 ) {}

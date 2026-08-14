@@ -166,6 +166,13 @@ public class DepartmentManagementController {
         return ResponseEntity.ok(managementService.findCandidates(departmentId, q));
     }
 
+    /** Recherche globale dans le département (membres, équipes, postes, tâches, événements). */
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> search(@PathVariable UUID departmentId,
+                                                      @RequestParam(required = false) String q) {
+        return ResponseEntity.ok(managementService.searchAll(departmentId, q));
+    }
+
     /** Ajoute une personne déjà inscrite au département (traçabilité + notification). */
     @PostMapping("/members")
     public ResponseEntity<Map<String, Object>> addMember(@PathVariable UUID departmentId,

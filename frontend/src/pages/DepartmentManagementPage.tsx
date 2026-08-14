@@ -7,7 +7,7 @@ import {
   Building2, ArrowLeft, Network, Briefcase, Users2, ListTodo, History,
   Plus, Pencil, Archive, Trash2, UserPlus, Loader2, CheckCircle2,
   Clock, AlertTriangle, CalendarDays, ChevronRight, ChevronDown, Save,
-  X, Star, Flag, FolderTree, Activity, ListChecks, Boxes,
+  X, Star, Flag, FolderTree, Activity, ListChecks, Boxes, Search,
 } from 'lucide-react';
 
 type Team = {
@@ -27,6 +27,7 @@ const TABS = [
   { key: 'tasks', label: 'Tâches', icon: ListTodo },
   { key: 'checklists', label: 'Checklists', icon: ListChecks },
   { key: 'inventory', label: 'Inventaire', icon: Boxes },
+  { key: 'events', label: 'Événements', icon: CalendarDays },
   { key: 'activity', label: 'Activité', icon: History },
 ] as const;
 
@@ -56,6 +57,13 @@ export default function DepartmentManagementPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<(typeof TABS)[number]['key']>('org');
+  const [search, setSearch] = useState('');
+
+  const { data: searchResults } = useQuery({
+    queryKey: ['department', id, 'search', search],
+    queryFn: async () => (await api.get(`/departments/${id}/search`, { params: { q: search } })).data as any,
+    enabled: !!id && search.trim().length >= 2,
+  });
 
   const { data: dept } = useQuery({
     queryKey: ['department', id],
@@ -107,10 +115,23 @@ export default function DepartmentManagementPage() {
           </div>
           <div className="flex-1">
             <h1 className="page-title">Gestion de {dept?.nom || 'département'}</h1>
-            <p className="page-subtitle">Organisation · postes · affectations · tâches · activité</p>
+            <p className="page-subtitle">Organisation · postes · affectations · tâches · événements · activité</p>
           </div>
         </div>
+        <div className="relative mt-3 w-full sm:w-80 sm:mt-0">
+          <input
+            className="input pl-9"
+            placeholder="Recherche rapide : membre, équipe, poste, tâche…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        </div>
       </div>
+
+      {search.trim().length >= 2 && (
+        <GlobalSearchResults results={searchResults} deptId={id || ''} onClear={() => setSearch('')} />
+      )}
 
       {/* Org mini-KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
@@ -162,8 +183,9 @@ export default function DepartmentManagementPage() {
       {tab === 'tasks' && (
         <TasksTab taskStats={taskStats} teams={teams} members={members} onChanged={invalidate} />
       )}
-      {tab === 'checklists' && <ChecklistsTab onChanged={invalidate} />}
-      {tab === 'inventory' && <InventoryTab onChanged={invalidate} />}
+      {tab === 'checklists' && <ChecklistsTab deptId={id || ''} onChanged={invalidate} />}
+      {tab === 'inventory' && <InventoryTab deptId={id || ''} onChanged={invalidate} />}
+      {tab === 'events' && <EventsTab deptId={id || ''} onChanged={invalidate} />}
       {tab === 'activity' && <ActivityTab activity={activity} />}
     </div>
   );
@@ -876,17 +898,11 @@ type Checklist = {
   items: { id: string; libelle: string; fait: boolean }[];
 };
 
-function getDeptIdFromPath() {
-  const m = window.location.pathname.match(/^\/departments\/([^/]+)\/manage/);
-  return m ? m[1] : '';
-}
-
-function ChecklistsTab({ onChanged }: { onChanged: () => void }) {
+function ChecklistsTab({ deptId, onChanged }: { deptId: string; onChanged: () => void }) {
   const queryClient = useQueryClient();
   const [titre, setTitre] = useState('');
   const [cibleType, setCibleType] = useState('GENERAL');
   const [items, setItems] = useState<string[]>(['', '']);
-  const deptId = getDeptIdFromPath();
 
   const { data: checklists = [], isLoading } = useQuery({
     queryKey: ['department', deptId, 'checklists'],
@@ -1078,9 +1094,8 @@ const ETAT_COLORS: Record<string, string> = {
   NEUF: 'badge-success', BON: 'badge-info', USAGE: 'badge-gray', REPARATION: 'badge-warning', HORS_SERVICE: 'badge-danger',
 };
 
-function InventoryTab({ onChanged }: { onChanged: () => void }) {
+function InventoryTab({ deptId, onChanged }: { deptId: string; onChanged: () => void }) {
   const queryClient = useQueryClient();
-  const deptId = getDeptIdFromPath();
   const [nom, setNom] = useState('');
   const [description, setDescription] = useState('');
   const [quantite, setQuantite] = useState(1);
@@ -1236,6 +1251,236 @@ function InventoryTab({ onChanged }: { onChanged: () => void }) {
               {e.description && <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{e.description}</p>}
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// RECHERCHE GLOBALE DU DÉPARTEMENT
+// ============================================================
+
+function GlobalSearchResults({ results, deptId, onClear }: { results: any; deptId: string; onClear: () => void }) {
+  const navigate = useNavigate();
+  if (!results) {
+    return (
+      <div className="glass-card p-5 mb-5 flex items-center gap-3">
+        <Loader2 className="w-4 h-4 animate-spin text-primary-500" /> Recherche en cours…
+      </div>
+    );
+  }
+  const total = results.total ?? 0;
+  const sections = [
+    { key: 'membres', label: 'Membres', items: results.membres ?? [], render: (m: any) => (
+      <button key={m.id} onClick={() => { navigate(`/departments/${deptId}/members/${m.id}`); onClear(); }}
+        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg flex items-center justify-between gap-2 cursor-pointer">
+        <span className="flex items-center gap-2 text-sm">
+          <Users2 className="w-4 h-4 text-primary-500" /> {m.nomComplet}
+        </span>
+        <span className="text-[11px] text-gray-400">{m.statut}</span>
+      </button>
+    ) },
+    { key: 'equipes', label: 'Équipes', items: results.equipes ?? [], render: (t: any) => (
+      <div key={t.id} className="px-3 py-2 flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-sm"><Network className="w-4 h-4 text-amber-500" /> {t.nom}</span>
+        <span className="badge badge-gray text-[10px]">{t.nbMembres} membre{t.nbMembres > 1 ? 's' : ''}</span>
+      </div>
+    ) },
+    { key: 'postes', label: 'Postes', items: results.postes ?? [], render: (p: any) => (
+      <div key={p.id} className="px-3 py-2 flex items-center gap-2 text-sm">
+        <Briefcase className="w-4 h-4 text-sky-500" /> {p.nom}
+      </div>
+    ) },
+    { key: 'taches', label: 'Tâches', items: results.taches ?? [], render: (t: any) => (
+      <div key={t.id} className="px-3 py-2 flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-sm"><ListTodo className="w-4 h-4 text-emerald-500" /> {t.titre}</span>
+        <span className={`badge text-[10px] ${STATUT_TASK_BADGE[t.statut] || 'badge-gray'}`}>{t.statut}</span>
+      </div>
+    ) },
+    { key: 'evenements', label: 'Événements', items: results.evenements ?? [], render: (e: any) => (
+      <div key={e.id} className="px-3 py-2 flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-sm"><CalendarDays className="w-4 h-4 text-violet-500" /> {e.titre}</span>
+        {e.dateDebut && <span className="text-[11px] text-gray-400">{formatEventDate(e.dateDebut)}</span>}
+      </div>
+    ) },
+  ];
+  return (
+    <div className="glass-card p-5 mb-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {total > 0 ? `${total} résultat${total > 1 ? 's' : ''}` : 'Aucun résultat'} pour cette recherche
+        </h3>
+        <button onClick={onClear} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      {total === 0 ? (
+        <p className="text-sm text-gray-400">Essayez un nom, un poste, une équipe, une tâche ou un événement.</p>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {sections.filter((s) => s.items.length > 0).map((s) => (
+            <div key={s.key}>
+              <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">{s.label} ({s.items.length})</p>
+              <div className="space-y-0.5">{s.items.map(s.render)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function formatEventDate(value: string) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) +
+    ' · ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ============================================================
+// ÉVÉNEMENTS DU DÉPARTEMENT
+// ============================================================
+
+type DeptEvent = {
+  id: string; titre: string; typeEvenement: string; lieu?: string;
+  dateDebut: string; dateFin?: string; statut: string; nbInscrits: number; description?: string;
+};
+
+const EVENT_TYPES = ['SORTIE', 'RETRAITE', 'EVANGELISATION', 'REUNION', 'VISITE', 'CONFERENCE', 'FORMATION', 'ANNIVERSAIRE', 'AUTRE'];
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  SORTIE: 'Sortie', RETRAITE: 'Retraite', EVANGELISATION: 'Évangélisation', REUNION: 'Réunion',
+  VISITE: 'Visite', CONFERENCE: 'Conférence', FORMATION: 'Formation', ANNIVERSAIRE: 'Anniversaire', AUTRE: 'Autre',
+};
+const EVENT_STATUT_BADGE: Record<string, string> = {
+  PLANIFIE: 'badge-info', EN_COURS: 'badge-warning', TERMINE: 'badge-success', ANNULE: 'badge-inactive',
+};
+
+function EventsTab({ deptId, onChanged }: { deptId: string; onChanged: () => void }) {
+  const queryClient = useQueryClient();
+  const [titre, setTitre] = useState('');
+  const [typeEvenement, setTypeEvenement] = useState('REUNION');
+  const [lieu, setLieu] = useState('');
+  const [dateDebut, setDateDebut] = useState('');
+  const [description, setDescription] = useState('');
+
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ['department', deptId, 'events'],
+    queryFn: async () => {
+      const res = await api.get(`/events/department/${deptId}?size=100`);
+      return (res.data?.content ?? []) as DeptEvent[];
+    },
+    enabled: !!deptId,
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['department', deptId, 'events'] });
+    onChanged();
+  };
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      await api.post('/events', {
+        typeEvenement, titre, lieu, description,
+        dateDebut: new Date(dateDebut).toISOString(),
+        departmentId: deptId,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Événement créé ✅');
+      setTitre(''); setLieu(''); setDateDebut(''); setDescription('');
+      invalidate();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const upcoming = events
+    .filter((e) => e.statut === 'PLANIFIE' || e.statut === 'EN_COURS')
+    .sort((a, b) => new Date(a.dateDebut).getTime() - new Date(b.dateDebut).getTime());
+  const past = events
+    .filter((e) => e.statut === 'TERMINE' || e.statut === 'ANNULE')
+    .sort((a, b) => new Date(b.dateDebut).getTime() - new Date(a.dateDebut).getTime());
+
+  if (isLoading) {
+    return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="glass-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <CalendarDays className="w-4 h-4 text-primary-500" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouvel événement du département</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="label">Titre *</label>
+            <input className="input" value={titre} onChange={(e) => setTitre(e.target.value)}
+              placeholder="Ex : Convention départementale 2026" />
+          </div>
+          <div>
+            <label className="label">Type</label>
+            <select className="input" value={typeEvenement} onChange={(e) => setTypeEvenement(e.target.value)}>
+              {EVENT_TYPES.map((t) => <option key={t} value={t}>{EVENT_TYPE_LABELS[t]}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Date et heure *</label>
+            <input type="datetime-local" className="input" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Lieu</label>
+            <input className="input" value={lieu} onChange={(e) => setLieu(e.target.value)} placeholder="Ex : Temple principal" />
+          </div>
+        </div>
+        <textarea className="input mb-3 min-h-[70px]" value={description} onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description, participants attendus, équipes mobilisées…" />
+        <button onClick={() => createMutation.mutate()} disabled={!titre.trim() || !dateDebut || createMutation.isPending}
+          className="btn-primary btn-sm cursor-pointer">
+          <Plus className="w-4 h-4" /> Créer l'événement
+        </button>
+      </div>
+
+      <div className="glass-card p-5">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+          À venir ({upcoming.length})
+        </h3>
+        {upcoming.length === 0 ? (
+          <p className="text-sm text-gray-400">Aucun événement planifié. Créez le premier événement de votre département.</p>
+        ) : (
+          <div className="space-y-2">
+            {upcoming.map((e) => (
+              <div key={e.id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg bg-primary-500/10 text-primary-600 dark:text-primary-300 shrink-0">
+                    <CalendarDays className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{e.titre}</p>
+                    <p className="text-[11px] text-gray-400">
+                      {EVENT_TYPE_LABELS[e.typeEvenement] ?? e.typeEvenement} · {formatEventDate(e.dateDebut)}
+                      {e.lieu ? ` · ${e.lieu}` : ''}
+                    </p>
+                  </div>
+                </div>
+                <span className={`badge text-[10px] shrink-0 ${EVENT_STATUT_BADGE[e.statut] || 'badge-gray'}`}>{e.statut}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {past.length > 0 && (
+        <div className="glass-card p-5">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Passés ({past.length})</h3>
+          <div className="space-y-1.5">
+            {past.map((e) => (
+              <div key={e.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                <span className="text-gray-700 dark:text-gray-200 truncate">{e.titre}</span>
+                <span className="text-[11px] text-gray-400 shrink-0">{formatEventDate(e.dateDebut)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
