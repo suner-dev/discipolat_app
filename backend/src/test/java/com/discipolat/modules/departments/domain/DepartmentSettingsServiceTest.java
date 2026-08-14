@@ -44,6 +44,7 @@ class DepartmentSettingsServiceTest {
         assertThat(result.get("absencePeriode")).isEqualTo(3);
         assertThat(result.get("inactiviteMois")).isEqualTo(3);
         assertThat(result.get("tacheRetardAlerte")).isEqualTo(true);
+        assertThat(result.get("eventRappelJours")).isEqualTo(1);
         verify(settingRepository).save(any(DepartmentSetting.class));
     }
 
@@ -72,6 +73,41 @@ class DepartmentSettingsServiceTest {
         assertThatThrownBy(() -> service.updateSettings(deptId, Map.of("absenceSeuil", 50)))
                 .isInstanceOf(BusinessRuleException.class);
         assertThatThrownBy(() -> service.updateSettings(deptId, Map.of("inactiviteMois", -1)))
+                .isInstanceOf(BusinessRuleException.class);
+    }
+
+    @Test
+    void updateSettings_modifieLeDelaiDeRappelEvenement() {
+        DepartmentSetting existing = DepartmentSetting.builder()
+                .departmentId(deptId).absenceSeuil(2).absencePeriode(3).inactiviteMois(3)
+                .tacheRetardAlerte(true).eventRappelJours(1).build();
+        when(settingRepository.findById(deptId)).thenReturn(Optional.of(existing));
+
+        Map<String, Object> result = service.updateSettings(deptId, Map.of("eventRappelJours", 7));
+
+        assertThat(result.get("eventRappelJours")).isEqualTo(7);
+        verify(settingRepository).save(existing);
+    }
+
+    @Test
+    void updateSettings_desactiveLeRappelAvecZero() {
+        DepartmentSetting existing = DepartmentSetting.builder()
+                .departmentId(deptId).eventRappelJours(1).build();
+        when(settingRepository.findById(deptId)).thenReturn(Optional.of(existing));
+
+        Map<String, Object> result = service.updateSettings(deptId, Map.of("eventRappelJours", 0));
+
+        assertThat(result.get("eventRappelJours")).isEqualTo(0);
+    }
+
+    @Test
+    void updateSettings_delaiRappelHorsBornes_refuse() {
+        when(settingRepository.findById(deptId)).thenReturn(Optional.empty());
+        when(settingRepository.save(any(DepartmentSetting.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThatThrownBy(() -> service.updateSettings(deptId, Map.of("eventRappelJours", 31)))
+                .isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> service.updateSettings(deptId, Map.of("eventRappelJours", -2)))
                 .isInstanceOf(BusinessRuleException.class);
     }
 

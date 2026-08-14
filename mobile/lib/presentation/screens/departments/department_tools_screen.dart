@@ -1244,6 +1244,8 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
         TextEditingController(text: (_settings['absencePeriode'] ?? 3).toString());
     final inactifCtrl =
         TextEditingController(text: (_settings['inactiviteMois'] ?? 3).toString());
+    final rappelEventCtrl =
+        TextEditingController(text: (_settings['eventRappelJours'] ?? 1).toString());
     return RefreshIndicator(
       onRefresh: _reload,
       child: ListView(
@@ -1283,9 +1285,19 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
                   decoration: const InputDecoration(
                       labelText: 'Mois sans présence (0–24)', helperText: '0 = désactivé'),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: rappelEventCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                      labelText: 'Rappel événement (0–30 jours)',
+                      helperText: 'Notifie le responsable N jours avant (0 = désactivé)'),
+                ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: () => _saveSettings(seuilCtrl.text, periodeCtrl.text, inactifCtrl.text),
+                  onPressed: () => _saveSettings(
+                      seuilCtrl.text, periodeCtrl.text, inactifCtrl.text, rappelEventCtrl.text),
                   icon: const Icon(Icons.save, size: 18),
                   label: const Text('Enregistrer les paramètres'),
                 ),
@@ -1298,11 +1310,13 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
     );
   }
 
-  Future<void> _saveSettings(String seuil, String periode, String inactif) async {
+  Future<void> _saveSettings(String seuil, String periode, String inactif, String rappelEvent) async {
     final absenceSeuil = int.tryParse(seuil.trim());
     final absencePeriode = int.tryParse(periode.trim());
     final inactiviteMois = int.tryParse(inactif.trim());
-    if (absenceSeuil == null || absencePeriode == null || inactiviteMois == null) {
+    final eventRappelJours = int.tryParse(rappelEvent.trim());
+    if (absenceSeuil == null || absencePeriode == null || inactiviteMois == null
+        || eventRappelJours == null) {
       _snack('Valeurs invalides', error: true);
       return;
     }
@@ -1311,6 +1325,7 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
         'absenceSeuil': absenceSeuil,
         'absencePeriode': absencePeriode,
         'inactiviteMois': inactiviteMois,
+        'eventRappelJours': eventRappelJours,
       });
       await _reload();
       if (mounted) _snack('Paramètres enregistrés');

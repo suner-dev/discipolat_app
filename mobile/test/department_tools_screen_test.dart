@@ -71,6 +71,7 @@ class _FakeApiService extends ApiService {
         'absencePeriode': 3,
         'inactiviteMois': 3,
         'tacheRetardAlerte': true,
+        'eventRappelJours': 1,
       });
     }
     return _json(path, <String, dynamic>{});
@@ -192,6 +193,30 @@ void main() {
     // Modifie le premier champ (absenceSeuil 2 → 4) puis enregistre
     final seuilField = find.byType(TextField).first;
     await tester.enterText(seuilField, '4');
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Enregistrer les paramètres'));
+    await tester.pumpAndSettle();
+
+    expect(api.putPaths, contains('/departments/dept-1/settings'));
+  });
+
+  testWidgets('configure le rappel des événements → PUT /settings', (tester) async {
+    final api = _FakeApiService();
+    await tester.pumpWidget(_wrap(DepartmentToolsScreen(
+      departmentId: 'dept-1',
+      apiService: api,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Paramètres'));
+    await tester.pumpAndSettle();
+    expect(find.text('Rappel événement (0–30 jours)'), findsOneWidget);
+
+    final rappelField = find.widgetWithText(TextField, '1').first;
+    await tester.enterText(rappelField, '7');
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Enregistrer les paramètres'));
     await tester.pumpAndSettle();
 

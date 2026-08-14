@@ -20,6 +20,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     Page<Event> findByDateDebutBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end, Pageable pageable);
     List<Event> findByFamilleIdAndStatutAndDeletedFalse(UUID familleId, String statut);
     List<Event> findByDateDebutBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end);
+    List<Event> findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(LocalDateTime start, LocalDateTime end);
     long countByFamilleIdAndDeletedFalse(UUID familleId);
     long countByDepartmentIdAndDeletedFalse(UUID departmentId);
 }

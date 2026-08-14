@@ -46,6 +46,11 @@ public class DepartmentSetting {
     @Builder.Default
     private boolean tacheRetardAlerte = true;
 
+    /** Jours avant l'événement pour le rappel au responsable (0 = désactivé). */
+    @Column(name = "event_rappel_jours", nullable = false)
+    @Builder.Default
+    private int eventRappelJours = 1;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

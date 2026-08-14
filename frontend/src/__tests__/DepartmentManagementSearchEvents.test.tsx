@@ -38,6 +38,7 @@ const mockEvents = {
 };
 const mockSettings = {
   departmentId: 'dept-1', absenceSeuil: 2, absencePeriode: 3, inactiviteMois: 3, tacheRetardAlerte: true,
+  eventRappelJours: 1,
 };
 const mockDocuments = {
   content: undefined,
@@ -155,6 +156,22 @@ describe('DepartmentManagementPage — recherche globale & événements', () => 
     const payload = (api.put as any).mock.calls[0][1];
     expect(payload.inactiviteMois).toBe(6);
     expect(payload.absenceSeuil).toBe(2);
+  });
+
+  it('configure le rappel automatique des événements depuis l\'onglet Paramètres', async () => {
+    const { default: api } = await import('@/lib/api');
+    renderPage();
+    fireEvent.click(await screen.findByText('Paramètres'));
+
+    expect(await screen.findByText(/Rappel automatique des événements/)).toBeInTheDocument();
+    const rappel = screen.getByLabelText(/Jours avant l\'événement/);
+    expect(rappel).toHaveValue(1); // valeur chargée depuis le serveur
+    fireEvent.change(rappel, { target: { value: '7' } });
+
+    fireEvent.click(screen.getByText("Enregistrer les paramètres"));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/departments/dept-1/settings', expect.anything()));
+    const payload = (api.put as any).mock.calls[0][1];
+    expect(payload.eventRappelJours).toBe(7);
   });
 
   it('masque les onglets des sous-modules désactivés par l\'administrateur', async () => {

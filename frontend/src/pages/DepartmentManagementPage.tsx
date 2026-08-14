@@ -1711,6 +1711,7 @@ function SettingsTab({ deptId }: { deptId: string }) {
   const [absencePeriode, setAbsencePeriode] = useState(3);
   const [inactiviteMois, setInactiviteMois] = useState(3);
   const [tacheRetardAlerte, setTacheRetardAlerte] = useState(true);
+  const [eventRappelJours, setEventRappelJours] = useState(1);
   const [loaded, setLoaded] = useState(false);
 
   const { isLoading } = useQuery({
@@ -1722,6 +1723,7 @@ function SettingsTab({ deptId }: { deptId: string }) {
       setAbsencePeriode(s.absencePeriode ?? 3);
       setInactiviteMois(s.inactiviteMois ?? 3);
       setTacheRetardAlerte(s.tacheRetardAlerte ?? true);
+      setEventRappelJours(s.eventRappelJours ?? 1);
       setLoaded(true);
       return s;
     },
@@ -1731,7 +1733,7 @@ function SettingsTab({ deptId }: { deptId: string }) {
   const saveMutation = useMutation({
     mutationFn: async () => {
       await api.put(`/departments/${deptId}/settings`, {
-        absenceSeuil, absencePeriode, inactiviteMois, tacheRetardAlerte,
+        absenceSeuil, absencePeriode, inactiviteMois, tacheRetardAlerte, eventRappelJours,
       });
     },
     onSuccess: () => {
@@ -1811,6 +1813,22 @@ function SettingsTab({ deptId }: { deptId: string }) {
             <p className="text-[11px] text-gray-400 mt-1">
               Alerte MOYENNE quand une tâche affectée dépasse son échéance.
             </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 sm:col-span-2">
+            <div className="flex items-center gap-2 mb-1">
+              <CalendarDays className="w-4 h-4 text-indigo-500" />
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Rappel automatique des événements</p>
+            </div>
+            <p className="text-[11px] text-gray-400 mb-3">
+              Notifie le responsable N jours avant chaque événement rattaché au département
+              (0 = rappel désactivé). En plus du rappel J-1 envoyé aux inscrits.
+            </p>
+            <div className="flex-1">
+              <label className="label" htmlFor="event-rappel-jours">Jours avant l'événement (0–30)</label>
+              <input id="event-rappel-jours" type="number" min={0} max={30} className="input" value={eventRappelJours}
+                onChange={(e) => setEventRappelJours(num(e.target.value))} />
+            </div>
           </div>
         </div>
       )}

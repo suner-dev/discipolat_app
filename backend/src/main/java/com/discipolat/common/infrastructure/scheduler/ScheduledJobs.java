@@ -11,6 +11,8 @@ import com.discipolat.modules.authentication.domain.ActivationTokenRepository;
 import com.discipolat.modules.authentication.domain.PasswordResetTokenRepository;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.departments.domain.DepartmentSetting;
+import com.discipolat.modules.departments.domain.DepartmentSettingsService;
 import com.discipolat.modules.departments.domain.DepartmentTask;
 import com.discipolat.modules.departments.domain.DepartmentTaskRepository;
 import com.discipolat.modules.notifications.domain.NotificationService;
@@ -62,6 +64,7 @@ public class ScheduledJobs {
     private final NotificationRepository notificationRepository;
     private final DepartmentTaskRepository departmentTaskRepository;
     private final DepartmentRepository departmentRepository;
+    private final DepartmentSettingsService departmentSettingsService;
 
     public ScheduledJobs(SoulRepository soulRepository, AlertRepository alertRepository,
                         NotificationService notificationService, MakerReportRepository makerReportRepository,
@@ -74,7 +77,8 @@ public class ScheduledJobs {
                         TransferRequestRepository transferRequestRepository,
                         NotificationRepository notificationRepository,
                         DepartmentTaskRepository departmentTaskRepository,
-                        DepartmentRepository departmentRepository) {
+                        DepartmentRepository departmentRepository,
+                        DepartmentSettingsService departmentSettingsService) {
         this.soulRepository = soulRepository;
         this.alertRepository = alertRepository;
         this.notificationService = notificationService;
@@ -90,6 +94,7 @@ public class ScheduledJobs {
         this.notificationRepository = notificationRepository;
         this.departmentTaskRepository = departmentTaskRepository;
         this.departmentRepository = departmentRepository;
+        this.departmentSettingsService = departmentSettingsService;
     }
 
     /**
@@ -232,7 +237,14 @@ public class ScheduledJobs {
     }
 
     /**
-     * US-54: Send event reminders J-1
+     * US-54 + DMS : rappels automatiques des événements à venir.
+     * <ul>
+     *   <li>J-1 : rappel générique aux inscrits (tous les événements).</li>
+     *   <li>J-N (N configurable par département via department_settings.event_rappel_jours,
+     *       0 = désactivé) : rappel au responsable du département pour les événements
+     *       rattachés à SON département. Déduplication : une notification par événement
+     *       et par responsable (one-shot, pas de re-notification aux passages suivants).</li>
+     * </ul>
      */
     @Scheduled(cron = "0 0 18 * * *") // Every day at 6 PM
     @Transactional
@@ -241,9 +253,9 @@ public class ScheduledJobs {
         LocalDateTime tomorrow = LocalDateTime.now().plusDays(1);
         LocalDateTime dayAfterTomorrow = LocalDateTime.now().plusDays(2);
 
+        // Rappel J-1 générique aux inscrits (comportement historique conservé).
         List<Event> upcomingEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
                 tomorrow, dayAfterTomorrow);
-
         for (Event event : upcomingEvents) {
             List<EventRegistration> registrations = eventRegistrationRepository.findByEventId(event.getId());
             for (EventRegistration reg : registrations) {
@@ -257,7 +269,44 @@ public class ScheduledJobs {
                 }
             }
         }
-        log.info("Event reminders sent for {} events", upcomingEvents.size());
+
+        // Rappels J-N configurables par département (responsable de l'événement).
+        int sent = 0;
+        LocalDateTime now = LocalDateTime.now();
+        // Fenêtre maximale : délai configurable jusqu'à 30 jours.
+        List<Event> departmentEvents = eventRepository
+                .findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(
+                        now.plusDays(1), now.plusDays(31));
+        for (Event event : departmentEvents) {
+            try {
+                if (event.getDepartmentId() == null || event.getDateDebut() == null) continue;
+                DepartmentSetting settings = departmentSettingsService.effectiveSettings(event.getDepartmentId());
+                int jours = settings.getEventRappelJours();
+                if (jours <= 0) continue;
+                // L'événement doit démarrer dans exactement `jours` jours (fenêtre du jour).
+                LocalDate targetDay = LocalDate.now().plusDays(jours);
+                if (!event.getDateDebut().toLocalDate().equals(targetDay)) continue;
+
+                Department department = departmentRepository.findById(event.getDepartmentId()).orElse(null);
+                if (department == null || department.isDeleted() || department.getResponsableId() == null) continue;
+                UUID responsableId = department.getResponsableId();
+                if (notificationRepository.existsByDestinataireIdAndTypeAndEntiteReferenceIdAndEntiteReferenceType(
+                        responsableId, TypeNotification.EVENEMENT_RAPPEL, event.getId(), "EVENT")) {
+                    continue;
+                }
+                notificationService.create(
+                        responsableId, TypeNotification.EVENEMENT_RAPPEL, CanalNotification.IN_APP,
+                        "📅 Événement du département dans " + jours + " jour(s) — " + department.getNom(),
+                        "L'événement « " + event.getTitre() + " » du département « " + department.getNom()
+                                + " » a lieu le " + event.getDateDebut() + " à " + event.getLieu() + ".",
+                        event.getId(), "EVENT");
+                sent++;
+            } catch (Exception e) {
+                log.warn("Department event reminder failed for event {}: {}", event.getId(), e.getMessage());
+            }
+        }
+        log.info("Event reminders: {} J-1 event(s), {} department reminder(s) sent",
+                upcomingEvents.size(), sent);
     }
 
     /**

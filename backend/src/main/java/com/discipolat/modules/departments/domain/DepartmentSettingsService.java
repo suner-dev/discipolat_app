@@ -41,6 +41,7 @@ public class DepartmentSettingsService {
         m.put("absencePeriode", settings.getAbsencePeriode());
         m.put("inactiviteMois", settings.getInactiviteMois());
         m.put("tacheRetardAlerte", settings.isTacheRetardAlerte());
+        m.put("eventRappelJours", settings.getEventRappelJours());
         return m;
     }
 
@@ -76,6 +77,15 @@ public class DepartmentSettingsService {
         if (values.containsKey("tacheRetardAlerte") && values.get("tacheRetardAlerte") != null) {
             settings.setTacheRetardAlerte(Boolean.parseBoolean(String.valueOf(values.get("tacheRetardAlerte"))));
         }
+        Integer eventRappelJours = intValue(values.get("eventRappelJours"));
+        if (eventRappelJours != null) {
+            if (eventRappelJours < 0 || eventRappelJours > 30) {
+                throw new BusinessRuleException(
+                        "Le délai de rappel d'événement doit être compris entre 0 et 30 jours",
+                        "EVENT_RAPPEL_JOURS_OUT_OF_RANGE");
+            }
+            settings.setEventRappelJours(eventRappelJours);
+        }
 
         settingRepository.save(settings);
         Map<String, Object> m = new LinkedHashMap<>();
@@ -84,6 +94,7 @@ public class DepartmentSettingsService {
         m.put("absencePeriode", settings.getAbsencePeriode());
         m.put("inactiviteMois", settings.getInactiviteMois());
         m.put("tacheRetardAlerte", settings.isTacheRetardAlerte());
+        m.put("eventRappelJours", settings.getEventRappelJours());
         return m;
     }
 

@@ -10,8 +10,11 @@ import com.discipolat.modules.authentication.domain.ActivationTokenRepository;
 import com.discipolat.modules.authentication.domain.PasswordResetTokenRepository;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.departments.domain.DepartmentSetting;
+import com.discipolat.modules.departments.domain.DepartmentSettingsService;
 import com.discipolat.modules.departments.domain.DepartmentTask;
 import com.discipolat.modules.departments.domain.DepartmentTaskRepository;
+import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.domain.EventRegistrationRepository;
 import com.discipolat.modules.events.domain.EventRepository;
 import com.discipolat.modules.notifications.domain.NotificationRepository;
@@ -62,6 +65,7 @@ class ScheduledJobsTest {
     @Mock private TransferRequestRepository transferRequestRepository;
     @Mock private DepartmentTaskRepository departmentTaskRepository;
     @Mock private DepartmentRepository departmentRepository;
+    @Mock private DepartmentSettingsService departmentSettingsService;
 
     private ScheduledJobs jobs;
 
@@ -73,7 +77,7 @@ class ScheduledJobsTest {
                 makerReportRepository, userRepository, eventRepository, eventRegistrationRepository,
                 activationTokenRepository, passwordResetTokenRepository, workflowService,
                 appointmentService, transferRequestRepository, notificationRepository,
-                departmentTaskRepository, departmentRepository);
+                departmentTaskRepository, departmentRepository, departmentSettingsService);
     }
 
     private User pasteur() {
@@ -213,5 +217,111 @@ class ScheduledJobsTest {
         verify(notificationService).create(
                 eq(responsableId), eq(TypeNotification.TACHE_EN_RETARD), eq(CanalNotification.IN_APP),
                 any(), any(), eq(task.getId()), eq("TASK"));
+    }
+
+    // ==================== RAPPELS D'ÉVÉNEMENTS DE DÉPARTEMENT ====================
+
+    @Test
+    void sendEventReminders_DepartementJN_NotifieLeResponsable() {
+        UUID departmentId = UUID.randomUUID();
+        UUID responsableId = UUID.randomUUID();
+        Event event = Event.builder()
+                .id(UUID.randomUUID())
+                .departmentId(departmentId)
+                .titre("Convention du département")
+                .lieu("Temple")
+                .dateDebut(LocalDateTime.now().plusDays(3))
+                .build();
+        Department dept = new Department();
+        dept.setResponsableId(responsableId);
+        dept.setNom("Jeunesse");
+        DepartmentSetting settings = DepartmentSetting.builder()
+                .departmentId(departmentId).eventRappelJours(3).build();
+        // Pas d'événement J-1 (démo générique vide)
+        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(any(), any()))
+                .thenReturn(List.of(event));
+        when(departmentSettingsService.effectiveSettings(departmentId)).thenReturn(settings);
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(dept));
+        when(notificationRepository.existsByDestinataireIdAndTypeAndEntiteReferenceIdAndEntiteReferenceType(
+                responsableId, TypeNotification.EVENEMENT_RAPPEL, event.getId(), "EVENT"))
+                .thenReturn(false);
+
+        jobs.sendEventReminders();
+
+        verify(notificationService).create(
+                eq(responsableId), eq(TypeNotification.EVENEMENT_RAPPEL), eq(CanalNotification.IN_APP),
+                any(), any(), eq(event.getId()), eq("EVENT"));
+    }
+
+    @Test
+    void sendEventReminders_DepartementRappelDesactive_NeNotifiePas() {
+        UUID departmentId = UUID.randomUUID();
+        Event event = Event.builder()
+                .id(UUID.randomUUID())
+                .departmentId(departmentId)
+                .titre("Événement sans rappel")
+                .dateDebut(LocalDateTime.now().plusDays(2))
+                .build();
+        DepartmentSetting settings = DepartmentSetting.builder()
+                .departmentId(departmentId).eventRappelJours(0).build();
+        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(any(), any()))
+                .thenReturn(List.of(event));
+        when(departmentSettingsService.effectiveSettings(departmentId)).thenReturn(settings);
+
+        jobs.sendEventReminders();
+
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void sendEventReminders_DepartementDejaNotifie_NeRenotifiePas() {
+        UUID departmentId = UUID.randomUUID();
+        UUID responsableId = UUID.randomUUID();
+        Event event = Event.builder()
+                .id(UUID.randomUUID())
+                .departmentId(departmentId)
+                .titre("Convention du département")
+                .dateDebut(LocalDateTime.now().plusDays(3))
+                .build();
+        Department dept = new Department();
+        dept.setResponsableId(responsableId);
+        DepartmentSetting settings = DepartmentSetting.builder()
+                .departmentId(departmentId).eventRappelJours(3).build();
+        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(any(), any()))
+                .thenReturn(List.of(event));
+        when(departmentSettingsService.effectiveSettings(departmentId)).thenReturn(settings);
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(dept));
+        when(notificationRepository.existsByDestinataireIdAndTypeAndEntiteReferenceIdAndEntiteReferenceType(
+                responsableId, TypeNotification.EVENEMENT_RAPPEL, event.getId(), "EVENT"))
+                .thenReturn(true);
+
+        jobs.sendEventReminders();
+
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void sendEventReminders_DepartementSansResponsable_NeNotifiePas() {
+        UUID departmentId = UUID.randomUUID();
+        Event event = Event.builder()
+                .id(UUID.randomUUID())
+                .departmentId(departmentId)
+                .titre("Événement sans responsable")
+                .dateDebut(LocalDateTime.now().plusDays(1))
+                .build();
+        DepartmentSetting settings = DepartmentSetting.builder()
+                .departmentId(departmentId).eventRappelJours(1).build();
+        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(any(), any()))
+                .thenReturn(List.of(event));
+        when(departmentSettingsService.effectiveSettings(departmentId)).thenReturn(settings);
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.empty());
+
+        jobs.sendEventReminders();
+
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
     }
 }
