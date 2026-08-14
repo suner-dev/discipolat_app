@@ -2,17 +2,19 @@ import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
+import { usePlatformConfig } from '@/contexts/PlatformContext';
 import toast from 'react-hot-toast';
 import AnnouncementsAlertsSection from '@/components/departments/AnnouncementsAlertsSection';
 import {
   Building2, Users, Heart, ArrowLeft, Mail, UserCog,
   ChevronRight, Loader2, AlertTriangle, BarChart3, FileText,
   CheckCircle2, XCircle, Clock, AlertCircle, Search, Download, Upload, FolderOpen,
-  UserPlus, X, Trash2,
+  UserPlus, X, Trash2, Boxes,
 } from 'lucide-react';
 
 export default function DepartmentDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { moduleEnabled } = usePlatformConfig();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [memberSearch, setMemberSearch] = useState('');
@@ -246,12 +248,19 @@ export default function DepartmentDetailPage() {
             <Link to={`/departments/${id}/manage`} className="btn-primary btn-sm inline-flex">
               <Users className="w-4 h-4" /> Gérer
             </Link>
+            {moduleEnabled('DEPT_INVENTORY') || moduleEnabled('DEPT_CHECKLISTS') || moduleEnabled('DEPT_REPORTS') ? (
+              <Link to={`/departments/${id}/tools`} className="btn-ghost btn-sm inline-flex">
+                <Boxes className="w-4 h-4" /> Outils
+              </Link>
+            ) : null}
             <Link to={`/departments/${id}/stats`} className="btn-ghost btn-sm inline-flex">
               <BarChart3 className="w-4 h-4" /> Stats
             </Link>
-            <Link to={`/departments/${id}/report`} className="btn-ghost btn-sm inline-flex">
-              <FileText className="w-4 h-4" /> Rapport
-            </Link>
+            {moduleEnabled('DEPT_REPORTS') && (
+              <Link to={`/departments/${id}/report`} className="btn-ghost btn-sm inline-flex">
+                <FileText className="w-4 h-4" /> Rapport
+              </Link>
+            )}
           </div>
         </div>
       </div>

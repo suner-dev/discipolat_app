@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
+import { usePlatformConfig } from '@/contexts/PlatformContext';
 import toast from 'react-hot-toast';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import {
@@ -11,8 +12,25 @@ import {
 
 export default function DepartmentReportPage() {
   const { id } = useParams<{ id: string }>();
+  const { moduleEnabled } = usePlatformConfig();
   const today = new Date().toISOString().split('T')[0];
   const [semaine, setSemaine] = useState(today);
+
+  // Module désactivé par l'administrateur : page remplacée par un état explicite
+  if (!moduleEnabled('DEPT_REPORTS')) {
+    return (
+      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <FileText className="w-10 h-10 text-gray-300 mb-3" />
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Rapports de département désactivés</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
+        </p>
+        <Link to="/departments" className="btn-ghost btn-sm mt-4">
+          <ArrowLeft className="w-4 h-4" /> Retour aux départements
+        </Link>
+      </div>
+    );
+  }
 
   const { data: dept } = useQuery({
     queryKey: ['department', id],

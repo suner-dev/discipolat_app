@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DepartmentManagementPage from '@/pages/DepartmentManagementPage';
+import { PlatformContext } from '@/contexts/PlatformContext';
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -75,12 +76,24 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 });
 
-function renderPage() {
+function renderPage(disabledModules: string[] = []) {
+  const moduleEnabled = (key: string) => !disabledModules.includes(key);
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/departments/dept-1/manage']}>
-        <DepartmentManagementPage />
-      </MemoryRouter>
+      <PlatformContext.Provider
+        value={{
+          menus: [],
+          modules: [],
+          isLoaded: true,
+          moduleEnabled,
+          canAccessPath: () => true,
+          refetch: () => undefined,
+        }}
+      >
+        <MemoryRouter initialEntries={['/departments/dept-1/manage']}>
+          <DepartmentManagementPage />
+        </MemoryRouter>
+      </PlatformContext.Provider>
     </QueryClientProvider>
   );
 }
@@ -142,6 +155,17 @@ describe('DepartmentManagementPage — recherche globale & événements', () => 
     const payload = (api.put as any).mock.calls[0][1];
     expect(payload.inactiviteMois).toBe(6);
     expect(payload.absenceSeuil).toBe(2);
+  });
+
+  it('masque les onglets des sous-modules désactivés par l\'administrateur', async () => {
+    renderPage(['DEPT_INVENTORY', 'DEPT_CHECKLISTS']);
+    await screen.findByText('Gestion de Département A');
+
+    // Les onglets désactivés disparaissent, les autres restent
+    expect(screen.queryByText('Inventaire')).not.toBeInTheDocument();
+    expect(screen.queryByText('Checklists')).not.toBeInTheDocument();
+    expect(screen.getByText('Documentation')).toBeInTheDocument();
+    expect(screen.getByText('Organisation')).toBeInTheDocument();
   });
 
   it('gère la documentation du département (ajout + liste par type)', async () => {

@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
+import { usePlatformConfig } from '@/contexts/PlatformContext';
 import toast from 'react-hot-toast';
 import {
   Building2, ArrowLeft, Network, Briefcase, Users2, ListTodo, History,
@@ -60,6 +61,22 @@ export default function DepartmentManagementPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<(typeof TABS)[number]['key']>('org');
   const [search, setSearch] = useState('');
+  const { moduleEnabled } = usePlatformConfig();
+
+  // Onglets modulables : masqués quand l'administrateur désactive le sous-module
+  const visibleTabs = TABS.filter((t) => {
+    if (t.key === 'checklists') return moduleEnabled('DEPT_CHECKLISTS');
+    if (t.key === 'inventory') return moduleEnabled('DEPT_INVENTORY');
+    if (t.key === 'docs') return moduleEnabled('DEPT_DOCUMENTS');
+    if (t.key === 'events') return moduleEnabled('EVENTS');
+    return true;
+  });
+  useEffect(() => {
+    if (!visibleTabs.some((t) => t.key === tab)) {
+      setTab('org');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduleEnabled, tab]);
 
   const { data: searchResults } = useQuery({
     queryKey: ['department', id, 'search', search],
@@ -157,7 +174,7 @@ export default function DepartmentManagementPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-        {TABS.map((t) => {
+        {visibleTabs.map((t) => {
           const Icon = t.icon;
           return (
             <button

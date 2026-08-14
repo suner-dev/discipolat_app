@@ -72,12 +72,29 @@ public class ModuleGateFilter extends OncePerRequestFilter {
 
     private static String matchModule(String path) {
         // Correspondance la plus longue d'abord (ex : /souls/retractions → SOULS).
+        // Les clés « PREFIXE@@SOUS_MODULE » ciblent un sous-chemin après un segment
+        // variable (UUID) : /api/v1/departments/{id}/equipment → DEPT_INVENTORY.
         String best = null;
         int bestLen = -1;
         for (Map.Entry<String, String> e : PATH_TO_MODULE.entrySet()) {
-            if (path.startsWith(e.getKey()) && e.getKey().length() > bestLen) {
+            String pattern = e.getKey();
+            int len = -1;
+            int idx = pattern.indexOf("@@");
+            if (idx >= 0) {
+                String prefix = pattern.substring(0, idx);
+                String tool = pattern.substring(idx + 2);
+                if (path.startsWith(prefix)) {
+                    String rest = path.substring(prefix.length());
+                    if (rest.matches("[^/]+/" + tool + "(/.*)?$")) {
+                        len = prefix.length() * 1000 + tool.length();
+                    }
+                }
+            } else if (path.startsWith(pattern)) {
+                len = pattern.length();
+            }
+            if (len > bestLen) {
+                bestLen = len;
                 best = e.getValue();
-                bestLen = e.getKey().length();
             }
         }
         return best;
@@ -88,6 +105,11 @@ public class ModuleGateFilter extends OncePerRequestFilter {
         m.put("/api/v1/souls", "SOULS");
         m.put("/api/v1/families", "FAMILIES");
         m.put("/api/v1/departments", "DEPARTMENTS");
+        // Sous-outils du DMS (modulables individuellement)
+        m.put("/api/v1/departments/@@reports", "DEPT_REPORTS");
+        m.put("/api/v1/departments/@@checklists", "DEPT_CHECKLISTS");
+        m.put("/api/v1/departments/@@equipment", "DEPT_INVENTORY");
+        m.put("/api/v1/departments/@@documents", "DEPT_DOCUMENTS");
         m.put("/api/v1/reports", "REPORTS");
         m.put("/api/v1/prayers", "PRAYERS");
         m.put("/api/v1/events", "EVENTS");

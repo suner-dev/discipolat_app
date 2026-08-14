@@ -27,7 +27,7 @@ interface PlatformConfigValue {
   refetch: () => void;
 }
 
-const PlatformContext = createContext<PlatformConfigValue | null>(null);
+export const PlatformContext = createContext<PlatformConfigValue | null>(null);
 
 export function PlatformProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, activeRole } = useAuth();
