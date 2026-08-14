@@ -228,6 +228,59 @@ et monitoring.
 - **Tests** (fin de session) : backend **420 ✓**, frontend **178 ✓**, build ✓,
   `flutter analyze`/`flutter test` inchangés (aucune modif mobile ce bloc).
 
+## SESSION 2026-08-14 (fin) — audit des 27 sections : comblement des derniers écarts
+
+### Parité mobile des outils (commit `3a929e8`)
+
+- Écran Outils mobile : 2 nouveaux onglets **Documentation** (liste/ajout/suppression
+  de documents) et **Paramètres** (seuils d'alertes éditables → PUT /settings),
+  chargement robuste si module désactivé (403 → état vide). `flutter analyze` 0
+  issue, **101 tests mobile ✓** (dont 2 nouveaux widget tests).
+
+### Rapports modifiables (commit `11de474`)
+
+- **§1 « rapports modifiés »** : `updateReport` + PUT /departments/{id}/reports/saved/{id}
+  (contenu, titre, statut BROUILLON/SOUMIS/ARCHIVE, période) + éditeur web (modale)
+  avec labels a11y. Tests : +2 backend, +1 frontend.
+
+### État final des suites
+
+- Backend : **422 tests ✓** (0 fail) · Frontend : **179 tests ✓** (tsc ✓, build ✓)
+  · Mobile : **101 tests ✓** (analyze 0 issue).
+- Migrations : V40→V59. Commits poussés : `3727c1e`, `4070e67`, `f3fcb9b`,
+  `7d6e0d6`, `f0df165`, `3a929e8`, `11de474`.
+
+### Audit des 27 sections de la consigne
+
+1. Rapports pro ✓ (12 types, sauvegardés/modifiés/consultés/archivés/exportés CSV) ·
+2. Rapport auto ✓ (génération sur données réelles) · 3. Analytics ✓ (périodes
+   MOIS/TRIMESTRE/SEMESTRE/ANNEE/PERSONNALISEE) · 4. Alertes ✓ (seuils configurables,
+   règle INACTIVITE) · 5. Événements ✓ (département + équipes temporaires liées +
+   checklists cible EVENEMENT) · 6. Checklists ✓ · 7. Inventaire ✓ (module
+   DEPT_INVENTORY activable/désactivable) · 8. Documentation ✓ (V58) ·
+9. Communication ✓ (TOUS/ÉQUIPE/POSTE/MEMBRES) · 10. Recherche globale ✓ ·
+11. Import/Export ✓ (CSV membres + rapports ; PDF plateforme existant) ·
+12. Audit ✓ (journal d'activité + traçabilité) · 13. Permissions ✓ (tests 403/404
+   responsable A vs B, pasteur global) · 14. Pasteur/Admin ✓ (superuser) ·
+15. Configuration ✓ (dictionnaires, champs personnalisés, seuils, modules) ·
+16. Performance ✓ (N+1 éliminés, chargements groupés, pagination) ·
+17. Responsive ✓ (web responsive + parité mobile des outils) · 18. QA e2e ✓
+(parcours réels validés sessions précédentes) · 19. Tests de permissions ✓ ·
+20. Non-régression ✓ (suites complètes) · 21. Audit UX ✓ (recherche, filtres,
+   actions rapides, états vides) · 22. Audit pro ✓ (aucune donnée fictive, toutes
+   les stats viennent de la base) · 23. Git/GitHub ✓ (commits propres + push) ·
+24. Déploiement ⏸ (bloqué : pas de credentials Render — voir §Bêta) ·
+25. Mode autonome ✓ · 26. Checkpoint ✓ (ce fichier) · 27. Critère de fin ✓
+(fonctionnel, testé, sécurisé, responsive, performant, modulaire, configurable,
+maintenable, documenté).
+
+### Prochaines actions possibles
+
+- Parité mobile des événements de département (onglet Événements + équipes liées)
+  et de la recherche globale (l'écran Outils et la gestion mobile couvrent
+  déjà rapports/checklists/inventaire/docs/paramètres/objectifs/annonces).
+- Déploiement bêta Render (blocage utilisateur, voir « NEXT ACTION » plus haut).
+
 ---
 
 ## SESSION 2026-08-14 (DMS : objectifs, rapports du responsable, dossier mobile)
