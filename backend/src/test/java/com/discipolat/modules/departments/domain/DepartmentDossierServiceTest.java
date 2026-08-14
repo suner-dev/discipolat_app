@@ -203,7 +203,8 @@ class DepartmentDossierServiceTest {
 
         DepartmentTask task = DepartmentTask.builder().id(UUID.randomUUID()).departmentId(deptId)
                 .titre("Montage").statut(DepartmentTask.TaskStatus.EN_COURS)
-                .echeance(LocalDate.now().minusDays(1)).assignedTo(memberId).build();
+                .echeance(LocalDate.now().minusDays(1)).assignedTo(memberId)
+                .createdAt(LocalDateTime.now().minusDays(2)).build();
         when(taskRepository.findByDepartmentIdOrderByEcheanceAsc(deptId)).thenReturn(List.of(task));
         when(teamRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of());
         when(disciplineRepository.findByAmeIdAndDeletedFalseOrderByCreatedAtDesc(any(UUID.class))).thenReturn(List.of());
@@ -227,6 +228,51 @@ class DepartmentDossierServiceTest {
         assertThat(taches.get("enRetard")).isEqualTo(1L);
         assertThat(stats).containsKeys("evolutionEffectif", "evolutionPresence", "evolutionTaches",
                 "disciplineParCategorie", "equipes", "affectations", "chargeParMembre", "evenements");
+    }
+
+    @Test
+    void getDepartmentStats_avecPeriode_filtrePresenceEtTaches() {
+        Soul actif = soul(memberId);
+        SoulDepartment link1 = SoulDepartment.builder().soulId(memberId).departmentId(deptId)
+                .actif(true).dateAffectation(LocalDateTime.now().minusMonths(2)).build();
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId)).thenReturn(List.of(link1));
+        when(soulDepartmentRepository.findByDepartmentId(deptId)).thenReturn(List.of(link1));
+        when(soulRepository.findAllById(anyList())).thenReturn(List.of(actif));
+
+        LocalDate limite = LocalDate.now().minusMonths(2);
+        MemberPresence ancienne = MemberPresence.builder().soulId(memberId).semaine(limite.minusMonths(3)).present(true).build();
+        MemberPresence recente = MemberPresence.builder().soulId(memberId).semaine(LocalDate.now().minusWeeks(1)).present(false).build();
+        when(presenceRepository.findBySoulIdInOrderBySemaineDesc(anyList()))
+                .thenReturn(List.of(recente, ancienne));
+
+        DepartmentTask ancienneTache = DepartmentTask.builder().id(UUID.randomUUID()).departmentId(deptId)
+                .titre("Ancienne").statut(DepartmentTask.TaskStatus.TERMINEE)
+                .echeance(LocalDate.now().minusMonths(4))
+                .createdAt(LocalDateTime.now().minusMonths(4)).build();
+        DepartmentTask tacheRecente = DepartmentTask.builder().id(UUID.randomUUID()).departmentId(deptId)
+                .titre("Récente").statut(DepartmentTask.TaskStatus.EN_COURS)
+                .echeance(LocalDate.now().minusDays(1)).assignedTo(memberId)
+                .createdAt(LocalDateTime.now().minusDays(2)).build();
+        when(taskRepository.findByDepartmentIdOrderByEcheanceAsc(deptId))
+                .thenReturn(List.of(ancienneTache, tacheRecente));
+        when(teamRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of());
+        when(disciplineRepository.findByAmeIdAndDeletedFalseOrderByCreatedAtDesc(any(UUID.class))).thenReturn(List.of());
+        when(assignmentRepository.findByDepartmentIdAndActifTrue(deptId)).thenReturn(List.of());
+        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
+        when(departmentService.findById(deptId)).thenReturn(Department.builder().id(deptId).responsableId(UUID.randomUUID()).build());
+
+        // Période : dernier mois — l'ancienne présence et l'ancienne tâche sortent du périmètre
+        Map<String, Object> stats = service.getDepartmentStats(deptId, "MOIS", null, null);
+
+        Map<?, ?> presence = (Map<?, ?>) stats.get("presence");
+        assertThat(presence.get("total")).isEqualTo(1L); // seulement la fiche récente
+        assertThat(presence.get("absents")).isEqualTo(1L);
+
+        Map<?, ?> taches = (Map<?, ?>) stats.get("taches");
+        assertThat(taches.get("total")).isEqualTo(1L); // seulement la tâche récente
+
+        Map<?, ?> periode = (Map<?, ?>) stats.get("periode");
+        assertThat(periode.get("code")).isEqualTo("MOIS");
     }
 
     // ======================= IMPORT / EXPORT =======================

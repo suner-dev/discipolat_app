@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
 import {
   ArrowLeft, BarChart3, Users, Activity, ListTodo, Gavel, Building2,
-  Briefcase, UserCheck, Loader2, TrendingUp,
+  Briefcase, UserCheck, Loader2, TrendingUp, CalendarRange,
 } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -12,13 +13,31 @@ import {
 
 const PIE_COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#64748b'];
 
+const PERIODES: Record<string, string> = {
+  ANNEE: '12 derniers mois',
+  SEMESTRE: '6 derniers mois',
+  TRIMESTRE: '3 derniers mois',
+  MOIS: 'Dernier mois',
+  PERSONNALISEE: 'Période personnalisée',
+};
+
 export default function DepartmentStatsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [periode, setPeriode] = useState('ANNEE');
+  const [debut, setDebut] = useState('');
+  const [fin, setFin] = useState('');
 
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['department', id, 'stats'],
-    queryFn: async () => (await api.get(`/departments/${id}/stats`)).data as any,
+    queryKey: ['department', id, 'stats', periode, debut, fin],
+    queryFn: async () => {
+      const params: Record<string, string> = { periode };
+      if (periode === 'PERSONNALISEE') {
+        if (debut) params.debut = debut;
+        if (fin) params.fin = fin;
+      }
+      return (await api.get(`/departments/${id}/stats`, { params })).data as any;
+    },
     enabled: !!id,
   });
 
@@ -52,6 +71,32 @@ export default function DepartmentStatsPage() {
             <p className="page-subtitle">Données réelles — effectif, présence, tâches, discipline, charge de travail</p>
           </div>
         </div>
+      </div>
+
+      {/* Sélecteur de période */}
+      <div className="glass-card p-4 mb-5 flex flex-wrap items-end gap-3">
+        <div className="flex items-center gap-2">
+          <CalendarRange className="w-4 h-4 text-primary-500" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Période</h3>
+        </div>
+        <select className="input w-auto" value={periode} onChange={(e) => setPeriode(e.target.value)} aria-label="Période">
+          {Object.entries(PERIODES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        {periode === 'PERSONNALISEE' && (
+          <>
+            <label className="flex items-center gap-2 text-xs text-gray-500">
+              Du
+              <input type="date" className="input w-auto" value={debut} onChange={(e) => setDebut(e.target.value)} />
+            </label>
+            <label className="flex items-center gap-2 text-xs text-gray-500">
+              Au
+              <input type="date" className="input w-auto" value={fin} onChange={(e) => setFin(e.target.value)} />
+            </label>
+          </>
+        )}
+        <p className="text-[11px] text-gray-400 ml-auto">
+          {stats?.periode ? `Du ${stats.periode.debut} au ${stats.periode.fin}` : 'Toutes les données sont réelles, issues de la base.'}
+        </p>
       </div>
 
       {/* KPIs */}
@@ -92,7 +137,7 @@ export default function DepartmentStatsPage() {
         {/* Évolution effectif */}
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-amber-500" /> Évolution de l'effectif (12 mois)
+            <TrendingUp className="w-4 h-4 text-amber-500" /> Évolution de l'effectif
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={stats?.evolutionEffectif ?? []}>
@@ -110,7 +155,7 @@ export default function DepartmentStatsPage() {
         {/* Présence mensuelle */}
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-violet-500" /> Taux de présence mensuel (6 mois)
+            <Activity className="w-4 h-4 text-violet-500" /> Taux de présence sur la période
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={stats?.evolutionPresence ?? []}>
@@ -151,7 +196,7 @@ export default function DepartmentStatsPage() {
         {/* Tâches par statut */}
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <ListTodo className="w-4 h-4 text-emerald-500" /> Tâches par statut
+            <ListTodo className="w-4 h-4 text-emerald-500" /> Tâches créées sur la période
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart

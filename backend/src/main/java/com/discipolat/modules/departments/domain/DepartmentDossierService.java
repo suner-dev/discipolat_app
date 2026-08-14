@@ -786,7 +786,44 @@ public class DepartmentDossierService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDepartmentStats(UUID departmentId) {
+        return getDepartmentStats(departmentId, null, null, null);
+    }
+
+    /**
+     * Statistiques du département sur une période donnée.
+     * {@code periode} : MOIS | TRIMESTRE | SEMESTRE | ANNEE | PERSONNALISEE
+     * (défaut ANNEE = 12 derniers mois). Pour PERSONNALISEE, fournir {@code debut}
+     * et {@code fin} (dates ISO). Les séries d'évolution sont regroupées par mois
+     * (ou trimestre si la période dépasse 24 mois).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getDepartmentStats(UUID departmentId, String periode,
+                                                  LocalDate debut, LocalDate fin) {
         assertCanManage(departmentId);
+        String periodeEffective = periode == null ? "ANNEE" : periode.toUpperCase(Locale.ROOT);
+        LocalDate today = LocalDate.now();
+        LocalDate finDate = fin != null ? fin : today;
+        LocalDate debutDate;
+        if (debut != null) {
+            debutDate = debut;
+        } else {
+            debutDate = switch (periodeEffective) {
+                case "MOIS" -> finDate.minusMonths(1).plusDays(1);
+                case "TRIMESTRE" -> finDate.minusMonths(3).plusDays(1);
+                case "SEMESTRE" -> finDate.minusMonths(6).plusDays(1);
+                case "PERSONNALISEE" -> finDate.minusMonths(1).plusDays(1);
+                default -> finDate.minusMonths(11); // ANNEE : 12 mois calendaires
+            };
+            debutDate = debutDate.withDayOfMonth(1);
+        }
+        if (debutDate.isAfter(finDate)) {
+            LocalDate tmp = debutDate;
+            debutDate = finDate;
+            finDate = tmp;
+        }
+        LocalDate debutFinal = debutDate;
+        LocalDate finFinal = finDate;
+
         List<SoulDepartment> links = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId);
         List<Soul> souls = links.isEmpty() ? List.of()
                 : soulRepository.findAllById(links.stream().map(SoulDepartment::getSoulId).toList()).stream()
@@ -803,15 +840,16 @@ public class DepartmentDossierService {
         effectif.put("nouveaux30j", souls.stream()
                 .filter(s -> s.getDateIntegration() != null && s.getDateIntegration().isAfter(LocalDate.now().minusDays(30)))
                 .count());
+        effectif.put("nouveauxPeriode", souls.stream()
+                .filter(s -> s.getDateIntegration() != null
+                        && !s.getDateIntegration().isBefore(debutFinal) && !s.getDateIntegration().isAfter(finFinal))
+                .count());
 
-        // ---- Évolution mensuelle de l'effectif (12 derniers mois) ----
-        List<Map<String, Object>> evolutionEffectif = new ArrayList<>();
-        Map<UUID, SoulDepartment> linkBySoul = links.stream()
-                .collect(Collectors.toMap(SoulDepartment::getSoulId, l -> l, (a, b) -> a));
+        // ---- Évolution de l'effectif sur la période ----
+        List<DepartmentTask> tasks = taskRepository.findByDepartmentIdOrderByEcheanceAsc(departmentId);
         List<SoulDepartment> allLinks = soulDepartmentRepository.findByDepartmentId(departmentId);
-        YearMonth now = YearMonth.now();
-        for (int i = 11; i >= 0; i--) {
-            YearMonth ym = now.minusMonths(i);
+        List<Map<String, Object>> evolutionEffectif = new ArrayList<>();
+        for (YearMonth ym : monthBuckets(debutFinal, finFinal)) {
             long ajoutes = allLinks.stream()
                     .filter(l -> l.getDateAffectation() != null && YearMonth.from(l.getDateAffectation()).equals(ym))
                     .count();
@@ -819,16 +857,18 @@ public class DepartmentDossierService {
                     .filter(l -> l.getDateDesaffectation() != null && YearMonth.from(l.getDateDesaffectation()).equals(ym))
                     .count();
             Map<String, Object> m = new LinkedHashMap<>();
-            m.put("mois", ym.getMonth().getDisplayName(TextStyle.SHORT, Locale.FRENCH) + " " + ym.getYear() % 100);
+            m.put("mois", bucketLabel(ym));
             m.put("ajoutes", ajoutes);
             m.put("sortis", sortis);
             m.put("solde", ajoutes - sortis);
             evolutionEffectif.add(m);
         }
 
-        // ---- Présence (fiches de présence du département) ----
+        // ---- Présence (fiches de présence du département sur la période) ----
         List<MemberPresence> presences = souls.isEmpty() ? List.of()
-                : presenceRepository.findBySoulIdInOrderBySemaineDesc(souls.stream().map(Soul::getId).toList());
+                : presenceRepository.findBySoulIdInOrderBySemaineDesc(souls.stream().map(Soul::getId).toList()).stream()
+                        .filter(r -> !r.getSemaine().isBefore(debutFinal) && !r.getSemaine().isAfter(finFinal))
+                        .toList();
         long presents = presences.stream().filter(r -> Boolean.TRUE.equals(r.getPresent())).count();
         Map<String, Object> presence = new LinkedHashMap<>();
         presence.put("total", (long) presences.size());
@@ -837,48 +877,53 @@ public class DepartmentDossierService {
         presence.put("taux", presences.isEmpty() ? 0.0
                 : Math.round(presents * 1000.0 / presences.size()) / 10.0);
         List<Map<String, Object>> evolutionPresence = new ArrayList<>();
-        for (int i = 5; i >= 0; i--) {
-            YearMonth ym = now.minusMonths(i);
+        for (YearMonth ym : monthBuckets(debutFinal, finFinal)) {
             List<MemberPresence> monthRecords = presences.stream()
                     .filter(r -> YearMonth.from(r.getSemaine()).equals(ym))
                     .toList();
             long p = monthRecords.stream().filter(r -> Boolean.TRUE.equals(r.getPresent())).count();
             Map<String, Object> m = new LinkedHashMap<>();
-            m.put("mois", ym.getMonth().getDisplayName(TextStyle.SHORT, Locale.FRENCH) + " " + ym.getYear() % 100);
+            m.put("mois", bucketLabel(ym));
             m.put("presents", p);
             m.put("absents", monthRecords.size() - p);
             m.put("taux", monthRecords.isEmpty() ? 0.0 : Math.round(p * 1000.0 / monthRecords.size()) / 10.0);
             evolutionPresence.add(m);
         }
 
-        // ---- Tâches ----
-        List<DepartmentTask> tasks = taskRepository.findByDepartmentIdOrderByEcheanceAsc(departmentId);
+        // ---- Tâches (créées sur la période) ----
+        List<DepartmentTask> tasksPeriode = tasks.stream()
+                .filter(t -> t.getCreatedAt() != null
+                        && !t.getCreatedAt().toLocalDate().isBefore(debutFinal)
+                        && !t.getCreatedAt().toLocalDate().isAfter(finFinal))
+                .toList();
         Map<String, Object> taches = new LinkedHashMap<>();
-        taches.put("total", (long) tasks.size());
-        taches.put("ouvertes", tasks.stream().filter(DepartmentTask::isOpen).count());
-        taches.put("enRetard", tasks.stream().filter(DepartmentTask::isOverdue).count());
-        taches.put("terminees", tasks.stream().filter(t -> t.getStatut() == DepartmentTask.TaskStatus.TERMINEE
+        taches.put("total", (long) tasksPeriode.size());
+        taches.put("ouvertes", tasksPeriode.stream().filter(DepartmentTask::isOpen).count());
+        taches.put("enRetard", tasksPeriode.stream().filter(DepartmentTask::isOverdue).count());
+        taches.put("terminees", tasksPeriode.stream().filter(t -> t.getStatut() == DepartmentTask.TaskStatus.TERMINEE
                 || t.getStatut() == DepartmentTask.TaskStatus.VALIDEE).count());
-        Map<String, Long> parStatut = tasks.stream()
+        Map<String, Long> parStatut = tasksPeriode.stream()
                 .collect(Collectors.groupingBy(t -> t.getStatut().name(), Collectors.counting()));
         taches.put("parStatut", parStatut);
         List<Map<String, Object>> evolutionTaches = new ArrayList<>();
-        for (int i = 5; i >= 0; i--) {
-            YearMonth ym = now.minusMonths(i);
+        for (YearMonth ym : monthBuckets(debutFinal, finFinal)) {
             long creees = tasks.stream()
                     .filter(t -> t.getCreatedAt() != null && YearMonth.from(t.getCreatedAt().toLocalDate()).equals(ym))
                     .count();
             Map<String, Object> m = new LinkedHashMap<>();
-            m.put("mois", ym.getMonth().getDisplayName(TextStyle.SHORT, Locale.FRENCH) + " " + ym.getYear() % 100);
+            m.put("mois", bucketLabel(ym));
             m.put("creees", creees);
             evolutionTaches.add(m);
         }
 
-        // ---- Discipline ----
+        // ---- Discipline (sur la période) ----
         Map<String, Long> disciplineParCategorie = new LinkedHashMap<>();
         for (Soul s : souls) {
             disciplineRepository.findByAmeIdAndDeletedFalseOrderByCreatedAtDesc(s.getId()).stream()
                     .filter(e -> e.getCategorie() != null)
+                    .filter(e -> e.getCreatedAt() != null
+                            && !e.getCreatedAt().toLocalDate().isBefore(debutFinal)
+                            && !e.getCreatedAt().toLocalDate().isAfter(finFinal))
                     .collect(Collectors.groupingBy(e -> e.getCategorie().name(), Collectors.counting()))
                     .forEach((k, v) -> disciplineParCategorie.merge(k, v, Long::sum));
         }
@@ -918,6 +963,10 @@ public class DepartmentDossierService {
 
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("departmentId", departmentId);
+        stats.put("periode", Map.of(
+                "code", periodeEffective,
+                "debut", debutFinal.toString(),
+                "fin", finFinal.toString()));
         stats.put("effectif", effectif);
         stats.put("evolutionEffectif", evolutionEffectif);
         stats.put("presence", presence);
@@ -935,6 +984,25 @@ public class DepartmentDossierService {
         stats.put("chargeParMembre", chargeParMembre);
         stats.put("evenements", evenements);
         return stats;
+    }
+
+    /** Buckets mensuels (trimestriels si la période dépasse 24 mois), du début à la fin. */
+    private static List<YearMonth> monthBuckets(LocalDate debut, LocalDate fin) {
+        YearMonth start = YearMonth.from(debut);
+        YearMonth end = YearMonth.from(fin);
+        int step = start.until(end, java.time.temporal.ChronoUnit.MONTHS) > 24 ? 3 : 1;
+        List<YearMonth> buckets = new ArrayList<>();
+        YearMonth cursor = start;
+        while (!cursor.isAfter(end)) {
+            buckets.add(cursor);
+            cursor = cursor.plusMonths(step);
+        }
+        if (buckets.isEmpty()) buckets.add(start);
+        return buckets;
+    }
+
+    private static String bucketLabel(YearMonth ym) {
+        return ym.getMonth().getDisplayName(TextStyle.SHORT, Locale.FRENCH) + " " + ym.getYear() % 100;
     }
 
     private List<Map<String, Object>> evenementsDuDepartement(UUID departmentId, Map<UUID, Soul> soulsById) {

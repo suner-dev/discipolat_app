@@ -140,9 +140,15 @@ public class DepartmentManagementController {
 
     // ======================= STATISTIQUES =======================
 
+    /** Statistiques du département, filtrables par période (MOIS/TRIMESTRE/SEMESTRE/ANNEE/PERSONNALISEE). */
     @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> stats(@PathVariable UUID departmentId) {
-        return ResponseEntity.ok(dossierService.getDepartmentStats(departmentId));
+    public ResponseEntity<Map<String, Object>> stats(@PathVariable UUID departmentId,
+                                                     @RequestParam(required = false) String periode,
+                                                     @RequestParam(required = false) String debut,
+                                                     @RequestParam(required = false) String fin) {
+        java.time.LocalDate d = debut != null && !debut.isBlank() ? java.time.LocalDate.parse(debut) : null;
+        java.time.LocalDate f = fin != null && !fin.isBlank() ? java.time.LocalDate.parse(fin) : null;
+        return ResponseEntity.ok(dossierService.getDepartmentStats(departmentId, periode, d, f));
     }
 
     // ======================= EXPORT / IMPORT MEMBRES =======================
