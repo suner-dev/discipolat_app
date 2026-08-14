@@ -114,7 +114,7 @@ class _DepartmentsListScreenState extends State<DepartmentsListScreen> {
                       return GlassCard(
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(14),
-                        onTap: () => context.go('/departments/${dept['id']}/manage'),
+                        onTap: () => context.go('/departments/${dept['id']}'),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

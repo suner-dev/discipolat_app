@@ -46,6 +46,7 @@ public class DepartmentManagementService {
     private final DepartmentAssignmentRepository assignmentRepository;
     private final DepartmentTaskRepository taskRepository;
     private final DepartmentActivityRepository activityRepository;
+    private final DepartmentMemberObjectiveRepository objectiveRepository;
     private final SoulRepository soulRepository;
     private final SoulDepartmentRepository soulDepartmentRepository;
     private final UserRepository userRepository;
@@ -59,6 +60,7 @@ public class DepartmentManagementService {
                                        DepartmentAssignmentRepository assignmentRepository,
                                        DepartmentTaskRepository taskRepository,
                                        DepartmentActivityRepository activityRepository,
+                                       DepartmentMemberObjectiveRepository objectiveRepository,
                                        SoulRepository soulRepository,
                                        SoulDepartmentRepository soulDepartmentRepository,
                                        UserRepository userRepository,
@@ -71,6 +73,7 @@ public class DepartmentManagementService {
         this.assignmentRepository = assignmentRepository;
         this.taskRepository = taskRepository;
         this.activityRepository = activityRepository;
+        this.objectiveRepository = objectiveRepository;
         this.soulRepository = soulRepository;
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.userRepository = userRepository;
@@ -907,6 +910,108 @@ public class DepartmentManagementService {
         m.put("familleId", soul.getFamilleId());
         m.put("dateIntegration", soul.getDateIntegration() != null ? soul.getDateIntegration().toString() : null);
         return m;
+    }
+
+    // ========================================================================
+    // OBJECTIFS DE PROGRESSION PAR MEMBRE
+    // ========================================================================
+
+    private Map<String, Object> objectiveSummary(DepartmentMemberObjective o) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", o.getId());
+        m.put("titre", o.getTitre());
+        m.put("description", o.getDescription());
+        m.put("echeance", o.getEcheance() != null ? o.getEcheance().toString() : null);
+        m.put("avancement", o.getAvancement());
+        m.put("statut", o.getStatut() != null ? o.getStatut().name() : null);
+        m.put("creeParNom", userName(o.getCreePar()));
+        m.put("createdAt", o.getCreatedAt() != null ? o.getCreatedAt().toString() : null);
+        m.put("updatedAt", o.getUpdatedAt() != null ? o.getUpdatedAt().toString() : null);
+        m.put("enRetard", o.getStatut() != null
+                && (o.getStatut() == DepartmentMemberObjective.ObjectiveStatus.A_FAIRE
+                    || o.getStatut() == DepartmentMemberObjective.ObjectiveStatus.EN_COURS)
+                && o.getEcheance() != null && o.getEcheance().isBefore(LocalDate.now()));
+        return m;
+    }
+
+    private String userName(UUID userId) {
+        if (userId == null) return null;
+        return userRepository.findById(userId)
+                .map(u -> u.getFirstName() + " " + u.getLastName())
+                .orElse(null);
+    }
+
+    /** Objectifs de progression d'un membre du département. */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getMemberObjectives(UUID departmentId, UUID memberId) {
+        assertCanManage(departmentId);
+        return objectiveRepository.findByMemberIdAndDepartmentIdOrderByEcheanceAscCreatedAtDesc(memberId, departmentId)
+                .stream().map(this::objectiveSummary).toList();
+    }
+
+    /** Crée un objectif de progression pour un membre du département. */
+    public Map<String, Object> createObjective(UUID departmentId, UUID memberId,
+                                               com.discipolat.modules.departments.api.DepartmentObjectiveRequest request) {
+        assertCanManage(departmentId);
+        soulRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Soul", memberId));
+        DepartmentMemberObjective.ObjectiveStatus statut = request.statut() != null
+                ? DepartmentMemberObjective.ObjectiveStatus.valueOf(request.statut())
+                : DepartmentMemberObjective.ObjectiveStatus.A_FAIRE;
+        DepartmentMemberObjective objective = DepartmentMemberObjective.builder()
+                .departmentId(departmentId)
+                .memberId(memberId)
+                .titre(request.titre().trim())
+                .description(request.description())
+                .echeance(request.echeance())
+                .avancement(request.avancement() != null ? request.avancement() : 0)
+                .statut(statut)
+                .creePar(securityUtils.getCurrentUserId())
+                .build();
+        objective = objectiveRepository.save(objective);
+        record(departmentId, "OBJECTIVE_CREATED", "MEMBER", memberId,
+                "Objectif « " + objective.getTitre() + " » fixé au membre");
+        return objectiveSummary(objective);
+    }
+
+    /** Met à jour un objectif (titre, échéance, avancement, statut). */
+    public Map<String, Object> updateObjective(UUID departmentId, UUID objectiveId,
+                                               com.discipolat.modules.departments.api.DepartmentObjectiveRequest request) {
+        assertCanManage(departmentId);
+        DepartmentMemberObjective objective = objectiveRepository.findById(objectiveId)
+                .orElseThrow(() -> new EntityNotFoundException("DepartmentMemberObjective", objectiveId));
+        if (!objective.getDepartmentId().equals(departmentId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Accès refusé : objectif hors de votre espace métier");
+        }
+        objective.setTitre(request.titre().trim());
+        objective.setDescription(request.description());
+        objective.setEcheance(request.echeance());
+        if (request.avancement() != null) {
+            objective.setAvancement(request.avancement());
+            if (request.avancement() >= 100) objective.setStatut(DepartmentMemberObjective.ObjectiveStatus.ATTEINT);
+        }
+        if (request.statut() != null) {
+            objective.setStatut(DepartmentMemberObjective.ObjectiveStatus.valueOf(request.statut()));
+        }
+        objectiveRepository.save(objective);
+        record(departmentId, "OBJECTIVE_UPDATED", "MEMBER", objective.getMemberId(),
+                "Objectif « " + objective.getTitre() + " » mis à jour");
+        return objectiveSummary(objective);
+    }
+
+    /** Supprime un objectif de progression. */
+    public void deleteObjective(UUID departmentId, UUID objectiveId) {
+        assertCanManage(departmentId);
+        DepartmentMemberObjective objective = objectiveRepository.findById(objectiveId)
+                .orElseThrow(() -> new EntityNotFoundException("DepartmentMemberObjective", objectiveId));
+        if (!objective.getDepartmentId().equals(departmentId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Accès refusé : objectif hors de votre espace métier");
+        }
+        objectiveRepository.delete(objective);
+        record(departmentId, "OBJECTIVE_DELETED", "MEMBER", objective.getMemberId(),
+                "Objectif « " + objective.getTitre() + " » supprimé");
     }
 
     // ========================================================================

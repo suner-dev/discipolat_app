@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import type { Department, User, PageResponse } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { Building2, Plus, Pencil, Trash2, Loader2, X, Calendar, UserPlus } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, Loader2, X, Calendar, UserPlus, FolderOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function DepartmentsPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Department | null>(null);
@@ -139,6 +141,9 @@ export default function DepartmentsPage() {
       header: 'Actions',
       cell: (dept) => (
         <div className="flex gap-1">
+          <button onClick={() => navigate(`/departments/${dept.id}`)} className="btn-ghost btn-sm text-amber-600" title="Voir le détail">
+            <FolderOpen className="w-4 h-4" />
+          </button>
           <button onClick={() => openEdit(dept)} className="btn-ghost btn-sm text-blue-600" title="Modifier">
             <Pencil className="w-4 h-4" />
           </button>
@@ -172,6 +177,7 @@ export default function DepartmentsPage() {
         isLoading={isLoading}
         emptyMessage="Aucun département"
         emptyIcon={<Building2 className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />}
+        onRowClick={(dept) => navigate(`/departments/${dept.id}`)}
       />
 
       {data && data.totalPages > 1 && (

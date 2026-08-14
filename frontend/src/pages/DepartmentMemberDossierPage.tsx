@@ -6,7 +6,8 @@ import toast from 'react-hot-toast';
 import {
   ArrowLeft, UserRound, Building2, Users2, ListTodo, ClipboardCheck, Gavel,
   FileText, Star, Calendar, StickyNote, Megaphone, ArrowLeftRight, History,
-  Loader2, Plus, Send, Trash2, FolderOpen, Bell, ExternalLink,
+  Loader2, Plus, Send, Trash2, FolderOpen, Bell, ExternalLink, Target, TrendingUp,
+  CheckCircle2,
 } from 'lucide-react';
 
 type Dossier = any;
@@ -23,6 +24,8 @@ const TABS = [
   { key: 'evenements', label: 'Événements', icon: Calendar },
   { key: 'annonces', label: 'Annonces', icon: Megaphone },
   { key: 'notes', label: 'Notes', icon: StickyNote },
+  { key: 'objectifs', label: 'Objectifs', icon: Target },
+  { key: 'documents', label: 'Documents', icon: FolderOpen },
   { key: 'transferts', label: 'Transferts', icon: ArrowLeftRight },
   { key: 'activite', label: 'Activité', icon: History },
 ] as const;
@@ -51,6 +54,16 @@ export default function DepartmentMemberDossierPage() {
     queryKey: ['department', id, 'dossier', memberId],
     queryFn: async () => (await api.get(`/departments/${id}/members/${memberId}/dossier`)).data as Dossier,
     enabled: !!id && !!memberId,
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async () => api.delete(`/departments/${id}/members/${memberId}`),
+    onSuccess: () => {
+      toast.success('Membre retiré du département');
+      queryClient.invalidateQueries({ queryKey: ['department', id, 'members'] });
+      navigate(`/departments/${id}`);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
   });
 
   if (isLoading) {
@@ -104,6 +117,17 @@ export default function DepartmentMemberDossierPage() {
             <Link to="/transfers/new" className="btn-primary btn-sm">
               <ArrowLeftRight className="w-4 h-4" /> Demander un transfert
             </Link>
+            {p.membreActif && (
+              <button
+                onClick={() => {
+                  if (confirm(`Retirer « ${p.nomComplet} » de ce département ?`)) removeMutation.mutate();
+                }}
+                disabled={removeMutation.isPending}
+                className="btn-ghost btn-sm text-red-500 hover:bg-red-500/10 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" /> Retirer du département
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -136,11 +160,13 @@ export default function DepartmentMemberDossierPage() {
       {tab === 'taches' && <TachesTab data={dossier.taches || {}} />}
       {tab === 'presences' && <PresencesTab data={dossier.presences || {}} />}
       {tab === 'discipline' && <DisciplineTab data={dossier.discipline || {}} memberId={p.id} />}
-      {tab === 'rapports' && <RapportsTab data={dossier.rapports || {}} />}
+      {tab === 'rapports' && <RapportsTab id={id!} memberId={memberId!} data={dossier.rapports || {}} items={dossier.rapportsResponsable || []} />}
       {tab === 'evaluations' && <EvaluationsTab data={dossier.evaluations || {}} />}
       {tab === 'evenements' && <EvenementsTab data={dossier.evenements || {}} />}
       {tab === 'annonces' && <AnnoncesTab items={dossier.annonces || []} />}
       {tab === 'notes' && <NotesTab id={id!} memberId={memberId!} items={dossier.notes || []} />}
+      {tab === 'objectifs' && <ObjectifsTab id={id!} memberId={memberId!} items={dossier.objectifs || []} />}
+      {tab === 'documents' && <DocumentsTab documents={dossier.documents || []} notesDisciple={dossier.notesDisciple || []} />}
       {tab === 'transferts' && <TransfertsTab items={dossier.transferts || []} />}
       {tab === 'activite' && <ActiviteTab items={dossier.activite || []} />}
     </div>
@@ -193,7 +219,7 @@ function ProfilTab({ p, alertes }: { p: any; alertes: any[] }) {
           <div className="space-y-2 text-sm">
             <p className="text-gray-600 dark:text-gray-300"><span className="text-gray-400">Ajouté par :</span> <b>{p.ajoutePar || '—'}</b></p>
             <p className="text-gray-600 dark:text-gray-300"><span className="text-gray-400">Origine :</span> <b>{ORIGINE_LABELS[p.origine] || p.origine || '—'}</b></p>
-            <p className="text-gray-600 dark:text-gray-300"><span className="text-gray-400">Date d\'affectation :</span> <b>{p.dateAffectation || '—'}</b></p>
+            <p className="text-gray-600 dark:text-gray-300"><span className="text-gray-400">Date d'affectation :</span> <b>{p.dateAffectation || '—'}</b></p>
             <p className="text-gray-600 dark:text-gray-300"><span className="text-gray-400">Membre actif :</span> <b>{p.membreActif ? 'Oui' : 'Non'}</b></p>
             {p.dateDesaffectation && (
               <p className="text-gray-600 dark:text-gray-300"><span className="text-gray-400">Date de désaffectation :</span> <b>{p.dateDesaffectation}</b></p>
@@ -430,28 +456,105 @@ function DisciplineTab({ data, memberId }: { data: any; memberId: string }) {
 // ============================================================
 // RAPPORTS
 // ============================================================
-function RapportsTab({ data }: { data: any }) {
+const REPORT_TYPE_LABELS: Record<string, string> = {
+  PROGRESSION: 'Progression', DIFFICULTE: 'Difficulté', COMPORTEMENT: 'Comportement', GENERAL: 'Général',
+};
+
+function RapportsTab({ id, memberId, data, items }: { id: string; memberId: string; data: any; items: any[] }) {
+  const queryClient = useQueryClient();
+  const [type, setType] = useState('PROGRESSION');
+  const [contenu, setContenu] = useState('');
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['department', id, 'dossier', memberId] });
+
+  const addMutation = useMutation({
+    mutationFn: async () => (await api.post(`/departments/${id}/members/${memberId}/reports`, {
+      type, contenu: contenu.trim(),
+    })).data,
+    onSuccess: () => {
+      toast.success('Rapport ajouté ✅');
+      setContenu('');
+      invalidate();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (reportId: string) => api.delete(`/departments/${id}/reports/${reportId}`),
+    onSuccess: () => {
+      toast.success('Rapport supprimé');
+      invalidate();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
   return (
-    <div className="glass-card p-5">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
-        Rapports du faiseur ({data.soumis ?? 0} soumis / {data.total ?? 0})
-      </h3>
-      {(data.liste || []).length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucun rapport</p>
-      ) : (
-        <div className="space-y-2">
-          {(data.liste as any[]).map((r) => (
-            <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40">
-              <FileText className="w-4 h-4 text-emerald-500" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Semaine du {r.semaine}</p>
-                {r.difficultes && <p className="text-[10px] text-gray-400 truncate">{r.difficultes}</p>}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="glass-card p-5">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          Rapports du faiseur ({data.soumis ?? 0} soumis / {data.total ?? 0})
+        </h3>
+        {(data.liste || []).length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">Aucun rapport</p>
+        ) : (
+          <div className="space-y-2">
+            {(data.liste as any[]).map((r) => (
+              <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40">
+                <FileText className="w-4 h-4 text-emerald-500" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Semaine du {r.semaine}</p>
+                  {r.difficultes && <p className="text-[10px] text-gray-400 truncate">{r.difficultes}</p>}
+                </div>
+                <span className={`badge text-[10px] ${r.soumis ? 'badge-success' : 'badge-gray'}`}>{r.soumis ? 'Soumis' : 'Brouillon'}</span>
               </div>
-              <span className={`badge text-[10px] ${r.soumis ? 'badge-success' : 'badge-gray'}`}>{r.soumis ? 'Soumis' : 'Brouillon'}</span>
-            </div>
-          ))}
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="glass-card p-5">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+          <ClipboardCheck className="w-4 h-4 text-amber-500" /> Rapports du responsable ({items.length})
+        </h3>
+        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 mb-4">
+          <div className="flex flex-col sm:flex-row gap-2 mb-2">
+            <select className="input sm:w-44" value={type} onChange={(e) => setType(e.target.value)}>
+              {Object.entries(REPORT_TYPE_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+            <input className="input flex-1" value={contenu} onChange={(e) => setContenu(e.target.value)} placeholder="Point de situation sur ce membre…" />
+          </div>
+          <button
+            onClick={() => addMutation.mutate()}
+            disabled={!contenu.trim() || addMutation.isPending}
+            className="btn-primary btn-sm cursor-pointer"
+          >
+            {addMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />} Ajouter le rapport
+          </button>
         </div>
-      )}
+        {items.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">Aucun rapport rédigé par un responsable</p>
+        ) : (
+          <div className="space-y-2">
+            {items.map((r) => (
+              <div key={r.id} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border-l-[3px] border-l-amber-500">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`badge text-[9px] badge-info`}>{REPORT_TYPE_LABELS[r.type] || r.type || 'Général'}</span>
+                  <button
+                    onClick={() => { if (confirm('Supprimer ce rapport ?')) deleteMutation.mutate(r.id); }}
+                    className="p-1 ml-auto text-gray-400 hover:text-red-500 transition-all cursor-pointer"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">{r.contenu}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{r.auteurNom || '—'} · {new Date(r.createdAt).toLocaleString('fr-FR')}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -613,6 +716,214 @@ function NotesTab({ id, memberId, items }: { id: string; memberId: string; items
 }
 
 // ============================================================
+// OBJECTIFS DE PROGRESSION
+// ============================================================
+const OBJECTIVE_BADGE: Record<string, string> = {
+  A_FAIRE: 'badge-gray', EN_COURS: 'badge-info', ATTEINT: 'badge-success', ANNULE: 'badge-inactive',
+};
+
+function ObjectifsTab({ id, memberId, items }: { id: string; memberId: string; items: any[] }) {
+  const queryClient = useQueryClient();
+  const [titre, setTitre] = useState('');
+  const [description, setDescription] = useState('');
+  const [echeance, setEcheance] = useState('');
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['department', id, 'dossier', memberId] });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/departments/${id}/members/${memberId}/objectives`, {
+        titre: titre.trim(), description: description.trim() || null, echeance: echeance || null,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Objectif créé ✅');
+      setTitre(''); setDescription(''); setEcheance('');
+      invalidate();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ objectiveId, data }: { objectiveId: string; data: any }) =>
+      (await api.put(`/departments/${id}/objectives/${objectiveId}`, data)).data,
+    onSuccess: () => invalidate(),
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (objectiveId: string) => api.delete(`/departments/${id}/objectives/${objectiveId}`),
+    onSuccess: () => {
+      toast.success('Objectif supprimé');
+      invalidate();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const setAvancement = (o: any, avancement: number) =>
+    updateMutation.mutate({ objectiveId: o.id, data: { titre: o.titre, description: o.description, echeance: o.echeance, avancement } });
+  const setStatut = (o: any, statut: string) =>
+    updateMutation.mutate({ objectiveId: o.id, data: { titre: o.titre, description: o.description, echeance: o.echeance, statut } });
+
+  const enCours = items.filter((o) => o.statut === 'EN_COURS' || o.statut === 'A_FAIRE');
+  const atteints = items.filter((o) => o.statut === 'ATTEINT');
+  const moyenne = items.length
+    ? Math.round(items.reduce((s: number, o) => s + (o.avancement ?? 0), 0) / items.length)
+    : 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="stat-card p-3 text-center">
+          <Target className="w-4 h-4 mx-auto mb-1 text-blue-500" />
+          <p className="stat-value text-xl">{enCours.length}</p>
+          <span className="stat-label text-[10px]">En cours</span>
+        </div>
+        <div className="stat-card p-3 text-center">
+          <TrendingUp className="w-4 h-4 mx-auto mb-1 text-emerald-500" />
+          <p className="stat-value text-xl">{atteints.length}</p>
+          <span className="stat-label text-[10px]">Atteints</span>
+        </div>
+        <div className="stat-card p-3 text-center">
+          <CheckCircle2 className="w-4 h-4 mx-auto mb-1 text-amber-500" />
+          <p className="stat-value text-xl">{moyenne}%</p>
+          <span className="stat-label text-[10px]">Avancement moyen</span>
+        </div>
+      </div>
+
+      <div className="glass-card p-5">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+          <Target className="w-4 h-4 text-amber-500" /> Objectifs de progression ({items.length})
+        </h3>
+
+        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-1">
+              <label className="label">Objectif *</label>
+              <input className="input" value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ex : Être confirmé, intégrer l'équipe…" />
+            </div>
+            <div>
+              <label className="label">Description</label>
+              <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Étapes, critères…" />
+            </div>
+            <div>
+              <label className="label">Échéance</label>
+              <input type="date" className="input" value={echeance} onChange={(e) => setEcheance(e.target.value)} />
+            </div>
+          </div>
+          <button
+            onClick={() => createMutation.mutate()}
+            disabled={!titre.trim() || createMutation.isPending}
+            className="btn-primary btn-sm mt-3 cursor-pointer"
+          >
+            {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Créer l'objectif
+          </button>
+        </div>
+
+        {items.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">Aucun objectif fixé pour ce membre</p>
+        ) : (
+          <div className="space-y-2">
+            {items.map((o) => (
+              <div key={o.id} className={`p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 ${o.enRetard ? 'border border-red-300/50 dark:border-red-500/30' : ''}`}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{o.titre}</span>
+                  <span className={`badge text-[9px] ${OBJECTIVE_BADGE[o.statut] || 'badge-gray'}`}>{o.statut?.replace('_', ' ')}</span>
+                  {o.enRetard && <span className="badge text-[9px] badge-danger">Échéance dépassée</span>}
+                </div>
+                {o.description && <p className="text-[10px] text-gray-400 mt-0.5">{o.description}</p>}
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  {o.echeance ? `Échéance : ${o.echeance} · ` : ''}fixé par {o.creeParNom || '—'}
+                </p>
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                  <div className="flex items-center gap-2 min-w-[180px] flex-1 max-w-xs">
+                    <input
+                      type="range" min={0} max={100} step={5}
+                      value={o.avancement}
+                      onChange={(e) => setAvancement(o, Number(e.target.value))}
+                      className="w-full accent-emerald-500"
+                    />
+                    <span className="text-[10px] font-bold text-emerald-600 shrink-0">{o.avancement}%</span>
+                  </div>
+                  <select
+                    value={o.statut}
+                    onChange={(e) => setStatut(o, e.target.value)}
+                    className="input w-36 py-1 text-xs"
+                  >
+                    {Object.keys(OBJECTIVE_BADGE).map((k) => (
+                      <option key={k} value={k}>{k.replace('_', ' ').toLowerCase()}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => { if (confirm(`Supprimer l'objectif « ${o.titre} » ?`)) deleteMutation.mutate(o.id); }}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-500/10 transition-all cursor-pointer"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// DOCUMENTS & NOTES DE LA FICHE ÂME
+// ============================================================
+function DocumentsTab({ documents, notesDisciple }: { documents: any[]; notesDisciple: any[] }) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="glass-card p-5">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+          <FolderOpen className="w-4 h-4 text-amber-500" /> Documents du dossier ({documents.length})
+        </h3>
+        {documents.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">Aucun document joint</p>
+        ) : (
+          <div className="space-y-2">
+            {documents.map((d) => (
+              <a
+                key={d.id}
+                href={d.url || `#/files/${d.fileId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+              >
+                <FolderOpen className="w-4 h-4 text-primary-500 shrink-0" />
+                <span className="min-w-0 flex-1 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{d.nom || d.fileId}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="glass-card p-5">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+          <StickyNote className="w-4 h-4 text-amber-500" /> Notes de la fiche âme ({notesDisciple.length})
+        </h3>
+        {notesDisciple.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">Aucune note sur la fiche âme</p>
+        ) : (
+          <div className="space-y-2">
+            {notesDisciple.map((n) => (
+              <div key={n.id} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40">
+                <p className="text-sm text-gray-800 dark:text-gray-200">{n.contenu}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{n.auteurNom || '—'} · {new Date(n.createdAt).toLocaleString('fr-FR')}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // TRANSFERTS
 // ============================================================
 function TransfertsTab({ items }: { items: any[] }) {
@@ -664,7 +975,7 @@ function ActiviteTab({ items }: { items: any[] }) {
   return (
     <div className="glass-card p-5">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-        <History className="w-4 h-4 text-amber-500" /> Journal d\'activité du département pour ce membre
+        <History className="w-4 h-4 text-amber-500" /> Journal d'activité du département pour ce membre
       </h3>
       {items.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-6">Aucune activité enregistrée</p>

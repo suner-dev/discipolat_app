@@ -210,7 +210,7 @@ export default function ResponsableDashboardPage() {
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{dashboard?.selectedDeptNom}</h2>
               </div>
             </div>
-            <Link to={`/departments/${dashboard?.selectedDeptId}`} className="btn-ghost btn-xs">
+            <Link to={`/departments/${activeDeptId}`} className="btn-ghost btn-xs">
               Voir le détail <ChevronRight className="w-3 h-3 ml-1" />
             </Link>
           </div>
@@ -457,7 +457,7 @@ export default function ResponsableDashboardPage() {
                     <p className="text-[10px] text-gray-400">fiche · présence · rapport</p>
                   </div>
                 </div>
-                <Link to={`/departments/${dashboard?.selectedDeptId}`} className="text-[10px] font-medium text-primary-600">
+                <Link to={`/departments/${activeDeptId}`} className="text-[10px] font-medium text-primary-600">
                   Gérer les membres
                 </Link>
               </div>
@@ -504,7 +504,7 @@ export default function ResponsableDashboardPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigate(`/departments/${dashboard?.selectedDeptId}/report`)}
+                        onClick={() => navigate(`/departments/${activeDeptId}/report`)}
                         title="Rapport du département"
                         className="p-1.5 rounded-lg cursor-pointer text-gray-400 hover:text-emerald-600 hover:bg-emerald-500/10 transition-all"
                       >
@@ -580,15 +580,15 @@ export default function ResponsableDashboardPage() {
               <ClipboardCheck className="w-5 h-5 text-sky-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Saisie des présences</span>
             </button>
-            <Link to={`/departments/${dashboard?.selectedDeptId}`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+            <Link to={`/departments/${activeDeptId}`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <Users className="w-5 h-5 text-amber-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Fiches membres</span>
             </Link>
-            <Link to={`/departments/${dashboard?.selectedDeptId}/manage`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+            <Link to={`/departments/${activeDeptId}/manage`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <Network className="w-5 h-5 text-orange-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Gestion & équipes</span>
             </Link>
-            <Link to={`/departments/${dashboard?.selectedDeptId}/report`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+            <Link to={`/departments/${activeDeptId}/report`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <FileText className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Rapport</span>
             </Link>
@@ -596,7 +596,7 @@ export default function ResponsableDashboardPage() {
               <Calendar className="w-5 h-5 text-primary-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Événements</span>
             </Link>
-            <Link to={`/departments/${dashboard?.selectedDeptId}/stats`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+            <Link to={`/departments/${activeDeptId}/stats`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <Activity className="w-5 h-5 text-violet-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Statistiques</span>
             </Link>
@@ -641,7 +641,7 @@ export default function ResponsableDashboardPage() {
                     {nouveauxRecents.map((m: any) => (
                       <Link
                         key={m.id}
-                        to={`/departments/${dashboard?.selectedDeptId}/members/${m.id}`}
+                        to={`/departments/${activeDeptId}/members/${m.id}`}
                         className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all"
                       >
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -674,7 +674,7 @@ export default function ResponsableDashboardPage() {
                 ) : (
                   <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                     {membresSuivi.map((m: any) => (
-                      <Link key={m.id} to={`/departments/${dashboard?.selectedDeptId}/members/${m.id}`} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
+                      <Link key={m.id} to={`/departments/${activeDeptId}/members/${m.id}`} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
                         <UserX className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                         <span className="text-sm text-gray-800 dark:text-gray-200 truncate flex-1">{m.nom}</span>
                         <span className="text-[9px] text-gray-400">{m.statut}</span>

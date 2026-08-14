@@ -178,3 +178,106 @@ et monitoring.
 > complète, ajouter les secrets GitHub RENDER_API_KEY /
 > RENDER_BETA_API_SERVICE_ID, vérifier l'URL publique et rédiger le rapport
 > final (comptes, rôles, fonctionnalités, version, tests, problèmes connus).
+
+---
+
+## SESSION 2026-08-14 (DMS : objectifs, rapports du responsable, dossier mobile)
+
+Reprise du système de gestion des départements (DMS). Travail en cours
+(déjà committé le 2026-08-13 dans `4335d3a` : liste/detail/stats/rapport,
+dossier membre web + mobile partiel).
+
+### Objectifs de progression (membre → département)
+
+- **Backend** : entité `DepartmentMemberObjective` + repo + migration **V53**
+  (`department_member_objectives`), requêtes `POST /departments/{id}/members/{memberId}/objectives`,
+  `PUT /departments/{id}/objectives/{objectiveId}`, `DELETE .../objectives/{objectiveId}`,
+  liste dans le dossier. Statuts `A_FAIRE / EN_COURS / ATTEINT / ANNULE`, avancement
+  0–100 %, drapeau `enRetard` (échéance dépassée + statut ouvert).
+- **Frontend web** : onglet **Objectifs** du dossier membre (création, slider
+  d'avancement, changement de statut, suppression, compteurs En cours/Atteints/
+  Moyenne).
+
+### Rapports du responsable sur un membre
+
+- **Backend** : entité `DepartmentMemberReport` + repo + migration **V54**
+  (`department_member_reports`), types `COMPORTEMENT / ASSIDUITE / CAPACITE /
+  PROGRESSION / INCIDENT / DISCIPLINE / RECOMMANDATION`. Endpoints
+  `GET|POST /departments/{id}/members/{memberId}/reports`, `DELETE /departments/{id}/reports/{reportId}`.
+  Traçabilité : auteur + activité `MEMBER_REPORT_ADDED` dans le journal.
+- **Frontend web** : onglet Rapports du dossier = rapports du faiseur **+**
+  rapports du responsable (ajout/type, suppression), injectés dans le payload
+  du dossier sous `rapportsResponsable`.
+
+### Mobile (Flutter) — dossier membre complet
+
+- **Nouvel écran** `DepartmentMemberDossierScreen` (`/departments/:id/members/:memberId`,
+  rôles ADMIN/PASTEUR/RESPONSABLE) : Profil (identité, affectations actives,
+  alertes, lien fiche âme), **Objectifs** (créer / slider / statut / supprimer),
+  **Rapports** (responsable + faiseur, créer/supprimer), **Notes** (ajout/
+  suppression), Activité.
+- **Onglet « Membres »** ajouté à la gestion de département (liste → dossier).
+- **Fix robustesse** : `SectionTitle` partagé rendu flexible (titre `Expanded` +
+  ellipsis) — évite le débordement horizontal sur écrans étroits (détecté par
+  tests).
+- **7 tests widget** ajoutés (`department_member_dossier_screen_test.dart`).
+
+### État des tests (2026-08-14)
+
+- Backend : **385 tests ✓** (0 fail / 0 error) — inclut 2 nouveaux tests dossier
+  (rapports responsable). NB : Mockito + JDK récents → erreurs sporadiques
+  « class redefinition » sur transferts/objectifs en exécution complète,
+  **passent en isolation** (flakiness environnementale, pas un bug de code).
+- Frontend web : `tsc --noEmit` ✓ (lint ESLint cassé au niveau de l'outil :
+  message de migration, indépendant du code).
+- Mobile : **96 tests ✓** (89 + 7), `flutter analyze` sans issue.
+
+### Prochaines actions possibles
+
+- Pousser le WIP (objectifs + rapports + dossier mobile) — non committé.
+- Améliorations mobiles : onglets Annonces/Transferts/Documents du dossier.
+
+## SESSION 2026-08-14 (suite) — parité mobile complète du DMS
+
+Clôture de la checklist « départements » côté mobile (le web l'avait déjà) :
+
+### Nouvel écran `DepartmentDetailScreen` (`/departments/:id`, ADMIN/PASTEUR/RESPONSABLE)
+
+Parité de `DepartmentDetailPage` web :
+- **Header** : nom, description, responsable (+ email).
+- **KPIs** (GET `/kpi`) : Actifs / En intégration / En veille / Décrochés /
+  Nvx convertis / Faiseurs + **Participation** (taux de soumission, présence,
+  rapports famille) avec barres de progression.
+- **Alerte âmes non assignées** (GET `/unassigned`) → lien fiche âme.
+- **Annonces** (GET|POST|DELETE `/announcements`) : publication avec cible
+  TOUS/ÉQUIPE/POSTE (dropdowns équipes/postes depuis `/management`), suppression.
+- **Alertes intelligentes** (GET `/alerts/smart`) : priorité HAUTE/MOYENNE →
+  lien dossier du membre.
+- **Membres** (GET `/members?size=200`) : recherche, carte → dossier,
+  **retrait** (DELETE `/members/{memberId}`) avec confirmation.
+- **Ajouter un membre** (bottom sheet) : **Nouveau membre** (POST `/members/create` :
+  nom, prénom, email, téléphone, profession, situation familiale, type de disciple,
+  statut, dates) ou **Personne déjà inscrite** (recherche GET `/members/candidates?q=`
+  ≥ 2 caractères → POST `/members {soulId}`).
+- **Familles** (depuis `/detail`) + boutons Gérer / Stats / Rapport.
+
+### Dossier membre — onglet Documents + retrait
+
+- **Onglet Documents** ajouté : documents du dossier (ouvrables via `showUrlLink`)
+  + notes de la fiche âme (`notesDisciple`).
+- **Retirer du département** (menu ⋮ dans l'en-tête, si `membreActif`) →
+  DELETE puis retour au détail.
+
+### Navigation & routing
+
+- Liste des départements → détail (`/departments/:id`) au lieu de `/manage`
+  directement (parité web : liste → détail → gestion).
+- Route + permissions ajoutées dans `app.dart`.
+
+### État des tests
+
+- Mobile : `flutter analyze` **0 issue** (les erreurs Const/`Colors.violet`/
+  `num→double` corrigées).
+- Backend et web inchangés (aucune modification).
+
+

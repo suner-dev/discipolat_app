@@ -3,10 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
+import AnnouncementsAlertsSection from '@/components/departments/AnnouncementsAlertsSection';
 import {
   Building2, Users, Heart, ArrowLeft, Mail, UserCog,
   ChevronRight, Loader2, AlertTriangle, BarChart3, FileText,
   CheckCircle2, XCircle, Clock, AlertCircle, Search, Download, Upload, FolderOpen,
+  UserPlus, X, Trash2,
 } from 'lucide-react';
 
 export default function DepartmentDetailPage() {
@@ -17,6 +19,12 @@ export default function DepartmentDetailPage() {
   const [importPreview, setImportPreview] = useState<any[] | null>(null);
   const [importCounts, setImportCounts] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const invalidateMembers = () => {
+    queryClient.invalidateQueries({ queryKey: ['department', id, 'members'] });
+    queryClient.invalidateQueries({ queryKey: ['department', id, 'detail'] });
+    queryClient.invalidateQueries({ queryKey: ['department', id, 'kpi'] });
+  };
 
   // ==================== EXPORT CSV ====================
   const exportMutation = useMutation({
@@ -53,6 +61,42 @@ export default function DepartmentDetailPage() {
         queryClient.invalidateQueries({ queryKey: ['department', id, 'members'] });
         queryClient.invalidateQueries({ queryKey: ['department', id, 'detail'] });
       }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  // ==================== AJOUT / CRÉATION / RETRAIT MEMBRE ====================
+  const createMemberMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await api.post(`/departments/${id}/members/create`, data);
+      return res.data as any;
+    },
+    onSuccess: () => {
+      toast.success('Membre créé et ajouté au département ✅');
+      setShowAddMember(false);
+      invalidateMembers();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const addMemberMutation = useMutation({
+    mutationFn: async (soulId: string) => {
+      const res = await api.post(`/departments/${id}/members`, { soulId });
+      return res.data as any;
+    },
+    onSuccess: () => {
+      toast.success('Personne ajoutée au département ✅');
+      setShowAddMember(false);
+      invalidateMembers();
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: async (memberId: string) => api.delete(`/departments/${id}/members/${memberId}`),
+    onSuccess: () => {
+      toast.success('Membre retiré du département');
+      invalidateMembers();
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -317,6 +361,13 @@ export default function DepartmentDetailPage() {
               }}
             />
             <button
+              onClick={() => setShowAddMember(true)}
+              className="btn-primary btn-sm cursor-pointer"
+              title="Créer un nouveau membre ou ajouter une personne déjà inscrite"
+            >
+              <UserPlus className="w-4 h-4" /> Ajouter un membre
+            </button>
+            <button
               onClick={() => fileInputRef.current?.click()}
               disabled={importMutation.isPending}
               className="btn-secondary btn-sm cursor-pointer"
@@ -414,6 +465,19 @@ export default function DepartmentDetailPage() {
                       </span>
                     </td>
                     <td className="flex items-center gap-2 justify-end">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Retirer « ${m.nom} » de ce département ?`)) {
+                            removeMemberMutation.mutate(m.id);
+                          }
+                        }}
+                        disabled={removeMemberMutation.isPending}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-500/10 transition-all cursor-pointer"
+                        title="Retirer du département"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                       <Link
                         to={`/departments/${id}/members/${m.id}`}
                         onClick={(e) => e.stopPropagation()}
@@ -436,6 +500,18 @@ export default function DepartmentDetailPage() {
           </div>
         )}
       </div>
+
+      {showAddMember && (
+        <AddMemberModal
+          deptId={id ?? ''}
+          onCreate={(data) => createMemberMutation.mutate(data)}
+          onAdd={(soulId) => addMemberMutation.mutate(soulId)}
+          onClose={() => setShowAddMember(false)}
+          pending={createMemberMutation.isPending || addMemberMutation.isPending}
+        />
+      )}
+
+      <AnnouncementsAlertsSection deptId={id ?? ''} />
 
       {/* Families list */}
       <div className="glass-card p-6">
@@ -479,6 +555,214 @@ export default function DepartmentDetailPage() {
             <p>Aucune famille dans ce département</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// AJOUT / CRÉATION DE MEMBRE
+// ============================================================
+
+function AddMemberModal({ deptId, onCreate, onAdd, onClose, pending }: {
+  deptId: string; onCreate: (data: any) => void; onAdd: (soulId: string) => void;
+  onClose: () => void; pending: boolean;
+}) {
+  const [mode, setMode] = useState<'create' | 'existing'>('create');
+  const [q, setQ] = useState('');
+  const [selected, setSelected] = useState<any | null>(null);
+
+  const [nom, setNom] = useState('');
+  const [prenom, setPrenom] = useState('');
+  const [email, setEmail] = useState('');
+  const [telephone, setTelephone] = useState('');
+  const [profession, setProfession] = useState('');
+  const [typeDisciple, setTypeDisciple] = useState('NOUVEL_ARRIVANT');
+  const [statut, setStatut] = useState('EN_INTEGRATION');
+  const [dateIntegration, setDateIntegration] = useState('');
+  const [dateConversion, setDateConversion] = useState('');
+  const [situationFamiliale, setSituationFamiliale] = useState('');
+
+  const { data: candidates = [], isFetching } = useQuery({
+    queryKey: ['department', deptId, 'candidates', q],
+    queryFn: async () => {
+      const res = await api.get(`/departments/${deptId}/members/candidates`, { params: { q } });
+      return res.data as any[];
+    },
+    enabled: mode === 'existing' && q.trim().length >= 2,
+  });
+
+  const canCreate = nom.trim().length >= 2 && !pending;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl animate-slide-up max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white">
+              <UserPlus className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ajouter un membre</h3>
+              <p className="text-xs text-gray-500">Créez un nouveau membre ou rattachez une personne déjà inscrite</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-5">
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => { setMode('create'); setSelected(null); }}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                mode === 'create'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-glow'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              <UserPlus className="w-4 h-4 inline mr-1" /> Nouveau membre
+            </button>
+            <button
+              onClick={() => { setMode('existing'); }}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                mode === 'existing'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-glow'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              <Search className="w-4 h-4 inline mr-1" /> Personne déjà inscrite
+            </button>
+          </div>
+
+          {mode === 'create' ? (
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Nom *</label>
+                  <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Nom de famille" />
+                </div>
+                <div>
+                  <label className="label">Prénom</label>
+                  <input className="input" value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Prénom" />
+                </div>
+                <div>
+                  <label className="label">Email</label>
+                  <input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" />
+                </div>
+                <div>
+                  <label className="label">Téléphone</label>
+                  <input className="input" value={telephone} onChange={(e) => setTelephone(e.target.value)} placeholder="+243…" />
+                </div>
+                <div>
+                  <label className="label">Profession</label>
+                  <input className="input" value={profession} onChange={(e) => setProfession(e.target.value)} placeholder="Ex : technicien, enseignant…" />
+                </div>
+                <div>
+                  <label className="label">Situation familiale</label>
+                  <input className="input" value={situationFamiliale} onChange={(e) => setSituationFamiliale(e.target.value)} placeholder="Ex : célibataire, marié(e)…" />
+                </div>
+                <div>
+                  <label className="label">Type de disciple</label>
+                  <select className="input" value={typeDisciple} onChange={(e) => setTypeDisciple(e.target.value)}>
+                    <option value="NOUVEL_ARRIVANT">Nouvel arrivant</option>
+                    <option value="NOUVEAU_CONVERTI">Nouveau converti</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Statut</label>
+                  <select className="input" value={statut} onChange={(e) => setStatut(e.target.value)}>
+                    <option value="NOUVEL_ARRIVANT">Nouvel arrivant</option>
+                    <option value="NOUVEAU_CONVERTI">Nouveau converti</option>
+                    <option value="EN_INTEGRATION">En intégration</option>
+                    <option value="ACTIF">Actif</option>
+                    <option value="EN_VEILLE">En veille</option>
+                    <option value="DECROCHE">Décroché</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Date d'intégration</label>
+                  <input type="date" className="input" value={dateIntegration} onChange={(e) => setDateIntegration(e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Date de conversion</label>
+                  <input type="date" className="input" value={dateConversion} onChange={(e) => setDateConversion(e.target.value)} />
+                </div>
+              </div>
+              <button
+                onClick={() => onCreate({
+                  nom: nom.trim(), prenom: prenom.trim() || null,
+                  email: email.trim() || null, telephone: telephone.trim() || null,
+                  profession: profession.trim() || null,
+                  situationFamiliale: situationFamiliale.trim() || null,
+                  typeDisciple, statut,
+                  dateIntegration: dateIntegration || null, dateConversion: dateConversion || null,
+                })}
+                disabled={!canCreate}
+                className="btn-primary btn-sm mt-4 cursor-pointer"
+              >
+                {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Créer et ajouter
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  className="input pl-9"
+                  placeholder="Rechercher par nom, téléphone ou email…"
+                  value={q}
+                  onChange={(e) => { setQ(e.target.value); setSelected(null); }}
+                />
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1">
+                Saisissez au moins 2 caractères — seules les personnes non encore rattachées à ce département sont proposées.
+              </p>
+              {q.trim().length >= 2 && (
+                <div className="mt-3 space-y-1 max-h-56 overflow-y-auto">
+                  {isFetching && (
+                    <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Recherche…
+                    </div>
+                  )}
+                  {!isFetching && candidates.length === 0 && (
+                    <p className="text-sm text-gray-400 py-2">Aucune personne trouvée.</p>
+                  )}
+                  {candidates.map((c: any) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelected(c)}
+                      className={`w-full flex items-center justify-between gap-2 p-2.5 rounded-xl text-left transition-all cursor-pointer ${
+                        selected?.id === c.id
+                          ? 'bg-primary-500/10 border border-primary-500/40'
+                          : 'bg-gray-50 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/40 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{c.nomComplet}</p>
+                        <p className="text-[10px] text-gray-400 truncate">
+                          {c.telephone || c.email || '—'} · {String(c.statut).replace(/_/g, ' ').toLowerCase()}
+                        </p>
+                      </div>
+                      {selected?.id === c.id && <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={() => selected && onAdd(selected.id)}
+                disabled={!selected || pending}
+                className="btn-primary btn-sm mt-4 cursor-pointer"
+              >
+                {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} Ajouter au département
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

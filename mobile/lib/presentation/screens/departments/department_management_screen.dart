@@ -75,7 +75,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
       body: _isLoading
           ? const ShimmerLoading(itemCount: 5)
           : DefaultTabController(
-              length: 4,
+              length: 5,
               child: Column(
                 children: [
                   Padding(
@@ -129,6 +129,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                     labelColor: Colors.white,
                     indicatorColor: AppColors.accent,
                     tabs: const [
+                      Tab(icon: Icon(Icons.group, size: 20), text: 'Membres'),
                       Tab(icon: Icon(Icons.account_tree, size: 20), text: 'Organisation'),
                       Tab(icon: Icon(Icons.checklist, size: 20), text: 'Tâches'),
                       Tab(icon: Icon(Icons.group_add, size: 20), text: 'Affectations'),
@@ -138,6 +139,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                   Expanded(
                     child: TabBarView(
                       children: [
+                        _MembersTab(deptId: _deptId, members: _members),
                         _OrganisationTab(overview: overview, deptId: _deptId, onChanged: _reload),
                         _TasksTab(overview: overview, members: _members, deptId: _deptId, onChanged: _reload),
                         _AssignmentsTab(overview: overview, members: _members, deptId: _deptId, onChanged: _reload),
@@ -148,6 +150,86 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                 ],
               ),
             ),
+    );
+  }
+}
+
+// ============================================================
+// MEMBRES — liste des membres → dossier individuel
+// ============================================================
+
+class _MembersTab extends StatelessWidget {
+  final String deptId;
+  final List<dynamic> members;
+
+  const _MembersTab({required this.deptId, required this.members});
+
+  @override
+  Widget build(BuildContext context) {
+    final list = members.map((m) => m as Map<String, dynamic>).toList();
+
+    return RefreshIndicator(
+      onRefresh: () async {},
+      child: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          SectionTitle(
+            title: 'Membres du département (${list.length})',
+            icon: Icons.group,
+          ),
+          if (list.isEmpty)
+            GlassCard(
+              padding: const EdgeInsets.all(24),
+              child: Text('Aucun membre dans ce département',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+            )
+          else
+            ...list.map((m) => GlassCard(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  onTap: () =>
+                      context.go('/departments/$deptId/members/${m['id']}'),
+                  child: Row(
+                    children: [
+                      GradientAvatar(text: '${m['nom'] ?? '?'}', radius: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${m['nom'] ?? ''}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14)),
+                            if (m['familleNom'] != null)
+                              Text('Famille : ${m['familleNom']}',
+                                  style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.5),
+                                      fontSize: 11)),
+                            if (m['faiseurNom'] != null)
+                              Text('Faiseur : ${m['faiseurNom']}',
+                                  style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.4),
+                                      fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      StatusBadge(
+                        label: '${m['statut'] ?? 'ACTIF'}'.replaceAll('_', ' '),
+                        color: m['statut'] == 'DECROCHE'
+                            ? Colors.grey
+                            : Colors.green,
+                      ),
+                      Icon(Icons.chevron_right,
+                          color: Colors.white.withValues(alpha: 0.3)),
+                    ],
+                  ),
+                )),
+          const SizedBox(height: 80),
+        ],
+      ),
     );
   }
 }

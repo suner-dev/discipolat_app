@@ -7,6 +7,7 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.alerts.domain.Alert;
 import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.departments.api.DepartmentAnnouncementRequest;
+import com.discipolat.modules.departments.api.DepartmentMemberReportRequest;
 import com.discipolat.modules.departments.api.DepartmentNoteRequest;
 import com.discipolat.modules.discipline.domain.SoulDisciplineEventRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationRepository;
@@ -39,6 +40,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
@@ -62,6 +64,10 @@ class DepartmentDossierServiceTest {
     private DepartmentMemberNoteRepository noteRepository;
     @Mock
     private DepartmentAnnouncementRepository announcementRepository;
+    @Mock
+    private DepartmentMemberObjectiveRepository objectiveRepository;
+    @Mock
+    private DepartmentMemberReportRepository memberReportRepository;
     @Mock
     private SoulRepository soulRepository;
     @Mock
@@ -103,6 +109,7 @@ class DepartmentDossierServiceTest {
     void setUp() {
         service = new DepartmentDossierService(departmentService, teamRepository, positionRepository,
                 assignmentRepository, taskRepository, activityRepository, noteRepository, announcementRepository,
+                objectiveRepository, memberReportRepository,
                 soulRepository, soulDepartmentRepository, soulNoteRepository, userRepository, familyRepository,
                 securityUtils, presenceRepository, disciplineRepository, makerReportRepository, evaluationRepository,
                 eventRegistrationRepository, eventRepository, alertRepository, transferRequestRepository,
@@ -382,5 +389,43 @@ class DepartmentDossierServiceTest {
                 && a.getDepartmentId().equals(deptId) && a.getAmeId().equals(memberId)));
         assertThat(alerts).hasSize(1);
         assertThat(alerts.get(0).get("typeAlerte")).isEqualTo("ABSENCE_REPETEE");
+    }
+
+    // ======================= RAPPORTS DU RESPONSABLE SUR UN MEMBRE =======================
+
+    @Test
+    void createMemberReport_savesReportAndActivity() {
+        when(soulRepository.findById(memberId)).thenReturn(Optional.of(soul(memberId)));
+        UUID savedId = UUID.randomUUID();
+        when(memberReportRepository.save(any(DepartmentMemberReport.class))).thenAnswer(inv -> {
+            DepartmentMemberReport r = inv.getArgument(0);
+            r.setId(savedId);
+            r.setCreatedAt(LocalDateTime.now());
+            return r;
+        });
+        when(memberReportRepository.findByMemberIdAndDepartmentIdOrderByCreatedAtDesc(memberId, deptId))
+                .thenReturn(List.of(DepartmentMemberReport.builder()
+                        .id(savedId).departmentId(deptId).memberId(memberId)
+                        .auteurId(UUID.randomUUID()).type(DepartmentMemberReport.ReportType.PROGRESSION)
+                        .contenu("Bonne progression").createdAt(LocalDateTime.now()).build()));
+
+        Map<String, Object> report = service.createMemberReport(deptId, memberId,
+                new DepartmentMemberReportRequest(DepartmentMemberReport.ReportType.PROGRESSION, "Bonne progression"));
+
+        assertThat(report.get("type")).isEqualTo("PROGRESSION");
+        assertThat(report.get("contenu")).isEqualTo("Bonne progression");
+        verify(memberReportRepository).save(any(DepartmentMemberReport.class));
+        verify(activityRepository).save(any(DepartmentActivity.class));
+    }
+
+    @Test
+    void deleteMemberReport_rejectsReportFromAnotherDepartment() {
+        UUID reportId = UUID.randomUUID();
+        when(memberReportRepository.findById(reportId)).thenReturn(Optional.of(
+                DepartmentMemberReport.builder().id(reportId).departmentId(UUID.randomUUID()).build()));
+
+        assertThatThrownBy(() -> service.deleteMemberReport(deptId, reportId))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        verify(memberReportRepository, never()).delete(any());
     }
 }

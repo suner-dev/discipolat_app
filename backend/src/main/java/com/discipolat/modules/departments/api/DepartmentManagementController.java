@@ -288,4 +288,55 @@ public class DepartmentManagementController {
         managementService.deleteTask(departmentId, taskId);
         return ResponseEntity.noContent().build();
     }
+
+    // ======================= OBJECTIFS DE PROGRESSION =======================
+
+    @GetMapping("/members/{memberId}/objectives")
+    public ResponseEntity<List<Map<String, Object>>> memberObjectives(@PathVariable UUID departmentId,
+                                                                      @PathVariable UUID memberId) {
+        return ResponseEntity.ok(managementService.getMemberObjectives(departmentId, memberId));
+    }
+
+    @PostMapping("/members/{memberId}/objectives")
+    public ResponseEntity<Map<String, Object>> createObjective(@PathVariable UUID departmentId,
+                                                               @PathVariable UUID memberId,
+                                                               @Valid @RequestBody DepartmentObjectiveRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(managementService.createObjective(departmentId, memberId, request));
+    }
+
+    @PutMapping("/objectives/{objectiveId}")
+    public ResponseEntity<Map<String, Object>> updateObjective(@PathVariable UUID departmentId,
+                                                               @PathVariable UUID objectiveId,
+                                                               @Valid @RequestBody DepartmentObjectiveRequest request) {
+        return ResponseEntity.ok(managementService.updateObjective(departmentId, objectiveId, request));
+    }
+
+    @DeleteMapping("/objectives/{objectiveId}")
+    public ResponseEntity<Void> deleteObjective(@PathVariable UUID departmentId, @PathVariable UUID objectiveId) {
+        managementService.deleteObjective(departmentId, objectiveId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ======================= RAPPORTS DU RESPONSABLE SUR UN MEMBRE =======================
+
+    @GetMapping("/members/{memberId}/reports")
+    public ResponseEntity<List<Map<String, Object>>> memberReports(@PathVariable UUID departmentId,
+                                                                   @PathVariable UUID memberId) {
+        return ResponseEntity.ok(dossierService.listMemberReports(departmentId, memberId));
+    }
+
+    @PostMapping("/members/{memberId}/reports")
+    public ResponseEntity<Map<String, Object>> createMemberReport(@PathVariable UUID departmentId,
+                                                                  @PathVariable UUID memberId,
+                                                                  @Valid @RequestBody DepartmentMemberReportRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(dossierService.createMemberReport(departmentId, memberId, request));
+    }
+
+    @DeleteMapping("/reports/{reportId}")
+    public ResponseEntity<Void> deleteMemberReport(@PathVariable UUID departmentId, @PathVariable UUID reportId) {
+        dossierService.deleteMemberReport(departmentId, reportId);
+        return ResponseEntity.noContent().build();
+    }
 }

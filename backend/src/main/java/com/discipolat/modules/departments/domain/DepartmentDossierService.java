@@ -70,6 +70,8 @@ public class DepartmentDossierService {
     private final DepartmentActivityRepository activityRepository;
     private final DepartmentMemberNoteRepository noteRepository;
     private final DepartmentAnnouncementRepository announcementRepository;
+    private final DepartmentMemberObjectiveRepository objectiveRepository;
+    private final DepartmentMemberReportRepository memberReportRepository;
     private final SoulRepository soulRepository;
     private final SoulDepartmentRepository soulDepartmentRepository;
     private final SoulNoteRepository soulNoteRepository;
@@ -95,6 +97,8 @@ public class DepartmentDossierService {
                                     DepartmentActivityRepository activityRepository,
                                     DepartmentMemberNoteRepository noteRepository,
                                     DepartmentAnnouncementRepository announcementRepository,
+                                    DepartmentMemberObjectiveRepository objectiveRepository,
+                                    DepartmentMemberReportRepository memberReportRepository,
                                     SoulRepository soulRepository,
                                     SoulDepartmentRepository soulDepartmentRepository,
                                     SoulNoteRepository soulNoteRepository,
@@ -119,6 +123,8 @@ public class DepartmentDossierService {
         this.activityRepository = activityRepository;
         this.noteRepository = noteRepository;
         this.announcementRepository = announcementRepository;
+        this.objectiveRepository = objectiveRepository;
+        this.memberReportRepository = memberReportRepository;
         this.soulRepository = soulRepository;
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.soulNoteRepository = soulNoteRepository;
@@ -188,6 +194,8 @@ public class DepartmentDossierService {
         dossier.put("documents", documents(memberId));
         dossier.put("notes", notes(departmentId, memberId));
         dossier.put("notesDisciple", notesDisciple(memberId));
+        dossier.put("objectifs", objectifs(departmentId, memberId));
+        dossier.put("rapportsResponsable", rapportsResponsable(departmentId, memberId));
         dossier.put("alertes", alertes(memberId));
         dossier.put("transferts", transferts(memberId));
         dossier.put("activite", activite(departmentId, memberId));
@@ -469,6 +477,88 @@ public class DepartmentDossierService {
                     return m;
                 })
                 .toList();
+    }
+
+    private List<Map<String, Object>> objectifs(UUID departmentId, UUID memberId) {
+        return objectiveRepository.findByMemberIdAndDepartmentIdOrderByEcheanceAscCreatedAtDesc(memberId, departmentId)
+                .stream().map(o -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", o.getId());
+                    m.put("titre", o.getTitre());
+                    m.put("description", o.getDescription());
+                    m.put("echeance", o.getEcheance() != null ? o.getEcheance().toString() : null);
+                    m.put("avancement", o.getAvancement());
+                    m.put("statut", o.getStatut() != null ? o.getStatut().name() : null);
+                    m.put("creeParNom", userName(o.getCreePar()));
+                    m.put("createdAt", ts(o.getCreatedAt()));
+                    m.put("enRetard", o.getStatut() != null
+                            && (o.getStatut() == DepartmentMemberObjective.ObjectiveStatus.A_FAIRE
+                                || o.getStatut() == DepartmentMemberObjective.ObjectiveStatus.EN_COURS)
+                            && o.getEcheance() != null && o.getEcheance().isBefore(java.time.LocalDate.now()));
+                    return m;
+                })
+                .toList();
+    }
+
+    private List<Map<String, Object>> rapportsResponsable(UUID departmentId, UUID memberId) {
+        return memberReportRepository.findByMemberIdAndDepartmentIdOrderByCreatedAtDesc(memberId, departmentId)
+                .stream().map(r -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", r.getId());
+                    m.put("type", r.getType() != null ? r.getType().name() : null);
+                    m.put("contenu", r.getContenu());
+                    m.put("auteurNom", userName(r.getAuteurId()));
+                    m.put("createdAt", ts(r.getCreatedAt()));
+                    return m;
+                })
+                .toList();
+    }
+
+    // ========================================================================
+    // RAPPORTS DU RESPONSABLE SUR UN MEMBRE
+    // ========================================================================
+
+    public List<Map<String, Object>> listMemberReports(UUID departmentId, UUID memberId) {
+        assertCanManage(departmentId);
+        return rapportsResponsable(departmentId, memberId);
+    }
+
+    public Map<String, Object> createMemberReport(UUID departmentId, UUID memberId,
+                                                  com.discipolat.modules.departments.api.DepartmentMemberReportRequest request) {
+        assertCanManage(departmentId);
+        soulRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Soul", memberId));
+        DepartmentMemberReport report = DepartmentMemberReport.builder()
+                .departmentId(departmentId)
+                .memberId(memberId)
+                .auteurId(securityUtils.getCurrentUserId())
+                .type(request.type())
+                .contenu(request.contenu().trim())
+                .build();
+        DepartmentMemberReport saved = memberReportRepository.save(report);
+        activityRepository.save(DepartmentActivity.builder()
+                .departmentId(departmentId)
+                .actorId(securityUtils.getCurrentUserId())
+                .actorNom(userName(securityUtils.getCurrentUserId()))
+                .action("MEMBER_REPORT_ADDED")
+                .entityType("MEMBER")
+                .entityId(memberId)
+                .details("Rapport (" + request.type() + ") ajouté au dossier du membre")
+                .build());
+        return rapportsResponsable(departmentId, memberId).stream()
+                .filter(r -> saved.getId().equals(((java.util.UUID) r.get("id"))))
+                .findFirst().orElseGet(Map::of);
+    }
+
+    public void deleteMemberReport(UUID departmentId, UUID reportId) {
+        assertCanManage(departmentId);
+        DepartmentMemberReport report = memberReportRepository.findById(reportId)
+                .orElseThrow(() -> new EntityNotFoundException("DepartmentMemberReport", reportId));
+        if (!report.getDepartmentId().equals(departmentId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Accès refusé : rapport hors de votre espace métier");
+        }
+        memberReportRepository.delete(report);
     }
 
     private List<Map<String, Object>> alertes(UUID memberId) {

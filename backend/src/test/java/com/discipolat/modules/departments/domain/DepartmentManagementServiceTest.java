@@ -7,6 +7,7 @@ import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.api.DepartmentAssignmentRequest;
+import com.discipolat.modules.departments.api.DepartmentObjectiveRequest;
 import com.discipolat.modules.departments.api.DepartmentTaskRequest;
 import com.discipolat.modules.departments.api.DepartmentTeamRequest;
 import com.discipolat.modules.notifications.domain.NotificationService;
@@ -39,6 +40,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class DepartmentManagementServiceTest {
@@ -55,6 +57,8 @@ class DepartmentManagementServiceTest {
     private DepartmentTaskRepository taskRepository;
     @Mock
     private DepartmentActivityRepository activityRepository;
+    @Mock
+    private DepartmentMemberObjectiveRepository objectiveRepository;
     @Mock
     private SoulRepository soulRepository;
     @Mock
@@ -74,7 +78,7 @@ class DepartmentManagementServiceTest {
     @BeforeEach
     void setUp() {
         service = new DepartmentManagementService(departmentService, teamRepository, positionRepository,
-                assignmentRepository, taskRepository, activityRepository, soulRepository,
+                assignmentRepository, taskRepository, activityRepository, objectiveRepository, soulRepository,
                 soulDepartmentRepository, userRepository, securityUtils, notificationService, soulService);
         // L'accès au département est toujours accordé par défaut (assertCanManage)
         lenient().when(departmentService.findById(deptId)).thenReturn(new Department());
@@ -510,5 +514,82 @@ class DepartmentManagementServiceTest {
         assertThatThrownBy(() -> service.assignMember(deptId, request))
                 .isInstanceOf(BusinessRuleException.class);
         verify(assignmentRepository, never()).save(any());
+    }
+
+    // ======================= OBJECTIFS DE PROGRESSION =======================
+
+    @Test
+    void createObjective_savesWithDefaultsAndRecordsActivity() {
+        UUID memberId = UUID.randomUUID();
+        when(soulRepository.findById(memberId)).thenReturn(Optional.of(Soul.builder().id(memberId).build()));
+        when(objectiveRepository.save(any(DepartmentMemberObjective.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        DepartmentObjectiveRequest request = new DepartmentObjectiveRequest(
+                "Être confirmé", "Suivre le parcours", LocalDate.now().plusMonths(3), null, null);
+
+        Map<String, Object> result = service.createObjective(deptId, memberId, request);
+
+        ArgumentCaptor<DepartmentMemberObjective> captor = ArgumentCaptor.forClass(DepartmentMemberObjective.class);
+        verify(objectiveRepository).save(captor.capture());
+        DepartmentMemberObjective saved = captor.getValue();
+        assertThat(saved.getDepartmentId()).isEqualTo(deptId);
+        assertThat(saved.getMemberId()).isEqualTo(memberId);
+        assertThat(saved.getTitre()).isEqualTo("Être confirmé");
+        assertThat(saved.getAvancement()).isEqualTo(0);
+        assertThat(saved.getStatut()).isEqualTo(DepartmentMemberObjective.ObjectiveStatus.A_FAIRE);
+        assertThat(result.get("statut")).isEqualTo("A_FAIRE");
+        verify(activityRepository).save(any(DepartmentActivity.class));
+    }
+
+    @Test
+    void updateObjective_setsStatutAtteintWhenAvancementReaches100() {
+        UUID memberId = UUID.randomUUID();
+        UUID objectiveId = UUID.randomUUID();
+        DepartmentMemberObjective objective = DepartmentMemberObjective.builder()
+                .id(objectiveId).departmentId(deptId).memberId(memberId)
+                .titre("Ancien titre").avancement(10)
+                .statut(DepartmentMemberObjective.ObjectiveStatus.EN_COURS)
+                .build();
+        when(objectiveRepository.findById(objectiveId)).thenReturn(Optional.of(objective));
+
+        DepartmentObjectiveRequest request = new DepartmentObjectiveRequest(
+                "Titre mis à jour", "Description", LocalDate.now().plusMonths(1), 100, null);
+
+        Map<String, Object> result = service.updateObjective(deptId, objectiveId, request);
+
+        assertThat(objective.getTitre()).isEqualTo("Titre mis à jour");
+        assertThat(objective.getAvancement()).isEqualTo(100);
+        assertThat(objective.getStatut()).isEqualTo(DepartmentMemberObjective.ObjectiveStatus.ATTEINT);
+        assertThat(result.get("statut")).isEqualTo("ATTEINT");
+    }
+
+    @Test
+    void updateObjective_rejectsObjectiveFromAnotherDepartment() {
+        UUID objectiveId = UUID.randomUUID();
+        DepartmentMemberObjective objective = DepartmentMemberObjective.builder()
+                .id(objectiveId).departmentId(UUID.randomUUID()).memberId(UUID.randomUUID())
+                .titre("Hors espace métier").build();
+        when(objectiveRepository.findById(objectiveId)).thenReturn(Optional.of(objective));
+
+        DepartmentObjectiveRequest request = new DepartmentObjectiveRequest(
+                "Test", null, null, null, null);
+
+        assertThatThrownBy(() -> service.updateObjective(deptId, objectiveId, request))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+    }
+
+    @Test
+    void deleteObjective_removesAndRecordsActivity() {
+        UUID objectiveId = UUID.randomUUID();
+        DepartmentMemberObjective objective = DepartmentMemberObjective.builder()
+                .id(objectiveId).departmentId(deptId).memberId(UUID.randomUUID())
+                .titre("Objectif supprimé").build();
+        when(objectiveRepository.findById(objectiveId)).thenReturn(Optional.of(objective));
+
+        service.deleteObjective(deptId, objectiveId);
+
+        verify(objectiveRepository).delete(objective);
+        verify(activityRepository).save(any(DepartmentActivity.class));
     }
 }
