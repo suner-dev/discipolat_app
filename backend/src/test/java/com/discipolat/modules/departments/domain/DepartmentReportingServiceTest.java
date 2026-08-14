@@ -167,6 +167,36 @@ class DepartmentReportingServiceTest {
     }
 
     @Test
+    void updateReport_modifieContenuEtStatut() {
+        UUID reportId = UUID.randomUUID();
+        DepartmentReport report = DepartmentReport.builder()
+                .id(reportId).departmentId(deptId).auteurId(userId)
+                .type(DepartmentReport.ReportType.ACTIVITE).titre("Bilan")
+                .contenu("Ancien contenu").statut(DepartmentReport.ReportStatus.BROUILLON).build();
+        when(reportRepository.findById(reportId)).thenReturn(Optional.of(report));
+
+        Map<String, Object> result = service.updateReport(deptId, reportId,
+                new DepartmentReportRequest("ACTIVITE", "Bilan corrigé", null, null, "Nouveau contenu", "SOUMIS"));
+
+        assertThat(result.get("statut")).isEqualTo("SOUMIS");
+        assertThat(report.getContenu()).isEqualTo("Nouveau contenu");
+        verify(reportRepository).save(report);
+    }
+
+    @Test
+    void updateReport_refuseRapportDunAutreDepartement() {
+        UUID reportId = UUID.randomUUID();
+        DepartmentReport other = DepartmentReport.builder().id(reportId)
+                .departmentId(UUID.randomUUID()).contenu("x").build();
+        when(reportRepository.findById(reportId)).thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> service.updateReport(deptId, reportId,
+                new DepartmentReportRequest("ACTIVITE", null, null, null, "y", null)))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(reportRepository, never()).save(any());
+    }
+
+    @Test
     void deleteReport_onlySameDepartment() {
         UUID reportId = UUID.randomUUID();
         DepartmentReport other = DepartmentReport.builder().id(reportId)

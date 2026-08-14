@@ -397,6 +397,14 @@ public class DepartmentManagementController {
                 .body(reportingService.saveManualReport(departmentId, request));
     }
 
+    /** Modifie un rapport sauvegardé (contenu, statut, période). */
+    @PutMapping("/reports/saved/{reportId}")
+    public ResponseEntity<Map<String, Object>> updateDepartmentReport(@PathVariable UUID departmentId,
+                                                                      @PathVariable UUID reportId,
+                                                                      @Valid @RequestBody DepartmentReportRequest request) {
+        return ResponseEntity.ok(reportingService.updateReport(departmentId, reportId, request));
+    }
+
     @DeleteMapping("/reports/saved/{reportId}")
     public ResponseEntity<Void> deleteDepartmentReport(@PathVariable UUID departmentId,
                                                        @PathVariable UUID reportId) {

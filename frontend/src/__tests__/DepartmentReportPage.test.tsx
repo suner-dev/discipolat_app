@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DepartmentReportPage from '@/pages/DepartmentReportPage';
@@ -56,12 +56,16 @@ const mockKpi = {
 vi.mock('@/lib/api', () => {
   const mockApiInstance = {
     get: vi.fn().mockImplementation((url: string) => {
-      if (url.includes('/reports/list')) return Promise.resolve({ data: [] });
+      if (url.includes('/reports/list')) return Promise.resolve({ data: [{
+        id: 'r1', titre: 'Synthèse hebdomadaire', type: 'HEBDOMADAIRE',
+        contenu: 'EFFECTIF\n- 2 membres', statut: 'SOUMIS',
+      }] });
       if (url.includes('/report')) return Promise.resolve({ data: mockReport });
       if (url.includes('/kpi')) return Promise.resolve({ data: mockKpi });
       return Promise.resolve({ data: { id: 'dept-1', nom: 'Département A' } });
     }),
     post: vi.fn(),
+    put: vi.fn().mockResolvedValue({ data: {} }),
     interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
     defaults: { headers: { common: {} } },
   };
@@ -116,5 +120,25 @@ describe('DepartmentReportPage', () => {
     // Aucun lien pour la famille sans pièces jointes : le seul lien est celui de Famille Alpha
     const links = screen.queryAllByTitle(/\.pdf/);
     expect(links).toHaveLength(1);
+  });
+
+  it('modifie une synthèse sauvegardée → PUT /reports/saved/{id}', async () => {
+    const { default: api } = await import('@/lib/api');
+    renderPage();
+
+    // La synthèse apparaît dans la liste sauvegardée
+    expect(await screen.findByText(/Synthèses sauvegardées/)).toBeInTheDocument();
+    expect(await screen.findByText('Synthèse hebdomadaire')).toBeInTheDocument();
+    const editButton = screen.getAllByTitle('Modifier')[0];
+    fireEvent.click(editButton);
+
+    const contenu = screen.getByLabelText('Contenu');
+    fireEvent.change(contenu, { target: { value: 'Nouvelle synthèse' } });
+    fireEvent.click(screen.getByText('Enregistrer'));
+
+    await waitFor(() => expect(api.put).toHaveBeenCalled());
+    const [url, payload] = (api.put as any).mock.calls[0];
+    expect(url).toMatch(/\/reports\/saved\//);
+    expect(payload.contenu).toBe('Nouvelle synthèse');
   });
 });

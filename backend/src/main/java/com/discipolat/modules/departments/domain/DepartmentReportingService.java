@@ -133,6 +133,28 @@ public class DepartmentReportingService {
         return toReportMap(report);
     }
 
+    /** Modifie un rapport sauvegardé (contenu, statut, période, titre). */
+    @Transactional
+    public Map<String, Object> updateReport(UUID departmentId, UUID reportId, DepartmentReportRequest request) {
+        requireDepartment(departmentId);
+        DepartmentReport report = reportRepository.findById(reportId)
+                .filter(r -> r.getDepartmentId().equals(departmentId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Rapport introuvable"));
+        if (request.titre() != null && !request.titre().isBlank()) report.setTitre(request.titre().trim());
+        if (request.contenu() != null && !request.contenu().isBlank()) report.setContenu(request.contenu());
+        if (request.periodeDebut() != null) report.setPeriodeDebut(request.periodeDebut());
+        if (request.periodeFin() != null) report.setPeriodeFin(request.periodeFin());
+        if (request.statut() != null) {
+            report.setStatut("SOUMIS".equalsIgnoreCase(request.statut())
+                    ? DepartmentReport.ReportStatus.SOUMIS
+                    : "ARCHIVE".equalsIgnoreCase(request.statut())
+                            ? DepartmentReport.ReportStatus.ARCHIVE
+                            : DepartmentReport.ReportStatus.BROUILLON);
+        }
+        reportRepository.save(report);
+        return toReportMap(report);
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listReports(UUID departmentId) {
         requireDepartment(departmentId);

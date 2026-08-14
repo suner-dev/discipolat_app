@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import {
   ArrowLeft, BarChart3, FileText, Users, Loader2, CheckCircle2,
-  XCircle, TrendingUp, TrendingDown, Minus, Sparkles, Download, Trash2, Save, CalendarRange,
+  XCircle, TrendingUp, TrendingDown, Minus, Sparkles, Download, Trash2, Save, CalendarRange, Pencil, X,
 } from 'lucide-react';
 
 export default function DepartmentReportPage() {
@@ -291,6 +291,13 @@ function SavedReportsSection({ departmentId }: { departmentId: string }) {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ reportId, data }: { reportId: string; data: any }) =>
+      (await api.put(`/departments/${departmentId}/reports/saved/${reportId}`, data)).data,
+    onSuccess: () => { toast.success('Rapport modifié ✅'); invalidate(); },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
   function downloadCsv(reportId: string) {
     api.get(`/departments/${departmentId}/reports/saved/${reportId}/export`, { responseType: 'blob' })
       .then((res) => {
@@ -366,6 +373,7 @@ function SavedReportsSection({ departmentId }: { departmentId: string }) {
                 <p className="text-[11px] text-gray-500 mt-1 whitespace-pre-line line-clamp-3">{r.contenu}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                <EditReportModal report={r} onSave={(data) => updateMutation.mutate({ reportId: r.id, data })} />
                 <button
                   onClick={() => downloadCsv(r.id)}
                   title="Exporter en CSV"
@@ -385,6 +393,52 @@ function SavedReportsSection({ departmentId }: { departmentId: string }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function EditReportModal({ report, onSave }: { report: SavedReport; onSave: (data: any) => void }) {
+  const [open, setOpen] = useState(false);
+  const [titre, setTitre] = useState(report.titre);
+  const [contenu, setContenu] = useState(report.contenu);
+  const [statut, setStatut] = useState(report.statut);
+
+  if (!open) {
+    return (
+      <button onClick={() => { setTitre(report.titre); setContenu(report.contenu); setStatut(report.statut); setOpen(true); }}
+        title="Modifier"
+        className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 transition-all cursor-pointer">
+        <Pencil className="w-4 h-4" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
+      <div className="glass-card p-5 w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Modifier le rapport</h3>
+          <button onClick={() => setOpen(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <label className="label" htmlFor="edit-report-titre">Titre</label>
+        <input id="edit-report-titre" className="input mb-3" value={titre} onChange={(e) => setTitre(e.target.value)} />
+        <label className="label" htmlFor="edit-report-contenu">Contenu</label>
+        <textarea id="edit-report-contenu" className="input mb-3 min-h-[160px] font-mono text-xs" value={contenu} onChange={(e) => setContenu(e.target.value)} />
+        <label className="label" htmlFor="edit-report-statut">Statut</label>
+        <select id="edit-report-statut" className="input mb-4" value={statut} onChange={(e) => setStatut(e.target.value)}>
+          <option value="BROUILLON">Brouillon</option>
+          <option value="SOUMIS">Soumis</option>
+          <option value="ARCHIVE">Archivé</option>
+        </select>
+        <button
+          onClick={() => { onSave({ titre, contenu, statut }); setOpen(false); }}
+          disabled={!titre.trim() || !contenu.trim()}
+          className="btn-primary btn-sm cursor-pointer">
+          <Save className="w-4 h-4" /> Enregistrer
+        </button>
+      </div>
     </div>
   );
 }
