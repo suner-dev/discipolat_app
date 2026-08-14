@@ -181,6 +181,55 @@ et monitoring.
 
 ---
 
+## SESSION 2026-08-14 (suite) — événements de département (V56) + recherche globale
+
+- **V56** : `events.department_id` (index) — événements rattachés à un département,
+  création/mise à jour avec departmentId, `GET /events/department/{id}` paginé,
+  scoping métier (WorkspaceScopeService.accessibleDepartmentIds), scopeEvents étendu.
+- **Recherche globale** : `GET /departments/{id}/search` — membres (LIKE base),
+  équipes, postes, tâches, événements, 10 max par catégorie. Frontend : champ
+  « Recherche rapide » + panneau de résultats ; onglet Événements (création +
+  à venir/passés). Refactor : tous les onglets reçoivent `deptId` par prop
+  (plus de parsing de window.location) + labels htmlFor/id (a11y).
+- Commit `3727c1e`. Tests : +3 frontend (recherche, événements, création).
+
+## SESSION 2026-08-14 (suite) — paramétrage des alertes (V57) + équipes liées aux événements
+
+- **V57** : table `department_settings` (absence_seuil=2, absence_periode=3,
+  inactivite_mois=3, tache_retard_alerte=true) — le moteur d'alertes lit ces
+  seuils (plus aucune valeur hardcodée) + **nouvelle règle INACTIVITE** (aucune
+  fiche de présence depuis N mois). `GET|PUT /departments/{id}/settings` validé.
+- **Équipes temporaires liées à un événement** : `department_teams.event_id`,
+  validation « l'événement doit appartenir au département », titre d'événement
+  groupé (pas de N+1). Frontend : onglet **Paramètres** (seuils + descriptions),
+  sélecteur « Événement lié » dans le formulaire d'équipe (dates pré-remplies).
+- Commit `4070e67`. Tests : +4 backend, +2 frontend.
+
+## SESSION 2026-08-14 (suite) — documentation du département (V58) + annonces ciblées
+
+- **V58** : `department_documents` (PROCEDURE/GUIDE/DOCUMENT/FORMULAIRE/COMPTE_RENDU/
+  RESSOURCE, statut ACTIF/ARCHIVE, url, created_by) + CRUD `/documents` ;
+  `department_announcement_members` — cible **MEMBRES** des annonces (validation
+  « le membre doit appartenir au département », filtre annoncesPourMembre étendu).
+- Frontend : onglet **Documentation** (KPIs par type, ajout/archive/suppression),
+  cible « Certains membres » (sélecteur multi, compteur).
+- Commit `f3fcb9b`. Tests : +5 backend, +3 frontend.
+
+## SESSION 2026-08-14 (suite) — statistiques par période + sous-modules DMS (V59)
+
+- **Analytics par période** : `GET /departments/{id}/stats?periode=MOIS|TRIMESTRE|
+  SEMESTRE|ANNEE|PERSONNALISEE&debut=&fin=` — présence/tâches/discipline filtrées,
+  séries par mois (trimestre si > 24 mois), `nouveauxPeriode`, écho de la période.
+  Frontend : sélecteur de période + champs Du/Au. Commit `7d6e0d6`.
+- **V59 — sous-modules activables** : DEPT_REPORTS / DEPT_CHECKLISTS /
+  DEPT_INVENTORY / DEPT_DOCUMENTS ; ModuleGateFilter segmenté (PREFIXE@@SOUS_MODULE)
+  → API 403 si désactivé ; onglets masqués côté web, page Rapport → état explicite.
+  Commit `f0df165`.
+- **Tests** (fin de session) : backend **420 ✓**, frontend **178 ✓**, build ✓,
+  `flutter analyze`/`flutter test` inchangés (aucune modif mobile ce bloc).
+
+---
+
 ## SESSION 2026-08-14 (DMS : objectifs, rapports du responsable, dossier mobile)
 
 Reprise du système de gestion des départements (DMS). Travail en cours

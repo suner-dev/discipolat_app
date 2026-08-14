@@ -43,6 +43,15 @@ const _etatColors = <String, Color>{
   'HORS_SERVICE': Colors.red,
 };
 
+const _docTypeLabels = <String, String>{
+  'PROCEDURE': 'Procédure',
+  'GUIDE': 'Guide',
+  'DOCUMENT': 'Document',
+  'FORMULAIRE': 'Formulaire',
+  'COMPTE_RENDU': 'Compte rendu',
+  'RESSOURCE': 'Ressource',
+};
+
 /// Outils & rapports du département (backend V55) : synthèses sauvegardées
 /// (génération/export CSV), checklists et inventaire matériel.
 class DepartmentToolsScreen extends StatefulWidget {
@@ -62,6 +71,8 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
   List<Map<String, dynamic>> _reports = [];
   List<Map<String, dynamic>> _checklists = [];
   List<Map<String, dynamic>> _equipment = [];
+  List<Map<String, dynamic>> _documents = [];
+  Map<String, dynamic> _settings = {};
   Map<String, String> _memberNames = {};
 
   String get _deptId => widget.departmentId;
@@ -93,10 +104,23 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
         final nom = mm['nom']?.toString();
         if (id != null && nom != null) names[id] = nom;
       }
+      // Documentation et paramètres : chargés séparément (peuvent être désactivés)
+      List<Map<String, dynamic>> docs = [];
+      Map<String, dynamic> settings = {};
+      try {
+        docs = _toListOfMaps((await _apiService.get('/departments/$_deptId/documents')).data);
+      } catch (_) {}
+      try {
+        final s = (await _apiService.get('/departments/$_deptId/settings')).data;
+        if (s is Map) settings = Map<String, dynamic>.from(s);
+      } catch (_) {}
+      if (!mounted) return;
       setState(() {
         _reports = _toListOfMaps(results[0].data);
         _checklists = _toListOfMaps(results[1].data);
         _equipment = _toListOfMaps(results[2].data);
+        _documents = docs;
+        _settings = settings;
         _memberNames = names;
         _isLoading = false;
       });
@@ -134,7 +158,7 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
       body: _isLoading
           ? const ShimmerLoading(itemCount: 5)
           : DefaultTabController(
-              length: 3,
+              length: 5,
               child: Column(
                 children: [
                   TabBar(
@@ -146,6 +170,8 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
                       Tab(icon: Icon(Icons.description, size: 20), text: 'Rapports'),
                       Tab(icon: Icon(Icons.checklist, size: 20), text: 'Checklists'),
                       Tab(icon: Icon(Icons.inventory_2, size: 20), text: 'Inventaire'),
+                      Tab(icon: Icon(Icons.menu_book, size: 20), text: 'Documentation'),
+                      Tab(icon: Icon(Icons.tune, size: 20), text: 'Paramètres'),
                     ],
                   ),
                   Expanded(
@@ -154,6 +180,8 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
                         _buildReportsTab(),
                         _buildChecklistsTab(),
                         _buildInventoryTab(),
+                        _buildDocumentsTab(),
+                        _buildSettingsTab(),
                       ],
                     ),
                   ),
@@ -1004,12 +1032,290 @@ class _DepartmentToolsScreenState extends State<DepartmentToolsScreen> {
                         const SnackBar(content: Text('Échec de l\'enregistrement')));
                   }
                 }
-              },
-              child: Text(isEdit ? 'Enregistrer' : 'Créer'),
+              },                  child: Text(isEdit ? 'Enregistrer' : 'Créer'),
             ),
           ],
         ),
       ),
     );
+  }
+
+  // ============================================================
+  // DOCUMENTATION DU DÉPARTEMENT
+  // ============================================================
+
+  Widget _buildDocumentsTab() {
+    return RefreshIndicator(
+      onRefresh: _reload,
+      child: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          SectionTitle(
+            title: 'Documentation (${_documents.length})',
+            icon: Icons.menu_book,
+            trailing: IconButton(
+              icon: const Icon(Icons.add_circle, color: Colors.amber),
+              tooltip: 'Ajouter un document',
+              onPressed: _showAddDocument,
+            ),
+          ),
+          if (_documents.isEmpty)
+            GlassCard(
+              padding: const EdgeInsets.all(24),
+              child: Text('Aucun document — procédures, guides, formulaires…',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+            )
+          else
+            ..._documents.map((d) => _documentCard(d)),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _documentCard(Map<String, dynamic> d) {
+    final type = d['type']?.toString() ?? 'DOCUMENT';
+    return GlassCard(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.menu_book, color: AppColors.primaryLight, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${d['titre'] ?? ''}',
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text(_docTypeLabels[type] ?? type.replaceAll('_', ' '),
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.delete_outline,
+                    color: Colors.red.withValues(alpha: 0.6), size: 18),
+                tooltip: 'Supprimer',
+                onPressed: () => _deleteDocument(d),
+              ),
+            ],
+          ),
+          if ((d['description'] ?? '').toString().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text('${d['description']}',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+          ],
+          if ((d['url'] ?? '').toString().isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text('🔗 ${d['url']}',
+                style: TextStyle(color: AppColors.accent, fontSize: 11)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showAddDocument() async {
+    final titreCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final urlCtrl = TextEditingController();
+    var type = 'DOCUMENT';
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          backgroundColor: AppColors.cardDark,
+          title: const Text('Nouveau document', style: TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titreCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Titre *'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: type,
+                  dropdownColor: AppColors.cardDark,
+                  style: const TextStyle(color: Colors.white),
+                  items: _docTypeLabels.entries.map((e) {
+                    return DropdownMenuItem(
+                        value: e.key,
+                        child: Text(e.value, style: const TextStyle(color: Colors.white)));
+                  }).toList(),
+                  onChanged: (v) => setState(() => type = v ?? type),
+                  decoration: const InputDecoration(labelText: 'Type'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: urlCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Lien du document (optionnel)'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+            FilledButton(
+              onPressed: () async {
+                if (titreCtrl.text.trim().isEmpty) return;
+                try {
+                  await _apiService.post('/departments/$_deptId/documents', data: {
+                    'titre': titreCtrl.text.trim(),
+                    'type': type,
+                    'description': descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
+                    'url': urlCtrl.text.trim().isEmpty ? null : urlCtrl.text.trim(),
+                  });
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  await _reload();
+                  if (mounted) _snack('Document ajouté');
+                } catch (_) {
+                  if (context.mounted) {
+                    // ignore: use_build_context_synchronously
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Échec de l\'ajout')));
+                  }
+                }
+              },
+              child: const Text('Ajouter'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteDocument(Map<String, dynamic> d) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardDark,
+        title: const Text('Supprimer le document', style: TextStyle(color: Colors.white)),
+        content: Text('Supprimer « ${d['titre'] ?? ''} » ?',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.8))),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Supprimer')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      try {
+        await _apiService.delete('/departments/$_deptId/documents/${d['id']}');
+        await _reload();
+        if (mounted) _snack('Document supprimé');
+      } catch (_) {
+        if (mounted) _snack('Échec de la suppression', error: true);
+      }
+    }
+  }
+
+  // ============================================================
+  // PARAMÈTRES (seuils des alertes intelligentes)
+  // ============================================================
+
+  Widget _buildSettingsTab() {
+    final seuilCtrl = TextEditingController(text: (_settings['absenceSeuil'] ?? 2).toString());
+    final periodeCtrl =
+        TextEditingController(text: (_settings['absencePeriode'] ?? 3).toString());
+    final inactifCtrl =
+        TextEditingController(text: (_settings['inactiviteMois'] ?? 3).toString());
+    return RefreshIndicator(
+      onRefresh: _reload,
+      child: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          SectionTitle(title: 'Paramètres des alertes', icon: Icons.tune),
+          GlassCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Les règles d\'alerte lisent ces seuils — aucune valeur codée en dur.',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: seuilCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                      labelText: 'Absences requises (1–10)', helperText: 'Alerte absences répétées'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: periodeCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                      labelText: 'Période en semaines (1–12)', helperText: 'Fenêtre de détection'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: inactifCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                      labelText: 'Mois sans présence (0–24)', helperText: '0 = désactivé'),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => _saveSettings(seuilCtrl.text, periodeCtrl.text, inactifCtrl.text),
+                  icon: const Icon(Icons.save, size: 18),
+                  label: const Text('Enregistrer les paramètres'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveSettings(String seuil, String periode, String inactif) async {
+    final absenceSeuil = int.tryParse(seuil.trim());
+    final absencePeriode = int.tryParse(periode.trim());
+    final inactiviteMois = int.tryParse(inactif.trim());
+    if (absenceSeuil == null || absencePeriode == null || inactiviteMois == null) {
+      _snack('Valeurs invalides', error: true);
+      return;
+    }
+    try {
+      await _apiService.put('/departments/$_deptId/settings', data: {
+        'absenceSeuil': absenceSeuil,
+        'absencePeriode': absencePeriode,
+        'inactiviteMois': inactiviteMois,
+      });
+      await _reload();
+      if (mounted) _snack('Paramètres enregistrés');
+    } catch (_) {
+      if (mounted) _snack('Échec de l\'enregistrement', error: true);
+    }
   }
 }

@@ -53,12 +53,40 @@ class _FakeApiService extends ApiService {
         },
       ]);
     }
+    if (path.endsWith('/documents')) {
+      return _json(path, [
+        {
+          'id': 'doc-1',
+          'titre': "Procédure d'accueil",
+          'type': 'PROCEDURE',
+          'description': 'Accueil des nouveaux membres',
+          'statut': 'ACTIF',
+        },
+      ]);
+    }
+    if (path.endsWith('/settings')) {
+      return _json(path, {
+        'departmentId': 'dept-1',
+        'absenceSeuil': 2,
+        'absencePeriode': 3,
+        'inactiviteMois': 3,
+        'tacheRetardAlerte': true,
+      });
+    }
     return _json(path, <String, dynamic>{});
   }
 
   @override
   Future<Response> post(String path, {dynamic data}) async {
     postPaths.add(path);
+    return _json(path, <String, dynamic>{});
+  }
+
+  final List<String> putPaths = [];
+
+  @override
+  Future<Response> put(String path, {dynamic data}) async {
+    putPaths.add(path);
     return _json(path, <String, dynamic>{});
   }
 
@@ -126,5 +154,47 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(api.postPaths, contains('/departments/dept-1/equipment'));
+  });
+
+  testWidgets('affiche la documentation puis ajoute un document', (tester) async {
+    final api = _FakeApiService();
+    await tester.pumpWidget(_wrap(DepartmentToolsScreen(
+      departmentId: 'dept-1',
+      apiService: api,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Documentation'));
+    await tester.pumpAndSettle();
+    expect(find.text("Procédure d'accueil"), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.add_circle));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Guide son');
+    await tester.tap(find.text('Ajouter'));
+    await tester.pumpAndSettle();
+
+    expect(api.postPaths, contains('/departments/dept-1/documents'));
+  });
+
+  testWidgets('enregistre les seuils d\'alertes → PUT /settings', (tester) async {
+    final api = _FakeApiService();
+    await tester.pumpWidget(_wrap(DepartmentToolsScreen(
+      departmentId: 'dept-1',
+      apiService: api,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Paramètres'));
+    await tester.pumpAndSettle();
+    expect(find.text('Paramètres des alertes'), findsOneWidget);
+
+    // Modifie le premier champ (absenceSeuil 2 → 4) puis enregistre
+    final seuilField = find.byType(TextField).first;
+    await tester.enterText(seuilField, '4');
+    await tester.tap(find.text('Enregistrer les paramètres'));
+    await tester.pumpAndSettle();
+
+    expect(api.putPaths, contains('/departments/dept-1/settings'));
   });
 }
