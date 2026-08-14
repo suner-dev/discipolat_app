@@ -283,6 +283,32 @@ maintenable, documenté).
 
 ---
 
+## SESSION 2026-08-14 (fin) — rappels automatiques des événements de département (V60)
+
+- **V60** : `department_settings.event_rappel_jours` (INTEGER, défaut 1, bornes 0–30,
+  0 = rappel désactivé pour le département).
+- **Scheduler `sendEventReminders` étendu** : le rappel J-1 générique aux inscrits est
+  conservé ; en plus, pour chaque événement rattaché à un département, le **responsable**
+  reçoit une notification `EVENEMENT_RAPPEL` (IN_APP) N jours avant, où N est lu dans
+  `department_settings` (jamais hardcodé). Déduplication one-shot par événement et par
+  responsable (`existsByDestinataireIdAndTypeAndEntiteReferenceIdAndEntiteReferenceType`).
+  `TypeNotification.EVENEMENT_RAPPEL` ajouté. Requête dédiée
+  `findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(now+1j, now+31j)`
+  (fenêtre maximale = délai max configurable).
+- **Frontend web** : onglet Paramètres → carte « Rappel automatique des événements »
+  (0–30 jours, descriptions) + payload PUT étendu.
+- **Mobile** : onglet Paramètres des Outils → champ « Rappel événement (0–30 jours) »
+  + PUT étendu (parité).
+- **Vérification e2e locale** : API redémarrée (migration V60 appliquée,
+  `now at version v60`), PUT `eventRappelJours=7` → 200, `99` → 422
+  `EVENT_RAPPEL_JOURS_OUT_OF_RANGE`.
+- Commit `33120e6` poussé. Tests : backend **429 ✓** (dont 4 nouveaux scheduler
+  + 4 settings), frontend **180 ✓** (+1), mobile **102 ✓** (+1).
+- **Stack locale relancée** : API :8080 (log `backend-run.log`), Vite :5173,
+  Postgres :5433, Redis :6379, MailHog :8026 (comptes démo `password123`).
+
+---
+
 ## SESSION 2026-08-14 (DMS : objectifs, rapports du responsable, dossier mobile)
 
 Reprise du système de gestion des départements (DMS). Travail en cours
