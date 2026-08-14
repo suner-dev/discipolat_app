@@ -283,6 +283,20 @@ maintenable, documenté).
 
 ---
 
+## SESSION 2026-08-14 (fin) — parité mobile : événements, équipes liées, recherche globale
+
+- **Onglet « Événements »** dans `DepartmentManagementScreen` : liste À venir/Passés
+  (GET /events/department/{id}) + création avec `departmentId` (POST /events,
+  types, date picker, lieu, description).
+- **Équipes liées** : le formulaire d'équipe (Organisation) affiche le sélecteur
+  « Événement lié » pour EQUIPE_TEMPORAIRE (chargé à la volée, dates pré-remplies,
+  `eventId` envoyé) et l'arbre affiche « Événement : <titre> » sur les équipes liées.
+- **Recherche globale** : champ « Recherche rapide » (≥ 2 caractères) → panneau de
+  résultats par catégorie (membres/équipes/postes/tâches/événements) depuis
+  GET /departments/{id}/search, navigation vers le dossier membre.
+- Commit `975f126` poussé. Mobile **106 tests ✓** (4 nouveaux widget tests),
+  `flutter analyze` 0 issue. Backend/web inchangés (429 ✓ / 180 ✓).
+
 ## SESSION 2026-08-14 (fin) — rappels automatiques des événements de département (V60)
 
 - **V60** : `department_settings.event_rappel_jours` (INTEGER, défaut 1, bornes 0–30,
