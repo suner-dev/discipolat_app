@@ -331,6 +331,26 @@ public class DepartmentManagementController {
         return ResponseEntity.ok(managementService.getMemberEventAttendance(departmentId, memberId));
     }
 
+    /** Marque un membre présent/absent à TOUS les événements du département (dossier). */
+    @PostMapping("/members/{memberId}/event-attendance/mark-all")
+    public ResponseEntity<Map<String, Object>> markAllMemberEventAttendance(@PathVariable UUID departmentId,
+                                                                            @PathVariable UUID memberId,
+                                                                            @RequestParam(defaultValue = "true") boolean present) {
+        return ResponseEntity.ok(managementService.markAllMemberEventAttendance(departmentId, memberId, present));
+    }
+
+    /** Export CSV de la présence d'un membre sur les événements du département. */
+    @GetMapping(value = "/members/{memberId}/event-attendance/export", produces = "text/csv;charset=UTF-8")
+    public ResponseEntity<String> exportMemberEventAttendance(@PathVariable UUID departmentId,
+                                                              @PathVariable UUID memberId) {
+        String csv = managementService.exportMemberEventAttendanceCsv(departmentId, memberId);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=presence-membre-evenements.csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .body(csv);
+    }
+
     @GetMapping("/members/{memberId}/objectives")
     public ResponseEntity<List<Map<String, Object>>> memberObjectives(@PathVariable UUID departmentId,
                                                                       @PathVariable UUID memberId) {

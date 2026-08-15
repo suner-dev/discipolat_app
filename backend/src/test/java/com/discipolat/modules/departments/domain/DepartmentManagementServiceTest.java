@@ -921,6 +921,48 @@ class DepartmentManagementServiceTest {
     }
 
     @Test
+    void markAllMemberEventAttendance_marqueLeMembreSurTousLesEvenements() {
+        UUID soulId = UUID.randomUUID();
+        UUID event1 = UUID.randomUUID();
+        UUID event2 = UUID.randomUUID();
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).build()));
+        when(eventRepository.findByDepartmentIdAndDeletedFalse(deptId)).thenReturn(List.of(
+                deptEvent(event1),
+                com.discipolat.modules.events.domain.Event.builder()
+                        .id(event2).departmentId(deptId).titre("Sortie")
+                        .typeEvenement("SORTIE").dateDebut(java.time.LocalDateTime.now().plusDays(2))
+                        .build()));
+        when(attendanceRepository.findByDepartmentIdAndEventIdAndSoulId(any(), any(), any()))
+                .thenReturn(Optional.empty());
+
+        Map<String, Object> result = service.markAllMemberEventAttendance(deptId, soulId, true);
+
+        assertThat(result.get("marques")).isEqualTo(2);
+        verify(attendanceRepository, times(2)).save(any(DepartmentEventAttendance.class));
+        verify(activityRepository).save(any(DepartmentActivity.class));
+    }
+
+    @Test
+    void exportMemberEventAttendanceCsv_produitLeContenuAttendu() {
+        UUID soulId = UUID.randomUUID();
+        UUID event1 = UUID.randomUUID();
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).build()));
+        when(eventRepository.findByDepartmentIdAndDeletedFalse(deptId)).thenReturn(List.of(deptEvent(event1)));
+        when(attendanceRepository.findBySoulId(soulId)).thenReturn(List.of(
+                DepartmentEventAttendance.builder().departmentId(deptId).eventId(event1).soulId(soulId)
+                        .present(true).markedBy(UUID.randomUUID()).build()));
+
+        String csv = service.exportMemberEventAttendanceCsv(deptId, soulId);
+
+        assertThat(csv).startsWith("\uFEFF");
+        assertThat(csv).contains("Événement;Date;Statut");
+        assertThat(csv).contains("Convention du département;");
+        assertThat(csv).contains(";Présent");
+    }
+
+    @Test
     void getEventAttendance_retourneLesMembresAvecStatut() {
         UUID eventId = UUID.randomUUID();
         UUID soulPresent = UUID.randomUUID();

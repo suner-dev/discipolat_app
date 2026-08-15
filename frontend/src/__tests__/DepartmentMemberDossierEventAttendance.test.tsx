@@ -98,4 +98,26 @@ describe('DepartmentMemberDossierPage — présence aux événements du départe
       { soulId: 'm1', present: true },
     ));
   });
+
+  it('marque tous les événements présents et exporte la présence du membre en CSV', async () => {
+    const { default: api } = await import('@/lib/api');
+    renderPage();
+    expect(await screen.findByText('Aya Kouassi')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Présences'));
+
+    expect(await screen.findByText('Convention départementale')).toBeInTheDocument();
+
+    // Marquer tous présents → POST /members/{id}/event-attendance/mark-all?present=true
+    fireEvent.click(screen.getByText('Marquer tous présents'));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith(
+      '/departments/dept-1/members/m1/event-attendance/mark-all?present=true',
+    ));
+
+    // Export CSV → GET /members/{id}/event-attendance/export en blob
+    fireEvent.click(screen.getByText('Exporter CSV'));
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith(
+      '/departments/dept-1/members/m1/event-attendance/export',
+      expect.objectContaining({ responseType: 'blob' }),
+    ));
+  });
 });

@@ -1125,6 +1125,58 @@ public class DepartmentManagementService {
         return sb.toString();
     }
 
+    /**
+     * Marque UN membre présent/absent à TOUS les événements du département
+     * (dossier membre) — upsert idempotent par événement.
+     */
+    @Transactional
+    public Map<String, Object> markAllMemberEventAttendance(UUID departmentId, UUID memberId, boolean present) {
+        assertCanManage(departmentId);
+        boolean member = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
+                .anyMatch(sd -> sd.getSoulId().equals(memberId));
+        if (!member) {
+            throw new com.discipolat.common.domain.BusinessRuleException(
+                    "Cette âme n'est pas un membre actif du département", "SOUL_NOT_DEPARTMENT_MEMBER");
+        }
+        List<Event> events = eventRepository.findByDepartmentIdAndDeletedFalse(departmentId);
+        UUID userId = securityUtils.getCurrentUserId();
+        int count = 0;
+        for (Event e : events) {
+            DepartmentEventAttendance attendance = attendanceRepository
+                    .findByDepartmentIdAndEventIdAndSoulId(departmentId, e.getId(), memberId)
+                    .orElseGet(() -> DepartmentEventAttendance.builder()
+                            .departmentId(departmentId).eventId(e.getId()).soulId(memberId)
+                            .markedBy(userId).present(present).build());
+            attendance.setPresent(present);
+            attendance.setMarkedBy(userId);
+            attendanceRepository.save(attendance);
+            count++;
+        }
+        record(departmentId, "EVENT_ATTENDANCE_MARK_ALL_MEMBER", "SOUL", memberId,
+                (present ? "présent" : "absent") + " à " + count + " événement(s)");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("soulId", memberId);
+        result.put("present", present);
+        result.put("marques", count);
+        return result;
+    }
+
+    /** Export CSV de la présence d'UN membre sur les événements du département. */
+    @Transactional(readOnly = true)
+    public String exportMemberEventAttendanceCsv(UUID departmentId, UUID memberId) {
+        Map<String, Object> sheet = getMemberEventAttendance(departmentId, memberId);
+        StringBuilder sb = new StringBuilder("\uFEFF");
+        sb.append("Événement;Date;Statut\n");
+        for (Object o : (List<?>) sheet.get("events")) {
+            Map<?, ?> m = (Map<?, ?>) o;
+            String statut = m.get("present") == null ? "Non pointé"
+                    : Boolean.TRUE.equals(m.get("present")) ? "Présent" : "Absent";
+            String date = m.get("dateDebut") != null ? String.valueOf(m.get("dateDebut")).substring(0, 10) : "";
+            sb.append(csv(String.valueOf(m.get("titre")))).append(';').append(date).append(';').append(statut).append('\n');
+        }
+        return sb.toString();
+    }
+
     /** Échappe une valeur CSV (séparateur ;, guillemets, sauts de ligne). */
     private String csv(String value) {
         if (value == null) return "";

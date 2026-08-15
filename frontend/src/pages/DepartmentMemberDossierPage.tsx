@@ -7,7 +7,7 @@ import {
   ArrowLeft, UserRound, Building2, Users2, ListTodo, ClipboardCheck, Gavel,
   FileText, Star, Calendar, StickyNote, Megaphone, ArrowLeftRight, History,
   Loader2, Plus, Send, Trash2, FolderOpen, Bell, ExternalLink, Target, TrendingUp,
-  CheckCircle2, CalendarDays, UserCheck, UserX,
+  CheckCircle2, CalendarDays, UserCheck, UserX, Download,
 } from 'lucide-react';
 
 type Dossier = any;
@@ -394,6 +394,30 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
+  const markAllMutation = useMutation({
+    mutationFn: async () =>
+      (await api.post(`/departments/${id}/members/${memberId}/event-attendance/mark-all?present=true`)).data,
+    onSuccess: (r) => {
+      toast.success(`${r?.marques ?? 0} événements marqués présents ✅`);
+      queryClient.invalidateQueries({ queryKey: ['department', id, 'dossier', memberId, 'event-attendance'] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const downloadCsv = () => {
+    api.get(`/departments/${id}/members/${memberId}/event-attendance/export`, { responseType: 'blob' })
+      .then((res) => {
+        const url = URL.createObjectURL(res.data as Blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'presence-membre-evenements.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('Présences exportées 📥');
+      })
+      .catch((err) => toast.error(getErrorMessage(err)));
+  };
+
   const events: any[] = eventAttendance?.events ?? [];
 
   return (
@@ -491,6 +515,26 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
                   </div>
                 );
               })}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/60">
+              <button
+                onClick={() => markAllMutation.mutate()}
+                disabled={markAllMutation.isPending || events.length === 0}
+                className="btn-secondary btn-sm cursor-pointer"
+                title="Marquer ce membre présent à tous les événements du département"
+              >
+                {markAllMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
+                Marquer tous présents
+              </button>
+              <button
+                onClick={downloadCsv}
+                disabled={events.length === 0}
+                className="btn-ghost btn-sm cursor-pointer"
+                title="Exporter la présence de ce membre en CSV"
+              >
+                <Download className="w-4 h-4" /> Exporter CSV
+              </button>
             </div>
           </>
         )}

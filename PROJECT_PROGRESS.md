@@ -652,3 +652,16 @@ Parité de `DepartmentDetailPage` web :
   `Aya Kouassi;Présent / Ibrahim Traoré;Présent` (BOM) ✓ · cleanup 204.
 - Tests : backend **439 ✓** (+2), frontend **189 ✓** (+1 mark-all/export),
   `tsc -b` ✓, `npm run build` ✓. Commit `24959dd` poussé.
+
+### Suite — mêmes actions dans le dossier membre
+
+- **Backend** : `POST /departments/{id}/members/{memberId}/event-attendance/mark-all?present=true`
+  (marque UN membre présent/absent à TOUS les événements du département, upsert
+  idempotent, traçabilité `EVENT_ATTENDANCE_MARK_ALL_MEMBER`) ;
+  `GET .../event-attendance/export` → CSV UTF-8 (BOM) `Événement;Date;Statut`.
+- **Dossier membre** (onglet Présences → section événements) : boutons
+  « **Marquer tous présents** » + « **Exporter CSV** » (parité avec la modale).
+- **E2E réel** : member mark-all `marques:1` → `nonMarques:0` ✓ · export CSV
+  `QA membre mark-all;2026-08-25;Présent` (BOM) ✓ · cleanup 204.
+- Tests : backend **441 ✓** (+2), frontend **190 ✓** (+1 dossier),
+  `tsc -b` ✓, `npm run build` ✓. Commit `2d7f28c` poussé.
