@@ -83,8 +83,14 @@ et monitoring.
 
 ## DERNIER COMMIT GIT
 
-- `2956527` docs: checkpoint — diagnostic déploiement bêta Render (services non créés)
-- Prochain commit : **3.20.0 mobile** (PlatformMeta + metaProvider + BetaBadge + feedback sheet + comptes démo conditionnels + 10 tests) — non encore poussé
+- `4fc6583` fix(events): contrainte DB types événement (V62) — types CULTE/ETUDE_BIBLIQUE/VEILLEE/PRIERE créaient un 500 ; onglet Événements département : 13 types (parité)
+- `scripts/e2e-browser.js` ajouté (harness Puppeteer + Chrome système, 16 étapes, `puppeteer-core` en devDependency frontend)
+
+## QA NAVIGATEUR RÉEL (2026-08-15) — E2E module Responsable
+
+- **16/16 étapes ✓, 0 erreur console** : login → rôle Responsable → départements → détail → **Outils** (ex-404, 5 onglets) → Rapport → Gestion/Événements → modale Présences (mark-all + export CSV) → recherche globale (« aya » → Aya Kouassi) → dossier membre (onglet Présences, section événements) → dashboard responsable (carte Présence aux événements)
+- **Bug corrigé (V62)** : la contrainte CHECK de V3 n'autorisait que 9 types d'événements alors que le dictionnaire en configure 13 → création d'un événement `CULTE`/`VEILLEE`/… : **500 Internal Server Error**. Migration `V62__events_type_constraint_fix.sql` réaligne la contrainte ; vérifié en réel (création CULTE ✓). `EVENT_TYPES` de l'onglet Événements du département réaligné sur les 13 types.
+- Relance : `node scripts/e2e-browser.js` (exige Chrome système + stack locale : API :8080, web :5173)
 
 ## PROCESSUS LOCAUX LAISSÉS ACTIFS (session e2e du 2026-08-11)
 
