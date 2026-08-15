@@ -690,4 +690,40 @@ class DepartmentManagementServiceTest {
         assertThat((List<?>) result.get("postes")).isEmpty();
         assertThat(result.get("total")).isEqualTo(3L);
     }
+
+    @Test
+    void searchAll_ignoreLesEquipesArchiveesEtLesTachesAnnulees() {
+        // Équipe archivée qui matche le nom : ne doit PAS apparaître
+        com.discipolat.modules.departments.domain.DepartmentTeam archivedTeam = com.discipolat.modules.departments.domain.DepartmentTeam.builder()
+                .id(UUID.randomUUID()).departmentId(deptId).nom("Johanne archivee")
+                .type(com.discipolat.modules.departments.domain.DepartmentTeam.TeamType.EQUIPE_PERMANENTE)
+                .statut(com.discipolat.modules.departments.domain.DepartmentTeam.TeamStatus.ARCHIVED)
+                .build();
+        com.discipolat.modules.departments.domain.DepartmentTeam activeTeam = com.discipolat.modules.departments.domain.DepartmentTeam.builder()
+                .id(UUID.randomUUID()).departmentId(deptId).nom("Johanne")
+                .type(com.discipolat.modules.departments.domain.DepartmentTeam.TeamType.EQUIPE_PERMANENTE)
+                .statut(com.discipolat.modules.departments.domain.DepartmentTeam.TeamStatus.ACTIVE)
+                .build();
+        when(teamRepository.findByDepartmentIdOrderByNomAsc(deptId))
+                .thenReturn(List.of(archivedTeam, activeTeam));
+
+        // Tâche annulée qui matche : ne doit PAS apparaître non plus
+        com.discipolat.modules.departments.domain.DepartmentTask cancelledTask = com.discipolat.modules.departments.domain.DepartmentTask.builder()
+                .id(UUID.randomUUID()).departmentId(deptId).titre("Répéter pour Johanne")
+                .priorite(com.discipolat.modules.departments.domain.DepartmentTask.TaskPriority.HAUTE)
+                .statut(com.discipolat.modules.departments.domain.DepartmentTask.TaskStatus.ANNULEE)
+                .build();
+        when(taskRepository.findByDepartmentIdOrderByEcheanceAsc(deptId)).thenReturn(List.of(cancelledTask));
+        when(positionRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of());
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId)).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedFalse(deptId, "joh"))
+                .thenReturn(List.of());
+
+        Map<String, Object> result = service.searchAll(deptId, "Joh");
+
+        assertThat((List<?>) result.get("equipes")).hasSize(1);
+        assertThat(((java.util.Map<?, ?>) ((List<?>) result.get("equipes")).get(0)).get("nom")).isEqualTo("Johanne");
+        assertThat((List<?>) result.get("taches")).isEmpty();
+        assertThat(result.get("total")).isEqualTo(1L);
+    }
 }

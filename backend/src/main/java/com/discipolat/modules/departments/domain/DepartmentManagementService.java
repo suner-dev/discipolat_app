@@ -853,8 +853,9 @@ public class DepartmentManagementService {
         }
         result.put("membres", members);
 
-        // Équipes
+        // Équipes (uniquement les équipes actives — jamais d'équipes archivées)
         List<Map<String, Object>> teams = teamRepository.findByDepartmentIdOrderByNomAsc(departmentId).stream()
+                .filter(t -> DepartmentTeam.TeamStatus.ACTIVE.equals(t.getStatut()))
                 .filter(t -> t.getNom() != null && t.getNom().toLowerCase().contains(q))
                 .limit(10)
                 .map(t -> {
@@ -869,8 +870,9 @@ public class DepartmentManagementService {
                 .toList();
         result.put("equipes", teams);
 
-        // Postes
+        // Postes (uniquement les postes actifs)
         List<Map<String, Object>> positions = positionRepository.findByDepartmentIdOrderByNomAsc(departmentId).stream()
+                .filter(p -> DepartmentPosition.PositionStatus.ACTIVE.equals(p.getStatut()))
                 .filter(p -> p.getNom() != null && p.getNom().toLowerCase().contains(q))
                 .limit(10)
                 .map(p -> {
@@ -884,8 +886,9 @@ public class DepartmentManagementService {
                 .toList();
         result.put("postes", positions);
 
-        // Tâches
+        // Tâches (sans les tâches annulées)
         List<Map<String, Object>> tasks = taskRepository.findByDepartmentIdOrderByEcheanceAsc(departmentId).stream()
+                .filter(t -> !DepartmentTask.TaskStatus.ANNULEE.equals(t.getStatut()))
                 .filter(t -> (t.getTitre() != null && t.getTitre().toLowerCase().contains(q))
                         || (t.getDescription() != null && t.getDescription().toLowerCase().contains(q)))
                 .limit(10)
