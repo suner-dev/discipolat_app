@@ -1078,6 +1078,63 @@ public class DepartmentManagementService {
         return m;
     }
 
+    /**
+     * Marque TOUS les membres actifs du département présents (ou absents) à
+     * l'événement en une seule opération (upsert idempotent par membre).
+     */
+    @Transactional
+    public Map<String, Object> markAllEventAttendance(UUID departmentId, UUID eventId, boolean present) {
+        assertCanManage(departmentId);
+        Event event = requireDepartmentEvent(departmentId, eventId);
+        UUID userId = securityUtils.getCurrentUserId();
+        List<UUID> soulIds = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
+                .map(SoulDepartment::getSoulId).toList();
+        int count = 0;
+        for (UUID soulId : soulIds) {
+            DepartmentEventAttendance attendance = attendanceRepository
+                    .findByDepartmentIdAndEventIdAndSoulId(departmentId, eventId, soulId)
+                    .orElseGet(() -> DepartmentEventAttendance.builder()
+                            .departmentId(departmentId).eventId(eventId).soulId(soulId)
+                            .markedBy(userId).present(present).build());
+            attendance.setPresent(present);
+            attendance.setMarkedBy(userId);
+            attendanceRepository.save(attendance);
+            count++;
+        }
+        record(departmentId, "EVENT_ATTENDANCE_MARK_ALL", "EVENT", eventId,
+                (present ? "présents" : "absents") + " (" + count + " membres) à \"" + event.getTitre() + "\"");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("eventId", eventId);
+        result.put("present", present);
+        result.put("marques", count);
+        return result;
+    }
+
+    /** Export CSV de la feuille de présence d'un événement (BOM UTF-8, séparateur ;). */
+    @Transactional(readOnly = true)
+    public String exportEventAttendanceCsv(UUID departmentId, UUID eventId) {
+        Map<String, Object> sheet = getEventAttendance(departmentId, eventId);
+        StringBuilder sb = new StringBuilder("\uFEFF");
+        sb.append("Membre;Présence\n");
+        for (Object o : (List<?>) sheet.get("membres")) {
+            Map<?, ?> m = (Map<?, ?>) o;
+            String statut = m.get("present") == null ? "Non pointé"
+                    : Boolean.TRUE.equals(m.get("present")) ? "Présent" : "Absent";
+            sb.append(csv(String.valueOf(m.get("nom")))).append(';').append(statut).append('\n');
+        }
+        return sb.toString();
+    }
+
+    /** Échappe une valeur CSV (séparateur ;, guillemets, sauts de ligne). */
+    private String csv(String value) {
+        if (value == null) return "";
+        String v = value.replace("\"", "\"\"");
+        if (v.contains(";") || v.contains("\"") || v.contains("\n")) {
+            return "\"" + v + "\"";
+        }
+        return v;
+    }
+
     /** Âmes accessibles à l'espace métier courant (rôle actif). */
     private List<UUID> accessibleSoulIds() {
         UUID currentUserId = securityUtils.getCurrentUserId();

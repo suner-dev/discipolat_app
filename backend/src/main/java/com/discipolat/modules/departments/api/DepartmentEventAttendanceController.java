@@ -44,4 +44,26 @@ public class DepartmentEventAttendanceController {
         return ResponseEntity.ok(managementService.markEventAttendance(
                 departmentId, eventId, request.soulId(), request.present()));
     }
+
+    /** Marque tous les membres actifs du département présents (ou absents). */
+    @PostMapping("/mark-all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<Map<String, Object>> markAllAttendance(@PathVariable UUID departmentId,
+                                                                 @PathVariable UUID eventId,
+                                                                 @RequestParam(defaultValue = "true") boolean present) {
+        return ResponseEntity.ok(managementService.markAllEventAttendance(departmentId, eventId, present));
+    }
+
+    /** Export CSV de la feuille de présence de l'événement. */
+    @GetMapping(value = "/export", produces = "text/csv;charset=UTF-8")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<String> exportAttendance(@PathVariable UUID departmentId,
+                                                   @PathVariable UUID eventId) {
+        String csv = managementService.exportEventAttendanceCsv(departmentId, eventId);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=feuille-presence.csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .body(csv);
+    }
 }

@@ -868,6 +868,59 @@ class DepartmentManagementServiceTest {
     }
 
     @Test
+    void markAllEventAttendance_marqueTousLesMembresPresent() {
+        UUID eventId = UUID.randomUUID();
+        UUID soul1 = UUID.randomUUID();
+        UUID soul2 = UUID.randomUUID();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(deptEvent(eventId)));
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(
+                        SoulDepartment.builder().soulId(soul1).build(),
+                        SoulDepartment.builder().soulId(soul2).build()));
+        when(attendanceRepository.findByDepartmentIdAndEventIdAndSoulId(any(), any(), any()))
+                .thenReturn(Optional.empty());
+
+        Map<String, Object> result = service.markAllEventAttendance(deptId, eventId, true);
+
+        assertThat(result.get("marques")).isEqualTo(2);
+        ArgumentCaptor<DepartmentEventAttendance> captor = ArgumentCaptor.forClass(DepartmentEventAttendance.class);
+        verify(attendanceRepository, times(2)).save(captor.capture());
+        assertThat(captor.getAllValues()).allMatch(a -> a.isPresent());
+        verify(activityRepository).save(any(DepartmentActivity.class));
+    }
+
+    @Test
+    void exportEventAttendanceCsv_produitLeContenuAttendu() {
+        UUID eventId = UUID.randomUUID();
+        UUID soulPresent = UUID.randomUUID();
+        UUID soulAbsent = UUID.randomUUID();
+        UUID soulNonPointee = UUID.randomUUID();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(deptEvent(eventId)));
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(
+                        SoulDepartment.builder().soulId(soulPresent).build(),
+                        SoulDepartment.builder().soulId(soulAbsent).build(),
+                        SoulDepartment.builder().soulId(soulNonPointee).build()));
+        when(soulRepository.findAllById(anyList())).thenReturn(List.of(
+                com.discipolat.modules.souls.domain.Soul.builder().id(soulPresent).nom("Kouassi").prenom("Aya").build(),
+                com.discipolat.modules.souls.domain.Soul.builder().id(soulAbsent).nom("Traore").prenom("Ibrahim").build(),
+                com.discipolat.modules.souls.domain.Soul.builder().id(soulNonPointee).nom("Zadi").prenom("Marc").build()));
+        when(attendanceRepository.findByEventId(eventId)).thenReturn(List.of(
+                DepartmentEventAttendance.builder().departmentId(deptId).eventId(eventId).soulId(soulPresent)
+                        .present(true).markedBy(UUID.randomUUID()).build(),
+                DepartmentEventAttendance.builder().departmentId(deptId).eventId(eventId).soulId(soulAbsent)
+                        .present(false).markedBy(UUID.randomUUID()).build()));
+
+        String csv = service.exportEventAttendanceCsv(deptId, eventId);
+
+        assertThat(csv).startsWith("\uFEFF");
+        assertThat(csv).contains("Membre;Présence");
+        assertThat(csv).contains("Aya Kouassi;Présent");
+        assertThat(csv).contains("Ibrahim Traore;Absent");
+        assertThat(csv).contains("Marc Zadi;Non pointé");
+    }
+
+    @Test
     void getEventAttendance_retourneLesMembresAvecStatut() {
         UUID eventId = UUID.randomUUID();
         UUID soulPresent = UUID.randomUUID();

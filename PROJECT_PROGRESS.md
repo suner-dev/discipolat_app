@@ -637,3 +637,18 @@ Parité de `DepartmentDetailPage` web :
   nonMarques:0` (compteurs corrects après fix), cleanup 204.
 - Tests : backend **437 ✓** (+2), frontend **188 ✓** (+2 dossier),
   `tsc -b` ✓, `npm run build` ✓. Commit `28e8b89` poussé.
+
+### Suite — « Marquer tous présents » + export CSV de la feuille de présence
+
+- **Backend** : `POST /departments/{id}/events/{eventId}/attendance/mark-all?present=true`
+  (marque TOUS les membres actifs présents/absents en une opération, upsert
+  idempotent, traçabilité `EVENT_ATTENDANCE_MARK_ALL`) ;
+  `GET .../attendance/export` → CSV UTF-8 (BOM) `Membre;Présence`
+  (Présent/Absent/Non pointé), permissions ADMIN/PASTEUR/RESPONSABLE.
+- **Frontend** : dans la modale de pointage, barre d'actions « **Marquer tous
+  présents** » (avec confirmation visuelle du nombre) + « **Exporter CSV** »
+  (téléchargement blob).
+- **E2E réel** : mark-all `marques:2` → feuille 2/2 présents · export CSV
+  `Aya Kouassi;Présent / Ibrahim Traoré;Présent` (BOM) ✓ · cleanup 204.
+- Tests : backend **439 ✓** (+2), frontend **189 ✓** (+1 mark-all/export),
+  `tsc -b` ✓, `npm run build` ✓. Commit `bb33e5a` poussé.

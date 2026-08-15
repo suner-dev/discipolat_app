@@ -10,7 +10,7 @@ import {
   Plus, Pencil, Archive, Trash2, UserPlus, Loader2, CheckCircle2,
   Clock, AlertTriangle, CalendarDays, ChevronRight, ChevronDown, Save,
   X,  Star, Flag, FolderTree, Activity, ListChecks, Boxes, Search, Settings, BookOpen,
-  UserCheck, UserX,
+  UserCheck, UserX, Download,
 } from 'lucide-react';
 
 type Team = {
@@ -1560,6 +1560,30 @@ export function EventAttendanceModal({ deptId, event, onClose }: { deptId: strin
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
+  const markAllMutation = useMutation({
+    mutationFn: async () =>
+      (await api.post(`/departments/${deptId}/events/${event.id}/attendance/mark-all?present=true`)).data,
+    onSuccess: (r) => {
+      toast.success(`${r?.marques ?? 0} membres marqués présents ✅`);
+      queryClient.invalidateQueries({ queryKey: ['department', deptId, 'events', event.id, 'attendance'] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const downloadCsv = () => {
+    api.get(`/departments/${deptId}/events/${event.id}/attendance/export`, { responseType: 'blob' })
+      .then((res) => {
+        const url = URL.createObjectURL(res.data as Blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `feuille-presence-${event.titre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'evenement'}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('Feuille de présence exportée 📥');
+      })
+      .catch((err) => toast.error(getErrorMessage(err)));
+  };
+
   const membres: any[] = data?.membres ?? [];
 
   return createPortal(
@@ -1642,6 +1666,25 @@ export function EventAttendanceModal({ deptId, event, onClose }: { deptId: strin
                 })}
               </div>
             )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/60">
+              <button
+                onClick={() => markAllMutation.mutate()}
+                disabled={markAllMutation.isPending || membres.length === 0}
+                className="btn-secondary btn-sm cursor-pointer"
+                title="Marquer tous les membres présents à cet événement"
+              >
+                {markAllMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
+                Marquer tous présents
+              </button>
+              <button
+                onClick={downloadCsv}
+                className="btn-ghost btn-sm cursor-pointer"
+                title="Exporter la feuille de présence en CSV"
+              >
+                <Download className="w-4 h-4" /> Exporter CSV
+              </button>
+            </div>
           </>
         )}
       </div>
