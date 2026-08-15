@@ -7,7 +7,7 @@ import {
   ArrowLeft, UserRound, Building2, Users2, ListTodo, ClipboardCheck, Gavel,
   FileText, Star, Calendar, StickyNote, Megaphone, ArrowLeftRight, History,
   Loader2, Plus, Send, Trash2, FolderOpen, Bell, ExternalLink, Target, TrendingUp,
-  CheckCircle2,
+  CheckCircle2, CalendarDays, UserCheck, UserX,
 } from 'lucide-react';
 
 type Dossier = any;
@@ -158,7 +158,7 @@ export default function DepartmentMemberDossierPage() {
       {tab === 'appartenance' && <AppartenanceTab items={dossier.appartenance || []} />}
       {tab === 'affectations' && <AffectationsTab items={dossier.affectations || []} />}
       {tab === 'taches' && <TachesTab data={dossier.taches || {}} />}
-      {tab === 'presences' && <PresencesTab data={dossier.presences || {}} />}
+      {tab === 'presences' && <PresencesTab id={id!} memberId={memberId!} data={dossier.presences || {}} />}
       {tab === 'discipline' && <DisciplineTab data={dossier.discipline || {}} memberId={p.id} />}
       {tab === 'rapports' && <RapportsTab id={id!} memberId={memberId!} data={dossier.rapports || {}} items={dossier.rapportsResponsable || []} />}
       {tab === 'evaluations' && <EvaluationsTab data={dossier.evaluations || {}} />}
@@ -373,9 +373,29 @@ function TachesTab({ data }: { data: any }) {
 }
 
 // ============================================================
-// PRÉSENCES
+// PRÉSENCES — fiches hebdomadaires + événements du département
 // ============================================================
-function PresencesTab({ data }: { data: any }) {
+function PresencesTab({ id, memberId, data }: { id: string; memberId: string; data: any }) {
+  const queryClient = useQueryClient();
+  const { data: eventAttendance, isLoading: loadingEvents } = useQuery({
+    queryKey: ['department', id, 'dossier', memberId, 'event-attendance'],
+    queryFn: async () => (await api.get(`/departments/${id}/members/${memberId}/event-attendance`)).data as any,
+    enabled: !!id && !!memberId,
+  });
+
+  const markMutation = useMutation({
+    mutationFn: async ({ eventId, present }: { eventId: string; present: boolean }) =>
+      (await api.put(`/departments/${id}/events/${eventId}/attendance`, { soulId: memberId, present })).data,
+    onSuccess: () => {
+      toast.success('Présence enregistrée ✅');
+      queryClient.invalidateQueries({ queryKey: ['department', id, 'dossier', memberId, 'event-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['department', id, 'dossier', memberId] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const events: any[] = eventAttendance?.events ?? [];
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -410,6 +430,69 @@ function PresencesTab({ data }: { data: any }) {
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Présence aux événements du département */}
+      <div className="glass-card p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <CalendarDays className="w-4 h-4 text-primary-500" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Présence aux événements du département</h3>
+        </div>
+        <p className="text-[11px] text-gray-400 mb-4">
+          Marquez ce membre présent ou absent à chaque événement rattaché au département.
+        </p>
+        {loadingEvents ? (
+          <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary-500" /></div>
+        ) : events.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">Aucun événement rattaché à ce département</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-3 mb-3 text-xs text-gray-500">
+              <span>Événements : <strong className="text-gray-800 dark:text-gray-100">{eventAttendance?.total ?? 0}</strong></span>
+              <span>Présents : <strong className="text-green-600">{eventAttendance?.presents ?? 0}</strong></span>
+              <span>Absents : <strong className="text-red-500">{eventAttendance?.absents ?? 0}</strong></span>
+              <span>Non pointés : <strong className="text-amber-600">{eventAttendance?.nonMarques ?? 0}</strong></span>
+            </div>
+            <div className="space-y-1.5">
+              {events.map((e: any) => {
+                const isPresent = e.present === true;
+                const isAbsent = e.present === false;
+                return (
+                  <div key={e.eventId} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{e.titre}</p>
+                      <p className="text-[10px] text-gray-400">
+                        {e.dateDebut ? new Date(e.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        {e.statut ? ` · ${e.statut.replace('_', ' ').toLowerCase()}` : ''}
+                      </p>
+                    </div>
+                    <span className={`text-[10px] font-medium shrink-0 ${isPresent ? 'text-emerald-600' : isAbsent ? 'text-red-500' : 'text-gray-400'}`}>
+                      {isPresent ? '✓ Présent' : isAbsent ? '✗ Absent' : 'Non pointé'}
+                    </span>
+                    <div className="flex gap-1 shrink-0">
+                      <button
+                        onClick={() => markMutation.mutate({ eventId: e.eventId, present: true })}
+                        disabled={markMutation.isPending || isPresent}
+                        className={`p-2 rounded-lg transition-colors cursor-pointer ${isPresent ? 'bg-emerald-100 text-emerald-700' : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
+                        title="Marquer présent"
+                      >
+                        <UserCheck className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => markMutation.mutate({ eventId: e.eventId, present: false })}
+                        disabled={markMutation.isPending || isAbsent}
+                        className={`p-2 rounded-lg transition-colors cursor-pointer ${isAbsent ? 'bg-red-100 text-red-700' : 'text-gray-400 hover:bg-red-50 hover:text-red-600'}`}
+                        title="Marquer absent"
+                      >
+                        <UserX className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>

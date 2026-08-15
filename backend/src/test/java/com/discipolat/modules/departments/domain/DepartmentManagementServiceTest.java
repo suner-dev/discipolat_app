@@ -823,6 +823,51 @@ class DepartmentManagementServiceTest {
     }
 
     @Test
+    void getMemberEventAttendance_retourneLesEvenementsAvecStatutDuMembre() {
+        UUID soulId = UUID.randomUUID();
+        UUID event1 = UUID.randomUUID();
+        UUID event2 = UUID.randomUUID();
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).build()));
+        when(eventRepository.findByDepartmentIdAndDeletedFalse(deptId)).thenReturn(List.of(
+                deptEvent(event1),
+                com.discipolat.modules.events.domain.Event.builder()
+                        .id(event2).departmentId(deptId).titre("Sortie évangélisation")
+                        .typeEvenement("SORTIE").dateDebut(java.time.LocalDateTime.now().plusDays(2))
+                        .build()));
+        when(attendanceRepository.findBySoulId(soulId)).thenReturn(List.of(
+                DepartmentEventAttendance.builder()
+                        .departmentId(deptId).eventId(event1).soulId(soulId)
+                        .present(true).markedBy(UUID.randomUUID()).build()));
+
+        Map<String, Object> result = service.getMemberEventAttendance(deptId, soulId);
+
+        assertThat(result.get("total")).isEqualTo(2L);
+        assertThat(result.get("presents")).isEqualTo(1L);
+        assertThat(result.get("absents")).isEqualTo(0L);
+        assertThat(result.get("nonMarques")).isEqualTo(1L);
+        List<?> events = (List<?>) result.get("events");
+        // Trié par date décroissante : event1 (dans 5 j) avant event2 (dans 2 j)
+        java.util.Map<?, ?> premier = (java.util.Map<?, ?>) events.get(0);
+        assertThat(premier.get("titre")).isEqualTo("Convention du département");
+        assertThat(premier.get("present")).isEqualTo(true);
+        java.util.Map<?, ?> second = (java.util.Map<?, ?>) events.get(1);
+        assertThat(second.get("titre")).isEqualTo("Sortie évangélisation");
+        assertThat(second.get("present")).isNull();
+    }
+
+    @Test
+    void getMemberEventAttendance_refuseUneAmeHorsDuDepartement() {
+        UUID soulId = UUID.randomUUID();
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.getMemberEventAttendance(deptId, soulId))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("membre actif");
+    }
+
+    @Test
     void getEventAttendance_retourneLesMembresAvecStatut() {
         UUID eventId = UUID.randomUUID();
         UUID soulPresent = UUID.randomUUID();

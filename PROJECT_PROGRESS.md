@@ -617,3 +617,23 @@ Parité de `DepartmentDetailPage` web :
 - Frontend : `tsc -b` ✓ · **186 tests vitest ✓** (+6 : page Outils ×4,
   pointage présence ×1, police modale ×1) · `npm run build` ✓.
 - Mobile : inchangé (106 ✓).
+
+### Suite — feuille de présence étendue au dossier membre et au dashboard responsable
+
+- **Backend** : `GET /departments/{id}/members/{memberId}/event-attendance`
+  (présence d'UN membre sur tous les événements du département, tri date
+  décroissante, compteurs calculés uniquement sur les événements visibles —
+  les pointages d'événements soft-deleted sont ignorés).
+  `EventRepository.findByDepartmentIdAndDeletedFalse(UUID)` (liste) ajouté.
+- **Dossier membre** (`DepartmentMemberDossierPage`) : onglet **Présences** →
+  section « Présence aux événements du département » : chaque événement avec
+  statut (Présent/Absent/Non pointé) + boutons de marquage one-click
+  (réutilise `PUT .../events/{eventId}/attendance` avec `soulId`).
+- **Dashboard responsable** (`ResponsableDashboardPage`) : carte
+  « Présence aux événements » (après la saisie hebdo) listant les événements
+  du département actif avec bouton **Présences** ouvrant la même modale
+  (`EventAttendanceModal` exportée depuis `DepartmentManagementPage`).
+- **E2E réel** : mark 200 → member event-attendance `total:1 presents:1
+  nonMarques:0` (compteurs corrects après fix), cleanup 204.
+- Tests : backend **437 ✓** (+2), frontend **188 ✓** (+2 dossier),
+  `tsc -b` ✓, `npm run build` ✓. Commit `26f6d0d` poussé.

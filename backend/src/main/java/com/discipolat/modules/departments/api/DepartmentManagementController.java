@@ -324,6 +324,13 @@ public class DepartmentManagementController {
 
     // ======================= OBJECTIFS DE PROGRESSION =======================
 
+    /** Présence d'un membre sur les événements du département (dossier membre). */
+    @GetMapping("/members/{memberId}/event-attendance")
+    public ResponseEntity<Map<String, Object>> memberEventAttendance(@PathVariable UUID departmentId,
+                                                                     @PathVariable UUID memberId) {
+        return ResponseEntity.ok(managementService.getMemberEventAttendance(departmentId, memberId));
+    }
+
     @GetMapping("/members/{memberId}/objectives")
     public ResponseEntity<List<Map<String, Object>>> memberObjectives(@PathVariable UUID departmentId,
                                                                       @PathVariable UUID memberId) {

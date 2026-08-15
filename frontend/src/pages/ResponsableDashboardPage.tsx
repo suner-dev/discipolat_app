@@ -6,10 +6,12 @@ import {
   Building2, Users, UserPlus, Calendar, UserCheck, FileText, Activity,
   Star, ChevronRight, Cake, CheckCircle, Clock, UserX, Network, AlertCircle,
   Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2, UserRound, ListTodo, ArrowLeftRight,
+  CalendarDays,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import type { DepartmentPresenceRecord, ProgramType } from '@/types';
+import { EventAttendanceModal } from '@/pages/DepartmentManagementPage';
 
 const currentWeekMonday = () => {
   const d = new Date();
@@ -37,6 +39,7 @@ export default function ResponsableDashboardPage() {
   const [presenceSemaine, setPresenceSemaine] = useState(currentWeekMonday());
   const [presenceType, setPresenceType] = useState('');
   const [presenceSousType, setPresenceSousType] = useState('');
+  const [attendanceEvent, setAttendanceEvent] = useState<any | null>(null);
 
   const { data: dashboard, isLoading, refetch } = useQuery({
     queryKey: ['dashboard', 'responsable', selectedDeptId],
@@ -49,6 +52,13 @@ export default function ResponsableDashboardPage() {
   });
 
   const activeDeptId = selectedDeptId ?? dashboard?.selectedDeptId;
+
+  // ==================== Événements du département (pointage des présences) ====================
+  const { data: deptEvents = [] } = useQuery({
+    queryKey: ['dashboard', 'responsable', activeDeptId, 'events'],
+    queryFn: async () => (await api.get(`/events/department/${activeDeptId}?size=50`)).data?.content ?? [],
+    enabled: !!activeDeptId,
+  });
 
   // ==================== Saisie des présences (responsable) ====================
   const { data: programTypes = [] } = useQuery({
@@ -446,6 +456,51 @@ export default function ResponsableDashboardPage() {
             )}
           </div>
 
+          {/* ==================== POINTAGE DES PRÉSENCES AUX ÉVÉNEMENTS ==================== */}
+          <div className="glass-card p-5 mb-6 animate-slide-up" style={{ animationDelay: '400ms' }}>
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg">
+                  <CalendarDays className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Présence aux événements</h3>
+                  <p className="text-xs text-gray-400">Pointez les membres de {dashboard?.selectedDeptNom} à chaque événement du département</p>
+                </div>
+              </div>
+              <span className="badge text-[10px] badge-info">{deptEvents.length} événement{deptEvents.length > 1 ? 's' : ''}</span>
+            </div>
+            {deptEvents.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">Aucun événement rattaché à ce département</p>
+            ) : (
+              <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                {deptEvents.map((e: any) => (
+                  <div key={e.id} className="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-300 shrink-0">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{e.titre}</p>
+                        <p className="text-[10px] text-gray-400">
+                          {e.dateDebut ? new Date(e.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                          {e.statut ? ` · ${e.statut.replace('_', ' ').toLowerCase()}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setAttendanceEvent(e)}
+                      className="btn-ghost btn-xs inline-flex cursor-pointer shrink-0"
+                      title="Pointer la présence des membres"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" /> Présences
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Members list — actions centrées membre (fiche / présence / rapport) */}
             <div className="glass-card p-5 animate-slide-up">
@@ -729,6 +784,15 @@ export default function ResponsableDashboardPage() {
               </Link>
             </div>
           </div>
+
+          {/* Modale de pointage des présences à un événement */}
+          {attendanceEvent && activeDeptId && (
+            <EventAttendanceModal
+              deptId={activeDeptId}
+              event={attendanceEvent as any}
+              onClose={() => setAttendanceEvent(null)}
+            />
+          )}
         </>
       )}
     </div>

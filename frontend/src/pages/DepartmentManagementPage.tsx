@@ -1542,7 +1542,7 @@ function initials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function EventAttendanceModal({ deptId, event, onClose }: { deptId: string; event: DeptEvent; onClose: () => void }) {
+export function EventAttendanceModal({ deptId, event, onClose }: { deptId: string; event: DeptEvent; onClose: () => void }) {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ['department', deptId, 'events', event.id, 'attendance'],

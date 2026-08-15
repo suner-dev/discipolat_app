@@ -13,6 +13,7 @@ import java.util.UUID;
 public interface EventRepository extends JpaRepository<Event, UUID> {
     Page<Event> findByFamilleIdAndDeletedFalse(UUID familleId, Pageable pageable);
     Page<Event> findByDepartmentIdAndDeletedFalse(UUID departmentId, Pageable pageable);
+    List<Event> findByDepartmentIdAndDeletedFalse(UUID departmentId);
     List<Event> findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedFalse(UUID departmentId, String titre);
     Page<Event> findByOrganisateurIdAndDeletedFalse(UUID organisateurId, Pageable pageable);
     Page<Event> findByTypeEvenementAndDeletedFalse(String typeEvenement, Pageable pageable);

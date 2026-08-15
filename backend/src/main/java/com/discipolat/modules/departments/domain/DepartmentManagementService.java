@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -978,6 +979,58 @@ public class DepartmentManagementService {
         result.put("presents", presents);
         result.put("absents", (long) (statusBySoul.size() - presents));
         result.put("nonMarques", (long) (membres.size() - statusBySoul.size()));
+        return result;
+    }
+
+    /**
+     * Présence d'UN membre sur tous les événements du département (dossier
+     * membre) : chaque événement avec le statut pointé (true/false/null).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMemberEventAttendance(UUID departmentId, UUID memberId) {
+        assertCanManage(departmentId);
+        boolean member = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
+                .anyMatch(sd -> sd.getSoulId().equals(memberId));
+        if (!member) {
+            throw new com.discipolat.common.domain.BusinessRuleException(
+                    "Cette âme n'est pas un membre actif du département", "SOUL_NOT_DEPARTMENT_MEMBER");
+        }
+
+        List<Event> events = eventRepository.findByDepartmentIdAndDeletedFalse(departmentId);
+        Map<UUID, Boolean> statusByEvent = attendanceRepository.findBySoulId(memberId).stream()
+                .collect(Collectors.toMap(DepartmentEventAttendance::getEventId, DepartmentEventAttendance::isPresent));
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Event e : events) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("eventId", e.getId());
+            m.put("titre", e.getTitre());
+            m.put("typeEvenement", e.getTypeEvenement());
+            m.put("dateDebut", e.getDateDebut());
+            m.put("statut", e.getStatut());
+            m.put("present", statusByEvent.get(e.getId()));
+            items.add(m);
+        }
+        items.sort((a, b) -> {
+            LocalDateTime da = (LocalDateTime) a.get("dateDebut");
+            LocalDateTime db = (LocalDateTime) b.get("dateDebut");
+            if (da == null && db == null) return 0;
+            if (da == null) return 1;
+            if (db == null) return -1;
+            return db.compareTo(da);
+        });
+
+        // Compteurs calculés UNIQUEMENT sur les événements visibles du département
+        // (les pointages d'événements soft-deleted ou d'autres départements sont ignorés).
+        long presents = items.stream().filter(m -> Boolean.TRUE.equals(m.get("present"))).count();
+        long absents = items.stream().filter(m -> Boolean.FALSE.equals(m.get("present"))).count();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("soulId", memberId);
+        result.put("events", items);
+        result.put("total", (long) items.size());
+        result.put("presents", presents);
+        result.put("absents", absents);
+        result.put("nonMarques", (long) (items.size() - presents - absents));
         return result;
     }
 

@@ -12,6 +12,8 @@ public interface DepartmentEventAttendanceRepository extends JpaRepository<Depar
 
     List<DepartmentEventAttendance> findByEventId(UUID eventId);
 
+    List<DepartmentEventAttendance> findBySoulId(UUID soulId);
+
     Optional<DepartmentEventAttendance> findByDepartmentIdAndEventIdAndSoulId(UUID departmentId, UUID eventId, UUID soulId);
 
     long countByEventIdAndPresent(UUID eventId, boolean present);
