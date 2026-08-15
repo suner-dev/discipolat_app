@@ -651,4 +651,4 @@ Parité de `DepartmentDetailPage` web :
 - **E2E réel** : mark-all `marques:2` → feuille 2/2 présents · export CSV
   `Aya Kouassi;Présent / Ibrahim Traoré;Présent` (BOM) ✓ · cleanup 204.
 - Tests : backend **439 ✓** (+2), frontend **189 ✓** (+1 mark-all/export),
-  `tsc -b` ✓, `npm run build` ✓. Commit `bb33e5a` poussé.
+  `tsc -b` ✓, `npm run build` ✓. Commit `24959dd` poussé.
