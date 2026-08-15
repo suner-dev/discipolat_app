@@ -40,6 +40,11 @@ const mockSettings = {
   departmentId: 'dept-1', absenceSeuil: 2, absencePeriode: 3, inactiviteMois: 3, tacheRetardAlerte: true,
   eventRappelJours: 1,
 };
+const mockAttendance = {
+  eventId: 'e1', eventTitre: 'Convention départementale', total: 1,
+  presents: 0, absents: 0, nonMarques: 1,
+  membres: [{ soulId: 's1', nom: 'Aya Kouassi', present: null }],
+};
 const mockDocuments = {
   content: undefined,
 };
@@ -56,6 +61,7 @@ vi.mock('@/lib/api', () => {
       if (url.includes('/members')) return Promise.resolve({ data: mockMembers });
       if (url.includes('/management')) return Promise.resolve({ data: mockManagement });
       if (url.includes('/events/department/')) return Promise.resolve({ data: mockEvents });
+      if (url.includes('/attendance')) return Promise.resolve({ data: mockAttendance });
       if (url.includes('/settings')) return Promise.resolve({ data: mockSettings });
       if (url.includes('/documents/stats')) return Promise.resolve({ data: mockDocumentStats });
       if (url.includes('/documents')) return Promise.resolve({ data: mockDocumentsList });
@@ -223,5 +229,26 @@ describe('DepartmentManagementPage — recherche globale & événements', () => 
     const payload = (api.post as any).mock.calls[0][1];
     expect(payload.eventId).toBe('e1');
     expect(payload.type).toBe('EQUIPE_TEMPORAIRE');
+  });
+
+  it('permet au responsable de pointer présent/absent un membre à un événement', async () => {
+    const { default: api } = await import('@/lib/api');
+    renderPage();
+    fireEvent.click(await screen.findByText('Événements'));
+
+    const presenceBtn = await screen.findByTitle(/Pointer la présence/);
+    fireEvent.click(presenceBtn);
+
+    // La feuille de présence s'ouvre avec les membres du département
+    expect(await screen.findByText(/Présences — Convention départementale/)).toBeInTheDocument();
+    expect(await screen.findByText('Aya Kouassi')).toBeInTheDocument();
+    expect(screen.getByText('Non pointé')).toBeInTheDocument();
+
+    // Marquer présent → PUT /departments/{id}/events/{eventId}/attendance
+    fireEvent.click(screen.getByTitle('Marquer présent'));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith(
+      '/departments/dept-1/events/e1/attendance',
+      { soulId: 's1', present: true },
+    ));
   });
 });

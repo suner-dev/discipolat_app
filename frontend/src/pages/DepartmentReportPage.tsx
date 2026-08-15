@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
@@ -200,9 +201,7 @@ export default function DepartmentReportPage() {
         </div>
       )}
 
-      <SavedReportsSection departmentId={id || ''} />
-
-      {/* KPI reference */}
+      {/* KPI reference — placé avant les synthèses sauvegardées pour la lisibilité */}
       {kpi && (
         <div className="glass-card p-5 mt-6">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
@@ -235,6 +234,8 @@ export default function DepartmentReportPage() {
           </div>
         </div>
       )}
+
+      <SavedReportsSection departmentId={id || ''} />
     </div>
   );
 }
@@ -261,7 +262,7 @@ const REPORT_TYPE_LABELS: Record<string, string> = {
   SYNTHESE: 'Synthèse',
 };
 
-function SavedReportsSection({ departmentId }: { departmentId: string }) {
+export function SavedReportsSection({ departmentId }: { departmentId: string }) {
   const queryClient = useQueryClient();
   const [type, setType] = useState('HEBDOMADAIRE');
 
@@ -413,8 +414,11 @@ function EditReportModal({ report, onSave }: { report: SavedReport; onSave: (dat
     );
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
+  // Rendu via un portail : la modale est attachée au <body> et n'est donc jamais
+  // piégée dans le stacking context d'une carte (glass-card = backdrop-blur +
+  // transform au survol). Sinon, le bloc « Indicateurs de la semaine » la recouvre.
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
       <div className="glass-card p-5 w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Modifier le rapport</h3>
@@ -425,7 +429,12 @@ function EditReportModal({ report, onSave }: { report: SavedReport; onSave: (dat
         <label className="label" htmlFor="edit-report-titre">Titre</label>
         <input id="edit-report-titre" className="input mb-3" value={titre} onChange={(e) => setTitre(e.target.value)} />
         <label className="label" htmlFor="edit-report-contenu">Contenu</label>
-        <textarea id="edit-report-contenu" className="input mb-3 min-h-[160px] font-mono text-xs" value={contenu} onChange={(e) => setContenu(e.target.value)} />
+        <textarea
+          id="edit-report-contenu"
+          className="input mb-3 min-h-[180px] text-sm leading-relaxed text-gray-800 dark:text-gray-200 resize-y"
+          value={contenu}
+          onChange={(e) => setContenu(e.target.value)}
+        />
         <label className="label" htmlFor="edit-report-statut">Statut</label>
         <select id="edit-report-statut" className="input mb-4" value={statut} onChange={(e) => setStatut(e.target.value)}>
           <option value="BROUILLON">Brouillon</option>
@@ -439,6 +448,7 @@ function EditReportModal({ report, onSave }: { report: SavedReport; onSave: (dat
           <Save className="w-4 h-4" /> Enregistrer
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

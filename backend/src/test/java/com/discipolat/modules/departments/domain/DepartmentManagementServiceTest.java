@@ -73,6 +73,10 @@ class DepartmentManagementServiceTest {
     private SoulService soulService;
     @Mock
     private com.discipolat.modules.events.domain.EventRepository eventRepository;
+    @Mock
+    private DepartmentEventAttendanceRepository attendanceRepository;
+    @Mock
+    private com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScope;
 
     private DepartmentManagementService service;
     private final UUID deptId = UUID.randomUUID();
@@ -82,7 +86,7 @@ class DepartmentManagementServiceTest {
         service = new DepartmentManagementService(departmentService, teamRepository, positionRepository,
                 assignmentRepository, taskRepository, activityRepository, objectiveRepository, soulRepository,
                 soulDepartmentRepository, userRepository, securityUtils, notificationService, soulService,
-                eventRepository);
+                eventRepository, attendanceRepository, workspaceScope);
         // L'accès au département est toujours accordé par défaut (assertCanManage)
         lenient().when(departmentService.findById(deptId)).thenReturn(new Department());
         // Identité de l'acteur pour le journal d'activité
@@ -725,5 +729,129 @@ class DepartmentManagementServiceTest {
         assertThat(((java.util.Map<?, ?>) ((List<?>) result.get("equipes")).get(0)).get("nom")).isEqualTo("Johanne");
         assertThat((List<?>) result.get("taches")).isEmpty();
         assertThat(result.get("total")).isEqualTo(1L);
+    }
+
+    // ======================= PRÉSENCE À UN ÉVÉNEMENT =======================
+
+    private com.discipolat.modules.events.domain.Event deptEvent(UUID eventId) {
+        return com.discipolat.modules.events.domain.Event.builder()
+                .id(eventId).departmentId(deptId).titre("Convention du département")
+                .typeEvenement("CONFERENCE").dateDebut(java.time.LocalDateTime.now().plusDays(5))
+                .build();
+    }
+
+    @Test
+    void markEventAttendance_marqueUnMembrePresent() {
+        UUID eventId = UUID.randomUUID();
+        UUID soulId = UUID.randomUUID();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(deptEvent(eventId)));
+        when(soulRepository.findById(soulId)).thenReturn(Optional.of(
+                com.discipolat.modules.souls.domain.Soul.builder().id(soulId).nom("Kouassi").prenom("Aya").build()));
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).build()));
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
+        when(workspaceScope.canAccessDepartment(deptId)).thenReturn(true);
+        when(attendanceRepository.findByDepartmentIdAndEventIdAndSoulId(deptId, eventId, soulId))
+                .thenReturn(Optional.empty());
+
+        Map<String, Object> result = service.markEventAttendance(deptId, eventId, soulId, true);
+
+        assertThat(result.get("soulId")).isEqualTo(soulId);
+        assertThat(result.get("present")).isEqualTo(true);
+        ArgumentCaptor<DepartmentEventAttendance> captor = ArgumentCaptor.forClass(DepartmentEventAttendance.class);
+        verify(attendanceRepository).save(captor.capture());
+        assertThat(captor.getValue().isPresent()).isTrue();
+        assertThat(captor.getValue().getEventId()).isEqualTo(eventId);
+        assertThat(captor.getValue().getDepartmentId()).isEqualTo(deptId);
+        verify(activityRepository).save(any(DepartmentActivity.class));
+    }
+
+    @Test
+    void markEventAttendance_refuseUneAmeHorsDuDepartement() {
+        UUID eventId = UUID.randomUUID();
+        UUID soulId = UUID.randomUUID();
+        UUID autreSoulId = UUID.randomUUID();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(deptEvent(eventId)));
+        when(soulRepository.findById(soulId)).thenReturn(Optional.of(
+                com.discipolat.modules.souls.domain.Soul.builder().id(soulId).nom("Autre").build()));
+        // Le département ne contient que autreSoulId → soulId n'est pas membre
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(SoulDepartment.builder().soulId(autreSoulId).build()));
+
+        assertThatThrownBy(() -> service.markEventAttendance(deptId, eventId, soulId, false))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("membre actif");
+        verify(attendanceRepository, never()).save(any());
+    }
+
+    @Test
+    void markEventAttendance_refuseUnEvenementDAutreDepartement() {
+        UUID eventId = UUID.randomUUID();
+        UUID soulId = UUID.randomUUID();
+        com.discipolat.modules.events.domain.Event autre = com.discipolat.modules.events.domain.Event.builder()
+                .id(eventId).departmentId(UUID.randomUUID()).titre("Événement ailleurs")
+                .typeEvenement("REUNION").build();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(autre));
+
+        assertThatThrownBy(() -> service.markEventAttendance(deptId, eventId, soulId, true))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("n'appartient pas");
+    }
+
+    @Test
+    void markEventAttendance_permetLeFaiseurDeLame() {
+        UUID eventId = UUID.randomUUID();
+        UUID soulId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(deptEvent(eventId)));
+        when(soulRepository.findById(soulId)).thenReturn(Optional.of(
+                com.discipolat.modules.souls.domain.Soul.builder().id(soulId).nom("Suivi").faiseurId(userId).build()));
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).build()));
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        // Le faiseur accède à l'âme via son espace métier
+        when(workspaceScope.canAccessSoul(soulId)).thenReturn(true);
+        when(attendanceRepository.findByDepartmentIdAndEventIdAndSoulId(deptId, eventId, soulId))
+                .thenReturn(Optional.empty());
+
+        Map<String, Object> result = service.markEventAttendance(deptId, eventId, soulId, false);
+
+        assertThat(result.get("present")).isEqualTo(false);
+        verify(attendanceRepository).save(any(DepartmentEventAttendance.class));
+    }
+
+    @Test
+    void getEventAttendance_retourneLesMembresAvecStatut() {
+        UUID eventId = UUID.randomUUID();
+        UUID soulPresent = UUID.randomUUID();
+        UUID soulNonPointee = UUID.randomUUID();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(deptEvent(eventId)));
+        when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
+                .thenReturn(List.of(
+                        SoulDepartment.builder().soulId(soulPresent).build(),
+                        SoulDepartment.builder().soulId(soulNonPointee).build()));
+        when(soulRepository.findAllById(anyList())).thenReturn(List.of(
+                com.discipolat.modules.souls.domain.Soul.builder().id(soulPresent).nom("Kouassi").prenom("Aya").build(),
+                com.discipolat.modules.souls.domain.Soul.builder().id(soulNonPointee).nom("Zadi").prenom("Marc").build()));
+        when(attendanceRepository.findByEventId(eventId)).thenReturn(List.of(
+                DepartmentEventAttendance.builder()
+                        .departmentId(deptId).eventId(eventId).soulId(soulPresent)
+                        .present(true).markedBy(UUID.randomUUID()).build()));
+
+        Map<String, Object> result = service.getEventAttendance(deptId, eventId);
+
+        assertThat(result.get("eventTitre")).isEqualTo("Convention du département");
+        assertThat(result.get("total")).isEqualTo(2L);
+        assertThat(result.get("presents")).isEqualTo(1L);
+        assertThat(result.get("absents")).isEqualTo(0L);
+        assertThat(result.get("nonMarques")).isEqualTo(1L);
+        List<?> membres = (List<?>) result.get("membres");
+        java.util.Map<?, ?> premier = (java.util.Map<?, ?>) membres.get(0);
+        assertThat(premier.get("nom")).isEqualTo("Aya Kouassi");
+        assertThat(premier.get("present")).isEqualTo(true);
+        java.util.Map<?, ?> second = (java.util.Map<?, ?>) membres.get(1);
+        assertThat(second.get("present")).isNull();
     }
 }

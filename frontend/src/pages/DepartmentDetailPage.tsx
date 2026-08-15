@@ -12,6 +12,13 @@ import {
   UserPlus, X, Trash2, Boxes,
 } from 'lucide-react';
 
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function DepartmentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { moduleEnabled } = usePlatformConfig();
@@ -441,61 +448,82 @@ export default function DepartmentDetailPage() {
           </div>
         )}
         {filteredMembers.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700/60">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Nom</th>
-                  <th>Famille</th>
-                  <th>Faiseur</th>
-                  <th>Statut</th>
-                  <th>Type</th>
-                  <th></th>
+                  <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Membre</th>
+                  <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Famille</th>
+                  <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Faiseur</th>
+                  <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Statut</th>
+                  <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Type</th>
+                  <th className="px-4 py-3 text-right text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">
                 {filteredMembers.map((m: any) => (
-                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 cursor-pointer" onClick={() => navigate(`/departments/${id}/members/${m.id}`)}>
-                    <td className="font-medium text-gray-900 dark:text-gray-100">{m.nom}</td>
-                    <td>
+                  <tr key={m.id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/30 cursor-pointer transition-colors" onClick={() => navigate(`/departments/${id}/members/${m.id}`)}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500/15 to-primary-600/10 text-primary-600 dark:text-primary-300 flex items-center justify-center text-xs font-bold shrink-0">
+                          {initials(m.nom)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{m.nom}</p>
+                          {m.telephone && <p className="text-[10px] text-gray-400 truncate">{m.telephone}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
                       {m.familleNom ? (
-                        <span className="text-sm text-primary-600">{m.familleNom}</span>
+                        <span className="inline-flex items-center gap-1.5 text-sm text-primary-600 dark:text-primary-300">
+                          <Users className="w-3.5 h-3.5" /> {m.familleNom}
+                        </span>
                       ) : (
-                        <span className="text-xs text-amber-600 flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
                           <AlertTriangle className="w-3 h-3" /> Non assigné
                         </span>
                       )}
                     </td>
-                    <td className="text-sm text-gray-600">{m.faiseurNom || m.faiseurId?.slice(0, 8)}</td>
-                    <td>{statutBadge(m.statut)}</td>
-                    <td>
-                      <span className={`badge text-[10px] ${m.typeDisciple === 'NOUVEAU_CONVERTI' ? 'badge-success' : 'badge-info'}`}>
-                        {m.typeDisciple === 'NOUVEAU_CONVERTI' ? 'Nv converti' : 'Nv arrivant'}
+                    <td className="px-4 py-3">
+                      {m.faiseurNom && m.faiseurNom !== 'N/A' ? (
+                        <span className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+                          <UserCog className="w-3.5 h-3.5 text-gray-400" /> {m.faiseurNom}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">{statutBadge(m.statut)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium ${m.typeDisciple === 'NOUVEAU_CONVERTI' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'}`}>
+                        {m.typeDisciple === 'NOUVEAU_CONVERTI' ? 'Nouveau converti' : 'Nouvel arrivant'}
                       </span>
                     </td>
-                    <td className="flex items-center gap-2 justify-end">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Retirer « ${m.nom} » de ce département ?`)) {
-                            removeMemberMutation.mutate(m.id);
-                          }
-                        }}
-                        disabled={removeMemberMutation.isPending}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-500/10 transition-all cursor-pointer"
-                        title="Retirer du département"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                      <Link
-                        to={`/departments/${id}/members/${m.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="btn-ghost btn-xs inline-flex"
-                        title="Dossier de gestion du membre"
-                      >
-                        <FolderOpen className="w-3.5 h-3.5" /> Dossier
-                      </Link>
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          to={`/departments/${id}/members/${m.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/60 hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-300 transition-all whitespace-nowrap"
+                          title="Dossier de gestion du membre"
+                        >
+                          <FolderOpen className="w-3.5 h-3.5" /> Dossier
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Retirer « ${m.nom} » de ce département ?`)) {
+                              removeMemberMutation.mutate(m.id);
+                            }
+                          }}
+                          disabled={removeMemberMutation.isPending}
+                          className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-500/10 transition-all cursor-pointer"
+                          title="Retirer du département"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
@@ -9,6 +10,7 @@ import {
   Plus, Pencil, Archive, Trash2, UserPlus, Loader2, CheckCircle2,
   Clock, AlertTriangle, CalendarDays, ChevronRight, ChevronDown, Save,
   X,  Star, Flag, FolderTree, Activity, ListChecks, Boxes, Search, Settings, BookOpen,
+  UserCheck, UserX,
 } from 'lucide-react';
 
 type Team = {
@@ -916,7 +918,7 @@ type Checklist = {
   items: { id: string; libelle: string; fait: boolean }[];
 };
 
-function ChecklistsTab({ deptId, onChanged }: { deptId: string; onChanged: () => void }) {
+export function ChecklistsTab({ deptId, onChanged }: { deptId: string; onChanged: () => void }) {
   const queryClient = useQueryClient();
   const [titre, setTitre] = useState('');
   const [cibleType, setCibleType] = useState('GENERAL');
@@ -1112,7 +1114,7 @@ const ETAT_COLORS: Record<string, string> = {
   NEUF: 'badge-success', BON: 'badge-info', USAGE: 'badge-gray', REPARATION: 'badge-warning', HORS_SERVICE: 'badge-danger',
 };
 
-function InventoryTab({ deptId, onChanged }: { deptId: string; onChanged: () => void }) {
+export function InventoryTab({ deptId, onChanged }: { deptId: string; onChanged: () => void }) {
   const queryClient = useQueryClient();
   const [nom, setNom] = useState('');
   const [description, setDescription] = useState('');
@@ -1391,6 +1393,8 @@ function EventsTab({ deptId, onChanged }: { deptId: string; onChanged: () => voi
     enabled: !!deptId,
   });
 
+  const [attendanceEvent, setAttendanceEvent] = useState<DeptEvent | null>(null);
+
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['department', deptId, 'events'] });
     onChanged();
@@ -1481,7 +1485,16 @@ function EventsTab({ deptId, onChanged }: { deptId: string; onChanged: () => voi
                     </p>
                   </div>
                 </div>
-                <span className={`badge text-[10px] shrink-0 ${EVENT_STATUT_BADGE[e.statut] || 'badge-gray'}`}>{e.statut}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setAttendanceEvent(e)}
+                    className="btn-ghost btn-xs inline-flex cursor-pointer"
+                    title="Pointer la présence des membres à cet événement"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" /> Présences
+                  </button>
+                  <span className={`badge text-[10px] ${EVENT_STATUT_BADGE[e.statut] || 'badge-gray'}`}>{e.statut}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -1495,13 +1508,145 @@ function EventsTab({ deptId, onChanged }: { deptId: string; onChanged: () => voi
             {past.map((e) => (
               <div key={e.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                 <span className="text-gray-700 dark:text-gray-200 truncate">{e.titre}</span>
-                <span className="text-[11px] text-gray-400 shrink-0">{formatEventDate(e.dateDebut)}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setAttendanceEvent(e)}
+                    className="btn-ghost btn-xs inline-flex cursor-pointer"
+                    title="Pointer la présence des membres à cet événement"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" /> Présences
+                  </button>
+                  <span className="text-[11px] text-gray-400">{formatEventDate(e.dateDebut)}</span>
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {attendanceEvent && (
+        <EventAttendanceModal deptId={deptId} event={attendanceEvent} onClose={() => setAttendanceEvent(null)} />
+      )}
     </div>
+  );
+}
+
+// ============================================================
+// PRÉSENCE DES MEMBRES À UN ÉVÉNEMENT
+// ============================================================
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function EventAttendanceModal({ deptId, event, onClose }: { deptId: string; event: DeptEvent; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ['department', deptId, 'events', event.id, 'attendance'],
+    queryFn: async () => (await api.get(`/departments/${deptId}/events/${event.id}/attendance`)).data as any,
+    enabled: !!deptId,
+  });
+
+  const markMutation = useMutation({
+    mutationFn: async ({ soulId, present }: { soulId: string; present: boolean }) =>
+      (await api.put(`/departments/${deptId}/events/${event.id}/attendance`, { soulId, present })).data,
+    onSuccess: () => {
+      toast.success('Présence enregistrée ✅');
+      queryClient.invalidateQueries({ queryKey: ['department', deptId, 'events', event.id, 'attendance'] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const membres: any[] = data?.membres ?? [];
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="glass-card p-5 w-full max-w-xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-primary-500" />
+            Présences — {event.titre}
+          </h3>
+          <button onClick={onClose} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 cursor-pointer">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-[11px] text-gray-400 mb-4">
+          Pointez chaque membre présent ou absent. Le responsable du département, le chef de famille
+          ou le faiseur de l'âme peuvent marquer la présence.
+        </p>
+
+        {isLoading ? (
+          <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-3 mb-4 text-xs text-gray-500">
+              <span>Total : <strong className="text-gray-800 dark:text-gray-100">{data?.total ?? 0}</strong></span>
+              <span>Présents : <strong className="text-green-600">{data?.presents ?? 0}</strong></span>
+              <span>Absents : <strong className="text-red-500">{data?.absents ?? 0}</strong></span>
+              <span>Non pointés : <strong className="text-amber-600">{data?.nonMarques ?? 0}</strong></span>
+            </div>
+            {membres.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">Aucun membre dans ce département</p>
+            ) : (
+              <div className="space-y-1.5 max-h-[50vh] overflow-y-auto pr-1">
+                {membres.map((m: any) => {
+                  const isPresent = m.present === true;
+                  const isAbsent = m.present === false;
+                  return (
+                    <div key={m.soulId} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          isPresent ? 'bg-emerald-100 text-emerald-700' : isAbsent ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-500'
+                        }`}>
+                          {initials(m.nom)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{m.nom}</p>
+                          <p className={`text-[10px] font-medium ${isPresent ? 'text-emerald-600' : isAbsent ? 'text-red-500' : 'text-gray-400'}`}>
+                            {isPresent ? '✓ Présent' : isAbsent ? '✗ Absent' : 'Non pointé'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          onClick={() => markMutation.mutate({ soulId: m.soulId, present: true })}
+                          disabled={markMutation.isPending || isPresent}
+                          className={`p-2 rounded-lg transition-colors cursor-pointer ${
+                            isPresent
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'
+                          }`}
+                          title="Marquer présent"
+                        >
+                          <UserCheck className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => markMutation.mutate({ soulId: m.soulId, present: false })}
+                          disabled={markMutation.isPending || isAbsent}
+                          className={`p-2 rounded-lg transition-colors cursor-pointer ${
+                            isAbsent
+                              ? 'bg-red-100 text-red-700'
+                              : 'text-gray-400 hover:bg-red-50 hover:text-red-600'
+                          }`}
+                          title="Marquer absent"
+                        >
+                          <UserX className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -1524,7 +1669,7 @@ type DeptDocument = {
   url?: string; statut: string; createdAt?: string;
 };
 
-function DocumentsTab({ deptId, onChanged }: { deptId: string; onChanged: () => void }) {
+export function DocumentsTab({ deptId, onChanged }: { deptId: string; onChanged: () => void }) {
   const queryClient = useQueryClient();
   const [titre, setTitre] = useState('');
   const [type, setType] = useState('DOCUMENT');
@@ -1705,7 +1850,7 @@ function DocumentsTab({ deptId, onChanged }: { deptId: string; onChanged: () => 
 // PARAMÈTRES — seuils configurables des alertes intelligentes
 // ============================================================
 
-function SettingsTab({ deptId }: { deptId: string }) {
+export function SettingsTab({ deptId }: { deptId: string }) {
   const queryClient = useQueryClient();
   const [absenceSeuil, setAbsenceSeuil] = useState(2);
   const [absencePeriode, setAbsencePeriode] = useState(3);

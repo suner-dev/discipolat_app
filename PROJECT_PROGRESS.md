@@ -558,3 +558,62 @@ Parité de `DepartmentDetailPage` web :
   (mock `/reports/list` ajouté au test `DepartmentReportPage`)
 - Mobile : `flutter analyze` **0 issue** · **99 tests ✓** (96 + 3 nouveaux
   `department_tools_screen_test`)
+
+---
+
+## SESSION 2026-08-15 — correctifs testeur : page Outils (404), modale rapport, présence à un événement, tableau membres
+
+### 1. Page « Outils » du département créée (corrige le 404)
+
+- Le bouton **Outils** (`/departments/:id/tools`) renvoyait une **404** : aucune
+  route ni page web n'existaient (seul le mobile avait l'écran).
+- Création de `DepartmentToolsPage` (parité mobile `DepartmentToolsScreen`) :
+  onglets **Rapports / Checklists / Inventaire / Documentation / Paramètres**,
+  masqués selon les sous-modules désactivés par l'admin.
+- Composants réutilisés : `SavedReportsSection` (exporté depuis
+  `DepartmentReportPage`) + `ChecklistsTab`/`InventoryTab`/`DocumentsTab`/
+  `SettingsTab` (exportés depuis `DepartmentManagementPage`).
+- Route ajoutée dans `App.tsx` (ADMIN/PASTEUR/RESPONSABLE) + lazy loading.
+
+### 2. Modale « Modifier le rapport » corrigée + police
+
+- Le bloc **« Indicateurs de la semaine »** recouvrait le bouton Enregistrer de la
+  modale : `glass-card` = `backdrop-blur` + `transform` au survol → stacking
+  context ; la modale `z-50` rendue DANS la carte était piégée dessous.
+- Fix : modale rendue via **`createPortal(document.body)`** + `z-[100]` (jamais
+  plus recouverte par les cartes suivantes). Le bloc Indicateurs a aussi été
+  déplacé **avant** les synthèses sauvegardées (lisibilité).
+- Police du contenu : `font-mono text-xs` → `text-sm leading-relaxed` lisible.
+
+### 3. Présence des membres à un événement du département (V61)
+
+- Migration **V61** `department_event_attendance` (department_id, event_id,
+  soul_id, present, marked_by, unique(department,event,soul)).
+- `GET /departments/{id}/events/{eventId}/attendance` : feuille de présence des
+  membres actifs du département (present = true/false/null).
+- `PUT /departments/{id}/events/{eventId}/attendance` : pointage présent/absent.
+  Permissions : responsable du département / super-utilisateur, **ou** acteur de
+  l'espace de l'âme (chef de sa famille, son faiseur) via `WorkspaceScopeService`.
+- Contrôleur dédié (`DepartmentEventAttendanceController`) : GET réservé aux
+  rôles de gestion, PUT ouvert à CHEF_DE_FAMILLE/FAISEUR (vérif service).
+- Frontend : onglet Événements → bouton **« Présences »** par événement → modale
+  listant les membres avec boutons Présent/Absent (marquage one-click, stats
+  Total/Présents/Absents/Non pointés). Traçabilité dans le journal d'activité
+  (`EVENT_ATTENDANCE_MARKED`).
+- **E2E réel validé** : sheet 200 → marquage Aya présent 200 → presents:1 ;
+  chef GET/PUT = 403 ; événement de test supprimé (204).
+
+### 4. Tableau « Membres du département » réorganisé
+
+- Lignes aérées (px-4/py-3), **avatar initiales**, contact sous le nom,
+  badges Statut/Type cohérents, colonne Actions groupée (bouton Dossier + retrait),
+  entêtes majuscules espacées, `divide-y` pour les lignes.
+
+### État des tests (2026-08-15)
+
+- Backend : **435 ✓** (430 + 5 `DepartmentManagementServiceTest` : marquage,
+  âme hors département refusée, événement d'autre département refusé, faiseur
+  autorisé, feuille de présence) · migration V61 appliquée en local.
+- Frontend : `tsc -b` ✓ · **186 tests vitest ✓** (+6 : page Outils ×4,
+  pointage présence ×1, police modale ×1) · `npm run build` ✓.
+- Mobile : inchangé (106 ✓).

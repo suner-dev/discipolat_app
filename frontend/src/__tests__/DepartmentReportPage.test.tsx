@@ -141,4 +141,16 @@ describe('DepartmentReportPage', () => {
     expect(url).toMatch(/\/reports\/saved\//);
     expect(payload.contenu).toBe('Nouvelle synthèse');
   });
+
+  it('utilise une police lisible (non mono) dans le contenu de modification', async () => {
+    renderPage();
+    expect(await screen.findByText(/Synthèses sauvegardées/)).toBeInTheDocument();
+    expect(await screen.findByText('Synthèse hebdomadaire')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByTitle('Modifier')[0]);
+
+    const contenu = screen.getByLabelText('Contenu');
+    expect(contenu.className).not.toContain('font-mono');
+    expect(contenu.className).toContain('text-sm');
+    expect(contenu.className).toContain('leading-relaxed');
+  });
 });

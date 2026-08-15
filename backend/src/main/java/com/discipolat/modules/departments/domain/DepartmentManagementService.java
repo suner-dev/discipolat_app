@@ -17,6 +17,7 @@ import com.discipolat.modules.souls.domain.SoulDepartment;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.SoulService;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
@@ -56,6 +57,8 @@ public class DepartmentManagementService {
     private final NotificationService notificationService;
     private final SoulService soulService;
     private final EventRepository eventRepository;
+    private final DepartmentEventAttendanceRepository attendanceRepository;
+    private final WorkspaceScopeService workspaceScope;
 
     public DepartmentManagementService(DepartmentService departmentService,
                                        DepartmentTeamRepository teamRepository,
@@ -70,7 +73,9 @@ public class DepartmentManagementService {
                                        SecurityUtils securityUtils,
                                        NotificationService notificationService,
                                        SoulService soulService,
-                                       EventRepository eventRepository) {
+                                       EventRepository eventRepository,
+                                       DepartmentEventAttendanceRepository attendanceRepository,
+                                       WorkspaceScopeService workspaceScope) {
         this.departmentService = departmentService;
         this.teamRepository = teamRepository;
         this.positionRepository = positionRepository;
@@ -85,6 +90,8 @@ public class DepartmentManagementService {
         this.notificationService = notificationService;
         this.soulService = soulService;
         this.eventRepository = eventRepository;
+        this.attendanceRepository = attendanceRepository;
+        this.workspaceScope = workspaceScope;
     }
 
     /** Vérifie que le département existe et appartient à l'espace métier de l'utilisateur. */
@@ -915,6 +922,107 @@ public class DepartmentManagementService {
 
         result.put("total", (long) (members.size() + teams.size() + positions.size() + tasks.size() + events.size()));
         return result;
+    }
+
+    // ========================================================================
+    // PRÉSENCE DES MEMBRES À UN ÉVÉNEMENT DU DÉPARTEMENT
+    // ========================================================================
+
+    /** Événement rattaché au département (sinon erreur métier). */
+    private Event requireDepartmentEvent(UUID departmentId, UUID eventId) {
+        Event event = eventRepository.findById(eventId)
+                .filter(e -> !e.isDeleted())
+                .orElseThrow(() -> new EntityNotFoundException("Event", eventId));
+        if (!departmentId.equals(event.getDepartmentId())) {
+            throw new com.discipolat.common.domain.BusinessRuleException(
+                    "Cet événement n'appartient pas à ce département", "EVENT_NOT_IN_DEPARTMENT");
+        }
+        return event;
+    }
+
+    /**
+     * Feuille de présence d'un événement : chaque membre actif du département
+     * avec son statut (true = présent, false = absent, null = non pointé).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getEventAttendance(UUID departmentId, UUID eventId) {
+        assertCanManage(departmentId);
+        Event event = requireDepartmentEvent(departmentId, eventId);
+
+        List<UUID> soulIds = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
+                .map(SoulDepartment::getSoulId).toList();
+        Map<UUID, Boolean> statusBySoul = new HashMap<>();
+        attendanceRepository.findByEventId(eventId)
+                .forEach(a -> statusBySoul.put(a.getSoulId(), a.isPresent()));
+
+        List<Map<String, Object>> membres = new ArrayList<>();
+        if (!soulIds.isEmpty()) {
+            soulRepository.findAllById(soulIds).stream()
+                    .filter(s -> !s.isDeleted())
+                    .forEach(s -> {
+                        Map<String, Object> m = new LinkedHashMap<>();
+                        m.put("soulId", s.getId());
+                        m.put("nom", s.getNomComplet());
+                        m.put("present", statusBySoul.get(s.getId()));
+                        membres.add(m);
+                    });
+        }
+        membres.sort(Comparator.comparing(m -> String.valueOf(m.get("nom"))));
+
+        long presents = statusBySoul.values().stream().filter(Boolean::booleanValue).count();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("eventId", eventId);
+        result.put("eventTitre", event.getTitre());
+        result.put("membres", membres);
+        result.put("total", (long) membres.size());
+        result.put("presents", presents);
+        result.put("absents", (long) (statusBySoul.size() - presents));
+        result.put("nonMarques", (long) (membres.size() - statusBySoul.size()));
+        return result;
+    }
+
+    /**
+     * Marque un membre présent/absent à un événement du département.
+     * Périmètre : responsable du département / super-utilisateur, ou acteur
+     * de l'espace de l'âme (chef de sa famille, son faiseur).
+     */
+    public Map<String, Object> markEventAttendance(UUID departmentId, UUID eventId, UUID soulId, boolean present) {
+        Event event = requireDepartmentEvent(departmentId, eventId);
+        Soul soul = soulRepository.findById(soulId)
+                .filter(s -> !s.isDeleted())
+                .orElseThrow(() -> new EntityNotFoundException("Soul", soulId));
+        boolean member = soulDepartmentRepository.findByDepartmentIdAndActifTrue(departmentId).stream()
+                .anyMatch(sd -> sd.getSoulId().equals(soulId));
+        if (!member) {
+            throw new com.discipolat.common.domain.BusinessRuleException(
+                    "Cette âme n'est pas un membre actif du département", "SOUL_NOT_DEPARTMENT_MEMBER");
+        }
+
+        UUID userId = securityUtils.getCurrentUserId();
+        boolean manager = securityUtils.isSuperUser()
+                || (securityUtils.hasActiveRole("RESPONSABLE") && workspaceScope.canAccessDepartment(departmentId));
+        if (!manager && !workspaceScope.canAccessSoul(soulId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Vous ne pouvez pas pointer la présence de cette âme");
+        }
+
+        DepartmentEventAttendance attendance = attendanceRepository
+                .findByDepartmentIdAndEventIdAndSoulId(departmentId, eventId, soulId)
+                .orElseGet(() -> DepartmentEventAttendance.builder()
+                        .departmentId(departmentId).eventId(eventId).soulId(soulId)
+                        .markedBy(userId).present(present).build());
+        attendance.setPresent(present);
+        attendance.setMarkedBy(userId);
+        attendanceRepository.save(attendance);
+
+        record(departmentId, "EVENT_ATTENDANCE_MARKED", "SOUL", soulId,
+                (present ? "présent" : "absent") + " à \"" + event.getTitre() + "\"");
+
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("soulId", soulId);
+        m.put("nom", soul.getNomComplet());
+        m.put("present", present);
+        return m;
     }
 
     /** Âmes accessibles à l'espace métier courant (rôle actif). */
