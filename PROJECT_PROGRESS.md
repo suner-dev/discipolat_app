@@ -636,4 +636,4 @@ Parité de `DepartmentDetailPage` web :
 - **E2E réel** : mark 200 → member event-attendance `total:1 presents:1
   nonMarques:0` (compteurs corrects après fix), cleanup 204.
 - Tests : backend **437 ✓** (+2), frontend **188 ✓** (+2 dossier),
-  `tsc -b` ✓, `npm run build` ✓. Commit `26f6d0d` poussé.
+  `tsc -b` ✓, `npm run build` ✓. Commit `28e8b89` poussé.
