@@ -283,6 +283,23 @@ maintenable, documenté).
 
 ---
 
+## SESSION 2026-08-14 (fin) — QA e2e locale + fix recherche globale (commit `0b17665`)
+
+- **QA de bout en bout sur l'API locale :8080** (parcours testeur réel) :
+  création événement département (departmentId) ✓ → GET /events/department/{id} ✓
+  → équipe temporaire liée (eventId, dates) ✓ → eventTitre résolu dans /management ✓
+  → recherche globale multi-catégories (membre réel + équipe + événement) ✓
+  → rappel configurable eventRappelJours=14 puis retour à 1 ✓. Données de test
+  nettoyées (équipe + événement supprimés).
+- **Bug découvert et corrigé** : une équipe archivée apparaissait dans la recherche
+  globale. `searchAll` ne filtre désormais que les équipes/postes `ACTIVE` et
+  écarte les tâches `ANNULEE`. +1 test backend. Backend **430 ✓**.
+- **`verify-beta.sh` validé 18/18** contre la stack bêta locale (API :8090, base
+  `discipolat_beta`) — voir session « diagnostic déploiement bêta Render ».
+- **Script `launch-beta.sh`** ajouté (racine) : relance l'API bêta locale
+  (profil beta, :8090, base discipolat_beta, log beta-api.log) — pattern
+  double-fork de launch-backend.sh.
+
 ## SESSION 2026-08-14 (fin) — diagnostic déploiement bêta Render (2e vérification)
 
 - **Services bêta : toujours inexistants** — `https://discipolat-beta.onrender.com`
