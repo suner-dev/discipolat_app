@@ -664,4 +664,4 @@ Parité de `DepartmentDetailPage` web :
 - **E2E réel** : member mark-all `marques:1` → `nonMarques:0` ✓ · export CSV
   `QA membre mark-all;2026-08-25;Présent` (BOM) ✓ · cleanup 204.
 - Tests : backend **441 ✓** (+2), frontend **190 ✓** (+1 dossier),
-  `tsc -b` ✓, `npm run build` ✓. Commit `2d7f28c` poussé.
+  `tsc -b` ✓, `npm run build` ✓. Commit `39c2810` poussé.
