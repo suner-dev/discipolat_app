@@ -1367,10 +1367,11 @@ type DeptEvent = {
   dateDebut: string; dateFin?: string; statut: string; nbInscrits: number; description?: string;
 };
 
-const EVENT_TYPES = ['SORTIE', 'RETRAITE', 'EVANGELISATION', 'REUNION', 'VISITE', 'CONFERENCE', 'FORMATION', 'ANNIVERSAIRE', 'AUTRE'];
+const EVENT_TYPES = ['SORTIE', 'RETRAITE', 'EVANGELISATION', 'REUNION', 'VISITE', 'CONFERENCE', 'FORMATION', 'ANNIVERSAIRE', 'CULTE', 'ETUDE_BIBLIQUE', 'VEILLEE', 'PRIERE', 'AUTRE'];
 const EVENT_TYPE_LABELS: Record<string, string> = {
   SORTIE: 'Sortie', RETRAITE: 'Retraite', EVANGELISATION: 'Évangélisation', REUNION: 'Réunion',
-  VISITE: 'Visite', CONFERENCE: 'Conférence', FORMATION: 'Formation', ANNIVERSAIRE: 'Anniversaire', AUTRE: 'Autre',
+  VISITE: 'Visite', CONFERENCE: 'Conférence', FORMATION: 'Formation', ANNIVERSAIRE: 'Anniversaire',
+  CULTE: 'Culte', ETUDE_BIBLIQUE: 'Étude biblique', VEILLEE: 'Veillée', PRIERE: 'Temps de prière', AUTRE: 'Autre',
 };
 const EVENT_STATUT_BADGE: Record<string, string> = {
   PLANIFIE: 'badge-info', EN_COURS: 'badge-warning', TERMINE: 'badge-success', ANNULE: 'badge-inactive',
