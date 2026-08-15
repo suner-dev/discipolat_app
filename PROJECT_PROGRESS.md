@@ -85,6 +85,14 @@ et monitoring.
 
 - `4fc6583` fix(events): contrainte DB types événement (V62) — types CULTE/ETUDE_BIBLIQUE/VEILLEE/PRIERE créaient un 500 ; onglet Événements département : 13 types (parité)
 - `scripts/e2e-browser.js` ajouté (harness Puppeteer + Chrome système, 16 étapes, `puppeteer-core` en devDependency frontend)
+- `scripts/seed-volumineux.sql` : seed massif 100 % fictif (voir section ci-dessous)
+
+## SEED VOLUMINEUX (2026-08-15) — base de DEV remplie
+
+- Script **`scripts/seed-volumineux.sql`** : `psql ... -f scripts/seed-volumineux.sql`, ré-exécutable (IDs md5 déterministes + ON CONFLICT), n'efface rien.
+- Volume après exécution : **1015 âmes** · **73 users** (12 responsables, 16 chefs, 30 faiseurs nouveaux) · **44 familles** · **16 départements** · **1254 liens âme↔département** (127 dans Audiovisuel) · **86 équipes** · **98 postes** · **164 tâches** · **922 affectations** · **72 événements** · **809 pointages** · **192 inscriptions** · **2002 présences hebdo** · 53 rapports département · 81 rapports famille · checklists · matériel · activité.
+- Tous les nouveaux comptes : `password123`. Ex. `responsable10@discipolat.com` (Intercession)… `responsable21@discipolat.com`, `chef10@…`–`chef25@…`, `faiseur10@…`–`faiseur39@…`.
+- Validé : API rapide (détail <110 ms, recherche <90 ms), pasteur voit les 16 départements, **E2E navigateur 16/16 ✓** sur la base remplie.
 
 ## QA NAVIGATEUR RÉEL (2026-08-15) — E2E module Responsable
 
