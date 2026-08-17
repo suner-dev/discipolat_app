@@ -50,6 +50,8 @@ const SOURCES = [
   { key: 'SOULS_BY_STATUT', label: 'Âmes par statut', type: 'GRAPHIQUE', description: '', sensitive: false },
   { key: 'CALENDAR_EVENTS', label: 'Prochains événements', type: 'CALENDRIER', description: '', sensitive: false },
   { key: 'SOULS_TIMELINE', label: 'Dernières âmes', type: 'TIMELINE', description: '', sensitive: false },
+  { key: 'RECENT_FILES', label: 'Documents récents', type: 'FICHIERS', description: '', sensitive: false },
+  { key: 'TACHES_EN_COURS', label: 'Tâches ouvertes', type: 'TACHES', description: '', sensitive: false },
 ];
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -256,6 +258,38 @@ describe('PlatformPagesPage — Page Builder', () => {
           expect.objectContaining({
             type: 'CHECKLIST',
             config: expect.objectContaining({ items: expect.arrayContaining(['Nouvel élément']) }),
+          }),
+        ]),
+      }));
+    });
+  });
+
+  it('ajoute un bloc FORMULAIRE avec type et destinataire', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Vue d’ensemble')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /modifier vue d’ensemble/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Modifier la page/)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Formulaire' }));
+    await waitFor(() => {
+      expect(screen.getByText('Type de demande')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Destinataire')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() => {
+      expect(apiPut).toHaveBeenCalledWith('/pages/page-1', expect.objectContaining({
+        blocks: expect.arrayContaining([
+          expect.objectContaining({
+            type: 'FORMULAIRE',
+            config: expect.objectContaining({ type: 'SUGGESTION', cible: 'PASTEUR' }),
           }),
         ]),
       }));

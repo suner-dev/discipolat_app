@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import CustomPageView from '@/pages/CustomPageView';
 
-const { apiGet } = vi.hoisted(() => ({ apiGet: vi.fn() }));
+const { apiGet, apiPost } = vi.hoisted(() => ({ apiGet: vi.fn(), apiPost: vi.fn() }));
 
 // Recharts : conteneurs simples pour le rendu jsdom (pattern des autres tests).
 vi.mock('recharts', () => ({
@@ -27,7 +27,7 @@ vi.mock('@/lib/api', () => ({
   default: {
     get: apiGet,
     put: vi.fn(),
-    post: vi.fn(),
+    post: apiPost,
     delete: vi.fn(),
     interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
     defaults: { headers: { common: {} } },
@@ -199,5 +199,70 @@ describe('CustomPageView — rendu public des pages personnalisées', () => {
     // Interagir : cocher le premier élément → 1/2 · 50 %.
     fireEvent.click(screen.getAllByRole('checkbox')[0]);
     expect(screen.getByText('1/2 · 50 %')).toBeInTheDocument();
+  });
+
+  it('rend les blocs FICHIERS et TACHES sur des données réelles', async () => {
+    const page = JSON.parse(JSON.stringify(RESOLVED_PAGE));
+    page.blocks = [
+      {
+        type: 'FICHIERS',
+        config: { title: 'Documents', source: 'RECENT_FILES' },
+        data: { items: [{ nom: 'Programme du culte.pdf', categorie: 'Compte Rendu', taille: 2048, date: '17/08/2026' }] },
+      },
+      {
+        type: 'TACHES',
+        config: { title: 'Tâches ouvertes', source: 'TACHES_EN_COURS' },
+        data: { items: [{ titre: 'Préparer la répétition', departement: 'Jeunesse', echeance: '2026-08-20', priorite: 'HAUTE' }] },
+      },
+    ];
+    apiGet.mockResolvedValue({ data: page });
+    renderView();
+
+    await waitFor(() => {
+      expect(screen.getByText('Vue d’ensemble de l’église')).toBeInTheDocument();
+    });
+    // Fichiers : titre + nom + catégorie + taille formatée.
+    expect(screen.getByText('Documents')).toBeInTheDocument();
+    expect(screen.getByText('Programme du culte.pdf')).toBeInTheDocument();
+    expect(screen.getByText(/Compte Rendu · 17\/08\/2026 · 2 Ko/)).toBeInTheDocument();
+    // Tâches : titre + tâche + département + badge de priorité.
+    expect(screen.getByText('Tâches ouvertes')).toBeInTheDocument();
+    expect(screen.getByText('Préparer la répétition')).toBeInTheDocument();
+    expect(screen.getByText('Jeunesse')).toBeInTheDocument();
+    expect(screen.getByText('Haute')).toBeInTheDocument();
+  });
+
+  it('soumet un bloc FORMULAIRE et affiche la confirmation', async () => {
+    const page = JSON.parse(JSON.stringify(RESOLVED_PAGE));
+    page.blocks = [
+      {
+        type: 'FORMULAIRE',
+        config: { title: 'Suggestion', type: 'SUGGESTION', cible: 'PASTEUR', successMessage: 'Merci ! Votre message a bien été transmis.' },
+        data: null,
+      },
+    ];
+    apiGet.mockResolvedValue({ data: page });
+    apiPost.mockResolvedValue({ data: {} });
+    renderView();
+
+    await waitFor(() => {
+      expect(screen.getByText('Vue d’ensemble de l’église')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Suggestion')).toBeInTheDocument();
+    // Le bouton est désactivé tant que le message est vide.
+    const button = screen.getByRole('button', { name: /envoyer/i });
+    expect(button).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Votre message'), { target: { value: 'J’aimerais proposer une nouvelle activité.' } });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(apiPost).toHaveBeenCalledWith('/members/me/requests', {
+        type: 'SUGGESTION',
+        cible: 'PASTEUR',
+        message: 'J’aimerais proposer une nouvelle activité.',
+      });
+    });
+    expect(screen.getByText('Merci ! Votre message a bien été transmis.')).toBeInTheDocument();
   });
 });

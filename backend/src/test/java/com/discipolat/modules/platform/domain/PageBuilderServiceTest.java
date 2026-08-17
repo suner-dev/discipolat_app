@@ -9,10 +9,14 @@ import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.departments.domain.DepartmentTask;
+import com.discipolat.modules.departments.domain.DepartmentTaskRepository;
 import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.domain.EventRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.files.domain.FileEntity;
+import com.discipolat.modules.files.domain.FileEntityRepository;
 import com.discipolat.modules.platform.api.ResolvedBlock;
 import com.discipolat.modules.platform.api.ResolvedPage;
 import com.discipolat.modules.souls.domain.Soul;
@@ -57,6 +61,8 @@ class PageBuilderServiceTest {
     @Mock private EventRepository eventRepository;
     @Mock private AlertRepository alertRepository;
     @Mock private TransferRequestRepository transferRepository;
+    @Mock private FileEntityRepository fileRepository;
+    @Mock private DepartmentTaskRepository taskRepository;
 
     private PageBuilderService service;
 
@@ -66,7 +72,7 @@ class PageBuilderServiceTest {
     void setUp() {
         service = new PageBuilderService(pageRepository, revisionService, auditService, securityUtils,
                 scopeService, soulRepository, familyRepository, departmentRepository, userRepository,
-                eventRepository, alertRepository, transferRepository);
+                eventRepository, alertRepository, transferRepository, fileRepository, taskRepository);
     }
 
     private CustomPage page(String key, String slug, List<Map<String, Object>> blocks,
@@ -463,5 +469,87 @@ class PageBuilderServiceTest {
         ResolvedPage resolved = service.resolve("check");
 
         assertThat(resolved.blocks().get(0).data()).isNull();
+    }
+
+    @Test
+    void resolveFiles_recentDocumentsWithMetadata() {
+        FileEntity file = FileEntity.builder().id(UUID.randomUUID())
+                .nom("Programme du culte.pdf").typeFichier("application/pdf").taille(2048L)
+                .categorie("COMPTE_RENDU").createdAt(LocalDateTime.now()).build();
+        CustomPage existing = page("FILES", "files",
+                List.of(Map.of("type", "FICHIERS",
+                        "config", Map.of("title", "Documents", "source", "RECENT_FILES"))),
+                List.of(), true);
+        when(pageRepository.findBySlug("files")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(true);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
+        when(fileRepository.findTop10ByDeletedFalseOrderByCreatedAtDesc()).thenReturn(List.of(file));
+
+        ResolvedPage resolved = service.resolve("files");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) resolved.blocks().get(0).data().get("items");
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0)).containsEntry("nom", "Programme du culte.pdf")
+                .containsEntry("categorie", "Compte Rendu").containsEntry("taille", 2048L);
+        assertThat((String) items.get(0).get("date")).matches("\\d{2}/\\d{2}/\\d{4}");
+    }
+
+    @Test
+    void resolveTasks_openTasksScopedWithDepartmentNames() {
+        UUID deptId = UUID.randomUUID();
+        Department dept = Department.builder().id(deptId).nom("Jeunesse").build();
+        DepartmentTask task = DepartmentTask.builder().id(UUID.randomUUID()).departmentId(deptId)
+                .titre("Préparer la répétition").priorite(DepartmentTask.TaskPriority.HAUTE)
+                .statut(DepartmentTask.TaskStatus.EN_COURS)
+                .echeance(java.time.LocalDate.now().plusDays(3)).build();
+        CustomPage existing = page("TASKS", "tasks",
+                List.of(Map.of("type", "TACHES",
+                        "config", Map.of("title", "Tâches", "source", "TACHES_EN_COURS"))),
+                List.of(), true);
+        when(pageRepository.findBySlug("tasks")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(false);
+        when(scopeService.accessibleDepartmentIds()).thenReturn(Set.of(deptId));
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("RESPONSABLE"));
+        when(taskRepository.findTop10ByStatutInAndDepartmentIdInOrderByEcheanceAsc(any(), eq(Set.of(deptId))))
+                .thenReturn(List.of(task));
+        when(departmentRepository.findAllById(Set.of(deptId))).thenReturn(List.of(dept));
+
+        ResolvedPage resolved = service.resolve("tasks");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) resolved.blocks().get(0).data().get("items");
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0)).containsEntry("titre", "Préparer la répétition")
+                .containsEntry("departement", "Jeunesse").containsEntry("priorite", "HAUTE");
+        assertThat((String) items.get(0).get("echeance")).matches("\\d{4}-\\d{2}-\\d{2}");
+    }
+
+    @Test
+    void create_rejectsFormBlockWithoutValidCible() {
+        CustomPage request = page("FORM", "form",
+                List.of(Map.of("type", "FORMULAIRE",
+                        "config", Map.of("title", "Contact", "type", "SUGGESTION"))),
+                List.of(), false);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("cible");
+    }
+
+    @Test
+    void create_acceptsValidFormBlock() {
+        CustomPage request = page("FORM", "form",
+                List.of(Map.of("type", "FORMULAIRE",
+                        "config", Map.of("title", "Contact", "type", "SUGGESTION", "cible", "PASTEUR"))),
+                List.of(), false);
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(pageRepository.existsByKey("FORM")).thenReturn(false);
+        when(pageRepository.existsBySlug("form")).thenReturn(false);
+        when(pageRepository.save(any(CustomPage.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CustomPage result = service.create(request);
+
+        assertThat(result.getKey()).isEqualTo("FORM");
     }
 }

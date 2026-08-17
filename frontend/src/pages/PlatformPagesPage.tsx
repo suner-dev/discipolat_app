@@ -16,7 +16,9 @@ const ALL_ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEU
 const LAYOUTS = ['STACK', 'GRID_2', 'GRID_3'];
 const KPI_COLORS = ['primary', 'emerald', 'amber', 'violet', 'rose', 'sky'];
 const CHART_TYPES = ['PIE', 'BAR', 'LINE'];
-const BLOCK_TYPES = ['KPI', 'TABLEAU', 'LISTE', 'GRAPHIQUE', 'CALENDRIER', 'TIMELINE', 'CHECKLIST', 'TEXTE', 'LIENS', 'RECHERCHE', 'IMAGES'];
+const BLOCK_TYPES = ['KPI', 'TABLEAU', 'LISTE', 'GRAPHIQUE', 'CALENDRIER', 'TIMELINE', 'CHECKLIST', 'FICHIERS', 'TACHES', 'FORMULAIRE', 'TEXTE', 'LIENS', 'RECHERCHE', 'IMAGES'];
+const FORM_TYPES = ['SUGGESTION', 'RENDEZ_VOUS', 'SIGNALEMENT'];
+const FORM_TARGETS = ['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'];
 const EMPTY_BLOCK: CustomPageBlock = { type: 'KPI', config: {} };
 
 interface PageForm {
@@ -53,6 +55,9 @@ function defaultConfig(type: string): Record<string, unknown> {
     case 'CALENDRIER': return { title: 'Calendrier', source: 'CALENDAR_EVENTS' };
     case 'TIMELINE': return { title: 'Timeline', source: 'SOULS_TIMELINE' };
     case 'CHECKLIST': return { title: 'Checklist', items: ['Premier élément'] };
+    case 'FICHIERS': return { title: 'Documents', source: 'RECENT_FILES' };
+    case 'TACHES': return { title: 'Tâches', source: 'TACHES_EN_COURS' };
+    case 'FORMULAIRE': return { title: 'Formulaire', type: 'SUGGESTION', cible: 'PASTEUR', placeholder: 'Votre message…', buttonLabel: 'Envoyer', successMessage: 'Merci ! Votre message a bien été transmis.' };
     case 'TEXTE': return { content: '' };
     case 'LIENS': return { title: 'Accès rapides', items: [{ label: 'Recherche', href: '/search', icon: 'Search' }] };
     case 'RECHERCHE': return { placeholder: 'Rechercher…' };
@@ -118,7 +123,7 @@ function BlockEditor({
         </div>
       )}
 
-      {(block.type === 'TABLEAU' || block.type === 'LISTE' || block.type === 'CALENDRIER' || block.type === 'TIMELINE') && (
+      {(block.type === 'TABLEAU' || block.type === 'LISTE' || block.type === 'CALENDRIER' || block.type === 'TIMELINE' || block.type === 'FICHIERS' || block.type === 'TACHES') && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="label">Titre</label>
@@ -129,6 +134,39 @@ function BlockEditor({
             <select className="input" value={(block.config.source as string) || ''} onChange={(e) => set({ source: e.target.value })}>
               {sourceOptions.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
+          </div>
+        </div>
+      )}
+
+      {block.type === 'FORMULAIRE' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="label">Titre</label>
+            <input className="input" value={(block.config.title as string) || ''} onChange={(e) => set({ title: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">Type de demande</label>
+            <select className="input" value={(block.config.type as string) || 'SUGGESTION'} onChange={(e) => set({ type: e.target.value })}>
+              {FORM_TYPES.map((t) => <option key={t} value={t}>{t === 'SUGGESTION' ? 'Suggestion' : t === 'RENDEZ_VOUS' ? 'Rendez-vous' : 'Signalement'}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Destinataire</label>
+            <select className="input" value={(block.config.cible as string) || 'PASTEUR'} onChange={(e) => set({ cible: e.target.value })}>
+              {FORM_TARGETS.map((c) => <option key={c} value={c}>{c === 'PASTEUR' ? 'Pasteur' : c === 'RESPONSABLE' ? 'Responsable' : 'Chef de famille'}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Texte d'aide</label>
+            <input className="input" value={(block.config.placeholder as string) || ''} onChange={(e) => set({ placeholder: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">Libellé du bouton</label>
+            <input className="input" value={(block.config.buttonLabel as string) || ''} onChange={(e) => set({ buttonLabel: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">Message de confirmation</label>
+            <input className="input" value={(block.config.successMessage as string) || ''} onChange={(e) => set({ successMessage: e.target.value })} />
           </div>
         </div>
       )}

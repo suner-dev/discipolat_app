@@ -5,6 +5,65 @@
 
 ---
 
+## SESSION 2026-08-17 (bloc 6) — Page Builder V67 : FICHIERS / TACHES / FORMULAIRE
+
+### Backend (V67 — blocs documents, tâches, formulaire de demande)
+
+- **`PageBuilderService`** : 3 nouveaux types de blocs (`FICHIERS`, `TACHES`,
+  `FORMULAIRE`) + **2 nouvelles sources** résolues sur données réelles scopées :
+  - FICHIERS : `RECENT_FILES` — les 10 derniers documents (nom, catégorie
+    humanisée, type, taille, date) ; scopés par familles accessibles
+    (`findTop10ByFamilleIdInAndDeletedFalseOrderByCreatedAtDesc`).
+  - TACHES : `TACHES_EN_COURS` — les 10 prochaines tâches ouvertes
+    (A_FAIRE/EN_COURS/BLOQUEE) par échéance, avec nom du département résolu
+    (pas de N+1) ; scopées par départements accessibles.
+  - FORMULAIRE : bloc d'interaction (pas de source serveur) — **soumission
+    réelle** côté frontend vers `POST /members/me/requests`.
+- **Validation serveur** : FICHIERS/TACHES exigent une source de leur type ;
+  FORMULAIRE exige une `cible` (PASTEUR/RESPONSABLE/CHEF_DE_FAMILLE) et un
+  `type` (SUGGESTION/RENDEZ_VOUS/SIGNALEMENT) valides.
+- **Repos étendus** : `FileEntityRepository` (top-10 récents global + scopé),
+  `DepartmentTaskRepository` (top-10 ouverts par échéance global + scopé).
+- **Tests** : `PageBuilderServiceTest` **29 ✓** (+4 : documents récents avec
+  métadonnées, tâches scopées avec noms de départements, formulaire sans cible
+  rejeté, formulaire valide accepté) + `PageBuilderControllerTest` 12 ✓ inchangé.
+
+### Frontend web
+
+- **`PageBlockRenderer`** : `FilesBlock` (liste de documents — icône, nom,
+  catégorie · date · taille formatée Ko/Mo), `TasksBlock` (tâches avec
+  département, échéance, badge de priorité coloré), `FormBlock` (champ message,
+  **envoi réel** vers `/members/me/requests` avec type + destinataire, états
+  chargement/erreur/confirmation inline).
+- **`PlatformPagesPage`** (éditeur) : palettes FICHIERS/TACHES/FORMULAIRE +
+  éditeurs dédiés — FICHIERS/TACHES : titre + source ; FORMULAIRE : titre,
+  type de demande, destinataire, texte d'aide, libellé du bouton, message de
+  confirmation.
+- **Types** : `PageDataSource.type` étendu à FICHIERS/TACHES.
+- **Tests** : `CustomPageView.test` **8 ✓** (+2 : rendu FICHIERS/TACHES sur
+  données réelles, soumission FORMULAIRE → POST + confirmation),
+  `PlatformPagesPage.test` **9 ✓** (+1 ajout bloc FORMULAIRE).
+
+### État des tests (bloc 6)
+
+- Backend : `PageBuilderServiceTest` 29 ✓ + `PageBuilderControllerTest` 12 ✓ —
+  BUILD SUCCESS.
+- Frontend : `tsc --noEmit` ✓ · suite complète **211 tests vitest ✓** (33 fichiers).
+- Mobile : inchangé (supervision pages ADMIN, 115 tests ✓).
+
+### Commit / push
+
+- Commit de ce bloc : Page Builder V67 — documents, tâches, formulaire de demande.
+- Poussé sur origin/main.
+
+### Prochain objectif
+
+Outils métiers activables (Finances, Communication) — voir ARCHITECTURE_AUDIT.md
+§9 — ou extension du Page Builder (bloc statistiques) puis passage à la phase
+« cohérence/synchronisation » (tests de propagation).
+
+---
+
 ## SESSION 2026-08-17 (bloc 5) — Page Builder V66 : GRAPHIQUE / CALENDRIER / TIMELINE / CHECKLIST
 
 ### Backend (V66 — sources & blocs supplémentaires)

@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, ArrowRight, Image as ImageIcon, List, FileText, Link2,
   CalendarDays, CheckSquare, Clock, ChevronLeft, ChevronRight, MapPin,
+  File as FileIcon, ClipboardList, Send, Loader2, CheckCircle2, AlertCircle,
 } from 'lucide-react';
+import api from '@/lib/api';
 import {
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -485,6 +487,176 @@ function ImagesBlock({ block }: { block: ResolvedBlock }) {
   );
 }
 
+interface FileItem { nom: string; categorie?: string; typeFichier?: string; taille?: number; date?: string }
+
+function FilesBlock({ block }: { block: ResolvedBlock }) {
+  const { config, data } = block;
+  const title = (config.title as string) || 'Documents';
+  const items = (data?.items as FileItem[]) || [];
+
+  const formatSize = (bytes: number) => {
+    if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} Mo`;
+    if (bytes >= 1024) return `${Math.round(bytes / 1024)} Ko`;
+    return `${bytes} o`;
+  };
+
+  return (
+    <div className="glass-card overflow-hidden">
+      <div className="card-header">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h3>
+        {items.length > 0 && <span className="text-xs text-gray-400">{items.length} document(s)</span>}
+      </div>
+      {items.length === 0 ? (
+        <p className="px-5 py-6 text-sm text-gray-400 text-center">Aucun document dans votre périmètre.</p>
+      ) : (
+        <ul className="divide-y divide-gray-100/50 dark:divide-gray-800/30">
+          {items.map((item, i) => (
+            <li key={i} className="px-5 py-3 flex items-start gap-3">
+              <span className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-950/40 flex items-center justify-center flex-shrink-0">
+                <FileIcon className="w-4 h-4 text-primary-500" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.nom}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {[item.categorie || 'Document', item.date, typeof item.taille === 'number' && item.taille > 0 ? formatSize(item.taille) : null]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+interface TaskItem { titre: string; departement?: string; echeance?: string; priorite?: string }
+
+const TASK_PRIORITY_STYLES: Record<string, string> = {
+  HAUTE: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400',
+  MOYENNE: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400',
+  BASSE: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400',
+};
+
+function TasksBlock({ block }: { block: ResolvedBlock }) {
+  const { config, data } = block;
+  const title = (config.title as string) || 'Tâches';
+  const items = (data?.items as TaskItem[]) || [];
+
+  return (
+    <div className="glass-card overflow-hidden">
+      <div className="card-header">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h3>
+        {items.length > 0 && <span className="text-xs text-gray-400">{items.length} tâche(s) ouverte(s)</span>}
+      </div>
+      {items.length === 0 ? (
+        <p className="px-5 py-6 text-sm text-gray-400 text-center">Aucune tâche ouverte dans votre périmètre.</p>
+      ) : (
+        <ul className="divide-y divide-gray-100/50 dark:divide-gray-800/30">
+          {items.map((item, i) => {
+            const priority = (item.priorite || '').toUpperCase();
+            return (
+              <li key={i} className="px-5 py-3 flex items-start gap-3">
+                <span className="mt-0.5 w-2 h-2 rounded-full bg-primary-400 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.titre}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {item.departement && <span>{item.departement}</span>}
+                    {item.echeance && <span> · Échéance : {item.echeance}</span>}
+                  </p>
+                </div>
+                {priority && (
+                  <span className={`badge text-[10px] ${TASK_PRIORITY_STYLES[priority] || 'bg-gray-100 text-gray-500'}`}>
+                    {priority === 'HAUTE' ? 'Haute' : priority === 'MOYENNE' ? 'Moyenne' : 'Basse'}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+const FORM_TYPES: Record<string, string> = {
+  SUGGESTION: 'Suggestion',
+  RENDEZ_VOUS: 'Demande de rendez-vous',
+  SIGNALEMENT: 'Signalement',
+};
+
+function FormBlock({ block }: { block: ResolvedBlock }) {
+  const { config } = block;
+  const title = (config.title as string) || 'Formulaire';
+  const type = ((config.type as string) || 'SUGGESTION').toUpperCase();
+  const cible = ((config.cible as string) || 'PASTEUR').toUpperCase();
+  const placeholder = (config.placeholder as string) || 'Votre message…';
+  const buttonLabel = (config.buttonLabel as string) || 'Envoyer';
+  const successMessage = (config.successMessage as string) || 'Merci ! Votre message a bien été transmis.';
+
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (message.trim().length < 2) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      await api.post('/members/me/requests', { type, cible, message: message.trim() });
+      setDone(true);
+    } catch {
+      setError('L’envoi a échoué. Veuillez réessayer.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <div className="glass-card p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h3>
+        </div>
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">{successMessage}</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="glass-card p-5">
+      <div className="flex items-center gap-2 mb-2">
+        <Send className="w-4 h-4 text-primary-500" />
+        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h3>
+        <span className="ml-auto text-[11px] text-gray-400">Transmis à {cible === 'PASTEUR' ? 'au pasteur' : cible === 'RESPONSABLE' ? 'au responsable' : 'au chef de famille'} · {FORM_TYPES[type] || type}</span>
+      </div>
+      <textarea
+        className="input min-h-[90px]"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder={placeholder}
+        aria-label="Votre message"
+        required
+      />
+      {error && (
+        <p className="mt-2 text-xs text-rose-500 flex items-center gap-1.5">
+          <AlertCircle className="w-3.5 h-3.5" /> {error}
+        </p>
+      )}
+      <div className="mt-3 flex justify-end">
+        <button className="btn-primary btn-sm" type="submit" disabled={submitting || message.trim().length < 2}>
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {buttonLabel}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 /**
  * Rendu d'un bloc de page personnalisée. Toutes les données affichées
  * proviennent du serveur (résolution réelle, scopée par espace métier) —
@@ -512,6 +684,12 @@ export default function PageBlockRenderer({ block, pageId, index }: {
       return <TimelineBlock block={block} />;
     case 'CHECKLIST':
       return <ChecklistBlock block={block} pageId={pageId} index={index} />;
+    case 'FICHIERS':
+      return <FilesBlock block={block} />;
+    case 'TACHES':
+      return <TasksBlock block={block} />;
+    case 'FORMULAIRE':
+      return <FormBlock block={block} />;
     case 'TEXTE':
       return <TextBlock block={block} />;
     case 'LIENS':
@@ -535,6 +713,9 @@ export function blockTypeIcon(type: string) {
     case 'CALENDRIER': return CalendarDays;
     case 'TIMELINE': return Clock;
     case 'CHECKLIST': return CheckSquare;
+    case 'FICHIERS': return FileIcon;
+    case 'TACHES': return ClipboardList;
+    case 'FORMULAIRE': return Send;
     case 'TEXTE': return FileText;
     case 'LIENS': return Link2;
     case 'RECHERCHE': return Search;
@@ -551,6 +732,9 @@ export const BLOCK_TYPE_LABELS: Record<string, string> = {
   CALENDRIER: 'Calendrier',
   TIMELINE: 'Timeline',
   CHECKLIST: 'Checklist',
+  FICHIERS: 'Documents',
+  TACHES: 'Tâches',
+  FORMULAIRE: 'Formulaire',
   TEXTE: 'Texte',
   LIENS: 'Liens rapides',
   RECHERCHE: 'Recherche',

@@ -10,10 +10,14 @@ import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.departments.domain.DepartmentTask;
+import com.discipolat.modules.departments.domain.DepartmentTaskRepository;
 import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.domain.EventRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.files.domain.FileEntity;
+import com.discipolat.modules.files.domain.FileEntityRepository;
 import com.discipolat.modules.platform.api.PageDataSource;
 import com.discipolat.modules.platform.api.ResolvedBlock;
 import com.discipolat.modules.platform.api.ResolvedPage;
@@ -48,7 +52,8 @@ public class PageBuilderService {
 
     private static final Set<String> BLOCK_TYPES = Set.of(
             "KPI", "TABLEAU", "LISTE", "TEXTE", "LIENS", "RECHERCHE", "IMAGES",
-            "GRAPHIQUE", "CALENDRIER", "TIMELINE", "CHECKLIST");
+            "GRAPHIQUE", "CALENDRIER", "TIMELINE", "CHECKLIST",
+            "FICHIERS", "TACHES", "FORMULAIRE");
     private static final Set<String> LAYOUTS = Set.of("STACK", "GRID_2", "GRID_3");
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -64,9 +69,11 @@ public class PageBuilderService {
     private final FamilyRepository familyRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
-    private final EventRepository eventRepository;
-    private final AlertRepository alertRepository;
+    private final EventRepository eventRepository;    private final AlertRepository alertRepository;
     private final TransferRequestRepository transferRepository;
+    private final FileEntityRepository fileRepository;
+    private final DepartmentTaskRepository taskRepository;
+
 
     public PageBuilderService(CustomPageRepository pageRepository,
                               ConfigRevisionService revisionService,
@@ -79,7 +86,9 @@ public class PageBuilderService {
                               UserRepository userRepository,
                               EventRepository eventRepository,
                               AlertRepository alertRepository,
-                              TransferRequestRepository transferRepository) {
+                              TransferRequestRepository transferRepository,
+                              FileEntityRepository fileRepository,
+                              DepartmentTaskRepository taskRepository) {
         this.pageRepository = pageRepository;
         this.revisionService = revisionService;
         this.auditService = auditService;
@@ -92,6 +101,8 @@ public class PageBuilderService {
         this.eventRepository = eventRepository;
         this.alertRepository = alertRepository;
         this.transferRepository = transferRepository;
+        this.fileRepository = fileRepository;
+        this.taskRepository = taskRepository;
     }
 
     /* ============================== CRUD ============================== */
@@ -252,7 +263,11 @@ public class PageBuilderService {
                 new PageDataSource("CALENDAR_EVENTS", "Prochains événements (calendrier)", "CALENDRIER",
                         "Les événements des 60 prochains jours (titre, date, lieu).", false),
                 new PageDataSource("SOULS_TIMELINE", "Dernières âmes (timeline)", "TIMELINE",
-                        "Les 10 âmes créées le plus récemment, avec leur date d'ajout.", false));
+                        "Les 10 âmes créées le plus récemment, avec leur date d'ajout.", false),
+                new PageDataSource("RECENT_FILES", "Documents récents", "FICHIERS",
+                        "Les 10 derniers documents versés, dans votre périmètre.", false),
+                new PageDataSource("TACHES_EN_COURS", "Tâches ouvertes", "TACHES",
+                        "Les 10 prochaines tâches ouvertes (par échéance), dans votre périmètre.", false));
     }
 
     /* ======================= Résolution des blocs ===================== */
@@ -287,7 +302,9 @@ public class PageBuilderService {
             case "GRAPHIQUE" -> resolveChart(source, superUser, soulIds, deptIds);
             case "CALENDRIER" -> resolveCalendar(source, superUser, soulIds);
             case "TIMELINE" -> resolveTimeline(source, superUser, soulIds);
-            default -> null; // TEXTE / LIENS / RECHERCHE / IMAGES / CHECKLIST : pas de source
+            case "FICHIERS" -> resolveFiles(source, superUser, familyIds);
+            case "TACHES" -> resolveTasks(source, superUser, deptIds);
+            default -> null; // TEXTE / LIENS / RECHERCHE / IMAGES / CHECKLIST / FORMULAIRE : pas de source
         };
         return new ResolvedBlock(type, config, data);
     }
@@ -358,6 +375,22 @@ public class PageBuilderService {
         if (source == null) return null;
         return switch (source) {
             case "SOULS_TIMELINE" -> soulsTimeline(superUser ? null : soulIds);
+            default -> null;
+        };
+    }
+
+    private Map<String, Object> resolveFiles(String source, boolean superUser, Set<UUID> familyIds) {
+        if (source == null) return null;
+        return switch (source) {
+            case "RECENT_FILES" -> recentFiles(superUser ? null : familyIds);
+            default -> null;
+        };
+    }
+
+    private Map<String, Object> resolveTasks(String source, boolean superUser, Set<UUID> deptIds) {
+        if (source == null) return null;
+        return switch (source) {
+            case "TACHES_EN_COURS" -> openTasks(superUser ? null : deptIds);
             default -> null;
         };
     }
@@ -465,6 +498,59 @@ public class PageBuilderService {
                             ? s.getCreatedAt().format(DATE_FMT) : "");
                     item.put("label", fullName(s));
                     item.put("value", s.getStatut() == null ? "" : statutLabel(s.getStatut()));
+                    return item;
+                })
+                .toList();
+        return Map.of("items", items);
+    }
+
+    /** Les 10 derniers documents versés (bloc FICHIERS), scopés par familles accessibles. */
+    private Map<String, Object> recentFiles(Set<UUID> familyIds) {
+        List<FileEntity> files = familyIds == null
+                ? fileRepository.findTop10ByDeletedFalseOrderByCreatedAtDesc()
+                : (familyIds.isEmpty()
+                        ? List.of()
+                        : fileRepository.findTop10ByFamilleIdInAndDeletedFalseOrderByCreatedAtDesc(familyIds));
+        List<Map<String, Object>> items = files.stream()
+                .map(f -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("nom", f.getNom());
+                    item.put("categorie", f.getCategorie() == null || f.getCategorie().isBlank()
+                            ? "DOCUMENT" : humanize(f.getCategorie()));
+                    item.put("typeFichier", f.getTypeFichier() == null ? "" : f.getTypeFichier());
+                    item.put("taille", f.getTaille() == null ? 0L : f.getTaille());
+                    item.put("date", f.getCreatedAt() != null ? f.getCreatedAt().format(DATE_FMT) : "");
+                    return item;
+                })
+                .toList();
+        return Map.of("items", items);
+    }
+
+    /** Les 10 prochaines tâches ouvertes par échéance (bloc TÂCHES), scopées par départements. */
+    private Map<String, Object> openTasks(Set<UUID> deptIds) {
+        List<DepartmentTask.TaskStatus> open = List.of(
+                DepartmentTask.TaskStatus.A_FAIRE,
+                DepartmentTask.TaskStatus.EN_COURS,
+                DepartmentTask.TaskStatus.BLOQUEE);
+        List<DepartmentTask> tasks = deptIds == null
+                ? taskRepository.findTop10ByStatutInOrderByEcheanceAsc(open)
+                : (deptIds.isEmpty()
+                        ? List.of()
+                        : taskRepository.findTop10ByStatutInAndDepartmentIdInOrderByEcheanceAsc(open, deptIds));
+        Set<UUID> ids = tasks.stream().map(DepartmentTask::getDepartmentId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<UUID, String> names = ids.isEmpty() ? Map.of()
+                : departmentRepository.findAllById(ids).stream()
+                        .collect(Collectors.toMap(Department::getId, Department::getNom));
+        List<Map<String, Object>> items = tasks.stream()
+                .map(t -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("titre", t.getTitre());
+                    item.put("departement", t.getDepartmentId() != null
+                            ? names.getOrDefault(t.getDepartmentId(), "—") : "—");
+                    item.put("echeance", t.getEcheance() != null
+                            ? t.getEcheance().format(DateTimeFormatter.ISO_LOCAL_DATE) : "");
+                    item.put("priorite", t.getPriorite() == null ? "" : t.getPriorite().name());
                     return item;
                 })
                 .toList();
@@ -655,7 +741,8 @@ public class PageBuilderService {
             Map<String, Object> config = block.get("config") instanceof Map<?, ?> m
                     ? (Map<String, Object>) m : Map.of();
             switch (type) {
-                case "KPI", "TABLEAU", "LISTE", "GRAPHIQUE", "CALENDRIER", "TIMELINE" -> {
+                case "KPI", "TABLEAU", "LISTE", "GRAPHIQUE", "CALENDRIER", "TIMELINE",
+                     "FICHIERS", "TACHES" -> {
                     if (!(config.get("source") instanceof String s) || s.isBlank()) {
                         throw new IllegalArgumentException("Le bloc " + type + " nécessite une source de données.");
                     }
@@ -667,6 +754,16 @@ public class PageBuilderService {
                     Object items = config.get("items");
                     if (!(items instanceof List<?> list) || list.isEmpty()) {
                         throw new IllegalArgumentException("Le bloc " + type + " nécessite au moins un élément.");
+                    }
+                }
+                case "FORMULAIRE" -> {
+                    Set<String> cibles = Set.of("PASTEUR", "RESPONSABLE", "CHEF_DE_FAMILLE");
+                    Set<String> types = Set.of("SUGGESTION", "RENDEZ_VOUS", "SIGNALEMENT");
+                    if (!(config.get("cible") instanceof String cible) || !cibles.contains(cible.toUpperCase())) {
+                        throw new IllegalArgumentException("Le bloc FORMULAIRE nécessite une cible valide (PASTEUR, RESPONSABLE ou CHEF_DE_FAMILLE).");
+                    }
+                    if (!(config.get("type") instanceof String typeF) || !types.contains(typeF.toUpperCase())) {
+                        throw new IllegalArgumentException("Le bloc FORMULAIRE nécessite un type valide (SUGGESTION, RENDEZ_VOUS ou SIGNALEMENT).");
                     }
                 }
                 case "IMAGES" -> {
