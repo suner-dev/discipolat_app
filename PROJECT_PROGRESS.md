@@ -5,6 +5,86 @@
 
 ---
 
+## SESSION 2026-08-17 (bloc 9) — Phase « cohérence / synchronisation » : TESTS DE PROPAGATION
+
+### Objectif (mission transversale)
+
+Prouver le principe **UNE ENTITÉ = UNE SOURCE DE VÉRITÉ** : une modification
+opérée par un service doit être visible partout ailleurs (CRM faiseur,
+famille, département/responsable, historique, notifications, recherche,
+statistiques) sans duplication ni donnée contradictoire.
+
+### `PropagationConsistencyTest` (@SpringBootTest réel sur H2, 8 tests ✓)
+
+Premier test d'intégration de ce type sur le projet : **contexte Spring
+complet, AUCUN mock** — le moteur de transfert réel, le service d'âmes et
+la recherche s'exécutent contre une base H2 embarquée (profil `test`,
+`application-test.yml` + `h2-init.sql` jsonb), assertions sur les données
+transactionnellement persistées. Nettoyage base entre chaque test
+(`SET REFERENTIAL_INTEGRITY FALSE` + TRUNCATE par table, H2 sans CASCADE).
+
+Scénarios couverts (chaque bloc = vérification de TOUS les consommateurs) :
+
+1. **Changer le faiseur d'un disciple** (FAISEUR_DISCIPLE_CHANGEMENT) :
+   âme → nouveau faiseur ; historique REAFFECTATION_FAISEUR (ancien/nouveau
+   faiseur) ; notifications IN_APP au disciple, à l'ANCIEN faiseur (« retirée
+   de votre suivi ») et au NOUVEAU (« affectée pour suivi ») ; CRM : l'âme
+   disparaît de la charge de A et apparaît dans celle de B ; recherche :
+   même entité toujours trouvable.
+2. **Transférer une âme vers une autre famille** (DISCIPLE_FAMILLE_TRANSFERT) :
+   familleId mis à jour une seule fois ; listes par famille alignées
+   (ancienne vide, nouvelle contient l'âme) ; historique TRANSFERT_FAMILLE
+   avec ancienne/nouvelle famille ; notification.
+3. **Transférer un membre d'un département à un autre**
+   (MEMBRE_DEPARTEMENT_TRANSFERT) : désaffectation de l'ancien (liaison
+   inactive + retrait membre), affectation au nouveau ; vue du RESPONSABLE B
+   contient le membre, celle de A ne le contient plus ; historique ;
+   notifications au membre ET au responsable du nouveau département.
+4. **Changer le chef de famille** (CHEF_FAMILLE_TRANSFERT) : famille
+   (chefFamilleId + userId) ; ancien chef déchu (estChefDeFamille=false,
+   familleGereeId=null) ; nouveau chef investi ; FamilyChiefHistory
+   (ancien/nouveau chef) ; notification.
+5. **Transférer un faiseur de famille AVEC ses disciples** (règle
+   `transfererAmes=true`) : faiseur ET toutes ses âmes changent de famille,
+   historique TRANSFERT_FAMILLE sur chaque disciple.
+6. **Transférer un faiseur SANS ses disciples** (`transfererAmes=false`) :
+   seul le faiseur change, les âmes restent, aucun historique indu.
+7. **Changer le responsable d'un département**
+   (RESPONSABLE_DEPARTEMENT_CHANGEMENT) : département ; liaison
+   user_departments (ancien retiré, nouveau avec roleDansDept=RESPONSABLE) ;
+   notifications aux deux responsables.
+8. **Modifier une âme** (SoulService.update) : nouveau statut + état
+   spirituel persistés ; historique CHANGEMENT_STATUT (ancien ACTIF →
+   nouveau DECROCHE) et CHANGEMENT_ETAT_SPIRITUEL ; recherche retrouve
+   l'entité ; statistiques par statut recalculées (1 DECROCHE / 1 ACTIF).
+
+**Constat** : le moteur de transfert existant (TransferExecutor) est déjà
+un vrai moteur de propagation — aucune incohérence découverte, tous les
+consommateurs lisent la même donnée. Aucun correctif de code nécessaire.
+
+### État des tests (bloc 9)
+
+- Backend : **523 tests ✓ (0 fail) BUILD SUCCESS** (515 → 523, +8 propagation).
+- NB : warning H2 préexistant et cosmétique au boot du contexte complet —
+  4 tables plateforme (custom_pages, menu_entries, platform_modules,
+  custom_field_values) non créées sur H2 (colonnes `key`/`value`, mots
+  réservés H2 2.x) ; sans impact : ces tables ne sont pas utilisées par les
+  tests d'intégration (schéma H2 volontairement via ddl-auto).
+
+### Commit / push
+
+- Commit de ce bloc : tests de propagation (cohérence/synchronisation).
+- Poussé sur origin/main.
+
+### Prochain objectif
+
+Étendre la phase cohérence aux scénarios restants (chef adjoint, ajout /
+retrait de département, sortie d'âme, cycle complet demande → validation →
+exécution) et/ou QA final : audit page par page, tests de rôles/permissions,
+responsive, perf, déploiement (voir ARCHITECTURE_AUDIT.md §12).
+
+---
+
 ## SESSION 2026-08-17 (bloc 8) — Outil métier COMMUNICATION (V69) — fullstack + mobile
 
 ### Backend (V69 — communications + module COMMUNICATION)
