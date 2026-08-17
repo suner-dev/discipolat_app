@@ -5,6 +5,96 @@
 
 ---
 
+## SESSION 2026-08-17 (bloc 11) — MULTITENANCY V70 TERMINÉ + SÉCURITÉ MOBILE — commit `a98ef56` (poussé sur origin/main)
+
+### Contexte de reprise
+
+Le WIP multitenancy (V70) laissé par « l'autre fil de travail » a été
+**repris, corrigé, testé et commité**. Ce WIP correspond au **bloqueur P0
+n°1 du COMMERCIALIZATION_AUDIT.md** (isolation des données entre églises).
+
+### Backend — isolation multi-tenant (V70) finalisée
+
+- **Migration V70** : table `tenants` + `tenant_id` (nullable → backfill
+  vers le tenant par défaut `00000000-...-0001` → NOT NULL) sur **~130
+  tables**, index composites tenant-aware (users(tenant,email), souls(tenant,
+  faiseur), notifications(tenant,destinataire), …), email unique **par
+  tenant** (`uk_users_tenant_email` au lieu du global `users_email_key`).
+- **`@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")`** +
+  `@FilterDef` sur toutes les entités métier → chaque requête JPA ajoute
+  automatiquement `WHERE tenant_id = :tenantId` (défense en profondeur : un
+  développeur qui oublie le filtre manuel est protégé).
+- **`tenantId` dans le JWT** (access + refresh) + `JwtTokenProvider`
+  (claims + `extractTenantId`) + `SecurityUtils.getCurrentTenantId()`.
+- **Cycle requête** : `TenantInterceptor` (extrait le tenant du JWT →
+  `TenantContext` ThreadLocal) puis `TenantFilterInterceptor` (active/désactive
+  le filtre Hibernate), `TenantFilter`, `WebMvcConfig` (intercepteurs `/api/**`),
+  `TenantFilterIntegrator` (auto-set tenantId à l'insert/update via
+  `META-INF/services`), `Tenant`/`TenantRepository`/`TenantStatus` (module
+  `tenants`).
+- **Bug corrigé** : `TenantFilterInterceptor` injectait `TenantFilter` en dur
+  (`@Lazy`) → `NoSuchBeanDefinitionException` dans **tous** les tests
+  controller (contexte tronqué) ; passé en `ObjectProvider` null-safe →
+  **0 erreur interceptor** sur les 525 tests.
+- **IDOR corrigé** (P0 audit) : `DashboardService` refuse désormais l'accès
+  à une famille qui n'est pas dans le périmètre de l'utilisateur
+  (`ForbiddenException` — nouvelle exception HTTP 403) sauf super-user.
+- **Tests** : backend **525 ✓ BUILD SUCCESS** (`PropagationConsistencyTest`
+  adapté : `TenantContext.setTenantId` + `tenantId` explicite sur les
+  entités).
+
+### Mobile Flutter — sécurité + onboarding (parité avec le WIP)
+
+- **`TenantConfig`** (`lib/tenant_config.dart`) : orgId persistant
+  (SharedPreferences), résolution tolérante au stockage absent (tests), +
+  **en-têtes `X-Org-Id` / `X-Tenant`** ajoutés sur chaque requête par
+  `ApiService` (interceptor). `AuthState` enrichi (`orgId`,
+  `isMultiTenantActive`, `hasCurrentTenantAccess`), persistance à la
+  connexion, purge au logout.
+- **File de synchronisation offline-first** (`sync_service.dart`) : retry
+  avec `retryCount` (3 max), payload tenant-aware (`orgId`), `_submitToApi`
+  restauré, `markSyncFailed(id, error, retryCount)` dans la DB drift.
+- **Écrans RÉELS câblés** (fini les orphelins) :
+  - `OnboardingScreen` — première connexion (router GoRouter :
+    `/onboarding` → `/login` une fois `onboarding_complete`).
+  - `SecuritySettingsScreen` (`/security-settings`) — biométrie, code PIN,
+    expiration de session, protection anti-capture d'écran, journal d'audit
+    local (consultation / export CSV / effacement RGPD). Accessible depuis
+    **Profil** et le **drawer de tous les rôles**.
+  - `BiometricAuthService`, `SessionManager`, `AuditLogService`,
+    `ScreenshotProtection` (overlay de confidentialité au background).
+- **Suppression des stubs factices** (règle « aucun écran décoratif ») :
+  scanner QR factice (pas de caméra, non câblé), dashboard mobile vide et
+  ses fichiers 0-octet, boutons « Actions rapides » du profil sans action.
+- **Dépendances nettoyées** : seul `shared_preferences` ajouté ; les 6
+  dépendances inutilisées du WIP retirées (local_auth, qr_flutter,
+  file_picker, share_plus, screenshot, device_info_plus).
+- **Tests** : mobile **125 ✓** (widget_test étendu : onboarding 1re
+  connexion + login après onboarding), `flutter analyze` **0 issue**,
+  `flutter pub get` OK.
+
+### État des tests (bloc 11)
+
+- Backend : **525 ✓ BUILD SUCCESS**, 0 erreur `HandlerInterceptor`.
+- Frontend web : **223 ✓** (36 fichiers) + `tsc --noEmit` ✓ (inchangé).
+- Mobile : **125 ✓** + `flutter analyze` **0 issue**.
+
+### Commit / push
+
+- `a98ef56` — feat(multitenancy): isolation multi-tenant V70 + sécurité
+  mobile (fullstack). **Poussé sur origin/main** ✓.
+
+### Prochain objectif
+
+Suite des **P0 du COMMERCIALIZATION_AUDIT.md** : vérifier l'isolation
+multi-tenant de bout en bout sur la vraie base (migration V70 sur Postgres,
+2 églises distinctes, exports/fichiers/cache par tenant), puis traiter les
+P0 permissions/IDOR restants (vérification serveur sur chaque endpoint
+CRUD) et le rate limiting global. QA final : audit page par page, tests de
+rôles/permissions/CRUD/sync, responsive, perf, sécurité, déploiement.
+
+---
+
 ## SESSION 2026-08-17 (bloc 10) — Outils métier ÉVÉNEMENTS / FORMATION — standard V68/V69 (module désactivé + KPIs réels)
 
 ### Objectif
