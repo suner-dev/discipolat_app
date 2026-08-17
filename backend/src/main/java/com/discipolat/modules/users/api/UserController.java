@@ -94,6 +94,12 @@ public class UserController {
         ));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> me() {
+        User user = userService.findById(securityUtils.getCurrentUserId());
+        return ResponseEntity.ok(UserResponse.from(user));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE') or #id == authentication.principal")
     public ResponseEntity<UserResponse> findById(@PathVariable UUID id) {
