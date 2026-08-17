@@ -24,6 +24,8 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, UUID> {
 
     Optional<Evaluation> findByEvaluateurIdAndEvalueIdAndCategorie(UUID evaluateurId, UUID evalueId, CategorieEvaluation categorie);
 
+    List<Evaluation> findByEvaluateurIdAndEvalueId(UUID evaluateurId, UUID evalueId);
+
     boolean existsByEvaluateurIdAndEvalueIdAndCategorie(UUID evaluateurId, UUID evalueId, CategorieEvaluation categorie);
 
     @Query("SELECT AVG(e.note) FROM Evaluation e WHERE e.evalueId = :evalueId AND e.categorie = :categorie")

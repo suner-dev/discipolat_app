@@ -219,6 +219,19 @@ public class UserController {
         return ResponseEntity.ok(userService.getFaiseurWorkload(familleId));
     }
 
+    // ======================== FICHE UTILISATEUR COMPLÈTE ========================
+
+    /**
+     * Fiche complète d'un utilisateur pour l'encadrement : identité, âme liée,
+     * âmes suivies (faiseur), départements + membres (responsable), famille
+     * gérée (chef), évaluations reçues et MES évaluations (donner/modifier).
+     */
+    @GetMapping("/{id}/detail")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> getUserDetail(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.getUserDetail(id));
+    }
+
     // ======================== US-16: FAISEUR HISTORY ========================
 
     @GetMapping("/{id}/faiseur-history")

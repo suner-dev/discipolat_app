@@ -111,9 +111,14 @@ export default function ChefFamilleDashboardPage() {
         </div>
       ) : (
         <>
-          {/* Stats Cards */}
+          {/* Stats Cards — cliquables : liste des disciples ou rapport */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="stat-card animate-slide-up">
+            <button
+              type="button"
+              onClick={() => document.getElementById('liste-disciples-famille')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              title="Voir tous les disciples de votre famille"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold-500 to-amber-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Disciples</span>
@@ -122,8 +127,15 @@ export default function ChefFamilleDashboardPage() {
                 </div>
               </div>
               <span className="stat-value">{stats.totalDisciples ?? 0}</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '60ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour voir la liste</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/families')}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '60ms' }}
+              title="Ouvrir la gestion des familles"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-green-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Faiseurs</span>
@@ -132,8 +144,15 @@ export default function ChefFamilleDashboardPage() {
                 </div>
               </div>
               <span className="stat-value">{stats.totalFaiseurs ?? 0}</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '120ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">Gérer les faiseurs</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => document.getElementById('liste-disciples-famille')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '120ms' }}
+              title="Voir les disciples actifs de votre famille"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Actifs</span>
@@ -142,8 +161,15 @@ export default function ChefFamilleDashboardPage() {
                 </div>
               </div>
               <span className="stat-value text-emerald-500">{stats.actifs ?? 0}</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '180ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour voir la liste</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/reports/family')}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '180ms' }}
+              title="Ouvrir le rapport de famille"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Rapports semaine</span>
@@ -155,7 +181,8 @@ export default function ChefFamilleDashboardPage() {
                 {stats.rapportsSoumisSemaine ?? 0}
                 <span className="text-xs text-gray-400 ml-1">/ {stats.totalDisciples ?? 0}</span>
               </span>
-            </div>
+              <span className="text-[10px] text-gray-400 mt-1 block">Rapport de famille</span>
+            </button>
           </div>
 
           {/* Charts Row */}
@@ -324,7 +351,7 @@ export default function ChefFamilleDashboardPage() {
           </div>
 
           {/* All Disciples List */}
-          <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '180ms' }}>
+          <div id="liste-disciples-famille" className="glass-card p-6 animate-slide-up scroll-mt-24" style={{ animationDelay: '180ms' }}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Heart className="w-4 h-4 text-primary-500" />

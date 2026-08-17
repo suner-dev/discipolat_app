@@ -27,6 +27,7 @@ import 'presentation/screens/search/search_screen.dart';
 import 'presentation/screens/souls/crm_faiseur_screen.dart';
 import 'presentation/screens/souls/pastoral_360_screen.dart';
 import 'presentation/screens/users/users_list_screen.dart';
+import 'presentation/screens/users/user_detail_screen.dart';
 import 'presentation/screens/users/permissions_screen.dart';
 import 'presentation/screens/users/documents_screen.dart';
 import 'presentation/screens/users/audit_screen.dart';
@@ -399,6 +400,13 @@ final appRouter = GoRouter(
       path: '/users',
       name: 'users',
       builder: (context, state) => const UsersListScreen(),
+    ),
+    GoRoute(
+      path: '/users/:id',
+      name: 'user-detail',
+      builder: (context, state) => UserDetailScreen(
+        userId: state.pathParameters['id']!,
+      ),
     ),
     GoRoute(
       path: '/permissions',

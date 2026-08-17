@@ -237,6 +237,7 @@ class GlassStatCard extends StatelessWidget {
   final Color? iconColor;
   final String? trend;
   final bool trendUp;
+  final VoidCallback? onTap;
 
   const GlassStatCard({
     super.key,
@@ -248,11 +249,12 @@ class GlassStatCard extends StatelessWidget {
     this.iconColor,
     this.trend,
     this.trendUp = true,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    final card = GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,6 +309,11 @@ class GlassStatCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+    if (onTap == null) return card;
+    return GestureDetector(
+      onTap: onTap,
+      child: card,
     );
   }
 }

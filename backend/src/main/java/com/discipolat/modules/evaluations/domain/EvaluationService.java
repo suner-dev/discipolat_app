@@ -1,5 +1,6 @@
 package com.discipolat.modules.evaluations.domain;
 
+import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
@@ -7,6 +8,7 @@ import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -30,33 +32,36 @@ public class EvaluationService {
     private final DepartmentRepository departmentRepository;
     private final FamilyRepository familyRepository;
     private final SoulRepository soulRepository;
+    private final SoulDepartmentRepository soulDepartmentRepository;
 
     public EvaluationService(EvaluationRepository evaluationRepository,
                              SecurityUtils securityUtils,
                              UserRepository userRepository,
                              DepartmentRepository departmentRepository,
                              FamilyRepository familyRepository,
-                             SoulRepository soulRepository) {
+                             SoulRepository soulRepository,
+                             SoulDepartmentRepository soulDepartmentRepository) {
         this.evaluationRepository = evaluationRepository;
         this.securityUtils = securityUtils;
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
         this.familyRepository = familyRepository;
         this.soulRepository = soulRepository;
+        this.soulDepartmentRepository = soulDepartmentRepository;
     }
 
+    /**
+     * Crée une évaluation (sans doublon) — flux « Évaluer » de l'onglet Évaluations.
+     * L'évaluation reste anonyme pour l'évalué (seul l'agrégat est exposé).
+     */
     @CacheEvict(value = "evaluationScores", allEntries = true)
     public Evaluation submit(UUID evalueId, CategorieEvaluation categorie, int note, String commentaire) {
         UUID currentUserId = securityUtils.getCurrentUserId();
-        if (currentUserId.equals(evalueId)) {
-            throw new IllegalArgumentException("Vous ne pouvez pas vous évaluer vous-même");
-        }
-        if (note < 1 || note > 5) {
-            throw new IllegalArgumentException("La note doit être comprise entre 1 et 5");
-        }
-        validateEvaluationRight(currentUserId, evalueId, categorie);
+        checkEligible(currentUserId, evalueId, note);
+        validateEvaluationRight(currentUserId, evalueId);
         if (evaluationRepository.existsByEvaluateurIdAndEvalueIdAndCategorie(currentUserId, evalueId, categorie)) {
-            throw new IllegalArgumentException("Vous avez déjà évalué cette personne dans cette catégorie");
+            throw new BusinessRuleException(
+                    "Vous avez déjà évalué cette personne dans cette catégorie — utilisez la modification", "ALREADY_EVALUATED");
         }
         Evaluation evaluation = Evaluation.builder()
                 .evalueId(evalueId).evaluateurId(currentUserId)
@@ -65,43 +70,122 @@ public class EvaluationService {
         return evaluationRepository.save(evaluation);
     }
 
-    private void validateEvaluationRight(UUID currentUserId, UUID evalueId, CategorieEvaluation categorie) {
+    /**
+     * Crée si absente, modifie si existante — la « maîtrise » de l'évaluateur
+     * sur SA propre évaluation. La catégorie par défaut est dérivée du rôle
+     * de l'évalué (RESPONSABLE → RESPONSABLE, CHEF_DE_FAMILLE → CHEF_FAMILLE,
+     * FAISEUR → FAISEUR, sinon MEMBRE).
+     */
+    @CacheEvict(value = "evaluationScores", allEntries = true)
+    public Evaluation submitOrUpdate(UUID evalueId, CategorieEvaluation categorie, int note, String commentaire) {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        checkEligible(currentUserId, evalueId, note);
+        validateEvaluationRight(currentUserId, evalueId);
+
+        CategorieEvaluation cat = categorie != null ? categorie : deriveCategory(evalueId);
+        Evaluation evaluation = evaluationRepository
+                .findByEvaluateurIdAndEvalueIdAndCategorie(currentUserId, evalueId, cat)
+                .orElseGet(() -> Evaluation.builder()
+                        .evalueId(evalueId).evaluateurId(currentUserId)
+                        .categorie(cat).note(note).commentaire(commentaire)
+                        .build());
+        evaluation.setNote(note);
+        evaluation.setCommentaire(commentaire);
+        return evaluationRepository.save(evaluation);
+    }
+
+    private void checkEligible(UUID currentUserId, UUID evalueId, int note) {
+        if (currentUserId.equals(evalueId)) {
+            throw new BusinessRuleException("Vous ne pouvez pas vous évaluer vous-même", "SELF_EVALUATION");
+        }
+        if (note < 1 || note > 5) {
+            throw new BusinessRuleException("La note doit être comprise entre 1 et 5", "NOTE_OUT_OF_RANGE");
+        }
+    }
+
+    /** Catégorie dérivée du rôle de l'évalué. */
+    private CategorieEvaluation deriveCategory(UUID evalueId) {
+        return userRepository.findById(evalueId)
+                .map(u -> switch (u.getRole()) {
+                    case RESPONSABLE -> CategorieEvaluation.RESPONSABLE;
+                    case CHEF_DE_FAMILLE -> CategorieEvaluation.CHEF_FAMILLE;
+                    case FAISEUR -> CategorieEvaluation.FAISEUR;
+                    default -> CategorieEvaluation.MEMBRE;
+                })
+                .orElse(CategorieEvaluation.MEMBRE);
+    }
+
+    /**
+     * Droit d'évaluer : l'évalué doit exister et être — soit dans MON périmètre
+     * d'encadrement (mes disciples, ma famille, mes départements), soit mon
+     * supérieur (mon faiseur, mon chef de famille, mon responsable), soit un
+     * utilisateur quelconque si je suis pasteur/administrateur.
+     */
+    private void validateEvaluationRight(UUID currentUserId, UUID evalueId) {
         userRepository.findById(evalueId)
                 .orElseThrow(() -> new EntityNotFoundException("User", evalueId));
 
-        switch (categorie) {
-            case RESPONSABLE -> {
-                List<Department> depts = departmentRepository.findByResponsableId(evalueId);
-                boolean authorized = depts.stream().anyMatch(dept -> {
-                    List<Family> families = familyRepository.findAll();
-                    List<UUID> familyIds = families.stream().map(Family::getId).toList();
-                    if (familyIds.isEmpty()) return false;
-                    return soulRepository.findByFamilleIdIn(familyIds).stream()
-                            .anyMatch(s -> s.getFaiseurId().equals(currentUserId));
-                });
-                if (!authorized) {
-                    throw new IllegalArgumentException("Vous n'êtes pas membre de ce département");
-                }
-            }
-            case CHEF_FAMILLE -> {
-                List<Family> families = familyRepository.findByChefFamilleId(evalueId);
-                boolean authorized = families.stream().anyMatch(f ->
-                        soulRepository.findAllByFamilleId(f.getId()).stream()
-                                .anyMatch(s -> s.getFaiseurId().equals(currentUserId)));
-                if (!authorized) {
-                    throw new IllegalArgumentException("Vous n'êtes pas dans la famille de ce chef");
-                }
-            }
-            case FAISEUR -> {
-                // Disciples evaluate their faiseur via soul.userId -> currentUserId link
-                List<Soul> disciples = soulRepository.findAllByFaiseurId(evalueId);
-                boolean authorized = disciples.stream()
-                        .anyMatch(s -> currentUserId.equals(s.getUserId()));
-                if (!authorized) {
-                    throw new IllegalArgumentException("Ce faiseur ne vous suit pas. Seuls les disciples liés à un compte utilisateur peuvent évaluer.");
+        // Super-utilisateur (pasteur / admin) : peut évaluer tout le monde
+        if (securityUtils.isSuperUser()) return;
+
+        // Bottom-up : l'évalué est mon supérieur (mon faiseur, mon chef, mon responsable)
+        if (isMySuperior(currentUserId, evalueId)) return;
+
+        // Top-down : l'évalué est dans mon périmètre d'encadrement
+        if (isInMyScope(currentUserId, evalueId)) return;
+
+        throw new BusinessRuleException(
+                "Vous n'êtes pas autorisé à évaluer cette personne", "EVALUATION_NOT_ALLOWED");
+    }
+
+    private boolean isMySuperior(UUID currentUserId, UUID evalueId) {
+        List<Soul> mySouls = soulRepository.findAllByUserId(currentUserId);
+        if (mySouls.isEmpty()) return false;
+
+        // L'évalué est mon faiseur
+        if (mySouls.stream().anyMatch(s -> evalueId.equals(s.getFaiseurId()))) return true;
+
+        // L'évalué est le chef de famille d'une de mes âmes
+        for (Soul s : mySouls) {
+            if (s.getFamilleId() == null) continue;
+            Optional<Family> family = familyRepository.findById(s.getFamilleId());
+            if (family.isPresent() && evalueId.equals(family.get().getChefFamilleId())) return true;
+        }
+
+        // L'évalué est le responsable d'un département qui contient une de mes âmes
+        List<Department> depts = departmentRepository.findByResponsableId(evalueId);
+        if (!depts.isEmpty()) {
+            for (Soul s : mySouls) {
+                for (Department d : depts) {
+                    if (soulDepartmentRepository.existsBySoulIdAndDepartmentIdAndActifTrue(s.getId(), d.getId())) {
+                        return true;
+                    }
                 }
             }
         }
+        return false;
+    }
+
+    private boolean isInMyScope(UUID currentUserId, UUID evalueId) {
+        List<Soul> evalueSouls = soulRepository.findAllByUserId(evalueId);
+        if (evalueSouls.isEmpty()) return false;
+
+        boolean responsable = securityUtils.hasActiveRole("RESPONSABLE");
+        List<Department> myDepts = responsable ? departmentRepository.findByResponsableId(currentUserId) : List.of();
+        UUID myFamilyId = securityUtils.hasActiveRole("CHEF_DE_FAMILLE")
+                ? userRepository.findById(currentUserId).map(User::getFamilleGereeId).orElse(null)
+                : null;
+        boolean faiseur = securityUtils.hasActiveRole("FAISEUR");
+
+        for (Soul evalueSoul : evalueSouls) {
+            if (responsable && myDepts.stream()
+                    .anyMatch(d -> soulDepartmentRepository.existsBySoulIdAndDepartmentIdAndActifTrue(evalueSoul.getId(), d.getId()))) {
+                return true;
+            }
+            if (myFamilyId != null && myFamilyId.equals(evalueSoul.getFamilleId())) return true;
+            if (faiseur && currentUserId.equals(evalueSoul.getFaiseurId())) return true;
+        }
+        return false;
     }
 
     @Transactional(readOnly = true)
@@ -139,10 +223,36 @@ public class EvaluationService {
         return evaluationRepository.findByEvalueId(currentUserId, pageable);
     }
 
+    /**
+     * MES évaluations d'un utilisateur donné (pour pré-remplir le formulaire
+     * « donner / modifier » dans la fiche de l'utilisateur).
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getMyEvaluationsFor(UUID evalueId) {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        validateEvaluationRight(currentUserId, evalueId);
+        return evaluationRepository.findByEvaluateurIdAndEvalueId(currentUserId, evalueId).stream()
+                .map(e -> Map.<String, Object>of(
+                        "categorie", e.getCategorie().name(),
+                        "note", e.getNote(),
+                        "commentaire", e.getCommentaire() != null ? e.getCommentaire() : "",
+                        "date", e.getUpdatedAt() != null ? e.getUpdatedAt().toString() : e.getCreatedAt().toString()))
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> getEvaluationsForUser(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User", userId));
+
+        // Lecture limitée au périmètre : seuls les utilisateurs autorisés à
+        // évaluer cette personne (ou les super-utilisateurs) voient ses stats.
+        // Exception : MES propres évaluations (anonymisées) — toujours autorisé,
+        // sinon « /evaluations/me » échouerait en 422 (auto-évaluation interdite).
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        if (!securityUtils.isSuperUser() && !userId.equals(currentUserId)) {
+            validateEvaluationRight(currentUserId, userId);
+        }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("userId", userId);

@@ -16,9 +16,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.SoulExitRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.modules.families.domain.Family;
+import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.departments.domain.Department;
+import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.departments.domain.DepartmentDossierService;
+import com.discipolat.modules.evaluations.domain.EvaluationService;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,13 +43,23 @@ public class UserService {
     private final SoulHistoryRepository soulHistoryRepository;
     private final AuditService auditService;
     private final WorkspaceScopeService workspaceScopeService;
+    private final SoulDepartmentRepository soulDepartmentRepository;
+    private final FamilyRepository familyRepository;
+    private final DepartmentRepository departmentRepository;
+    private final EvaluationService evaluationService;
+    private final DepartmentDossierService dossierService;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        SecurityUtils securityUtils, SoulRepository soulRepository,
                        SoulExitRepository soulExitRepository,
                        SoulHistoryRepository soulHistoryRepository,
                        AuditService auditService,
-                       WorkspaceScopeService workspaceScopeService) {
+                       WorkspaceScopeService workspaceScopeService,
+                       SoulDepartmentRepository soulDepartmentRepository,
+                       FamilyRepository familyRepository,
+                       DepartmentRepository departmentRepository,
+                       EvaluationService evaluationService,
+                       DepartmentDossierService dossierService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.securityUtils = securityUtils;
@@ -51,6 +68,11 @@ public class UserService {
         this.soulHistoryRepository = soulHistoryRepository;
         this.auditService = auditService;
         this.workspaceScopeService = workspaceScopeService;
+        this.soulDepartmentRepository = soulDepartmentRepository;
+        this.familyRepository = familyRepository;
+        this.departmentRepository = departmentRepository;
+        this.evaluationService = evaluationService;
+        this.dossierService = dossierService;
     }
 
     // ======================== US-12: PROMOTE TO FAISEUR ========================
@@ -465,7 +487,170 @@ public class UserService {
 
     // ======================== US-16: FAISEUR HISTORY ========================
 
+    // ======================== FICHE UTILISATEUR COMPLÈTE ========================
+
+    /**
+     * Fiche complète d'un utilisateur pour l'encadrement (responsable, chef de
+     * famille, faiseur, pasteur/admin) : identité, âme liée au compte, âmes
+     * suivies (si faiseur), départements + membres (si responsable), famille
+     * gérée (si chef de famille), évaluations reçues et MES évaluations.
+     */
     @Transactional(readOnly = true)
+    public Map<String, Object> getUserDetail(UUID userId) {
+        User u = findById(userId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", u.getId());
+        result.put("firstName", u.getFirstName());
+        result.put("lastName", u.getLastName());
+        result.put("email", u.getEmail());
+        result.put("phone", u.getPhone());
+        result.put("role", u.getRole().name());
+        result.put("statut", u.getStatut().name());
+        result.put("estChefDeFamille", u.isEstChefDeFamille());
+        result.put("dateCreation", u.getCreatedAt());
+
+        // Âme(s) liée(s) au compte (soul.userId)
+        List<Soul> linkedSouls = soulRepository.findAllByUserId(userId).stream()
+                .filter(s -> !s.isDeleted()).toList();
+        Soul linkedSoul = linkedSouls.isEmpty() ? null : linkedSouls.get(0);
+        if (linkedSoul != null) {
+            Soul s = linkedSoul;
+            Map<String, Object> ame = new LinkedHashMap<>();
+            ame.put("id", s.getId());
+            ame.put("nomComplet", s.getNomComplet());
+            ame.put("telephone", s.getTelephone());
+            ame.put("email", s.getEmail());
+            ame.put("profession", s.getProfession());
+            ame.put("statut", s.getStatut().name());
+            ame.put("typeDisciple", s.getTypeDisciple().name());
+            ame.put("dateIntegration", s.getDateIntegration() != null ? s.getDateIntegration().toString() : null);
+            ame.put("familleId", s.getFamilleId());
+            ame.put("familleNom", s.getFamilleId() != null
+                    ? familyRepository.findById(s.getFamilleId()).map(Family::getNom).orElse(null) : null);
+            ame.put("faiseurId", s.getFaiseurId());
+            ame.put("faiseurNom", s.getFaiseurId() != null
+                    ? userRepository.findById(s.getFaiseurId())
+                            .map(f -> f.getFirstName() + " " + f.getLastName()).orElse(null) : null);
+            result.put("ame", ame);
+        } else {
+            result.put("ame", null);
+        }
+
+        // Faiseur : âmes qu'il suit (actuelles) + sorties passées
+        if (u.getRoles().contains(UserRole.FAISEUR)) {
+            List<Map<String, Object>> amesSuivies = soulRepository.findAllByFaiseurId(userId).stream()
+                    .filter(s -> !s.isDeleted())
+                    .map(s -> {
+                        Map<String, Object> m = new LinkedHashMap<>();
+                        m.put("id", s.getId());
+                        m.put("nom", s.getNomComplet());
+                        m.put("statut", s.getStatut().name());
+                        m.put("typeDisciple", s.getTypeDisciple().name());
+                        m.put("familleNom", s.getFamilleId() != null
+                                ? familyRepository.findById(s.getFamilleId()).map(Family::getNom).orElse(null) : null);
+                        m.put("dateIntegration", s.getDateIntegration() != null ? s.getDateIntegration().toString() : null);
+                        m.put("hasCompte", s.getUserId() != null);
+                        m.put("userId", s.getUserId());
+                        return m;
+                    })
+                    .toList();
+            result.put("amesSuivies", amesSuivies);
+            result.put("nombreAmesSuivies", (long) amesSuivies.size());
+            result.put("sorties", soulExitRepository.findByFaiseurIdOrderByCreatedAtDesc(userId).stream()
+                    .map(ex -> Map.<String, Object>of(
+                            "ameId", ex.getAmeId(),
+                            "motif", ex.getMotif(),
+                            "dateSortie", ex.getDateSortie().toString()))
+                    .toList());
+        }
+
+        // Responsable : départements dirigés + leurs membres
+        if (u.getRoles().contains(UserRole.RESPONSABLE)) {
+            List<Map<String, Object>> departements = new ArrayList<>();
+            for (Department d : departmentRepository.findByResponsableId(userId)) {
+                Map<String, Object> dm = new LinkedHashMap<>();
+                dm.put("id", d.getId());
+                dm.put("nom", d.getNom());
+                List<UUID> soulIds = soulDepartmentRepository.findByDepartmentIdAndActifTrue(d.getId()).stream()
+                        .map(sd -> sd.getSoulId()).toList();
+                List<Map<String, Object>> membres = new ArrayList<>();
+                if (!soulIds.isEmpty()) {
+                    for (Soul s : soulRepository.findAllById(soulIds)) {
+                        if (s.isDeleted()) continue;
+                        Map<String, Object> mm = new LinkedHashMap<>();
+                        mm.put("id", s.getId());
+                        mm.put("nomComplet", s.getNomComplet());
+                        mm.put("statut", s.getStatut().name());
+                        mm.put("typeDisciple", s.getTypeDisciple().name());
+                        mm.put("telephone", s.getTelephone());
+                        mm.put("email", s.getEmail());
+                        mm.put("familleNom", s.getFamilleId() != null
+                                ? familyRepository.findById(s.getFamilleId()).map(Family::getNom).orElse(null) : null);
+                        mm.put("faiseurNom", s.getFaiseurId() != null
+                                ? userRepository.findById(s.getFaiseurId())
+                                        .map(f -> f.getFirstName() + " " + f.getLastName()).orElse(null) : null);
+                        mm.put("userId", s.getUserId());
+                        membres.add(mm);
+                    }
+                    membres.sort(Comparator.comparing(m -> String.valueOf(m.get("nomComplet"))));
+                }
+                dm.put("membres", membres);
+                departements.add(dm);
+            }
+            result.put("departements", departements);
+        }
+
+        // Chef de famille : famille gérée + ses membres
+        if (u.getFamilleGereeId() != null) {
+            familyRepository.findById(u.getFamilleGereeId()).ifPresent(fam -> {
+                Map<String, Object> famille = new LinkedHashMap<>();
+                famille.put("id", fam.getId());
+                famille.put("nom", fam.getNom());
+                List<Map<String, Object>> membres = soulRepository.findAllByFamilleId(fam.getId()).stream()
+                        .filter(s -> !s.isDeleted())
+                        .map(s -> {
+                            Map<String, Object> mm = new LinkedHashMap<>();
+                            mm.put("id", s.getId());
+                            mm.put("nomComplet", s.getNomComplet());
+                            mm.put("statut", s.getStatut().name());
+                            mm.put("faiseurNom", s.getFaiseurId() != null
+                                    ? userRepository.findById(s.getFaiseurId())
+                                            .map(f -> f.getFirstName() + " " + f.getLastName()).orElse(null) : null);
+                            return mm;
+                        })
+                        .toList();
+                famille.put("membres", membres);
+                result.put("familleGeree", famille);
+            });
+        }
+
+        // Évaluations reçues (agrégat anonyme) + MES évaluations (pour modifier)
+        result.put("evaluations", evaluationService.getUserEvalScores(userId));
+        result.put("monEvaluation", evaluationService.getMyEvaluationsFor(userId));
+
+        // Dossier du membre (objectifs, rapports du responsable, notes,
+        // documents) — limité aux départements accessibles à l'appelant
+        // (super-utilisateur : tous ; responsable : ses départements ;
+        // chef de famille / faiseur : aucun).
+        if (linkedSoul != null) {
+            Set<UUID> accessibleDeptIds = securityUtils.isSuperUser()
+                    ? departmentRepository.findAll().stream().map(Department::getId).collect(Collectors.toSet())
+                    : workspaceScopeService.accessibleDepartmentIds();
+            List<Map<String, Object>> dossier = dossierService.dossierUtilisateur(linkedSoul.getId(), accessibleDeptIds);
+            for (Map<String, Object> d : dossier) {
+                UUID deptId = (UUID) d.get("departmentId");
+                d.put("departmentNom", departmentRepository.findById(deptId).map(Department::getNom).orElse(null));
+            }
+            result.put("dossier", dossier);
+            result.put("dossierDocuments", dossierService.dossierDocuments(linkedSoul.getId()));
+        } else {
+            result.put("dossier", List.of());
+            result.put("dossierDocuments", List.of());
+        }
+        return result;
+    }
+
     public Map<String, Object> getFaiseurHistory(UUID faiseurId) {
         User faiseur = findById(faiseurId);
         Map<String, Object> history = new LinkedHashMap<>();

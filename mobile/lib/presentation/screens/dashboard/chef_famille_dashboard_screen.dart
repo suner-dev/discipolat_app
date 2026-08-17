@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
@@ -102,6 +103,11 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                             icon: item['icon'] as IconData,
                             gradientStart: item['color'] as Color,
                             gradientEnd: (item['color'] as Color).withValues(alpha: 0.7),
+                            onTap: () => context.go(
+                              item['label'] == 'Faiseurs' ? '/users'
+                                  : item['label'] == 'Rapports' ? '/reports/family'
+                                  : '/souls',
+                            ),
                           );
                         },
                       ),
@@ -116,39 +122,42 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                           final chargeColor = charge == 'SURCHARGÉ'
                               ? Colors.redAccent
                               : charge == 'LEGER' ? Colors.greenAccent : Colors.blueAccent;
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.04),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(children: [
-                              Expanded(child: Text('${w['faiseurName'] ?? '—'}',
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12))),
-                              if (charge.isNotEmpty)
+                          return GestureDetector(
+                            onTap: () => context.go('/users'),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.04),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(children: [
+                                Expanded(child: Text('${w['faiseurName'] ?? '—'}',
+                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12))),
+                                if (charge.isNotEmpty)
+                                  Container(
+                                    margin: const EdgeInsets.only(right: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: chargeColor.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      charge == 'SURCHARGÉ' ? 'Surchargé' : charge == 'LEGER' ? 'Léger' : 'Normal',
+                                      style: TextStyle(color: chargeColor, fontSize: 9, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
                                 Container(
-                                  margin: const EdgeInsets.only(right: 6),
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: chargeColor.withValues(alpha: 0.15),
+                                    color: AppColors.primary.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Text(
-                                    charge == 'SURCHARGÉ' ? 'Surchargé' : charge == 'LEGER' ? 'Léger' : 'Normal',
-                                    style: TextStyle(color: chargeColor, fontSize: 9, fontWeight: FontWeight.w600),
-                                  ),
+                                  child: Text('${w['soulCount'] ?? 0} âmes',
+                                      style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
                                 ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text('${w['soulCount'] ?? 0} âmes',
-                                    style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
-                              ),
-                            ]),
+                              ]),
+                            ),
                           );
                         }),
                         const SizedBox(height: 16),
@@ -181,7 +190,11 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                                   style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
                               children: faiseurDisciples.map((d) {
                                 final disciple = d as Map<String, dynamic>;
+                                final discipleId = disciple['id']?.toString();
                                 return ListTile(
+                                  onTap: (discipleId != null && discipleId.isNotEmpty)
+                                      ? () => context.go('/souls/$discipleId')
+                                      : null,
                                   leading: Container(
                                     width: 8, height: 8,
                                     decoration: BoxDecoration(

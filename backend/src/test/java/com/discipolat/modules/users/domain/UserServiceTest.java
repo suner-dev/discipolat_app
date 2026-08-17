@@ -44,14 +44,27 @@ class UserServiceTest {
     private AuditService auditService;
     @Mock
     private WorkspaceScopeService workspaceScopeService;
+    @Mock
+    private com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository;
+    @Mock
+    private com.discipolat.modules.families.domain.FamilyRepository familyRepository;    @Mock
+    private com.discipolat.modules.departments.domain.DepartmentRepository departmentRepository;
+    @Mock
+    private com.discipolat.modules.evaluations.domain.EvaluationService evaluationService;
+    @Mock
+    private com.discipolat.modules.departments.domain.DepartmentDossierService dossierService;
 
     private UserService userService;
+
+
+
 
     @BeforeEach
     void setUp() {
         userService = new UserService(userRepository, passwordEncoder, securityUtils,
                 soulRepository, soulExitRepository, soulHistoryRepository, auditService,
-                workspaceScopeService);
+                workspaceScopeService, soulDepartmentRepository, familyRepository,
+                departmentRepository, evaluationService, dossierService);
     }
 
     private User userWithRole(UserRole role) {
@@ -62,6 +75,7 @@ class UserServiceTest {
                 .lastName("Test")
                 .role(role)
                 .roles(new HashSet<>(Set.of(role)))
+                .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE)
                 .build();
     }
 
@@ -255,5 +269,60 @@ class UserServiceTest {
         var result = userService.getFaiseurWorkload(null);
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getUserDetail_WithLinkedSoul_ShouldIncludeScopedDossier() {
+        UUID userId = UUID.randomUUID();
+        UUID deptId = UUID.randomUUID();
+        UUID soulId = UUID.randomUUID();
+        User user = userWithRole(UserRole.PASTEUR);
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+        Soul soul = new Soul();
+        soul.setId(soulId);
+        soul.setTypeDisciple(com.discipolat.common.enums.TypeDisciple.NOUVEAU_CONVERTI);
+        soul.setStatut(com.discipolat.common.enums.StatutAme.ACTIF);
+        when(soulRepository.findAllByUserId(userId)).thenReturn(java.util.List.of(soul));
+        // Super-utilisateur : tous les départements sont accessibles.
+        when(securityUtils.isSuperUser()).thenReturn(true);
+        var department = new com.discipolat.modules.departments.domain.Department();
+        department.setId(deptId);
+        department.setNom("Jeunesse");
+        when(departmentRepository.findAll()).thenReturn(java.util.List.of(department));
+        var deptEntry = new java.util.LinkedHashMap<String, Object>();
+        deptEntry.put("departmentId", deptId);
+        deptEntry.put("objectifs", java.util.List.of());
+        deptEntry.put("rapportsResponsable", java.util.List.of());
+        deptEntry.put("notes", java.util.List.of());
+        when(dossierService.dossierUtilisateur(eq(soulId), eq(Set.of(deptId))))
+                .thenReturn(java.util.List.of(deptEntry));
+        when(dossierService.dossierDocuments(soulId)).thenReturn(java.util.List.of());
+        when(departmentRepository.findById(deptId)).thenReturn(java.util.Optional.of(department));
+        when(evaluationService.getUserEvalScores(userId)).thenReturn(java.util.Map.of());
+        when(evaluationService.getMyEvaluationsFor(userId)).thenReturn(java.util.List.of());
+
+        var result = userService.getUserDetail(userId);
+
+        @SuppressWarnings("unchecked")
+        var dossier = (java.util.List<java.util.Map<String, Object>>) result.get("dossier");
+        assertEquals(1, dossier.size());
+        assertEquals("Jeunesse", dossier.get(0).get("departmentNom"));
+        assertNotNull(result.get("dossierDocuments"));
+    }
+
+    @Test
+    void getUserDetail_WithoutLinkedSoul_ShouldReturnEmptyDossier() {
+        UUID userId = UUID.randomUUID();
+        User user = userWithRole(UserRole.MEMBRE);
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+        when(soulRepository.findAllByUserId(userId)).thenReturn(java.util.List.of());
+        when(evaluationService.getUserEvalScores(userId)).thenReturn(java.util.Map.of());
+        when(evaluationService.getMyEvaluationsFor(userId)).thenReturn(java.util.List.of());
+
+        var result = userService.getUserDetail(userId);
+
+        assertEquals(java.util.List.of(), result.get("dossier"));
+        assertEquals(java.util.List.of(), result.get("dossierDocuments"));
+        verify(dossierService, never()).dossierUtilisateur(any(), any());
     }
 }

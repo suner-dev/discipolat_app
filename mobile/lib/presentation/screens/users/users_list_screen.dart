@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
@@ -19,6 +20,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   late final ApiService _apiService = widget.apiService ?? ApiService();
   List<dynamic> _users = [];
   List<dynamic> _workload = [];
+  Map<String, dynamic> _evalScores = {};
   bool _isLoading = true;
   bool _showCreate = false;
   bool _showWorkload = true;
@@ -63,9 +65,21 @@ class _UsersListScreenState extends State<UsersListScreen> {
     try {
       final usersRes = await _apiService.get('/users', params: {'size': '50'});
       final workloadRes = await _apiService.get('/users/faiseur-workload');
+      final users = (usersRes.data['content'] as List?) ?? [];
+      Map<String, dynamic> evalScores = {};
+      // Scores d'évaluation agrégés (une requête groupée pour toute la page).
+      final ids = users.map((u) => (u as Map<String, dynamic>)['id']?.toString()).whereType<String>().toList();
+      if (ids.isNotEmpty) {
+        try {
+          final scoresRes = await _apiService.get('/users/evaluation-scores',
+              params: {'userIds': ids.join(',')});
+          evalScores = (scoresRes.data as Map<String, dynamic>?) ?? {};
+        } catch (_) {/* best-effort : la moyenne n'empêche pas l'affichage de la liste */}
+      }
       if (mounted) {
-        _users = (usersRes.data['content'] as List?) ?? [];
+        _users = users;
         _workload = (workloadRes.data as List?) ?? [];
+        _evalScores = evalScores;
         setState(() => _isLoading = false);
       }
     } catch (_) { if (mounted) setState(() => _isLoading = false); }
@@ -266,65 +280,114 @@ class _UsersListScreenState extends State<UsersListScreen> {
     final color = _roleColor(role);
     final name = '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}';
 
-    return GlassCard(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
-              borderRadius: BorderRadius.circular(10),
+    return GestureDetector(
+      onTap: () => context.go('/users/${u['id']}'),
+      child: GlassCard(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(child: Text(
+                '${(name.isNotEmpty ? name[0] : '?')}${name.length > 1 ? name.split(' ').last[0] : ''}',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+              )),
             ),
-            child: Center(child: Text(
-              '${(name.isNotEmpty ? name[0] : '?')}${name.length > 1 ? name.split(' ').last[0] : ''}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-            )),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name.trim().isEmpty ? '—' : name,
-                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-            Text('${u['email'] ?? ''}',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
-          ])),
-          Container(
-            width: 8, height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive ? Colors.green : Colors.grey,
-              boxShadow: isActive ? [BoxShadow(color: Colors.green.withValues(alpha: 0.5), blurRadius: 4)] : null,
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name.trim().isEmpty ? '—' : name,
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+              Text('${u['email'] ?? ''}',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+            ])),
+            Container(
+              width: 8, height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isActive ? Colors.green : Colors.grey,
+                boxShadow: isActive ? [BoxShadow(color: Colors.green.withValues(alpha: 0.5), blurRadius: 4)] : null,
+              ),
             ),
-          ),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          _badge(color, _roleLabels[role] ?? role),
-          const SizedBox(width: 6),
-          _badge(isActive ? Colors.green : Colors.grey, isActive ? 'Actif' : 'Inactif'),
-          if (u['estChefDeFamille'] == true) ...[
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            _badge(color, _roleLabels[role] ?? role),
             const SizedBox(width: 6),
-            _badge(const Color(0xFFD4AF37), 'Chef'),
-          ],
-        ]),
-        if (role == 'FAISEUR' || role == 'RESPONSABLE' || role == 'PASTEUR')
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(children: [
-              if (role == 'FAISEUR') ...[
-                _actionBtn(Icons.arrow_downward, () => _showActionModal(u, 'demote'), Colors.amber),
-                const SizedBox(width: 4),
-                _actionBtn(Icons.swap_horiz, () => _showActionModal(u, 'transfer'), Colors.blue),
-              ],
-              if (role != 'FAISEUR' && role != 'ADMIN') ...[
-                const SizedBox(width: 4),
-                _actionBtn(Icons.arrow_upward, () => _showActionModal(u, 'promote'), Colors.green),
-              ],
+            _badge(isActive ? Colors.green : Colors.grey, isActive ? 'Actif' : 'Inactif'),
+            if (u['estChefDeFamille'] == true) ...[
+              const SizedBox(width: 6),
+              _badge(const Color(0xFFD4AF37), 'Chef'),
+            ],
+            if (_evalBadge(u['id']) != null) ...[
+              const SizedBox(width: 6),
+              _evalBadge(u['id'])!,
+            ],
+            const Spacer(),
+            _actionBtn(Icons.person, () => context.go('/users/${u['id']}'), AppColors.primary, tooltip: 'Fiche complète'),
+            if (role == 'FAISEUR') ...[
               const SizedBox(width: 4),
-              _actionBtn(Icons.delete_forever, () => _showActionModal(u, 'hardDelete'), Colors.red),
-            ]),
-          ),
+              _actionBtn(Icons.history, () => _showActionModal(u, 'history'), const Color(0xFFA855F7), tooltip: 'Historique'),
+            ],
+          ]),
+          if (role == 'FAISEUR' || role == 'RESPONSABLE' || role == 'PASTEUR')
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(children: [
+                if (role == 'FAISEUR') ...[
+                  _actionBtn(Icons.arrow_downward, () => _showActionModal(u, 'demote'), Colors.amber),
+                  const SizedBox(width: 4),
+                  _actionBtn(Icons.swap_horiz, () => _showActionModal(u, 'transfer'), Colors.blue),
+                ],
+                if (role != 'FAISEUR' && role != 'ADMIN') ...[
+                  const SizedBox(width: 4),
+                  _actionBtn(Icons.arrow_upward, () => _showActionModal(u, 'promote'), Colors.green),
+                ],
+                const SizedBox(width: 4),
+                _actionBtn(Icons.delete_forever, () => _showActionModal(u, 'hardDelete'), Colors.red),
+              ]),
+            ),
+        ]),
+      ),
+    );
+  }
+
+  /// Badge « moyenne d'évaluation » (parité web : étoiles + note + compteur).
+  Widget? _evalBadge(dynamic userId) {
+    final scores = _evalScores[userId] as Map<String, dynamic>?;
+    if (scores == null || scores.isEmpty) return null;
+    final values = scores.values.whereType<Map<String, dynamic>>().toList();
+    if (values.isEmpty) return null;
+    double totalAvg = values.fold<double>(0, (acc, s) => acc + ((s['moyenne'] as num?) ?? 0));
+    totalAvg = totalAvg / values.length;
+    final totalCount = values.fold<int>(0, (acc, s) => acc + ((s['total'] as num?) ?? 0).toInt());
+    final rounded = totalAvg.round();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFD4AF37).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        ...List.generate(5, (i) => Icon(
+          i < rounded ? Icons.star_rounded : Icons.star_border_rounded,
+          size: 11,
+          color: i < rounded ? const Color(0xFFF59E0B) : Colors.white24,
+        )),
+        const SizedBox(width: 3),
+        Text(
+          totalAvg > 0 ? totalAvg.toStringAsFixed(1) : '—',
+          style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 10, fontWeight: FontWeight.w700),
+        ),
+        if (totalCount > 0) ...[
+          const SizedBox(width: 2),
+          Text('($totalCount)', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9)),
+        ],
       ]),
     );
   }
@@ -337,13 +400,16 @@ class _UsersListScreenState extends State<UsersListScreen> {
     );
   }
 
-  Widget _actionBtn(IconData icon, VoidCallback onTap, Color color) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, color: color, size: 16),
+  Widget _actionBtn(IconData icon, VoidCallback onTap, Color color, {String? tooltip}) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, color: color, size: 16),
+        ),
       ),
     );
   }
@@ -477,23 +543,8 @@ class _ActionModalState extends State<_ActionModal> {
               ]),
               const SizedBox(height: 16),
 
-              if (widget.action == 'history' && _history != null)
-                SizedBox(
-                  height: 300,
-                  child: SingleChildScrollView(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.04),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _history.toString(),
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontFamily: 'monospace'),
-                      ),
-                    ),
-                  ),
-                )
+              if (widget.action == 'history')
+                _buildHistoryContent()
               else if (widget.action == 'transfer')
                 ..._buildTransferContent()
               else if (widget.action == 'demote')
@@ -527,10 +578,216 @@ class _ActionModalState extends State<_ActionModal> {
                     ),
                   ),
                 ]),
+              ] else ...[
+                const SizedBox(height: 16),
+                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Fermer'),
+                  ),
+                ]),
               ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // HISTORIQUE STYLISÉ (parcours du faiseur + âmes suivies)
+  // ============================================================
+
+  String _formatDate(dynamic date) {
+    if (date == null) return '—';
+    final s = date.toString();
+    return s.length >= 10 ? '${s.substring(8, 10)}/${s.substring(5, 7)}/${s.substring(0, 4)}' : s;
+  }
+
+  String _statutLabel(String? statut) {
+    switch (statut) {
+      case 'ACTIF': return 'Actif';
+      case 'EN_INTEGRATION': return 'Intégration';
+      case 'EN_VEILLE': return 'Veille';
+      case 'DECROCHE': return 'Décroché';
+      default: return statut ?? '—';
+    }
+  }
+
+  Color _statutColor(String? statut) {
+    switch (statut) {
+      case 'ACTIF': return Colors.greenAccent;
+      case 'EN_INTEGRATION': return Colors.amber;
+      case 'EN_VEILLE': return Colors.lightBlueAccent;
+      case 'DECROCHE': return Colors.redAccent;
+      default: return Colors.white70;
+    }
+  }
+
+  Widget _buildHistoryContent() {
+    if (_history == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    final h = _history!;
+    final ames = (h['amesActuelles'] as List?) ?? [];
+    final sorties = (h['sorties'] as List?) ?? [];
+
+    return SizedBox(
+      height: 320,
+      child: SingleChildScrollView(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Résumé du parcours
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [
+                const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                const Color(0xFF6D28D9).withValues(alpha: 0.10),
+              ]),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFA855F7).withValues(alpha: 0.3)),
+            ),
+            child: Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Rôle', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
+                  const SizedBox(height: 2),
+                  Text(widget.roleLabels[h['role']] ?? h['role']?.toString() ?? '—',
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                  if (h['estChef'] == true) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('Chef de famille',
+                          style: TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ]),
+              ),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text('Membre depuis', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
+                const SizedBox(height: 2),
+                Text(_formatDate(h['dateCreation']),
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 14),
+
+          // Âmes actuellement suivies
+          Row(children: [
+            const Icon(Icons.favorite, color: Colors.greenAccent, size: 15),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text('Âmes actuellement suivies',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600)),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+              child: Text('${h['nombreAmesActuelles'] ?? ames.length}',
+                  style: const TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.w700)),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          if (ames.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(12)),
+              child: Center(
+                child: Text('Aucune âme suivie actuellement',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 12)),
+              ),
+            )
+          else
+            ...ames.map((raw) {
+              final a = raw as Map<String, dynamic>;
+              final statut = (a['statut'] as String?) ?? '';
+              final nom = a['nom']?.toString() ?? '—';
+              final initials = nom.split(' ').where((p) => p.isNotEmpty).map((p) => p[0]).take(2).join();
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)),
+                child: Row(children: [
+                  Container(
+                    width: 34, height: 34,
+                    decoration: BoxDecoration(
+                      color: _statutColor(statut).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(child: Text(initials,
+                        style: TextStyle(color: _statutColor(statut), fontSize: 11, fontWeight: FontWeight.bold))),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(nom, maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: _statutColor(statut).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(_statutLabel(statut),
+                        style: TextStyle(color: _statutColor(statut), fontSize: 9, fontWeight: FontWeight.w600)),
+                  ),
+                ]),
+              );
+            }),
+
+          // Sorties de suivi
+          if (sorties.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(children: [
+              const Icon(Icons.person_remove, color: Colors.redAccent, size: 15),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text('Sorties de suivi',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                child: Text('${sorties.length}',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10, fontWeight: FontWeight.w700)),
+              ),
+            ]),
+            const SizedBox(height: 8),
+            ...sorties.map((raw) {
+              final ex = raw as Map<String, dynamic>;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.person_remove, color: Colors.redAccent, size: 14),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(ex['motif']?.toString() ?? 'Sortie du suivi', maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
+                  ),
+                  Text(_formatDate(ex['dateSortie']),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10)),
+                ]),
+              );
+            }),
+          ],
+        ]),
       ),
     );
   }

@@ -588,7 +588,7 @@ export default function EventsPage() {
                               userId: reg.utilisateurId,
                               present: true,
                             })}
-                            disabled={markAttendanceMutation.isPending || isPresent}
+                            disabled={markAttendanceMutation.isPending}
                             className={`p-2 rounded-lg transition-colors ${
                               isPresent
                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
@@ -604,7 +604,7 @@ export default function EventsPage() {
                               userId: reg.utilisateurId,
                               present: false,
                             })}
-                            disabled={markAttendanceMutation.isPending || isAbsent}
+                            disabled={markAttendanceMutation.isPending}
                             className={`p-2 rounded-lg transition-colors ${
                               isAbsent
                                 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'

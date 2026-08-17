@@ -6,7 +6,7 @@ import {
   Building2, Users, UserPlus, Calendar, UserCheck, FileText, Activity,
   Star, ChevronRight, Cake, CheckCircle, Clock, UserX, Network, AlertCircle,
   Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2, UserRound, ListTodo, ArrowLeftRight,
-  CalendarDays,
+  CalendarDays, X,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -40,6 +40,7 @@ export default function ResponsableDashboardPage() {
   const [presenceType, setPresenceType] = useState('');
   const [presenceSousType, setPresenceSousType] = useState('');
   const [attendanceEvent, setAttendanceEvent] = useState<any | null>(null);
+  const [showBirthdays, setShowBirthdays] = useState(false);
 
   const { data: dashboard, isLoading, refetch } = useQuery({
     queryKey: ['dashboard', 'responsable', selectedDeptId],
@@ -77,7 +78,7 @@ export default function ResponsableDashboardPage() {
     enabled: !!activeDeptId,
   });
 
-  const [presenceForm, setPresenceForm] = useState<Record<string, boolean>>({});
+  const [presenceForm, setPresenceForm] = useState<Record<string, boolean | undefined>>({});
   const [presenceNotes, setPresenceNotes] = useState<Record<string, string>>({});
 
   const presenceMutation = useMutation({
@@ -123,11 +124,15 @@ export default function ResponsableDashboardPage() {
   };
 
   // Initialiser le formulaire à partir de la fiche chargée (une fois par semaine/département)
+  // NB : un membre non pointé (present null) reste « Non pointé » — il n'est PAS
+  // envoyé comme absent lors de l'enregistrement (seuls les statuts choisis le sont).
   useEffect(() => {
     setPresenceForm({});
     setPresenceNotes({});
     (presenceSheet ?? []).forEach((m) => {
-      setPresenceForm((f) => ({ ...f, [m.soulId]: m.present ?? false }));
+      if (m.present !== null && m.present !== undefined) {
+        setPresenceForm((f) => ({ ...f, [m.soulId]: m.present }));
+      }
       if (m.notes) setPresenceNotes((n) => ({ ...n, [m.soulId]: m.notes as string }));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -225,9 +230,14 @@ export default function ResponsableDashboardPage() {
             </Link>
           </div>
 
-          {/* Member Stats Cards */}
+          {/* Member Stats Cards — cliquables : navigation ou liste détaillée */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <div className="stat-card animate-slide-up">
+            <button
+              type="button"
+              onClick={() => navigate(`/departments/${activeDeptId}`)}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              title="Gérer les membres du département"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Membres</span>
@@ -236,9 +246,15 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value">{stats.totalMembres ?? 0}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">dans {dashboard?.selectedDeptNom}</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '60ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">dans {dashboard?.selectedDeptNom} · gérer</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/departments/${activeDeptId}`)}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '60ms' }}
+              title="Voir les membres actifs"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-green-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Membres actifs</span>
@@ -247,8 +263,15 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value text-emerald-500">{stats.totalActifs ?? 0}</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '120ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">cliquer pour gérer</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => document.getElementById('nouveaux-membres')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '120ms' }}
+              title="Voir les nouveaux membres (30 jours)"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Nouveaux membres</span>
@@ -257,9 +280,15 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value text-blue-500">{stats.nouveauxMembres ?? 0}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">30 derniers jours</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '180ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">30 derniers jours · cliquer pour voir</span>
+            </button>
+            <button
+              type="button"
+              onClick={scrollToPresences}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '180ms' }}
+              title="Aller à la saisie des présences"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-purple-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Taux de présence</span>
@@ -268,8 +297,15 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value text-violet-500">{stats.tauxPresence ?? 0}%</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '240ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">cliquer pour pointer</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/departments/${activeDeptId}/report`)}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '240ms' }}
+              title="Ouvrir le rapport du département"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Rapports reçus</span>
@@ -278,9 +314,15 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value">{stats.rapportsSoumis ?? 0}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">/ {stats.rapportsAttendus ?? 0} attendus</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '300ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">/ {stats.rapportsAttendus ?? 0} attendus · rapport</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBirthdays(true)}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '300ms' }}
+              title="Voir les anniversaires du mois"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Anniversaires</span>
@@ -289,9 +331,15 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value text-pink-500">{anniversaires.length}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">ce mois-ci</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '360ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">ce mois-ci · cliquer pour la liste</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/departments/${activeDeptId}/manage`)}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '360ms' }}
+              title="Ouvrir la gestion du département (équipes, postes)"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Équipes</span>
@@ -300,9 +348,15 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value">{stats.equipesActives ?? 0}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">actives · {stats.postesActifs ?? 0} postes</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '420ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">actives · {stats.postesActifs ?? 0} postes · gérer</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/departments/${activeDeptId}/manage`)}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '420ms' }}
+              title="Ouvrir les tâches en retard"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-rose-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Tâches en retard</span>
@@ -311,8 +365,8 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value text-red-500">{stats.tachesEnRetard ?? 0}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">{stats.tachesOuvertes ?? 0} ouvertes</span>
-            </div>
+              <span className="text-[10px] text-gray-400 mt-1 block">{stats.tachesOuvertes ?? 0} ouvertes · gérer</span>
+            </button>
           </div>
 
           {/* Reports progress */}
@@ -416,42 +470,68 @@ export default function ResponsableDashboardPage() {
               </div>
             ) : (
               <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
-                {presenceSheet.map((m) => (
-                  <div key={m.soulId} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
-                    <button
-                      onClick={() => setPresenceForm((f) => ({ ...f, [m.soulId]: !(f[m.soulId] ?? false) }))}
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
-                        presenceForm[m.soulId]
-                          ? 'bg-emerald-500 text-white shadow-glow' 
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
-                      }`}
-                      title={presenceForm[m.soulId] ? 'Marquer absent' : 'Marquer présent'}
-                    >
-                      {presenceForm[m.soulId]
-                        ? <CheckCircle className="w-5 h-5" />
-                        : <UserX className="w-5 h-5" />}
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{m.nom}</p>
-                      <p className="text-[10px] text-gray-400 truncate">
-                        {m.familleNom ? `Famille ${m.familleNom}` : 'Sans famille'}
-                        {m.statut ? ` · ${m.statut.replace(/_/g, ' ').toLowerCase()}` : ''}
-                      </p>
+                {presenceSheet.map((m) => {
+                  const isPresent = presenceForm[m.soulId] === true;
+                  const isAbsent = presenceForm[m.soulId] === false;
+                  return (
+                    <div key={m.soulId} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                        isPresent
+                          ? 'bg-emerald-500 text-white shadow-glow'
+                          : isAbsent
+                            ? 'bg-red-100 text-red-600'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
+                      }`}>
+                        {isPresent
+                          ? <CheckCircle className="w-5 h-5" />
+                          : isAbsent
+                            ? <UserX className="w-5 h-5" />
+                            : <Clock className="w-5 h-5" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{m.nom}</p>
+                        <p className="text-[10px] text-gray-400 truncate">
+                          {m.familleNom ? `Famille ${m.familleNom}` : 'Sans famille'}
+                          {m.statut ? ` · ${m.statut.replace(/_/g, ' ').toLowerCase()}` : ''}
+                        </p>
+                      </div>
+                      {!m.userId && (
+                        <span className="badge text-[10px] badge-gray" title="Sans compte utilisateur lié">Pas de compte</span>
+                      )}
+                      <input
+                        className="input w-28 hidden sm:block"
+                        placeholder="Note"
+                        value={presenceNotes[m.soulId] || ''}
+                        onChange={(e) => setPresenceNotes((n) => ({ ...n, [m.soulId]: e.target.value }))}
+                      />
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => setPresenceForm((f) => ({ ...f, [m.soulId]: true }))}
+                          className={`p-2 rounded-lg transition-colors cursor-pointer ${
+                            isPresent ? 'bg-emerald-100 text-emerald-700' : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'
+                          }`}
+                          title="Marquer présent"
+                        >
+                          <UserCheck className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setPresenceForm((f) => ({ ...f, [m.soulId]: false }))}
+                          className={`p-2 rounded-lg transition-colors cursor-pointer ${
+                            isAbsent ? 'bg-red-100 text-red-700' : 'text-gray-400 hover:bg-red-50 hover:text-red-600'
+                          }`}
+                          title="Marquer absent"
+                        >
+                          <UserX className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <span className={`text-[10px] font-medium w-20 text-right ${
+                        isPresent ? 'text-emerald-500' : isAbsent ? 'text-red-400' : 'text-gray-400'
+                      }`}>
+                        {isPresent ? 'Présent' : isAbsent ? 'Absent' : 'Non pointé'}
+                      </span>
                     </div>
-                    {!m.userId && (
-                      <span className="badge text-[10px] badge-gray" title="Sans compte utilisateur lié">Pas de compte</span>
-                    )}
-                    <input
-                      className="input w-28 hidden sm:block"
-                      placeholder="Note"
-                      value={presenceNotes[m.soulId] || ''}
-                      onChange={(e) => setPresenceNotes((n) => ({ ...n, [m.soulId]: e.target.value }))}
-                    />
-                    <span className={`text-[10px] font-medium ${presenceForm[m.soulId] ? 'text-emerald-500' : 'text-red-400'}`}>
-                      {presenceForm[m.soulId] ? 'Présent' : 'Absent'}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -684,7 +764,7 @@ export default function ResponsableDashboardPage() {
 
             {/* Nouveaux membres + à suivre */}
             <div className="space-y-6">
-              <div className="glass-card p-5 animate-slide-up">
+              <div id="nouveaux-membres" className="glass-card p-5 animate-slide-up scroll-mt-24">
                 <div className="flex items-center gap-2 mb-4">
                   <UserPlus className="w-4 h-4 text-blue-500" />
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouveaux membres (30 jours)</h3>
@@ -792,6 +872,43 @@ export default function ResponsableDashboardPage() {
               event={attendanceEvent as any}
               onClose={() => setAttendanceEvent(null)}
             />
+          )}
+
+          {/* Modale anniversaires du mois */}
+          {showBirthdays && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowBirthdays(false)}>
+              <div className="glass-card p-5 w-full max-w-md max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    <Cake className="w-4 h-4 text-pink-500" />
+                    Anniversaires du mois ({anniversaires.length})
+                  </h3>
+                  <button onClick={() => setShowBirthdays(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                {anniversaires.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6">Aucun anniversaire ce mois-ci 🎂</p>
+                ) : (
+                  <div className="space-y-2">
+                    {anniversaires.map((a: any) => (
+                      <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                            {(a.nom || '?').split(' ').map((p: string) => p?.[0]).join('').slice(0, 2)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{a.nom}</p>
+                            {a.telephone && <p className="text-[10px] text-gray-400">{a.telephone}</p>}
+                          </div>
+                        </div>
+                        <span className="text-xs font-semibold text-pink-500 shrink-0">🎂 {formatDate(a.dateNaissance)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </>
       )}

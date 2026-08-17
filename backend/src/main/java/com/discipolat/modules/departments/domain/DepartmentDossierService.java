@@ -518,6 +518,35 @@ public class DepartmentDossierService {
     }
 
     // ========================================================================
+    // DOSSIER D'UN UTILISATEUR (fiche utilisateur) — objectifs, rapports,
+    // notes et documents, agrégés par département d'appartenance ACTIF.
+    // Aucun assert de permission ici : le scoping (départements accessibles à
+    // l'appelant) est fourni par l'appelant via accessibleDeptIds.
+    // ========================================================================
+
+    public List<Map<String, Object>> dossierUtilisateur(UUID soulId, Set<UUID> accessibleDeptIds) {
+        List<UUID> deptIds = soulDepartmentRepository.findBySoulId(soulId).stream()
+                .filter(SoulDepartment::isActif)
+                .map(SoulDepartment::getDepartmentId)
+                .filter(accessibleDeptIds::contains)
+                .distinct()
+                .toList();
+        return deptIds.stream().map(deptId -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("departmentId", deptId);
+            m.put("objectifs", objectifs(deptId, soulId));
+            m.put("rapportsResponsable", rapportsResponsable(deptId, soulId));
+            m.put("notes", notes(deptId, soulId));
+            return m;
+        }).toList();
+    }
+
+    /** Documents du dossier membre d'un utilisateur (attachés à son âme). */
+    public List<Map<String, Object>> dossierDocuments(UUID soulId) {
+        return documents(soulId);
+    }
+
+    // ========================================================================
     // RAPPORTS DU RESPONSABLE SUR UN MEMBRE
     // ========================================================================
 

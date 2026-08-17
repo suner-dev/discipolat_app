@@ -12,6 +12,9 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // Autorise les URL dynamiques des tunnels Cloudflare (trycloudflare.com)
+    // pour que le dev server réponde aux hôtes publics.
+    allowedHosts: ['.trycloudflare.com', '.cloudflare.com', 'localhost'],
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

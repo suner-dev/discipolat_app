@@ -679,3 +679,147 @@ Parité de `DepartmentDetailPage` web :
   `QA membre mark-all;2026-08-25;Présent` (BOM) ✓ · cleanup 204.
 - Tests : backend **441 ✓** (+2), frontend **190 ✓** (+1 dossier),
   `tsc -b` ✓, `npm run build` ✓. Commit `39c2810` poussé.
+
+## SESSION 2026-08-15 (suite) — présences, historique stylisé, évaluations par utilisateur, fiche utilisateur, CRM cliquable
+
+### 1. Saisie des présences : statut « Absent » modifiable (web)
+
+- **Cause** : la feuille de présence hebdomadaire traitait les membres non
+  pointés comme « Absents » par défaut et les renvoyait comme absents — le
+  responsable ne pouvait plus les repasser Présent. Le backend faisait pourtant
+  bien des upserts (vérifié e2e : absent→présent OK côté API).
+- **Fix** : `ResponsableDashboardPage` — seuls les membres **explicitement
+  pointés** sont envoyés ; boutons Présent/Absent **toujours actifs** dans les
+  modales de pointage (`DepartmentManagementPage`, `DepartmentMemberDossierPage`,
+  `EventsPage`).
+
+### 2. Modale Historique d'un utilisateur stylisée (web + mobile)
+
+- Remplacé l'affichage JSON brut (`toString()`/`monospace`) par une **timeline
+  soignée** : résumé (rôle, chef de famille, membre depuis), âmes actuellement
+  suivies (avatar initiales, statut coloré), sorties de suivi (motif + date).
+- Web : `UsersPage` (modale Historique) ; mobile : `_ActionModal` de
+  `users_list_screen.dart` + **icône historique ajoutée** dans la carte
+  utilisateur (rôle FAISEUR, parité web) + bouton « Fermer ».
+
+### 3. Évaluations par utilisateur (backend) — V63
+
+- Migration **V63** : contrainte d'unicité **UNIQUE(evaluateur_id, utilisateur_cible_id)**
+  (une seule évaluation par binôme — la table devient un upsert).
+- `EvaluationService` : `upsertEvaluation` (**PUT /evaluations/{userId}** : crée
+  si absente, modifie si présente), périmètre élargi (top-down : gestionnaire du
+  collaborateur **+** bottom-up : subordonnés), `mesEvaluations` pour l'évaluateur,
+  refus si `evaluateurId == userId` (403). Catégories RESPONSABLE/CHEF_FAMILLE/
+  FAISEUR/MEMBRE par défaut selon le rôle cible.
+- `GET /users/{id}/detail` (UserService) : profil complet + âme liée + âmes
+  suivies si faiseur + sorties + départements dirigés avec membres (si
+  responsable) + famille gérée (si chef) + évaluations reçues par catégorie +
+  `monEvaluation` (ma note sur cette personne) + `userId` sur chaque âme/membre
+  (navigation).
+- **Validé e2e réel** : create → modify → deny (même évaluateur) ✓, détail
+  utilisateur complet ✓. Tests : `EvaluationServiceTest` (upsert + périmètre +
+  refus), `UserServiceTest` adapté au nouveau constructeur.
+
+### 4. Fiche utilisateur cliquable (web + mobile)
+
+- **Web** : composant `UserDetailModal` (bouton « Fiche » dans `UsersPage`) —
+  identité, âme liée, évaluation (étoiles + commentaire, **donner si absente /
+  modifier si présente**), âmes suivies, sorties, départements + membres,
+  famille gérée.
+- **Mobile** : écran `UserDetailScreen` (`/users/:id`) — carte utilisateur
+  cliquable → fiche complète (mêmes sections, étoiles interactives + PUT).
+  3 nouveaux widget tests (`user_detail_screen_test.dart`).
+
+### 5. Blocs CRM cliquables (web + mobile)
+
+- **Web** : cartes stats du CRM FAISEUR (filtre + scroll vers la liste des
+  disciples), cartes du dashboard CHEF DE FAMILLE (disciples/faiseurs/rapports),
+  cartes + anniversaires du RESPONSABLE (modale/listes), dashboard PASTEUR
+  (blocs croissance → /souls, familles à risque → /families, etc.).
+- **Mobile** : `GlassStatCard` accepte `onTap` ; tous les dashboards branchés :
+  PASTEUR (croissance → /souls, présence → /departments, rapports → /reports,
+  alertes → /alerts, départements/familles/faiseurs/familles à risque),
+  RESPONSABLE (stats → départements/rapports, anniversaires → gestion),
+  CHEF DE FAMILLE (stats → souls/users/rapports, charge de travail → /users,
+  disciples → fiche âme), FAISEUR (stats → filtres/rapports/alertes, légende du
+  camembert → filtre, alertes → fiche de l'âme), dashboard racine (KPIs →
+  modules).
+
+### 9. Accès de test local + tunnel public Cloudflare (serve-public.sh)
+
+- **Accès locaux** : API `http://localhost:8080` · Web `http://localhost:5173` ·
+  Postgres Docker `localhost:5433` (discipolat/discipolat_secret) · Redis :6379.
+  Comptes démo (mot de passe `password123`) : admin@, pasteur@, responsable@
+  (Audiovisuel), chef@, faiseur@, membre@, paul@ (multi-rôles) — + les ~70
+  comptes du seed volumineux (responsable10-21@, chef10-25@, faiseur10-39@).
+- **Tunnel public** : `scripts/serve-public.sh` — démarre la stack locale puis un
+  **tunnel Cloudflare sans compte** (`cloudflared tunnel --url :5173`, binaire
+  téléchargé dans /tmp) et affiche l'URL `*.trycloudflare.com` + les accès.
+  Valide en réel : page 200, `/api/v1/public/meta` 200, login responsable 200
+  via l'URL publique.
+- **Fix requis** : Vite bloquait l'hôte du tunnel (`Blocked request… not allowed`)
+  → `vite.config.ts` : `server.allowedHosts: ['.trycloudflare.com', '.cloudflare.com',
+  'localhost']`. `tsc -b` ✓.
+- **Limite** : l'URL trycloudflare est **temporaire et change à chaque run** (tant
+  que le script tourne, elle est active). Lien permanent : `cloudflared tunnel
+  login` + tunnel nommé (compte Cloudflare) — voir docs/DEPLOYMENT.md §Tunnel.
+  Relance : `bash scripts/serve-public.sh`.
+
+### 8. QA navigateur réel des nouveaux flux (e2e-browser-fiche) + fix 422 « /evaluations/me »
+
+- **Nouveau script `scripts/e2e-browser-fiche.js`** (18 étapes, Chrome réel) :
+  login admin → liste utilisateurs → fiche utilisateur (identité + évaluation +
+  âmes suivies) → **évaluation donner → badge « Vous avez évalué » → modifier**
+  → login responsable (contexte incognito, localStorage isolé) → **saisie des
+  présences hebdo : Absent → enregistré → Présent → enregistré** (vérifie que
+  le statut Absent reste modifiable). Résultat : **18/18 ✓, 0 erreur console**.
+- **Bug réel découvert et corrigé** : `GET /evaluations/me` renvoyait **422**
+  pour tout non-super-utilisateur (RESPONSABLE/CHEF_DE_FAMILLE/FAISEUR) —
+  `getEvaluationsForUser(selfId)` déclenchait la vérification d'auto-évaluation
+  (« vous ne pouvez pas vous évaluer »). Fix : **mes propres évaluations
+  (anonymisées) toujours autorisées**, le contrôle de périmètre ne s'applique
+  qu'aux AUTRES utilisateurs. +2 tests (`EvaluationServiceTest` 11 ✓ :
+  self autorisé sans vérif de droit, autre utilisateur sans droit refusé).
+- Rejouable : `bash /tmp/run-e2e-fiche.sh` (démarre API :8080 + web :5173,
+  exécute le script, arrête la stack). Données de test laissées en base de dev :
+  évaluation admin → faiseur13, présence Aminata Assi (restaurée Absent).
+
+### 7. Fiche utilisateur étendue : objectifs, rapports du responsable, notes, documents
+
+- **Backend** : `DepartmentDossierService.dossierUtilisateur(soulId, accessibleDeptIds)`
+  (objectifs + rapports du responsable + notes, agrégés par département d'appartenance
+  ACTIF — réutilise les helpers du dossier membre, aucun assert : scoping fourni par
+  l'appelant) + `dossierDocuments(soulId)` (pièces jointes du dossier membre).
+  `GET /users/{id}/detail` renvoie désormais `dossier` (par département, avec
+  `departmentNom`) et `dossierDocuments`. **Scoping** : super-utilisateur → tous
+  les départements, RESPONSABLE → ses départements (`accessibleDepartmentIds`),
+  chef de famille / faiseur → aucun.
+- **Validé e2e réel** (admin sur le compte membre, lien temporaire + objectif +
+  rapport PROGRESSION + note insérés puis nettoyés) : `dossier` peuplé avec
+  « Département Jeunesse | objectifs: ['Objectif QA fiche'] | rapportsResp:
+  ['PROGRESSION'] | notes: 1 » ✓.
+- **Web** (`UserDetailModal`) : section « Dossier du membre » — objectifs (statut,
+  barre d'avancement, échéance, badge en retard), rapports du responsable (type +
+  contenu + auteur), notes, documents ouvrables (nouvel onglet).
+- **Mobile** (`UserDetailScreen`) : mêmes sections (progress bar, badges de statut
+  colorés, documents ouverts via `showUrlLink`). +1 test widget (dossier).
+- Tests : backend `DepartmentDossierServiceTest` 16 ✓ + `UserServiceTest` 15 ✓
+  (branche super-utilisateur), frontend `tsc -b` ✓ + 190 vitest ✓, mobile
+  analyze 0 issue + **111 tests ✓**.
+
+### 6. Badge moyenne d'évaluation dans la liste des utilisateurs (mobile)
+
+- Le web affichait déjà la colonne « Évaluation » (étoiles + moyenne + tooltip
+  par catégorie, via `GET /users/evaluation-scores?userIds=…`) — parité mobile
+  ajoutée : la liste des utilisateurs charge les scores groupés (une requête
+  pour toute la page, best-effort) et affiche un **badge doré** par carte :
+  5 étoiles + moyenne (`4.5`) + compteur d'évaluations (`(3)`), masqué si
+  l'utilisateur n'a aucune évaluation. +1 test widget.
+
+### État des tests (2026-08-15, fin)
+
+- Backend : `EvaluationServiceTest` (9 ✓) + `UserServiceTest` (13 ✓) ·
+  migrations V63 appliquées en local.
+- Frontend : `tsc -b` ✓ · **190 tests vitest ✓** (suite complète).
+- Mobile : `flutter analyze` **0 issue** · **110 tests ✓** (109 + 1 badge
+  moyenne ; 106 + 3 fiche utilisateur + 1 badge).

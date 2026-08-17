@@ -46,6 +46,40 @@ public class EvaluationController {
     }
 
     /**
+     * Donne une évaluation si l'utilisateur n'en a pas encore, ou modifie
+     * la sienne s'il en a déjà une (upsert sur évaluateur + évalué + catégorie).
+     * La catégorie est optionnelle : dérivée du rôle de l'évalué si absente.
+     */
+    @PutMapping("/{evalueId}")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> submitOrUpdate(@PathVariable UUID evalueId,
+                                                              @RequestBody Map<String, Object> body) {
+        CategorieEvaluation categorie = body.get("categorie") != null
+                ? CategorieEvaluation.valueOf((String) body.get("categorie"))
+                : null;
+        int note = (Integer) body.get("note");
+        String commentaire = (String) body.getOrDefault("commentaire", null);
+
+        Evaluation evaluation = evaluationService.submitOrUpdate(evalueId, categorie, note, commentaire);
+        return ResponseEntity.ok(Map.of(
+                "id", evaluation.getId(),
+                "categorie", evaluation.getCategorie().name(),
+                "note", evaluation.getNote(),
+                "message", "Évaluation enregistrée"
+        ));
+    }
+
+    /**
+     * MES évaluations d'un utilisateur donné — pré-remplit le formulaire
+     * « donner / modifier » de la fiche utilisateur.
+     */
+    @GetMapping("/my/{evalueId}")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<List<Map<String, Object>>> getMyEvaluationsFor(@PathVariable UUID evalueId) {
+        return ResponseEntity.ok(evaluationService.getMyEvaluationsFor(evalueId));
+    }
+
+    /**
      * Get my evaluations aggregated stats (what others think of me — anonymous).
      */
     @GetMapping("/me")
@@ -88,10 +122,11 @@ public class EvaluationController {
     }
 
     /**
-     * Get evaluations for a specific user (Pasteur / admin).
+     * Get evaluations for a specific user (encadrement : le service vérifie
+     * que l'utilisateur courant est autorisé à évaluer/voir cette personne).
      */
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getEvaluationsForUser(@PathVariable UUID userId) {
         return ResponseEntity.ok(evaluationService.getEvaluationsForUser(userId));
     }

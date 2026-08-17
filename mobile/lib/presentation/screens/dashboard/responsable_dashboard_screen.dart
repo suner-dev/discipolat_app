@@ -138,6 +138,9 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                             icon: item['icon'] as IconData,
                             gradientStart: item['color'] as Color,
                             gradientEnd: (item['color'] as Color).withValues(alpha: 0.7),
+                            onTap: () => context.go(
+                              ['Rapports', 'Taux'].contains(item['label'] as String) ? '/reports' : '/departments',
+                            ),
                           );
                         },
                       ),
@@ -199,6 +202,7 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                           return GlassCard(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            onTap: () => context.go('/departments/$_selectedDeptId/manage'),
                             child: Row(
                               children: [
                                 GradientAvatar(

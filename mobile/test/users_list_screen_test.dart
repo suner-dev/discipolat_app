@@ -99,10 +99,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  _FakeApiService fakeWith({Object? users = _users, bool failPosts = false}) {
+  _FakeApiService fakeWith({Object? users = _users, bool failPosts = false, Object? evalScores}) {
     return _FakeApiService((path, params) {
       if (path == '/users') return _json(path, users ?? {'content': []});
       if (path == '/users/faiseur-workload') return _json(path, <dynamic>[]);
+      if (path == '/users/evaluation-scores') return _json(path, evalScores ?? <String, dynamic>{});
       return _json(path, {'content': []});
     }, failPosts: failPosts);
   }
@@ -244,6 +245,22 @@ void main() {
 
     expect(api.patchPaths, contains('/users/u2/demote'));
     expect(api.patchDatas.last?['newRole'], 'RESPONSABLE'); // rôle choisi
+  });
+
+  testWidgets('affiche le badge moyenne d’évaluation avec étoiles et compteur', (tester) async {
+    final api = fakeWith(evalScores: {
+      'u2': {
+        'RESPONSABLE': {'moyenne': 4.0, 'total': 2},
+        'FAISEUR': {'moyenne': 5.0, 'total': 1},
+      },
+    });
+    await pumpScreen(tester, api);
+
+    // Marie (u2) : moyenne (4+5)/2 = 4.5 → 5 étoiles pleines.
+    expect(find.text('4.5'), findsOneWidget);
+    expect(find.text('(3)'), findsOneWidget);
+    // Jean (u1) et Paul (u3) n'ont pas d'évaluation → aucun badge.
+    expect(find.byIcon(Icons.star_rounded), findsNWidgets(5));
   });
 
   testWidgets('suppression définitive → dialogue → DELETE /users/{id}/hard-delete', (tester) async {

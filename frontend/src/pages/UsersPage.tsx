@@ -5,11 +5,12 @@ import DataTable from '@/components/shared/DataTable';
 import { useAuth } from '@/contexts/AuthContext';
 import type { User, PageResponse, Family, TransferRequest } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, Key, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, RefreshCw, Users, BarChart3, Star, ClipboardList } from 'lucide-react';
+import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, Key, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, RefreshCw, Users, BarChart3, Star, ClipboardList, Heart, UserX, UserRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
 import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { UserDetailModal } from '@/components/users/UserDetailModal';
 
 /** Repli (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const ROLE_FALLBACK: Record<string, string> = {
@@ -51,7 +52,7 @@ export default function UsersPage() {
   const [page, setPage] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [actionModal, setActionModal] = useState<'' | 'promote' | 'demote' | 'transfer' | 'history' | 'hardDelete'>('');
+  const [actionModal, setActionModal] = useState<'' | 'detail' | 'promote' | 'demote' | 'transfer' | 'history' | 'hardDelete'>('');
   const [transferFamilleId, setTransferFamilleId] = useState('');
   const [transferAmes, setTransferAmes] = useState(false);
   const [demoteRole, setDemoteRole] = useState('RESPONSABLE');
@@ -300,6 +301,13 @@ export default function UsersPage() {
       header: 'Actions',
       cell: (user) => (
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => { setSelectedUser(user); setActionModal('detail'); }}
+            className="p-1.5 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/20 text-primary-600 hover:text-primary-700 transition-colors"
+            title="Voir la fiche complète"
+          >
+            <UserRound className="w-3.5 h-3.5" />
+          </button>
           {user.role === 'FAISEUR' && (
             <>
               <button
@@ -530,6 +538,14 @@ export default function UsersPage() {
         </div>
       )}
 
+      {/* User detail modal — fiche complète + évaluations */}
+      {actionModal === 'detail' && selectedUser && (
+        <UserDetailModal
+          userId={selectedUser.id}
+          onClose={() => { setActionModal(''); setSelectedUser(null); }}
+        />
+      )}
+
       {/* Promote modal */}
       {actionModal === 'promote' && selectedUser && (
         <div className="modal-overlay" onClick={() => { setActionModal(''); setSelectedUser(null); }}>
@@ -629,18 +645,107 @@ export default function UsersPage() {
       {/* History modal */}
       {actionModal === 'history' && selectedUser && (
         <div className="modal-overlay" onClick={() => { setActionModal(''); setSelectedUser(null); }}>
-          <div className="modal-content max-w-lg max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Historique - {selectedUser.firstName} {selectedUser.lastName}</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-lg">
+                  <History className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Historique — {selectedUser.firstName} {selectedUser.lastName}
+                  </h3>
+                  <p className="text-xs text-gray-400">Parcours de disciple & âmes suivies</p>
+                </div>
+              </div>
               <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
             <div className="modal-body">
               {userHistory ? (
-                <pre className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-mono bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl">
-                  {JSON.stringify(userHistory, null, 2)}
-                </pre>
+                <div className="space-y-5">
+                  {/* Résumé */}
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/10 border border-purple-200/40 dark:border-purple-700/30">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Rôle</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {ROLE_FALLBACK[userHistory.role] || userHistory.role || '—'}
+                      </p>
+                    </div>
+                    {userHistory.estChef && (
+                      <span className="badge text-[10px] bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400">Chef de famille</span>
+                    )}
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Membre depuis</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {userHistory.dateCreation
+                          ? new Date(userHistory.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+                          : '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Âmes actuellement suivies */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Heart className="w-3.5 h-3.5 text-emerald-500" />
+                        Âmes actuellement suivies
+                      </p>
+                      <span className="badge text-[10px] badge-success">{userHistory.nombreAmesActuelles ?? (userHistory.amesActuelles || []).length}</span>
+                    </div>
+                    {(userHistory.amesActuelles || []).length === 0 ? (
+                      <div className="p-4 text-center rounded-xl bg-gray-50 dark:bg-gray-800/40">
+                        <p className="text-xs text-gray-400">Aucune âme suivie actuellement</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {(userHistory.amesActuelles || []).map((s: any) => (
+                          <div key={s.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 ${
+                              s.statut === 'ACTIF' ? 'bg-emerald-500' : s.statut === 'EN_INTEGRATION' ? 'bg-amber-500' : s.statut === 'EN_VEILLE' ? 'bg-blue-500' : 'bg-red-500'
+                            }`}>
+                              {(s.nom || '?').split(' ').map((p: string) => p?.[0]).join('').slice(0, 2)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{s.nom}</p>
+                              <p className="text-[10px] text-gray-400">
+                                {s.statut === 'ACTIF' ? 'Actif' : s.statut === 'EN_INTEGRATION' ? 'En intégration' : s.statut === 'EN_VEILLE' ? 'En veille' : 'Décroché'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sorties passées */}
+                  {(userHistory.sorties || []).length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <UserX className="w-3.5 h-3.5 text-red-500" />
+                          Sorties de suivi
+                        </p>
+                        <span className="badge text-[10px] badge-gray">{(userHistory.sorties || []).length}</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {(userHistory.sorties || []).map((ex: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-red-50/50 dark:bg-red-900/10 border border-red-200/30 dark:border-red-800/20">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2 min-w-0">
+                              <UserX className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                              <span className="truncate">{ex.motif || 'Sortie du suivi'}</span>
+                            </p>
+                            <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                              {ex.dateSortie ? new Date(ex.dateSortie).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-primary-500" />

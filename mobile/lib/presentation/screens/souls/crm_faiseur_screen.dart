@@ -186,6 +186,18 @@ class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerPr
                             icon: item['icon'] as IconData,
                             gradientStart: item['color'] as Color,
                             gradientEnd: (item['color'] as Color).withValues(alpha: 0.7),
+                            onTap: () {
+                              final label = item['label'] as String;
+                              if (label == 'Disciples') {
+                                setState(() => _filterStatus = 'all');
+                              } else if (label == 'Actifs') {
+                                setState(() => _filterStatus = 'ACTIF');
+                              } else if (label == 'Rapports soumis') {
+                                context.go('/reports/maker');
+                              } else {
+                                context.go('/alerts');
+                              }
+                            },
                           );
                         },
                       ),
@@ -224,24 +236,29 @@ class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerPr
                                   ...(['Actifs', 'Intégration', 'Veille', 'Décrochés']
                                       .asMap()
                                       .entries
-                                      .map((e) => Padding(
-                                            padding: const EdgeInsets.symmetric(vertical: 1),
-                                            child: Row(
-                                              children: [
-                                                Container(width: 8, height: 8,
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                      color: [
-                                                        const Color(0xFF22C55E),
-                                                        const Color(0xFFF59E0B),
-                                                        const Color(0xFF3B82F6),
-                                                        const Color(0xFFEF4444),
-                                                      ][e.key],
-                                                    )),
-                                                const SizedBox(width: 6),
-                                                Text(e.value,
-                                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
-                                              ],
+                                      .map((e) => GestureDetector(
+                                            onTap: () => setState(() {
+                                              _filterStatus = ['ACTIF', 'EN_INTEGRATION', 'EN_VEILLE', 'DECROCHE'][e.key];
+                                            }),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 1),
+                                              child: Row(
+                                                children: [
+                                                  Container(width: 8, height: 8,
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        color: [
+                                                          const Color(0xFF22C55E),
+                                                          const Color(0xFFF59E0B),
+                                                          const Color(0xFF3B82F6),
+                                                          const Color(0xFFEF4444),
+                                                        ][e.key],
+                                                      )),
+                                                  const SizedBox(width: 6),
+                                                  Text(e.value,
+                                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+                                                ],
+                                              ),
                                             ),
                                           ))),
                                 ],
@@ -269,7 +286,16 @@ class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerPr
                                   ),
                                   const SizedBox(height: 8),
                                   if (_alertes.isNotEmpty)
-                                    ..._alertes.take(3).map((alert) => Container(
+                                    ..._alertes.take(3).map((alert) => GestureDetector(
+                                      onTap: () {
+                                        final soulId = alert['soulId']?.toString();
+                                        if (soulId != null && soulId.isNotEmpty) {
+                                          context.go('/souls/$soulId');
+                                        } else {
+                                          context.go('/alerts');
+                                        }
+                                      },
+                                      child: Container(
                                       margin: const EdgeInsets.only(bottom: 4),
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
@@ -297,6 +323,7 @@ class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerPr
                                             ),
                                           ),
                                         ],
+                                      ),
                                       ),
                                     ))
                                   else

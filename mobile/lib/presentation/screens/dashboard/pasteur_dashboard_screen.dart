@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
@@ -101,6 +102,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                             icon: item['icon'] as IconData,
                             gradientStart: item['color'] as Color,
                             gradientEnd: (item['color'] as Color).withValues(alpha: 0.7),
+                            onTap: () => context.go('/souls'),
                           );
                         },
                       ),
@@ -118,6 +120,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                               icon: Icons.trending_up,
                               gradientStart: Colors.green,
                               gradientEnd: Colors.teal,
+                              onTap: () => context.go('/departments'),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -128,6 +131,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                               icon: Icons.description,
                               gradientStart: Colors.blue,
                               gradientEnd: Colors.indigo,
+                              onTap: () => context.go('/reports'),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -138,6 +142,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                               icon: Icons.pie_chart,
                               gradientStart: Colors.teal,
                               gradientEnd: Colors.cyan,
+                              onTap: () => context.go('/reports'),
                             ),
                           ),
                         ],
@@ -145,46 +150,49 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                       const SizedBox(height: 16),
 
                       // Alert
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              alertesActives > 0 ? Colors.red.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.2),
-                              Colors.transparent,
+                      GestureDetector(
+                        onTap: () => context.go('/alerts'),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                alertesActives > 0 ? Colors.red.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.2),
+                                Colors.transparent,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: (alertesActives > 0 ? Colors.red : Colors.green).withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                alertesActives > 0 ? Icons.warning : Icons.check_circle,
+                                color: alertesActives > 0 ? Colors.red : Colors.green,
+                                size: 32,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '$alertesActives alerte${alertesActives > 1 ? 's' : ''} active${alertesActives > 1 ? 's' : ''}',
+                                      style: TextStyle(
+                                        color: alertesActives > 0 ? Colors.red : Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    Text(
+                                      alertesActives > 0 ? 'Attention requise' : 'Tout est sous contrôle',
+                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: (alertesActives > 0 ? Colors.red : Colors.green).withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              alertesActives > 0 ? Icons.warning : Icons.check_circle,
-                              color: alertesActives > 0 ? Colors.red : Colors.green,
-                              size: 32,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '$alertesActives alerte${alertesActives > 1 ? 's' : ''} active${alertesActives > 1 ? 's' : ''}',
-                                    style: TextStyle(
-                                      color: alertesActives > 0 ? Colors.red : Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  Text(
-                                    alertesActives > 0 ? 'Attention requise' : 'Tout est sous contrôle',
-                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -200,30 +208,33 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                             itemCount: departements.length,
                             itemBuilder: (_, i) {
                               final dept = departements[i] as Map<String, dynamic>;
-                              return Container(
-                                width: 180,
-                                margin: const EdgeInsets.only(right: 12),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [AppColors.primary.withValues(alpha: 0.15), Colors.transparent],
-                                    begin: Alignment.topLeft, end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(dept['nom'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                                    const Spacer(),
-                                    Row(
-                                      children: [
-                                        Text('${dept['totalFamilles'] ?? 0} fam. · ', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
-                                        Text('${dept['totalAmes'] ?? 0} âmes', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11)),
-                                      ],
+                              return GestureDetector(
+                                onTap: () => context.go('/departments'),
+                                child: Container(
+                                  width: 180,
+                                  margin: const EdgeInsets.only(right: 12),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [AppColors.primary.withValues(alpha: 0.15), Colors.transparent],
+                                      begin: Alignment.topLeft, end: Alignment.bottomRight,
                                     ),
-                                  ],
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(dept['nom'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                      const Spacer(),
+                                      Row(
+                                        children: [
+                                          Text('${dept['totalFamilles'] ?? 0} fam. · ', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+                                          Text('${dept['totalAmes'] ?? 0} âmes', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               );
                             },
@@ -243,40 +254,43 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                             itemCount: familles.length,
                             itemBuilder: (_, i) {
                               final f = familles[i] as Map<String, dynamic>;
-                              return Container(
-                                width: 170,
-                                margin: const EdgeInsets.only(right: 10),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [AppColors.primary.withValues(alpha: 0.12), Colors.transparent],
-                                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                              return GestureDetector(
+                                onTap: () => context.go('/families'),
+                                child: Container(
+                                  width: 170,
+                                  margin: const EdgeInsets.only(right: 10),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [AppColors.primary.withValues(alpha: 0.12), Colors.transparent],
+                                      begin: Alignment.topLeft, end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                                   ),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(f['nom'] ?? '',
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
-                                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                                    const Spacer(),
-                                    Row(children: [
-                                      Icon(Icons.people_alt, size: 12, color: Colors.white.withValues(alpha: 0.4)),
-                                      const SizedBox(width: 4),
-                                      Text('${f['actifs'] ?? 0} actifs · ${f['totalAmes'] ?? 0} âmes',
-                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
-                                    ]),
-                                    if ((f['tauxPresence'] as num?) != null) ...[
-                                      const SizedBox(height: 3),
-                                      Text('Présence ${f['tauxPresence']}%',
-                                          style: TextStyle(
-                                            color: (f['tauxPresence'] as num).toDouble() < 50 ? Colors.redAccent : Colors.greenAccent,
-                                            fontSize: 9,
-                                          )),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(f['nom'] ?? '',
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      const Spacer(),
+                                      Row(children: [
+                                        Icon(Icons.people_alt, size: 12, color: Colors.white.withValues(alpha: 0.4)),
+                                        const SizedBox(width: 4),
+                                        Text('${f['actifs'] ?? 0} actifs · ${f['totalAmes'] ?? 0} âmes',
+                                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+                                      ]),
+                                      if ((f['tauxPresence'] as num?) != null) ...[
+                                        const SizedBox(height: 3),
+                                        Text('Présence ${f['tauxPresence']}%',
+                                            style: TextStyle(
+                                              color: (f['tauxPresence'] as num).toDouble() < 50 ? Colors.redAccent : Colors.greenAccent,
+                                              fontSize: 9,
+                                            )),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
                               );
                             },
@@ -296,35 +310,38 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                             itemCount: faiseurs.length,
                             itemBuilder: (_, i) {
                               final f = faiseurs[i] as Map<String, dynamic>;
-                              return Container(
-                                width: 170,
-                                margin: const EdgeInsets.only(right: 10),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [Colors.teal.withValues(alpha: 0.12), Colors.transparent],
-                                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                              return GestureDetector(
+                                onTap: () => context.go('/users'),
+                                child: Container(
+                                  width: 170,
+                                  margin: const EdgeInsets.only(right: 10),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Colors.teal.withValues(alpha: 0.12), Colors.transparent],
+                                      begin: Alignment.topLeft, end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                                   ),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(f['nom'] ?? '',
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
-                                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                                    if (f['estChef'] == true)
-                                      Text('Chef de famille',
-                                          style: TextStyle(color: const Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w600)),
-                                    const Spacer(),
-                                    Row(children: [
-                                      Icon(Icons.favorite, size: 12, color: Colors.white.withValues(alpha: 0.4)),
-                                      const SizedBox(width: 4),
-                                      Text('${f['actifs'] ?? 0} actifs · ${f['totalAmes'] ?? 0} âmes',
-                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
-                                    ]),
-                                  ],
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(f['nom'] ?? '',
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      if (f['estChef'] == true)
+                                        Text('Chef de famille',
+                                            style: TextStyle(color: const Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w600)),
+                                      const Spacer(),
+                                      Row(children: [
+                                        Icon(Icons.favorite, size: 12, color: Colors.white.withValues(alpha: 0.4)),
+                                        const SizedBox(width: 4),
+                                        Text('${f['actifs'] ?? 0} actifs · ${f['totalAmes'] ?? 0} âmes',
+                                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+                                      ]),
+                                    ],
+                                  ),
                                 ),
                               );
                             },
@@ -339,21 +356,24 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                         const SizedBox(height: 8),
                         ...famillesRisque.take(5).map((fr) {
                           final f = fr as Map<String, dynamic>;
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 6),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.warning_amber, color: Colors.red, size: 20),
-                                const SizedBox(width: 10),
-                                Expanded(child: Text(f['nom'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13))),
-                                Text('${f['tauxPresence']}%', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                              ],
+                          return GestureDetector(
+                            onTap: () => context.go('/families'),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.warning_amber, color: Colors.red, size: 20),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: Text(f['nom'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13))),
+                                  Text('${f['tauxPresence']}%', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
                             ),
                           );
                         }),

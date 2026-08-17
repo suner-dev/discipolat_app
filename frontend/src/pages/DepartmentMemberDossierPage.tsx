@@ -497,7 +497,7 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
                     <div className="flex gap-1 shrink-0">
                       <button
                         onClick={() => markMutation.mutate({ eventId: e.eventId, present: true })}
-                        disabled={markMutation.isPending || isPresent}
+                        disabled={markMutation.isPending}
                         className={`p-2 rounded-lg transition-colors cursor-pointer ${isPresent ? 'bg-emerald-100 text-emerald-700' : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
                         title="Marquer présent"
                       >
@@ -505,7 +505,7 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
                       </button>
                       <button
                         onClick={() => markMutation.mutate({ eventId: e.eventId, present: false })}
-                        disabled={markMutation.isPending || isAbsent}
+                        disabled={markMutation.isPending}
                         className={`p-2 rounded-lg transition-colors cursor-pointer ${isAbsent ? 'bg-red-100 text-red-700' : 'text-gray-400 hover:bg-red-50 hover:text-red-600'}`}
                         title="Marquer absent"
                       >

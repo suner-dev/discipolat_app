@@ -67,14 +67,14 @@ export default function PasteurDashboardPage() {
   const famillesARisque = dashboard?.famillesARisque ?? [];
 
   const growthCards = [
-    { label: 'Âmes totales', value: croissance.totalAmes ?? 0, icon: Heart, color: 'from-rose-500 to-pink-500' },
-    { label: 'Nouveaux convertis', value: croissance.nouveauxConvertis ?? 0, icon: UserPlus, color: 'from-green-500 to-emerald-500' },
-    { label: 'Nouveaux arrivants', value: croissance.nouveauxArrivants ?? 0, icon: UserCheck, color: 'from-blue-500 to-indigo-500' },
-    { label: 'Actifs', value: croissance.actifs ?? 0, icon: CheckCircle, color: 'from-emerald-500 to-teal-500' },
-    { label: 'En intégration', value: croissance.enIntegration ?? 0, icon: Clock, color: 'from-amber-500 to-orange-500' },
-    { label: 'En veille', value: croissance.enVeille ?? 0, icon: UserX, color: 'from-yellow-500 to-amber-500' },
-    { label: 'Décrochés', value: croissance.decroches ?? 0, icon: XCircle, color: 'from-red-500 to-rose-500' },
-    { label: 'Taux conversion', value: `${croissance.tauxConversion ?? 0}%`, icon: TrendingUp, color: 'from-violet-500 to-purple-500' },
+    { label: 'Âmes totales', value: croissance.totalAmes ?? 0, icon: Heart, color: 'from-rose-500 to-pink-500', route: '/souls' },
+    { label: 'Nouveaux convertis', value: croissance.nouveauxConvertis ?? 0, icon: UserPlus, color: 'from-green-500 to-emerald-500', route: '/souls' },
+    { label: 'Nouveaux arrivants', value: croissance.nouveauxArrivants ?? 0, icon: UserCheck, color: 'from-blue-500 to-indigo-500', route: '/souls' },
+    { label: 'Actifs', value: croissance.actifs ?? 0, icon: CheckCircle, color: 'from-emerald-500 to-teal-500', route: '/souls' },
+    { label: 'En intégration', value: croissance.enIntegration ?? 0, icon: Clock, color: 'from-amber-500 to-orange-500', route: '/souls' },
+    { label: 'En veille', value: croissance.enVeille ?? 0, icon: UserX, color: 'from-yellow-500 to-amber-500', route: '/souls' },
+    { label: 'Décrochés', value: croissance.decroches ?? 0, icon: XCircle, color: 'from-red-500 to-rose-500', route: '/souls' },
+    { label: 'Taux conversion', value: `${croissance.tauxConversion ?? 0}%`, icon: TrendingUp, color: 'from-violet-500 to-purple-500', route: '/reports' },
   ];
 
   return (
@@ -153,7 +153,14 @@ export default function PasteurDashboardPage() {
               {growthCards.map((stat, i) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={stat.label} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 60}ms` }}>
+                  <button
+                    key={stat.label}
+                    type="button"
+                    onClick={() => navigate(stat.route)}
+                    className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+                    style={{ animationDelay: `${i * 60}ms` }}
+                    title={`Voir la liste des ${stat.label.toLowerCase()}`}
+                  >
                     <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color} opacity-60`} />
                     <div className="flex items-start justify-between mb-3">
                       <span className="stat-label">{stat.label}</span>
@@ -162,7 +169,8 @@ export default function PasteurDashboardPage() {
                       </div>
                     </div>
                     <span className="stat-value animate-count-up">{stat.value}</span>
-                  </div>
+                    <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour explorer</span>
+                  </button>
                 );
               })}
             </div>

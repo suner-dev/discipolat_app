@@ -1639,7 +1639,7 @@ export function EventAttendanceModal({ deptId, event, onClose }: { deptId: strin
                       <div className="flex gap-1 shrink-0">
                         <button
                           onClick={() => markMutation.mutate({ soulId: m.soulId, present: true })}
-                          disabled={markMutation.isPending || isPresent}
+                          disabled={markMutation.isPending}
                           className={`p-2 rounded-lg transition-colors cursor-pointer ${
                             isPresent
                               ? 'bg-emerald-100 text-emerald-700'
@@ -1651,7 +1651,7 @@ export function EventAttendanceModal({ deptId, event, onClose }: { deptId: strin
                         </button>
                         <button
                           onClick={() => markMutation.mutate({ soulId: m.soulId, present: false })}
-                          disabled={markMutation.isPending || isAbsent}
+                          disabled={markMutation.isPending}
                           className={`p-2 rounded-lg transition-colors cursor-pointer ${
                             isAbsent
                               ? 'bg-red-100 text-red-700'

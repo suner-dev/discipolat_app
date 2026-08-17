@@ -27,6 +27,13 @@ export default function CrmFaiseurPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterDifficulte, setFilterDifficulte] = useState(false);
+
+  const scrollToDisciples = (status: string, difficulte = false) => {
+    setFilterStatus(status);
+    setFilterDifficulte(difficulte);
+    document.getElementById('liste-disciples')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const { data: crm, isLoading } = useQuery({
     queryKey: ['crm', 'faiseur'],
@@ -40,9 +47,10 @@ export default function CrmFaiseurPage() {
   const stats = crm?.statistiques ?? {};
   const alertes = crm?.alertes ?? [];
 
-  const filteredDisciples = filterStatus === 'all'
-    ? disciples
-    : disciples.filter((d: any) => d.statut === filterStatus);
+  const filteredDisciples = disciples.filter((d: any) =>
+    (filterStatus === 'all' || d.statut === filterStatus)
+    && (!filterDifficulte || d.etatSpirituel === 'EN_DIFFICULTE')
+  );
 
   const pieData = [
     { name: 'Actifs', value: stats.actifs ?? 0, color: '#22c55e' },
@@ -85,9 +93,14 @@ export default function CrmFaiseurPage() {
         </div>
       ) : (
         <>
-          {/* Stats Cards */}
+          {/* Stats Cards — cliquables : filtrent la liste des disciples */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="stat-card animate-slide-up">
+            <button
+              type="button"
+              onClick={() => scrollToDisciples('all', false)}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              title="Voir tous vos disciples"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-green-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Disciples</span>
@@ -96,8 +109,15 @@ export default function CrmFaiseurPage() {
                 </div>
               </div>
               <span className="stat-value">{stats.totalDisciples ?? 0}</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '60ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour voir la liste</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToDisciples('ACTIF', false)}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '60ms' }}
+              title="Voir vos disciples actifs"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-teal-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Actifs</span>
@@ -106,8 +126,15 @@ export default function CrmFaiseurPage() {
                 </div>
               </div>
               <span className="stat-value text-emerald-500">{stats.actifs ?? 0}</span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '120ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour filtrer</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/reports/maker')}
+              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              style={{ animationDelay: '120ms' }}
+              title="Ouvrir le rapport hebdomadaire"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">Rapports soumis</span>
@@ -119,8 +146,15 @@ export default function CrmFaiseurPage() {
                 {stats.rapportsSoumisSemaine ?? 0}
                 <span className="text-xs text-gray-400 ml-1">/ {stats.totalDisciples ?? 0}</span>
               </span>
-            </div>
-            <div className="stat-card animate-slide-up" style={{ animationDelay: '180ms' }}>
+              <span className="text-[10px] text-gray-400 mt-1 block">Rapport hebdomadaire</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToDisciples('all', true)}
+              className={`stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${filterDifficulte ? 'ring-2 ring-red-400/40' : ''}`}
+              style={{ animationDelay: '180ms' }}
+              title="Voir vos disciples en difficulté"
+            >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-rose-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
                 <span className="stat-label">En difficulté</span>
@@ -131,7 +165,8 @@ export default function CrmFaiseurPage() {
               <span className={`stat-value ${(stats.enDifficulte ?? 0) > 0 ? 'text-red-500' : 'text-green-500'}`}>
                 {stats.enDifficulte ?? 0}
               </span>
-            </div>
+              <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour filtrer</span>
+            </button>
           </div>
 
           {/* Chart + Alerts Row */}
@@ -237,7 +272,7 @@ export default function CrmFaiseurPage() {
           </div>
 
           {/* Disciples List */}
-          <div className="space-y-3">
+          <div id="liste-disciples" className="space-y-3 scroll-mt-24">
             {filteredDisciples.length === 0 ? (
               <div className="glass-card p-12 text-center animate-fade-in">
                 <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />

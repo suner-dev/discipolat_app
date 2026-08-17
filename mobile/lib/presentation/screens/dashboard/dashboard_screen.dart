@@ -113,21 +113,40 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                             gradientEnd: gradient[1],
                             trend: stat['trend'] as String?,
                             trendUp: true,
+                            onTap: () {
+                              final label = stat['label'] as String;
+                              if (label.contains('Âme')) {
+                                context.go('/souls');
+                              } else if (label.contains('présence')) {
+                                context.go('/departments');
+                              } else if (label.contains('Faiseur')) {
+                                context.go('/users');
+                              } else if (label.contains('Famille')) {
+                                context.go('/families');
+                              } else if (label.contains('Alerte')) {
+                                context.go('/alerts');
+                              } else {
+                                context.go('/reports');
+                              }
+                            },
                           );
                         },
                       ),
                       const SizedBox(height: 16),
                       SectionTitle(title: 'Alertes récentes', icon: Icons.warning_amber),
-                      GlassCard(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            Icon(Icons.check_circle_outline, color: Colors.green.withValues(alpha: 0.7), size: 48),
-                            const SizedBox(height: 12),
-                            const Text('Tout est sous contrôle', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
-                            const SizedBox(height: 4),
-                            Text('Aucune alerte active', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
-                          ],
+                      GestureDetector(
+                        onTap: () => context.go('/alerts'),
+                        child: GlassCard(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              Icon(Icons.check_circle_outline, color: Colors.green.withValues(alpha: 0.7), size: 48),
+                              const SizedBox(height: 12),
+                              const Text('Tout est sous contrôle', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 4),
+                              Text('Aucune alerte active', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
+                            ],
+                          ),
                         ),
                       ),
                     ],
