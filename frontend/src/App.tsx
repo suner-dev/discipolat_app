@@ -56,6 +56,7 @@ const UrgentAidPage = lazy(() => import('@/pages/UrgentAidPage'));
 const IntelligentSearchPage = lazy(() => import('@/pages/IntelligentSearchPage'));
 const Pastoral360Page = lazy(() => import('@/pages/Pastoral360Page'));
 const CrmFaiseurPage = lazy(() => import('@/pages/CrmFaiseurPage'));
+const FinancePage = lazy(() => import('@/pages/FinancePage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 const WeeklyProgramPage = lazy(() => import('@/pages/WeeklyProgramPage'));
 const ProgramTypesPage = lazy(() => import('@/pages/ProgramTypesPage'));
@@ -324,6 +325,11 @@ export default function App() {
           <Route path="/alerts" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
               <AlertsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/finances" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <FinancePage />
             </ProtectedRoute>
           } />
           <Route path="/notifications" element={

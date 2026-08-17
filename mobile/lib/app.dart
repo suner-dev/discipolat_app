@@ -48,6 +48,7 @@ import 'presentation/screens/transfers/transfer_admin_screen.dart';
 import 'presentation/screens/platform/platform_modules_screen.dart';
 import 'presentation/screens/platform/platform_menus_screen.dart';
 import 'presentation/screens/platform/platform_pages_screen.dart';
+import 'presentation/screens/finances/finance_screen.dart';
 import 'presentation/screens/not_found_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -188,6 +189,7 @@ Map<String, List<String>> _routeRoles = {
   '/members/requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
   '/transfers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/admin': ['ADMIN', 'PASTEUR'],
+  '/finances': ['ADMIN', 'PASTEUR'],
   '/admin/modules': ['ADMIN'],
   '/admin/menus': ['ADMIN'],
   '/admin/pages': ['ADMIN'],
@@ -511,6 +513,11 @@ final appRouter = GoRouter(
       path: '/admin/pages',
       name: 'platform-pages',
       builder: (context, state) => const PlatformPagesScreen(),
+    ),
+    GoRoute(
+      path: '/finances',
+      name: 'finances',
+      builder: (context, state) => const FinanceScreen(),
     ),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),

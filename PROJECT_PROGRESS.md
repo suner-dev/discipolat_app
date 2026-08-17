@@ -5,6 +5,68 @@
 
 ---
 
+## SESSION 2026-08-17 (bloc 7) — Outil métier FINANCES (V68) — fullstack + mobile
+
+### Backend (V68 — finance_transactions + finance_budgets + module FINANCES)
+
+- **Migration V68** : tables `finance_transactions` (type RECETTE/DEPENSE avec
+  contrainte CHECK, catégorie, montant ≥ 0, date, soft delete) et
+  `finance_budgets` (catégorie + année, montant, unique(categorie, annee)) +
+  module `FINANCES` (activables) + menu `finances` → `/finances`
+  (ADMIN/PASTEUR).
+- **`FinanceService`** : CRUD transactions (soft delete, traçabilité audit
+  FINANCE_TRANSACTION_CREATED/UPDATED/DELETED), **statistiques annuelles
+  réelles** (totaux recettes/dépenses/solde, séries par mois sur 12 mois,
+  répartition par catégorie), **budgets** (upsert par catégorie/année,
+  consommation = dépenses réelles de l'année / budget, statut OK/ALERTE/DEPASSE).
+- **API** `/api/v1/finances` : GET/POST/PUT/DELETE `/transactions`, GET `/stats`,
+  GET/POST/DELETE `/budgets` — `@PreAuthorize ADMIN/PASTEUR` + garde-fou de
+  module `ModuleGateFilter` (`/api/v1/finances` → FINANCES, 403 si désactivé).
+- **Tests** : `FinanceServiceTest` **5 ✓** (création+audit, filtre type/période,
+  séries mensuelles + solde, upsert budget sans doublon, consommation 80 % → ALERTE).
+
+### Frontend web
+
+- **`FinancePage`** (`/finances`, ADMIN/PASTEUR, lazy) : état explicite si module
+  désactivé ; KPIs (recettes, dépenses, solde, budgets), **graphique barres
+  recettes/dépenses par mois** (recharts), budgets par catégorie avec barre de
+  consommation colorée (dépassé/alerte), **CRUD transactions** (modale
+  type/catégorie/montant/date/description), filtres type + catégorie, **export
+  CSV** client (BOM UTF-8).
+- **Route** App.tsx (ProtectedRoute ADMIN/PASTEUR) + types Finances (transaction,
+  budget, stats) + le menu apparaît automatiquement (config plateforme DB).
+- **Tests** : `FinancePage.test` **3 ✓** (KPIs/liste/graphique, création via
+  modale → POST, état module désactivé).
+
+### Mobile (Flutter) — parité
+
+- **`FinanceScreen`** (`/finances`, ADMIN/PASTEUR) : KPIs (recettes/dépenses/
+  solde), **chips de filtre par type** (→ GET ?type=), liste des transactions
+  avec suppression confirmée, **bottom sheet d'ajout** (type segmenté, catégorie,
+  montant validé, description, date picker) → POST. Drawer ADMIN/PASTEUR + route
+  dans la matrice de rôles.
+- **Tests** : `finance_screen_test` **3 ✓** — mobile **118 tests ✓**, analyze 0 issue.
+
+### État des tests (bloc 7)
+
+- Backend : `FinanceServiceTest` 5 ✓ + `ModuleGateFilterTest` 3 ✓ +
+  `PageBuilderServiceTest` 29 ✓ — BUILD SUCCESS.
+- Frontend : `tsc --noEmit` ✓ · suite complète **214 tests vitest ✓** (34 fichiers).
+- Mobile : `flutter analyze` **0 issue** · **118 tests ✓**.
+
+### Commit / push
+
+- Commit de ce bloc : Outil métier Finances (V68) — transactions, budget, stats.
+- Poussé sur origin/main.
+
+### Prochain objectif
+
+Outil métier **Communication** (annonces/campagnes ciblées) et/ou passage à la
+phase « cohérence/synchronisation » (tests de propagation) — voir
+ARCHITECTURE_AUDIT.md §9 et la feuille de route §12.
+
+---
+
 ## SESSION 2026-08-17 (bloc 6) — Page Builder V67 : FICHIERS / TACHES / FORMULAIRE
 
 ### Backend (V67 — blocs documents, tâches, formulaire de demande)

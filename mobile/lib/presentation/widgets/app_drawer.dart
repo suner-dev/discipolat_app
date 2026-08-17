@@ -50,6 +50,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.emoji_events_rounded, 'title': 'Badges', 'route': '/badges'},
     {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
+    {'icon': Icons.account_balance_wallet_rounded, 'title': 'Finances', 'route': '/finances'},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
     {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},

@@ -1478,6 +1478,67 @@ export interface PageDataSource {
   sensitive: boolean;
 }
 
+// ======================== Finances (V68) ========================
+
+export type FinanceTransactionType = 'RECETTE' | 'DEPENSE';
+export type FinanceBudgetStatus = 'OK' | 'ALERTE' | 'DEPASSE';
+
+export interface FinanceTransaction {
+  id: string;
+  type: FinanceTransactionType;
+  categorie: string;
+  montant: number;
+  description?: string;
+  dateTransaction: string;
+  createdAt?: string;
+}
+
+export interface CreateFinanceTransactionRequest {
+  type: FinanceTransactionType;
+  categorie: string;
+  montant: number;
+  description?: string;
+  dateTransaction: string;
+}
+
+export interface FinanceBudget {
+  id: string;
+  categorie: string;
+  annee: number;
+  montant: number;
+  depenseReelle: number;
+  consommationPct: number;
+  statut: FinanceBudgetStatus;
+}
+
+export interface CreateFinanceBudgetRequest {
+  categorie: string;
+  annee: number;
+  montant: number;
+}
+
+export interface FinanceMonthPoint {
+  mois: string;
+  recettes: number;
+  depenses: number;
+}
+
+export interface FinanceCategoryTotal {
+  categorie: string;
+  total: number;
+}
+
+export interface FinanceStats {
+  annee: number;
+  totalRecettes: number;
+  totalDepenses: number;
+  solde: number;
+  nbTransactions: number;
+  parMois: FinanceMonthPoint[];
+  recettesParCategorie: FinanceCategoryTotal[];
+  depensesParCategorie: FinanceCategoryTotal[];
+}
+
 // ======================== Rôles & permissions (T3) ========================
 
 export interface PlatformRole {
