@@ -84,13 +84,35 @@ n°1 du COMMERCIALIZATION_AUDIT.md** (isolation des données entre églises).
 - `a98ef56` — feat(multitenancy): isolation multi-tenant V70 + sécurité
   mobile (fullstack). **Poussé sur origin/main** ✓.
 
+### Suite — Accès local + fix `/users/me` (commit `52e1684`, poussé)
+
+- **Environnement local relancé depuis le repo réel** `/home/jo/discipolat`
+  (les services précédents tournaient depuis une copie `/tmp/discipolat-audit`) :
+  - Backend `:8080` — `mvn spring-boot:run` (base `localhost:5433/discipolat`,
+    keys/private.pem). **Migration Flyway V66→V70 appliquée sur la vraie base
+    Postgres : `now at version v70` ✓** (test réel de la migration multitenancy,
+    1 tenant par défaut, 1015 âmes backfillées).
+  - Frontend `:5173` — `npx vite --host 0.0.0.0` (proxy `/api` → `:8080`).
+  - Smoke test : meta 200, login admin/faiseur 200, `/users/me` 200,
+    `/souls` 200 — **tout vert via le proxy**.
+- **Bug corrigé** : `GET /users/me` n'existait pas côté backend (le mobile
+  l'appelle pour le profil) — Spring matchait `/users/{id}` avec `me` → 500
+  `MethodArgumentTypeMismatchException`. Ajout de l'endpoint `GET /users/me`
+  (utilisateur courant, tout rôle authentifié) dans `UserController`.
+  Tests `UserServiceTest` 15/15 ✓, commit `52e1684` poussé sur origin/main.
+- **Comptes de test locaux** : base `:5433` (dev) avec seed volumineux —
+  `admin@discipolat.com` / `password123` (ADMIN+PASTEUR),
+  `pasteur@`, `responsable@`, `chef@`, `faiseur@`, `membre@`, `paul@`.
+  ⚠️ `demoAccountsEnabled: false` en dev (comptes démo masqués sur la page
+  de login hors bêta) — se connecter directement avec les emails ci-dessus.
+
 ### Prochain objectif
 
 Suite des **P0 du COMMERCIALIZATION_AUDIT.md** : vérifier l'isolation
-multi-tenant de bout en bout sur la vraie base (migration V70 sur Postgres,
-2 églises distinctes, exports/fichiers/cache par tenant), puis traiter les
-P0 permissions/IDOR restants (vérification serveur sur chaque endpoint
-CRUD) et le rate limiting global. QA final : audit page par page, tests de
+multi-tenant avec 2 églises distinctes réelles (créer un 2e tenant + users,
+exports/fichiers/cache par tenant), puis traiter les P0 permissions/IDOR
+restants (vérification serveur sur chaque endpoint CRUD) et le rate
+limiting global. QA final : audit page par page, tests de
 rôles/permissions/CRUD/sync, responsive, perf, sécurité, déploiement.
 
 ---
