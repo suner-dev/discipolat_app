@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
 import 'presentation/screens/dashboard/pasteur_dashboard_screen.dart';
@@ -50,10 +51,14 @@ import 'presentation/screens/platform/platform_menus_screen.dart';
 import 'presentation/screens/platform/platform_pages_screen.dart';
 import 'presentation/screens/finances/finance_screen.dart';
 import 'presentation/screens/communications/communications_screen.dart';
+import 'presentation/screens/onboarding/onboarding_screen.dart';
+import 'presentation/screens/security/security_settings_screen.dart';
 import 'presentation/screens/not_found_screen.dart';
 
+import 'tenant_config.dart';
+
 /// Auth state notifier — singleton that tracks the authenticated user
-/// with full multi-role support (roles + activeRole).
+/// with full multi-role and multi-tenant support (roles + activeRole + orgId).
 class AuthState {
   static final AuthState _instance = AuthState._internal();
   factory AuthState() => _instance;
@@ -69,6 +74,7 @@ class AuthState {
   String? _lastName;
   bool _estChefDeFamille = false;
   String? _familleGereeId;
+  String? _orgId;
 
   bool get isAuthenticated => _isAuthenticated;
   String? get userId => _userId;
@@ -80,6 +86,13 @@ class AuthState {
   String? get lastName => _lastName;
   bool get estChefDeFamille => _estChefDeFamille;
   String? get familleGereeId => _familleGereeId;
+  String? get orgId => _orgId;
+  bool get isMultiTenantActive => _orgId != null && _orgId!.isNotEmpty;
+
+  /// Check if the current user has access to the current tenant/org
+  bool hasCurrentTenantAccess() {
+    return _orgId != null && _orgId!.isNotEmpty && TenantConfig.isMultiTenantActive;
+  }
 
   void setAuthenticated(bool value, {Map<String, dynamic>? userData}) {
     _isAuthenticated = value;
@@ -95,6 +108,11 @@ class AuthState {
       _lastName = userData['lastName'] as String?;
       _estChefDeFamille = userData['estChefDeFamille'] as bool? ?? false;
       _familleGereeId = userData['familleGereeId'] as String?;
+      _orgId = userData['orgId'] as String?;
+      // Persist orgId for tenant-aware API calls
+      if (_orgId != null) {
+        TenantConfig.setOrgId(_orgId!);
+      }
     }
   }
 
@@ -127,6 +145,9 @@ class AuthState {
     _lastName = null;
     _estChefDeFamille = false;
     _familleGereeId = null;
+    _orgId = null;
+    // Clear tenant config on logout
+    TenantConfig.clearOrgId();
   }
 }
 
@@ -195,22 +216,39 @@ Map<String, List<String>> _routeRoles = {
   '/admin/modules': ['ADMIN'],
   '/admin/menus': ['ADMIN'],
   '/admin/pages': ['ADMIN'],
+  '/security-settings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/onboarding': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
 };
 
 final appRouter = GoRouter(
-  initialLocation: '/login',
-  redirect: (context, state) {
+  initialLocation: '/onboarding',
+  redirect: (context, state) async {
     final auth = AuthState();
     final loginRoute = '/login';
+    final onboardingRoute = '/onboarding';
     final isLoginRoute = state.matchedLocation == loginRoute;
 
-    // If not authenticated and trying to access a protected route → redirect to login
-    if (!auth.isAuthenticated && !isLoginRoute) {
-      return loginRoute;
+    // Onboarding — première connexion uniquement (non authentifié).
+    // Une fois complété, l'utilisateur est redirigé vers le login.
+    if (!auth.isAuthenticated) {
+      bool onboardingComplete = false;
+      try {
+        onboardingComplete = await SharedPreferences.getInstance()
+            .then((prefs) => prefs.getBool('onboarding_complete') ?? false);
+      } catch (_) {
+        // Storage unavailable (tests) — skip onboarding, go to login
+      }
+      if (!onboardingComplete && state.matchedLocation != onboardingRoute) {
+        return onboardingRoute;
+      }
+      if (onboardingComplete && state.matchedLocation == onboardingRoute) {
+        return loginRoute;
+      }
+      return null;
     }
 
-    // If authenticated and on login page → redirect to dashboard
-    if (auth.isAuthenticated && isLoginRoute) {
+    // If authenticated and on login/onboarding page → redirect to dashboard
+    if (auth.isAuthenticated && (isLoginRoute || state.matchedLocation == onboardingRoute)) {
       return '/dashboard';
     }
 
@@ -250,6 +288,16 @@ final appRouter = GoRouter(
     return null; // allow navigation
   },
   routes: [
+    GoRoute(
+      path: '/onboarding',
+      name: 'onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
+    GoRoute(
+      path: '/security-settings',
+      name: 'security-settings',
+      builder: (context, state) => const SecuritySettingsScreen(),
+    ),
     GoRoute(
       path: '/login',
       name: 'login',

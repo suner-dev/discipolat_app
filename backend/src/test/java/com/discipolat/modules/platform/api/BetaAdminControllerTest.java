@@ -50,7 +50,7 @@ class BetaAdminControllerTest {
 
     private String bearer(String role) {
         return "Bearer " + jwtTokenProvider.generateAccessToken(
-                ADMIN_ID, EMAIL, role, Set.of(role), false);
+                ADMIN_ID, EMAIL, role, Set.of(role), false, null);
     }
 
     // ======================== Status ========================

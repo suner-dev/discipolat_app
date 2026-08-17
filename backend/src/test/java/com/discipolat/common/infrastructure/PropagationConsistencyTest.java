@@ -7,6 +7,7 @@ import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.TransferType;
 import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.domain.Family;
@@ -73,6 +74,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class PropagationConsistencyTest {
 
+    private static final UUID DEFAULT_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     @Autowired private TransferExecutor transferExecutor;
     @Autowired private SoulService soulService;
     @Autowired private SearchService searchService;
@@ -105,6 +108,7 @@ class PropagationConsistencyTest {
             jdbcTemplate.execute("TRUNCATE TABLE " + table);
         }
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+        TenantContext.setTenantId(DEFAULT_TENANT_ID);
         pasteurId = saveUser("pasteur@test", UserRole.PASTEUR, "Pierre", "Pasteur").getId();
         login(pasteurId, "PASTEUR");
     }
@@ -112,6 +116,7 @@ class PropagationConsistencyTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+        TenantContext.clear();
     }
 
     // ========================================================================
@@ -127,6 +132,7 @@ class PropagationConsistencyTest {
 
     private User saveUser(String email, UserRole role, String firstName, String lastName) {
         return userRepository.save(User.builder()
+                .tenantId(DEFAULT_TENANT_ID)
                 .email(email)
                 .passwordHash("PLACEHOLDER")
                 .firstName(firstName)
@@ -140,6 +146,7 @@ class PropagationConsistencyTest {
 
     private Soul saveSoul(String nom, String prenom, UUID faiseurId, UUID familleId) {
         return soulRepository.save(Soul.builder()
+                .tenantId(DEFAULT_TENANT_ID)
                 .nom(nom).prenom(prenom).email(nom.toLowerCase() + "@test")
                 .typeDisciple(TypeDisciple.NOUVEL_ARRIVANT)
                 .dateIntegration(LocalDate.now())
@@ -153,12 +160,12 @@ class PropagationConsistencyTest {
 
     private Family saveFamily(String nom, UUID chefId) {
         return familyRepository.save(Family.builder()
-                .nom(nom).chefFamilleId(chefId).dateCreation(LocalDate.now()).build());
+                .tenantId(DEFAULT_TENANT_ID).nom(nom).chefFamilleId(chefId).dateCreation(LocalDate.now()).build());
     }
 
     private Department saveDepartment(String nom, UUID responsableId) {
         return departmentRepository.save(Department.builder()
-                .nom(nom).responsableId(responsableId).build());
+                .tenantId(DEFAULT_TENANT_ID).nom(nom).responsableId(responsableId).build());
     }
 
     private Map<String, Object> affectation(String type, UUID id, String nom) {
@@ -170,6 +177,7 @@ class PropagationConsistencyTest {
                                  Map<String, Object> ancienne, Map<String, Object> nouvelle,
                                  Map<String, Object> regles) {
         TransferRequest req = TransferRequest.builder()
+                .tenantId(DEFAULT_TENANT_ID)
                 .type(type)
                 .statut(com.discipolat.common.enums.TransferStatus.VALIDE)
                 .personneId(personneId)
@@ -301,10 +309,12 @@ class PropagationConsistencyTest {
         Soul membre = saveSoul("Aka", "Marie", faiseur.getId(), null);
 
         soulDepartmentRepository.save(SoulDepartment.builder()
+                .tenantId(DEFAULT_TENANT_ID)
                 .soulId(membre.getId()).departmentId(deptA.getId())
                 .actif(true).dateAffectation(LocalDateTime.now())
                 .createdBy(pasteurId).origine("TEST").build());
         memberDepartmentRepository.save(MemberDepartment.builder()
+                .tenantId(DEFAULT_TENANT_ID)
                 .soulId(membre.getId()).departmentId(deptA.getId()).build());
 
         executeTransfer(TransferType.MEMBRE_DEPARTEMENT_TRANSFERT,
@@ -439,6 +449,7 @@ class PropagationConsistencyTest {
         User nouveauResp = saveUser("resp.nouveau@test", UserRole.RESPONSABLE, "Roger", "Nouveau");
         Department dept = saveDepartment("Jeunesse", ancienResp.getId());
         userDepartmentRepository.save(UserDepartment.builder()
+                .tenantId(DEFAULT_TENANT_ID)
                 .userId(ancienResp.getId()).departmentId(dept.getId())
                 .roleDansDept("RESPONSABLE").build());
 

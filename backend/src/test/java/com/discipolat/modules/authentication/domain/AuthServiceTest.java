@@ -69,9 +69,9 @@ class AuthServiceTest {
     @Test
     void login_WithValidCredentials_ShouldReturnAuthResult() {
         when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean()))
+        when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean(), any()))
                 .thenReturn("access-token");
-        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet()))
+        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet(), any()))
                 .thenReturn("refresh-token");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
@@ -141,9 +141,9 @@ class AuthServiceTest {
         when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.extractUserId(refreshToken)).thenReturn(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean()))
+        when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean(), any()))
                 .thenReturn("new-access-token");
-        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet()))
+        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet(), any()))
                 .thenReturn("new-refresh-token");
 
         AuthService.AuthResult result = authService.refreshToken(refreshToken);

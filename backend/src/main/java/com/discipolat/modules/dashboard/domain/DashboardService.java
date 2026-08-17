@@ -600,6 +600,10 @@ public class DashboardService {
             }
             resolvedFamilleId = user.getFamilleGereeId();
         }
+        // IDOR FIX: Verify the current user has access to this family
+        if (!securityUtils.isSuperUser() && !workspaceScope.canAccessFamily(resolvedFamilleId)) {
+            throw new com.discipolat.common.exception.ForbiddenException("You do not have access to this family");
+        }
         final UUID finalFamilleId = resolvedFamilleId;
         UUID currentUserId = securityUtils.getCurrentUserId();
         Map<String, Object> dashboard = new LinkedHashMap<>();

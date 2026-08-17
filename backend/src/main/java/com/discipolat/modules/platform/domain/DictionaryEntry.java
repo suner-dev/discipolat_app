@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.Filter;
 
 /**
  * Entrée d'un dictionnaire de la plateforme (référentiel configurable).
@@ -20,12 +21,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class DictionaryEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
+
+    @Column(name = "tenant_id", nullable = false)
+    private UUID tenantId;
 
     /** Clé du dictionnaire (ex : EVENT_TYPE, SOUL_STATUS, ABSENCE_RAISON). */
     @Column(name = "dict_key", nullable = false, length = 50)

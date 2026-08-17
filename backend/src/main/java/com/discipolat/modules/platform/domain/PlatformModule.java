@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
+import org.hibernate.annotations.Filter;
 
 /**
  * Module de la plateforme, activable/désactivable par l'administrateur.
@@ -17,11 +19,15 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class PlatformModule {
 
     @Id
     @Column(name = "key", nullable = false, length = 50)
     private String key;
+
+    @Column(name = "tenant_id", nullable = false)
+    private UUID tenantId;
 
     @Column(name = "label", nullable = false)
     private String label;

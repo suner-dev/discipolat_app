@@ -46,6 +46,7 @@ public class SoulService {
     private final MakerReportRepository makerReportRepository;
     private final EvaluationService evaluationService;
     private final EntityAttachmentService attachmentService;
+    private final WorkspaceScopeService workspaceScopeService;
 
     public SoulService(SoulRepository soulRepository, SoulHistoryRepository soulHistoryRepository,
                        SoulNoteRepository soulNoteRepository,
@@ -54,7 +55,8 @@ public class SoulService {
                        SoulDepartmentRepository soulDepartmentRepository,
                        MakerReportRepository makerReportRepository,
                        EvaluationService evaluationService,
-                       EntityAttachmentService attachmentService) {
+                       EntityAttachmentService attachmentService,
+                       WorkspaceScopeService workspaceScopeService) {
         this.soulRepository = soulRepository;
         this.soulHistoryRepository = soulHistoryRepository;
         this.soulNoteRepository = soulNoteRepository;
@@ -66,6 +68,7 @@ public class SoulService {
         this.makerReportRepository = makerReportRepository;
         this.evaluationService = evaluationService;
         this.attachmentService = attachmentService;
+        this.workspaceScopeService = workspaceScopeService;
     }
 
     public Soul create(CreateSoulRequest request) {
@@ -329,6 +332,9 @@ public class SoulService {
      */
     @Transactional(readOnly = true)
     public UUID suggestLeastLoadedFaiseur(UUID familleId) {
+        if (!securityUtils.isSuperUser() && !workspaceScopeService.canAccessFamily(familleId)) {
+            throw new com.discipolat.common.exception.ForbiddenException("You do not have access to this family");
+        }
         List<Soul> familySouls = soulRepository.findAllByFamilleId(familleId);
         java.util.Map<UUID, Long> loadByFaiseur = new java.util.HashMap<>();
         for (Soul soul : familySouls) {

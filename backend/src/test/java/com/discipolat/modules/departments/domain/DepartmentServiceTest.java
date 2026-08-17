@@ -14,6 +14,7 @@ import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulDepartment;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.UserDepartmentRepository;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +61,8 @@ class DepartmentServiceTest {
     private SoulDepartmentRepository soulDepartmentRepository;
     @Mock
     private EntityAttachmentService attachmentService;
+    @Mock
+    private WorkspaceScopeService workspaceScopeService;
 
     private DepartmentService service;
     private UUID currentUserId;
@@ -71,7 +74,7 @@ class DepartmentServiceTest {
         service = new DepartmentService(departmentRepository, familyRepository, soulRepository,
                 userRepository, userDepartmentRepository, makerReportRepository,
                 familyReportRepository, securityUtils, passwordEncoder, soulDepartmentRepository,
-                attachmentService);
+                attachmentService, workspaceScopeService);
         currentUserId = UUID.randomUUID();
         ownDept = Department.builder().id(UUID.randomUUID())
                 .nom("Département 1").responsableId(currentUserId)

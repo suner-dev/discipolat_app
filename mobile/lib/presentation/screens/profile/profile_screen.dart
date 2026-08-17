@@ -140,11 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Text('Actions rapides', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 12),
-                          _actionRow(Icons.lock_outline, 'Changer le mot de passe', () {}),
-                          const GlassDivider(),
-                          _actionRow(Icons.notifications_outlined, 'Paramètres notifications', () {}),
-                          const GlassDivider(),
-                          _actionRow(Icons.dark_mode_outlined, 'Mode sombre', () {}),
+                          _actionRow(Icons.security, 'Sécurité et confidentialité', () => context.go('/security-settings')),
                         ],
                       ),
                     ),

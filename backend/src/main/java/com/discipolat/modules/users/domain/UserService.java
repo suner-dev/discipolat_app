@@ -3,6 +3,7 @@ package com.discipolat.modules.users.domain;
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.UserRole;
+import com.discipolat.common.exception.ForbiddenException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.souls.domain.SoulHistory;
@@ -188,8 +189,25 @@ public class UserService {
     }
 
     public User findById(UUID id) {
-        return userRepository.findById(id)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User", id));
+        assertUserAccessible(user);
+        return user;
+    }
+
+    /**
+     * Checks if the current user can access the target user based on
+     * both tenant isolation and workspace scope.
+     */
+    private void assertUserAccessible(User target) {
+        if (securityUtils.isSuperUser()) return;
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        if (target.getId().equals(currentUserId)) return;
+        if (securityUtils.hasActiveRole("RESPONSABLE")) {
+            Set<UUID> accessibleFaiseurIds = workspaceScopeService.accessibleFaiseurIds();
+            if (accessibleFaiseurIds.contains(target.getId())) return;
+        }
+        throw new com.discipolat.common.exception.ForbiddenException("You do not have access to this user");
     }
 
     @Transactional(readOnly = true)
@@ -253,6 +271,9 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<User> findByFamilleGereeId(UUID familleId) {
+        if (!securityUtils.isSuperUser() && !workspaceScopeService.canAccessFamily(familleId)) {
+            throw new ForbiddenException("You do not have access to this family");
+        }
         return userRepository.findByFamilleGereeId(familleId);
     }
 

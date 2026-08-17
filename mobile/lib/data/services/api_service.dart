@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_config.dart';
+import '../../tenant_config.dart';
 
 class ApiService {
   late final Dio _dio;
@@ -25,12 +26,22 @@ class ApiService {
       },
     ));
 
+    // Add orgId filtering header for multi-tenant isolation
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // Add authentication token
         final token = await _secureStorage.read(key: _accessTokenKey);
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+
+        // Add organisation/tenant filter for multi-tenant isolation
+        final orgId = await TenantConfig.resolveOrgId();
+        if (orgId != null && orgId.isNotEmpty) {
+          options.headers['X-Org-Id'] = orgId;
+          options.headers['X-Tenant'] = 'active';
+        }
+
         handler.next(options);
       },
       onError: (error, handler) async {
@@ -73,19 +84,19 @@ class ApiService {
   }
 
   Future<Response> get(String path, {Map<String, dynamic>? params}) =>
-      _dio.get(path, queryParameters: params);
+    _dio.get(path, queryParameters: params);
 
   Future<Response> getBytes(String path, {Map<String, dynamic>? params}) =>
-      _dio.get(path, queryParameters: params, options: Options(responseType: ResponseType.bytes));
+    _dio.get(path, queryParameters: params, options: Options(responseType: ResponseType.bytes));
 
   Future<Response> post(String path, {dynamic data}) =>
-      _dio.post(path, data: data);
+    _dio.post(path, data: data);
 
   Future<Response> put(String path, {dynamic data}) =>
-      _dio.put(path, data: data);
+    _dio.put(path, data: data);
 
   Future<Response> patch(String path, {dynamic data}) =>
-      _dio.patch(path, data: data);
+    _dio.patch(path, data: data);
 
   Future<Response> delete(String path) => _dio.delete(path);
 

@@ -17,6 +17,7 @@ import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserDepartmentRepository;
 import com.discipolat.modules.users.domain.UserRepository;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +45,7 @@ public class DepartmentService {
     private final PasswordEncoder passwordEncoder;
     private final com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository;
     private final EntityAttachmentService attachmentService;
+    private final com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService;
 
     public DepartmentService(DepartmentRepository departmentRepository,
                              FamilyRepository familyRepository,
@@ -55,7 +57,8 @@ public class DepartmentService {
                              SecurityUtils securityUtils,
                              PasswordEncoder passwordEncoder,
                              com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository,
-                             EntityAttachmentService attachmentService) {
+                             EntityAttachmentService attachmentService,
+                             com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService) {
         this.departmentRepository = departmentRepository;
         this.familyRepository = familyRepository;
         this.soulRepository = soulRepository;
@@ -67,6 +70,7 @@ public class DepartmentService {
         this.passwordEncoder = passwordEncoder;
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.attachmentService = attachmentService;
+        this.workspaceScopeService = workspaceScopeService;
     }
 
     public Department create(Department department) {
@@ -183,6 +187,12 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public List<Department> findByResponsableId(UUID responsableId) {
+        if (!securityUtils.isSuperUser() && !securityUtils.getCurrentUserId().equals(responsableId)) {
+            if (!workspaceScopeService.accessibleDepartmentIds().contains(departmentRepository.findByResponsableId(responsableId)
+                    .stream().findFirst().map(Department::getId).orElse(null))) {
+                throw new com.discipolat.common.exception.ForbiddenException("You do not have access to this responsable's departments");
+            }
+        }
         return departmentRepository.findByResponsableId(responsableId);
     }
 

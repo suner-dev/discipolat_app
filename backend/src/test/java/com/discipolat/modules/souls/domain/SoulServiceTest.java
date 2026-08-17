@@ -60,6 +60,8 @@ class SoulServiceTest {
     private EvaluationService evaluationService;
     @Mock
     private EntityAttachmentService attachmentService;
+    @Mock
+    private WorkspaceScopeService workspaceScopeService;
 
     private SoulService soulService;
 
@@ -73,7 +75,7 @@ class SoulServiceTest {
         soulService = new SoulService(soulRepository, soulHistoryRepository,
                 soulNoteRepository, securityUtils, userRepository,
                 familyRepository, departmentRepository, soulDepartmentRepository,
-                makerReportRepository, evaluationService, attachmentService);
+                makerReportRepository, evaluationService, attachmentService, workspaceScopeService);
 
         faiseurId = UUID.randomUUID();
         familleId = UUID.randomUUID();

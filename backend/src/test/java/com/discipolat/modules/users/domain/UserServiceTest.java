@@ -151,6 +151,7 @@ class UserServiceTest {
 
     @Test
     void replaceRoles_AdminAddingAdminRole_ShouldSucceed() {
+        when(securityUtils.isSuperUser()).thenReturn(true);
         when(securityUtils.hasActiveRole("ADMIN")).thenReturn(true);
         User target = userWithRole(UserRole.MEMBRE);
         when(userRepository.findById(target.getId())).thenReturn(java.util.Optional.of(target));
@@ -312,6 +313,7 @@ class UserServiceTest {
 
     @Test
     void getUserDetail_WithoutLinkedSoul_ShouldReturnEmptyDossier() {
+        when(securityUtils.isSuperUser()).thenReturn(true);
         UUID userId = UUID.randomUUID();
         User user = userWithRole(UserRole.MEMBRE);
         when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));

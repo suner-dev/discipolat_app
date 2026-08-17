@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.hibernate.annotations.Filter;
 
 /**
  * Identité et marque de l'église.
@@ -25,6 +26,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class ChurchSettings {
 
     public static final String DEFAULT_PRIMARY_COLOR = "#16a34a";

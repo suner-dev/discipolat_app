@@ -63,7 +63,7 @@ class WorkspaceIsolationIntegrationTest {
 
     private String bearerToken(String activeRole, Set<String> roles) {
         String token = jwtTokenProvider.generateAccessToken(
-                MULTI_ROLE_USER_ID, EMAIL, activeRole, roles, false);
+                MULTI_ROLE_USER_ID, EMAIL, activeRole, roles, false, null);
         return "Bearer " + token;
     }
 

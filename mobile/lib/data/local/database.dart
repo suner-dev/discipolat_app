@@ -131,14 +131,20 @@ class AppDatabase extends _$AppDatabase {
     return (delete(syncQueueTable)..where((t) => t.id.equals(id))).go();
   }
 
-  Future<void> incrementRetry(String id) {
-    return (update(syncQueueTable)..where((t) => t.id.equals(id)))
-        .write(const SyncQueueTableCompanion(retryCount: Value(0), lastError: Value(null)));
+  Future<void> incrementRetry(String id, {String? error}) async {
+    // Reads the current value then increments — avoids drift expression limits.
+    final current = await (select(syncQueueTable)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (current == null) return;
+    await (update(syncQueueTable)..where((t) => t.id.equals(id)))
+        .write(SyncQueueTableCompanion(
+      retryCount: Value(current.retryCount + 1),
+      lastError: Value(error),
+    ));
   }
 
-  Future<void> markSyncFailed(String id, String error) {
+  Future<void> markSyncFailed(String id, String error, int retryCount) {
     return (update(syncQueueTable)..where((t) => t.id.equals(id)))
-        .write(SyncQueueTableCompanion(lastError: Value(error)));
+        .write(SyncQueueTableCompanion(retryCount: Value(retryCount), lastError: Value(error)));
   }
 
   /// Clear all data (e.g., on logout)

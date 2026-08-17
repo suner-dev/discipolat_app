@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
+import org.hibernate.annotations.Filter;
 
 /**
  * Table de liaison ManyToMany âme ↔ département.
@@ -17,15 +19,19 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @IdClass(SoulDepartmentId.class)
+@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class SoulDepartment {
 
     @Id
     @Column(name = "soul_id")
-    private java.util.UUID soulId;
+    private UUID soulId;
 
     @Id
     @Column(name = "department_id")
-    private java.util.UUID departmentId;
+    private UUID departmentId;
+
+    @Column(name = "tenant_id", nullable = false)
+    private UUID tenantId;
 
     @Column(name = "date_affectation", nullable = false, updatable = false)
     private LocalDateTime dateAffectation;
@@ -39,7 +45,7 @@ public class SoulDepartment {
 
     /** Compte utilisateur à l'origine du rattachement (traçabilité). */
     @Column(name = "created_by")
-    private java.util.UUID createdBy;
+    private UUID createdBy;
 
     /** Origine du rattachement : MANUEL | SIGNUP | TRANSFERT. */
     @Column(name = "origine")

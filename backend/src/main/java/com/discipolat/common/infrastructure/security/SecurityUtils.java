@@ -36,6 +36,20 @@ public class SecurityUtils {
         throw new UnauthorizedException("Invalid authentication principal");
     }
 
+    /**
+     * Returns the current tenant ID from the JWT token.
+     * Used for multi-tenant isolation.
+     */
+    public UUID getCurrentTenantId() {
+        String token = getCurrentJwtToken();
+        if (token != null) {
+            try {
+                return jwtTokenProvider.extractTenantId(token);
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
     public boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null && authentication.isAuthenticated()
@@ -67,10 +81,9 @@ public class SecurityUtils {
     }
 
     /**
-     * Vérifie si le rôle ACTIF de l'utilisateur fait partie des rôles donnés.
-     * Le rôle actif représente l'espace métier courant : les contrôles
-     * d'accès aux espaces doivent se baser sur lui (et non sur l'ensemble
-     * des rôles possédés).
+     * Checks if the ACTIVE role matches any of the given roles.
+     * The active role represents the current workspace: access controls
+     * must use this (not the full set of roles held).
      */
     public boolean hasActiveRole(String... roles) {
         String activeRole = getCurrentUserRole();
@@ -82,7 +95,7 @@ public class SecurityUtils {
     }
 
     /**
-     * Rôles super-utilisateurs : accès à tous les espaces métiers.
+     * Super-user roles: full access to all workspaces.
      */
     public boolean isSuperUser() {
         return hasActiveRole("ADMIN", "PASTEUR");

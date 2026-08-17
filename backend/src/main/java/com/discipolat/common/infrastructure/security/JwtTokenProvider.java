@@ -84,7 +84,7 @@ public class JwtTokenProvider {
         return Base64.getDecoder().decode(pemContent.replaceAll("\\s", ""));
     }
 
-    public String generateAccessToken(UUID userId, String email, String activeRole, java.util.Set<String> roles, boolean estChefDeFamille) {
+    public String generateAccessToken(UUID userId, String email, String activeRole, java.util.Set<String> roles, boolean estChefDeFamille, UUID tenantId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("role", activeRole);
@@ -92,6 +92,9 @@ public class JwtTokenProvider {
         claims.put("activeRole", activeRole);
         claims.put("estChefDeFamille", estChefDeFamille);
         claims.put("type", "access");
+        if (tenantId != null) {
+            claims.put("tenantId", tenantId.toString());
+        }
 
         return Jwts.builder()
                 .claims(claims)
@@ -102,13 +105,16 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String generateRefreshToken(UUID userId, String email, String activeRole, java.util.Set<String> roles) {
+    public String generateRefreshToken(UUID userId, String email, String activeRole, java.util.Set<String> roles, UUID tenantId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("role", activeRole);
         claims.put("roles", roles);
         claims.put("activeRole", activeRole);
         claims.put("type", "refresh");
+        if (tenantId != null) {
+            claims.put("tenantId", tenantId.toString());
+        }
 
         return Jwts.builder()
                 .claims(claims)
@@ -150,6 +156,11 @@ public class JwtTokenProvider {
 
     public UUID extractUserId(String token) {
         return UUID.fromString(getClaims(token).getSubject());
+    }
+
+    public UUID extractTenantId(String token) {
+        String tenantId = getClaims(token).get("tenantId", String.class);
+        return tenantId != null ? UUID.fromString(tenantId) : null;
     }
 
     public String extractRole(String token) {

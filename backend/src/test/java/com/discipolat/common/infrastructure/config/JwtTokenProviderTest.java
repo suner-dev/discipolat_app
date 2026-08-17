@@ -43,7 +43,7 @@ class JwtTokenProviderTest {
     @Test
     void generateAndValidateAccessToken() {
         UUID userId = UUID.randomUUID();
-        String token =        jwtTokenProvider.generateAccessToken(userId, "test@test.com", "FAISEUR", Set.of("FAISEUR"), false);
+        String token =        jwtTokenProvider.generateAccessToken(userId, "test@test.com", "FAISEUR", Set.of("FAISEUR"), false, null);
         assertNotNull(token);
         assertTrue(jwtTokenProvider.validateToken(token));
     }
@@ -51,7 +51,7 @@ class JwtTokenProviderTest {
     @Test
     void generateAndValidateRefreshToken() {
         UUID userId = UUID.randomUUID();
-        String token =        jwtTokenProvider.generateRefreshToken(userId, "test@test.com", "FAISEUR", Set.of("FAISEUR"));
+        String token =        jwtTokenProvider.generateRefreshToken(userId, "test@test.com", "FAISEUR", Set.of("FAISEUR"), null);
         assertNotNull(token);
         assertTrue(jwtTokenProvider.validateToken(token));
     }
@@ -59,7 +59,7 @@ class JwtTokenProviderTest {
     @Test
     void extractUserIdFromToken() {
         UUID userId = UUID.randomUUID();
-        String token =        jwtTokenProvider.generateAccessToken(userId, "test@test.com", "FAISEUR", Set.of("FAISEUR"), false);
+        String token =        jwtTokenProvider.generateAccessToken(userId, "test@test.com", "FAISEUR", Set.of("FAISEUR"), false, null);
         UUID extractedId = jwtTokenProvider.extractUserId(token);
         assertEquals(userId, extractedId);
     }
@@ -72,7 +72,7 @@ class JwtTokenProviderTest {
     @Test
     void extractRoleFromToken() {
         UUID userId = UUID.randomUUID();
-        String token =        jwtTokenProvider.generateAccessToken(userId, "test@test.com", "PASTEUR", Set.of("PASTEUR"), true);
+        String token =        jwtTokenProvider.generateAccessToken(userId, "test@test.com", "PASTEUR", Set.of("PASTEUR"), true, null);
         String role = jwtTokenProvider.extractRole(token);
         assertEquals("PASTEUR", role);
     }

@@ -89,7 +89,7 @@ class PlatformConfigControllerTest {
 
     private String bearer(String role) {
         return "Bearer " + jwtTokenProvider.generateAccessToken(
-                USER_ID, EMAIL, role, Set.of(role), false);
+                USER_ID, EMAIL, role, Set.of(role), false, null);
     }
 
     // ======================== Menus (lecture authentifiée) ========================

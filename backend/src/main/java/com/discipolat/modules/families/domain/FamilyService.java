@@ -15,6 +15,7 @@ import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulDepartment;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
@@ -42,6 +43,7 @@ public class FamilyService {
     private final MakerReportRepository makerReportRepository;
     private final SecurityUtils securityUtils;
     private final PasswordEncoder passwordEncoder;
+    private final WorkspaceScopeService workspaceScopeService;
 
     public FamilyService(FamilyRepository familyRepository,
                          FamilyChiefHistoryRepository chiefHistoryRepository,
@@ -51,7 +53,8 @@ public class FamilyService {
                          UserRepository userRepository,
                          MakerReportRepository makerReportRepository,
                          SecurityUtils securityUtils,
-                         PasswordEncoder passwordEncoder) {
+                         PasswordEncoder passwordEncoder,
+                         WorkspaceScopeService workspaceScopeService) {
         this.familyRepository = familyRepository;
         this.chiefHistoryRepository = chiefHistoryRepository;
         this.soulRepository = soulRepository;
@@ -61,6 +64,7 @@ public class FamilyService {
         this.makerReportRepository = makerReportRepository;
         this.securityUtils = securityUtils;
         this.passwordEncoder = passwordEncoder;
+        this.workspaceScopeService = workspaceScopeService;
     }
 
     /**
@@ -232,10 +236,16 @@ public class FamilyService {
 
     @Transactional(readOnly = true)
     public List<Family> findByChefFamille(UUID chefId) {
+        if (!securityUtils.isSuperUser() && !workspaceScopeService.canAccessFaiseur(chefId)) {
+            throw new com.discipolat.common.exception.ForbiddenException("You do not have access to this chef's families");
+        }
         return familyRepository.findByChefFamilleId(chefId);
     }
 
     public Page<Family> findByChefFamille(UUID chefId, Pageable pageable) {
+        if (!securityUtils.isSuperUser() && !workspaceScopeService.canAccessFaiseur(chefId)) {
+            throw new com.discipolat.common.exception.ForbiddenException("You do not have access to this chef's families");
+        }
         return familyRepository.findByChefFamilleId(chefId, pageable);
     }
 
@@ -401,6 +411,9 @@ public class FamilyService {
 
     @Transactional(readOnly = true)
     public List<FamilyChiefHistory> getChiefHistory(UUID familyId) {
+        if (!securityUtils.isSuperUser() && !workspaceScopeService.canAccessFamily(familyId)) {
+            throw new com.discipolat.common.exception.ForbiddenException("You do not have access to this family");
+        }
         return chiefHistoryRepository.findByFamilleIdOrderByCreatedAtDesc(familyId);
     }
 
@@ -408,6 +421,9 @@ public class FamilyService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getFaiseurPerformance(UUID familyId, LocalDate semaine) {
+        if (!securityUtils.isSuperUser() && !workspaceScopeService.canAccessFamily(familyId)) {
+            throw new com.discipolat.common.exception.ForbiddenException("You do not have access to this family");
+        }
         List<Soul> souls = soulRepository.findAllByFamilleId(familyId).stream()
                 .filter(s -> !s.isDeleted())
                 .toList();

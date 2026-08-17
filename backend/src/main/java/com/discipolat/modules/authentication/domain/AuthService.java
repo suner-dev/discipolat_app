@@ -124,10 +124,11 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getEmail(), activeRoleStr,
                 user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.isEstChefDeFamille());
+                user.isEstChefDeFamille(), user.getTenantId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(
                 user.getId(), user.getEmail(), activeRoleStr,
-                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()));
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
+                user.getTenantId());
 
         return new AuthResult(accessToken, refreshToken, user, activeRoleStr);
     }
@@ -274,10 +275,11 @@ public class AuthService {
         String newAccessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getEmail(), activeRoleStr,
                 user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.isEstChefDeFamille());
+                user.isEstChefDeFamille(), user.getTenantId());
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(
                 user.getId(), user.getEmail(), activeRoleStr,
-                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()));
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
+                user.getTenantId());
 
         return new AuthResult(newAccessToken, newRefreshToken, user, activeRoleStr);
     }
@@ -336,10 +338,11 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getEmail(), activeRoleStr,
                 user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.isEstChefDeFamille());
+                user.isEstChefDeFamille(), user.getTenantId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(
                 user.getId(), user.getEmail(), activeRoleStr,
-                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()));
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
+                user.getTenantId());
 
         return new AuthResult(accessToken, refreshToken, user, activeRoleStr);
     }

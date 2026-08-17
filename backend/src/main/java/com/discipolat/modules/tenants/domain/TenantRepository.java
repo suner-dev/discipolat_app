@@ -1,0 +1,17 @@
+package com.discipolat.modules.tenants.domain;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface TenantRepository extends JpaRepository<Tenant, UUID> {
+
+    Optional<Tenant> findBySlug(String slug);
+
+    boolean existsBySlug(String slug);
+
+    @Query("SELECT t FROM Tenant t WHERE t.status = 'ACTIVE'")
+    java.util.List<Tenant> findAllActive();
+}

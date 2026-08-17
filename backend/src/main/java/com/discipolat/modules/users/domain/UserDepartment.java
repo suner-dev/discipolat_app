@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
+import org.hibernate.annotations.Filter;
 
 /**
  * Table de liaison utilisateur ↔ département pour les responsables multi-départements.
@@ -16,15 +18,19 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @IdClass(UserDepartmentId.class)
+@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class UserDepartment {
 
     @Id
     @Column(name = "user_id")
-    private java.util.UUID userId;
+    private UUID userId;
 
     @Id
     @Column(name = "department_id")
-    private java.util.UUID departmentId;
+    private UUID departmentId;
+
+    @Column(name = "tenant_id", nullable = false)
+    private UUID tenantId;
 
     @Column(name = "role_dans_dept", nullable = false)
     private String roleDansDept = "MEMBRE";

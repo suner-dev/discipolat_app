@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.Filter;
 
 /**
  * Paramétrage du département : seuils configurables des alertes
@@ -20,11 +21,15 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class DepartmentSetting {
 
     @Id
     @Column(name = "department_id")
     private UUID departmentId;
+
+    @Column(name = "tenant_id", nullable = false)
+    private UUID tenantId;
 
     /** Nombre d'absences sur la période déclenchant l'alerte ABSENCE_REPETEE. */
     @Column(name = "absence_seuil", nullable = false)

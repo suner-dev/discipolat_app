@@ -54,6 +54,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+    {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
     {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},
     {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions'},
     {'icon': Icons.history_rounded, 'title': 'Audit', 'route': '/audit'},
@@ -75,6 +76,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+    {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];
 
   // Espace FAISEUR — discipolat uniquement
@@ -95,6 +97,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+    {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];
 
   // Espace CHEF DE FAMILLE — gestion de la famille uniquement
@@ -113,6 +116,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+    {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];
 
   // Espace MEMBRE — personnel
@@ -124,6 +128,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
+    {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];
 
   /// Retourne les éléments de navigation de l'espace métier du rôle donné.
