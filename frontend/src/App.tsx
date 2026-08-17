@@ -79,6 +79,8 @@ const TransferAdminPage = lazy(() => import('@/pages/TransferAdminPage'));
 const AdminSettingsPage = lazy(() => import('@/pages/AdminSettingsPage'));
 const PlatformModulesPage = lazy(() => import('@/pages/PlatformModulesPage'));
 const PlatformMenusPage = lazy(() => import('@/pages/PlatformMenusPage'));
+const PlatformPagesPage = lazy(() => import('@/pages/PlatformPagesPage'));
+const CustomPageView = lazy(() => import('@/pages/CustomPageView'));
 const ModuleUnavailablePage = lazy(() => import('@/pages/ModuleUnavailablePage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 const AdminCustomFieldsPage = lazy(() => import('@/pages/AdminCustomFieldsPage'));
@@ -482,6 +484,16 @@ export default function App() {
           <Route path="/admin/menus" element={
             <ProtectedRoute roles={['ADMIN']}>
               <PlatformMenusPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/pages" element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <PlatformPagesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/pages/:slug" element={
+            <ProtectedRoute>
+              <CustomPageView />
             </ProtectedRoute>
           } />
           <Route path="/module-unavailable" element={

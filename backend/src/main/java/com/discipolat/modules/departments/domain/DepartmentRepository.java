@@ -19,4 +19,9 @@ public interface DepartmentRepository extends JpaRepository<Department, UUID> {
     Page<Department> findAllByIdIn(java.util.List<UUID> ids, Pageable pageable);
 
     List<Department> findAllByIdIn(java.util.Collection<UUID> ids);
+
+    /** Sources du Page Builder : départements non supprimés. */
+    long countByDeletedFalse();
+
+    List<Department> findByDeletedFalseOrderByNomAsc();
 }

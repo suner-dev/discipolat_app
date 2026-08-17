@@ -1,0 +1,334 @@
+package com.discipolat.modules.platform.domain;
+
+import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.enums.StatutAlerte;
+import com.discipolat.common.enums.StatutAme;
+import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.alerts.domain.Alert;
+import com.discipolat.modules.alerts.domain.AlertRepository;
+import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.departments.domain.Department;
+import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.events.domain.Event;
+import com.discipolat.modules.events.domain.EventRepository;
+import com.discipolat.modules.families.domain.Family;
+import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.platform.api.ResolvedBlock;
+import com.discipolat.modules.platform.api.ResolvedPage;
+import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.modules.transfers.domain.TransferRequest;
+import com.discipolat.modules.transfers.domain.TransferRequestRepository;
+import com.discipolat.modules.users.domain.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class PageBuilderServiceTest {
+
+    @Mock private CustomPageRepository pageRepository;
+    @Mock private ConfigRevisionService revisionService;
+    @Mock private AuditService auditService;
+    @Mock private SecurityUtils securityUtils;
+    @Mock private WorkspaceScopeService scopeService;
+    @Mock private SoulRepository soulRepository;
+    @Mock private FamilyRepository familyRepository;
+    @Mock private DepartmentRepository departmentRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private EventRepository eventRepository;
+    @Mock private AlertRepository alertRepository;
+    @Mock private TransferRequestRepository transferRepository;
+
+    private PageBuilderService service;
+
+    private static final UUID USER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+    @BeforeEach
+    void setUp() {
+        service = new PageBuilderService(pageRepository, revisionService, auditService, securityUtils,
+                scopeService, soulRepository, familyRepository, departmentRepository, userRepository,
+                eventRepository, alertRepository, transferRepository);
+    }
+
+    private CustomPage page(String key, String slug, List<Map<String, Object>> blocks,
+                            List<String> roles, boolean published) {
+        return CustomPage.builder()
+                .id(UUID.randomUUID()).key(key).title("Titre").description("Description")
+                .slug(slug).layout("GRID_2").blocks(blocks).roles(roles)
+                .enabled(true).published(published).version(published ? 2 : 1)
+                .build();
+    }
+
+    private Map<String, Object> kpiBlock(String source) {
+        return Map.of("type", "KPI", "config", Map.of("label", "Âmes", "source", source));
+    }
+
+    // ================================ CRUD ================================
+
+    @Test
+    void create_persistsAuditsAndRecordsRevision() {
+        CustomPage request = page("APERCU", "apercu-eglise", List.of(kpiBlock("SOULS_TOTAL")),
+                List.of("ADMIN"), false);
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(pageRepository.existsByKey("APERCU")).thenReturn(false);
+        when(pageRepository.existsBySlug("apercu-eglise")).thenReturn(false);
+        CustomPage saved = page("APERCU", "apercu-eglise", request.getBlocks(), request.getRoles(), false);
+        when(pageRepository.save(any(CustomPage.class))).thenReturn(saved);
+
+        CustomPage result = service.create(request);
+
+        assertThat(result.getKey()).isEqualTo("APERCU");
+        assertThat(result.getVersion()).isEqualTo(1);
+        // Le créateur est posé sur la requête AVANT la sauvegarde.
+        assertThat(request.getCreatedBy()).isEqualTo(USER_ID);
+        verify(auditService).logSimple("PAGE_CREATED", "CUSTOM_PAGE", result.getId());
+        verify(revisionService).record(eq("CUSTOM_PAGE"), eq("APERCU"), eq("PAGE_CREATED"), anyMap());
+    }
+
+    @Test
+    void create_rejectsDuplicateKey() {
+        CustomPage request = page("APERCU", "apercu-eglise", List.of(), List.of(), false);
+        when(pageRepository.existsByKey("APERCU")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(pageRepository, never()).save(any());
+    }
+
+    @Test
+    void create_rejectsUnknownBlockSource() {
+        CustomPage request = page("X", "x", List.of(kpiBlock("SOURCE_INCONNUE")), List.of(), false);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Source inconnue");
+    }
+
+    @Test
+    void update_changesFieldsAndRecordsRevision() {
+        CustomPage existing = page("APERCU", "apercu-eglise", List.of(kpiBlock("SOULS_TOTAL")),
+                List.of("ADMIN"), false);
+        when(pageRepository.findById(existing.getId())).thenReturn(Optional.of(existing));
+        CustomPage request = CustomPage.builder().title("Nouveau titre").description("Nouvelle description").build();
+
+        CustomPage result = service.update(existing.getId(), request);
+
+        assertThat(result.getTitle()).isEqualTo("Nouveau titre");
+        assertThat(result.getDescription()).isEqualTo("Nouvelle description");
+        verify(auditService).logSimple("PAGE_UPDATED", "CUSTOM_PAGE", existing.getId());
+        verify(revisionService).record(eq("CUSTOM_PAGE"), eq("APERCU"), eq("PAGE_UPDATED"), anyMap());
+    }
+
+    @Test
+    void setPublished_incrementsVersionAndAudits() {
+        CustomPage existing = page("APERCU", "apercu-eglise", List.of(), List.of(), false);
+        when(pageRepository.findById(existing.getId())).thenReturn(Optional.of(existing));
+
+        CustomPage result = service.setPublished(existing.getId(), true);
+
+        assertThat(result.isPublished()).isTrue();
+        assertThat(result.getVersion()).isEqualTo(2);
+        verify(auditService).logSimple("PAGE_PUBLISHED", "CUSTOM_PAGE", existing.getId());
+        verify(revisionService).record(eq("CUSTOM_PAGE"), eq("APERCU"), eq("PAGE_PUBLISHED"), anyMap());
+    }
+
+    @Test
+    void setPublished_sameStateDoesNotIncrement() {
+        CustomPage existing = page("APERCU", "apercu-eglise", List.of(), List.of(), true);
+        when(pageRepository.findById(existing.getId())).thenReturn(Optional.of(existing));
+
+        service.setPublished(existing.getId(), true);
+
+        verify(revisionService, never()).record(any(), any(), any(), anyMap());
+        assertThat(existing.getVersion()).isEqualTo(2);
+    }
+
+    @Test
+    void delete_removesAndRecordsRevision() {
+        CustomPage existing = page("APERCU", "apercu-eglise", List.of(), List.of(), false);
+        when(pageRepository.findById(existing.getId())).thenReturn(Optional.of(existing));
+
+        service.delete(existing.getId());
+
+        verify(pageRepository).delete(existing);
+        verify(revisionService).record(eq("CUSTOM_PAGE"), eq("APERCU"), eq("PAGE_DELETED"), anyMap());
+    }
+
+    // ================================ Rendu ================================
+
+    @Test
+    void resolve_returnsResolvedBlocksWithRealData() {
+        CustomPage existing = page("APERCU", "apercu-eglise",
+                List.of(kpiBlock("SOULS_TOTAL"), Map.of("type", "TEXTE", "config", Map.of("content", "Bienvenue"))),
+                List.of(), true);
+        when(pageRepository.findBySlug("apercu-eglise")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(true);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
+        when(soulRepository.countByDeletedFalse()).thenReturn(42L);
+
+        ResolvedPage resolved = service.resolve("apercu-eglise");
+
+        assertThat(resolved.page()).isEqualTo(existing);
+        assertThat(resolved.blocks()).hasSize(2);
+        ResolvedBlock kpi = resolved.blocks().get(0);
+        assertThat(kpi.type()).isEqualTo("KPI");
+        assertThat(kpi.data()).containsEntry("value", 42L);
+        assertThat(resolved.blocks().get(1).data()).isNull();
+    }
+
+    @Test
+    void resolve_scopesSoulCountForNonSuperUser() {
+        CustomPage existing = page("APERCU", "apercu-eglise", List.of(kpiBlock("SOULS_TOTAL")), List.of(), true);
+        when(pageRepository.findBySlug("apercu-eglise")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(false);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("FAISEUR"));
+        when(scopeService.accessibleSoulIds()).thenReturn(Set.of(UUID.randomUUID(), UUID.randomUUID()));
+
+        ResolvedPage resolved = service.resolve("apercu-eglise");
+
+        assertThat(resolved.blocks().get(0).data()).containsEntry("value", 2L);
+        verify(soulRepository, never()).countByDeletedFalse();
+    }
+
+    @Test
+    void resolve_hidesSensitiveSourceForNonSuperUser() {
+        CustomPage existing = page("ADMIN", "admin", List.of(kpiBlock("USERS_TOTAL")), List.of(), true);
+        when(pageRepository.findBySlug("admin")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(false);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("FAISEUR"));
+        when(scopeService.accessibleSoulIds()).thenReturn(Set.of());
+
+        ResolvedPage resolved = service.resolve("admin");
+
+        assertThat(resolved.blocks().get(0).data()).isNull();
+    }
+
+    @Test
+    void resolve_deniedForUnauthorizedRole() {
+        CustomPage existing = page("PASTEUR", "pasteur", List.of(), List.of("PASTEUR"), true);
+        when(pageRepository.findBySlug("pasteur")).thenReturn(Optional.of(existing));
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("FAISEUR"));
+        when(securityUtils.isSuperUser()).thenReturn(false);
+
+        assertThatThrownBy(() -> service.resolve("pasteur"))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void resolve_allowsAdminOnPasteurOnlyPage() {
+        CustomPage existing = page("PASTEUR", "pasteur", List.of(), List.of("PASTEUR"), true);
+        when(pageRepository.findBySlug("pasteur")).thenReturn(Optional.of(existing));
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("ADMIN"));
+        when(securityUtils.isSuperUser()).thenReturn(true);
+
+        assertThat(service.resolve("pasteur").page()).isEqualTo(existing);
+    }
+
+    @Test
+    void resolve_hidesUnpublishedPage() {
+        CustomPage existing = page("BROUILLON", "brouillon", List.of(), List.of(), false);
+        when(pageRepository.findBySlug("brouillon")).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> service.resolve("brouillon"))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    void resolve_unknownSlugThrows() {
+        when(pageRepository.findBySlug("inconnu")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.resolve("inconnu"))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    // ========================== Résolution des listes ==========================
+
+    @Test
+    void resolveTable_recentAlertsResolved() {
+        Alert alert = Alert.builder().id(UUID.randomUUID())
+                .ameId(UUID.randomUUID()).titre("Assiduité").message("Absence répétée")
+                .statut(StatutAlerte.ACTIVE).dateDeclenchement(LocalDateTime.now()).build();
+        CustomPage existing = page("ALERTES", "alertes",
+                List.of(Map.of("type", "LISTE", "config", Map.of("title", "Alertes", "source", "RECENT_ALERTS"))),
+                List.of(), true);
+        when(pageRepository.findBySlug("alertes")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(true);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
+        when(alertRepository.findTop10ByStatutOrderByDateDeclenchementDesc(StatutAlerte.ACTIVE))
+                .thenReturn(List.of(alert));
+        Soul soul = Soul.builder().id(alert.getAmeId()).nom("Kouassi").prenom("Aya").build();
+        when(soulRepository.findAllById(Set.of(alert.getAmeId()))).thenReturn(List.of(soul));
+
+        ResolvedPage resolved = service.resolve("alertes");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items =
+                (List<Map<String, Object>>) resolved.blocks().get(0).data().get("items");
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0)).containsEntry("label", "Assiduité");
+        assertThat(items.get(0)).containsEntry("value", "Aya Kouassi");
+    }
+
+    @Test
+    void resolveTable_recentSoulsScopedByDepartment() {
+        UUID soulId = UUID.randomUUID();
+        Soul soul = Soul.builder().id(soulId).nom("Traoré").prenom("Ibrahim").statut(StatutAme.ACTIF).build();
+        CustomPage existing = page("SOULS", "souls",
+                List.of(Map.of("type", "TABLEAU", "config", Map.of("title", "Âmes", "source", "RECENT_SOULS"))),
+                List.of(), true);
+        when(pageRepository.findBySlug("souls")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(false);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("RESPONSABLE"));
+        when(scopeService.accessibleSoulIds()).thenReturn(Set.of(soulId));
+        when(soulRepository.findTop10ByDeletedFalseOrderByCreatedAtDesc()).thenReturn(List.of(soul));
+
+        ResolvedPage resolved = service.resolve("souls");
+
+        @SuppressWarnings("unchecked")
+        List<List<Object>> rows = (List<List<Object>>) resolved.blocks().get(0).data().get("rows");
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0)).contains("Ibrahim Traoré");
+    }
+
+    // ================================ Divers ================================
+
+    @Test
+    void sources_catalogIsComplete() {
+        List<com.discipolat.modules.platform.api.PageDataSource> sources = service.sources();
+
+        assertThat(sources).extracting(com.discipolat.modules.platform.api.PageDataSource::key)
+                .contains("SOULS_TOTAL", "SOULS_ACTIFS", "FAMILIES_TOTAL", "DEPARTMENTS_TOTAL",
+                        "EVENTS_UPCOMING", "ALERTS_OPEN", "TRANSFERS_PENDING", "USERS_TOTAL",
+                        "RECENT_SOULS", "UPCOMING_EVENTS", "RECENT_ALERTS", "RECENT_TRANSFERS",
+                        "DEPARTMENTS_LIST");
+    }
+
+    @Test
+    void create_rejectsLinksBlockWithoutItems() {
+        CustomPage request = page("LIENS", "liens",
+                List.of(Map.of("type", "LIENS", "config", Map.of("title", "Accès"))), List.of(), false);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("LIENS");
+    }
+}

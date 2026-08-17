@@ -3,6 +3,86 @@
 > Fichier de checkpoint : état exact du travail à tout moment, pour reprise
 > immédiate d'une session. Mis à jour à chaque étape stable.
 
+---
+
+## SESSION 2026-08-17 (bloc 4) — Page Builder complet (V65) — fullstack + mobile
+
+### Backend (V65 `custom_pages`)
+
+- **Migration V65** : table `custom_pages` (key/title/description/slug/layout/blocs JSONB/
+  roles JSONB/enabled/published/version/created_by) + menu ADMIN « Pages personnalisées »
+  (`LayoutTemplate`, section Administration) + **page d'exemple publiée** « Vue d'ensemble
+  de l'église » (KPI + tableaux + liste + liens, tous résolus sur données réelles).
+- **`PageBuilderService`** : CRUD complet (clés/slugs uniques, slugification, validation
+  des blocs et sources), publication/dépublia ge avec **incrément de version**, versionnage
+  systématique dans `config_revisions` (PAGE_CREATED/UPDATED/DELETED/PUBLISHED) + audit.
+- **Résolution des blocs sur données RÉELLES** : 13 sources (SOULS_TOTAL/ACTIFS,
+  FAMILIES_TOTAL, DEPARTMENTS_TOTAL, EVENTS_UPCOMING, ALERTS_OPEN, TRANSFERS_PENDING,
+  USERS_TOTAL (sensible), RECENT_SOULS, UPCOMING_EVENTS, RECENT_ALERTS,
+  RECENT_TRANSFERS, DEPARTMENTS_LIST) **scopées par espace métier** (WorkspaceScopeService :
+  super-utilisateur → tout, sinon âmes/familles/départements accessibles) — aucun KPI fictif.
+- **API** `/api/v1/pages` : CRUD ADMIN (POST/PUT/DELETE/publish/preview/sources/options),
+  rendu public `GET /pages/{slug}` authentifié + contrôle RBAC par rôles de la page
+  (vide = tous ; super-user débloque les pages PASTEUR).
+- **Repos** : `AlertRepository`, `DepartmentRepository`, `EventRepository`, `FamilyRepository`,
+  `SoulRepository`, `TransferRequestRepository` étendus (comptages/listes top-10 scopées).
+- **Tests** : `PageBuilderServiceTest` 18 ✓ (CRUD, rendu, scoping, source sensible masquée
+  pour non-super-user, refus de rôle, page non publiée masquée, liste d'alertes résolue)
+  + `PageBuilderControllerTest` 12 ✓ (RBAC réel 401/403, rendu 200, preview).
+
+### Frontend web
+
+- **`PlatformPagesPage`** (`/admin/pages`) : liste (badges Publiée·vX/Brouillon/Désactivée,
+  rôles), éditeur en modale — titre/adresse/clé/disposition/description, rôles autorisés
+  (chips), **blocs réordonnables** (KPI avec icône+couleur, tableau, liste, texte, liens,
+  recherche, images), **aperçu local**, toggle de publication, suppression, historique
+  versionné (ConfigRevisionHistory). Erreurs serveur affichées (message `detail`).
+- **`CustomPageView`** (`/pages/:slug`) : rendu public des blocs résolus (KPI formatés
+  fr-FR, tableaux, listes, texte, liens, recherche → `/search?q=`, images), états
+  403/page introuvable dédiés, version affichée.
+- **`PageBlockRenderer`** : rendu de chaque type de bloc (zéro JSON brut, aucune donnée
+  fictive — les valeurs viennent du serveur).
+- **Routes** App.tsx (lazy) + icône `LayoutTemplate` + types `CustomPage`/`ResolvedPage`/
+  `ResolvedBlock`/`PageDataSource`.
+- **Tests** : `PlatformPagesPage.test` 6 ✓ (liste, création avec bloc KPI, ajout bloc
+  tableau, toggle publication, suppression, erreur serveur) + `CustomPageView.test` 5 ✓
+  (rendu KPI/tableau réels, KPI sans valeur → « — », page vide, 403, 404).
+
+### Mobile (Flutter) — parité supervision
+
+- **`PlatformPagesScreen`** (`/admin/pages`, ADMIN) : liste des pages (titre, adresse,
+  badges Publiée·vX/Brouillon/Désactivée, rôles), **toggle publication**
+  (POST /pages/{id}/publish), suppression avec confirmation, pull-to-refresh.
+  L'éditeur complet de blocs reste web (interface de configuration avancée) — la
+  supervision mobile couvre l'état et la publication.
+- **Nav** : entrée « Pages personnalisées » dans le drawer ADMIN (exclue du menu PASTEUR)
+  + route `/admin/pages` (matrice de rôles ['ADMIN']).
+- **Tests** : `platform_pages_screen_test` 4 ✓ — mobile **115 tests ✓**, analyze 0 issue.
+
+### Validation e2e réelle (navigateur Chrome)
+
+- **`scripts/e2e-browser-pages.js` — 16/16 ✓, 0 erreur console** : login admin → liste
+  (page d'exemple présente) → création d'une page (KPI + texte) → publication (badge) →
+  rendu public de la nouvelle page → rendu de la page d'exemple avec **KPI réels**
+  (1015 âmes, 555 actives, 45 familles — base de dev) → tableaux + liens → login faiseur
+  (contexte séparé) → accès page publiée → rendu scopé → **RBAC API 403** (GET /pages et
+  /pages/sources par non-ADMIN) → suppression de la page de test (nettoyage).
+
+### État des tests (session, tout vert)
+
+- Backend : **494 tests ✓ BUILD SUCCESS** (454 → 494, +40 : 18 PageBuilderService +
+  12 PageBuilderController + 10 ConfigRevision/PlatformConfig en cours de session).
+- Frontend : `tsc -b` ✓ · **205 tests vitest ✓** (33 fichiers, 190 → 205) · `npm run build` ✓.
+- Mobile : `flutter analyze` **0 issue** · **115 tests ✓** (111 → 115, +4 pages).
+
+### Prochain objectif
+
+Extension de la bibliothèque de blocs du Page Builder (graphiques/formulaires/calendrier/
+timeline/checklist) et/ou outils métiers activables (Finances, Communication) — voir
+ARCHITECTURE_AUDIT.md §9 et la feuille de route §12.
+
+---
+
 ## SESSION 2026-08-17 — AUDIT TRANSVERSAL COMPLET (avant refonte)
 
 ### Fait

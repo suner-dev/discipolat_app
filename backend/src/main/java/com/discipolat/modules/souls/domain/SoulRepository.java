@@ -54,4 +54,9 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     Page<Soul> findByUserId(UUID userId, Pageable pageable);
     List<Soul> findByUserIdIsNotNull();
     Page<Soul> findByDeletedTrue(Pageable pageable);
+
+    /** Sources du Page Builder : comptage et âmes récentes (non supprimées). */
+    long countByDeletedFalse();
+
+    List<Soul> findTop10ByDeletedFalseOrderByCreatedAtDesc();
 }

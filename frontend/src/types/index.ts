@@ -1433,6 +1433,51 @@ export interface MenuEntry {
   enabled: boolean;
 }
 
+// ======================== Page Builder (V65) ========================
+
+/** Bloc d'une page personnalisée : type + configuration saisie par l'admin. */
+export interface CustomPageBlock {
+  type: string;
+  config: Record<string, unknown>;
+}
+
+/** Page personnalisée (Page Builder). */
+export interface CustomPage {
+  id: string;
+  key: string;
+  title: string;
+  description?: string;
+  slug: string;
+  layout: string;
+  blocks: CustomPageBlock[];
+  roles: string[];
+  enabled: boolean;
+  published: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Bloc résolu : la configuration + les données réelles résolues côté serveur. */
+export interface ResolvedBlock extends CustomPageBlock {
+  data?: Record<string, unknown> | null;
+}
+
+/** Page résolue prête à l'affichage (données réelles). */
+export interface ResolvedPage {
+  page: CustomPage;
+  blocks: ResolvedBlock[];
+}
+
+/** Source de données exploitable par les blocs du Page Builder. */
+export interface PageDataSource {
+  key: string;
+  label: string;
+  type: 'KPI' | 'TABLEAU' | 'LISTE';
+  description: string;
+  sensitive: boolean;
+}
+
 // ======================== Rôles & permissions (T3) ========================
 
 export interface PlatformRole {

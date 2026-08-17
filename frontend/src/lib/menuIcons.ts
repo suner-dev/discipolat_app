@@ -4,7 +4,7 @@ import {
   DoorOpen, AlertTriangle, Building2, FileText, BookOpen, Calendar, BarChart3, Shield,
   Star as StarIcon, MessageSquare, MessagesSquare, Bell, FolderOpen, GraduationCap,
   Trophy, CalendarClock, UserCog, User, Sparkles, Church, HandHeart, ArrowLeftRight,
-  Workflow, Palette, Boxes, Menu as MenuIcon, CircleDot,
+  Workflow, Palette, Boxes, Menu as MenuIcon, LayoutTemplate, CircleDot,
 } from 'lucide-react';
 
 /**
@@ -47,6 +47,7 @@ export const MENU_ICONS: Record<string, LucideIcon> = {
   Palette,
   Boxes,
   Menu: MenuIcon,
+  LayoutTemplate,
 };
 
 export const MENU_ICON_KEYS = Object.keys(MENU_ICONS).sort();

@@ -30,4 +30,13 @@ public interface TransferRequestRepository extends JpaRepository<TransferRequest
     /** Demandes toujours en attente de validation dont le délai de traitement est dépassé. */
     List<TransferRequest> findByStatutInAndDelaiLimiteBefore(Collection<TransferStatus> statuts,
                                                              LocalDateTime delaiLimite);
+
+    /** Sources du Page Builder : transferts en attente et demandes récentes. */
+    long countByStatut(TransferStatus statut);
+
+    List<TransferRequest> findTop10ByOrderByCreatedAtDesc();
+
+    long countByDemandeurIdAndStatut(UUID demandeurId, TransferStatus statut);
+
+    List<TransferRequest> findTop10ByDemandeurIdOrderByCreatedAtDesc(UUID demandeurId);
 }

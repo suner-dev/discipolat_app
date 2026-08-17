@@ -184,7 +184,7 @@ Hiérarchie canonique : **Département → Famille → Faiseur → Âme/Discipli
 
 | Item | État | Action proposée |
 |---|---|---|
-| Page Builder (blocs : KPI, tableau, graphique, formulaire, calendrier, timeline, checklist…) | F (absente) | Créer un moteur de pages personnalisées versionné, adossé aux modules/dictionnaires existants |
+| Page Builder (blocs : KPI, tableau, graphique, formulaire, calendrier, timeline, checklist…) | A/B (implémenté session 08-17) | **Fait (V65)** : CRUD de pages personnalisées versionnées (config_revisions), blocs KPI/TABLEAU/LISTE/TEXTE/LIENS/RECHERCHE/IMAGES résolus côté serveur sur données réelles scopées (aucune statistique fictive), publication + version, RBAC par rôles au rendu, éditeur web (`/admin/pages`) + supervision mobile (liste/publication/suppression). Reste à étendre : graphiques, formulaires, calendrier, timeline, checklist (bibliothèque extensible côté serveur) |
 | Outils métiers modulaires (Finances, Formation, Inventaire, Communication) | Partiel (trainings/programs existent) | Étendre et les rendre activables/désactivables comme les modules plateforme |
 | Versionnage des pages/configurations | A (implémenté session 08-17) | **Fait** : journal append-only `config_revisions` (V64) sur les mutations modules/menus (avant/après, auteur, RBAC ADMIN, `GET /api/v1/platform/revisions`), panneau d'historique sur les pages Modules/Menus |
 | Moteur de notifications visuel (canaux/modèles/fréquence configurables en UI) | B | Faciliter la configuration des destinataires/canaux |
@@ -232,7 +232,7 @@ Le code étant déjà très avancé, la refonte est **incrémentale et à forte 
 3. **Admin** — centre de configuration : consolider constructeur de rôles/menus/pages,
    champs personnalisés, modules activables.
 4. **Espaces métiers** — dashboards différenciés par rôle + changement de rôle complet.
-5. **Plateforme modulaire** — Page Builder + outils métiers activables + versionnage.
+5. **Plateforme modulaire** — Page Builder **fait (V65)** + versionnage **fait (V64)** ; reste : outils métiers activables (Finances/Communication) et extension de la bibliothèque de blocs (graphiques/formulaires/calendrier).
 6. **Cohérence/synchronisation** — tests de propagation transversale.
 7. **QA final** — audit page par page, tests rôles/permissions/CRUD/sync, responsive, perf,
    sécurité, déploiement, GitHub.

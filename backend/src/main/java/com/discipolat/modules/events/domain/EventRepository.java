@@ -24,4 +24,9 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     List<Event> findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(LocalDateTime start, LocalDateTime end);
     long countByFamilleIdAndDeletedFalse(UUID familleId);
     long countByDepartmentIdAndDeletedFalse(UUID departmentId);
+
+    /** Sources du Page Builder : événements à venir (non supprimés). */
+    long countByDeletedFalseAndDateDebutAfter(LocalDateTime dateDebut);
+
+    List<Event> findTop10ByDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime dateDebut);
 }

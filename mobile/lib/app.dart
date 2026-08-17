@@ -47,6 +47,7 @@ import 'presentation/screens/transfers/transfer_create_screen.dart';
 import 'presentation/screens/transfers/transfer_admin_screen.dart';
 import 'presentation/screens/platform/platform_modules_screen.dart';
 import 'presentation/screens/platform/platform_menus_screen.dart';
+import 'presentation/screens/platform/platform_pages_screen.dart';
 import 'presentation/screens/not_found_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -189,6 +190,7 @@ Map<String, List<String>> _routeRoles = {
   '/admin': ['ADMIN', 'PASTEUR'],
   '/admin/modules': ['ADMIN'],
   '/admin/menus': ['ADMIN'],
+  '/admin/pages': ['ADMIN'],
 };
 
 final appRouter = GoRouter(
@@ -504,6 +506,11 @@ final appRouter = GoRouter(
       path: '/admin/menus',
       name: 'platform-menus',
       builder: (context, state) => const PlatformMenusScreen(),
+    ),
+    GoRoute(
+      path: '/admin/pages',
+      name: 'platform-pages',
+      builder: (context, state) => const PlatformPagesScreen(),
     ),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
