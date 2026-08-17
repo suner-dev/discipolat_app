@@ -51,6 +51,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.emoji_events_rounded, 'title': 'Badges', 'route': '/badges'},
     {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
     {'icon': Icons.account_balance_wallet_rounded, 'title': 'Finances', 'route': '/finances'},
+    {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
     {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},
@@ -71,6 +72,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
     {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
+    {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
   ];
@@ -90,6 +92,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.search_rounded, 'title': 'Recherche', 'route': '/search'},
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
     {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
+    {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
   ];
@@ -107,6 +110,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
     {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
     {'icon': Icons.mail_rounded, 'title': 'Demandes', 'route': '/members/requests'},
+    {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
   ];
@@ -117,6 +121,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
     {'icon': Icons.emoji_events_rounded, 'title': 'Badges', 'route': '/badges'},
     {'icon': Icons.calendar_today_rounded, 'title': 'Rendez-vous', 'route': '/appointments'},
+    {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
   ];

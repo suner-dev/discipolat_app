@@ -120,6 +120,7 @@ public class ModuleGateFilter extends OncePerRequestFilter {
         m.put("/api/v1/evaluations", "EVALUATIONS");
         m.put("/api/v1/trainings", "TRAININGS");
         m.put("/api/v1/finances", "FINANCES");
+        m.put("/api/v1/communications", "COMMUNICATION");
         m.put("/api/v1/badges", "BADGES");
         m.put("/api/v1/appointments", "APPOINTMENTS");
         m.put("/api/v1/messages", "MESSAGES");

@@ -5,6 +5,79 @@
 
 ---
 
+## SESSION 2026-08-17 (bloc 8) — Outil métier COMMUNICATION (V69) — fullstack + mobile
+
+### Backend (V69 — communications + module COMMUNICATION)
+
+- **Migration V69** : table `communications` (titre, contenu, cible CHECK
+  TOUS/ROLE/FAMILLE/DEPARTEMENT, rôles JSONB, famille_id, department_id,
+  statut CHECK BROUILLON/PUBLIEE/ARCHIVEE, date_publication, auteur, soft
+  delete) + module `COMMUNICATION` activable + menu « Annonces » →
+  `/communications` pour tous les rôles.
+- **`CommunicationService`** : CRUD (soft delete, audit
+  COMMUNICATION_CREATED/UPDATED/DELETED/PUBLISHED) ; **publication →
+  notifications IN_APP** à chaque destinataire réel : TOUS (utilisateurs
+  actifs), ROLE (`findByRolesContaining`), FAMILLE (chefs de famille du
+  foyer + âmes de la famille avec compte), DEPARTEMENT (responsable + âmes
+  actives avec compte) — compteur `destinataires` renvoyé à la publication.
+- **API** `/api/v1/communications` : GET (annonces publiées visibles par
+  l'utilisateur courant, cible respectée), GET/POST `/admin`,
+  PUT/DELETE `/admin/{id}`, POST `/admin/{id}/publish` — lecture tout rôle
+  authentifié, gestion ADMIN/PASTEUR (`@PreAuthorize`) + garde-fou de module
+  `ModuleGateFilter` (`/api/v1/communications` → COMMUNICATION, 403 si désactivé).
+- **Tests** : `CommunicationServiceTest` **5 ✓** (TOUS → tous les actifs
+  notifiés, ROLE → uniquement ce rôle, FAMILLE ciblée à la création,
+  DEPARTEMENT → responsable + membres, lecture filtrée par cible) +
+  `ModuleGateFilterTest` 3 ✓ — BUILD SUCCESS.
+
+### Frontend web
+
+- **`CommunicationsPage`** (`/communications`, tous rôles, lazy) : état
+  explicite si module désactivé ; **gestion ADMIN/PASTEUR** (liste complète,
+  badges de statut et de cible, publier + diffuser avec compteur de
+  destinataires, modifier, supprimer) ; fil des **annonces publiées visibles
+  par l'utilisateur courant** ; modale création/édition (titre, contenu,
+  cible TOUS/ROLE/FAMILLE/DEPARTEMENT, chips de rôles, sélecteurs
+  famille/département) — **a11y corrigée** (labels htmlFor sur la cible).
+- **Route** App.tsx (ProtectedRoute tous rôles) + types Communication
+  (cible/statut) + le menu apparaît automatiquement (config plateforme DB).
+- **Tests** : `CommunicationsPage.test` **5 ✓** (gestion + fil publié,
+  création ciblée → POST, publication → POST publish + compteur, lecture
+  seule MEMBRE sans appel `/admin`, état module désactivé).
+
+### Mobile (Flutter) — parité
+
+- **`CommunicationsScreen`** (`/communications`, tous rôles) : gestion
+  (statuts, publier / modifier / supprimer avec confirmation) pour
+  ADMIN/PASTEUR (AuthState.activeRole), fil des annonces publiées, bottom
+  sheet création/édition (cible, rôles, familles/départements chargés à la
+  demande), FAB. Entrées « Annonces » dans le drawer de **tous** les rôles +
+  route dans la matrice de rôles.
+- **Tests** : `communications_screen_test` **4 ✓** — mobile **122 tests ✓**
+  (118 → 122, +4), `flutter analyze` 0 issue.
+
+### État des tests (bloc 8)
+
+- Backend : `CommunicationServiceTest` 5 ✓ + `ModuleGateFilterTest` 3 ✓ —
+  BUILD SUCCESS (compilation complète OK).
+- Frontend : `tsc --noEmit` ✓ · suite complète **219 tests vitest ✓**
+  (35 fichiers, 214 → 219) · `npm run build` ✓.
+- Mobile : `flutter analyze` **0 issue** · **122 tests ✓**.
+
+### Commit / push
+
+- Commit de ce bloc : Outil métier Communication (V69) — annonces ciblées +
+  notifications IN_APP (fullstack + mobile).
+- Poussé sur origin/main.
+
+### Prochain objectif
+
+Phase « cohérence/synchronisation » (tests de propagation transversale) puis
+QA final — voir ARCHITECTURE_AUDIT.md §9 et la feuille de route §12 ; sinon
+outil métier suivant (module activable).
+
+---
+
 ## SESSION 2026-08-17 (bloc 7) — Outil métier FINANCES (V68) — fullstack + mobile
 
 ### Backend (V68 — finance_transactions + finance_budgets + module FINANCES)

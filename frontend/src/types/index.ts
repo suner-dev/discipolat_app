@@ -1539,6 +1539,33 @@ export interface FinanceStats {
   depensesParCategorie: FinanceCategoryTotal[];
 }
 
+// ======================== Communication (V69) ========================
+
+export type CommunicationCible = 'TOUS' | 'ROLE' | 'FAMILLE' | 'DEPARTEMENT';
+export type CommunicationStatut = 'BROUILLON' | 'PUBLIEE' | 'ARCHIVEE';
+
+export interface Communication {
+  id: string;
+  titre: string;
+  contenu: string;
+  cible: CommunicationCible;
+  roles: string[];
+  familleId?: string;
+  departmentId?: string;
+  statut: CommunicationStatut;
+  datePublication?: string;
+  createdAt?: string;
+}
+
+export interface CreateCommunicationRequest {
+  titre: string;
+  contenu: string;
+  cible: CommunicationCible;
+  roles?: string[];
+  familleId?: string;
+  departmentId?: string;
+}
+
 // ======================== Rôles & permissions (T3) ========================
 
 export interface PlatformRole {

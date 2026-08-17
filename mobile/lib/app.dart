@@ -49,6 +49,7 @@ import 'presentation/screens/platform/platform_modules_screen.dart';
 import 'presentation/screens/platform/platform_menus_screen.dart';
 import 'presentation/screens/platform/platform_pages_screen.dart';
 import 'presentation/screens/finances/finance_screen.dart';
+import 'presentation/screens/communications/communications_screen.dart';
 import 'presentation/screens/not_found_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -183,6 +184,7 @@ Map<String, List<String>> _routeRoles = {
   '/objectives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/badges': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/trainings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/communications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/messages': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/parallel-followups': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/map': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -518,6 +520,11 @@ final appRouter = GoRouter(
       path: '/finances',
       name: 'finances',
       builder: (context, state) => const FinanceScreen(),
+    ),
+    GoRoute(
+      path: '/communications',
+      name: 'communications',
+      builder: (context, state) => const CommunicationsScreen(),
     ),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
