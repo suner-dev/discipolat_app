@@ -43,6 +43,47 @@ PROJECT_PROGRESS.md → reprendre.
 ---
 
 
+## SESSION 2026-08-17 (blocs 2 et 3) — Pasteur (audit exploitable) + Plateforme (versionnage)
+
+### Bloc 2 — Pasteur : audit exploitable par action (`aa5ce54`)
+
+- **Backend** : `AuditLogRepository`/`AuditService`/`AuditController` acceptent le filtre
+  `action` exact sur `GET /audit` et `/audit/export` (chaque critère optionnel).
+- **Frontend** : nouvelle catégorie **TRANSFER** (badge ambre, icône `ArrowLeftRight`,
+  KPI « Transferts » cliquable + filtre par type d'action) sur `AuditPage`.
+- **Tests** : `AuditServiceTest` 6/6, `AuditPage.test` 7/7 (dont entrée `TRANSFERT_SOUL`).
+
+### Bloc 3 — Plateforme modulaire : versionnage des configurations (`8c2b0ae`)
+
+- **V64 `config_revisions`** : journal append-only (entity_type, entity_key, action,
+  payload JSONB, user_id, created_at) + index (entity_type, created_at DESC).
+- **Backend** : `ConfigRevision`/`ConfigRevisionRepository`/`ConfigRevisionService`
+  (record + list, auteur via SecurityUtils) ; `PlatformConfigService` instrumente chaque
+  mutation modules/menus (toggle/création/modification/suppression/réordonnancement) avec
+  état avant/après ; `GET /api/v1/platform/revisions?entityType=&page=&size=` (ADMIN).
+- **Frontend** : composant `ConfigRevisionHistory` (panneau repliable, timeline, chargement
+  à la demande) intégré aux pages `PlatformModulesPage` et `PlatformMenusPage`.
+- **Tests** : `ConfigRevisionServiceTest` 4/4, `PlatformConfigServiceTest` 9/9,
+  `PlatformConfigControllerTest` 20/20 (dont 403 non-ADMIN), frontend **14/14**,
+  `tsc -b` ✓, BUILD SUCCESS.
+
+### Constat au fil des blocs
+
+Plusieurs items « restant » du roadmap étaient déjà implémentés (corbeille des âmes
+`/souls/trash` + restauration, blocs CRM cliquables du dashboard Pasteur, dashboards
+dédiés, constructeur rôles/menus/champs perso). Les vrais écarts restants (F/B) sont :
+**Page Builder**, **outils métiers Finances/Communication** (Formation/Inventaire
+déjà couverts par TRAININGS + sous-modules DMS), **workflow builder visuel**,
+**moteur de notifications configurable en UI**.
+
+### Commit / push
+
+- `aa5ce54` — Pasteur : audit exploitable par action.
+- `8c2b0ae` — Plateforme : versionnage des configurations.
+- Poussés sur origin/main.
+
+---
+
 ## OBJECTIF GLOBAL
 
 Passer l'application du mode "projet/démo" au mode **produit professionnel**

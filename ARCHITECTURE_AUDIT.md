@@ -186,7 +186,7 @@ Hiérarchie canonique : **Département → Famille → Faiseur → Âme/Discipli
 |---|---|---|
 | Page Builder (blocs : KPI, tableau, graphique, formulaire, calendrier, timeline, checklist…) | F (absente) | Créer un moteur de pages personnalisées versionné, adossé aux modules/dictionnaires existants |
 | Outils métiers modulaires (Finances, Formation, Inventaire, Communication) | Partiel (trainings/programs existent) | Étendre et les rendre activables/désactivables comme les modules plateforme |
-| Versionnage des pages/configurations | F | Ajouter un versionnage (`revisions`) sur menus/pages/configurations clés |
+| Versionnage des pages/configurations | A (implémenté session 08-17) | **Fait** : journal append-only `config_revisions` (V64) sur les mutations modules/menus (avant/après, auteur, RBAC ADMIN, `GET /api/v1/platform/revisions`), panneau d'historique sur les pages Modules/Menus |
 | Moteur de notifications visuel (canaux/modèles/fréquence configurables en UI) | B | Faciliter la configuration des destinataires/canaux |
 | Workflow builder visuel (drag & drop) | B | Le workflow de transfert est codé ; le rendre 100 % configurable en UI |
 | Consolider le constructeur de rôles/pages admin | B | Étendre `PlatformModulesPage` / `PlatformMenusPage` / `PermissionsPage` |
