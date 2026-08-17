@@ -236,6 +236,42 @@ public class TrainingService {
     }
 
     // ============================================================
+    // Statistiques globales (pasteur / admin)
+    // ============================================================
+
+    /**
+     * Statistiques de la plateforme de formation calculées sur les données
+     * réelles : cours actifs, inscriptions, certificats délivrés, progression
+     * moyenne, répartition par catégorie et par statut d'inscription.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> stats() {
+        List<Course> courses = courseRepository.findByActifTrueOrderByTitreAsc();
+        List<CourseEnrollment> enrollments = enrollmentRepository.findAll();
+        long certificats = certificateRepository.count();
+
+        double moyenne = enrollments.stream()
+                .mapToInt(CourseEnrollment::getProgression)
+                .average().orElse(0.0);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("nbCours", courses.size());
+        result.put("nbInscrits", enrollments.size());
+        result.put("nbCertificats", certificats);
+        result.put("progressionMoyenne", Math.round(moyenne));
+        result.put("parCategorie", courses.stream()
+                .collect(Collectors.groupingBy(
+                        c -> c.getCategorie() == null || c.getCategorie().isBlank()
+                                ? "DISCIPOLAT" : c.getCategorie(),
+                        Collectors.counting())));
+        result.put("parStatut", enrollments.stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getStatut() != null ? e.getStatut().name() : "INSCRIT",
+                        Collectors.counting())));
+        return result;
+    }
+
+    // ============================================================
     // Administration (pasteur / admin)
     // ============================================================
 

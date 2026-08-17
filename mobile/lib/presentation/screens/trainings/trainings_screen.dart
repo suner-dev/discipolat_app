@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
+import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
 
 class TrainingsScreen extends StatefulWidget {
-  const TrainingsScreen({super.key});
+  const TrainingsScreen({super.key, this.apiService});
+
+  /// Permet d'injecter un ApiService mocké dans les tests widget.
+  final ApiService? apiService;
 
   @override
   State<TrainingsScreen> createState() => _TrainingsScreenState();
 }
 
 class _TrainingsScreenState extends State<TrainingsScreen> with SingleTickerProviderStateMixin {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   late TabController _tabController;
   List<dynamic> _courses = [];
   List<dynamic> _enrollments = [];
   List<dynamic> _certificates = [];
+  Map<String, dynamic>? _stats;
   bool _isLoading = true;
 
   @override
@@ -37,11 +42,21 @@ class _TrainingsScreenState extends State<TrainingsScreen> with SingleTickerProv
       final coursesRes = await _apiService.get('/trainings/courses');
       final enrollRes = await _apiService.get('/trainings/my-enrollments');
       final certRes = await _apiService.get('/trainings/my-certificates');
+      // KPIs de la formation : réservés aux super-utilisateurs (ADMIN / PASTEUR).
+      Map<String, dynamic>? stats;
+      if (AuthState().hasActiveRole(['ADMIN', 'PASTEUR'])) {
+        try {
+          stats = (await _apiService.get('/trainings/stats')).data as Map<String, dynamic>?;
+        } catch (_) {
+          stats = null;
+        }
+      }
       if (mounted) {
         setState(() {
           _courses = (coursesRes.data is Map ? coursesRes.data['content'] : coursesRes.data) as List<dynamic>? ?? [];
           _enrollments = (enrollRes.data is Map ? enrollRes.data['content'] : enrollRes.data) as List<dynamic>? ?? [];
           _certificates = (certRes.data is Map ? certRes.data['content'] : certRes.data) as List<dynamic>? ?? [];
+          _stats = stats;
           _isLoading = false;
         });
       }
@@ -78,17 +93,64 @@ class _TrainingsScreenState extends State<TrainingsScreen> with SingleTickerProv
       drawer: const AppDrawer(),
       body: _isLoading
           ? const ShimmerLoading(itemCount: 3)
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildCatalog(),
-                  _buildEnrollments(),
-                  _buildCertificates(),
-                ],
+          : Column(children: [
+              if (_stats != null) ...[
+                _buildStatsRow(),
+                const SizedBox(height: 4),
+              ],
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildCatalog(),
+                      _buildEnrollments(),
+                      _buildCertificates(),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ]),
+    );
+  }
+
+  /// KPIs réels de la plateforme de formation (GET /trainings/stats).
+  Widget _buildStatsRow() {
+    final stats = _stats!;
+    final nbCours = (stats['nbCours'] as num?)?.toInt() ?? 0;
+    final nbInscrits = (stats['nbInscrits'] as num?)?.toInt() ?? 0;
+    final nbCertificats = (stats['nbCertificats'] as num?)?.toInt() ?? 0;
+    final progression = (stats['progressionMoyenne'] as num?)?.toInt() ?? 0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Row(children: [
+        Expanded(child: _kpiCard('Cours', '$nbCours', const Color(0xFF3B82F6), Icons.school)),
+        const SizedBox(width: 8),
+        Expanded(child: _kpiCard('Inscrits', '$nbInscrits', const Color(0xFF22C55E), Icons.group)),
+        const SizedBox(width: 8),
+        Expanded(child: _kpiCard('Certificats', '$nbCertificats', const Color(0xFFF59E0B), Icons.workspace_premium)),
+        const SizedBox(width: 8),
+        Expanded(child: _kpiCard('Progression', '$progression%', const Color(0xFF8B5CF6), Icons.trending_up)),
+      ]),
+    );
+  }
+
+  Widget _kpiCard(String label, String value, Color color, IconData icon) {
+    return GlassCard(
+      padding: const EdgeInsets.all(10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(icon, color: color, size: 13),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 8, fontWeight: FontWeight.w600)),
+        ]),
+        const SizedBox(height: 3),
+        Text(value,
+            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+            overflow: TextOverflow.ellipsis),
+      ]),
     );
   }
 

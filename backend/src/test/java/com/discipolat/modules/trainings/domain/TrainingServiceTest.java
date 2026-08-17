@@ -123,6 +123,50 @@ class TrainingServiceTest {
     }
 
     @Test
+    void stats_calculeLesIndicateursSurDonneesReelles() {
+        Course c1 = Course.builder().id(UUID.randomUUID()).titre("C1")
+                .categorie("DISCIPOLAT").niveau(Course.Niveau.DEBUTANT).actif(true).build();
+        Course c2 = Course.builder().id(UUID.randomUUID()).titre("C2")
+                .categorie("MINISTERE").niveau(Course.Niveau.INTERMEDIAIRE).actif(true).build();
+        when(courseRepository.findByActifTrueOrderByTitreAsc()).thenReturn(List.of(c1, c2));
+
+        CourseEnrollment termine = enrollment(c1.getId(), UUID.randomUUID());
+        termine.setProgression(100);
+        termine.setStatut(CourseEnrollment.Statut.TERMINE);
+        CourseEnrollment enCours = enrollment(c2.getId(), UUID.randomUUID());
+        enCours.setProgression(50);
+        enCours.setStatut(CourseEnrollment.Statut.EN_COURS);
+        when(enrollmentRepository.findAll()).thenReturn(List.of(termine, enCours));
+        when(certificateRepository.count()).thenReturn(1L);
+
+        java.util.Map<String, Object> stats = trainingService.stats();
+
+        assertEquals(2, stats.get("nbCours"));
+        assertEquals(2, stats.get("nbInscrits"));
+        assertEquals(1L, stats.get("nbCertificats"));
+        assertEquals(75L, stats.get("progressionMoyenne")); // (100 + 50) / 2
+        assertEquals(1L, ((java.util.Map<?, ?>) stats.get("parCategorie")).get("DISCIPOLAT"));
+        assertEquals(1L, ((java.util.Map<?, ?>) stats.get("parCategorie")).get("MINISTERE"));
+        assertEquals(1L, ((java.util.Map<?, ?>) stats.get("parStatut")).get("TERMINE"));
+        assertEquals(1L, ((java.util.Map<?, ?>) stats.get("parStatut")).get("EN_COURS"));
+    }
+
+    @Test
+    void stats_sansDonnees_renvoieDesZeros() {
+        when(courseRepository.findByActifTrueOrderByTitreAsc()).thenReturn(List.of());
+        when(enrollmentRepository.findAll()).thenReturn(List.of());
+        when(certificateRepository.count()).thenReturn(0L);
+
+        java.util.Map<String, Object> stats = trainingService.stats();
+
+        assertEquals(0, stats.get("nbCours"));
+        assertEquals(0, stats.get("nbInscrits"));
+        assertEquals(0L, stats.get("nbCertificats"));
+        assertEquals(0L, stats.get("progressionMoyenne"));
+        assertEquals(0, ((java.util.Map<?, ?>) stats.get("parStatut")).size());
+    }
+
+    @Test
     void submitQuiz_failingScore_shouldNotIssueCertificate() {
         UUID userId = UUID.randomUUID();
         UUID courseId = UUID.randomUUID();

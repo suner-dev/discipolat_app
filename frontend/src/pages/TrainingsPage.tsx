@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { usePlatformConfig } from '@/contexts/PlatformContext';
 import {
   BookOpen,
   PlayCircle,
@@ -29,6 +31,7 @@ import type {
   CreateQuestionRequest,
   SubmitQuizRequest,
   QuizResult,
+  TrainingStats,
 } from '@/types';
 
 const NIVEAU_STYLE: Record<string, string> = {
@@ -47,6 +50,7 @@ export default function TrainingsPage() {
   const { user } = useAuth();
   const isAdmin = !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR'));
   const queryClient = useQueryClient();
+  const { moduleEnabled } = usePlatformConfig();
 
   const [selected, setSelected] = useState<Course | null>(null);
   const [activeModule, setActiveModule] = useState<string | null>(null);
@@ -61,6 +65,25 @@ export default function TrainingsPage() {
   const [showModuleForm, setShowModuleForm] = useState(false);
   const [questionForm, setQuestionForm] = useState<CreateQuestionRequest>({
     question: '', propositions: '["Vrai","Faux"]', reponseIndex: 0, ordre: 0,
+  });
+
+  if (!moduleEnabled('TRAININGS')) {
+    return (
+      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <BookOpen className="w-10 h-10 text-gray-300 mb-3" />
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Module Formations désactivé</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
+        </p>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">Retour au tableau de bord</Link>
+      </div>
+    );
+  }
+
+  const { data: stats } = useQuery({
+    queryKey: ['trainings', 'stats'],
+    queryFn: async () => (await api.get('/trainings/stats')).data as TrainingStats,
+    enabled: isAdmin,
   });
 
   const coursesQuery = useQuery({
@@ -534,6 +557,30 @@ export default function TrainingsPage() {
           </button>
         )}
       </div>
+
+      {/* KPIs — calculés sur les données réelles (GET /trainings/stats) */}
+      {isAdmin && stats && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Cours', value: String(stats.nbCours), icon: BookOpen, color: 'from-blue-500 to-indigo-600', sub: `${Object.keys(stats.parCategorie ?? {}).length} catégorie(s)` },
+            { label: 'Inscrits', value: String(stats.nbInscrits), icon: Users, color: 'from-emerald-500 to-green-600', sub: `${stats.parStatut?.TERMINE ?? 0} terminé(s)` },
+            { label: 'Certificats', value: String(stats.nbCertificats), icon: Award, color: 'from-amber-500 to-orange-600' },
+            { label: 'Progression moyenne', value: `${stats.progressionMoyenne}%`, icon: GraduationCap, color: 'from-violet-500 to-purple-600' },
+          ].map((kpi, i) => (
+            <div key={kpi.label} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 60}ms` }}>
+              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${kpi.color} opacity-60`} />
+              <div className="flex items-start justify-between mb-2">
+                <span className="stat-label text-[10px]">{kpi.label}</span>
+                <div className={`p-1.5 rounded-lg bg-gradient-to-br ${kpi.color} text-white shadow-sm`}>
+                  <kpi.icon className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <p className="stat-value text-xl">{kpi.value}</p>
+              {kpi.sub && <p className="text-[10px] text-gray-400 mt-0.5">{kpi.sub}</p>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {certificates.length > 0 && (
         <div className="glass-card p-4">

@@ -1065,6 +1065,16 @@ export interface QuizResult {
   certificat: boolean;
 }
 
+/** Statistiques globales de la formation (GET /trainings/stats) — données réelles. */
+export interface TrainingStats {
+  nbCours: number;
+  nbInscrits: number;
+  nbCertificats: number;
+  progressionMoyenne: number;
+  parCategorie?: Record<string, number>;
+  parStatut?: Record<string, number>;
+}
+
 // ======================== Rendez-vous ========================
 
 export type AppointmentMotif = 'CONSEIL' | 'CONFESSION' | 'SUIVI' | 'FORMATION' | 'AUTRE';

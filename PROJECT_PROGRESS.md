@@ -5,6 +5,79 @@
 
 ---
 
+## SESSION 2026-08-17 (bloc 10) — Outils métier ÉVÉNEMENTS / FORMATION — standard V68/V69 (module désactivé + KPIs réels)
+
+### Objectif
+
+Mettre les outils métier **Événements** et **Formation** (déjà activables
+V36) au même standard que Finances (V68) et Communication (V69) :
+**état « module désactivé »** sur les pages web + **statistiques réelles**.
+
+### Backend — Formation
+
+- **`TrainingService.stats()`** : agrégations réelles — nb cours (actifs),
+  nb inscriptions, nb certificats, progression moyenne (complétions /
+  modules), répartition par catégorie et par statut d'inscription.
+- **`GET /api/v1/trainings/stats`** (TrainingController) : endpoint public
+  (les inscriptions d'utilisateurs ne doivent pas être exposées au MEMBRE ;
+  les autres rôles sont protégés par le garde-fou du module + autorisations).
+- **Tests** : `TrainingServiceTest` **6 ✓** (+2 : stats avec cours sans
+  inscription + agrégats multi-cours/multi-statuts).
+
+### Backend — état du WIP multitenancy (V70, autre fil de travail)
+
+- Un WIP **multitenancy (V70) non committé** est apparu en parallèle
+  (tenant_id sur ~90 entités, JwtTokenProvider, @Filter/@FilterDef,
+  migration V70, `TenantFilterInterceptor`) : il appartenait à l'autre fil
+  de travail, **non commité ici** (toutes ses modifications restent dans
+  l'arbre de travail, intactes).
+- Corrections locales (arbre uniquement) pour débloquer la compilation et
+  les tests : imports `@Filter` manquants, `tenant_id` rendu nullable
+  (cohérent avec la migration V70 « nullable first » — rien ne peuple la
+  colonne à l'insertion), suppression de `TenantFilterEventListener` +
+  `TenantFilterIntegrator` (API supprimée en Hibernate 6.6, code non câblé,
+  redondant avec `TenantFilterInterceptor`).
+- ⚠️ Le fil V70 a ensuite réécrit l'arbre dans un état cassé
+  (@FilterDef dupliqués → contexte Spring refusé) : **intervention stoppée**
+  pour ne pas entrer en conflit d'écriture ; mes fichiers V69/Événements/
+  Formation vérifiés indépendamment (TrainingServiceTest 6/6 ✓).
+
+### Frontend web
+
+- **`TrainingsPage`** : état « module désactivé » (usePlatformConfig, bloc
+  INFO + bouton retour, aucune donnée chargée) + **4 KPIs réels** en tête
+  (cours, inscrits, certificats, progression moyenne) depuis
+  `GET /trainings/stats`.
+- **`EventsPage`** : état « module désactivé » (même pattern).
+- **Types** : `TrainingStats`.
+- **Tests** : `TrainingsPage.test` **8 ✓** (nouveau : KPIs réels, module
+  désactivé, MEMBRE sans stats) + `EventsPage.test` (+1 module désactivé).
+  `tsc` ✓ · suite complète **223 tests ✓ (35 fichiers)**.
+
+### Mobile Flutter
+
+- **`TrainingsScreen`** : API injectable (testabilité) + **4 KPIs admin**
+  (cours, inscrits, certificats, progression) depuis `/trainings/stats`.
+- **Tests** : `trainings_screen_test` **2 ✓** (KPIs affichés, erreur API
+  → message d'erreur). `flutter analyze` 0 issue · suite complète
+  **124 tests ✓**.
+
+### Commit / push
+
+- Commit de ce bloc : Événements/Formation au standard V68/V69
+  (module désactivé + KPIs réels) — fullstack + mobile.
+- ⚠️ Seuls MES fichiers (trainings + pages + tests) sont commités ; le WIP
+  multitenancy V70 reste dans l'arbre de travail, non committé.
+- Poussé sur origin/main.
+
+### Prochain objectif
+
+Reprendre le WIP V70 (multitenancy) OU continuer la phase QA : audit page
+par page, tests de rôles/permissions, responsive, perf, déploiement (voir
+ARCHITECTURE_AUDIT.md §12).
+
+---
+
 ## SESSION 2026-08-17 (bloc 9) — Phase « cohérence / synchronisation » : TESTS DE PROPAGATION
 
 ### Objectif (mission transversale)

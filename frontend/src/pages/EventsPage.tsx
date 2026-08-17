@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlatformConfig } from '@/contexts/PlatformContext';
 import DataTable from '@/components/shared/DataTable';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
@@ -158,6 +160,7 @@ export default function EventsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const dictionaries = useDictionaries();
+  const { moduleEnabled } = usePlatformConfig();
 
   /** Types configurés (dictionnaire) — sinon repli sur les valeurs par défaut. */
   const typeEntries = useMemo<{ code: string; label: string; color?: string }[]>(() => {
@@ -215,6 +218,19 @@ export default function EventsPage() {
     statut: 'PLANIFIE' as StatutEvenement,
     fichierIds: [] as string[],
   });
+
+  if (!moduleEnabled('EVENTS')) {
+    return (
+      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <Calendar className="w-10 h-10 text-gray-300 mb-3" />
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Module Événements désactivé</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
+        </p>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">Retour au tableau de bord</Link>
+      </div>
+    );
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['events', page, search, typeFilter, statutFilter],

@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -77,6 +78,16 @@ public class TrainingController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<List<Certificate>> myCertificates() {
         return ResponseEntity.ok(trainingService.myCertificates());
+    }
+
+    // ============================================================
+    // Statistiques globales (pasteur / admin)
+    // ============================================================
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> stats() {
+        return ResponseEntity.ok(trainingService.stats());
     }
 
     // ============================================================

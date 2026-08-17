@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { PlatformContext } from '@/contexts/PlatformContext';
 import EventsPage from '@/pages/EventsPage';
 
 const { apiMock } = vi.hoisted(() => ({
@@ -49,14 +50,22 @@ const EVENT_WITH_PIECES = {
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
-function renderWithProviders() {
+function renderWithProviders(disabledModules: string[] = []) {
+  const moduleEnabled = (key: string) => !disabledModules.includes(key);
   return render(
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <EventsPage />
-        </AuthProvider>
-      </BrowserRouter>
+      <PlatformContext.Provider
+        value={{
+          menus: [], modules: [], isLoaded: true, moduleEnabled,
+          canAccessPath: () => true, refetch: () => undefined,
+        }}
+      >
+        <BrowserRouter>
+          <AuthProvider>
+            <EventsPage />
+          </AuthProvider>
+        </BrowserRouter>
+      </PlatformContext.Provider>
     </QueryClientProvider>
   );
 }
@@ -93,6 +102,16 @@ describe('EventsPage — pièces jointes', () => {
 
   afterEach(() => {
     localStorage.clear();
+  });
+
+  it('affiche l’état explicite quand le module est désactivé', async () => {
+    renderWithProviders(['EVENTS']);
+
+    await waitFor(() => {
+      expect(screen.getByText('Module Événements désactivé')).toBeInTheDocument();
+    });
+    // Aucun appel API événements (le garde-fou serveur renverrait 403 de toute façon).
+    expect(apiMock.get).not.toHaveBeenCalledWith(expect.stringContaining('/events'));
   });
 
   it('affiche la section « Pièces jointes » dans le formulaire de création', async () => {
