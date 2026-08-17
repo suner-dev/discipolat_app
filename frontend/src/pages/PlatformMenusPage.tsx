@@ -7,6 +7,7 @@ import type { MenuEntry, PlatformModule } from '@/types';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import { MENU_ICON_KEYS, resolveIcon } from '@/lib/menuIcons';
+import ConfigRevisionHistory from '@/components/ConfigRevisionHistory';
 
 const ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
 
@@ -148,6 +149,10 @@ export default function PlatformMenusPage() {
         <div className="page-header-actions">
           <button className="btn-primary btn-sm" onClick={openCreate}><Plus className="w-4 h-4" /> Nouveau menu</button>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <ConfigRevisionHistory entityType="PLATFORM_MENU" />
       </div>
 
       {Object.keys(grouped).length === 0 && (

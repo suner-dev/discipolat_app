@@ -6,6 +6,7 @@ import { Boxes, Plus, Pencil, Trash2, Loader2, Power } from 'lucide-react';
 import type { PlatformModule } from '@/types';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import { MENU_ICON_KEYS, resolveIcon } from '@/lib/menuIcons';
+import ConfigRevisionHistory from '@/components/ConfigRevisionHistory';
 
 interface ModuleForm {
   key: string;
@@ -108,6 +109,10 @@ export default function PlatformModulesPage() {
             <Plus className="w-4 h-4" /> Nouveau module
           </button>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <ConfigRevisionHistory entityType="PLATFORM_MODULE" />
       </div>
 
       {Object.keys(grouped).length === 0 && (

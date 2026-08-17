@@ -1,9 +1,16 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.platform.domain.ConfigRevision;
+import com.discipolat.modules.platform.domain.ConfigRevisionService;
 import com.discipolat.modules.platform.domain.MenuEntry;
 import com.discipolat.modules.platform.domain.PlatformConfigService;
 import com.discipolat.modules.platform.domain.PlatformModule;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,10 +41,13 @@ public class PlatformConfigController {
 
     private final PlatformConfigService platformService;
     private final SecurityUtils securityUtils;
+    private final ConfigRevisionService revisionService;
 
-    public PlatformConfigController(PlatformConfigService platformService, SecurityUtils securityUtils) {
+    public PlatformConfigController(PlatformConfigService platformService, SecurityUtils securityUtils,
+                                    ConfigRevisionService revisionService) {
         this.platformService = platformService;
         this.securityUtils = securityUtils;
+        this.revisionService = revisionService;
     }
 
     /* ------------------------------ Menus ------------------------------ */
@@ -129,5 +139,25 @@ public class PlatformConfigController {
     public ResponseEntity<Void> deleteModule(@PathVariable String key) {
         platformService.deleteModule(key);
         return ResponseEntity.noContent().build();
+    }
+
+    /* --------------------------- Versionnage --------------------------- */
+
+    /**
+     * Historique des révisions de configuration (modules/menus). Filtré
+     * optionnellement par type d'entité, trié du plus récent au plus ancien.
+     */
+    @GetMapping("/revisions")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PageResponse<ConfigRevision>> revisions(
+            @RequestParam(required = false) String entityType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50),
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<ConfigRevision> result = revisionService.list(entityType, pageable);
+        return ResponseEntity.ok(PageResponse.of(
+                result.getContent(), result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages()));
     }
 }

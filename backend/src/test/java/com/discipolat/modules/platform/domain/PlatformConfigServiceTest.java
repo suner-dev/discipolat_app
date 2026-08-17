@@ -17,6 +17,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,12 +27,13 @@ class PlatformConfigServiceTest {
     @Mock private PlatformModuleRepository moduleRepository;
     @Mock private MenuEntryRepository menuRepository;
     @Mock private AuditService auditService;
+    @Mock private ConfigRevisionService revisionService;
 
     private PlatformConfigService service;
 
     @BeforeEach
     void setUp() {
-        service = new PlatformConfigService(moduleRepository, menuRepository, auditService);
+        service = new PlatformConfigService(moduleRepository, menuRepository, auditService, revisionService);
     }
 
     private MenuEntry menu(String key, String href, String moduleKey, List<String> roles, boolean enabled) {
@@ -99,6 +102,24 @@ class PlatformConfigServiceTest {
         assertThat(module.isEnabled()).isFalse();
         verify(moduleRepository).save(module);
         verify(auditService).logSimple("MODULE_DISABLED", "PLATFORM_MODULE", null);
+    }
+
+    @Test
+    void toggleModule_recordsRevision() {
+        PlatformModule module = module("SOULS", true);
+        when(moduleRepository.findById("SOULS")).thenReturn(Optional.of(module));
+
+        service.toggleModule("SOULS", false);
+
+        verify(revisionService).record(eq("PLATFORM_MODULE"), eq("SOULS"), eq("MODULE_DISABLED"), anyMap());
+    }
+
+    @Test
+    void createMenu_recordsRevision() {
+        MenuEntry soulMenu = menu("souls", "/souls", "SOULS", List.of("ADMIN"), true);
+        service.createMenu(soulMenu);
+
+        verify(revisionService).record(eq("PLATFORM_MENU"), eq("souls"), eq("MENU_CREATED"), anyMap());
     }
 
     @Test

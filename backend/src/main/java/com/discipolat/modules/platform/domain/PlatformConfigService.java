@@ -21,13 +21,16 @@ public class PlatformConfigService {
     private final PlatformModuleRepository moduleRepository;
     private final MenuEntryRepository menuRepository;
     private final AuditService auditService;
+    private final ConfigRevisionService revisionService;
 
     public PlatformConfigService(PlatformModuleRepository moduleRepository,
                                  MenuEntryRepository menuRepository,
-                                 AuditService auditService) {
+                                 AuditService auditService,
+                                 ConfigRevisionService revisionService) {
         this.moduleRepository = moduleRepository;
         this.menuRepository = menuRepository;
         this.auditService = auditService;
+        this.revisionService = revisionService;
     }
 
     /* ============================== Modules ============================== */
@@ -54,6 +57,9 @@ public class PlatformConfigService {
             module.setEnabled(enabled);
             moduleRepository.save(module);
             auditService.logSimple(enabled ? "MODULE_ENABLED" : "MODULE_DISABLED", "PLATFORM_MODULE", null);
+            revisionService.record("PLATFORM_MODULE", key,
+                    enabled ? "MODULE_ENABLED" : "MODULE_DISABLED",
+                    Map.of("enabled", enabled));
         }
         return module;
     }
@@ -65,11 +71,14 @@ public class PlatformConfigService {
         module.setKey(module.getKey().trim().toUpperCase());
         moduleRepository.save(module);
         auditService.logSimple("MODULE_CREATED", "PLATFORM_MODULE", null);
+        revisionService.record("PLATFORM_MODULE", module.getKey(), "MODULE_CREATED",
+                modulePayload(module));
         return module;
     }
 
     public PlatformModule updateModule(String key, PlatformModule request) {
         PlatformModule module = getModule(key);
+        Map<String, Object> before = modulePayload(module);
         if (request.getLabel() != null && !request.getLabel().isBlank()) module.setLabel(request.getLabel());
         if (request.getDescription() != null) module.setDescription(request.getDescription());
         if (request.getIcon() != null) module.setIcon(request.getIcon());
@@ -77,6 +86,8 @@ public class PlatformConfigService {
         module.setOrdre(request.getOrdre());
         moduleRepository.save(module);
         auditService.logSimple("MODULE_UPDATED", "PLATFORM_MODULE", null);
+        revisionService.record("PLATFORM_MODULE", key, "MODULE_UPDATED",
+                Map.of("before", before, "after", modulePayload(module)));
         return module;
     }
 
@@ -90,6 +101,7 @@ public class PlatformConfigService {
         }
         moduleRepository.delete(module);
         auditService.logSimple("MODULE_DELETED", "PLATFORM_MODULE", null);
+        revisionService.record("PLATFORM_MODULE", key, "MODULE_DELETED", modulePayload(module));
     }
 
     /* ============================== Menus ============================== */
@@ -140,12 +152,14 @@ public class PlatformConfigService {
         }
         menuRepository.save(menu);
         auditService.logSimple("MENU_CREATED", "PLATFORM_MENU", menu.getId());
+        revisionService.record("PLATFORM_MENU", menu.getKey(), "MENU_CREATED", menuPayload(menu));
         return menu;
     }
 
     public MenuEntry updateMenu(UUID id, MenuEntry request) {
         MenuEntry menu = menuRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("MenuEntry", id));
+        Map<String, Object> before = menuPayload(menu);
         if (request.getLabel() != null && !request.getLabel().isBlank()) menu.setLabel(request.getLabel());
         if (request.getHref() != null && !request.getHref().isBlank()) menu.setHref(request.getHref());
         if (request.getIcon() != null) menu.setIcon(request.getIcon());
@@ -156,6 +170,8 @@ public class PlatformConfigService {
         menu.setOrdre(request.getOrdre());
         menuRepository.save(menu);
         auditService.logSimple("MENU_UPDATED", "PLATFORM_MENU", menu.getId());
+        revisionService.record("PLATFORM_MENU", menu.getKey(), "MENU_UPDATED",
+                Map.of("before", before, "after", menuPayload(menu)));
         return menu;
     }
 
@@ -164,6 +180,7 @@ public class PlatformConfigService {
                 .orElseThrow(() -> new EntityNotFoundException("MenuEntry", id));
         menuRepository.delete(menu);
         auditService.logSimple("MENU_DELETED", "PLATFORM_MENU", id);
+        revisionService.record("PLATFORM_MENU", menu.getKey(), "MENU_DELETED", menuPayload(menu));
     }
 
     /** Réordonne les menus de la section donnée. */
@@ -177,6 +194,36 @@ public class PlatformConfigService {
             });
         }
         auditService.logSimple("MENUS_REORDERED", "PLATFORM_MENU", null);
+        revisionService.record("PLATFORM_MENU", "reorder", "MENUS_REORDERED",
+                Map.of("ordre", items.stream()
+                        .map(MenuOrderItem::id)
+                        .collect(Collectors.toList())));
         return updated;
+    }
+
+    /* ====================== Helpers de versionnage ====================== */
+
+    private Map<String, Object> modulePayload(PlatformModule m) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("label", m.getLabel());
+        map.put("description", m.getDescription());
+        map.put("icon", m.getIcon());
+        map.put("section", m.getSection());
+        map.put("enabled", m.isEnabled());
+        map.put("ordre", m.getOrdre());
+        return map;
+    }
+
+    private Map<String, Object> menuPayload(MenuEntry m) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("label", m.getLabel());
+        map.put("href", m.getHref());
+        map.put("icon", m.getIcon());
+        map.put("section", m.getSection());
+        map.put("ordre", m.getOrdre());
+        map.put("roles", m.getRoles());
+        map.put("moduleKey", m.getModuleKey());
+        map.put("enabled", m.isEnabled());
+        return map;
     }
 }

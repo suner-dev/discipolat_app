@@ -4,6 +4,8 @@ import com.discipolat.common.infrastructure.config.SecurityConfig;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.test.TestJwtConfig;
+import com.discipolat.modules.platform.domain.ConfigRevision;
+import com.discipolat.modules.platform.domain.ConfigRevisionService;
 import com.discipolat.modules.platform.domain.MenuEntry;
 import com.discipolat.modules.platform.domain.PlatformConfigService;
 import com.discipolat.modules.platform.domain.PlatformModule;
@@ -14,10 +16,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -25,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -59,6 +66,9 @@ class PlatformConfigControllerTest {
 
     @MockBean
     private SecurityUtils securityUtils;
+
+    @MockBean
+    private ConfigRevisionService revisionService;
 
     private static final UUID USER_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final String EMAIL = "admin@discipolat.com";
@@ -333,5 +343,55 @@ class PlatformConfigControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(platformService).deleteModule("SOULS");
+    }
+
+    // ===================== Versionnage (révisions) =====================
+
+    @Test
+    @DisplayName("GET /platform/revisions par ADMIN → 200 avec la page de révisions")
+    void revisions_admin_200() throws Exception {
+        ConfigRevision revision = ConfigRevision.builder()
+                .id(UUID.randomUUID())
+                .entityType("PLATFORM_MODULE")
+                .entityKey("SOULS")
+                .action("MODULE_ENABLED")
+                .payload(Map.of("enabled", true))
+                .createdAt(java.time.LocalDateTime.of(2026, 8, 17, 10, 0))
+                .build();
+        Page<ConfigRevision> page = new PageImpl<>(List.of(revision),
+                PageRequest.of(0, 20), 1);
+        when(revisionService.list(isNull(), any())).thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/platform/revisions")
+                        .header("Authorization", bearer("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].action").value("MODULE_ENABLED"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+
+        verify(revisionService).list(isNull(), any());
+    }
+
+    @Test
+    @DisplayName("GET /platform/revisions filtré par entityType → le filtre est transmis")
+    void revisions_filtered_200() throws Exception {
+        when(revisionService.list(eq("PLATFORM_MENU"), any()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        mockMvc.perform(get("/api/v1/platform/revisions")
+                        .param("entityType", "PLATFORM_MENU")
+                        .header("Authorization", bearer("ADMIN")))
+                .andExpect(status().isOk());
+
+        verify(revisionService).list(eq("PLATFORM_MENU"), any());
+    }
+
+    @Test
+    @DisplayName("GET /platform/revisions par non-ADMIN → 403")
+    void revisions_nonAdmin_403() throws Exception {
+        mockMvc.perform(get("/api/v1/platform/revisions")
+                        .header("Authorization", bearer("PASTEUR")))
+                .andExpect(status().isForbidden());
+
+        verify(revisionService, never()).list(any(), any());
     }
 }
