@@ -69,7 +69,8 @@ services:
     volumes:
       - ./keys:/app/keys:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      # /dev/tcp natif (pas besoin de curl dans l'image eclipse-temurin)
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080'"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -110,13 +111,53 @@ services:
   nginx:
     image: nginx:alpine
     container_name: discipolat-nginx
+    # Apache2 système occupe :80 sur le host → mapping hôte :8086 (port libre).
+    # Le tunnel cloudflared atteint nginx via le réseau docker interne (nginx:80),
+    # donc le port hôte n'est PAS nécessaire pour le tunnel.
     ports:
-      - "80:80"
+      - "8086:80"
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - web
-      - api
+      # attendre que 'api' soit healthy (sinon "host not found in upstream api:8080")
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+    networks:
+      - discipolat-net
+
+# ============================================
+  # Cloudflared — Tunnel Cloudflare → Nginx (:80)
+  # Expose TOUTE l'application via un seul tunnel.
+  #
+  #   MODE 1 (permanent) : si CLOUDFLARE_TUNNEL_TOKEN est défini dans .env
+  #                        → tunnel NOMNÉ (config gérée dans Zero Trust dashboard,
+  #                          hostname public → origin http://nginx:80).
+  #   MODE 2 (rapide)     : sinon → tunnel trycloudflare SANS compte.
+  #                        L'URL est affichée dans les logs :
+  #                        docker logs discipolat-cloudflared
+  #   --protocol http2    : contourne l'UDP/QUIC bloqué sur ce host (TCP forcé).
+  # ============================================
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: discipolat-cloudflared
+    restart: unless-stopped
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    # ⚠️ Image distroless : PAS de /bin/sh → arguments passés DIRECTEMENT à
+    # cloudflared (pas d'entrypoint script). --protocol http2 : contourne
+    # l'UDP/QUIC bloqué sur ce host (TCP forcé).
+    #
+    #   MODE 1 (permanent) : CLOUDFLARE_TUNNEL_TOKEN défini dans .env
+    #                        → remplacer command par :
+    #                          ["tunnel", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
+    #   MODE 2 (rapide)     : sinon → tunnel trycloudflare SANS compte vers nginx.
+    #                        L'URL est affichée dans : docker logs discipolat-cloudflared
+    entrypoint: ["cloudflared", "--no-autoupdate", "--protocol", "http2"]
+    command: ["tunnel", "--url", "http://nginx:80"]
+    depends_on:
+      - nginx
     networks:
       - discipolat-net
 
