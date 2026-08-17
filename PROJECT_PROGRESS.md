@@ -5,6 +5,71 @@
 
 ---
 
+## SESSION 2026-08-17 (bloc 5) — Page Builder V66 : GRAPHIQUE / CALENDRIER / TIMELINE / CHECKLIST
+
+### Backend (V66 — sources & blocs supplémentaires)
+
+- **`PageBuilderService`** : 4 nouveaux types de blocs (`GRAPHIQUE`, `CALENDRIER`,
+  `TIMELINE`, `CHECKLIST`) + **7 nouvelles sources de données** résolues sur données
+  réelles et scopées par espace métier :
+  - GRAPHIQUE : `SOULS_BY_STATUT` (répartition par statut d'âme), `EVENTS_BY_MONTH`
+    (6 prochains mois, mois à trous → 0), `ALERTS_BY_TYPE` (actives par type,
+    libellés humanisés), `DEPARTMENTS_BY_STATUT` (répartition par statut d'entité).
+  - CALENDRIER : `CALENDAR_EVENTS` (événements des 60 prochains jours : date ISO,
+    titre, lieu, type, triés par date).
+  - TIMELINE : `SOULS_TIMELINE` (10 dernières âmes créées : date, nom complet, statut).
+  - CHECKLIST : bloc local (config `items`, aucune donnée serveur — validation
+    « au moins un élément » comme LIENS).
+- **Repos étendus** : `AlertRepository.findByStatut` + `findByStatutAndAmeIdIn`
+  (répartition des alertes actives, scopée).
+- **Validation** : blocs GRAPHIQUE/CALENDRIER/TIMELINE exigent une source connue de
+  leur type ; `sourceExists` réaligné sur le type exact (plus de détour TABLEAU/LISTE→KPI).
+- **Tests** : `PageBuilderServiceTest` **25 ✓** (25 → 25, +7 : checklist sans items
+  rejetée, source graphique inconnue rejetée, camembert âmes par statut,
+  barres événements par mois (7 points, mois vide → 0), calendrier (date ISO),
+  timeline (nom complet + statut), checklist sans données serveur).
+
+### Frontend web
+
+- **`PageBlockRenderer`** : `ChartBlock` (recharts : camembert `PIE` avec Cell colorés,
+  barres `BAR`, courbe `LINE` — palette 7 couleurs), `CalendarBlock` (grille
+  mensuelle lundi→dimanche, navigation mois précédent/suivant, événements du mois
+  listés sous le calendrier), `TimelineBlock` (timeline verticale avec date/label/
+  valeur), `ChecklistBlock` (cases à cocher, **persistance localStorage** par
+  page+bloc, barre de progression 0–100 %).
+- **`PlatformPagesPage`** (éditeur) : palettes des 4 nouveaux types (boutons d'ajout),
+  éditeurs dédiés — GRAPHIQUE : titre + source + **type de graphique**
+  (PIE/BAR/LINE) ; CALENDRIER/TIMELINE : titre + source ; CHECKLIST : titre +
+  liste d'éléments ajoutables/retirables. Aperçu local intégré (blocs sans données).
+- **Types** : `PageDataSource.type` étendu à GRAPHIQUE/CALENDRIER/TIMELINE.
+- **Tests** : `PlatformPagesPage.test` **8 ✓** (+1 ajout bloc GRAPHIQUE),
+  `CustomPageView.test` **6 ✓** (+1 rendu des 4 nouveaux blocs + interaction
+  checklist 0/2 → 1/2 · 50 %). **14 tests frontend pour ce bloc, tous verts.**
+
+### Mobile — inchangé (supervision pages ADMIN déjà couverte en V65)
+
+- `PlatformPagesScreen` inchangé : la liste/publication/suppression couvre les
+  nouvelles pages ; le rendu des blocs est web.
+
+### État des tests (bloc 5)
+
+- Backend : `PageBuilderServiceTest` **25 ✓ BUILD SUCCESS**.
+- Frontend : `tsc --noEmit` ✓ · vitest 14/14 (CustomPageView + PlatformPagesPage) ✓.
+- Mobile : `platform_pages_screen_test` **4 ✓**.
+
+### Commit / push
+
+- Commit de ce bloc : Page Builder V66 — graphiques, calendrier, timeline, checklist.
+- Poussé sur origin/main.
+
+### Prochain objectif
+
+Étendre le Page Builder avec les blocs restants (formulaire, fichiers, tâches,
+statistiques) et/ou les outils métiers activables (Finances, Communication) — voir
+ARCHITECTURE_AUDIT.md §9 et la feuille de route §12.
+
+---
+
 ## SESSION 2026-08-17 (bloc 4) — Page Builder complet (V65) — fullstack + mobile
 
 ### Backend (V65 `custom_pages`)

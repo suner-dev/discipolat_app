@@ -1473,7 +1473,7 @@ export interface ResolvedPage {
 export interface PageDataSource {
   key: string;
   label: string;
-  type: 'KPI' | 'TABLEAU' | 'LISTE';
+  type: 'KPI' | 'TABLEAU' | 'LISTE' | 'GRAPHIQUE' | 'CALENDRIER' | 'TIMELINE';
   description: string;
   sensitive: boolean;
 }

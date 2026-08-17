@@ -30,4 +30,10 @@ public interface AlertRepository extends JpaRepository<Alert, UUID> {
     long countByStatutAndAmeIdIn(StatutAlerte statut, Collection<UUID> ameIds);
 
     List<Alert> findTop10ByStatutAndAmeIdInOrderByDateDeclenchementDesc(StatutAlerte statut, Collection<UUID> ameIds);
+
+    /** Source du Page Builder GRAPHIQUE : toutes les alertes actives (répartition par type). */
+    List<Alert> findByStatut(StatutAlerte statut);
+
+    /** Source du Page Builder GRAPHIQUE scopée : actives sur des âmes données. */
+    List<Alert> findByStatutAndAmeIdIn(StatutAlerte statut, Collection<UUID> ameIds);
 }

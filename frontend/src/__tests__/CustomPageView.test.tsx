@@ -1,10 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import CustomPageView from '@/pages/CustomPageView';
 
 const { apiGet } = vi.hoisted(() => ({ apiGet: vi.fn() }));
+
+// Recharts : conteneurs simples pour le rendu jsdom (pattern des autres tests).
+vi.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Line: () => null,
+  BarChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Bar: () => null,
+  PieChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Pie: () => null,
+  Cell: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
+  Legend: () => null,
+}));
 
 vi.mock('@/lib/api', () => ({
   default: {
@@ -129,5 +146,58 @@ describe('CustomPageView — rendu public des pages personnalisées', () => {
     await waitFor(() => {
       expect(screen.getByText(/n’existe pas ou n’est pas publiée/i)).toBeInTheDocument();
     });
+  });
+
+  it('rend les blocs GRAPHIQUE, CALENDRIER, TIMELINE et CHECKLIST', async () => {
+    // Date d'événement toujours dans le mois courant (aujourd'hui + 3 jours).
+    const soon = new Date(Date.now() + 3 * 86400000);
+    const iso = `${soon.getFullYear()}-${String(soon.getMonth() + 1).padStart(2, '0')}-${String(soon.getDate()).padStart(2, '0')}`;
+    const page = JSON.parse(JSON.stringify(RESOLVED_PAGE));
+    page.blocks = [
+      {
+        type: 'GRAPHIQUE',
+        config: { title: 'Âmes par statut', source: 'SOULS_BY_STATUT', chartType: 'PIE' },
+        data: { data: [{ name: 'Actif', value: 42 }, { name: 'En veille', value: 3 }] },
+      },
+      {
+        type: 'CALENDRIER',
+        config: { title: 'Agenda', source: 'CALENDAR_EVENTS' },
+        data: { events: [{ date: iso, title: 'Culte du dimanche', lieu: 'Temple' }] },
+      },
+      {
+        type: 'TIMELINE',
+        config: { title: 'Nouvelles âmes', source: 'SOULS_TIMELINE' },
+        data: { items: [{ date: '17/08/2026', label: 'Aya Kouassi', value: 'Actif' }] },
+      },
+      {
+        type: 'CHECKLIST',
+        config: { title: 'Suivi des nouveaux', items: ['Appeler', 'Inviter'] },
+        data: null,
+      },
+    ];
+    apiGet.mockResolvedValue({ data: page });
+    renderView();
+
+    await waitFor(() => {
+      expect(screen.getByText('Vue d’ensemble de l’église')).toBeInTheDocument();
+    });
+    // Graphique : titre rendu.
+    expect(screen.getByText('Âmes par statut')).toBeInTheDocument();
+    // Calendrier : titre + mois courant + événement du mois.
+    expect(screen.getByText('Agenda')).toBeInTheDocument();
+    expect(screen.getByText('Culte du dimanche')).toBeInTheDocument();
+    expect(screen.getByText('Temple')).toBeInTheDocument();
+    // Timeline : titre + entrée.
+    expect(screen.getByText('Nouvelles âmes')).toBeInTheDocument();
+    expect(screen.getByText('Aya Kouassi')).toBeInTheDocument();
+    // Checklist : titre + éléments + progression.
+    expect(screen.getByText('Suivi des nouveaux')).toBeInTheDocument();
+    expect(screen.getByText('Appeler')).toBeInTheDocument();
+    expect(screen.getByText('Inviter')).toBeInTheDocument();
+    expect(screen.getByText('0/2 · 0 %')).toBeInTheDocument();
+
+    // Interagir : cocher le premier élément → 1/2 · 50 %.
+    fireEvent.click(screen.getAllByRole('checkbox')[0]);
+    expect(screen.getByText('1/2 · 50 %')).toBeInTheDocument();
   });
 });

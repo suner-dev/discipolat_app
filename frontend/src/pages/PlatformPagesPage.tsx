@@ -15,7 +15,8 @@ import PageBlockRenderer, { BLOCK_TYPE_LABELS } from '@/components/pages/PageBlo
 const ALL_ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
 const LAYOUTS = ['STACK', 'GRID_2', 'GRID_3'];
 const KPI_COLORS = ['primary', 'emerald', 'amber', 'violet', 'rose', 'sky'];
-const BLOCK_TYPES = ['KPI', 'TABLEAU', 'LISTE', 'TEXTE', 'LIENS', 'RECHERCHE', 'IMAGES'];
+const CHART_TYPES = ['PIE', 'BAR', 'LINE'];
+const BLOCK_TYPES = ['KPI', 'TABLEAU', 'LISTE', 'GRAPHIQUE', 'CALENDRIER', 'TIMELINE', 'CHECKLIST', 'TEXTE', 'LIENS', 'RECHERCHE', 'IMAGES'];
 const EMPTY_BLOCK: CustomPageBlock = { type: 'KPI', config: {} };
 
 interface PageForm {
@@ -48,6 +49,10 @@ function defaultConfig(type: string): Record<string, unknown> {
     case 'KPI': return { label: 'Indicateur', source: 'SOULS_TOTAL', icon: 'BarChart3', color: 'primary' };
     case 'TABLEAU': return { title: 'Tableau', source: 'RECENT_SOULS' };
     case 'LISTE': return { title: 'Liste', source: 'RECENT_ALERTS' };
+    case 'GRAPHIQUE': return { title: 'Graphique', source: 'SOULS_BY_STATUT', chartType: 'PIE' };
+    case 'CALENDRIER': return { title: 'Calendrier', source: 'CALENDAR_EVENTS' };
+    case 'TIMELINE': return { title: 'Timeline', source: 'SOULS_TIMELINE' };
+    case 'CHECKLIST': return { title: 'Checklist', items: ['Premier élément'] };
     case 'TEXTE': return { content: '' };
     case 'LIENS': return { title: 'Accès rapides', items: [{ label: 'Recherche', href: '/search', icon: 'Search' }] };
     case 'RECHERCHE': return { placeholder: 'Rechercher…' };
@@ -113,7 +118,7 @@ function BlockEditor({
         </div>
       )}
 
-      {(block.type === 'TABLEAU' || block.type === 'LISTE') && (
+      {(block.type === 'TABLEAU' || block.type === 'LISTE' || block.type === 'CALENDRIER' || block.type === 'TIMELINE') && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="label">Titre</label>
@@ -126,6 +131,31 @@ function BlockEditor({
             </select>
           </div>
         </div>
+      )}
+
+      {block.type === 'GRAPHIQUE' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="label">Titre</label>
+            <input className="input" value={(block.config.title as string) || ''} onChange={(e) => set({ title: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">Source de données</label>
+            <select className="input" value={(block.config.source as string) || ''} onChange={(e) => set({ source: e.target.value })}>
+              {sourceOptions.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Type de graphique</label>
+            <select className="input" value={(block.config.chartType as string) || 'PIE'} onChange={(e) => set({ chartType: e.target.value })}>
+              {CHART_TYPES.map((c) => <option key={c} value={c}>{c === 'PIE' ? 'Camembert' : c === 'BAR' ? 'Barres' : 'Courbe'}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {block.type === 'CHECKLIST' && (
+        <ChecklistEditor block={block} set={set} />
       )}
 
       {block.type === 'TEXTE' && (
@@ -158,6 +188,42 @@ function BlockEditor({
       {block.type === 'LIENS' && (
         <LinksEditor block={block} set={set} />
       )}
+    </div>
+  );
+}
+
+function ChecklistEditor({ block, set }: { block: CustomPageBlock; set: (p: Record<string, unknown>) => void }) {
+  const items = (block.config.items as string[]) || [];
+  const update = (i: number, value: string) => {
+    set({ items: items.map((it, j) => (j === i ? value : it)) });
+  };
+  return (
+    <div className="space-y-2">
+      <div>
+        <label className="label">Titre</label>
+        <input className="input" value={(block.config.title as string) || ''} onChange={(e) => set({ title: e.target.value })} />
+      </div>
+      <label className="label">Éléments à cocher</label>
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input
+            className="input flex-1"
+            placeholder="Élément…"
+            value={item}
+            onChange={(e) => update(i, e.target.value)}
+          />
+          <button type="button" className="btn-icon btn-icon-sm text-gray-400 hover:text-red-500" onClick={() => set({ items: items.filter((_, j) => j !== i) })} aria-label="Retirer l'élément">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="btn-ghost btn-sm"
+        onClick={() => set({ items: [...items, 'Nouvel élément'] })}
+      >
+        <Plus className="w-4 h-4" /> Ajouter un élément
+      </button>
     </div>
   );
 }
@@ -511,7 +577,9 @@ export default function PlatformPagesPage() {
                       : previewPage.page.layout === 'GRID_3'
                         ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'
                         : 'flex flex-col gap-3'}>
-                      {previewPage.blocks.map((b, i) => <PageBlockRenderer key={i} block={b} />)}
+                      {previewPage.blocks.map((b, i) => (
+                        <PageBlockRenderer key={i} block={b} pageId={editing?.id} index={i} />
+                      ))}
                     </div>
                   </div>
                 )}

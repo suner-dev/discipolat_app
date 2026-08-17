@@ -319,7 +319,8 @@ class PageBuilderServiceTest {
                 .contains("SOULS_TOTAL", "SOULS_ACTIFS", "FAMILIES_TOTAL", "DEPARTMENTS_TOTAL",
                         "EVENTS_UPCOMING", "ALERTS_OPEN", "TRANSFERS_PENDING", "USERS_TOTAL",
                         "RECENT_SOULS", "UPCOMING_EVENTS", "RECENT_ALERTS", "RECENT_TRANSFERS",
-                        "DEPARTMENTS_LIST");
+                        "DEPARTMENTS_LIST", "SOULS_BY_STATUT", "EVENTS_BY_MONTH",
+                        "ALERTS_BY_TYPE", "DEPARTMENTS_BY_STATUT", "CALENDAR_EVENTS", "SOULS_TIMELINE");
     }
 
     @Test
@@ -330,5 +331,137 @@ class PageBuilderServiceTest {
         assertThatThrownBy(() -> service.create(request))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("LIENS");
+    }
+
+    @Test
+    void create_rejectsChecklistBlockWithoutItems() {
+        CustomPage request = page("CHECK", "check",
+                List.of(Map.of("type", "CHECKLIST", "config", Map.of("title", "Suivi"))), List.of(), false);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("CHECKLIST");
+    }
+
+    @Test
+    void create_rejectsUnknownChartSource() {
+        CustomPage request = page("GRAPH", "graph",
+                List.of(Map.of("type", "GRAPHIQUE",
+                        "config", Map.of("title", "Graph", "source", "SOURCE_INCONNUE"))),
+                List.of(), false);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Source inconnue");
+    }
+
+    // ========================== Nouveaux blocs (V66) ==========================
+
+    @Test
+    void resolveChart_soulsByStatutReturnsPieData() {
+        CustomPage existing = page("GRAPH", "graph",
+                List.of(Map.of("type", "GRAPHIQUE",
+                        "config", Map.of("title", "Âmes", "source", "SOULS_BY_STATUT", "chartType", "PIE"))),
+                List.of(), true);
+        when(pageRepository.findBySlug("graph")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(true);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
+        when(soulRepository.countByStatut(any())).thenReturn(0L);
+        when(soulRepository.countByStatut(StatutAme.ACTIF)).thenReturn(5L);
+        when(soulRepository.countByStatut(StatutAme.EN_VEILLE)).thenReturn(2L);
+
+        ResolvedPage resolved = service.resolve("graph");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> data = (List<Map<String, Object>>) resolved.blocks().get(0).data().get("data");
+        assertThat(data).hasSize(2);
+        assertThat(data.get(0)).containsEntry("name", "Actif").containsEntry("value", 5L);
+        assertThat(data.get(1)).containsEntry("name", "En veille").containsEntry("value", 2L);
+    }
+
+    @Test
+    void resolveChart_eventsByMonthReturnsSixMonthsSeries() {
+        Event event = Event.builder().id(UUID.randomUUID())
+                .titre("Culte").dateDebut(LocalDateTime.now().plusMonths(1).withDayOfMonth(15)).build();
+        Event event2 = Event.builder().id(UUID.randomUUID())
+                .titre("Étude biblique").dateDebut(LocalDateTime.now().plusMonths(1).withDayOfMonth(22)).build();
+        CustomPage existing = page("EVENTS", "events-chart",
+                List.of(Map.of("type", "GRAPHIQUE",
+                        "config", Map.of("title", "Événements", "source", "EVENTS_BY_MONTH", "chartType", "BAR"))),
+                List.of(), true);
+        when(pageRepository.findBySlug("events-chart")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(true);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
+        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any()))
+                .thenReturn(List.of(event, event2));
+
+        ResolvedPage resolved = service.resolve("events-chart");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> data = (List<Map<String, Object>>) resolved.blocks().get(0).data().get("data");
+        assertThat(data).hasSize(7); // mois courant + 6 mois
+        assertThat(data).anySatisfy(m -> assertThat(m.get("value")).isEqualTo(2L));
+        assertThat(data).anySatisfy(m -> assertThat(m.get("value")).isEqualTo(0L));
+    }
+
+    @Test
+    void resolveCalendar_eventsWithDatesResolved() {
+        Event event = Event.builder().id(UUID.randomUUID())
+                .titre("Veillée").lieu("Temple")
+                .dateDebut(LocalDateTime.now().plusDays(10).withHour(20).withMinute(0)).build();
+        CustomPage existing = page("CAL", "cal",
+                List.of(Map.of("type", "CALENDRIER",
+                        "config", Map.of("title", "Agenda", "source", "CALENDAR_EVENTS"))),
+                List.of(), true);
+        when(pageRepository.findBySlug("cal")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(true);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
+        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any()))
+                .thenReturn(List.of(event));
+
+        ResolvedPage resolved = service.resolve("cal");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) resolved.blocks().get(0).data().get("events");
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0)).containsEntry("title", "Veillée").containsEntry("lieu", "Temple");
+        assertThat((String) items.get(0).get("date")).matches("\\d{4}-\\d{2}-\\d{2}");
+    }
+
+    @Test
+    void resolveTimeline_recentSoulsWithDates() {
+        Soul soul = Soul.builder().id(UUID.randomUUID())
+                .nom("Kouassi").prenom("Aya").statut(StatutAme.ACTIF)
+                .createdAt(LocalDateTime.now()).build();
+        CustomPage existing = page("TIMELINE", "timeline",
+                List.of(Map.of("type", "TIMELINE",
+                        "config", Map.of("title", "Nouvelles âmes", "source", "SOULS_TIMELINE"))),
+                List.of(), true);
+        when(pageRepository.findBySlug("timeline")).thenReturn(Optional.of(existing));
+        when(scopeService.isSuperUser()).thenReturn(true);
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
+        when(soulRepository.findTop10ByDeletedFalseOrderByCreatedAtDesc()).thenReturn(List.of(soul));
+
+        ResolvedPage resolved = service.resolve("timeline");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) resolved.blocks().get(0).data().get("items");
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0)).containsEntry("label", "Aya Kouassi").containsEntry("value", "Actif");
+        assertThat((String) items.get(0).get("date")).matches("\\d{2}/\\d{2}/\\d{4}");
+    }
+
+    @Test
+    void resolveChecklist_blockHasNoServerData() {
+        CustomPage existing = page("CHECK", "check",
+                List.of(Map.of("type", "CHECKLIST",
+                        "config", Map.of("title", "Suivi", "items", List.of("A", "B")))),
+                List.of(), true);
+        when(pageRepository.findBySlug("check")).thenReturn(Optional.of(existing));
+        when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
+
+        ResolvedPage resolved = service.resolve("check");
+
+        assertThat(resolved.blocks().get(0).data()).isNull();
     }
 }

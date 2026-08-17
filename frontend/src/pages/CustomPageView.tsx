@@ -82,7 +82,7 @@ export default function CustomPageView() {
       ) : (
         <div className={layoutClass}>
           {blocks.map((block, i) => (
-            <PageBlockRenderer key={i} block={block} />
+            <PageBlockRenderer key={i} block={block} pageId={page.id} index={i} />
           ))}
         </div>
       )}

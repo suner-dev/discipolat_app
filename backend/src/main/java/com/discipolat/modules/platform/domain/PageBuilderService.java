@@ -2,6 +2,7 @@ package com.discipolat.modules.platform.domain;
 
 import com.discipolat.common.enums.StatutAlerte;
 import com.discipolat.common.enums.StatutAme;
+import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.common.enums.TransferStatus;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.alerts.domain.Alert;
@@ -46,10 +47,13 @@ import java.util.stream.Collectors;
 public class PageBuilderService {
 
     private static final Set<String> BLOCK_TYPES = Set.of(
-            "KPI", "TABLEAU", "LISTE", "TEXTE", "LIENS", "RECHERCHE", "IMAGES");
+            "KPI", "TABLEAU", "LISTE", "TEXTE", "LIENS", "RECHERCHE", "IMAGES",
+            "GRAPHIQUE", "CALENDRIER", "TIMELINE", "CHECKLIST");
     private static final Set<String> LAYOUTS = Set.of("STACK", "GRID_2", "GRID_3");
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter DATE_MONTH_FMT = DateTimeFormatter.ofPattern("yyyy-MM");
+    private static final DateTimeFormatter DATE_MONTH_LABEL_FMT = DateTimeFormatter.ofPattern("MMM", Locale.FRENCH);
 
     private final CustomPageRepository pageRepository;
     private final ConfigRevisionService revisionService;
@@ -236,7 +240,19 @@ public class PageBuilderService {
                 new PageDataSource("RECENT_TRANSFERS", "Transferts récents", "TABLEAU",
                         "Les 10 dernières demandes de transfert.", false),
                 new PageDataSource("DEPARTMENTS_LIST", "Liste des départements", "TABLEAU",
-                        "Départements et leur statut, dans votre périmètre.", false));
+                        "Départements et leur statut, dans votre périmètre.", false),
+                new PageDataSource("SOULS_BY_STATUT", "Âmes par statut", "GRAPHIQUE",
+                        "Répartition des âmes par statut (camembert), dans votre périmètre.", false),
+                new PageDataSource("EVENTS_BY_MONTH", "Événements par mois", "GRAPHIQUE",
+                        "Nombre d'événements par mois sur les 6 prochains mois (barres).", false),
+                new PageDataSource("ALERTS_BY_TYPE", "Alertes par type", "GRAPHIQUE",
+                        "Alertes actives regroupées par type, dans votre périmètre.", false),
+                new PageDataSource("DEPARTMENTS_BY_STATUT", "Départements par statut", "GRAPHIQUE",
+                        "Répartition des départements par statut (camembert).", false),
+                new PageDataSource("CALENDAR_EVENTS", "Prochains événements (calendrier)", "CALENDRIER",
+                        "Les événements des 60 prochains jours (titre, date, lieu).", false),
+                new PageDataSource("SOULS_TIMELINE", "Dernières âmes (timeline)", "TIMELINE",
+                        "Les 10 âmes créées le plus récemment, avec leur date d'ajout.", false));
     }
 
     /* ======================= Résolution des blocs ===================== */
@@ -268,7 +284,10 @@ public class PageBuilderService {
             case "KPI" -> resolveKpi(source, superUser, userId, soulIds, familyIds, deptIds);
             case "TABLEAU" -> resolveTable(source, superUser, userId, soulIds, familyIds, deptIds);
             case "LISTE" -> resolveList(source, superUser, userId, soulIds, familyIds, deptIds);
-            default -> null; // TEXTE / LIENS / RECHERCHE / IMAGES : pas de source
+            case "GRAPHIQUE" -> resolveChart(source, superUser, soulIds, deptIds);
+            case "CALENDRIER" -> resolveCalendar(source, superUser, soulIds);
+            case "TIMELINE" -> resolveTimeline(source, superUser, soulIds);
+            default -> null; // TEXTE / LIENS / RECHERCHE / IMAGES / CHECKLIST : pas de source
         };
         return new ResolvedBlock(type, config, data);
     }
@@ -315,7 +334,142 @@ public class PageBuilderService {
         };
     }
 
+    private Map<String, Object> resolveChart(String source, boolean superUser,
+                                             Set<UUID> soulIds, Set<UUID> deptIds) {
+        if (source == null) return null;
+        return switch (source) {
+            case "SOULS_BY_STATUT" -> soulsByStatutChart(superUser ? null : soulIds);
+            case "EVENTS_BY_MONTH" -> eventsByMonthChart();
+            case "ALERTS_BY_TYPE" -> alertsByTypeChart(superUser ? null : soulIds);
+            case "DEPARTMENTS_BY_STATUT" -> departmentsByStatutChart(superUser ? null : deptIds);
+            default -> null;
+        };
+    }
+
+    private Map<String, Object> resolveCalendar(String source, boolean superUser, Set<UUID> soulIds) {
+        if (source == null) return null;
+        return switch (source) {
+            case "CALENDAR_EVENTS" -> calendarEvents();
+            default -> null;
+        };
+    }
+
+    private Map<String, Object> resolveTimeline(String source, boolean superUser, Set<UUID> soulIds) {
+        if (source == null) return null;
+        return switch (source) {
+            case "SOULS_TIMELINE" -> soulsTimeline(superUser ? null : soulIds);
+            default -> null;
+        };
+    }
+
     /* ------------------- Implémentations des sources ------------------- */
+
+    /** Répartition des âmes par statut (données {name, value} pour camembert/barres). */
+    private Map<String, Object> soulsByStatutChart(Set<UUID> soulIds) {
+        List<Map<String, Object>> data = new ArrayList<>();
+        for (StatutAme statut : StatutAme.values()) {
+            long count = soulIds == null
+                    ? soulRepository.countByStatut(statut)
+                    : countSoulsByStatut(soulIds, statut);
+            if (count > 0) {
+                data.add(entry(statutLabel(statut), count));
+            }
+        }
+        return Map.of("data", data);
+    }
+
+    /** Événements par mois sur les 6 prochains mois (barres). */
+    private Map<String, Object> eventsByMonthChart() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime start = now.withDayOfMonth(1);
+        LocalDateTime end = now.plusMonths(6);
+        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedFalse(start, end);
+        Map<String, Long> counts = events.stream()
+                .filter(e -> e.getDateDebut() != null)
+                .collect(Collectors.groupingBy(e -> e.getDateDebut().format(DATE_MONTH_FMT), Collectors.counting()));
+        List<Map<String, Object>> data = new ArrayList<>();
+        LocalDateTime cursor = start;
+        while (!cursor.isAfter(end)) {
+            String key = cursor.format(DATE_MONTH_FMT);
+            data.add(entry(cursor.format(DATE_MONTH_LABEL_FMT), counts.getOrDefault(key, 0L)));
+            cursor = cursor.plusMonths(1);
+        }
+        return Map.of("data", data);
+    }
+
+    /** Alertes actives regroupées par type (données {name, value}). */
+    private Map<String, Object> alertsByTypeChart(Set<UUID> soulIds) {
+        List<Alert> alerts = soulIds == null
+                ? alertRepository.findByStatut(StatutAlerte.ACTIVE)
+                : (soulIds.isEmpty()
+                        ? List.of()
+                        : alertRepository.findByStatutAndAmeIdIn(StatutAlerte.ACTIVE, soulIds));
+        Map<String, Long> counts = alerts.stream()
+                .map(a -> a.getTypeAlerte() == null || a.getTypeAlerte().isBlank() ? "AUTRE" : a.getTypeAlerte())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        List<Map<String, Object>> data = counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .map(e -> entry(humanize(e.getKey()), e.getValue()))
+                .toList();
+        return Map.of("data", data);
+    }
+
+    /** Répartition des départements par statut (données {name, value}). */
+    private Map<String, Object> departmentsByStatutChart(Set<UUID> deptIds) {
+        List<Department> departments = deptIds == null
+                ? departmentRepository.findByDeletedFalseOrderByNomAsc()
+                : departmentRepository.findAllById(deptIds).stream()
+                        .filter(d -> !d.isDeleted())
+                        .toList();
+        Map<StatutEntite, Long> counts = departments.stream()
+                .collect(Collectors.groupingBy(d -> d.getStatut() == null ? StatutEntite.ACTIVE : d.getStatut(),
+                        Collectors.counting()));
+        List<Map<String, Object>> data = counts.entrySet().stream()
+                .sorted(Map.Entry.<StatutEntite, Long>comparingByValue().reversed())
+                .map(e -> entry(entiteLabel(e.getKey()), e.getValue()))
+                .toList();
+        return Map.of("data", data);
+    }
+
+    /** Événements des 60 prochains jours pour le calendrier. */
+    private Map<String, Object> calendarEvents() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedFalse(now, now.plusDays(60));
+        List<Map<String, Object>> items = events.stream()
+                .filter(e -> e.getDateDebut() != null)
+                .sorted(Comparator.comparing(Event::getDateDebut))
+                .map(e -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("date", e.getDateDebut().format(DateTimeFormatter.ISO_LOCAL_DATE));
+                    item.put("title", e.getTitre());
+                    item.put("lieu", e.getLieu() == null || e.getLieu().isBlank() ? "" : e.getLieu());
+                    item.put("type", e.getTypeEvenement() == null ? "" : e.getTypeEvenement());
+                    return item;
+                })
+                .toList();
+        return Map.of("events", items);
+    }
+
+    /** Les 10 dernières âmes créées (timeline). */
+    private Map<String, Object> soulsTimeline(Set<UUID> soulIds) {
+        List<Soul> souls = soulRepository.findTop10ByDeletedFalseOrderByCreatedAtDesc();
+        if (soulIds != null && !soulIds.isEmpty()) {
+            souls = souls.stream().filter(s -> soulIds.contains(s.getId())).toList();
+        } else if (soulIds != null) {
+            souls = List.of();
+        }
+        List<Map<String, Object>> items = souls.stream()
+                .map(s -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("date", s.getCreatedAt() != null
+                            ? s.getCreatedAt().format(DATE_FMT) : "");
+                    item.put("label", fullName(s));
+                    item.put("value", s.getStatut() == null ? "" : statutLabel(s.getStatut()));
+                    return item;
+                })
+                .toList();
+        return Map.of("items", items);
+    }
 
     private long countSoulsByStatut(Set<UUID> soulIds, StatutAme statut) {
         if (soulIds == null) {
@@ -407,6 +561,39 @@ public class PageBuilderService {
         return Map.of("value", v);
     }
 
+    private static Map<String, Object> entry(String name, long value) {
+        return Map.of("name", name, "value", value);
+    }
+
+    /** Libellé français d'un statut d'âme. */
+    private static String statutLabel(StatutAme statut) {
+        return switch (statut) {
+            case NOUVEAU_CONVERTI -> "Nouveau converti";
+            case NOUVEL_ARRIVANT -> "Nouvel arrivant";
+            case EN_INTEGRATION -> "En intégration";
+            case ACTIF -> "Actif";
+            case EN_VEILLE -> "En veille";
+            case DECROCHE -> "Décroché";
+        };
+    }
+
+    /** Libellé français d'un statut d'entité (département). */
+    private static String entiteLabel(StatutEntite statut) {
+        return switch (statut) {
+            case ACTIVE -> "Actif";
+            case INACTIVE -> "Inactif";
+            case ARCHIVED -> "Archivé";
+        };
+    }
+
+    /** Humanise une clé technique (ASSIDUITE → Assiduité). */
+    private static String humanize(String raw) {
+        return Arrays.stream(raw.toLowerCase(Locale.ROOT).split("_"))
+                .filter(s -> !s.isBlank())
+                .map(s -> s.substring(0, 1).toUpperCase(Locale.ROOT) + s.substring(1))
+                .collect(Collectors.joining(" "));
+    }
+
     private Map<UUID, String> familyNamesOf(List<Soul> souls) {
         Set<UUID> ids = souls.stream().map(Soul::getFamilleId).filter(Objects::nonNull).collect(Collectors.toSet());
         if (ids.isEmpty()) return Map.of();
@@ -468,7 +655,7 @@ public class PageBuilderService {
             Map<String, Object> config = block.get("config") instanceof Map<?, ?> m
                     ? (Map<String, Object>) m : Map.of();
             switch (type) {
-                case "KPI", "TABLEAU", "LISTE" -> {
+                case "KPI", "TABLEAU", "LISTE", "GRAPHIQUE", "CALENDRIER", "TIMELINE" -> {
                     if (!(config.get("source") instanceof String s) || s.isBlank()) {
                         throw new IllegalArgumentException("Le bloc " + type + " nécessite une source de données.");
                     }
@@ -476,10 +663,10 @@ public class PageBuilderService {
                         throw new IllegalArgumentException("Source inconnue : " + config.get("source"));
                     }
                 }
-                case "LIENS" -> {
+                case "LIENS", "CHECKLIST" -> {
                     Object items = config.get("items");
                     if (!(items instanceof List<?> list) || list.isEmpty()) {
-                        throw new IllegalArgumentException("Le bloc LIENS nécessite au moins un lien.");
+                        throw new IllegalArgumentException("Le bloc " + type + " nécessite au moins un élément.");
                     }
                 }
                 case "IMAGES" -> {
@@ -493,8 +680,7 @@ public class PageBuilderService {
     }
 
     private boolean sourceExists(String source, String type) {
-        String t = "TABLEAU".equals(type) || "LISTE".equals(type) ? type : "KPI";
-        return sources().stream().anyMatch(s -> s.key().equals(source) && s.type().equals(t));
+        return sources().stream().anyMatch(s -> s.key().equals(source) && s.type().equals(type));
     }
 
     private static String slugify(String raw) {
