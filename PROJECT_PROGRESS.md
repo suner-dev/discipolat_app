@@ -3,6 +3,46 @@
 > Fichier de checkpoint : état exact du travail à tout moment, pour reprise
 > immédiate d'une session. Mis à jour à chaque étape stable.
 
+## SESSION 2026-08-17 — AUDIT TRANSVERSAL COMPLET (avant refonte)
+
+### Fait
+
+- **ARCHITECTURE_AUDIT.md créé** (livrable mission 1, documents de référence de la refonte) :
+  cartographie complète des modules (46), pages (79), entités, relations, permissions,
+  workflows, duplications, bugs, manques, UX, backend, mobile, sécurité + plan de refonte.
+- **Baselines vérifiées (toutes vertes)** :
+  - Backend : **454 tests ✓ BUILD SUCCESS** (`mvn test`)
+  - Frontend : **190 tests vitest ✓** (30 fichiers) + `tsc -b` ✓
+  - Mobile : `flutter analyze` **0 issue** ✓ (110 tests)
+  - **0 lien mort** : les 49 `href` de navigation (workspaces.ts) ont tous une route dans App.tsx
+- **Constat d'audit** : le projet est déjà très avancé — la quasi-totalité des modules sont
+  fonctionnels (A) et testés. Aucun bug fonctionnel bloquant détecté à l'audit statique.
+  Seul item : warning console React `<linearGradient>` (recharts + React 19, cosmétique).
+
+### Restant (feuille de route refonte)
+
+1. Pasteur — centre de supervision (blocs CRM cliquables, audit exploitable, corbeilles).
+2. Admin — centre de configuration (constructeur rôles/menus/pages, champs perso, modules).
+3. Espaces métiers différenciés par rôle + changement de rôle complet.
+4. Plateforme modulaire : **Page Builder** + outils métiers activables + **versionnage**.
+5. Cohérence/synchronisation : tests de propagation transversale.
+6. QA final : audit page par page, rôles/permissions/CRUD/sync, responsive, perf, sécurité,
+   déploiement, GitHub.
+
+### Commit / push
+
+- Commit : `docs(audit): ARCHITECTURE_AUDIT.md — cartographie complète + baselines vertes`
+  (backend 454, frontend 190, mobile analyze 0 issue, 0 lien mort).
+
+### Prochain objectif
+
+Démarrer la phase **Pasteur** (ou la phase **Admin** / **Plateforme modulaire**) en suivant
+ARCHITECTURE_AUDIT.md et ce checkpoint ; à la reprise d'une session : `git pull` → lire
+PROJECT_PROGRESS.md → reprendre.
+
+---
+
+
 ## OBJECTIF GLOBAL
 
 Passer l'application du mode "projet/démo" au mode **produit professionnel**
