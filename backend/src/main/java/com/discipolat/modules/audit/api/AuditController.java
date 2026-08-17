@@ -35,13 +35,14 @@ public class AuditController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) UUID utilisateurId,
             @RequestParam(required = false) String entiteType,
+            @RequestParam(required = false) String action,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin) {
         Pageable pageable = PageRequest.of(page, Math.min(size, 50),
                 Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<AuditLog> logs = auditService.findFiltered(utilisateurId, entiteType, debut, fin, pageable);
+        Page<AuditLog> logs = auditService.findFiltered(utilisateurId, entiteType, action, debut, fin, pageable);
         return ResponseEntity.ok(PageResponse.of(
                 logs.getContent(), logs.getNumber(), logs.getSize(),
                 logs.getTotalElements(), logs.getTotalPages()));
@@ -52,11 +53,12 @@ public class AuditController {
     public ResponseEntity<byte[]> exportCsv(
             @RequestParam(required = false) UUID utilisateurId,
             @RequestParam(required = false) String entiteType,
+            @RequestParam(required = false) String action,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin) {
-        byte[] csv = auditService.exportCsv(utilisateurId, entiteType, debut, fin);
+        byte[] csv = auditService.exportCsv(utilisateurId, entiteType, action, debut, fin);
         String filename = "journal-audit-" + LocalDate.now() + ".csv";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")

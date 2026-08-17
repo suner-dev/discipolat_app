@@ -44,24 +44,36 @@ class AuditServiceTest {
         LocalDateTime fin = LocalDateTime.of(2026, 8, 7, 23, 59);
         Pageable pageable = PageRequest.of(0, 20);
 
-        when(auditLogRepository.findFiltered(userId, "SOUL", debut, fin, pageable))
+        when(auditLogRepository.findFiltered(userId, "SOUL", "CREER_SOUL", debut, fin, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        auditService.findFiltered(userId, "SOUL", debut, fin, pageable);
+        auditService.findFiltered(userId, "SOUL", "CREER_SOUL", debut, fin, pageable);
 
-        verify(auditLogRepository).findFiltered(userId, "SOUL", debut, fin, pageable);
+        verify(auditLogRepository).findFiltered(userId, "SOUL", "CREER_SOUL", debut, fin, pageable);
     }
 
     @Test
     void findFiltered_WithNulls_ShouldPassNullCriteria() {
         Pageable pageable = PageRequest.of(0, 20);
 
-        when(auditLogRepository.findFiltered(isNull(), isNull(), isNull(), isNull(), any()))
+        when(auditLogRepository.findFiltered(isNull(), isNull(), isNull(), isNull(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        auditService.findFiltered(null, null, null, null, pageable);
+        auditService.findFiltered(null, null, null, null, null, pageable);
 
-        verify(auditLogRepository).findFiltered(null, null, null, null, pageable);
+        verify(auditLogRepository).findFiltered(null, null, null, null, null, pageable);
+    }
+
+    @Test
+    void findFiltered_WithActionOnly_ShouldDelegateActionCriteria() {
+        Pageable pageable = PageRequest.of(0, 20);
+
+        when(auditLogRepository.findFiltered(isNull(), isNull(), eq("TRANSFERT_SOUL"), isNull(), isNull(), any()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        auditService.findFiltered(null, null, "TRANSFERT_SOUL", null, null, pageable);
+
+        verify(auditLogRepository).findFiltered(isNull(), isNull(), eq("TRANSFERT_SOUL"), isNull(), isNull(), any());
     }
 
     @Test
@@ -79,12 +91,12 @@ class AuditServiceTest {
                 .build();
         log.setCreatedAt(LocalDateTime.of(2026, 8, 5, 10, 30));
 
-        when(auditLogRepository.findFiltered(eq(userId), isNull(), isNull(), isNull(), any()))
+        when(auditLogRepository.findFiltered(eq(userId), isNull(), isNull(), isNull(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(log)));
         when(userRepository.findAllById(Set.of(userId)))
                 .thenReturn(List.of(User.builder().id(userId).email("pasteur@discipolat.com").build()));
 
-        byte[] csv = auditService.exportCsv(userId, null, null, null);
+        byte[] csv = auditService.exportCsv(userId, null, null, null, null);
         String content = new String(csv, StandardCharsets.UTF_8);
 
         assertTrue(content.startsWith("\uFEFF"));
@@ -107,11 +119,11 @@ class AuditServiceTest {
                 .build();
         log.setCreatedAt(LocalDateTime.of(2026, 8, 5, 10, 30));
 
-        when(auditLogRepository.findFiltered(any(), any(), any(), any(), any()))
+        when(auditLogRepository.findFiltered(any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(log)));
         when(userRepository.findAllById(any())).thenReturn(List.of());
 
-        byte[] csv = auditService.exportCsv(null, null, null, null);
+        byte[] csv = auditService.exportCsv(null, null, null, null, null);
         String content = new String(csv, StandardCharsets.UTF_8);
 
         assertTrue(content.contains(userId.toString()));
@@ -120,10 +132,10 @@ class AuditServiceTest {
 
     @Test
     void exportCsv_WhenEmpty_ShouldReturnHeaderOnly() {
-        when(auditLogRepository.findFiltered(any(), any(), any(), any(), any()))
+        when(auditLogRepository.findFiltered(any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        byte[] csv = auditService.exportCsv(null, null, null, null);
+        byte[] csv = auditService.exportCsv(null, null, null, null, null);
         String content = new String(csv, StandardCharsets.UTF_8);
 
         assertTrue(content.startsWith("\uFEFF"));

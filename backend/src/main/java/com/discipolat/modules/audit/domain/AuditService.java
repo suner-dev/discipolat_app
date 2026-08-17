@@ -76,13 +76,13 @@ public class AuditService {
     }
 
     /**
-     * Recherche combinée : utilisateur, type d'entité et plage de dates.
+     * Recherche combinée : utilisateur, type d'entité, action et plage de dates.
      * Chaque critère est optionnel (null = pas de filtre).
      */
     @Transactional(readOnly = true)
-    public Page<AuditLog> findFiltered(UUID utilisateurId, String entiteType,
+    public Page<AuditLog> findFiltered(UUID utilisateurId, String entiteType, String action,
                                        LocalDateTime debut, LocalDateTime fin, Pageable pageable) {
-        return auditLogRepository.findFiltered(utilisateurId, entiteType, debut, fin, pageable);
+        return auditLogRepository.findFiltered(utilisateurId, entiteType, action, debut, fin, pageable);
     }
 
     /**
@@ -90,13 +90,13 @@ public class AuditService {
      * (parcours paginé de toutes les pages, plafonné à 50 000 lignes).
      */
     @Transactional(readOnly = true)
-    public byte[] exportCsv(UUID utilisateurId, String entiteType,
+    public byte[] exportCsv(UUID utilisateurId, String entiteType, String action,
                             LocalDateTime debut, LocalDateTime fin) {
         List<AuditLog> all = new ArrayList<>();
         int pageNumber = 0;
         Page<AuditLog> page;
         do {
-            page = auditLogRepository.findFiltered(utilisateurId, entiteType, debut, fin,
+            page = auditLogRepository.findFiltered(utilisateurId, entiteType, action, debut, fin,
                     PageRequest.of(pageNumber, 1000, Sort.by(Sort.Direction.DESC, "createdAt")));
             all.addAll(page.getContent());
             pageNumber++;

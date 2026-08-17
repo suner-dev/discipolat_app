@@ -48,6 +48,14 @@ const SAMPLE_ENTRIES = [
     entiteType: 'FAMILY',
     createdAt: '2026-08-06T09:00:00',
   },
+  {
+    id: 'log-3',
+    utilisateurId: 'u-pasteur',
+    emailUtilisateur: 'pasteur@discipolat.com',
+    action: 'TRANSFERT_SOUL',
+    entiteType: 'SOUL',
+    createdAt: '2026-08-06T11:00:00',
+  },
 ];
 
 const USERS = [
@@ -102,8 +110,8 @@ describe('AuditPage — filtres et export', () => {
   it('résout le nom affiché via la liste des utilisateurs', async () => {
     renderPage();
 
-    // Les emails des entrées sont affichés directement.
-    expect(await screen.findByText('pasteur@discipolat.com')).toBeInTheDocument();
+    // Les emails des entrées sont affichés directement (le pasteur a 2 entrées).
+    expect((await screen.findAllByText('pasteur@discipolat.com')).length).toBeGreaterThan(0);
     expect(screen.getByText('chef@discipolat.com')).toBeInTheDocument();
   });
 
@@ -122,6 +130,22 @@ describe('AuditPage — filtres et export', () => {
       expect(last).toContain('utilisateurId=u-pasteur');
       expect(last).toContain('entiteType=SOUL');
     });
+  });
+
+  it('filtre par catégorie d’action (Transferts) et affiche le badge', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('CREER_SOUL');
+
+    // Toutes les entrées (y compris le transfert) sont visibles au départ.
+    expect(screen.getByText('TRANSFERT_SOUL')).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Filtrer par type d'action"), 'TRANSFER');
+
+    // Seule l'entrée TRANSFERT_SOUL reste après le filtre client-side.
+    expect(screen.getByText('TRANSFERT_SOUL')).toBeInTheDocument();
+    expect(screen.queryByText('CREER_SOUL')).not.toBeInTheDocument();
+    expect(screen.queryByText('MODIFIER_FAMILLE')).not.toBeInTheDocument();
   });
 
   it('filtre par plage de dates (debut/fin ISO)', async () => {

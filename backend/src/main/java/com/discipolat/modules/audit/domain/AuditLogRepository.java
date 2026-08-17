@@ -14,18 +14,23 @@ import java.util.UUID;
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
 
     /**
-     * Recherche combinée : utilisateur, type d'entité et plage de dates.
-     * Chaque critère est optionnel (null = pas de filtre).
+     * Recherche combinée : utilisateur, type d'entité, action et plage de dates.
+     * Chaque critère est optionnel (null = pas de filtre). Le filtre par action
+     * permet d'exploiter l'audit par type d'opération (création, modification,
+     * suppression, transfert... → voir les actions « CREER_* », « MODIFIER_* »,
+     * « SUPPRIMER_* », « TRANSFERT_* », etc.).
      */
     @Query("""
             SELECT a FROM AuditLog a
             WHERE (:utilisateurId IS NULL OR a.utilisateurId = :utilisateurId)
               AND (:entiteType IS NULL OR a.entiteType = :entiteType)
+              AND (:action IS NULL OR a.action = :action)
               AND (:debut IS NULL OR a.createdAt >= :debut)
               AND (:fin IS NULL OR a.createdAt <= :fin)
             """)
     Page<AuditLog> findFiltered(@Param("utilisateurId") UUID utilisateurId,
                                 @Param("entiteType") String entiteType,
+                                @Param("action") String action,
                                 @Param("debut") LocalDateTime debut,
                                 @Param("fin") LocalDateTime fin,
                                 Pageable pageable);
