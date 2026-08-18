@@ -256,7 +256,7 @@ export default function DepartmentDetailPage() {
               <Users className="w-4 h-4" /> Gérer
             </Link>
             {moduleEnabled('DEPT_INVENTORY') || moduleEnabled('DEPT_CHECKLISTS') || moduleEnabled('DEPT_REPORTS') ? (
-              <Link to={`/departments/${id}/tools`} className="btn-ghost btn-sm inline-flex">
+              <Link to={`/departments/${id}/manage`} className="btn-ghost btn-sm inline-flex">
                 <Boxes className="w-4 h-4" /> Outils
               </Link>
             ) : null}

@@ -24,8 +24,9 @@ const getGreeting = () => {
 };
 
 export default function ChefFamilleDashboardPage() {
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
   const navigate = useNavigate();
+  const canManage = activeRole === 'CHEF_DE_FAMILLE'; // ADMIN/PASTEUR voient en lecture seule
 
   const familleId = user?.familleGereeId;
 
@@ -238,8 +239,8 @@ export default function ChefFamilleDashboardPage() {
             </div>
           </div>
 
-          {/* Charge de travail des faiseurs (US-14) */}
-          {workload && workload.length > 0 && (
+          {/* Charge de travail des faiseurs (US-14) — CHEF_DE_FAMILLE uniquement */}
+          {canManage && workload && workload.length > 0 && (
             <div className="glass-card p-6 mb-6 animate-slide-up" style={{ animationDelay: '110ms' }}>
               <div className="flex items-center gap-2 mb-1">
                 <BarChart3 className="w-4 h-4 text-primary-500" />
@@ -271,7 +272,8 @@ export default function ChefFamilleDashboardPage() {
             </div>
           )}
 
-          {/* Network View: Faiseurs */}
+          {/* Network View: Faiseurs — CHEF_DE_FAMILLE uniquement */}
+          {canManage && (
           <div className="glass-card p-6 mb-6 animate-slide-up" style={{ animationDelay: '120ms' }}>
             <div className="flex items-center gap-2 mb-4">
               <GitBranch className="w-4 h-4 text-primary-500" />
@@ -349,6 +351,7 @@ export default function ChefFamilleDashboardPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* All Disciples List */}
           <div id="liste-disciples-famille" className="glass-card p-6 animate-slide-up scroll-mt-24" style={{ animationDelay: '180ms' }}>

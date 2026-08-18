@@ -11,7 +11,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import type { DepartmentPresenceRecord, ProgramType } from '@/types';
-import { EventAttendanceModal } from '@/pages/DepartmentManagementPage';
+import { EventAttendanceModal } from '@/components/departments';
 
 const currentWeekMonday = () => {
   const d = new Date();
@@ -32,7 +32,8 @@ const formatDate = (d?: string) => {
 };
 
 export default function ResponsableDashboardPage() {
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
+  const canManage = activeRole === 'RESPONSABLE'; // ADMIN/PASTEUR voient en lecture seule
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDeptId, setSelectedDeptId] = useState<string | undefined>(undefined);
@@ -231,7 +232,7 @@ export default function ResponsableDashboardPage() {
           </div>
 
           {/* Member Stats Cards — cliquables : navigation ou liste détaillée */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div className={`grid grid-cols-1 gap-4 mb-6 ${canManage ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
             <button
               type="button"
               onClick={() => navigate(`/departments/${activeDeptId}`)}
@@ -282,23 +283,25 @@ export default function ResponsableDashboardPage() {
               <span className="stat-value text-blue-500">{stats.nouveauxMembres ?? 0}</span>
               <span className="text-[10px] text-gray-400 mt-1 block">30 derniers jours · cliquer pour voir</span>
             </button>
-            <button
-              type="button"
-              onClick={scrollToPresences}
-              className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
-              style={{ animationDelay: '180ms' }}
-              title="Aller à la saisie des présences"
-            >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-purple-500 opacity-60" />
-              <div className="flex items-start justify-between mb-3">
-                <span className="stat-label">Taux de présence</span>
-                <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 text-white shadow-lg">
-                  <Activity className="w-4 h-4" />
+            {canManage && (
+              <button
+                type="button"
+                onClick={scrollToPresences}
+                className="stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+                style={{ animationDelay: '180ms' }}
+                title="Aller à la saisie des présences"
+              >
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-purple-500 opacity-60" />
+                <div className="flex items-start justify-between mb-3">
+                  <span className="stat-label">Taux de présence</span>
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 text-white shadow-lg">
+                    <Activity className="w-4 h-4" />
+                  </div>
                 </div>
-              </div>
-              <span className="stat-value text-violet-500">{stats.tauxPresence ?? 0}%</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">cliquer pour pointer</span>
-            </button>
+                <span className="stat-value text-violet-500">{stats.tauxPresence ?? 0}%</span>
+                <span className="text-[10px] text-gray-400 mt-1 block">cliquer pour pointer</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => navigate(`/departments/${activeDeptId}/report`)}
@@ -316,6 +319,7 @@ export default function ResponsableDashboardPage() {
               <span className="stat-value">{stats.rapportsSoumis ?? 0}</span>
               <span className="text-[10px] text-gray-400 mt-1 block">/ {stats.rapportsAttendus ?? 0} attendus · rapport</span>
             </button>
+            {canManage && (
             <button
               type="button"
               onClick={() => setShowBirthdays(true)}
@@ -333,6 +337,8 @@ export default function ResponsableDashboardPage() {
               <span className="stat-value text-pink-500">{anniversaires.length}</span>
               <span className="text-[10px] text-gray-400 mt-1 block">ce mois-ci · cliquer pour la liste</span>
             </button>
+            )}
+            {canManage && (
             <button
               type="button"
               onClick={() => navigate(`/departments/${activeDeptId}/manage`)}
@@ -350,6 +356,8 @@ export default function ResponsableDashboardPage() {
               <span className="stat-value">{stats.equipesActives ?? 0}</span>
               <span className="text-[10px] text-gray-400 mt-1 block">actives · {stats.postesActifs ?? 0} postes · gérer</span>
             </button>
+            )}
+            {canManage && (
             <button
               type="button"
               onClick={() => navigate(`/departments/${activeDeptId}/manage`)}
@@ -367,6 +375,7 @@ export default function ResponsableDashboardPage() {
               <span className="stat-value text-red-500">{stats.tachesEnRetard ?? 0}</span>
               <span className="text-[10px] text-gray-400 mt-1 block">{stats.tachesOuvertes ?? 0} ouvertes · gérer</span>
             </button>
+            )}
           </div>
 
           {/* Reports progress */}
@@ -388,7 +397,8 @@ export default function ResponsableDashboardPage() {
             </div>
           </div>
 
-          {/* ==================== SAISIE DES PRÉSENCES ==================== */}
+          {/* ==================== SAISIE DES PRÉSENCES (RESPONSABLE uniquement) ==================== */}
+          {canManage && (
           <div id="saisie-presences" className="glass-card p-5 mb-6 animate-slide-up scroll-mt-24" style={{ animationDelay: '380ms' }}>
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
               <div className="flex items-center gap-3">
@@ -536,7 +546,10 @@ export default function ResponsableDashboardPage() {
             )}
           </div>
 
-          {/* ==================== POINTAGE DES PRÉSENCES AUX ÉVÉNEMENTS ==================== */}
+          )}
+
+          {/* ==================== POINTAGE DES PRÉSENCES AUX ÉVÉNEMENTS (RESPONSABLE uniquement) ==================== */}
+          {canManage && (
           <div className="glass-card p-5 mb-6 animate-slide-up" style={{ animationDelay: '400ms' }}>
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
               <div className="flex items-center gap-3">
@@ -580,6 +593,7 @@ export default function ResponsableDashboardPage() {
               </div>
             )}
           </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Members list — actions centrées membre (fiche / présence / rapport) */}
@@ -706,6 +720,7 @@ export default function ResponsableDashboardPage() {
           </div>
 
           {/* Quick Actions — centrées sur la gestion des membres (HRM) */}
+          {canManage && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 animate-slide-up">
             <button
               type="button"
@@ -736,6 +751,7 @@ export default function ResponsableDashboardPage() {
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Statistiques</span>
             </Link>
           </div>
+          )}
 
           {/* ==================== ALERTES & SUIVI ==================== */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
