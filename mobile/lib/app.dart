@@ -326,7 +326,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/souls',
       name: 'souls',
-      builder: (context, state) => const SoulsListScreen(),
+      builder: (context, state) => SoulsListScreen(
+        statutFilter: state.uri.queryParameters['statut'],
+        typeFilter: state.uri.queryParameters['typeDisciple'],
+      ),
     ),
     GoRoute(
       path: '/souls/:id',

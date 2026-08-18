@@ -7,27 +7,40 @@ import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
 class SoulsListScreen extends StatefulWidget {
-  const SoulsListScreen({super.key});
+  /// Filtres optionnels portés par l'URL (KPI cliquables du dashboard Pasteur) :
+  /// `/souls?statut=DECROCHE`, `/souls?typeDisciple=NOUVEAU_CONVERTI`…
+  const SoulsListScreen({super.key, this.statutFilter, this.typeFilter, this.apiService});
+
+  final String? statutFilter;
+  final String? typeFilter;
+  final ApiService? apiService;
 
   @override
   State<SoulsListScreen> createState() => _SoulsListScreenState();
 }
 
 class _SoulsListScreenState extends State<SoulsListScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   List<Soul> _souls = [];
   bool _isLoading = true;
   int _currentNavIndex = 1;
+  String? _activeStatut;
+  String? _activeType;
 
   @override
   void initState() {
     super.initState();
+    _activeStatut = widget.statutFilter;
+    _activeType = widget.typeFilter;
     _loadSouls();
   }
 
   Future<void> _loadSouls() async {
     try {
-      final response = await _apiService.get('/souls', params: {'size': '50'});
+      final params = <String, String>{'size': '50'};
+      if (_activeStatut != null) params['statut'] = _activeStatut!;
+      if (_activeType != null) params['typeDisciple'] = _activeType!;
+      final response = await _apiService.get('/souls', params: params);
       final data = response.data as Map<String, dynamic>;
       if (mounted) {
         setState(() {
@@ -75,53 +88,116 @@ class _SoulsListScreenState extends State<SoulsListScreen> {
           ? const ShimmerLoading(itemCount: 6)
           : RefreshIndicator(
               onRefresh: _loadSouls,
-              child: _souls.isEmpty
-                  ? ListView(children: [
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-                      Center(child: Column(children: [
-                        Icon(Icons.favorite_outline, size: 64, color: Colors.white.withValues(alpha: 0.15)),
-                        const SizedBox(height: 16),
-                        Text('Aucune âme trouvée', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
-                      ])),
-                    ])
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _souls.length,
-                      itemBuilder: (context, index) {
-                        final soul = _souls[index];
-                        final isConverti = soul.typeDisciple == 'NOUVEAU_CONVERTI';
-                        return GlassCard(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(12),
-                          onTap: () => context.go('/souls/${soul.id}'),
-                          child: Row(
-                            children: [
-                              GradientAvatar(
-                                text: soul.nom[0],
-                                radius: 22,
-                                gradientStart: isConverti ? Colors.green : Colors.blue,
-                                gradientEnd: isConverti ? Colors.teal : Colors.lightBlue,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // Filtre actif (KPI cliquable) : visible et effaçable.
+                  if (_activeStatut != null || _activeType != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(soul.nomComplet, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
-                                    const SizedBox(height: 2),
-                                    Text(soul.email ?? soul.telephone ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
-                                  ],
-                                ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.filter_alt, size: 14, color: AppColors.primary),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _activeStatut != null
+                                          ? 'Statut : $_activeStatut'
+                                          : 'Type : $_activeType',
+                                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              StatusBadge(
-                                label: isConverti ? 'Converti' : 'Arrivant',
-                                color: isConverti ? Colors.green : Colors.blue,
-                              ),
-                            ],
+                            ),
                           ),
-                        );
-                      },
+                          const SizedBox(width: 8),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _activeStatut = null;
+                                _activeType = null;
+                              });
+                              _loadSouls();
+                            },
+                            icon: const Icon(Icons.close, size: 14),
+                            label: const Text('Effacer', style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      ),
                     ),
+                  if (_souls.isEmpty && _activeStatut == null && _activeType == null)
+                    Column(children: [
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                      const Icon(Icons.favorite_outline, size: 64, color: Colors.white24),
+                      const SizedBox(height: 16),
+                      Text('Aucune âme trouvée', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+                    ])
+                  else if (_souls.isEmpty)
+                    Column(children: [
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                      const Icon(Icons.filter_alt_off, size: 64, color: Colors.white24),
+                      const SizedBox(height: 16),
+                      Text('Aucune âme avec ce filtre', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _activeStatut = null;
+                            _activeType = null;
+                          });
+                          _loadSouls();
+                        },
+                        child: const Text('Voir toutes les âmes'),
+                      ),
+                    ])
+                  else
+                    ..._souls.map((soul) {
+                      final isConverti = soul.typeDisciple == 'NOUVEAU_CONVERTI';
+                      return GlassCard(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(12),
+                        onTap: () => context.go('/souls/${soul.id}'),
+                        child: Row(
+                          children: [
+                            GradientAvatar(
+                              text: soul.nom[0],
+                              radius: 22,
+                              gradientStart: isConverti ? Colors.green : Colors.blue,
+                              gradientEnd: isConverti ? Colors.teal : Colors.lightBlue,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(soul.nomComplet, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                                  const SizedBox(height: 2),
+                                  Text(soul.email ?? soul.telephone ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            StatusBadge(
+                              label: isConverti ? 'Converti' : 'Arrivant',
+                              color: isConverti ? Colors.green : Colors.blue,
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                ],
+              ),
             ),
       bottomNavigationBar: GlassBottomNav(currentIndex: _currentNavIndex, onTap: (i) {
         setState(() => _currentNavIndex = i);

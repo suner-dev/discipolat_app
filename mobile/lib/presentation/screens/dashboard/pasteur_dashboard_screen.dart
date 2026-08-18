@@ -85,15 +85,17 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                         ),
                         itemCount: 8,
                         itemBuilder: (_, i) {
+                          // Chaque KPI ouvre la liste Âmes déjà filtrée (filtres
+                          // portés par l'URL, lus par SoulsListScreen).
                           final items = [
-                            {'label': 'Âmes', 'value': '${croissance['totalAmes'] ?? 0}', 'icon': Icons.favorite, 'color': Colors.red},
-                            {'label': 'Convertis', 'value': '${croissance['nouveauxConvertis'] ?? 0}', 'icon': Icons.people, 'color': Colors.green},
-                            {'label': 'Arrivants', 'value': '${croissance['nouveauxArrivants'] ?? 0}', 'icon': Icons.person_add, 'color': Colors.blue},
-                            {'label': 'Actifs', 'value': '${croissance['actifs'] ?? 0}', 'icon': Icons.check_circle, 'color': Colors.teal},
-                            {'label': 'Intégration', 'value': '${croissance['enIntegration'] ?? 0}', 'icon': Icons.hourglass_top, 'color': Colors.amber},
-                            {'label': 'Veille', 'value': '${croissance['enVeille'] ?? 0}', 'icon': Icons.bedtime, 'color': Colors.orange},
-                            {'label': 'Décrochés', 'value': '${croissance['decroches'] ?? 0}', 'icon': Icons.cancel, 'color': Colors.red},
-                            {'label': 'Conversion', 'value': '${croissance['tauxConversion'] ?? 0}%', 'icon': Icons.trending_up, 'color': Colors.purple},
+                            {'label': 'Âmes', 'value': '${croissance['totalAmes'] ?? 0}', 'icon': Icons.favorite, 'color': Colors.red, 'route': '/souls'},
+                            {'label': 'Convertis', 'value': '${croissance['nouveauxConvertis'] ?? 0}', 'icon': Icons.people, 'color': Colors.green, 'route': '/souls?typeDisciple=NOUVEAU_CONVERTI'},
+                            {'label': 'Arrivants', 'value': '${croissance['nouveauxArrivants'] ?? 0}', 'icon': Icons.person_add, 'color': Colors.blue, 'route': '/souls?typeDisciple=NOUVEL_ARRIVANT'},
+                            {'label': 'Actifs', 'value': '${croissance['actifs'] ?? 0}', 'icon': Icons.check_circle, 'color': Colors.teal, 'route': '/souls?statut=ACTIF'},
+                            {'label': 'Intégration', 'value': '${croissance['enIntegration'] ?? 0}', 'icon': Icons.hourglass_top, 'color': Colors.amber, 'route': '/souls?statut=EN_INTEGRATION'},
+                            {'label': 'Veille', 'value': '${croissance['enVeille'] ?? 0}', 'icon': Icons.bedtime, 'color': Colors.orange, 'route': '/souls?statut=EN_VEILLE'},
+                            {'label': 'Décrochés', 'value': '${croissance['decroches'] ?? 0}', 'icon': Icons.cancel, 'color': Colors.red, 'route': '/souls?statut=DECROCHE'},
+                            {'label': 'Conversion', 'value': '${croissance['tauxConversion'] ?? 0}%', 'icon': Icons.trending_up, 'color': Colors.purple, 'route': '/reports'},
                           ];
                           final item = items[i];
                           return GlassStatCard(
@@ -102,7 +104,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                             icon: item['icon'] as IconData,
                             gradientStart: item['color'] as Color,
                             gradientEnd: (item['color'] as Color).withValues(alpha: 0.7),
-                            onTap: () => context.go('/souls'),
+                            onTap: () => context.go(item['route'] as String),
                           );
                         },
                       ),
@@ -254,45 +256,46 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                             itemCount: familles.length,
                             itemBuilder: (_, i) {
                               final f = familles[i] as Map<String, dynamic>;
-                              return GestureDetector(
-                                onTap: () => context.go('/families'),
-                                child: Container(
-                                  width: 170,
-                                  margin: const EdgeInsets.only(right: 10),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [AppColors.primary.withValues(alpha: 0.12), Colors.transparent],
-                                      begin: Alignment.topLeft, end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(f['nom'] ?? '',
-                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
-                                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                                      const Spacer(),
-                                      Row(children: [
-                                        Icon(Icons.people_alt, size: 12, color: Colors.white.withValues(alpha: 0.4)),
-                                        const SizedBox(width: 4),
-                                        Text('${f['actifs'] ?? 0} actifs · ${f['totalAmes'] ?? 0} âmes',
-                                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
-                                      ]),
-                                      if ((f['tauxPresence'] as num?) != null) ...[
-                                        const SizedBox(height: 3),
-                                        Text('Présence ${f['tauxPresence']}%',
-                                            style: TextStyle(
-                                              color: (f['tauxPresence'] as num).toDouble() < 50 ? Colors.redAccent : Colors.greenAccent,
-                                              fontSize: 9,
-                                            )),
-                                      ],
-                                    ],
-                                  ),
+                          return GestureDetector(
+                            // Pas d'écran de détail famille sur mobile → liste réelle.
+                            onTap: () => context.go('/families'),
+                            child: Container(
+                              width: 170,
+                              margin: const EdgeInsets.only(right: 10),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [AppColors.primary.withValues(alpha: 0.12), Colors.transparent],
+                                  begin: Alignment.topLeft, end: Alignment.bottomRight,
                                 ),
-                              );
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(f['nom'] ?? '',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  const Spacer(),
+                                  Row(children: [
+                                    Icon(Icons.people_alt, size: 12, color: Colors.white.withValues(alpha: 0.4)),
+                                    const SizedBox(width: 4),
+                                    Text('${f['actifs'] ?? 0} actifs · ${f['totalAmes'] ?? 0} âmes',
+                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+                                  ]),
+                                  if ((f['tauxPresence'] as num?) != null) ...[
+                                    const SizedBox(height: 3),
+                                    Text('Présence ${f['tauxPresence']}%',
+                                        style: TextStyle(
+                                          color: (f['tauxPresence'] as num).toDouble() < 50 ? Colors.redAccent : Colors.greenAccent,
+                                          fontSize: 9,
+                                        )),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
                             },
                           ),
                         ),
@@ -357,6 +360,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                         ...famillesRisque.take(5).map((fr) {
                           final f = fr as Map<String, dynamic>;
                           return GestureDetector(
+                            // Pas d'écran de détail famille sur mobile → liste réelle.
                             onTap: () => context.go('/families'),
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 6),
