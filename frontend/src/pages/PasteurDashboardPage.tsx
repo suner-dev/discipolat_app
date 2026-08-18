@@ -28,8 +28,9 @@ const getGreeting = () => {
 };
 
 export default function PasteurDashboardPage() {
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
   const navigate = useNavigate();
+  const canManage = activeRole === 'PASTEUR'; // ADMIN voit en lecture seule
   const { exportReport, isExporting } = useExportReport();
   const [searchQuery, setSearchQuery] = useState('');
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -130,6 +131,7 @@ export default function PasteurDashboardPage() {
             })}
           </p>
         </div>
+        {canManage && (
         <div className="flex items-center gap-2">
           <button
             onClick={() => exportReport({ endpoint: '/reports/export/consolidated-pdf', filename: `rapport-pasteur-${new Date().toISOString().split('T')[0]}.html` })}
@@ -140,6 +142,7 @@ export default function PasteurDashboardPage() {
             {isExporting ? 'Génération...' : 'Exporter rapport'}
           </button>
         </div>
+        )}
       </div>
 
       {/* Barre de recherche 360° */}
@@ -328,9 +331,11 @@ export default function PasteurDashboardPage() {
                 <Building2 className="w-5 h-5 text-primary-500" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Départements</h3>
               </div>
+              {canManage && (
               <Link to="/departments" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
                 Gérer <ChevronRight className="w-3 h-3" />
               </Link>
+              )}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -369,9 +374,11 @@ export default function PasteurDashboardPage() {
                 <Users className="w-5 h-5 text-primary-500" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Familles de disciples</h3>
               </div>
+              {canManage && (
               <Link to="/families" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
                 Voir tout <ChevronRight className="w-3 h-3" />
               </Link>
+              )}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -415,8 +422,8 @@ export default function PasteurDashboardPage() {
             </div>
           </div>
 
-          {/* Transferts à traiter */}
-          {transfertsEnAttente.length > 0 && (
+          {/* Transferts à traiter — PASTEUR uniquement */}
+          {canManage && transfertsEnAttente.length > 0 && (
             <div className="glass-card p-6 mb-6 animate-slide-up" style={{ animationDelay: '400ms' }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -495,16 +502,36 @@ export default function PasteurDashboardPage() {
                 </div>
                 <Link to="/alerts" className="text-[10px] font-medium text-primary-600">Voir</Link>
               </div>
-              <div className="text-center py-6">
-                <div className={`text-4xl font-bold mb-2 ${(dashboard?.alertesActives ?? 0) > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                  {dashboard?.alertesActives ?? 0}
+              <div className="text-center py-4">
+                <div className={`text-4xl font-bold mb-2 ${(alertStats?.actives ?? dashboard?.alertesActives ?? 0) > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                  {alertStats?.actives ?? dashboard?.alertesActives ?? 0}
                 </div>
                 <p className="text-xs text-gray-400">Alertes actives</p>
               </div>
+              {alertStats && alertStats.total > 0 && (
+                <div className="h-36 mt-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Actives', value: alertStats.actives, fill: '#ef4444' },
+                          { name: 'Traitées', value: alertStats.traitees, fill: '#f59e0b' },
+                          { name: 'Résolues', value: alertStats.resolues, fill: '#22c55e' },
+                        ].filter(d => d.value > 0)}
+                        cx="50%" cy="50%" innerRadius={28} outerRadius={50}
+                        paddingAngle={3} dataKey="value" strokeWidth={0}
+                      >
+                      </Pie>
+                      <Tooltip formatter={(v: number, name: string) => [v, name]}
+                        contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               <div className="flex items-center gap-2 justify-center">
-                <span className={`w-2 h-2 rounded-full ${(dashboard?.alertesActives ?? 0) > 0 ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`} />
+                <span className={`w-2 h-2 rounded-full ${(alertStats?.actives ?? dashboard?.alertesActives ?? 0) > 0 ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`} />
                 <span className="text-[10px] text-gray-400">
-                  {(dashboard?.alertesActives ?? 0) > 0 ? 'Attention requise' : 'Tout est sous contrôle'}
+                  {(alertStats?.actives ?? dashboard?.alertesActives ?? 0) > 0 ? 'Attention requise' : 'Tout est sous contrôle'}
                 </span>
               </div>
               <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/30">
