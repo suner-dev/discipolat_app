@@ -23,7 +23,13 @@ import {
   CalendarRange,
   RotateCcw,
   ArrowLeftRight,
+  BarChart3,
 } from 'lucide-react';
+import {
+  ResponsiveContainer, Tooltip, Legend,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, Cell,
+} from 'recharts';
 
 interface AuditEntry {
   id: string;
@@ -141,6 +147,14 @@ export default function AuditPage() {
     },
   });
 
+  const { data: trend } = useQuery({
+    queryKey: ['audit', 'trend'],
+    queryFn: async () => {
+      const res = await api.get('/audit/trend', { params: { jours: 30 } });
+      return res.data as { jours: number; totalActions: number; parAction: Record<string, number>; parEntite: Record<string, number> };
+    },
+  });
+
   // Recherche client-side + filtre par catégorie d'action (le backend /audit
   // ne filtre ni par texte ni par catégorie ; le filtre `action` exact reste
   // disponible côté API/export).
@@ -249,6 +263,74 @@ export default function AuditPage() {
           );
         })}
       </div>
+
+      {/* Trend Charts */}
+      {trend && trend.totalActions > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Actions par type */}
+          <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '180ms' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="w-4 h-4 text-primary-500" />
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Répartition par action
+              </h3>
+              <span className="ml-auto text-[10px] text-gray-400">{trend.totalActions} actions · {trend.jours} jours</span>
+            </div>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={Object.entries(trend.parAction)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([action, count]) => ({ action: action.length > 12 ? action.slice(0, 12) + '…' : action, count }))
+                }>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" vertical={false} />
+                  <XAxis dataKey="action" tick={{ fontSize: 9 }} stroke="rgba(128,128,128,0.3)" angle={-30} textAnchor="end" height={50} />
+                  <YAxis tick={{ fontSize: 10 }} stroke="rgba(128,128,128,0.3)" />
+                  <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {Object.entries(trend.parAction)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([action], i) => {
+                        const cat = actionCategory(action);
+                        return <Cell key={action} fill={cat === 'CREATE' ? '#22c55e' : cat === 'UPDATE' ? '#3b82f6' : cat === 'DELETE' ? '#ef4444' : cat === 'TRANSFER' ? '#f59e0b' : '#8b5cf6'} />;
+                      })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Entités les plus modifiées */}
+          <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '240ms' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-4 h-4 text-primary-500" />
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Entités les plus touchées
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {Object.entries(trend.parEntite)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 6)
+                .map(([entite, count]) => {
+                  const pct = Math.round((count / trend.totalActions) * 100);
+                  const label = dictionaries.label('AUDIT_ENTITY', entite) || ENTITY_FALLBACK[entite] || entite;
+                  return (
+                    <div key={entite} className="flex items-center gap-3">
+                      <span className="text-xs text-gray-600 dark:text-gray-400 w-28 truncate">{label}</span>
+                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="h-2 rounded-full bg-primary-500 transition-all duration-500"
+                          style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 w-12 text-right">
+                        {count} <span className="text-[9px] text-gray-400">({pct}%)</span>
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="glass-card p-4 mb-6 animate-slide-up" style={{ animationDelay: '240ms' }}>

@@ -77,7 +77,7 @@ public class FileController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<FileResponse> update(@PathVariable UUID id,
-                                               @RequestBody UpdateFileRequest request) {
+                                               @Valid @RequestBody UpdateFileRequest request) {
         FileEntity file = FileEntity.builder()
                 .nom(request.nom())
                 .description(request.description())

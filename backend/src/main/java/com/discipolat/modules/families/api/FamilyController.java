@@ -127,7 +127,7 @@ public class FamilyController {
      */
     @PatchMapping("/{id}/chief")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
-    public ResponseEntity<TransferResponse> reassignChief(@PathVariable UUID id, @RequestBody ReassignChiefRequest request) {
+    public ResponseEntity<TransferResponse> reassignChief(@PathVariable UUID id, @Valid @RequestBody ReassignChiefRequest request) {
         return ResponseEntity.ok(transferBridgeService.reassignChef(id, request.newChefId()));
     }
 
@@ -223,7 +223,7 @@ public class FamilyController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<FamilyResponse> setNiveauRisque(
             @PathVariable UUID id,
-            @RequestBody SetRiskLevelRequest request) {
+            @Valid @RequestBody SetRiskLevelRequest request) {
         Family family = familyRiskService.setNiveauRisque(id, request.niveauRisque(), request.raison());
         return ResponseEntity.ok(toResponse(family));
     }

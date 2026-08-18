@@ -182,7 +182,7 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<UserResponse> promoteToChefDeFamille(
             @PathVariable UUID id,
-            @RequestBody ChefPromotionRequest request) {
+            @Valid @RequestBody ChefPromotionRequest request) {
         User user = userService.promoteToChefDeFamille(id, request.familleId());
         return ResponseEntity.ok(UserResponse.from(user));
     }

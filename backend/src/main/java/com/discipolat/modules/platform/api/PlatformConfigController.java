@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -82,13 +83,13 @@ public class PlatformConfigController {
 
     @PostMapping("/menus")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<MenuEntry> createMenu(@RequestBody MenuEntry menu) {
+    public ResponseEntity<MenuEntry> createMenu(@Valid @RequestBody MenuEntry menu) {
         return ResponseEntity.status(HttpStatus.CREATED).body(platformService.createMenu(menu));
     }
 
     @PutMapping("/menus/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<MenuEntry> updateMenu(@PathVariable UUID id, @RequestBody MenuEntry menu) {
+    public ResponseEntity<MenuEntry> updateMenu(@PathVariable UUID id, @Valid @RequestBody MenuEntry menu) {
         return ResponseEntity.ok(platformService.updateMenu(id, menu));
     }
 
@@ -123,14 +124,14 @@ public class PlatformConfigController {
 
     @PostMapping("/modules")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PlatformModule> createModule(@RequestBody PlatformModule module) {
+    public ResponseEntity<PlatformModule> createModule(@Valid @RequestBody PlatformModule module) {
         return ResponseEntity.status(HttpStatus.CREATED).body(platformService.createModule(module));
     }
 
     @PutMapping("/modules/{key}/edit")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PlatformModule> updateModule(@PathVariable String key,
-                                                       @RequestBody PlatformModule module) {
+                                                       @Valid @RequestBody PlatformModule module) {
         return ResponseEntity.ok(platformService.updateModule(key, module));
     }
 

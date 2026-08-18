@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -42,13 +43,13 @@ public class PageBuilderController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CustomPage> createPage(@RequestBody CustomPage page) {
+    public ResponseEntity<CustomPage> createPage(@Valid @RequestBody CustomPage page) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pageBuilderService.create(page));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CustomPage> updatePage(@PathVariable UUID id, @RequestBody CustomPage page) {
+    public ResponseEntity<CustomPage> updatePage(@PathVariable UUID id, @Valid @RequestBody CustomPage page) {
         return ResponseEntity.ok(pageBuilderService.update(id, page));
     }
 

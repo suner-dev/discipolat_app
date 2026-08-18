@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -57,14 +58,14 @@ public class DictionaryController {
     @PostMapping("/admin/dictionaries/{key}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DictionaryEntry> create(@PathVariable String key,
-                                                  @RequestBody DictionaryEntry entry) {
+                                                  @Valid @RequestBody DictionaryEntry entry) {
         return ResponseEntity.status(HttpStatus.CREATED).body(dictionaryService.create(key, entry));
     }
 
     @PutMapping("/admin/dictionaries/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DictionaryEntry> update(@PathVariable UUID id,
-                                                  @RequestBody DictionaryEntry entry) {
+                                                  @Valid @RequestBody DictionaryEntry entry) {
         return ResponseEntity.ok(dictionaryService.update(id, entry));
     }
 
