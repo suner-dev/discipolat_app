@@ -101,8 +101,9 @@ const initials = (p?: MemberDashboard['user']) =>
   `${p?.firstName?.[0] || ''}${p?.lastName?.[0] || ''}`.toUpperCase() || '👤';
 
 export default function MemberDashboardPage() {
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
   const dictionaries = useDictionaries();
+  const canManage = activeRole === 'MEMBRE'; // Les autres rôles voient en lecture seule
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<UpdateMemberProfileRequest>({});
@@ -304,9 +305,11 @@ export default function MemberDashboardPage() {
             Vos informations, votre famille de disciple et vos départements
           </p>
         </div>
+        {canManage && (
         <button onClick={openEdit} className="btn-glow btn-sm animate-scale-in">
           <Edit3 className="w-4 h-4" /> Modifier mes informations
         </button>
+        )}
       </div>
 
       {/* ===================== CARTE PROFIL ===================== */}
@@ -571,14 +574,16 @@ export default function MemberDashboardPage() {
                 value={presenceNotes}
                 onChange={(e) => setPresenceNotes(e.target.value)}
               />
-              <button
-                onClick={submitPresence}
-                disabled={presenceMutation.isPending}
-                className="btn-primary btn-sm mt-3 w-full"
-              >
-                {presenceMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {presenceMutation.isPending ? 'Enregistrement...' : 'Enregistrer ma présence'}
-              </button>
+            {canManage && (
+            <button
+              onClick={submitPresence}
+              disabled={presenceMutation.isPending}
+              className="btn-primary btn-sm mt-3 w-full"
+            >
+              {presenceMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {presenceMutation.isPending ? 'Enregistrement...' : 'Enregistrer ma présence'}
+            </button>
+            )}
             </div>
 
             {/* Historique */}
@@ -688,6 +693,7 @@ export default function MemberDashboardPage() {
                 />
               </div>
             )}
+            {canManage && (
             <button
               onClick={submitRequest}
               disabled={requestMutation.isPending || !requestForm.message.trim()}
@@ -696,6 +702,7 @@ export default function MemberDashboardPage() {
               {requestMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {requestMutation.isPending ? 'Envoi...' : 'Envoyer ma demande'}
             </button>
+            )}
           </div>
 
           {/* Mes demandes */}
