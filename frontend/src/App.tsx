@@ -89,6 +89,7 @@ const AdminCustomFieldsPage = lazy(() => import('@/pages/AdminCustomFieldsPage')
 const AdminFeedbackPage = lazy(() => import('@/pages/AdminFeedbackPage'));
 const AdminDictionariesPage = lazy(() => import('@/pages/AdminDictionariesPage'));
 const AdminTenantsPage = lazy(() => import('@/pages/AdminTenantsPage'));
+const AdminNotificationTemplatesPage = lazy(() => import('@/pages/AdminNotificationTemplatesPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -537,6 +538,11 @@ export default function App() {
           <Route path="/admin/tenants" element={
             <ProtectedRoute roles={['ADMIN']}>
               <AdminTenantsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/notifications" element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminNotificationTemplatesPage />
             </ProtectedRoute>
           } />
         </Route>

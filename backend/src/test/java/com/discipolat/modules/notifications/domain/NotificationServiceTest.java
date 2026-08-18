@@ -27,6 +27,8 @@ class NotificationServiceTest {
     @Mock
     private NotificationRepository notificationRepository;
     @Mock
+    private NotificationTemplateRepository notificationTemplateRepository;
+    @Mock
     private SecurityUtils securityUtils;
 
     private NotificationService service;
@@ -35,7 +37,7 @@ class NotificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new NotificationService(notificationRepository, securityUtils);
+        service = new NotificationService(notificationRepository, notificationTemplateRepository, securityUtils);
         currentUserId = UUID.randomUUID();
         notification = Notification.builder()
                 .id(UUID.randomUUID())
@@ -121,11 +123,84 @@ class NotificationServiceTest {
     }
 
     @Test
-    void create_WithoutTenantContext_ShouldPersistNullTenantId() {
-        // Sans contexte de requête ni tenant explicite (comportement historique
-        // des jobs non encore migrés) : la création ne doit pas crasher côté
-        // service — la contrainte DB reste le garde-fou final.
+    void create_WithActiveTemplate_ShouldRenderTitleAndMessage() {
+        UUID tenantId = UUID.randomUUID();
         UUID destinataireId = UUID.randomUUID();
+        UUID refId = UUID.randomUUID();
+        NotificationTemplate template = NotificationTemplate.builder()
+                .id(UUID.randomUUID())
+                .tenantId(tenantId)
+                .event(TypeNotification.ALERTE_ABSENCE)
+                .titre("{{type}} — Alerte personnalisée")
+                .message("Entité : {{entiteType}} — sur mesure")
+                .canaux(new java.util.ArrayList<>(List.of(CanalNotification.PUSH, CanalNotification.IN_APP)))
+                .actif(true)
+                .build();
+        when(notificationTemplateRepository.findByTenantIdAndEventAndActifTrue(tenantId, TypeNotification.ALERTE_ABSENCE))
+                .thenReturn(Optional.of(template));
+        when(notificationRepository.save(any(Notification.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        Notification saved = service.create(
+                tenantId, destinataireId, TypeNotification.ALERTE_ABSENCE, CanalNotification.IN_APP,
+                "Titre par défaut", "Message par défaut", refId, "SOUL");
+
+        assertEquals("ALERTE_ABSENCE — Alerte personnalisée", saved.getTitre());
+        assertEquals("Entité : SOUL — sur mesure", saved.getMessage());
+        assertEquals(CanalNotification.IN_APP, saved.getCanal());
+    }
+
+    @Test
+    void create_WithActiveTemplateWithoutFallbackCanal_ShouldPickTemplateChannel() {
+        UUID tenantId = UUID.randomUUID();
+        UUID destinataireId = UUID.randomUUID();
+        NotificationTemplate template = NotificationTemplate.builder()
+                .id(UUID.randomUUID())
+                .tenantId(tenantId)
+                .event(TypeNotification.INFORMATION)
+                .titre("Custom")
+                .message("Custom message")
+                .canaux(new java.util.ArrayList<>(List.of(CanalNotification.PUSH)))
+                .actif(true)
+                .build();
+        when(notificationTemplateRepository.findByTenantIdAndEventAndActifTrue(tenantId, TypeNotification.INFORMATION))
+                .thenReturn(Optional.of(template));
+        when(notificationRepository.save(any(Notification.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        Notification saved = service.create(
+                tenantId, destinataireId, TypeNotification.INFORMATION, CanalNotification.EMAIL,
+                "Titre", "Message", null, null);
+
+        assertEquals("Custom", saved.getTitre());
+        assertEquals(CanalNotification.PUSH, saved.getCanal());
+    }
+
+    @Test
+    void create_WithoutTemplate_ShouldKeepProvidedTitleAndMessage() {
+        UUID tenantId = UUID.randomUUID();
+        UUID destinataireId = UUID.randomUUID();
+        when(notificationTemplateRepository.findByTenantIdAndEventAndActifTrue(tenantId, TypeNotification.INFORMATION))
+                .thenReturn(Optional.empty());
+        when(notificationRepository.save(any(Notification.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        Notification saved = service.create(
+                tenantId, destinataireId, TypeNotification.INFORMATION, CanalNotification.IN_APP,
+                "Titre par défaut", "Message par défaut", null, null);
+
+        assertEquals("Titre par défaut", saved.getTitre());
+        assertEquals("Message par défaut", saved.getMessage());
+        assertEquals(CanalNotification.IN_APP, saved.getCanal());
+    }
+
+    @Test
+    void create_WithoutTenantContext_ShouldPersistNullTenantId() {
+        // Sans contexte de requête ni tenant explicite (jobs planifiés) : la
+        // recherche de modèle renvoie vide et la création ne doit pas crasher.
+        UUID destinataireId = UUID.randomUUID();
+        when(notificationTemplateRepository.findByTenantIdAndEventAndActifTrue(null, TypeNotification.INFORMATION))
+                .thenReturn(Optional.empty());
         when(notificationRepository.save(any(Notification.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 

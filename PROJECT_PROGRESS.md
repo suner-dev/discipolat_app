@@ -5,6 +5,84 @@
 
 ---
 
+## SESSION 2026-08-18 (bloc 15) — REFONDRE PROFONDÉMENT L'ESPACE ADMIN : NOTIFICATIONS CONFIGURABLES + DÉMONOLITHISATION DÉPARTEMENTS + KPIs RÉELS
+
+### Objectif
+
+Refonte profonde de l'espace administration : phase 2 Admin (notifications
+configurables fullstack), réduction de la dette technique (décomposition du
+monolithe Départements en composants), KPIs réels sur les espaces admin/audit/
+pasteur, et durcissement de la validation backend.
+
+### Fait
+
+#### Phase 2 Admin — Centre de configuration des notifications (fullstack)
+
+**Backend** (`backend/src/main/java/com/discipolat/modules/notifications`):
+- `NotificationTemplate` (entité) + `notification_template_channels` et
+  `notification_template_roles` (tables de liaison) → migration **V71**.
+- `NotificationTemplateRepository` : filtrage multi-tenant **explicite** par
+  `tenantId` (fiable hors contexte requête, jobs planifiés).
+- `NotificationEventCatalog` : catalogue statique des événements configurables
+  (libellés FR, modèles suggérés, canaux recommandés, variables).
+- `NotificationTemplateService` : CRUD + toggle + suppression (traçés dans le
+  journal d'audit `NOTIFICATION_TEMPLATE_*`), rendu de variables
+  `{{type}}` / `{{event}}` / `{{entiteType}}`, canal préféré.
+- `NotificationService.create(...)` **applique réellement** le modèle actif du
+  tenant à l'émission (titre/message rendus + canal), de façon **défensive** :
+  une anomalie de modèle ne bloque jamais l'émission d'une notification.
+- `NotificationTemplateController` `/api/v1/admin/notifications` (ADMIN-only) :
+  events, list, create, update, toggle, delete.
+
+**Frontend web** (`/admin/notifications`, route ADMIN-only lazy) :
+- `AdminNotificationTemplatesPage.tsx` : liste des modèles (badges canaux,
+  rôles, statut actif/inactif), switch d'activation, édition, suppression avec
+  confirmation, stats (actifs / configurés / événements couverts).
+- Modal création/édition avec **pré-remplissage** des textes/canaux suggérés du
+  catalogue + variables, événements déjà configurés masqués (1 modèle/événement).
+- Tile « Notifications » ajouté au dashboard admin (`Bell`).
+
+#### Phase 3 — Réduction de la dette technique (départements)
+
+- Monolithe `DepartmentManagementPage.tsx` (2032 lignes) décomposé en
+  `frontend/src/components/departments/` (10 onglets + types + SearchResults).
+- **Régression corrigée** : le panneau de résultats de la recherche globale
+  (perdu dans la refonte) restauré en composant `GlobalSearchResults` (résultats
+  par catégorie, total, navigation vers la fiche membre).
+
+#### KPIs réels sur les espaces admin / audit / pasteur
+
+- **AdminDashboardPage** : « Santé de la plateforme » (total âmes, familles,
+  faiseurs, alertes actives), graphe de répartition des âmes (donut),
+  statistiques d'alertes globales et liste des tenants (status/plan).
+- **AuditPage** : graphiques de tendance sur 30 jours (répartition par action &
+  entités les plus touchées).
+- **PasteurDashboardPage** : donut des alertes (actives/traitées/résolues) via
+  `/alerts/stats` à la place du seul compteur.
+
+#### Hardening validation backend
+
+- `@Valid` ajouté sur les DTOs d'endpoints admin/clé (FamilyController,
+  FileController, DictionaryController, PageBuilderController,
+  PlatformConfigController, UserController) — réduit la dette « @Valid manquant ».
+
+### Baselines
+
+- Backend : `NotificationTemplateServiceTest` **11 ✓** + `NotificationServiceTest`
+  **10 ✓** · `mvn test-compile` ✓ · `mvn -DskipTests package` ✓ BUILD SUCCESS.
+- Frontend : **235 tests vitest ✓ (38 fichiers)** · `tsc --noEmit` ✓ ·
+  `npm run build` ✓.
+- Mobile : inchangé.
+
+### Prêt pour la suite
+
+Phase 2 Admin avancée (notifications configurables terminée fullstack, tenants
+terminée). Prochaine étape recommandée : Phase 3 suite (autres monolithes
+frontend, réduction des `as any`) ou Phase 4 — Parité mobile (page notification
+templates + dashboard admin mobiles).
+
+---
+
 ## SESSION 2026-08-18 (bloc 14) — AUDIT PROFOND POST-PASTHEUR : VÉRIFICATION + CARTOGRAPHIE CORRIGÉE
 
 ### Objectif

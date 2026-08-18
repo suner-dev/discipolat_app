@@ -560,6 +560,27 @@ export interface Notification {
   createdAt: string;
 }
 
+// Administration — modèles de notification configurables (centre de configuration)
+export interface NotificationEventInfo {
+  event: string;
+  label: string;
+  defaultTitre: string;
+  defaultMessage: string;
+  canauxSuggestes: CanalNotification[];
+  variables: string[];
+}
+
+export interface NotificationTemplateAdmin {
+  id: string;
+  event: string;
+  titre: string;
+  message: string;
+  canaux: CanalNotification[];
+  rolesDestinataires: string[];
+  actif: boolean;
+  updatedAt: string;
+}
+
 // Prayer types
 export type CategoriePriere = 'SANTE' | 'FAMILLE' | 'TRAVAIL' | 'SPIRITUEL' | 'AUTRE';
 export type PrioritePriere = 'BASSE' | 'MOYENNE' | 'HAUTE';

@@ -5,6 +5,8 @@ import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,11 +19,17 @@ import java.util.UUID;
 @Transactional
 public class NotificationService {
 
+    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+
     private final NotificationRepository notificationRepository;
+    private final NotificationTemplateRepository notificationTemplateRepository;
     private final SecurityUtils securityUtils;
 
-    public NotificationService(NotificationRepository notificationRepository, SecurityUtils securityUtils) {
+    public NotificationService(NotificationRepository notificationRepository,
+                               NotificationTemplateRepository notificationTemplateRepository,
+                               SecurityUtils securityUtils) {
         this.notificationRepository = notificationRepository;
+        this.notificationTemplateRepository = notificationTemplateRepository;
         this.securityUtils = securityUtils;
     }
 
@@ -39,13 +47,32 @@ public class NotificationService {
      */
     public Notification create(UUID tenantId, UUID destinataireId, TypeNotification type, CanalNotification canal,
                                String titre, String message, UUID entiteReferenceId, String entiteReferenceType) {
+        // Rendu à partir d'un modèle actif (centre de configuration admin) — défensif :
+        // une anomalie de modèle ne doit jamais empêcher l'émission d'une notification.
+        String renderedTitre = titre;
+        String renderedMessage = message;
+        CanalNotification effectiveCanal = canal;
+        try {
+            var template = notificationTemplateRepository
+                    .findByTenantIdAndEventAndActifTrue(tenantId, type).orElse(null);
+            if (template != null) {
+                String t = NotificationTemplateService.render(template.getTitre(), type, entiteReferenceType);
+                if (t != null) renderedTitre = t;
+                String m = NotificationTemplateService.render(template.getMessage(), type, entiteReferenceType);
+                if (m != null) renderedMessage = m;
+                effectiveCanal = NotificationTemplateService.preferredCanal(template.getCanaux(), canal);
+            }
+        } catch (Exception e) {
+            log.warn("Modèle de notification non appliqué pour {} : {}", type, e.getMessage());
+        }
+
         Notification notification = Notification.builder()
                 .tenantId(tenantId)
                 .destinataireId(destinataireId)
                 .type(type)
-                .canal(canal)
-                .titre(titre)
-                .message(message)
+                .canal(effectiveCanal)
+                .titre(renderedTitre)
+                .message(renderedMessage)
                 .lu(false)
                 .entiteReferenceId(entiteReferenceId)
                 .entiteReferenceType(entiteReferenceType)
