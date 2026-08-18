@@ -54,11 +54,11 @@ public class PermissionService {
         UUID tenantId = tenantId();
         if (tenantId != null) {
             return jdbcTemplate.queryForList(
-                    "SELECT role, permission, enabled FROM role_permissions WHERE tenant_id = ? ORDER BY role, permission",
+                    "SELECT role, permission, enabled, can_read, can_write, can_delete, scope FROM role_permissions WHERE tenant_id = ? ORDER BY role, permission",
                     tenantId);
         }
         return jdbcTemplate.queryForList(
-                "SELECT role, permission, enabled FROM role_permissions ORDER BY role, permission");
+                "SELECT role, permission, enabled, can_read, can_write, can_delete, scope FROM role_permissions ORDER BY role, permission");
     }
 
     public List<Map<String, Object>> getPermissionsByRole(String role) {
@@ -70,13 +70,41 @@ public class PermissionService {
 
     public Map<String, Object> updatePermission(String role, String permission, boolean enabled) {
         jdbcTemplate.update(
-                "UPDATE role_permissions SET enabled = ?, updated_at = ? WHERE role = ? AND permission = ?"
+                "UPDATE role_permissions SET enabled = ?, can_read = ?, can_write = ?, updated_at = ? WHERE role = ? AND permission = ?"
                         + andTenant(),
-                params(enabled, LocalDateTime.now(), role.toUpperCase(), permission.toUpperCase()));
+                params(enabled, enabled, enabled, LocalDateTime.now(), role.toUpperCase(), permission.toUpperCase()));
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("role", role.toUpperCase());
         result.put("permission", permission.toUpperCase());
         result.put("enabled", enabled);
+        result.put("canRead", enabled);
+        result.put("canWrite", enabled);
+        result.put("canDelete", false);
+        return result;
+    }
+
+    /**
+     * Met à jour les permissions granulaires (lecture/écriture/suppression) + scope.
+     */
+    public Map<String, Object> updatePermissionRWD(String role, String permission,
+                                                     boolean canRead, boolean canWrite, boolean canDelete,
+                                                     String scope) {
+        String r = role.toUpperCase();
+        String p = permission.toUpperCase();
+        String s = scope != null ? scope.toUpperCase() : "GLOBAL";
+        boolean enabled = canRead || canWrite || canDelete;
+        jdbcTemplate.update(
+                "UPDATE role_permissions SET enabled = ?, can_read = ?, can_write = ?, can_delete = ?, scope = ?, updated_at = ?"
+                        + " WHERE role = ? AND permission = ?" + andTenant(),
+                params(enabled, canRead, canWrite, canDelete, s, LocalDateTime.now(), r, p));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("role", r);
+        result.put("permission", p);
+        result.put("enabled", enabled);
+        result.put("canRead", canRead);
+        result.put("canWrite", canWrite);
+        result.put("canDelete", canDelete);
+        result.put("scope", s);
         return result;
     }
 
@@ -91,6 +119,47 @@ public class PermissionService {
                 params(role.toUpperCase(), permission.toUpperCase()));
         if (results.isEmpty()) return true; // pas de ligne = permissif (préservation du comportement existant)
         return (boolean) results.getFirst().get("enabled");
+    }
+
+    /**
+     * Vérifie si un rôle a un niveau de permission (read/write/delete) donné.
+     * Niveau "manage" = write OR delete.
+     */
+    public boolean hasPermissionLevel(String role, String permission, String level) {
+        String col = switch (level.toUpperCase()) {
+            case "READ" -> "can_read";
+            case "WRITE" -> "can_write";
+            case "DELETE", "MANAGE" -> "can_delete";
+            default -> "enabled";
+        };
+        if ("MANAGE".equalsIgnoreCase(level)) {
+            List<Map<String, Object>> results = jdbcTemplate.queryForList(
+                    "SELECT can_write, can_delete FROM role_permissions WHERE role = ? AND permission = ?"
+                            + andTenant(),
+                    params(role.toUpperCase(), permission.toUpperCase()));
+            if (results.isEmpty()) return true;
+            Map<String, Object> row = results.getFirst();
+            return (boolean) row.get("can_write") || (boolean) row.get("can_delete");
+        }
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(
+                "SELECT " + col + " FROM role_permissions WHERE role = ? AND permission = ?"
+                        + andTenant(),
+                params(role.toUpperCase(), permission.toUpperCase()));
+        if (results.isEmpty()) return true;
+        return (boolean) results.getFirst().get(col);
+    }
+
+    /**
+     * Retourne le scope configuré pour un rôle + permission.
+     */
+    public String getPermissionScope(String role, String permission) {
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(
+                "SELECT scope FROM role_permissions WHERE role = ? AND permission = ?"
+                        + andTenant(),
+                params(role.toUpperCase(), permission.toUpperCase()));
+        if (results.isEmpty()) return "GLOBAL";
+        Object scope = results.getFirst().get("scope");
+        return scope != null ? scope.toString() : "GLOBAL";
     }
 
     /* ======================== Catalogue des permissions ======================== */

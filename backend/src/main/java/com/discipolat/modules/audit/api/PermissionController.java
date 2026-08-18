@@ -38,9 +38,31 @@ public class PermissionController {
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable String role,
             @PathVariable String permission,
-            @RequestBody Map<String, Boolean> body) {
-        boolean enabled = body.getOrDefault("enabled", true);
+            @RequestBody Map<String, Object> body) {
+        // Supporte à la fois l'ancien format (enabled seul) et le nouveau (canRead/canWrite/canDelete/scope)
+        if (body.containsKey("canRead") || body.containsKey("canWrite") || body.containsKey("canDelete") || body.containsKey("scope")) {
+            boolean canRead = body.containsKey("canRead") ? (Boolean) body.get("canRead") : true;
+            boolean canWrite = body.containsKey("canWrite") ? (Boolean) body.get("canWrite") : true;
+            boolean canDelete = body.containsKey("canDelete") ? (Boolean) body.get("canDelete") : false;
+            String scope = body.containsKey("scope") ? (String) body.get("scope") : "GLOBAL";
+            return ResponseEntity.ok(permissionService.updatePermissionRWD(role, permission, canRead, canWrite, canDelete, scope));
+        }
+        // Rétrocompatibilité : ancien format { enabled: true/false }
+        boolean enabled = body.containsKey("enabled") ? (Boolean) body.get("enabled") : true;
         return ResponseEntity.ok(permissionService.updatePermission(role, permission, enabled));
+    }
+
+    @PutMapping("/{role}/{permission}/rwd")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> updateRWD(
+            @PathVariable String role,
+            @PathVariable String permission,
+            @RequestBody Map<String, Object> body) {
+        boolean canRead = body.containsKey("canRead") ? (Boolean) body.get("canRead") : true;
+        boolean canWrite = body.containsKey("canWrite") ? (Boolean) body.get("canWrite") : true;
+        boolean canDelete = body.containsKey("canDelete") ? (Boolean) body.get("canDelete") : false;
+        String scope = body.containsKey("scope") ? (String) body.get("scope") : "GLOBAL";
+        return ResponseEntity.ok(permissionService.updatePermissionRWD(role, permission, canRead, canWrite, canDelete, scope));
     }
 
     /* ======================== Catalogue ======================== */

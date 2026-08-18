@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { Shield, Check, X, Loader2, Save, Plus, Copy, Pencil, Trash2, BadgeCheck } from 'lucide-react';
+import { Shield, Check, X, Loader2, Save, Plus, Copy, Pencil, Trash2, BadgeCheck, Eye, Pencil as PencilIcon, Trash, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface PermissionEntry {
   role: string;
   permission: string;
   enabled: boolean;
+  canRead?: boolean;
+  canWrite?: boolean;
+  canDelete?: boolean;
+  scope?: string;
 }
 
 interface PlatformRole {
@@ -23,10 +27,23 @@ interface PermissionCatalogEntry {
   label: string;
   module: string;
   description?: string;
+  defaultScope?: string;
+  scopeDescription?: string;
 }
+
+const SCOPE_OPTIONS = [
+  { value: 'GLOBAL', label: 'Global', description: 'Accès à toutes les données' },
+  { value: 'DEPARTMENT', label: 'Département', description: 'Limité aux départements assignés' },
+  { value: 'FAMILY', label: 'Famille', description: 'Limité à la famille assignée' },
+  { value: 'TEAM', label: 'Équipe', description: 'Limité à l\'équipe assignée' },
+  { value: 'OWN', label: 'Propre', description: 'Limité à ses propres données' },
+];
 
 export default function PermissionsPage() {
   const queryClient = useQueryClient();
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+  const [expandedRole, setExpandedRole] = useState<string | null>(null);
+  const [rwdMode, setRwdMode] = useState<boolean>(false); // false = ancien mode (enabled), true = mode R/W/D
 
   const { data: permissions, isLoading: permLoading } = useQuery({
     queryKey: ['permissions'],
@@ -52,9 +69,23 @@ export default function PermissionsPage() {
     },
   });
 
+  // --- Mutations ---
   const updateMutation = useMutation({
     mutationFn: async ({ role, permission, enabled }: { role: string; permission: string; enabled: boolean }) => {
       await api.put(`/permissions/${role}/${permission}`, { enabled });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['permissions'] });
+      toast.success('Permission mise à jour');
+    },
+    onError: () => toast.error('Erreur lors de la mise à jour'),
+  });
+
+  const updateRwdMutation = useMutation({
+    mutationFn: async ({ role, permission, canRead, canWrite, canDelete, scope }: {
+      role: string; permission: string; canRead: boolean; canWrite: boolean; canDelete: boolean; scope: string;
+    }) => {
+      await api.put(`/permissions/${role}/${permission}/rwd`, { canRead, canWrite, canDelete, scope });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
@@ -128,6 +159,103 @@ export default function PermissionsPage() {
 
   const isSystemRole = (key: string) => roles?.find((r) => r.key === key)?.system ?? false;
 
+  const toggleModule = (module: string) => {
+    setExpandedModules((prev) => ({ ...prev, [module]: !prev[module] }));
+  };
+
+  const toggleRoleExpand = (role: string) => {
+    setExpandedRole(expandedRole === role ? null : role);
+  };
+
+  const getEntry = (role: string, perm: string): PermissionEntry | undefined => {
+    return groupedPermissions[role]?.find((p) => p.permission === perm);
+  };
+
+  // --- R/W/D cell renderer ---
+  const renderRwdCell = (role: string, perm: string) => {
+    if (!rwdMode) {
+      // Ancien mode : toggle enabled
+      const entry = getEntry(role, perm);
+      const enabled = entry?.enabled ?? true;
+      return (
+        <td key={role} className="text-center">
+          <button
+            onClick={() => updateMutation.mutate({ role, permission: perm, enabled: !enabled })}
+            className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-all duration-200
+              ${enabled
+                ? 'bg-primary-500/15 text-primary-600 dark:text-primary-400 hover:bg-primary-500/25'
+                : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-300 dark:text-gray-600 hover:bg-gray-200/50 dark:hover:bg-gray-700/40'
+              }`}
+            title={enabled ? 'Désactiver' : 'Activer'}
+          >
+            {enabled ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+          </button>
+        </td>
+      );
+    }
+
+    // Mode R/W/D : 3 mini-toggle + scope
+    const entry = getEntry(role, perm);
+    const canRead = entry?.canRead ?? entry?.enabled ?? true;
+    const canWrite = entry?.canWrite ?? entry?.enabled ?? true;
+    const canDelete = entry?.canDelete ?? false;
+    const scope = entry?.scope ?? 'GLOBAL';
+
+    const handleToggle = (field: 'canRead' | 'canWrite' | 'canDelete', val: boolean) => {
+      const newValues = { canRead, canWrite, canDelete, scope, [field]: val };
+      updateRwdMutation.mutate({ role, permission: perm, ...newValues });
+    };
+
+    const handleScopeChange = (newScope: string) => {
+      updateRwdMutation.mutate({ role, permission: perm, canRead, canWrite, canDelete, scope: newScope });
+    };
+
+    return (
+      <td key={role} className="text-center px-1">
+        <div className="flex flex-col items-center gap-1">
+          {/* R/W/D mini-toggles */}
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => handleToggle('canRead', !canRead)}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all text-[10px] font-bold
+                ${canRead ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : 'bg-gray-100/50 text-gray-300 dark:text-gray-600'}`}
+              title={canRead ? 'Lecture activée' : 'Lecture désactivée'}
+            >
+              <Eye className="w-3 h-3" />
+            </button>
+            <button
+              onClick={() => handleToggle('canWrite', !canWrite)}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all text-[10px] font-bold
+                ${canWrite ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-gray-100/50 text-gray-300 dark:text-gray-600'}`}
+              title={canWrite ? 'Écriture activée' : 'Écriture désactivée'}
+            >
+              <PencilIcon className="w-3 h-3" />
+            </button>
+            <button
+              onClick={() => handleToggle('canDelete', !canDelete)}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all text-[10px] font-bold
+                ${canDelete ? 'bg-red-500/15 text-red-600 dark:text-red-400' : 'bg-gray-100/50 text-gray-300 dark:text-gray-600'}`}
+              title={canDelete ? 'Suppression activée' : 'Suppression désactivée'}
+            >
+              <Trash className="w-3 h-3" />
+            </button>
+          </div>
+          {/* Scope selector */}
+          <select
+            value={scope}
+            onChange={(e) => handleScopeChange(e.target.value)}
+            className="text-[9px] px-1 py-0.5 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 max-w-[80px] truncate"
+            title={`Scope: ${SCOPE_OPTIONS.find(s => s.value === scope)?.description || scope}`}
+          >
+            {SCOPE_OPTIONS.map(s => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+      </td>
+    );
+  };
+
   if (permLoading || rolesLoading) {
     return <div className="min-h-[50vh] flex items-center justify-center"><div className="spinner h-8 w-8" /></div>;
   }
@@ -137,9 +265,22 @@ export default function PermissionsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Rôles & permissions</h1>
-          <p className="page-subtitle">Gérez les rôles et leurs permissions. Les rôles système ne peuvent pas être supprimés.</p>
+          <p className="page-subtitle">
+            Gérez les rôles, permissions granulaires (lecture/écriture/suppression) et scopes d'accès.
+          </p>
         </div>
-        <div className="page-header-actions">
+        <div className="page-header-actions flex items-center gap-2">
+          {/* Toggle RWD mode */}
+          <button
+            onClick={() => setRwdMode(!rwdMode)}
+            className={`btn-sm rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+              rwdMode
+                ? 'bg-primary-500 text-white shadow-md'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+          >
+            {rwdMode ? 'Mode R/W/D ✓' : 'Mode simple'}
+          </button>
           <button className="btn-primary btn-sm" onClick={() => { setCreateForm({ key: '', label: '', description: '' }); setCreateOpen(true); }}>
             <Plus className="w-4 h-4" /> Nouveau rôle
           </button>
@@ -175,55 +316,63 @@ export default function PermissionsPage() {
       </div>
 
       {/* Tableau des permissions par module */}
-      {Object.entries(catalogByModule).map(([module, perms]) => (
-        <div key={module} className="glass-card overflow-hidden mb-6">
-          <div className="card-header"><h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">{module}</h3></div>
-          <div className="overflow-x-auto">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th className="min-w-[200px]">Permission</th>
-                  {roleKeys.map((role) => (
-                    <th key={role} className="text-center px-3 text-[10px]">{getRoleLabel(role)}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {perms.map((perm) => {
-                  const permKey = perm.key;
-                  return (
-                    <tr key={permKey}>
-                      <td className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        <span className="block">{perm.label}</span>
-                        <span className="block text-[10px] text-gray-400">{permKey}</span>
-                      </td>
-                      {roleKeys.map((role) => {
-                        const entry = groupedPermissions[role]?.find((p) => p.permission === permKey);
-                        const enabled = entry?.enabled ?? true;
-                        return (
-                          <td key={role} className="text-center">
-                            <button
-                              onClick={() => updateMutation.mutate({ role, permission: permKey, enabled: !enabled })}
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-all duration-200
-                                ${enabled
-                                  ? 'bg-primary-500/15 text-primary-600 dark:text-primary-400 hover:bg-primary-500/25'
-                                  : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-300 dark:text-gray-600 hover:bg-gray-200/50 dark:hover:bg-gray-700/40'
-                                }`}
-                              title={enabled ? 'Cliquer pour désactiver' : 'Cliquer pour activer'}
-                            >
-                              {enabled ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                            </button>
-                          </td>
-                        );
-                      })}
+      {Object.entries(catalogByModule).map(([module, perms]) => {
+        const isExpanded = expandedModules[module] !== false; // expanded by default
+        return (
+          <div key={module} className="glass-card overflow-hidden mb-6">
+            <button
+              className="card-header w-full flex items-center gap-2 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors"
+              onClick={() => toggleModule(module)}
+            >
+              {isExpanded ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">{module}</h3>
+              <span className="text-[10px] text-gray-400 ml-2">({perms.length} permission{perms.length > 1 ? 's' : ''})</span>
+            </button>
+            {isExpanded && (
+              <div className="overflow-x-auto">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th className="min-w-[200px]">Permission</th>
+                      {roleKeys.map((role) => (
+                        <th key={role} className="text-center px-3 text-[10px]">
+                          <div className="flex flex-col items-center">
+                            <span>{getRoleLabel(role)}</span>
+                            {rwdMode && (
+                              <span className="flex items-center gap-0.5 mt-0.5 text-gray-400">
+                                <Eye className="w-2 h-2" />
+                                <PencilIcon className="w-2 h-2" />
+                                <Trash className="w-2 h-2" />
+                              </span>
+                            )}
+                          </div>
+                        </th>
+                      ))}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {perms.map((perm) => {
+                      const permKey = perm.key;
+                      return (
+                        <tr key={permKey}>
+                          <td className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <span className="block">{perm.label}</span>
+                            <span className="block text-[10px] text-gray-400">{permKey}</span>
+                            {rwdMode && perm.defaultScope && perm.defaultScope !== 'GLOBAL' && (
+                              <span className="block text-[9px] text-primary-500">Scope par défaut: {perm.defaultScope}</span>
+                            )}
+                          </td>
+                          {roleKeys.map((role) => renderRwdCell(role, permKey))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Modal créer rôle */}
       {createOpen && (
