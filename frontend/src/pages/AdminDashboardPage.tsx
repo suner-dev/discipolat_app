@@ -6,6 +6,7 @@ import {
   ArrowRight, Sparkles, MessageSquareText, BookOpen, LayoutTemplate, Building2,
   Users, Heart, Bell, UserCheck, AlertTriangle, TrendingUp, BarChart3,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import type { Tenant } from '@/types';
 import {
@@ -31,6 +32,8 @@ const ADMIN_SECTIONS = [
 ];
 
 export default function AdminDashboardPage() {
+  const { activeRole } = useAuth();
+  const canManage = activeRole === 'ADMIN'; // Route déjà protégée, mais patron uniforme
   const { branding } = useSettings();
 
   const { data: summary } = useQuery({
