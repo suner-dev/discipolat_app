@@ -138,8 +138,9 @@ public class ScheduledJobs {
                             .statut(StatutAlerte.ACTIVE)
                             .build();
                     alertRepository.save(alert);
+                    // Job planifié : tenant dérivé de l'âme (pas de contexte requête).
                     notificationService.create(
-                            soul.getFaiseurId(), TypeNotification.ABSENCE_48H, CanalNotification.EMAIL,
+                            soul.getTenantId(), soul.getFaiseurId(), TypeNotification.ABSENCE_48H, CanalNotification.EMAIL,
                             "Alerte absence 48h",
                             "L'âme " + soul.getNomComplet() + " n'a pas eu de contact depuis plus de 48h.",
                             soul.getId(), "SOUL");
@@ -166,7 +167,7 @@ public class ScheduledJobs {
 
                     // Notify the faiseur
                     notificationService.create(
-                            soul.getFaiseurId(), TypeNotification.ABSENCE_48H, CanalNotification.EMAIL,
+                            soul.getTenantId(), soul.getFaiseurId(), TypeNotification.ABSENCE_48H, CanalNotification.EMAIL,
                             "Alerte décrochage 3 semaines",
                             "L'âme " + soul.getNomComplet() + " n'a pas eu de suivi depuis plus de 3 semaines. Intervention requise.",
                             soul.getId(), "SOUL");
@@ -175,7 +176,7 @@ public class ScheduledJobs {
                     List<User> pasteurs = userRepository.findByRole(UserRole.PASTEUR);
                     for (User pasteur : pasteurs) {
                         notificationService.create(
-                                pasteur.getId(), TypeNotification.ABSENCE_48H, CanalNotification.EMAIL,
+                                soul.getTenantId(), pasteur.getId(), TypeNotification.ABSENCE_48H, CanalNotification.EMAIL,
                                 "🚨 Décrochage pastoral détecté",
                                 "L'âme " + soul.getNomComplet() + " est sans suivi depuis plus de 3 semaines. "
                                 + "Faiseur responsable : " + soul.getFaiseurId(),
@@ -202,7 +203,7 @@ public class ScheduledJobs {
             long soulCount = soulRepository.countByFaiseurId(faiseur.getId());
             if (soulCount > 0 && reportCount < soulCount) {
                 notificationService.create(
-                        faiseur.getId(), TypeNotification.RAPPORT_NON_SOUMIS, CanalNotification.EMAIL,
+                        faiseur.getTenantId(), faiseur.getId(), TypeNotification.RAPPORT_NON_SOUMIS, CanalNotification.EMAIL,
                         "🔔 Rappel : Rapport hebdomadaire à soumettre !",
                         "Vous avez " + (soulCount - reportCount) + " rapport(s) non soumis pour la semaine du " + currentWeek
                         + ". La deadline de soumission est ce soir à minuit.",
@@ -227,7 +228,7 @@ public class ScheduledJobs {
             long soulCount = soulRepository.countByFaiseurId(faiseur.getId());
             if (soulCount > 0 && reportCount < soulCount) {
                 notificationService.create(
-                        faiseur.getId(), TypeNotification.RAPPORT_NON_SOUMIS, CanalNotification.EMAIL,
+                        faiseur.getTenantId(), faiseur.getId(), TypeNotification.RAPPORT_NON_SOUMIS, CanalNotification.EMAIL,
                         "Rapport hebdomadaire non soumis",
                         "Vous avez " + (soulCount - reportCount) + " rapport(s) non soumis pour la semaine du " + currentWeek,
                         null, null);
@@ -261,7 +262,7 @@ public class ScheduledJobs {
             for (EventRegistration reg : registrations) {
                 if ("INSCRIT".equals(reg.getStatutInscription())) {
                     notificationService.create(
-                            reg.getUtilisateurId(), TypeNotification.INFORMATION, CanalNotification.EMAIL,
+                            event.getTenantId(), reg.getUtilisateurId(), TypeNotification.INFORMATION, CanalNotification.EMAIL,
                             "Rappel événement : " + event.getTitre(),
                             "L'événement \"" + event.getTitre() + "\" a lieu demain à " + event.getLieu()
                             + ". Date : " + event.getDateDebut(),
@@ -295,7 +296,7 @@ public class ScheduledJobs {
                     continue;
                 }
                 notificationService.create(
-                        responsableId, TypeNotification.EVENEMENT_RAPPEL, CanalNotification.IN_APP,
+                        event.getTenantId(), responsableId, TypeNotification.EVENEMENT_RAPPEL, CanalNotification.IN_APP,
                         "📅 Événement du département dans " + jours + " jour(s) — " + department.getNom(),
                         "L'événement « " + event.getTitre() + " » du département « " + department.getNom()
                                 + " » a lieu le " + event.getDateDebut() + " à " + event.getLieu() + ".",
@@ -371,7 +372,7 @@ public class ScheduledJobs {
                 }
                 try {
                     notificationService.create(
-                            pasteur.getId(), TypeNotification.TRANSFERT_DELAI_DEPASSE, CanalNotification.IN_APP,
+                            req.getTenantId(), pasteur.getId(), TypeNotification.TRANSFERT_DELAI_DEPASSE, CanalNotification.IN_APP,
                             "⏰ Délai de validation dépassé",
                             "La demande de transfert (" + req.getType().name()
                                     + ") soumise le " + (req.getDateSoumission() != null ? req.getDateSoumission() : "—")
@@ -440,7 +441,7 @@ public class ScheduledJobs {
                         .statut(StatutAlerte.ACTIVE)
                         .build());
                 notificationService.create(
-                        responsableId, TypeNotification.TACHE_EN_RETARD, CanalNotification.IN_APP,
+                        department.getTenantId(), responsableId, TypeNotification.TACHE_EN_RETARD, CanalNotification.IN_APP,
                         "⏰ Tâche en retard — " + department.getNom(),
                         "La tâche « " + task.getTitre() + " » a dépassé son échéance ("
                                 + task.getEcheance() + ") et est toujours ouverte.",

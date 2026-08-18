@@ -126,6 +126,7 @@ class DashboardServiceTest {
                 .thenReturn(emptyPage);
         when(soulRepository.findByTypeDisciple(any(), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of()));
+        when(transferRequestRepository.findAll()).thenReturn(List.of());
 
         var result = dashboardService.getPasteurDashboard();
 
@@ -134,6 +135,9 @@ class DashboardServiceTest {
         assertTrue(result.containsKey("departements"));
         assertTrue(result.containsKey("familles"));
         assertTrue(result.containsKey("presences"));
+        // Le Pasteur supervise les transferts en attente de validation.
+        assertTrue(result.containsKey("transfertsEnAttente"));
+        assertEquals(List.of(), result.get("transfertsEnAttente"));
     }
 
     @Test

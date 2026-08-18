@@ -4,6 +4,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,20 @@ public class NotificationService {
 
     public Notification create(UUID destinataireId, TypeNotification type, CanalNotification canal,
                                String titre, String message, UUID entiteReferenceId, String entiteReferenceType) {
+        // Tenant hérité du contexte de requête (JWT) — obligatoire (colonne NOT NULL).
+        return create(TenantContext.getTenantId(), destinataireId, type, canal,
+                titre, message, entiteReferenceId, entiteReferenceType);
+    }
+
+    /**
+     * Création avec tenant explicite — utilisé par les jobs planifiés
+     * (escalade d'absentéisme, rappels) qui tournent SANS contexte de requête :
+     * le tenant est dérivé de l'entité concernée (ex : l'âme de la notification).
+     */
+    public Notification create(UUID tenantId, UUID destinataireId, TypeNotification type, CanalNotification canal,
+                               String titre, String message, UUID entiteReferenceId, String entiteReferenceType) {
         Notification notification = Notification.builder()
+                .tenantId(tenantId)
                 .destinataireId(destinataireId)
                 .type(type)
                 .canal(canal)

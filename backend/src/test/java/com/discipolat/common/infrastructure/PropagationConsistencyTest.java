@@ -307,6 +307,12 @@ class PropagationConsistencyTest {
         Department deptA = saveDepartment("Jeunesse", respA.getId());
         Department deptB = saveDepartment("Chorale", respB.getId());
         Soul membre = saveSoul("Aka", "Marie", faiseur.getId(), null);
+        // Le membre a un compte utilisateur : c'est CE compte qui reçoit les
+        // notifications (FK notifications.destinataire_id → users), jamais l'UUID
+        // de l'âme. Une âme sans compte n'est simplement pas notifiée.
+        User membreUser = saveUser("marie.aka@test", UserRole.MEMBRE, "Marie", "Aka");
+        membre.setUserId(membreUser.getId());
+        soulRepository.save(membre);
 
         soulDepartmentRepository.save(SoulDepartment.builder()
                 .tenantId(DEFAULT_TENANT_ID)
@@ -340,10 +346,10 @@ class PropagationConsistencyTest {
         assertThat(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptA.getId()))
                 .extracting(SoulDepartment::getSoulId).doesNotContain(membre.getId());
 
-        // Historique + notifications (membre + responsable du nouveau département).
+        // Historique + notifications (compte du membre + responsable du nouveau département).
         assertThat(history(membre.getId(), "TRANSFERT_DEPARTEMENT")).isNotNull();
         assertThat(hasNotification(respB.getId(), "transféré vers votre département : Marie Aka")).isTrue();
-        assertThat(hasNotification(membre.getId(), "département « Chorale »")).isTrue();
+        assertThat(hasNotification(membreUser.getId(), "département « Chorale »")).isTrue();
     }
 
     // ========================================================================

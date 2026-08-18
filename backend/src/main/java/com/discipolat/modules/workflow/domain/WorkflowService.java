@@ -70,8 +70,9 @@ public class WorkflowService {
             // 3+ mois → pasteur
             if (days >= 90) {
                 for (User pasteur : userRepository.findByRole(UserRole.PASTEUR)) {
+                    // Job planifié : tenant dérivé de l'âme (pas de contexte requête).
                     notificationService.create(
-                            pasteur.getId(), TypeNotification.ALERTE_ABSENCE, CanalNotification.IN_APP,
+                            soul.getTenantId(), pasteur.getId(), TypeNotification.ALERTE_ABSENCE, CanalNotification.IN_APP,
                             "🚨 Absence de 3 mois : " + nom,
                             nom + " est sans contact depuis plus de 3 mois. Action pastorale requise.",
                             soul.getId(), "SOUL");
@@ -83,7 +84,7 @@ public class WorkflowService {
                 UUID chefId = findChefFamille(soul);
                 if (chefId != null) {
                     notificationService.create(
-                            chefId, TypeNotification.ALERTE_ABSENCE, CanalNotification.IN_APP,
+                            soul.getTenantId(), chefId, TypeNotification.ALERTE_ABSENCE, CanalNotification.IN_APP,
                             "⚠️ Absence de 2 mois : " + nom,
                             nom + " est sans contact depuis plus de 2 mois. Suivi de la famille requis.",
                             soul.getId(), "SOUL");
@@ -93,7 +94,7 @@ public class WorkflowService {
             // 3+ semaines → faiseur
             else if (days >= 21) {
                 notificationService.create(
-                        soul.getFaiseurId(), TypeNotification.ALERTE_ABSENCE, CanalNotification.IN_APP,
+                        soul.getTenantId(), soul.getFaiseurId(), TypeNotification.ALERTE_ABSENCE, CanalNotification.IN_APP,
                         "⏰ Absence de 3 semaines : " + nom,
                         nom + " est sans contact depuis plus de 3 semaines. Reprendre contact.",
                         soul.getId(), "SOUL");
@@ -115,7 +116,7 @@ public class WorkflowService {
             if (MonthDay.from(soul.getDateNaissance()).equals(today)) {
                 UUID target = soul.getFaiseurId();
                 notificationService.create(
-                        target, TypeNotification.INFORMATION, CanalNotification.IN_APP,
+                        soul.getTenantId(), target, TypeNotification.INFORMATION, CanalNotification.IN_APP,
                         "🎂 Anniversaire : " + soul.getNomComplet(),
                         soul.getNomComplet() + " fête son anniversaire aujourd'hui !",
                         soul.getId(), "SOUL");

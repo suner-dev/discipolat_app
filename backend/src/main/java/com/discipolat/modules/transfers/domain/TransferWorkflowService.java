@@ -606,7 +606,17 @@ public class TransferWorkflowService {
     }
 
     private void notifyConcerned(TransferRequest req, String message, TypeNotification type) {
-        notifyUser(req.getPersonneId(), message, type, req.getId());
+        // La personne concernée peut être une âme (SOUL) : son compte utilisateur
+        // est résolu via Soul.userId — jamais l'UUID brut de l'âme (FK users).
+        UUID cible = req.getPersonneId();
+        if ("SOUL".equals(req.getPersonneType())) {
+            cible = soulRepository.findById(req.getPersonneId())
+                    .map(Soul::getUserId)
+                    .orElse(null);
+        }
+        if (cible != null) {
+            notifyUser(cible, message, type, req.getId());
+        }
     }
 
     private void notifyUser(UUID userId, String titre, TypeNotification type, UUID entiteId) {

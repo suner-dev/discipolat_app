@@ -3,12 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { useExportReport } from '@/hooks/useExportReport';
+import type { PasteurDashboardData, PresenceTrendData, AuditRecentActivity } from '@/types';
 import {
   Heart, Users, Building2, FileText, AlertTriangle, TrendingUp,
   TrendingDown, Activity, Bell, UserCheck, BarChart3, FileDown,
   Loader2, Sparkles, ChevronRight,  Church, BookOpen, Calendar,
   Shield, Star, Search, UserPlus, UserX, Clock,
-  CheckCircle, XCircle,
+  CheckCircle, XCircle, ArrowLeftRight, History,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -54,17 +55,34 @@ export default function PasteurDashboardPage() {
     queryKey: ['dashboard', 'pasteur'],
     queryFn: async () => {
       const res = await api.get('/dashboard/pasteur');
-      return res.data as any;
+      return res.data as PasteurDashboardData;
     },
   });
 
-  const croissance = dashboard?.croissance ?? {};
+  const { data: presenceTrend } = useQuery({
+    queryKey: ['dashboard', 'pasteur', 'presence-trend'],
+    queryFn: async () => {
+      const res = await api.get('/dashboard/pasteur/presence-trend', { params: { mois: 12 } });
+      return res.data as PresenceTrendData;
+    },
+  });
+
+  const { data: recentActivity } = useQuery({
+    queryKey: ['audit', 'recent'],
+    queryFn: async () => {
+      const res = await api.get('/audit/recent', { params: { limit: 15 } });
+      return res.data as AuditRecentActivity[];
+    },
+  });
+
+  const croissance = dashboard?.croissance ?? {} as PasteurDashboardData['croissance'];
   const departements = dashboard?.departements ?? [];
   const familles = dashboard?.familles ?? [];
   const faiseurs = dashboard?.faiseurs ?? [];
-  const presences = dashboard?.presences ?? {};
-  const rapports = dashboard?.rapports ?? {};
+  const presences = dashboard?.presences ?? {} as PasteurDashboardData['presences'];
+  const rapports = dashboard?.rapports ?? {} as PasteurDashboardData['rapports'];
   const famillesARisque = dashboard?.famillesARisque ?? [];
+  const transfertsEnAttente = dashboard?.transfertsEnAttente ?? [];
 
   // Chaque KPI ouvre la liste Âmes déjà filtrée (filtres portés par l'URL,
   // lus par SoulsPage) — jamais une liste vide non filtrée.
@@ -258,6 +276,43 @@ export default function PasteurDashboardPage() {
             </div>
           </div>
 
+          {/* Tendance de présence (LineChart 12 semaines) */}
+          {presenceTrend?.tendance && presenceTrend.tendance.length > 0 && (
+            <div className="glass-card p-6 mb-6 animate-slide-up" style={{ animationDelay: '120ms' }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary-500" />
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    Tendance de présence (12 semaines)
+                  </h3>
+                </div>
+                <span className={`text-xs font-semibold ${presenceTrend.tendanceGlobale > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {presenceTrend.tendanceGlobale > 0 ? '+' : ''}{presenceTrend.tendanceGlobale}%
+                </span>
+              </div>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={presenceTrend.tendance}>
+                    <defs>
+                      <linearGradient id="presenceGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" vertical={false} />
+                    <XAxis dataKey="semaine" tick={{ fontSize: 10 }} stroke="rgba(128,128,128,0.3)"
+                      tickFormatter={(v) => v.slice(5)} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} unit="%" stroke="rgba(128,128,128,0.3)" />
+                    <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, 'Taux']}
+                      labelFormatter={(l) => `Semaine ${l}`} />
+                    <Area type="monotone" dataKey="taux" stroke="#3b82f6" strokeWidth={2}
+                      fill="url(#presenceGradient)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
           {/* Départements */}
           <div className="glass-card p-6 mb-6 animate-slide-up" style={{ animationDelay: '150ms' }}>
             <div className="flex items-center justify-between mb-4">
@@ -280,7 +335,7 @@ export default function PasteurDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {departements.map((dept: any, i: number) => (
+                  {departements.map((dept, i) => (
                     <tr key={dept.id} className="border-b border-gray-50 dark:border-gray-800/30 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 cursor-pointer transition-colors"
                       onClick={() => navigate(`/departments/${dept.id}`)}>
                       <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{dept.nom}</td>
@@ -323,7 +378,7 @@ export default function PasteurDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {familles.map((fam: any, i: number) => (
+                  {familles.map((fam, i) => (
                     <tr key={fam.id} className="border-b border-gray-50 dark:border-gray-800/30 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 cursor-pointer transition-colors"
                       onClick={() => navigate(`/families/${fam.id}`)}>
                       <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{fam.nom}</td>
@@ -352,6 +407,45 @@ export default function PasteurDashboardPage() {
             </div>
           </div>
 
+          {/* Transferts à traiter */}
+          {transfertsEnAttente.length > 0 && (
+            <div className="glass-card p-6 mb-6 animate-slide-up" style={{ animationDelay: '400ms' }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ArrowLeftRight className="w-4 h-4 text-amber-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Transferts à traiter</h3>
+                  <span className="badge-warning text-[10px]">{transfertsEnAttente.length} en attente</span>
+                </div>
+                <Link to="/transfers" className="text-[10px] font-medium text-primary-600">Voir tout</Link>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {transfertsEnAttente.slice(0, 6).map((t) => (
+                  <Link
+                    key={t.id}
+                    to={`/transfers/${t.id}`}
+                    className="flex items-center justify-between p-2.5 rounded-lg bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/30 dark:border-amber-800/20 hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ArrowLeftRight className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {t.personneNom || '—'} → {t.cible || '—'}
+                        </p>
+                        <p className="text-[9px] text-gray-400">
+                          {t.type === 'SOUL_TRANSFERT' ? 'Âme' : t.type === 'FAISEUR_TRANSFERT' ? 'Faiseur' : t.type === 'CHEF_FAMILLE_TRANSFERT' ? 'Chef' : t.type}
+                          {t.dateSoumission ? ` · ${new Date(t.dateSoumission).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    {t.priorite === 'HAUTE' && (
+                      <span className="text-[8px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full font-semibold uppercase flex-shrink-0">Priorité</span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Bottom: Faiseurs + Alertes + Familles à risque */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Faiseurs */}
@@ -364,7 +458,7 @@ export default function PasteurDashboardPage() {
                 <Link to="/users" className="text-[10px] font-medium text-primary-600">Voir</Link>
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {faiseurs.slice(0, 10).map((f: any) => (
+                {faiseurs.slice(0, 10).map((f) => (
                   <div key={f.id} onClick={openFaiseur} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer" title="Gérer les utilisateurs / faiseurs">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-[9px] font-bold text-white">
@@ -405,37 +499,43 @@ export default function PasteurDashboardPage() {
                   {(dashboard?.alertesActives ?? 0) > 0 ? 'Attention requise' : 'Tout est sous contrôle'}
                 </span>
               </div>
-            </div>
-
-            {/* Familles à risque */}
-            <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '350ms' }}>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-red-500" />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Familles à risque</h3>
-                </div>
-                <span className="text-[10px] text-gray-400">Présence &lt; 50%</span>
-              </div>
-              {famillesARisque.length > 0 ? (
-                <div className="space-y-2">
-                  {famillesARisque.slice(0, 5).map((fr: any) => (
-                    <div key={fr.id} onClick={() => openFamille(fr.id)} className="flex items-center justify-between p-2 rounded-lg bg-red-50/50 dark:bg-red-900/10 border border-red-200/30 dark:border-red-800/20 cursor-pointer hover:bg-red-100/50 dark:hover:bg-red-900/20 transition-colors" title="Ouvrir la fiche de la famille">
-                      <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{fr.nom}</span>
-                      <span className="text-xs font-semibold text-red-500">{fr.tauxPresence}%</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-xs text-gray-400">Aucune famille à risque</p>
-                </div>
-              )}
               <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/30">
                 <div className="flex items-center justify-between text-[10px] text-gray-400">
                   <span>Suivis parallèles actifs</span>
                   <span className="font-semibold text-primary-500">{dashboard?.suivisParallelesActifs ?? 0}</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Fil d'activité récente */}
+            <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '350ms' }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <History className="w-4 h-4 text-blue-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activité récente</h3>
+                </div>
+                <Link to="/audit" className="text-[10px] font-medium text-primary-600">Voir tout</Link>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {recentActivity?.slice(0, 8).map((a) => (
+                  <div key={a.id} className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0 mt-0.5">
+                      {a.utilisateurNom?.charAt(0) || '?'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium text-gray-900 dark:text-gray-100 truncate">
+                        <span className="text-primary-600 dark:text-primary-400">{a.utilisateurNom}</span>
+                        {' '}{a.action?.toLowerCase().replace(/_/g, ' ')}
+                      </p>
+                      <p className="text-[9px] text-gray-400">
+                        {a.entiteType} · {new Date(a.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {(!recentActivity || recentActivity.length === 0) && (
+                  <p className="text-xs text-gray-400 text-center py-4">Aucune activité récente</p>
+                )}
               </div>
             </div>
           </div>

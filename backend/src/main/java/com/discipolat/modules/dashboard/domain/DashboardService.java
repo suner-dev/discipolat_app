@@ -26,6 +26,7 @@ import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.members.domain.MemberPresence;
 import com.discipolat.modules.members.domain.MemberPresenceRepository;
 import com.discipolat.modules.parallelfollowups.domain.ParallelFollowupRepository;
+import com.discipolat.modules.transfers.domain.TransferRequest;
 import com.discipolat.modules.transfers.domain.TransferRequestRepository;
 import com.discipolat.modules.reports.domain.FamilyReport;
 import com.discipolat.modules.reports.domain.FamilyReportRepository;
@@ -579,6 +580,39 @@ public class DashboardService {
             }
         }
         dashboard.put("famillesARisque", famillesRisque);
+
+        // ==================== TRANSFERTS À TRAITER ====================
+        // Demandes en attente de validation (EN_ATTENTE_VALIDATION ou
+        // VALIDATION_PARTIELLE) — le Pasteur est le validateur final : il doit
+        // voir immédiatement ce qui requiert son action.
+        List<TransferRequest> transfertsEnValidation = transferRequestRepository.findAll().stream()
+                .filter(t -> t.getStatut() == TransferStatus.EN_ATTENTE_VALIDATION
+                        || t.getStatut() == TransferStatus.VALIDATION_PARTIELLE)
+                .sorted(Comparator.comparing(TransferRequest::getDateSoumission,
+                        Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                .toList();
+        List<Map<String, Object>> transfertsList = new ArrayList<>();
+        for (TransferRequest t : transfertsEnValidation) {
+            Map<String, Object> tf = new LinkedHashMap<>();
+            tf.put("id", t.getId());
+            tf.put("type", t.getType().name());
+            tf.put("statut", t.getStatut().name());
+            tf.put("priorite", t.getPriorite().name());
+            tf.put("dateSoumission", t.getDateSoumission());
+            // Personne concernée (âme ou utilisateur) : nom résolu.
+            if ("USER".equals(t.getPersonneType())) {
+                tf.put("personneNom", userRepository.findById(t.getPersonneId())
+                        .map(u -> u.getFirstName() + " " + u.getLastName()).orElse(null));
+            } else {
+                tf.put("personneNom", soulRepository.findById(t.getPersonneId())
+                        .map(Soul::getNomComplet).orElse(null));
+            }
+            // Cible lisible : nouvelle affectation {type, id, nom}.
+            Object cible = t.getNouvelleAffectation() != null ? t.getNouvelleAffectation().get("nom") : null;
+            tf.put("cible", cible);
+            transfertsList.add(tf);
+        }
+        dashboard.put("transfertsEnAttente", transfertsList);
 
         dashboard.put("semaine", currentWeek.toString());
         return dashboard;

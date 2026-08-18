@@ -355,7 +355,17 @@ public class TransferExecutor {
 
     /** Notification au demandeur / à la personne concernée (si elle a un compte). */
     private void notify(TransferRequest req, String message, TypeNotification type) {
-        notifyUser(req.getPersonneId(), message, type, req.getId());
+        // La personne concernée peut être une âme (SOUL) : son compte utilisateur
+        // est alors résolu via Soul.userId — jamais l'UUID brut de l'âme.
+        UUID cible = req.getPersonneId();
+        if ("SOUL".equals(req.getPersonneType())) {
+            cible = soulRepository.findById(req.getPersonneId())
+                    .map(Soul::getUserId)
+                    .orElse(null);
+        }
+        if (cible != null) {
+            notifyUser(cible, message, type, req.getId());
+        }
         if (!req.getPersonneId().equals(req.getDemandeurId())) {
             notifyUser(req.getDemandeurId(), message, type, req.getId());
         }

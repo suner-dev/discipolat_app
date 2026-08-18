@@ -103,4 +103,37 @@ class NotificationServiceTest {
         assertEquals(1, result.getTotalElements());
         assertEquals(currentUserId, result.getContent().get(0).getDestinataireId());
     }
+
+    @Test
+    void create_WithExplicitTenant_ShouldPersistTenantId() {
+        UUID tenantId = UUID.randomUUID();
+        UUID destinataireId = UUID.randomUUID();
+        when(notificationRepository.save(any(Notification.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        Notification saved = service.create(
+                tenantId, destinataireId, TypeNotification.ALERTE_ABSENCE, CanalNotification.IN_APP,
+                "Titre", "Message", UUID.randomUUID(), "SOUL");
+
+        assertEquals(tenantId, saved.getTenantId());
+        assertEquals(destinataireId, saved.getDestinataireId());
+        verify(notificationRepository).save(argThat(n -> tenantId.equals(n.getTenantId())));
+    }
+
+    @Test
+    void create_WithoutTenantContext_ShouldPersistNullTenantId() {
+        // Sans contexte de requête ni tenant explicite (comportement historique
+        // des jobs non encore migrés) : la création ne doit pas crasher côté
+        // service — la contrainte DB reste le garde-fou final.
+        UUID destinataireId = UUID.randomUUID();
+        when(notificationRepository.save(any(Notification.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        Notification saved = service.create(
+                destinataireId, TypeNotification.INFORMATION, CanalNotification.IN_APP,
+                "Titre", "Message", null, null);
+
+        assertNull(saved.getTenantId());
+        verify(notificationRepository).save(any(Notification.class));
+    }
 }

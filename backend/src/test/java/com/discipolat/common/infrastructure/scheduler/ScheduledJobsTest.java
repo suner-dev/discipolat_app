@@ -106,7 +106,7 @@ class ScheduledJobsTest {
 
         jobs.checkTransferDelays();
 
-        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -122,8 +122,8 @@ class ScheduledJobsTest {
         jobs.checkTransferDelays();
 
         verify(notificationService).create(
-                eq(pasteurId), eq(TypeNotification.TRANSFERT_DELAI_DEPASSE), eq(CanalNotification.IN_APP),
-                any(), any(), eq(req.getId()), eq("TRANSFER"));
+                eq(req.getTenantId()), eq(pasteurId), eq(TypeNotification.TRANSFERT_DELAI_DEPASSE),
+                eq(CanalNotification.IN_APP), any(), any(), eq(req.getId()), eq("TRANSFER"));
     }
 
     @Test
@@ -137,7 +137,7 @@ class ScheduledJobsTest {
 
         jobs.checkTransferDelays();
 
-        verify(notificationService, times(1)).create(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationService, times(1)).create(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -152,7 +152,7 @@ class ScheduledJobsTest {
 
         jobs.checkTransferDelays();
 
-        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -164,7 +164,7 @@ class ScheduledJobsTest {
 
         jobs.checkTransferDelays();
 
-        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -182,7 +182,7 @@ class ScheduledJobsTest {
         jobs.checkTransferDelays();
 
         // 2 demandes × 2 pasteurs = 4 notifications
-        verify(notificationService, times(4)).create(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationService, times(4)).create(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -195,7 +195,7 @@ class ScheduledJobsTest {
 
         jobs.checkOverdueDepartmentTasks();
 
-        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -215,8 +215,8 @@ class ScheduledJobsTest {
         jobs.checkOverdueDepartmentTasks();
 
         verify(notificationService).create(
-                eq(responsableId), eq(TypeNotification.TACHE_EN_RETARD), eq(CanalNotification.IN_APP),
-                any(), any(), eq(task.getId()), eq("TASK"));
+                eq(dept.getTenantId()), eq(responsableId), eq(TypeNotification.TACHE_EN_RETARD),
+                eq(CanalNotification.IN_APP), any(), any(), eq(task.getId()), eq("TASK"));
     }
 
     // ==================== RAPPELS D'ÉVÉNEMENTS DE DÉPARTEMENT ====================
@@ -250,8 +250,8 @@ class ScheduledJobsTest {
         jobs.sendEventReminders();
 
         verify(notificationService).create(
-                eq(responsableId), eq(TypeNotification.EVENEMENT_RAPPEL), eq(CanalNotification.IN_APP),
-                any(), any(), eq(event.getId()), eq("EVENT"));
+                eq(event.getTenantId()), eq(responsableId), eq(TypeNotification.EVENEMENT_RAPPEL),
+                eq(CanalNotification.IN_APP), any(), any(), eq(event.getId()), eq("EVENT"));
     }
 
     @Test
@@ -272,7 +272,7 @@ class ScheduledJobsTest {
 
         jobs.sendEventReminders();
 
-        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -300,7 +300,7 @@ class ScheduledJobsTest {
 
         jobs.sendEventReminders();
 
-        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -322,6 +322,6 @@ class ScheduledJobsTest {
 
         jobs.sendEventReminders();
 
-        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationService, never()).create(any(), any(), any(), any(), any(), any(), any(), any());
     }
 }
