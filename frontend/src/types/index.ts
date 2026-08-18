@@ -1888,6 +1888,20 @@ export interface AuditRecentActivity {
   createdAt: string;
 }
 
+// ==================== TENANTS (ADMIN) ====================
+
+export type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'CANCELLED' | 'PENDING_SETUP';
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  status: TenantStatus;
+  plan: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // API Error
 export interface ApiError {
   status: number;

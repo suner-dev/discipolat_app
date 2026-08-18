@@ -85,6 +85,39 @@ avancée avec 9/11 actions complétées.
 
 ---
 
+## SESSION 2026-08-18 (bloc 14) — PHASE 2 ADMIN : PAGE GESTION DES TENANTS
+
+### Objectif
+
+Interface d'administration pour gérer les tenants (églises) : liste, création,
+modification — avec validation, badges de statut, et sous-titre éducatif sur
+l'isolation multi-tenant.
+
+### Fait
+
+- **AdminTenantsPage.tsx** : page complète accessible à `/admin/tenants` (ADMIN-
+  only) :
+  - **Liste** des tenants avec avatar, nom, slug, date de création, badges
+    statut (ACTIVE/SUSPENDED/CANCELLED/PENDING_SETUP) et plan.
+  - **Barre de stats** en haut (4 compteurs par statut).
+  - **Modal création** : nom (auto-slug), slug (verbatim, disabled en édition),
+    plan (free/starter/pro/enterprise).
+  - **Modal édition** : nom, plan, statut.
+  - **Empty state** avec CTA "Créer la première église".
+  - Toasts d'erreur avec `getErrorMessage`.
+- **Types TypeScript** : `Tenant` + `TenantStatus` ajoutés à `types/index.ts`.
+- **Route** : `/admin/tenants` ajoutée dans `App.tsx` (ProtectedRoute ADMIN).
+- **Lazy import** : `AdminTenantsPage` ajouté (code splitting).
+- **AdminDashboardPage** : tile "Églises (tenants)" ajoutée (première position).
+
+### Baselines
+
+- Backend : **541 tests ✓** (inchangé)
+- Frontend : **228 tests vitest ✓ (37 fichiers) + `tsc --noEmit` ✓**
+- Mobile : inchangé (125 tests ✓)
+
+---
+
 ## SESSION 2026-08-18 (bloc 13) — PHASE 1 PASTEUR + HARDENING MULTI-TENANT (P0)
 
 ### Objectif
@@ -208,8 +241,9 @@ et compléter le module de gestion des tenants.
 ### Prêt pour la suite
 
 Phase 1 **Pasteur** terminée (KPI réels, alerts bulk, pastoral-360).
-Prochaine phase : **Phase 2 — Consolidation Admin** (gestion tenants en UI,
-notifications configurables, workflows) ou **Phase 4 — Parité mobile**.
+Phase 2 **Admin** démarrée : page de gestion des tenants terminée.
+Prochaine phase : **Phase 2 suite** (notifications configurables, workflows) ou
+**Phase 3 — Réduction dette technique** ou **Phase 4 — Parité mobile**.
 
 ---
 

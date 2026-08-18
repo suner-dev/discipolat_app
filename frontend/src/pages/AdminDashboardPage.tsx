@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import {
   Palette, Boxes, Menu as MenuIcon, Shield, UserCog, Activity, FileText,
-  ArrowRight, Sparkles, MessageSquareText, BookOpen, LayoutTemplate,
+  ArrowRight, Sparkles, MessageSquareText, BookOpen, LayoutTemplate, Building2,
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 
 const ADMIN_SECTIONS = [
+  { href: '/admin/tenants', icon: Building2, title: 'Églises (tenants)', desc: 'Gérer les églises de la plateforme : création, statut, plan et isolation multi-tenant.', gradient: 'from-emerald-500 to-teal-600' },
   { href: '/admin/settings', icon: Palette, title: 'Identité & marque', desc: 'Nom, logo, couleurs, typographie et coordonnées de l\'église.', gradient: 'from-primary-500 to-emerald-600' },
   { href: '/admin/modules', icon: Boxes, title: 'Modules', desc: 'Activer ou désactiver les grands modules de la plateforme.', gradient: 'from-violet-500 to-purple-600' },
   { href: '/admin/menus', icon: MenuIcon, title: 'Menus', desc: 'Configurer la navigation : ordre, libellé, icônes et rôles visibles.', gradient: 'from-amber-500 to-orange-600' },

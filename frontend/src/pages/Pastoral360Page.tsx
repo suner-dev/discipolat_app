@@ -15,7 +15,9 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   PolarRadiusAxis, ResponsiveContainer, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Legend,
+  AreaChart, Area,
 } from 'recharts';
+import type { SpiritualScorePoint } from '@/types';
 
 const INDICE_LABELS: Record<string, string> = {
   santeSpirituelle: 'Santé spirituelle',
@@ -83,6 +85,15 @@ export default function Pastoral360Page() {
     queryFn: async () => {
       const res = await api.get(`/souls/${id}/pastoral-360`);
       return res.data as Pastoral360Data;
+    },
+    enabled: !!id,
+  });
+
+  const { data: scoreHistory } = useQuery({
+    queryKey: ['soul', id, 'spiritual-score-history'],
+    queryFn: async () => {
+      const res = await api.get(`/souls/${id}/spiritual-score/history`);
+      return res.data as SpiritualScorePoint[];
     },
     enabled: !!id,
   });
@@ -258,6 +269,60 @@ export default function Pastoral360Page() {
             </div>
             <p className="text-[9px] text-gray-400 text-center mt-2">
               {timeline.filter((e: any) => e.nouveauStatut).length} changements de statut enregistrés
+            </p>
+          </div>
+        )}
+
+        {/* Score spirituel — évolution hebdomadaire */}
+        {scoreHistory && scoreHistory.length > 1 && (
+          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700/30">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-4 h-4 text-blue-500" />
+              <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Évolution du score spirituel
+              </h3>
+            </div>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={scoreHistory.slice(-20)}>
+                  <defs>
+                    <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" vertical={false} />
+                  <XAxis dataKey="semaine" tick={{ fontSize: 10 }} stroke="rgba(128,128,128,0.3)"
+                    tickFormatter={(v) => v?.slice(5) ?? v} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} stroke="rgba(128,128,128,0.3)" />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">{d.semaine}</p>
+                          {payload.map((p) => (
+                            <p key={p.dataKey} className="text-[10px]" style={{ color: p.color }}>
+                              {p.dataKey === 'scoreGlobal' ? 'Global' : p.dataKey === 'sante' ? 'Santé' : p.dataKey === 'fidelite' ? 'Fidélité' : p.dataKey === 'engagement' ? 'Engagement' : 'Participation'}: {p.value}
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    }}
+                  />
+                  <Legend iconType="circle" iconSize={6}
+                    formatter={(value) => value === 'scoreGlobal' ? 'Global' : value === 'sante' ? 'Santé' : value === 'fidelite' ? 'Fidélité' : value === 'engagement' ? 'Engagement' : 'Participation'} />
+                  <Area type="monotone" dataKey="scoreGlobal" stroke="#22c55e" strokeWidth={2} fill="url(#scoreGradient)" />
+                  <Line type="monotone" dataKey="sante" stroke="#3b82f6" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                  <Line type="monotone" dataKey="fidelite" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                  <Line type="monotone" dataKey="engagement" stroke="#8b5cf6" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                  <Line type="monotone" dataKey="participation" stroke="#ec4899" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-[9px] text-gray-400 text-center mt-2">
+              {scoreHistory.length} semaines de données
             </p>
           </div>
         )}

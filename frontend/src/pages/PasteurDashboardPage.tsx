@@ -75,6 +75,14 @@ export default function PasteurDashboardPage() {
     },
   });
 
+  const { data: alertStats } = useQuery({
+    queryKey: ['alerts', 'stats'],
+    queryFn: async () => {
+      const res = await api.get('/alerts/stats');
+      return res.data as { actives: number; traitees: number; resolues: number; total: number };
+    },
+  });
+
   const croissance = dashboard?.croissance ?? {} as PasteurDashboardData['croissance'];
   const departements = dashboard?.departements ?? [];
   const familles = dashboard?.familles ?? [];
