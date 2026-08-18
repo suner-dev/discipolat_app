@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
@@ -35,14 +35,44 @@ const STATUT_FALLBACK: Record<string, string> = {
 };
 
 export default function SoulsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Les query params permettent aux KPI des dashboards d'ouvrir la liste
+  // directement filtrée (/souls?statut=DECROCHE, ?typeDisciple=NOUVEAU_CONVERTI,
+  // ?search=..., ?view=corbeille). L'URL reste la source de vérité des filtres.
+  const initialStatut = (searchParams.get('statut') as StatutAme | null) ?? '';
+  const initialType = (searchParams.get('typeDisciple') as TypeDisciple | null) ?? '';
+  const initialSearch = searchParams.get('search') ?? '';
+  const initialView = searchParams.get('view') === 'corbeille' ? 'corbeille' : 'liste';
+
   const [page, setPage] = useState(0);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<TypeDisciple | ''>('');
-  const [statutFilter, setStatutFilter] = useState<StatutAme | ''>('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [view, setView] = useState<'liste' | 'corbeille'>('liste');
+  const [search, setSearch] = useState(initialSearch);
+  const [typeFilter, setTypeFilter] = useState<TypeDisciple | ''>(initialType);
+  const [statutFilter, setStatutFilter] = useState<StatutAme | ''>(initialStatut);
+  const [showFilters, setShowFilters] = useState(Boolean(initialStatut || initialType || initialSearch));
+  const [view, setView] = useState<'liste' | 'corbeille'>(initialView);
   const queryClient = useQueryClient();
   const dictionaries = useDictionaries();
+
+  /** Synchronise l'URL avec les filtres courants (replace : pas d'historique). */
+  const syncUrl = useCallback((next: { search?: string; typeDisciple?: TypeDisciple | ''; statut?: StatutAme | ''; view?: 'liste' | 'corbeille' }) => {
+    const params = new URLSearchParams();
+    const s = next.search !== undefined ? next.search : search;
+    const t = next.typeDisciple !== undefined ? next.typeDisciple : typeFilter;
+    const st = next.statut !== undefined ? next.statut : statutFilter;
+    const v = next.view !== undefined ? next.view : view;
+    if (s) params.set('search', s);
+    if (t) params.set('typeDisciple', t);
+    if (st) params.set('statut', st);
+    if (v === 'corbeille') params.set('view', 'corbeille');
+    const qs = params.toString();
+    setSearchParams(qs ? `?${qs}` : '', { replace: true });
+  }, [search, typeFilter, statutFilter, view, setSearchParams]);
+
+  // Réinitialise la page quand les filtres changent depuis un KPI cliquable.
+  useEffect(() => {
+    setPage(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const typeEntries = useMemo(() => {
     const configured = dictionaries.options('SOUL_TYPE');
@@ -185,7 +215,7 @@ export default function SoulsPage() {
         </div>
         <div className="flex gap-2 animate-fade-in">
           <button
-            onClick={() => { setView(view === 'corbeille' ? 'liste' : 'corbeille'); setPage(0); }}
+            onClick={() => { const next = view === 'corbeille' ? 'liste' : 'corbeille'; setView(next); setPage(0); syncUrl({ view: next }); }}
             className={`btn-secondary btn-sm ${view === 'corbeille' ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700' : ''}`}
             title="Âmes supprimées (restauration possible)"
           >
@@ -217,7 +247,7 @@ export default function SoulsPage() {
               type="text"
               placeholder="Rechercher par nom, email..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              onChange={(e) => { setSearch(e.target.value); setPage(0); syncUrl({ search: e.target.value }); }}
               className="input pl-10"
             />
           </div>
@@ -229,7 +259,7 @@ export default function SoulsPage() {
               <span className="text-xs text-gray-400 font-medium">Type</span>
               <select
                 value={typeFilter}
-                onChange={(e) => { setTypeFilter(e.target.value as TypeDisciple | ''); setPage(0); }}
+                onChange={(e) => { const v = e.target.value as TypeDisciple | ''; setTypeFilter(v); setPage(0); syncUrl({ typeDisciple: v }); }}
                 className="input w-auto text-sm"
               >
                 <option value="">Tous</option>
@@ -240,7 +270,7 @@ export default function SoulsPage() {
               <span className="text-xs text-gray-400 font-medium">Statut</span>
               <select
                 value={statutFilter}
-                onChange={(e) => { setStatutFilter(e.target.value as StatutAme | ''); setPage(0); }}
+                onChange={(e) => { const v = e.target.value as StatutAme | ''; setStatutFilter(v); setPage(0); syncUrl({ statut: v }); }}
                 className="input w-auto text-sm"
               >
                 <option value="">Tous</option>

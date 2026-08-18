@@ -66,16 +66,22 @@ export default function PasteurDashboardPage() {
   const rapports = dashboard?.rapports ?? {};
   const famillesARisque = dashboard?.famillesARisque ?? [];
 
+  // Chaque KPI ouvre la liste Âmes déjà filtrée (filtres portés par l'URL,
+  // lus par SoulsPage) — jamais une liste vide non filtrée.
   const growthCards = [
     { label: 'Âmes totales', value: croissance.totalAmes ?? 0, icon: Heart, color: 'from-rose-500 to-pink-500', route: '/souls' },
-    { label: 'Nouveaux convertis', value: croissance.nouveauxConvertis ?? 0, icon: UserPlus, color: 'from-green-500 to-emerald-500', route: '/souls' },
-    { label: 'Nouveaux arrivants', value: croissance.nouveauxArrivants ?? 0, icon: UserCheck, color: 'from-blue-500 to-indigo-500', route: '/souls' },
-    { label: 'Actifs', value: croissance.actifs ?? 0, icon: CheckCircle, color: 'from-emerald-500 to-teal-500', route: '/souls' },
-    { label: 'En intégration', value: croissance.enIntegration ?? 0, icon: Clock, color: 'from-amber-500 to-orange-500', route: '/souls' },
-    { label: 'En veille', value: croissance.enVeille ?? 0, icon: UserX, color: 'from-yellow-500 to-amber-500', route: '/souls' },
-    { label: 'Décrochés', value: croissance.decroches ?? 0, icon: XCircle, color: 'from-red-500 to-rose-500', route: '/souls' },
+    { label: 'Nouveaux convertis', value: croissance.nouveauxConvertis ?? 0, icon: UserPlus, color: 'from-green-500 to-emerald-500', route: '/souls?typeDisciple=NOUVEAU_CONVERTI' },
+    { label: 'Nouveaux arrivants', value: croissance.nouveauxArrivants ?? 0, icon: UserCheck, color: 'from-blue-500 to-indigo-500', route: '/souls?typeDisciple=NOUVEL_ARRIVANT' },
+    { label: 'Actifs', value: croissance.actifs ?? 0, icon: CheckCircle, color: 'from-emerald-500 to-teal-500', route: '/souls?statut=ACTIF' },
+    { label: 'En intégration', value: croissance.enIntegration ?? 0, icon: Clock, color: 'from-amber-500 to-orange-500', route: '/souls?statut=EN_INTEGRATION' },
+    { label: 'En veille', value: croissance.enVeille ?? 0, icon: UserX, color: 'from-yellow-500 to-amber-500', route: '/souls?statut=EN_VEILLE' },
+    { label: 'Décrochés', value: croissance.decroches ?? 0, icon: XCircle, color: 'from-red-500 to-rose-500', route: '/souls?statut=DECROCHE' },
     { label: 'Taux conversion', value: `${croissance.tauxConversion ?? 0}%`, icon: TrendingUp, color: 'from-violet-500 to-purple-500', route: '/reports' },
   ];
+
+  // Lignes du dashboard cliquables vers des fonctionnalités réelles.
+  const openFamille = (id: string) => navigate(`/families/${id}`);
+  const openFaiseur = () => navigate('/users');
 
   return (
     <div className="page-container">
@@ -359,7 +365,7 @@ export default function PasteurDashboardPage() {
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {faiseurs.slice(0, 10).map((f: any) => (
-                  <div key={f.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                  <div key={f.id} onClick={openFaiseur} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer" title="Gérer les utilisateurs / faiseurs">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-[9px] font-bold text-white">
                         {f.nom.charAt(0)}
@@ -413,7 +419,7 @@ export default function PasteurDashboardPage() {
               {famillesARisque.length > 0 ? (
                 <div className="space-y-2">
                   {famillesARisque.slice(0, 5).map((fr: any) => (
-                    <div key={fr.id} className="flex items-center justify-between p-2 rounded-lg bg-red-50/50 dark:bg-red-900/10 border border-red-200/30 dark:border-red-800/20">
+                    <div key={fr.id} onClick={() => openFamille(fr.id)} className="flex items-center justify-between p-2 rounded-lg bg-red-50/50 dark:bg-red-900/10 border border-red-200/30 dark:border-red-800/20 cursor-pointer hover:bg-red-100/50 dark:hover:bg-red-900/20 transition-colors" title="Ouvrir la fiche de la famille">
                       <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{fr.nom}</span>
                       <span className="text-xs font-semibold text-red-500">{fr.tauxPresence}%</span>
                     </div>

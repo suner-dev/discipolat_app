@@ -113,6 +113,16 @@ export default function DashboardPage() {
     },
   });
 
+  // Tendance de présence réelle (12 dernières semaines calculées côté serveur).
+  const { data: presenceTrend } = useQuery({
+    queryKey: ['dashboard', 'presence-trend'],
+    queryFn: async () => {
+      const res = await api.get('/dashboard/presence-trend?mois=12');
+      return res.data as { mois: number; data: { semaine: string; taux: number }[] };
+    },
+    enabled: isPasteurOrAdmin,
+  });
+
   const kpiData = kpi || DEFAULT_KPI;
 
   const statCards = [
@@ -150,6 +160,7 @@ export default function DashboardPage() {
       icon: TrendingUp,
       gradient: kpiData.tauxPresenceGlobal >= 70 ? 'from-green-500 to-emerald-500' : 'from-red-500 to-rose-500',
       trend: kpiData.tendancePresence,
+      link: '/reports',
     },
     {
       label: 'Alertes actives',
@@ -170,6 +181,7 @@ export default function DashboardPage() {
       value: kpiData.famillesARisque,
       icon: AlertTriangle,
       gradient: kpiData.famillesARisque > 0 ? 'from-orange-500 to-red-500' : 'from-green-500 to-emerald-500',
+      link: '/families',
     },
   ];
 
@@ -184,12 +196,12 @@ export default function DashboardPage() {
     { name: 'Suivis parallèles', value: kpiData.suivisParallelesActifs, color: '#3b82f6' },
   ];
 
-  const weeklyTrendData = [
-    { semaine: 'S-3', taux: kpiData.tauxPresenceGlobal - 5 },
-    { semaine: 'S-2', taux: kpiData.tauxPresenceGlobal - 2 },
-    { semaine: 'S-1', taux: kpiData.tauxPresenceGlobal },
-    { semaine: 'Cette S', taux: kpiData.tauxPresenceGlobal },
-  ];
+  // Données RÉELLES du backend (semaines calculées sur les rapports) —
+  // jamais de valeurs dérivées arbitrairement côté client.
+  const weeklyTrendData = (presenceTrend?.data ?? []).map((p) => ({
+    semaine: new Date(`${p.semaine}T00:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+    taux: p.taux,
+  }));
 
   return (
     <div className="page-container">
