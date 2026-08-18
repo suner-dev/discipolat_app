@@ -152,4 +152,56 @@ public class AuditService {
         String cleaned = value.replace("\r", " ").replace("\n", " ");
         return "\"" + cleaned.replace("\"", "\"\"") + "\"";
     }
+
+    /**
+     * Activité récente (dernières 20 entrées) — pour le fil d'activité du dashboard Pasteur.
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getRecentActivity(int limit) {
+        Page<AuditLog> page = auditLogRepository.findAll(
+                PageRequest.of(0, Math.min(limit, 50), Sort.by(Sort.Direction.DESC, "createdAt")));
+        Map<UUID, String> emails = resolveEmails(page.getContent());
+        List<Map<String, Object>> activities = new ArrayList<>();
+        for (AuditLog log : page.getContent()) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("id", log.getId());
+            entry.put("utilisateurId", log.getUtilisateurId());
+            entry.put("utilisateurNom", log.getUtilisateurId() != null
+                    ? emails.getOrDefault(log.getUtilisateurId(), log.getUtilisateurId().toString())
+                    : "Système");
+            entry.put("action", log.getAction());
+            entry.put("entiteType", log.getEntiteType());
+            entry.put("entiteId", log.getEntiteId());
+            entry.put("details", details(log));
+            entry.put("createdAt", log.getCreatedAt());
+            activities.add(entry);
+        }
+        return activities;
+    }
+
+    /**
+     * Tendances d'audit : nombre d'actions par jour sur les N derniers jours.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getAuditTrend(int jours) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        LocalDateTime debut = LocalDateTime.now().minusDays(jours);
+        // Compter par type d'action
+        Page<AuditLog> allPage = auditLogRepository.findFiltered(null, null, null, debut, null,
+                PageRequest.of(0, 50000, Sort.by(Sort.Direction.DESC, "createdAt")));
+        List<AuditLog> logs = allPage.getContent();
+
+        Map<String, Long> parAction = new LinkedHashMap<>();
+        Map<String, Long> parEntite = new LinkedHashMap<>();
+        for (AuditLog log : logs) {
+            parAction.merge(log.getAction(), 1L, Long::sum);
+            parEntite.merge(log.getEntiteType(), 1L, Long::sum);
+        }
+
+        result.put("jours", jours);
+        result.put("totalActions", (long) logs.size());
+        result.put("parAction", parAction);
+        result.put("parEntite", parEntite);
+        return result;
+    }
 }

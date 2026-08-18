@@ -17,7 +17,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
  *
  * The filter is optional: in sliced test contexts (e.g. @WebMvcTest) the
  * TenantFilter bean is not present, so the interceptor degrades gracefully
- * instead of failing afterCompletion on every request.
+ * instead of failing on every request.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
@@ -34,7 +34,7 @@ public class TenantFilterInterceptor implements HandlerInterceptor {
         if (TenantContext.getTenantId() != null) {
             TenantFilter tenantFilter = tenantFilterProvider.getIfAvailable();
             if (tenantFilter != null) {
-                tenantFilter.enableFilter();
+                tenantFilter.enableFilter(request);
             }
         }
         return true;
@@ -45,7 +45,7 @@ public class TenantFilterInterceptor implements HandlerInterceptor {
                                 Object handler, Exception ex) {
         TenantFilter tenantFilter = tenantFilterProvider.getIfAvailable();
         if (tenantFilter != null) {
-            tenantFilter.disableFilter();
+            tenantFilter.afterCompletion(request);
         }
     }
 }

@@ -3,6 +3,8 @@ package com.discipolat.common.multitenancy;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -13,10 +15,14 @@ import java.util.UUID;
  * Intercepts every request to extract the tenant ID from the JWT token
  * and set it in the TenantContext (ThreadLocal).
  *
+ * Runs FIRST (highest precedence) so that TenantContext is populated before
+ * TenantFilterInterceptor enables the Hibernate tenant filter.
+ *
  * This runs after JwtAuthenticationFilter but before the controller,
  * so the tenant context is available to all services and repositories.
  */
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class TenantInterceptor implements HandlerInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;

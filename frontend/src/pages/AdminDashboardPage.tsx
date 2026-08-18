@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
-  Palette, Boxes, Menu as MenuIcon, Shield, UserCog, Activity, FileText, PlusCircle,
-  ArrowRight, Sparkles, MessageSquareText, BookOpen,
+  Palette, Boxes, Menu as MenuIcon, Shield, UserCog, Activity, FileText,
+  ArrowRight, Sparkles, MessageSquareText, BookOpen, LayoutTemplate,
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -9,29 +9,34 @@ const ADMIN_SECTIONS = [
   { href: '/admin/settings', icon: Palette, title: 'Identité & marque', desc: 'Nom, logo, couleurs, typographie et coordonnées de l\'église.', gradient: 'from-primary-500 to-emerald-600' },
   { href: '/admin/modules', icon: Boxes, title: 'Modules', desc: 'Activer ou désactiver les grands modules de la plateforme.', gradient: 'from-violet-500 to-purple-600' },
   { href: '/admin/menus', icon: MenuIcon, title: 'Menus', desc: 'Configurer la navigation : ordre, libellé, icônes et rôles visibles.', gradient: 'from-amber-500 to-orange-600' },
+  { href: '/admin/pages', icon: LayoutTemplate, title: 'Pages', desc: 'Créer des pages personnalisées avec tableaux, graphiques, formulaires et widgets.', gradient: 'from-teal-500 to-cyan-600' },
   { href: '/admin/custom-fields', icon: FileText, title: 'Champs personnalisés', desc: 'Ajouter des champs aux entités (âmes, utilisateurs, départements, familles).', gradient: 'from-sky-500 to-blue-600' },
-  { href: '/admin/dictionaries', icon: BookOpen, title: 'Dictionnaires', desc: 'Types d\'événements, statuts, raisons d\'absence et catégories — adaptez chaque liste.', gradient: 'from-fuchsia-500 to-pink-600' },
-  { href: '/permissions', icon: Shield, title: 'Rôles & permissions', desc: 'Gérer les rôles, créer des rôles personnalisés et éditer la matrice.', gradient: 'from-rose-500 to-pink-600' },
+  { href: '/admin/dictionaries', icon: BookOpen, title: 'Dictionnaires', desc: 'Types d\'événement, statuts, raisons d\'absence et catégories — adaptez chaque liste.', gradient: 'from-fuchsia-500 to-pink-600' },
+  { href: '/permissions', icon: Shield, title: 'Rôles & permissions', desc: 'Gérer les rôles, créer des rôles personnalisés et éditer la matrice.', gradient: 'from-indigo-500 to-violet-600' },
   { href: '/users', icon: UserCog, title: 'Utilisateurs', desc: 'Créer, modifier et gérer les comptes utilisateurs.', gradient: 'from-teal-500 to-cyan-600' },
-  { href: '/admin/feedback', icon: MessageSquareText, title: 'Retours testeurs', desc: 'Bugs, suggestions et retours UX des testeurs — suivi et statuts.', gradient: 'from-indigo-500 to-violet-600' },
-  { href: '/audit', icon: Activity, title: 'Audit', desc: 'Consulter le journal de bord complet des actions.', gradient: 'from-gray-500 to-slate-600' },
+  { href: '/admin/feedback', icon: MessageSquareText, title: 'Retours testeurs', desc: 'Bugs, suggestions et retours UX des testeurs — suivi et statuts.', gradient: 'from-blue-500 to-indigo-600' },
+  { href: '/audit', icon: Activity, title: 'Audit', desc: 'Consulter le journal de bord complet des actions système.', gradient: 'from-gray-500 to-slate-600' },
 ];
 
 export default function AdminDashboardPage() {
   const { branding } = useSettings();
 
   return (
-    <div className="page-container max-w-5xl">
+    <div className="page-container max-w-6xl">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <Sparkles className="w-6 h-6 text-primary-500" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 font-display tracking-tight">
-            Administration
-          </h1>
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 text-white flex items-center justify-center shadow-lg">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 font-display tracking-tight">
+              Administration
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              Centre de configuration de {branding.platformName} — tout paramétrer sans écrire de code.
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Configurez tous les aspects de {branding.platformName} sans écrire de code.
-        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -35,6 +35,9 @@ public class Communication {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "tenant_id")
+    private UUID tenantId;
+
     @Column(name = "titre", nullable = false, length = 200)
     private String titre;
 

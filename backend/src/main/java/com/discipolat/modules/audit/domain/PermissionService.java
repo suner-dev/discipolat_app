@@ -1,5 +1,6 @@
 package com.discipolat.modules.audit.domain;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -7,6 +8,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Matrice des permissions (role → permission → enabled).
+ *
+ * <p>Les tables {@code role_permissions}, {@code permission_catalog} et
+ * {@code platform_roles} sont multi-tenant (colonne {@code tenant_id}) : ce
+ * service utilise du SQL brut, qui échappe au filtre Hibernate — chaque requête
+ * filtre donc explicitement sur le tenant courant quand un contexte tenant est
+ * actif. Sans contexte tenant (tâches système), le comportement historique est
+ * conservé.
+ */
 @Service
 @Transactional
 public class PermissionService {
@@ -17,23 +28,51 @@ public class PermissionService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /* ======================== Helpers tenant ======================== */
+
+    private UUID tenantId() {
+        return TenantContext.getTenantId();
+    }
+
+    private String andTenant() {
+        return tenantId() != null ? " AND tenant_id = ?" : "";
+    }
+
+    private Object[] params(Object... base) {
+        UUID tenantId = tenantId();
+        if (tenantId == null) {
+            return base;
+        }
+        Object[] all = Arrays.copyOf(base, base.length + 1);
+        all[base.length] = tenantId;
+        return all;
+    }
+
     /* ======================== Matrice des permissions ======================== */
 
     public List<Map<String, Object>> getAllPermissions() {
+        UUID tenantId = tenantId();
+        if (tenantId != null) {
+            return jdbcTemplate.queryForList(
+                    "SELECT role, permission, enabled FROM role_permissions WHERE tenant_id = ? ORDER BY role, permission",
+                    tenantId);
+        }
         return jdbcTemplate.queryForList(
                 "SELECT role, permission, enabled FROM role_permissions ORDER BY role, permission");
     }
 
     public List<Map<String, Object>> getPermissionsByRole(String role) {
         return jdbcTemplate.queryForList(
-                "SELECT role, permission, enabled FROM role_permissions WHERE role = ? ORDER BY permission",
-                role.toUpperCase());
+                "SELECT role, permission, enabled FROM role_permissions WHERE role = ?"
+                        + andTenant() + " ORDER BY permission",
+                params(role.toUpperCase()));
     }
 
     public Map<String, Object> updatePermission(String role, String permission, boolean enabled) {
         jdbcTemplate.update(
-                "UPDATE role_permissions SET enabled = ?, updated_at = ? WHERE role = ? AND permission = ?",
-                enabled, LocalDateTime.now(), role.toUpperCase(), permission.toUpperCase());
+                "UPDATE role_permissions SET enabled = ?, updated_at = ? WHERE role = ? AND permission = ?"
+                        + andTenant(),
+                params(enabled, LocalDateTime.now(), role.toUpperCase(), permission.toUpperCase()));
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("role", role.toUpperCase());
         result.put("permission", permission.toUpperCase());
@@ -47,8 +86,9 @@ public class PermissionService {
      */
     public boolean hasPermission(String role, String permission) {
         List<Map<String, Object>> results = jdbcTemplate.queryForList(
-                "SELECT enabled FROM role_permissions WHERE role = ? AND permission = ?",
-                role.toUpperCase(), permission.toUpperCase());
+                "SELECT enabled FROM role_permissions WHERE role = ? AND permission = ?"
+                        + andTenant(),
+                params(role.toUpperCase(), permission.toUpperCase()));
         if (results.isEmpty()) return true; // pas de ligne = permissif (préservation du comportement existant)
         return (boolean) results.getFirst().get("enabled");
     }
@@ -56,6 +96,12 @@ public class PermissionService {
     /* ======================== Catalogue des permissions ======================== */
 
     public List<Map<String, Object>> listPermissionCatalog() {
+        UUID tenantId = tenantId();
+        if (tenantId != null) {
+            return jdbcTemplate.queryForList(
+                    "SELECT key, label, module, description, ordre FROM permission_catalog WHERE tenant_id = ? ORDER BY ordre",
+                    tenantId);
+        }
         return jdbcTemplate.queryForList(
                 "SELECT key, label, module, description, ordre FROM permission_catalog ORDER BY ordre");
     }
@@ -63,35 +109,51 @@ public class PermissionService {
     /* ======================== Gestion des rôles ======================== */
 
     public List<Map<String, Object>> listRoles() {
+        UUID tenantId = tenantId();
+        if (tenantId != null) {
+            return jdbcTemplate.queryForList(
+                    "SELECT pr.key, pr.label, pr.description, pr.system, "
+                            + "(SELECT COUNT(*) FROM role_permissions rp WHERE rp.role = pr.key AND rp.enabled = true AND rp.tenant_id = ?) AS nb_permissions "
+                            + "FROM platform_roles pr WHERE pr.tenant_id = ? ORDER BY pr.system DESC, pr.key",
+                    tenantId, tenantId);
+        }
         return jdbcTemplate.queryForList(
-                "SELECT pr.key, pr.label, pr.description, pr.system, " +
-                "(SELECT COUNT(*) FROM role_permissions rp WHERE rp.role = pr.key AND rp.enabled = true) AS nb_permissions " +
-                "FROM platform_roles pr ORDER BY pr.system DESC, pr.key");
+                "SELECT pr.key, pr.label, pr.description, pr.system, "
+                        + "(SELECT COUNT(*) FROM role_permissions rp WHERE rp.role = pr.key AND rp.enabled = true) AS nb_permissions "
+                        + "FROM platform_roles pr ORDER BY pr.system DESC, pr.key");
     }
 
     public Map<String, Object> getRole(String key) {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-                "SELECT * FROM platform_roles WHERE key = ?", key.toUpperCase());
+                "SELECT * FROM platform_roles WHERE key = ?" + andTenant(),
+                params(key.toUpperCase()));
         if (rows.isEmpty()) throw new NoSuchElementException("Rôle introuvable : " + key);
         return rows.getFirst();
     }
 
     public void createRole(String key, String label, String description) {
         String k = key.toUpperCase();
-        jdbcTemplate.update(
-                "INSERT INTO platform_roles (key, label, description, system) VALUES (?, ?, ?, FALSE)",
-                k, label, description);
+        UUID tenantId = tenantId();
+        if (tenantId != null) {
+            jdbcTemplate.update(
+                    "INSERT INTO platform_roles (key, label, description, system, tenant_id) VALUES (?, ?, ?, FALSE, ?)",
+                    k, label, description, tenantId);
+        } else {
+            jdbcTemplate.update(
+                    "INSERT INTO platform_roles (key, label, description, system) VALUES (?, ?, ?, FALSE)",
+                    k, label, description);
+        }
     }
 
     public void updateRole(String key, String label, String description) {
         String k = key.toUpperCase();
         if (label != null && !label.isBlank()) {
-            jdbcTemplate.update("UPDATE platform_roles SET label = ?, updated_at = ? WHERE key = ?",
-                    label, LocalDateTime.now(), k);
+            jdbcTemplate.update("UPDATE platform_roles SET label = ?, updated_at = ? WHERE key = ?" + andTenant(),
+                    params(label, LocalDateTime.now(), k));
         }
         if (description != null) {
-            jdbcTemplate.update("UPDATE platform_roles SET description = ?, updated_at = ? WHERE key = ?",
-                    description, LocalDateTime.now(), k);
+            jdbcTemplate.update("UPDATE platform_roles SET description = ?, updated_at = ? WHERE key = ?" + andTenant(),
+                    params(description, LocalDateTime.now(), k));
         }
     }
 
@@ -102,15 +164,26 @@ public class PermissionService {
     public void duplicateRole(String sourceKey, String newKey, String label) {
         String src = sourceKey.toUpperCase();
         String dst = newKey.toUpperCase();
-        // Créer l'entrée dans platform_roles
-        jdbcTemplate.update(
-                "INSERT INTO platform_roles (key, label, description, system) VALUES (?, ?, ?, FALSE)",
-                dst, label, "Dupliqué de " + src);
-        // Copier les permissions activées
-        jdbcTemplate.update(
-                "INSERT INTO role_permissions (role, permission, enabled) " +
-                "SELECT ?, permission, enabled FROM role_permissions WHERE role = ? AND enabled = true",
-                dst, src);
+        UUID tenantId = tenantId();
+        if (tenantId != null) {
+            // Créer l'entrée dans platform_roles
+            jdbcTemplate.update(
+                    "INSERT INTO platform_roles (key, label, description, system, tenant_id) VALUES (?, ?, ?, FALSE, ?)",
+                    dst, label, "Dupliqué de " + src, tenantId);
+            // Copier les permissions activées du même tenant
+            jdbcTemplate.update(
+                    "INSERT INTO role_permissions (role, permission, enabled, tenant_id) "
+                            + "SELECT ?, permission, enabled, ? FROM role_permissions WHERE role = ? AND enabled = true AND tenant_id = ?",
+                    dst, tenantId, src, tenantId);
+        } else {
+            jdbcTemplate.update(
+                    "INSERT INTO platform_roles (key, label, description, system) VALUES (?, ?, ?, FALSE)",
+                    dst, label, "Dupliqué de " + src);
+            jdbcTemplate.update(
+                    "INSERT INTO role_permissions (role, permission, enabled) "
+                            + "SELECT ?, permission, enabled FROM role_permissions WHERE role = ? AND enabled = true",
+                    dst, src);
+        }
     }
 
     public void deleteRole(String key) {
@@ -119,8 +192,8 @@ public class PermissionService {
         if ((boolean) role.get("system")) {
             throw new IllegalStateException("Impossible de supprimer un rôle système : " + k);
         }
-        jdbcTemplate.update("DELETE FROM role_permissions WHERE role = ?", k);
-        jdbcTemplate.update("DELETE FROM platform_roles WHERE key = ?", k);
+        jdbcTemplate.update("DELETE FROM role_permissions WHERE role = ?" + andTenant(), params(k));
+        jdbcTemplate.update("DELETE FROM platform_roles WHERE key = ?" + andTenant(), params(k));
     }
 
     /**
@@ -142,8 +215,8 @@ public class PermissionService {
         boolean anyExplicit = false;
         for (String role : roles) {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-                    "SELECT enabled FROM role_permissions WHERE role = ? AND permission = ?",
-                    role.toUpperCase(), permission.toUpperCase());
+                    "SELECT enabled FROM role_permissions WHERE role = ? AND permission = ?" + andTenant(),
+                    params(role.toUpperCase(), permission.toUpperCase()));
             if (rows.isEmpty()) continue;
             anyExplicit = true;
             if ((boolean) rows.getFirst().get("enabled")) return true;

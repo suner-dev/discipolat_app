@@ -44,9 +44,13 @@ public class TenantFilterIntegrator implements Integrator {
         }
 
         private void autoSetTenantId(EntityPersister persister, Object[] state) {
+            // Contexte de requête HTTP : le tenant du JWT. Hors contexte
+            // (jobs planifiés, initialiseurs, tâches système) : repli sur le
+            // tenant par défaut créé/backfillé par V70 — sans quoi tout insert
+            // échouerait sur la contrainte tenant_id NOT NULL.
             java.util.UUID tenantId = TenantContext.getTenantId();
             if (tenantId == null) {
-                return;
+                tenantId = TenantContext.DEFAULT_TENANT_ID;
             }
             String[] propertyNames = persister.getPropertyNames();
             int index = Arrays.asList(propertyNames).indexOf("tenantId");

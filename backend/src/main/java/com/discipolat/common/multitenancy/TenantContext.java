@@ -12,6 +12,15 @@ import java.util.UUID;
  */
 public final class TenantContext {
 
+    /**
+     * Tenant par défaut — créé par la migration V70 et backfillé sur toutes
+     * les données existantes. Utilisé comme filet de sécurité pour les
+     * écritures hors contexte de requête (jobs planifiés, initialiseurs,
+     * tâches système) : sans lui, tout insert échouerait sur la contrainte
+     * {@code tenant_id NOT NULL} de V70.
+     */
+    public static final UUID DEFAULT_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     private static final ThreadLocal<UUID> CURRENT_TENANT = new ThreadLocal<>();
 
     private TenantContext() {}

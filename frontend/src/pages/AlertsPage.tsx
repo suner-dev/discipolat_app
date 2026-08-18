@@ -57,6 +57,8 @@ export default function AlertsPage() {
     typeAlerteManuel: '', titre: '', message: '', cible: 'PERSONNE',
     priorite: 'MOYENNE', ameId: '', familleId: '', departmentId: '', faiseurId: '',
   });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkMode, setBulkMode] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['alerts', page, filter],
@@ -75,6 +77,19 @@ export default function AlertsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
       toast.success('Alerte résolue avec succès');
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const resolveBatchMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await api.post('/alerts/resolve-batch', ids);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      setSelectedIds(new Set());
+      setBulkMode(false);
+      toast.success('Alertes résolues avec succès');
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -227,6 +242,26 @@ export default function AlertsPage() {
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
+          <button
+            onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
+            className={`btn-sm ${bulkMode ? 'btn-primary' : 'btn-secondary'}`}
+          >
+            {bulkMode ? 'Annuler sélection' : 'Sélectionner'}
+          </button>
+          {bulkMode && selectedIds.size > 0 && (
+            <button
+              onClick={() => resolveBatchMutation.mutate(Array.from(selectedIds))}
+              disabled={resolveBatchMutation.isPending}
+              className="btn-glow btn-sm"
+            >
+              {resolveBatchMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              Résoudre ({selectedIds.size})
+            </button>
+          )}
           <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm">
             <Plus className="w-4 h-4" />
             Nouvelle alerte
@@ -307,6 +342,20 @@ export default function AlertsPage() {
               style={{ animationDelay: `${i * 40}ms` }}
             >
               <div className="flex items-start gap-4">
+                {/* Checkbox (bulk mode) */}
+                {bulkMode && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(alert.id)}
+                    onChange={(e) => {
+                      const next = new Set(selectedIds);
+                      if (e.target.checked) next.add(alert.id); else next.delete(alert.id);
+                      setSelectedIds(next);
+                    }}
+                    className="mt-3 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                )}
+
                 {/* Icon */}
                 <div className={`p-2.5 rounded-xl ${
                   alert.statut === 'ACTIVE'

@@ -25,8 +25,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
             WHERE (:utilisateurId IS NULL OR a.utilisateurId = :utilisateurId)
               AND (:entiteType IS NULL OR a.entiteType = :entiteType)
               AND (:action IS NULL OR a.action = :action)
-              AND (:debut IS NULL OR a.createdAt >= :debut)
-              AND (:fin IS NULL OR a.createdAt <= :fin)
+              AND (:debut IS NULL OR a.createdAt >= cast(:debut as timestamp))
+              AND (:fin IS NULL OR a.createdAt <= cast(:fin as timestamp))
             """)
     Page<AuditLog> findFiltered(@Param("utilisateurId") UUID utilisateurId,
                                 @Param("entiteType") String entiteType,

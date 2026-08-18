@@ -1679,6 +1679,215 @@ export interface PageResponse<T> {
   empty: boolean;
 }
 
+// ==================== PASTEUR DASHBOARD ====================
+
+export interface PasteurDashboardCroissance {
+  totalAmes: number;
+  nouveauxArrivants: number;
+  nouveauxConvertis: number;
+  actifs: number;
+  enIntegration: number;
+  enVeille: number;
+  decroches: number;
+  tauxConversion: number;
+}
+
+export interface PasteurDashboardDepartement {
+  id: string;
+  nom: string;
+  totalFamilles: number;
+  totalAmes: number;
+  responsableId: string;
+  responsableNom: string;
+}
+
+export interface PasteurDashboardFamille {
+  id: string;
+  nom: string;
+  totalAmes: number;
+  actifs: number;
+  enIntegration: number;
+  tauxPresence: number;
+  chefFamilleId: string;
+  chefNom: string;
+  aRisque: boolean;
+}
+
+export interface PasteurDashboardFaiseur {
+  id: string;
+  nom: string;
+  email: string;
+  totalAmes: number;
+  actifs: number;
+  enIntegration: number;
+  estChef: boolean;
+  statut: string;
+}
+
+export interface PasteurDashboardPresences {
+  tauxGlobal: number;
+  presents: number;
+  totalPossibles: number;
+  tauxNouveauxArrivants: number;
+  tauxNouveauxConvertis: number;
+}
+
+export interface PasteurDashboardRapports {
+  tauxCompletion: number;
+  soumis: number;
+  enAttente: number;
+  faiseursAyantRapporte: number;
+  totalFaiseurs: number;
+}
+
+export interface PasteurDashboardTransfert {
+  id: string;
+  type: string;
+  statut: string;
+  priorite: string;
+  dateSoumission: string;
+  personneNom: string | null;
+  cible: string | null;
+}
+
+export interface PasteurDashboardFamilleRisque {
+  id: string;
+  nom: string;
+  tauxPresence: number;
+  niveauRisque: string;
+}
+
+export interface PasteurDashboardData {
+  croissance: PasteurDashboardCroissance;
+  departements: PasteurDashboardDepartement[];
+  familles: PasteurDashboardFamille[];
+  faiseurs: PasteurDashboardFaiseur[];
+  presences: PasteurDashboardPresences;
+  alertesActives: number;
+  rapports: PasteurDashboardRapports;
+  suivisParallelesActifs: number;
+  famillesARisque: PasteurDashboardFamilleRisque[];
+  transfertsEnAttente: PasteurDashboardTransfert[];
+  semaine: string;
+}
+
+// ==================== PRESENCE TREND ====================
+
+export interface PresenceTrendPoint {
+  mois: string;
+  taux: number;
+  presents: number;
+  total: number;
+}
+
+export interface PresenceTrendData {
+  tendance: PresenceTrendPoint[];
+  tendanceGlobale: number;
+}
+
+// ==================== PASTORAL 360 ====================
+
+export interface Pastoral360Informations {
+  id: string;
+  nom: string;
+  prenom: string;
+  email?: string;
+  telephone?: string;
+  adresse?: string;
+  dateNaissance?: string;
+  profession?: string;
+  situationFamiliale?: string;
+  photoUrl?: string;
+}
+
+export interface Pastoral360Indices {
+  [key: string]: number;
+  santeSpirituelle: number;
+  fidelite: number;
+  engagement: number;
+  participation: number;
+  global: number;
+}
+
+export interface Pastoral360Spirituel {
+  typeDisciple: string;
+  statut: string;
+  etatSpirituel: string;
+  niveauCroissance: number;
+  dateIntegration: string;
+  dateConversion?: string;
+  dateDernierContact?: string;
+}
+
+export interface Pastoral360Alerte {
+  type: string;
+  message: string;
+  priorite: string;
+}
+
+export interface Pastoral360Encadrement {
+  faiseurId: string;
+  faiseurNom?: string;
+  familleId: string;
+}
+
+export interface Pastoral360Evaluation {
+  moyenne: number;
+  total: number;
+}
+
+export interface Pastoral360Note {
+  id: string;
+  contenu: string;
+  auteurId: string;
+  date: string;
+}
+
+export interface Pastoral360TimelineEntry {
+  id: string;
+  type: string;
+  description?: string;
+  ancienStatut?: string;
+  nouveauStatut?: string;
+  utilisateurId?: string;
+  date: string;
+}
+
+export interface Pastoral360Data {
+  informations: Pastoral360Informations;
+  spirituel: Pastoral360Spirituel;
+  indices: Pastoral360Indices;
+  alertesAutomatiques: Pastoral360Alerte[];
+  encadrement: Pastoral360Encadrement;
+  timeline: Pastoral360TimelineEntry[];
+  evaluations: Record<string, Pastoral360Evaluation>;
+  notes: Pastoral360Note[];
+  piecesJointes: TransferAttachment[];
+}
+
+// ==================== SPIRITUAL SCORE HISTORY ====================
+
+export interface SpiritualScorePoint {
+  semaine: string;
+  scoreGlobal: number;
+  sante: number;
+  fidelite: number;
+  engagement: number;
+  participation: number;
+}
+
+// ==================== RECENT ACTIVITY ====================
+
+export interface AuditRecentActivity {
+  id: string;
+  utilisateurNom: string;
+  action: string;
+  entiteType: string;
+  entiteId: string;
+  details: string;
+  createdAt: string;
+}
+
 // API Error
 export interface ApiError {
   status: number;

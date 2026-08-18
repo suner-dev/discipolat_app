@@ -22,6 +22,12 @@ vi.mock('recharts', () => ({
   PolarAngleAxis: () => null,
   PolarRadiusAxis: () => null,
   Tooltip: () => null,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Line: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Legend: () => null,
 }));
 
 const mockDossier = {

@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -76,5 +78,20 @@ public class AlertController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<AlertResponse> acknowledge(@PathVariable UUID id) {
         return ResponseEntity.ok(AlertResponse.from(alertService.acknowledge(id)));
+    }
+
+    /** Résolution en lot — le Pasteur peut marquer plusieurs alertes comme résolues d'un coup. */
+    @PostMapping("/resolve-batch")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> resolveBatch(@RequestBody List<UUID> ids) {
+        int resolved = alertService.resolveBatch(ids);
+        return ResponseEntity.ok(Map.of("resolved", resolved));
+    }
+
+    /** Statistiques globales des alertes (pour graphiques Pasteur). */
+    @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> getStats() {
+        return ResponseEntity.ok(alertService.getAlertStats());
     }
 }

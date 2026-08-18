@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -70,5 +72,21 @@ public class AuditController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<AuditLog> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(auditService.findById(id));
+    }
+
+    /** Activité récente — fil d'activité du dashboard Pasteur. */
+    @GetMapping("/recent")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<List<Map<String, Object>>> getRecentActivity(
+            @RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(auditService.getRecentActivity(limit));
+    }
+
+    /** Tendances d'audit : répartition des actions sur N jours. */
+    @GetMapping("/trend")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> getAuditTrend(
+            @RequestParam(defaultValue = "30") int jours) {
+        return ResponseEntity.ok(auditService.getAuditTrend(jours));
     }
 }

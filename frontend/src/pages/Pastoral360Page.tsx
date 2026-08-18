@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
+import type { Pastoral360Data } from '@/types';
 import {
   ArrowLeft, Heart, Activity, Clock, AlertTriangle, Star,
   MessageSquare, TrendingUp, TrendingDown, Sparkles, Users,
@@ -13,6 +14,7 @@ import {
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   PolarRadiusAxis, ResponsiveContainer, Tooltip,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts';
 
 const INDICE_LABELS: Record<string, string> = {
@@ -80,7 +82,7 @@ export default function Pastoral360Page() {
     queryKey: ['soul', id, 'pastoral-360'],
     queryFn: async () => {
       const res = await api.get(`/souls/${id}/pastoral-360`);
-      return res.data as any;
+      return res.data as Pastoral360Data;
     },
     enabled: !!id,
   });
@@ -111,11 +113,11 @@ export default function Pastoral360Page() {
     );
   }
 
-  const infos = dossier.informations ?? {};
-  const spirituel = dossier.spirituel ?? {};
-  const indices = dossier.indices ?? {};
+  const infos = dossier.informations ?? ({} as Pastoral360Data['informations']);
+  const spirituel = dossier.spirituel ?? ({} as Pastoral360Data['spirituel']);
+  const indices = dossier.indices ?? ({} as Pastoral360Data['indices']);
   const alertesAuto = dossier.alertesAutomatiques ?? [];
-  const encadrement = dossier.encadrement ?? {};
+  const encadrement = dossier.encadrement ?? ({} as Pastoral360Data['encadrement']);
   const timeline = dossier.timeline ?? [];
   const evaluations = dossier.evaluations ?? {};
   const notes = dossier.notes ?? [];
@@ -155,7 +157,7 @@ export default function Pastoral360Page() {
       {/* Alertes automatiques */}
       {alertesAuto.length > 0 && (
         <div className="space-y-2 mb-6 animate-slide-up">
-          {alertesAuto.map((alert: any, i: number) => (
+          {alertesAuto.map((alert, i) => (
             <div key={i} className={`p-3 rounded-xl flex items-center gap-3 border ${
               alert.priorite === 'HAUTE'
                 ? 'bg-red-50/70 dark:bg-red-900/10 border-red-200/50 dark:border-red-800/30'
@@ -203,6 +205,60 @@ export default function Pastoral360Page() {
                 <Tooltip />
               </RadarChart>
             </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Parcours spirituel — graphique d'évolution */}
+        {timeline.length > 1 && (
+          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700/30">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-4 h-4 text-primary-500" />
+              <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Évolution du parcours
+              </h3>
+            </div>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={timeline
+                  .filter((e: any) => e.nouveauStatut)
+                  .slice(0, 20)
+                  .reverse()
+                  .map((e: any, i: number) => ({
+                    index: i + 1,
+                    evenement: e.type?.slice(0, 15) || `#${i}`,
+                    date: new Date(e.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+                    statut: e.nouveauStatut,
+                  }))
+                }>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="rgba(128,128,128,0.3)" />
+                  <YAxis hide />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{d.evenement}</p>
+                          <p className="text-[10px] text-gray-500">{d.date}</p>
+                          {d.statut && (
+                            <p className="text-[10px] text-primary-600 dark:text-primary-400 mt-1">
+                              → {d.statut}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                  <Line type="monotone" dataKey="index" stroke="#22c55e" strokeWidth={2}
+                    dot={{ r: 4, fill: '#22c55e', strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 6, fill: '#22c55e' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-[9px] text-gray-400 text-center mt-2">
+              {timeline.filter((e: any) => e.nouveauStatut).length} changements de statut enregistrés
+            </p>
           </div>
         )}
       </div>
@@ -314,7 +370,7 @@ export default function Pastoral360Page() {
           </h3>
           {Object.keys(evaluations).length > 0 ? (
             <div className="space-y-2">
-              {Object.entries(evaluations).map(([cat, data]: [string, any]) => (
+              {Object.entries(evaluations).map(([cat, data]) => (
                 <div key={cat} className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
                   <span className="text-xs text-gray-400">{dictionaries.label('EVALUATION_CATEGORIE', cat) || EVAL_FALLBACK[cat] || cat}</span>
                   <div className="flex items-center gap-2">
@@ -362,7 +418,7 @@ export default function Pastoral360Page() {
           <div className="relative">
             <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary-500/30 via-primary-500/20 to-transparent" />
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {timeline.slice(0, 50).map((entry: any, i: number) => (
+              {timeline.slice(0, 50).map((entry, i) => (
                 <div key={entry.id} className="relative pl-10 animate-slide-up" style={{ animationDelay: `${i * 30}ms` }}>
                   <div className="absolute left-2.5 top-1.5 w-3 h-3 rounded-full bg-primary-500 border-2 border-white dark:border-gray-900 shadow-[0_0_6px_rgba(22,163,74,0.4)]" />
                   <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
@@ -406,7 +462,7 @@ export default function Pastoral360Page() {
             </h3>
           </div>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {notes.map((note: any, i: number) => (
+            {notes.map((note, i) => (
               <div key={note.id} className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 animate-fade-in" style={{ animationDelay: `${i * 40}ms` }}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[9px] text-gray-400">{note.auteurId?.slice(0, 8)}...</span>

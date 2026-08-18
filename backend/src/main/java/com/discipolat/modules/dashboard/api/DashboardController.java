@@ -90,4 +90,13 @@ public class DashboardController {
     public ResponseEntity<Map<String, Object>> getCrmFaiseur() {
         return ResponseEntity.ok(dashboardService.getCrmFaiseurDashboard());
     }
+
+    // ======================== PASTEUR: TENDANCES & FIL D'ACTIVITÉ ========================
+
+    @GetMapping("/pasteur/presence-trend")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> getPasteurPresenceTrend(
+            @RequestParam(defaultValue = "12") int mois) {
+        return ResponseEntity.ok(dashboardService.getPresenceTrend(mois));
+    }
 }

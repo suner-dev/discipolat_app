@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -96,5 +98,40 @@ public class AlertService {
     @Transactional(readOnly = true)
     public long countActive() {
         return alertRepository.countByStatut(StatutAlerte.ACTIVE);
+    }
+
+    /**
+     * Résolution en lot : marque toutes les alertes données comme résolues.
+     */
+    public int resolveBatch(List<UUID> ids) {
+        int count = 0;
+        UUID userId = securityUtils.getCurrentUserId();
+        for (UUID id : ids) {
+            Alert alert = alertRepository.findById(id).orElse(null);
+            if (alert != null && alert.getStatut() == StatutAlerte.ACTIVE) {
+                alert.setStatut(StatutAlerte.RESOLUE);
+                alert.setDateResolution(LocalDateTime.now());
+                alert.setResoluPar(userId);
+                alertRepository.save(alert);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Statistiques d'alertes (pour tendances/graphiques).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getAlertStats() {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        long active = alertRepository.countByStatut(StatutAlerte.ACTIVE);
+        long traitees = alertRepository.countByStatut(StatutAlerte.TRAITEE);
+        long resolues = alertRepository.countByStatut(StatutAlerte.RESOLUE);
+        stats.put("actives", active);
+        stats.put("traitees", traitees);
+        stats.put("resolues", resolues);
+        stats.put("total", active + traitees + resolues);
+        return stats;
     }
 }

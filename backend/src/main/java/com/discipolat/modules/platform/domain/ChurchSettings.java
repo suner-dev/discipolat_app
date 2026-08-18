@@ -39,6 +39,9 @@ public class ChurchSettings {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "tenant_id")
+    private UUID tenantId;
+
     @Column(name = "church_name", nullable = false)
     @Builder.Default
     private String churchName = "Discipolat";
