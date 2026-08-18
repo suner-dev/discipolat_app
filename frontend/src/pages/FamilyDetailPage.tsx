@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
-import type { Family, Soul, FamilyReport, User, FamilyRiskAssessment, TransferRequest } from '@/types';
+import type { Family, Soul, FamilyReport, User, FamilyRiskAssessment, TransferRequest, FamilyChiefHistoryEntry } from '@/types';
 import {
   ArrowLeft, Users, FileText, Heart, UserCog, Loader2, CheckCircle2, X,
   Calendar, Crown, Sparkles, ChevronRight, Clock, BarChart3, AlertTriangle, ShieldCheck,
@@ -56,7 +56,7 @@ export default function FamilyDetailPage() {
     queryKey: ['family', id, 'chief-history'],
     queryFn: async () => {
       const res = await api.get(`/families/${id}/chief-history`);
-      return res.data as { ancienChefId: string; nouveauChefId: string; dateChangement: string }[];
+      return res.data as FamilyChiefHistoryEntry[];
     },
     enabled: !!id,
   });
@@ -179,7 +179,7 @@ export default function FamilyDetailPage() {
                 )}
                 <span className="text-xs text-gray-400 flex items-center gap-1">
                   <Crown className="w-3 h-3 text-gold-500" />
-                  Chef: {family.chefFamilleId?.slice(0, 12)}...
+                  Chef: {family.chefFamilleNom || family.chefFamilleId?.slice(0, 12) + '...'}
                 </span>
                 <span className="text-xs text-gray-400 flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
@@ -342,7 +342,14 @@ export default function FamilyDetailPage() {
 
             <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
               <p className="stat-label">Chef actuel</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{family.chefFamilleId}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                {family.chefFamilleNom || family.chefFamilleId}
+              </p>
+              {family.chefAdjointNom && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Adjoint : {family.chefAdjointNom}
+                </p>
+              )}
             </div>
 
             {chefHistory && chefHistory.length > 0 && (
@@ -363,12 +370,18 @@ export default function FamilyDetailPage() {
                 <p className="stat-label mb-2">Anciens chefs</p>
                 <div className="space-y-2">
                   {chefHistory.map((entry, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-gray-500">
+                    <div key={entry.id || i} className="flex items-center gap-2 text-xs text-gray-500">
                       <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
-                      <span className="truncate">{entry.ancienChefId.slice(0, 8)}...</span>
-                      <ChevronRight className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate">{entry.nouveauChefId.slice(0, 8)}...</span>
-                      <span className="text-gray-400 ml-auto">{new Date(entry.dateChangement).toLocaleDateString('fr-FR')}</span>
+                      <span className="truncate font-medium text-gray-700 dark:text-gray-300">
+                        {entry.ancienChefNom || entry.ancienChefId?.slice(0, 8)}
+                      </span>
+                      <ChevronRight className="w-3 h-3 flex-shrink-0 text-primary-500" />
+                      <span className="truncate font-medium text-gray-700 dark:text-gray-300">
+                        {entry.nouveauChefNom || entry.nouveauChefId?.slice(0, 8)}
+                      </span>
+                      <span className="text-gray-400 ml-auto whitespace-nowrap">
+                        {new Date(entry.dateChangement).toLocaleDateString('fr-FR')}
+                      </span>
                     </div>
                   ))}
                 </div>

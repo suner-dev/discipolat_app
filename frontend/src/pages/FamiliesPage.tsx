@@ -43,6 +43,14 @@ export default function FamiliesPage() {
       ),
     },
     {
+      header: 'Chef de famille',
+      cell: (family) => (
+        <span className="text-sm text-gray-600 dark:text-gray-300">
+          {family.chefFamilleNom || family.chefFamilleId?.slice(0, 12) + '…'}
+        </span>
+      ),
+    },
+    {
       header: 'Statut',
       cell: (family) => (
         <span className={`inline-flex items-center gap-1.5 ${

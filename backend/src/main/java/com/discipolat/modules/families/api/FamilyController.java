@@ -5,6 +5,7 @@ import com.discipolat.common.enums.NiveauRisque;
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.modules.families.domain.Family;
+import com.discipolat.modules.families.domain.FamilyChiefHistory;
 import com.discipolat.modules.families.domain.FamilyRiskHistory;
 import com.discipolat.modules.families.domain.FamilyRiskService;
 import com.discipolat.modules.families.domain.FamilyService;
@@ -12,6 +13,8 @@ import com.discipolat.modules.transfers.api.TransferResponse;
 import com.discipolat.modules.transfers.domain.TransferBridgeService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.users.domain.User;
+import com.discipolat.modules.users.domain.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,14 +39,31 @@ public class FamilyController {
     private final FamilyRiskService familyRiskService;
     private final SoulRepository soulRepository;
     private final TransferBridgeService transferBridgeService;
+    private final UserRepository userRepository;
 
     public FamilyController(FamilyService familyService, FamilyRiskService familyRiskService,
                             SoulRepository soulRepository,
-                            TransferBridgeService transferBridgeService) {
+                            TransferBridgeService transferBridgeService,
+                            UserRepository userRepository) {
         this.familyService = familyService;
         this.familyRiskService = familyRiskService;
         this.soulRepository = soulRepository;
         this.transferBridgeService = transferBridgeService;
+        this.userRepository = userRepository;
+    }
+
+    /** Résout les noms des chefs (id → prénom + nom) pour un affichage professionnel. */
+    private String userName(UUID id) {
+        return id == null ? null
+                : userRepository.findById(id)
+                        .map(u -> u.getFirstName() + " " + u.getLastName())
+                        .orElse(null);
+    }
+
+    /** FamilyResponse avec les noms de chefs résolus (jamais d'UUID brut). */
+    private FamilyResponse toResponse(Family family) {
+        return FamilyResponse.from(family, userName(family.getChefFamilleId()),
+                userName(family.getChefAdjointId()));
     }
 
     @GetMapping
@@ -58,7 +78,7 @@ public class FamilyController {
         } else {
             families = familyService.findAll(pageable);
         }
-        Page<FamilyResponse> response = families.map(FamilyResponse::from);
+        Page<FamilyResponse> response = families.map(this::toResponse);
         return ResponseEntity.ok(PageResponse.of(
                 response.getContent(), response.getNumber(), response.getSize(),
                 response.getTotalElements(), response.getTotalPages()));
@@ -66,7 +86,7 @@ public class FamilyController {
 
     @GetMapping("/{id}")
     public ResponseEntity<FamilyResponse> findById(@PathVariable UUID id) {
-        return ResponseEntity.ok(FamilyResponse.from(familyService.findById(id)));
+        return ResponseEntity.ok(toResponse(familyService.findById(id)));
     }
 
     /**
@@ -78,14 +98,14 @@ public class FamilyController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<FamilyResponse> create(@Valid @RequestBody CreateFamilyRequest request) {
         Family family = familyService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(FamilyResponse.from(family));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(family));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
     public ResponseEntity<FamilyResponse> update(@PathVariable UUID id, @Valid @RequestBody CreateFamilyRequest request) {
         Family family = familyService.update(id, request);
-        return ResponseEntity.ok(FamilyResponse.from(family));
+        return ResponseEntity.ok(toResponse(family));
     }
 
     @DeleteMapping("/{id}")
@@ -114,7 +134,7 @@ public class FamilyController {
     @GetMapping("/by-chef/{chefId}")
     public ResponseEntity<List<FamilyResponse>> findByChef(@PathVariable UUID chefId) {
         List<Family> families = familyService.findByChefFamille(chefId);
-        return ResponseEntity.ok(families.stream().map(FamilyResponse::from).toList());
+        return ResponseEntity.ok(families.stream().map(this::toResponse).toList());
     }
 
     // ======================== US-08: TREE VIEW ========================
@@ -156,11 +176,29 @@ public class FamilyController {
 
     // ======================== US-07: CHIEF HISTORY ========================
 
+    /**
+     * Historique des chefs : DTO professionnel (noms résolus, date lisible,
+     * raison) — jamais d'UUID brut ni de date technique.
+     */
     @GetMapping("/{id}/chief-history")
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
-    public ResponseEntity<List<com.discipolat.modules.families.domain.FamilyChiefHistory>> getChiefHistory(
-            @PathVariable UUID id) {
-        return ResponseEntity.ok(familyService.getChiefHistory(id));
+    public ResponseEntity<List<Map<String, Object>>> getChiefHistory(@PathVariable UUID id) {
+        List<Map<String, Object>> history = new java.util.ArrayList<>();
+        for (FamilyChiefHistory change : familyService.getChiefHistory(id)) {
+            Map<String, Object> entry = new java.util.LinkedHashMap<>();
+            entry.put("id", change.getId());
+            entry.put("ancienChefId", change.getAncienChefId());
+            entry.put("ancienChefNom", change.getAncienChefId() == null ? null
+                    : userRepository.findById(change.getAncienChefId())
+                            .map(u -> u.getFirstName() + " " + u.getLastName()).orElse(null));
+            entry.put("nouveauChefId", change.getNouveauChefId());
+            entry.put("nouveauChefNom", userRepository.findById(change.getNouveauChefId())
+                    .map(u -> u.getFirstName() + " " + u.getLastName()).orElse(null));
+            entry.put("dateChangement", change.getCreatedAt());
+            entry.put("raison", change.getRaison());
+            history.add(entry);
+        }
+        return ResponseEntity.ok(history);
     }
 
     // ======================== US-60: RESTORE FAMILY ========================
@@ -168,7 +206,7 @@ public class FamilyController {
     @PatchMapping("/{id}/restore")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<FamilyResponse> restore(@PathVariable UUID id) {
-        return ResponseEntity.ok(FamilyResponse.from(familyService.restore(id)));
+        return ResponseEntity.ok(toResponse(familyService.restore(id)));
     }
 
     // ======================== FAMILLE À RISQUE ========================
@@ -187,7 +225,7 @@ public class FamilyController {
             @PathVariable UUID id,
             @RequestBody SetRiskLevelRequest request) {
         Family family = familyRiskService.setNiveauRisque(id, request.niveauRisque(), request.raison());
-        return ResponseEntity.ok(FamilyResponse.from(family));
+        return ResponseEntity.ok(toResponse(family));
     }
 
     /** Historique des changements de niveau de risque. */

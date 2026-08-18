@@ -67,7 +67,10 @@ export interface Family {
   nom: string;
   userId?: string;
   chefFamilleId: string;
+  /** Nom complet du chef de famille (résolu côté serveur — jamais d'UUID brut). */
+  chefFamilleNom?: string;
   chefAdjointId?: string;
+  chefAdjointNom?: string;
   dateCreation: string;
   statut: EntityStatus;
   latitude?: number;
@@ -76,6 +79,16 @@ export interface Family {
   niveauRisque?: 'NORMAL' | 'SOUS_SURVEILLANCE' | 'A_RISQUE';
   createdAt: string;
   updatedAt: string;
+}
+
+export interface FamilyChiefHistoryEntry {
+  id: string;
+  ancienChefId?: string;
+  ancienChefNom?: string;
+  nouveauChefId: string;
+  nouveauChefNom?: string;
+  dateChangement: string;
+  raison?: string;
 }
 
 export interface FamilyRiskAssessment {
