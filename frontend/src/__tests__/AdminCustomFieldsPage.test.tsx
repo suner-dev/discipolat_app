@@ -29,58 +29,31 @@ vi.mock('@/lib/api', () => ({
 
 const DEFS = [
   {
-    id: 'cf-1',
-    entiteType: 'SOUL',
-    code: 'LANGUE',
-    label: 'Langue parlée',
-    type: 'TEXTE',
-    obligatoire: true,
-    ordre: 1,
-    options: null,
-    placeholder: 'Ex : Français',
-    defaultValue: '',
-    rolesLecture: [],
-    rolesEcriture: [],
-    actif: true,
+    id: 'cf-1', entiteType: 'SOUL', code: 'LANGUE', label: 'Langue parlée',
+    type: 'TEXTE', obligatoire: true, ordre: 1, options: null,
+    placeholder: 'Ex : Français', defaultValue: '', rolesLecture: [], rolesEcriture: [], actif: true,
   },
   {
-    id: 'cf-2',
-    entiteType: 'SOUL',
-    code: 'TALENT',
-    label: 'Talent',
-    type: 'SELECTION',
-    obligatoire: false,
-    ordre: 2,
-    options: ['Musique', 'Enseignement'],
-    placeholder: '',
-    defaultValue: '',
-    rolesLecture: [],
-    rolesEcriture: [],
-    actif: true,
+    id: 'cf-2', entiteType: 'SOUL', code: 'TALENT', label: 'Talent',
+    type: 'SELECTION', obligatoire: false, ordre: 2, options: ['Musique', 'Enseignement'],
+    placeholder: '', defaultValue: '', rolesLecture: [], rolesEcriture: [], actif: true,
+  },
+  {
+    id: 'cf-4', entiteType: 'SOUL', code: 'NOTE_HISTO', label: 'Note historique',
+    type: 'TEXTE', obligatoire: false, ordre: 3, options: null,
+    placeholder: '', defaultValue: '', rolesLecture: [], rolesEcriture: [], actif: false,
   },
 ];
 
 const USER_DEFS = [
   {
-    id: 'cf-3',
-    entiteType: 'USER',
-    code: 'TELEPHONE',
-    label: 'Téléphone secondaire',
-    type: 'TELEPHONE',
-    obligatoire: false,
-    ordre: 1,
-    options: null,
-    placeholder: '',
-    defaultValue: '',
-    rolesLecture: [],
-    rolesEcriture: [],
-    actif: true,
+    id: 'cf-3', entiteType: 'USER', code: 'TELEPHONE', label: 'Téléphone secondaire',
+    type: 'TELEPHONE', obligatoire: false, ordre: 1, options: null,
+    placeholder: '', defaultValue: '', rolesLecture: [], rolesEcriture: [], actif: true,
   },
 ];
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false } },
-});
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 function renderPage() {
   return render(
@@ -151,7 +124,6 @@ describe('AdminCustomFieldsPage — administration des champs personnalisés', (
     });
 
     fireEvent.click(screen.getByRole('button', { name: /nouveau champ/i }));
-    // Le libellé « Code » n'existe que dans le modal ouvert.
     await waitFor(() => {
       expect(screen.getByText('Code')).toBeInTheDocument();
     });
@@ -176,7 +148,6 @@ describe('AdminCustomFieldsPage — administration des champs personnalisés', (
       expect(screen.getByText('Langue parlée')).toBeInTheDocument();
     });
 
-    // Clique sur le bouton d'édition (crayon) dans la ligne de Langue parlée.
     const row = screen.getByText('Langue parlée').closest('.glass-card')!;
     const editBtn = row.querySelector('button[title="Modifier"]');
     expect(editBtn).toBeTruthy();
@@ -205,9 +176,8 @@ describe('AdminCustomFieldsPage — administration des champs personnalisés', (
       expect(screen.getByText('Langue parlée')).toBeInTheDocument();
     });
 
-    // Clique sur le bouton de suppression (poubelle) dans la ligne de Langue parlée.
     const row = screen.getByText('Langue parlée').closest('.glass-card')!;
-    const deleteBtn = row.querySelector('button[title="Supprimer"]');
+    const deleteBtn = row.querySelector('button[title="Supprimer"]')!;
     expect(deleteBtn).toBeTruthy();
     fireEvent.click(deleteBtn);
 
@@ -236,6 +206,66 @@ describe('AdminCustomFieldsPage — administration des champs personnalisés', (
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalled();
+    });
+  });
+
+  it('affiche l\'aperçu d\'un champ', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Langue parlée')).toBeInTheDocument();
+    });
+
+    // Click preview button on the first field
+    const row = screen.getByText('Langue parlée').closest('.glass-card')!;
+    const previewBtn = row.querySelector('button[title="Aperçu"]');
+    expect(previewBtn).toBeTruthy();
+    fireEvent.click(previewBtn!);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Aperçu — Langue parlée/)).toBeInTheDocument();
+    });
+  });
+
+  it('recherche un champ par nom', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Langue parlée')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/Rechercher un champ/);
+    fireEvent.change(searchInput, { target: { value: 'Talent' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Talent')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Langue parlée')).not.toBeInTheDocument();
+  });
+
+  it('affiche les champs inactifs quand le filtre est activé', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Langue parlée')).toBeInTheDocument();
+    });
+
+    // By default, inactive fields should be hidden
+    expect(screen.queryByText('Note historique')).not.toBeInTheDocument();
+
+    // Click "Inclus inactifs" button
+    fireEvent.click(screen.getByText('Inclus inactifs'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Note historique')).toBeInTheDocument();
+    });
+  });
+
+  it('affiche le bon compteur par entité', async () => {
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/3 champ/)).toBeInTheDocument();
     });
   });
 });
