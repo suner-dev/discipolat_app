@@ -2,6 +2,7 @@ package com.discipolat.modules.customfields.api;
 
 import com.discipolat.modules.customfields.domain.CustomFieldDefinition;
 import com.discipolat.modules.customfields.domain.CustomFieldService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,14 +40,39 @@ public class CustomFieldController {
 
     @PostMapping("/definitions")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CustomFieldDefinition> createDefinition(@RequestBody CustomFieldDefinition def) {
+    public ResponseEntity<CustomFieldDefinition> createDefinition(
+            @Valid @RequestBody CreateCustomFieldRequest request) {
+        CustomFieldDefinition def = new CustomFieldDefinition();
+        def.setEntiteType(request.entiteType());
+        def.setCode(request.code());
+        def.setLabel(request.label());
+        def.setType(request.type());
+        def.setObligatoire(request.obligatoire());
+        def.setOrdre(request.ordre());
+        def.setOptions(request.options());
+        def.setPlaceholder(request.placeholder());
+        def.setDefaultValue(request.defaultValue());
+        def.setRolesLecture(request.rolesLecture());
+        def.setRolesEcriture(request.rolesEcriture());
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createDefinition(def));
     }
 
     @PutMapping("/definitions/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CustomFieldDefinition> updateDefinition(
-            @PathVariable UUID id, @RequestBody CustomFieldDefinition def) {
+            @PathVariable UUID id, @Valid @RequestBody CreateCustomFieldRequest request) {
+        CustomFieldDefinition def = new CustomFieldDefinition();
+        def.setEntiteType(request.entiteType());
+        def.setCode(request.code());
+        def.setLabel(request.label());
+        def.setType(request.type());
+        def.setObligatoire(request.obligatoire());
+        def.setOrdre(request.ordre());
+        def.setOptions(request.options());
+        def.setPlaceholder(request.placeholder());
+        def.setDefaultValue(request.defaultValue());
+        def.setRolesLecture(request.rolesLecture());
+        def.setRolesEcriture(request.rolesEcriture());
         return ResponseEntity.ok(service.updateDefinition(id, def));
     }
 
@@ -71,8 +97,8 @@ public class CustomFieldController {
     public ResponseEntity<Void> saveValues(
             @PathVariable String entiteType,
             @PathVariable UUID entiteId,
-            @RequestBody Map<String, String> values) {
-        service.saveValues(entiteType, entiteId, values);
+            @Valid @RequestBody SaveCustomFieldValuesRequest request) {
+        service.saveValues(entiteType, entiteId, request.values());
         return ResponseEntity.ok().build();
     }
 }

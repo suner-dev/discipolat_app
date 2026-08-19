@@ -224,7 +224,7 @@ class CustomFieldControllerTest {
         mockMvc.perform(put("/api/v1/custom-fields/SOUL/" + entiteId)
                         .header("Authorization", bearer("FAISEUR"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"%s\":\"français\"}".formatted(definitionId)))
+                        .content("{\"values\":{\"%s\":\"français\"}}".formatted(definitionId)))
                 .andExpect(status().isOk());
 
         verify(service).saveValues(eq("SOUL"), eq(entiteId), argThat(values ->

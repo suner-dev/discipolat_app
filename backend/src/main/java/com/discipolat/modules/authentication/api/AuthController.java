@@ -105,66 +105,66 @@ public class AuthController {
 
     /** US-02: Activate account with token */
     @PostMapping("/activate")
-    public ResponseEntity<?> activateAccount(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> activateAccount(@Valid @RequestBody TokenRequest request, HttpServletRequest httpRequest) {
         String clientIp = PerIpRateLimiter.extractClientIp(httpRequest);
         RateLimitResult rl = rateLimiter.tryConsumeActivate(clientIp);
         if (!rl.allowed()) {
             return rateLimitedResponse(rl);
         }
 
-        authService.activateAccount(body.get("token"));
+        authService.activateAccount(request.token());
         return ResponseEntity.ok(Map.of("message", "Account has been activated successfully"));
     }
 
     /** US-02: Resend activation email */
     @PostMapping("/resend-activation")
-    public ResponseEntity<?> resendActivation(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> resendActivation(@Valid @RequestBody EmailRequest request, HttpServletRequest httpRequest) {
         String clientIp = PerIpRateLimiter.extractClientIp(httpRequest);
         RateLimitResult rl = rateLimiter.tryConsumeActivate(clientIp);
         if (!rl.allowed()) {
             return rateLimitedResponse(rl);
         }
 
-        authService.resendActivationEmail(body.get("email"));
+        authService.resendActivationEmail(request.email());
         return ResponseEntity.ok(Map.of("message", "If the email exists, a new activation link has been sent."));
     }
 
     /** US-03: Request password reset */
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody EmailRequest request, HttpServletRequest httpRequest) {
         String clientIp = PerIpRateLimiter.extractClientIp(httpRequest);
         RateLimitResult rl = rateLimiter.tryConsumeForgotPassword(clientIp);
         if (!rl.allowed()) {
             return rateLimitedResponse(rl);
         }
 
-        String message = authService.generatePasswordResetToken(body.get("email"));
+        String message = authService.generatePasswordResetToken(request.email());
         return ResponseEntity.ok(Map.of("message", message));
     }
 
     /** US-03: Reset password with token */
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request, HttpServletRequest httpRequest) {
         String clientIp = PerIpRateLimiter.extractClientIp(httpRequest);
         RateLimitResult rl = rateLimiter.tryConsumeResetPassword(clientIp);
         if (!rl.allowed()) {
             return rateLimitedResponse(rl);
         }
 
-        authService.resetPassword(body.get("token"), body.get("newPassword"));
+        authService.resetPassword(request.token(), request.newPassword());
         return ResponseEntity.ok(Map.of("message", "Password has been reset successfully"));
     }
 
     /** Change password for authenticated user */
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
         String clientIp = PerIpRateLimiter.extractClientIp(httpRequest);
         RateLimitResult rl = rateLimiter.tryConsumeChangePassword(clientIp);
         if (!rl.allowed()) {
             return rateLimitedResponse(rl);
         }
 
-        authService.changePassword(body.get("currentPassword"), body.get("newPassword"));
+        authService.changePassword(request.currentPassword(), request.newPassword());
         return ResponseEntity.ok(Map.of("message", "Password has been changed successfully"));
     }
 

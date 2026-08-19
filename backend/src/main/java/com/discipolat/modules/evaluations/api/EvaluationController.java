@@ -2,6 +2,7 @@ package com.discipolat.modules.evaluations.api;
 
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.modules.evaluations.domain.CategorieEvaluation;
+import jakarta.validation.Valid;
 import com.discipolat.modules.evaluations.domain.Evaluation;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
 import org.springframework.data.domain.Page;
@@ -32,13 +33,10 @@ public class EvaluationController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
-    public ResponseEntity<Map<String, Object>> submit(@RequestBody Map<String, Object> body) {
-        UUID evalueId = UUID.fromString((String) body.get("evalueId"));
-        CategorieEvaluation categorie = CategorieEvaluation.valueOf((String) body.get("categorie"));
-        int note = (Integer) body.get("note");
-        String commentaire = (String) body.getOrDefault("commentaire", null);
-
-        Evaluation evaluation = evaluationService.submit(evalueId, categorie, note, commentaire);
+    public ResponseEntity<Map<String, Object>> submit(@Valid @RequestBody SubmitEvaluationRequest request) {
+        CategorieEvaluation categorie = request.categorie() != null
+                ? CategorieEvaluation.valueOf(request.categorie()) : null;
+        Evaluation evaluation = evaluationService.submit(request.evalueId(), categorie, request.note(), request.commentaire());
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "id", evaluation.getId(),
                 "message", "Évaluation soumise avec succès (anonyme)"
@@ -53,14 +51,10 @@ public class EvaluationController {
     @PutMapping("/{evalueId}")
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> submitOrUpdate(@PathVariable UUID evalueId,
-                                                              @RequestBody Map<String, Object> body) {
-        CategorieEvaluation categorie = body.get("categorie") != null
-                ? CategorieEvaluation.valueOf((String) body.get("categorie"))
-                : null;
-        int note = (Integer) body.get("note");
-        String commentaire = (String) body.getOrDefault("commentaire", null);
-
-        Evaluation evaluation = evaluationService.submitOrUpdate(evalueId, categorie, note, commentaire);
+                                                              @Valid @RequestBody UpsertEvaluationRequest request) {
+        CategorieEvaluation categorie = request.categorie() != null
+                ? CategorieEvaluation.valueOf(request.categorie()) : null;
+        Evaluation evaluation = evaluationService.submitOrUpdate(evalueId, categorie, request.note(), request.commentaire());
         return ResponseEntity.ok(Map.of(
                 "id", evaluation.getId(),
                 "categorie", evaluation.getCategorie().name(),
