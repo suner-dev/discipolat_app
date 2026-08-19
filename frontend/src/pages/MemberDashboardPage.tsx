@@ -15,10 +15,12 @@ import type {
   CreateMemberRequest,
   ProgramType,
 } from '@/types';
+import { Link } from 'react-router-dom';
 import {
   Sparkles, User, Mail, Phone, Calendar, GraduationCap, Briefcase, Heart,
   Users, Building2, Camera, Edit3, Save, X, Loader2, MessageSquare,
   ChevronRight, UserCheck, Church, Cake, CalendarCheck, Send, Paperclip,
+  CheckCircle, Star, TrendingUp,
 } from 'lucide-react';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
@@ -108,7 +110,7 @@ export default function MemberDashboardPage() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<UpdateMemberProfileRequest>({});
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data: dashboard, isLoading, isError, error } = useQuery({
     queryKey: ['members', 'me', 'dashboard'],
     queryFn: async () => {
       const res = await api.get('/members/me/dashboard');
@@ -216,13 +218,13 @@ export default function MemberDashboardPage() {
 
   const openEdit = () => {
     setForm({
-      phone: data?.user.phone || '',
-      photoUrl: data?.user.photoUrl || '',
-      situationFamiliale: data?.user.situationFamiliale || '',
-      dateNaissance: data?.user.dateNaissance || '',
-      profession: data?.soul?.profession || '',
-      niveauEtude: data?.soul?.niveauEtude || '',
-      nbEnfants: data?.soul?.nbEnfants ?? 0,
+      phone: dashboard?.user.phone || '',
+      photoUrl: dashboard?.user.photoUrl || '',
+      situationFamiliale: dashboard?.user.situationFamiliale || '',
+      dateNaissance: dashboard?.user.dateNaissance || '',
+      profession: dashboard?.soul?.profession || '',
+      niveauEtude: dashboard?.soul?.niveauEtude || '',
+      nbEnfants: dashboard?.soul?.nbEnfants ?? 0,
     });
     setEditing(true);
   };
@@ -254,7 +256,7 @@ export default function MemberDashboardPage() {
     );
   }
 
-  if (isError || !data) {
+  if (isError || !dashboard) {
     return (
       <div className="page-container">
         <div className="glass-card p-8 text-center animate-scale-in">
@@ -273,7 +275,7 @@ export default function MemberDashboardPage() {
     );
   }
 
-  const d = data;
+  const d = dashboard;
   const statutLabel = dictionaries.label('USER_ROLE', d.statutMembre) || STATUT_FALLBACK[d.statutMembre] || d.statutMembre;
   const statut = { label: statutLabel, badge: STATUT_BADGES[d.statutMembre] || 'badge-info' };
   const isParentCelibataire = form.situationFamiliale === 'PARENT_CELIBATAIRE';
@@ -753,6 +755,109 @@ export default function MemberDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ===================== ÉVÉNEMENTS À VENIR ===================== */}
+      <div className="glass-card p-6 animate-slide-up mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+            <Calendar className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Événements à venir</h3>
+            <p className="text-xs text-gray-400">Prochains événements de votre communauté</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {((dashboard as any)?.evenements?.slice(0, 6) || []).map((ev: any) => (
+            <Link key={ev.id} to="/events" className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-blue-500" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-primary-600">{ev.titre}</p>
+                <p className="text-[10px] text-gray-400">{ev.dateDebut ? new Date(ev.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}{ev.lieu ? ` · ${ev.lieu}` : ''}</p>
+              </div>
+              <ChevronRight className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
+          ))}
+          {(!(dashboard as any)?.evenements || ((dashboard as any)).evenements.length === 0) && (
+            <div className="col-span-full text-center py-6"><Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-xs text-gray-400">Aucun événement à venir</p></div>
+          )}
+        </div>
+      </div>
+
+      {/* ===================== PRIÈRES & ACTIONS DE GRÂCE ===================== */}
+      <div className="glass-card p-6 animate-slide-up mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg">
+            <Church className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Prières & actions de grâce</h3>
+            <p className="text-xs text-gray-400">Demandes de prière de votre famille et de l'église</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {((dashboard as any)?.prieres?.slice(0, 5) || []).map((p: any) => (
+            <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${p.statut === 'EXAUCEE' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'}`}>
+                {p.statut === 'EXAUCEE' ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Church className="w-4 h-4 text-indigo-500" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{p.titre}</p>
+                <p className="text-[10px] text-gray-400">{p.priorite} · {p.visibilite} · {p.auteurNom || '—'}</p>
+              </div>
+              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${p.statut === 'EXAUCEE' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
+                {p.statut === 'EXAUCEE' ? 'Exaucée' : 'En cours'}
+              </span>
+            </div>
+          ))}
+          {(!(dashboard as any)?.prieres || ((dashboard as any)).prieres.length === 0) && (
+            <div className="text-center py-6"><Church className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-xs text-gray-400">Aucune prière</p></div>
+          )}
+        </div>
+      </div>
+
+      {/* ===================== PROGRESSION SPIRITUELLE ===================== */}
+      {(dashboard as any)?.progression && (
+        <div className="glass-card p-6 animate-slide-up mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ma progression</h3>
+              <p className="text-xs text-gray-400">Évolution spirituelle et engagement</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {((dashboard as any)).progression.niveauCroissance !== undefined && (
+              <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 text-center">
+                <div className="flex justify-center gap-0.5 mb-1">{[1,2,3,4,5].map(i => <Star key={i} className={`w-3.5 h-3.5 ${i <= ((dashboard as any)).progression.niveauCroissance ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />)}</div>
+                <p className="text-[10px] text-gray-400">Niveau spiritual</p>
+              </div>
+            )}
+            {((dashboard as any)).progression.presencesTotal !== undefined && (
+              <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 text-center">
+                <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{((dashboard as any)).progression.presencesTotal}</p>
+                <p className="text-[10px] text-gray-400">Présences</p>
+              </div>
+            )}
+            {((dashboard as any)).progression.rapportsSoumis !== undefined && (
+              <div className="p-3 rounded-xl bg-green-50/50 dark:bg-green-900/10 text-center">
+                <p className="text-xl font-bold text-green-600 dark:text-green-400">{((dashboard as any)).progression.rapportsSoumis}</p>
+                <p className="text-[10px] text-gray-400">Rapports</p>
+              </div>
+            )}
+            {((dashboard as any)).progression.prieres !== undefined && (
+              <div className="p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/10 text-center">
+                <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{((dashboard as any)).progression.prieres}</p>
+                <p className="text-[10px] text-gray-400">Prières</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ===================== MODAL D'ÉDITION ===================== */}
       {editing && (
