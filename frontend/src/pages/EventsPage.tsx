@@ -497,12 +497,20 @@ export default function EventsPage() {
     },
   ];
 
+  const allEvents = data?.content || [];
+  const evtStats = useMemo(() => ({
+    total: data?.totalElements ?? allEvents.length,
+    planifies: allEvents.filter(e => e.statut === 'PLANIFIE').length,
+    enCours: allEvents.filter(e => e.statut === 'EN_COURS').length,
+    termines: allEvents.filter(e => e.statut === 'TERMINE').length,
+  }), [data, allEvents]);
+
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
           <h1 className="page-title">Événements</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Gestion des événements de famille</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Gestion des événements de famille — {evtStats.total} événement(s)</p>
         </div>
         <div className="flex gap-2">
           {isPasteurOrAdmin && (
@@ -528,6 +536,33 @@ export default function EventsPage() {
             <Plus className="w-4 h-4" /> Nouvel événement
           </button>
         </div>
+      </div>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'Total', value: evtStats.total, icon: Calendar, color: 'from-primary-500 to-primary-600', filter: '' },
+          { label: 'Planifiés', value: evtStats.planifies, icon: Clock, color: 'from-sky-500 to-blue-500', filter: 'PLANIFIE' },
+          { label: 'En cours', value: evtStats.enCours, icon: CheckCircle2, color: 'from-amber-500 to-orange-500', filter: 'EN_COURS' },
+          { label: 'Terminés', value: evtStats.termines, icon: Users, color: 'from-emerald-500 to-green-500', filter: 'TERMINE' },
+        ].map((s, i) => (
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => { if (s.filter) { setStatutFilter(statutFilter === (s.filter as StatutEvenement) ? '' : (s.filter as StatutEvenement)); setPage(0); } else { setStatutFilter(''); setPage(0); } }}
+            className={`stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${statutFilter === s.filter && s.filter ? 'ring-2 ring-primary-500/50' : ''}`}
+            style={{ animationDelay: `${i * 50}ms` }}
+          >
+            <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${s.color} opacity-60`} />
+            <div className="flex items-start justify-between mb-2">
+              <span className="stat-label text-[10px]">{s.label}</span>
+              <div className={`p-1.5 rounded-lg bg-gradient-to-br ${s.color} text-white shadow-sm`}>
+                <s.icon className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <p className="stat-value text-xl">{s.value}</p>
+          </button>
+        ))}
       </div>
 
       {/* Create form */}

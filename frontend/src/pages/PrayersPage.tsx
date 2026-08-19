@@ -403,23 +403,61 @@ export default function PrayersPage() {
     },
   ];
 
+  // Compute stats from all loaded data
+  const allPrayers = data?.content || [];
+  const stats = useMemo(() => ({
+    total: data?.totalElements ?? allPrayers.length,
+    enCours: allPrayers.filter(p => p.statut === 'EN_COURS').length,
+    exauces: allPrayers.filter(p => p.statut === 'EXAUCEE').length,
+    haute: allPrayers.filter(p => p.priorite === 'HAUTE').length,
+  }), [data, allPrayers]);
+
+  const hasActiveFilters = Boolean(catFilter || statutFilter || visibiliteFilter || search);
+
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
           <h1 className="page-title">Prières</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Suivi des sujets de prière de la famille
+            Suivi des sujets de prière de la famille — {stats.total} sujet(s)
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50' : ''}`}>
+          <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters || hasActiveFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-700' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
           </button>
           <button onClick={() => setShowCreate(!showCreate)} className="btn-primary btn-sm">
             <Plus className="w-4 h-4" /> Nouveau sujet
           </button>
         </div>
+      </div>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'Total', value: stats.total, icon: Heart, color: 'from-primary-500 to-primary-600', filterVal: '' },
+          { label: 'En cours', value: stats.enCours, icon: Clock, color: 'from-amber-500 to-orange-500', filterVal: 'EN_COURS' },
+          { label: 'Exaucés', value: stats.exauces, icon: CheckCircle2, color: 'from-emerald-500 to-green-500', filterVal: 'EXAUCEE' },
+          { label: 'Haute priorité', value: stats.haute, icon: Flame, color: 'from-red-500 to-rose-500', filterVal: '' },
+        ].map((s, i) => (
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => { if (s.filterVal) { setStatutFilter(statutFilter === s.filterVal ? '' : s.filterVal); setPage(0); } }}
+            className={`stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${statutFilter === s.filterVal && s.filterVal ? 'ring-2 ring-primary-500/50' : ''}`}
+            style={{ animationDelay: `${i * 50}ms` }}
+          >
+            <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${s.color} opacity-60`} />
+            <div className="flex items-start justify-between mb-2">
+              <span className="stat-label text-[10px]">{s.label}</span>
+              <div className={`p-1.5 rounded-lg bg-gradient-to-br ${s.color} text-white shadow-sm`}>
+                <s.icon className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <p className="stat-value text-xl">{s.value}</p>
+          </button>
+        ))}
       </div>
 
       {/* Create form */}
