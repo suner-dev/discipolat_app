@@ -1,5 +1,6 @@
 package com.discipolat.modules.users.api;
 
+import com.discipolat.modules.users.api.dto.*;
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
@@ -258,19 +259,16 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<TransferResponse> transferFaiseur(
             @PathVariable UUID id,
-            @RequestBody Map<String, Object> body) {
-        UUID nouvelleFamilleId = UUID.fromString((String) body.get("nouvelleFamilleId"));
-        boolean transfererAmes = body.containsKey("transfererAmes") && (Boolean) body.get("transfererAmes");
-        return ResponseEntity.ok(transferBridgeService.transferFaiseur(id, nouvelleFamilleId, transfererAmes));
+            @Valid @RequestBody TransferFaiseurRequest body) {
+        return ResponseEntity.ok(transferBridgeService.transferFaiseur(id, body.nouvelleFamilleId(), body.transfererAmes()));
     }
 
     // ======================== US-17: DEMOTE FAISEUR ========================
 
     @PatchMapping("/{id}/demote")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
-    public ResponseEntity<UserResponse> demote(@PathVariable UUID id, @RequestBody Map<String, String> body) {
-        String newRole = body.get("newRole");
-        UserRole role = newRole != null ? UserRole.valueOf(newRole) : null;
+    public ResponseEntity<UserResponse> demote(@PathVariable UUID id, @Valid @RequestBody DemoteRequest body) {
+        UserRole role = body.newRole() != null ? UserRole.valueOf(body.newRole()) : null;
         return ResponseEntity.ok(UserResponse.from(userService.demoteFaiseur(id, role)));
     }
 
@@ -298,8 +296,8 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<UserResponse> addRole(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> body) {
-        UserRole role = UserRole.valueOf(body.get("role"));
+            @Valid @RequestBody AddRoleRequest body) {
+        UserRole role = UserRole.valueOf(body.role());
         User user = userService.addRole(id, role);
         return ResponseEntity.ok(UserResponse.from(user));
     }
@@ -319,9 +317,8 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<UserResponse> replaceRoles(
             @PathVariable UUID id,
-            @RequestBody Map<String, Set<String>> body) {
-        Set<String> roleStrings = body.get("roles");
-        Set<UserRole> roles = roleStrings.stream().map(UserRole::valueOf).collect(java.util.stream.Collectors.toSet());
+            @Valid @RequestBody ReplaceRolesRequest body) {
+        Set<UserRole> roles = body.roles().stream().map(UserRole::valueOf).collect(Collectors.toSet());
         User user = userService.replaceRoles(id, roles);
         return ResponseEntity.ok(UserResponse.from(user));
     }
@@ -331,8 +328,8 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<UserResponse> setActiveRole(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> body) {
-        UserRole activeRole = UserRole.valueOf(body.get("activeRole"));
+            @Valid @RequestBody SetActiveRoleRequest body) {
+        UserRole activeRole = UserRole.valueOf(body.activeRole());
         User user = userService.setActiveRole(id, activeRole);
         return ResponseEntity.ok(UserResponse.from(user));
     }
