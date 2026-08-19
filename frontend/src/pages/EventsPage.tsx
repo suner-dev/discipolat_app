@@ -32,6 +32,9 @@ import {
   Sparkles,
   BellRing,
   Paperclip,
+  Download,
+  List,
+  Grid3X3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -185,6 +188,7 @@ export default function EventsPage() {
   const statusLabel = (code: string) =>
     dictionaries.label('EVENT_STATUS', code) || STATUT_LABELS[code] || code;
   const [view, setView] = useState<'list' | 'consolidated'>('list');
+  const [displayMode, setDisplayMode] = useState<'table' | 'calendar'>('table');
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeEvenement | ''>('');
@@ -505,6 +509,63 @@ export default function EventsPage() {
     termines: allEvents.filter(e => e.statut === 'TERMINE').length,
   }), [data, allEvents]);
 
+  const exportCsv = () => {
+    const rows = [['Titre', 'Type', 'Statut', 'Date début', 'Date fin', 'Lieu', 'Capacité', 'Inscriptions']];
+    allEvents.forEach((e) => {
+      rows.push([
+        e.titre,
+        TYPE_LABELS[e.typeEvenement] || e.typeEvenement,
+        STATUT_LABELS[e.statut] || e.statut,
+        e.dateDebut ? new Date(e.dateDebut).toLocaleDateString('fr-FR') : '',
+        e.dateFin ? new Date(e.dateFin).toLocaleDateString('fr-FR') : '',
+        e.lieu || '',
+        String(e.limitePlaces || ''),
+        String(e.nbInscrits || 0),
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `evenements_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Calendar grid computation
+  const calendarWeeks = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const weeks: { date: Date; events: Evenement[]; isCurrentMonth: boolean; isToday: boolean }[][] = [];
+    let week: typeof weeks[0] = [];
+    const startOffset = firstDay.getDay();
+    for (let i = 0; i < startOffset; i++) {
+      const d = new Date(year, month, -(startOffset - 1 - i));
+      week.push({ date: d, events: [], isCurrentMonth: false, isToday: false });
+    }
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      const date = new Date(year, month, d);
+      const dayStr = date.toISOString().slice(0, 10);
+      const dayEvents = allEvents.filter(e => {
+        if (!e.dateDebut) return false;
+        return new Date(e.dateDebut).toISOString().slice(0, 10) === dayStr;
+      });
+      week.push({ date, events: dayEvents, isCurrentMonth: true, isToday: d === now.getDate() });
+      if (week.length === 7) { weeks.push(week); week = []; }
+    }
+    while (week.length > 0 && week.length < 7) {
+      const lastDate = week[week.length - 1].date;
+      const nextDate = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate() + 1);
+      week.push({ date: nextDate, events: [], isCurrentMonth: false, isToday: false });
+    }
+    if (week.length === 7) weeks.push(week);
+    return weeks;
+  }, [allEvents]);
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -529,6 +590,17 @@ export default function EventsPage() {
               </button>
             </div>
           )}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-white/50 dark:bg-gray-800/30">
+            <button onClick={() => setDisplayMode('table')} className={displayMode === 'table' ? 'tab-active text-xs px-2 py-1' : 'tab text-xs px-2 py-1'} title="Vue tableau">
+              <List className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setDisplayMode('calendar')} className={displayMode === 'calendar' ? 'tab-active text-xs px-2 py-1' : 'tab text-xs px-2 py-1'} title="Vue calendrier">
+              <Grid3X3 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <button onClick={exportCsv} className="btn-secondary btn-sm">
+            <Download className="w-4 h-4" /> Export
+          </button>
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
           </button>
@@ -841,22 +913,61 @@ export default function EventsPage() {
             )}
           </div>
 
-          <DataTable<Evenement>
-            columns={columns}
-            data={data?.content || []}
-            isLoading={isLoading}
-            emptyMessage="Aucun événement trouvé"
-            emptyIcon={<Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />}
-          />
-
-          {data && data.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
-              <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">Précédent</button>
-                <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-secondary btn-sm">Suivant</button>
+          {/* Calendar View */}
+          {displayMode === 'calendar' ? (
+            <div className="card p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                </h3>
+                <div className="flex gap-2 text-[10px]">
+                  {Object.entries(TYPE_LABELS).slice(0, 6).map(([k, v]) => (
+                    <span key={k} className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500">{v}</span>
+                  ))}
+                </div>
               </div>
+              <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                {['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'].map((d) => (
+                  <div key={d} className="bg-gray-50 dark:bg-gray-800 p-2 text-center text-[10px] font-semibold text-gray-400 uppercase">{d}</div>
+                ))}
+                {calendarWeeks.flat().map((day, i) => (
+                  <div key={i} className={`bg-white dark:bg-gray-900 p-1.5 min-h-[60px] ${!day.isCurrentMonth ? 'opacity-40' : ''} ${day.isToday ? 'bg-primary-50 dark:bg-primary-900/20 ring-1 ring-primary-400' : ''}`}>
+                    <p className={`text-[10px] font-medium mb-1 ${day.isToday ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500'}`}>{day.date.getDate()}</p>
+                    <div className="space-y-0.5">
+                      {day.events.slice(0, 2).map((ev) => (
+                        <div key={ev.id} className="text-[8px] leading-tight px-1 py-0.5 rounded bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 truncate cursor-pointer hover:bg-primary-200 dark:hover:bg-primary-800/40" title={ev.titre}>
+                          {ev.titre.slice(0, 12)}
+                        </div>
+                      ))}
+                      {day.events.length > 2 && (
+                        <p className="text-[8px] text-gray-400 pl-1">+{day.events.length - 2}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-400 mt-2 text-center">Calendrier du mois en cours — cliquez sur un événement pour voir les détails</p>
             </div>
+          ) : (
+            <>
+              <DataTable<Evenement>
+                columns={columns}
+                data={data?.content || []}
+                isLoading={isLoading}
+                emptyMessage="Aucun événement trouvé"
+                emptyIcon={<Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />}
+              />
+
+              {data && data.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">Précédent</button>
+                    <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-secondary btn-sm">Suivant</button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

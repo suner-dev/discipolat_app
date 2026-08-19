@@ -23,6 +23,8 @@ import {
   Pencil,
   Trash2,
   MessageSquare,
+  Download,
+  BarChart3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -147,6 +149,7 @@ export default function PrayersPage() {
   const queryClient = useQueryClient();
   const dictionaries = useDictionaries();
   const [page, setPage] = useState(0);
+  const [viewMode, setViewMode] = useState<'list' | 'grace'>('list');
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState<CategoriePriere | ''>('');
   const [statutFilter, setStatutFilter] = useState('');
@@ -403,6 +406,29 @@ export default function PrayersPage() {
     },
   ];
 
+  // Export CSV
+  const exportCsv = () => {
+    const rows = [['Titre', 'Catégorie', 'Priorité', 'Visibilité', 'Statut', 'Date']];
+    allPrayers.forEach((p) => {
+      rows.push([
+        p.titre,
+        categorieLabel(p.categorie),
+        prioriteLabel(p.priorite),
+        p.visibilite,
+        p.statut === 'EXAUCEE' ? 'Exaucé' : 'En cours',
+        new Date(p.dateCreation).toLocaleDateString('fr-FR'),
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prieres_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Compute stats from all loaded data
   const allPrayers = data?.content || [];
   const stats = useMemo(() => ({
@@ -411,6 +437,13 @@ export default function PrayersPage() {
     exauces: allPrayers.filter(p => p.statut === 'EXAUCEE').length,
     haute: allPrayers.filter(p => p.priorite === 'HAUTE').length,
   }), [data, allPrayers]);
+
+  // Category distribution
+  const catDistribution = useMemo(() => {
+    const dist: Record<string, number> = {};
+    allPrayers.forEach((p) => { dist[p.categorie] = (dist[p.categorie] || 0) + 1; });
+    return Object.entries(dist).sort((a, b) => b[1] - a[1]);
+  }, [allPrayers]);
 
   const hasActiveFilters = Boolean(catFilter || statutFilter || visibiliteFilter || search);
 
@@ -424,6 +457,12 @@ export default function PrayersPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setViewMode(viewMode === 'list' ? 'grace' : 'list')} className={`btn-secondary btn-sm ${viewMode === 'grace' ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700' : ''}`}>
+            {viewMode === 'grace' ? <Heart className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />} {viewMode === 'grace' ? 'Sujets actifs' : 'Actions de grâce'}
+          </button>
+          <button onClick={exportCsv} className="btn-secondary btn-sm">
+            <Download className="w-4 h-4" /> Export
+          </button>
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters || hasActiveFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-700' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
           </button>
@@ -459,6 +498,33 @@ export default function PrayersPage() {
           </button>
         ))}
       </div>
+
+      {/* Category distribution */}
+      {catDistribution.length > 0 && viewMode === 'list' && (
+        <div className="card p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <BarChart3 className="w-4 h-4 text-gray-400" />
+            <p className="text-xs font-semibold text-gray-500 uppercase">Répartition par catégorie</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {catDistribution.map(([cat, count]) => {
+              const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => { setCatFilter(catFilter === cat ? '' : cat as CategoriePriere); setPage(0); }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${catFilter === cat ? 'ring-2 ring-primary-500/50 shadow-sm' : ''} bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50`}
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: categorieColor(cat) || '#9ca3af' }} />
+                  <span className="text-gray-700 dark:text-gray-300">{categorieLabel(cat)}</span>
+                  <span className="text-gray-400">{count}</span>
+                  <span className="text-[10px] text-gray-400">{pct}%</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Create form */}
       {showCreate && createPrayerForm('newPrayer', newPrayer, (v) => setNewPrayer({ ...newPrayer, ...v }), 'Créer', () => createMutation.mutate(newPrayer), createMutation.isPending, () => setShowCreate(false), categorieEntries, prioriteEntries)}
@@ -568,22 +634,60 @@ export default function PrayersPage() {
         )}
       </div>
 
-      <DataTable<Prayer>
-        columns={columns}
-        data={data?.content || []}
-        isLoading={isLoading}
-        emptyMessage="Aucun sujet de prière"
-        emptyIcon={<Heart className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />}
-      />
-
-      {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
-          <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">Précédent</button>
-            <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-secondary btn-sm">Suivant</button>
-          </div>
+      {/* Actions de grâce view */}
+      {viewMode === 'grace' && (
+        <div className="space-y-4 mb-6">
+          {allPrayers.filter(p => p.statut === 'EXAUCEE').length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {allPrayers.filter(p => p.statut === 'EXAUCEE').map((prayer) => (
+                <div key={prayer.id} className="card p-5 border-l-4 border-green-400 animate-slide-up">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">Exaucé !</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">{prayer.titre}</p>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                    {categorieLabel(prayer.categorie)}
+                  </span>
+                  {prayer.temoignage && (
+                    <div className="mt-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/10">
+                      <p className="text-xs text-green-700 dark:text-green-300 italic">"{prayer.temoignage}"</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="card p-10 text-center">
+              <CheckCircle2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">Aucune prière exaucée pour le moment</p>
+              <p className="text-xs text-gray-400 mt-1">Marquez une prière comme exaucée pour voir les actions de grâce</p>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Regular list view */}
+      {viewMode === 'list' && (
+        <>
+          <DataTable<Prayer>
+            columns={columns}
+            data={data?.content || []}
+            isLoading={isLoading}
+            emptyMessage="Aucun sujet de prière"
+            emptyIcon={<Heart className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />}
+          />
+
+          {data && data.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
+              <div className="flex gap-2">
+                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">Précédent</button>
+                <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-secondary btn-sm">Suivant</button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
