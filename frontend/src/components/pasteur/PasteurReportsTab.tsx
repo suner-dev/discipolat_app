@@ -368,7 +368,7 @@ export default function PasteurReportsTab() {
                 <div className="flex justify-between text-sm"><span className="text-gray-500">Faiseur</span><span className="font-medium">{(showDetail as MakerReportItem).faiseurNom || '—'}</span></div>
               )}
               {'familleNom' in showDetail && (
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Famille</span><span className="font-medium">{(showDetail as any).familleNom || '—'}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">Famille</span><span className="font-medium">{(showDetail as FamilyReportItem).familleNom || '—'}</span></div>
               )}
               {'statut' in showDetail && (
                 <div className="flex justify-between text-sm"><span className="text-gray-500">Statut</span>{reportTypeBadge(showDetail.statut)}</div>
