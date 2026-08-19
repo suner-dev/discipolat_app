@@ -103,7 +103,7 @@ public class FamilyController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
-    public ResponseEntity<FamilyResponse> update(@PathVariable UUID id, @Valid @RequestBody CreateFamilyRequest request) {
+    public ResponseEntity<FamilyResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateFamilyRequest request) {
         Family family = familyService.update(id, request);
         return ResponseEntity.ok(toResponse(family));
     }

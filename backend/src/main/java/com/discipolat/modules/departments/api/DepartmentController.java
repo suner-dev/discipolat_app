@@ -64,7 +64,7 @@ public class DepartmentController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<DepartmentResponse> update(@PathVariable UUID id,
-                                                      @Valid @RequestBody CreateDepartmentRequest request) {
+                                                      @Valid @RequestBody UpdateDepartmentRequest request) {
         Department department = departmentService.findById(id);
         department.setNom(request.nom());
         department.setDescription(request.description());

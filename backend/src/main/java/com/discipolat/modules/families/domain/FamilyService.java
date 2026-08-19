@@ -9,6 +9,7 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.api.CreateFamilyRequest;
+import com.discipolat.modules.families.api.UpdateFamilyRequest;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
@@ -249,7 +250,7 @@ public class FamilyService {
         return familyRepository.findByChefFamilleId(chefId, pageable);
     }
 
-    public Family update(UUID id, CreateFamilyRequest request) {
+    public Family update(UUID id, UpdateFamilyRequest request) {
         Family existing = findById(id);
         existing.setNom(request.nom());
         if (request.chefFamilleId() != null) {
