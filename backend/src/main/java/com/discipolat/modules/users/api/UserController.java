@@ -33,17 +33,20 @@ public class UserController {
     private final EvaluationService evaluationService;
     private final com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService;
     private final TransferBridgeService transferBridgeService;
+    private final com.discipolat.modules.audit.domain.AuditService auditService;
 
     public UserController(UserService userService, AuthService authService, SecurityUtils securityUtils,
                           EvaluationService evaluationService,
                           com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService,
-                          TransferBridgeService transferBridgeService) {
+                          TransferBridgeService transferBridgeService,
+                          com.discipolat.modules.audit.domain.AuditService auditService) {
         this.userService = userService;
         this.authService = authService;
         this.securityUtils = securityUtils;
         this.evaluationService = evaluationService;
         this.workspaceScopeService = workspaceScopeService;
         this.transferBridgeService = transferBridgeService;
+        this.auditService = auditService;
     }
 
     @GetMapping
@@ -123,7 +126,8 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
-    public ResponseEntity<UserResponse> create(@Valid @RequestBody CreateUserRequest request) {
+    public ResponseEntity<UserResponse> create(@Valid @RequestBody CreateUserRequest request,
+                                               jakarta.servlet.http.HttpServletRequest httpRequest) {
         User.UserBuilder builder = User.builder()
                 .email(request.email())
                 .firstName(request.firstName())
@@ -143,13 +147,22 @@ public class UserController {
         user = userService.create(user, request.password());
         // US-02: Send welcome email with activation link
         authService.sendActivationEmail(user.getId());
+        // Audit log
+        auditService.log("CREATE", "USER", user.getId(), null,
+                Map.of("email", user.getEmail(), "firstName", user.getFirstName(),
+                       "lastName", user.getLastName(), "role", String.valueOf(user.getRole())),
+                httpRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(user));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
-    public ResponseEntity<UserResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
+    public ResponseEntity<UserResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request,
+                                               jakarta.servlet.http.HttpServletRequest httpRequest) {
         User user = userService.findById(id);
+        Map<String, Object> oldValues = Map.of(
+                "email", user.getEmail(), "firstName", user.getFirstName(),
+                "lastName", user.getLastName(), "role", String.valueOf(user.getRole()));
         user.setEmail(request.email());
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
@@ -162,6 +175,11 @@ public class UserController {
             user.setActiveRole(request.activeRole());
         }
         user = userService.update(user);
+        // Audit log
+        Map<String, Object> newValues = Map.of(
+                "email", user.getEmail(), "firstName", user.getFirstName(),
+                "lastName", user.getLastName(), "role", String.valueOf(user.getRole()));
+        auditService.log("UPDATE", "USER", user.getId(), oldValues, newValues, httpRequest);
         return ResponseEntity.ok(UserResponse.from(user));
     }
 
@@ -276,7 +294,9 @@ public class UserController {
 
     @DeleteMapping("/{id}/hard-delete")
     @PreAuthorize("hasRole('ADMIN') && @perm.has('USER','DELETE')")
-    public ResponseEntity<Map<String, String>> hardDelete(@PathVariable UUID id) {
+    public ResponseEntity<Map<String, String>> hardDelete(@PathVariable UUID id,
+                                                          jakarta.servlet.http.HttpServletRequest httpRequest) {
+        auditService.log("DELETE", "USER", id, null, null, httpRequest);
         userService.hardDeleteUser(id);
         return ResponseEntity.ok(Map.of("message", "User permanently deleted"));
     }
@@ -296,9 +316,11 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<UserResponse> addRole(
             @PathVariable UUID id,
-            @Valid @RequestBody AddRoleRequest body) {
+            @Valid @RequestBody AddRoleRequest body,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
         UserRole role = UserRole.valueOf(body.role());
         User user = userService.addRole(id, role);
+        auditService.log("ADD_ROLE", "USER", id, null, Map.of("role", body.role()), httpRequest);
         return ResponseEntity.ok(UserResponse.from(user));
     }
 
