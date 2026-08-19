@@ -178,7 +178,7 @@ describe('AdminCustomFieldsPage — administration des champs personnalisés', (
 
     // Clique sur le bouton d'édition (crayon) dans la ligne de Langue parlée.
     const row = screen.getByText('Langue parlée').closest('.glass-card')!;
-    const editBtn = row.querySelector('button');
+    const editBtn = row.querySelector('button[title="Modifier"]');
     expect(editBtn).toBeTruthy();
     fireEvent.click(editBtn!);
 
@@ -207,7 +207,7 @@ describe('AdminCustomFieldsPage — administration des champs personnalisés', (
 
     // Clique sur le bouton de suppression (poubelle) dans la ligne de Langue parlée.
     const row = screen.getByText('Langue parlée').closest('.glass-card')!;
-    const deleteBtn = row.querySelectorAll('button')[1]; // 2e bouton = poubelle
+    const deleteBtn = row.querySelector('button[title="Supprimer"]');
     expect(deleteBtn).toBeTruthy();
     fireEvent.click(deleteBtn);
 

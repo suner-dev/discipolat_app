@@ -11,15 +11,19 @@ import {
   Plus,
   Search,
   Filter,
-  ChevronDown,
-  Sparkles,
-  Star,
   Trash2,
   RotateCcw,
+  Star,
+  Users,
+  Activity,
+  TrendingUp,
+  Clock,
+  BarChart3,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-/** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
+/** Replis */
 const TYPE_FALLBACK: Record<string, string> = {
   NOUVEL_ARRIVANT: 'Nouvel arrivant',
   NOUVEAU_CONVERTI: 'Nouveau converti',
@@ -34,11 +38,17 @@ const STATUT_FALLBACK: Record<string, string> = {
   DECROCHE: 'Décroché',
 };
 
+const STATUT_COLORS: Record<string, string> = {
+  ACTIF: 'bg-emerald-500',
+  EN_INTEGRATION: 'bg-amber-500',
+  EN_VEILLE: 'bg-blue-500',
+  DECROCHE: 'bg-red-500',
+  NOUVEAU_CONVERTI: 'bg-purple-500',
+  NOUVEL_ARRIVANT: 'bg-cyan-500',
+};
+
 export default function SoulsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  // Les query params permettent aux KPI des dashboards d'ouvrir la liste
-  // directement filtrée (/souls?statut=DECROCHE, ?typeDisciple=NOUVEAU_CONVERTI,
-  // ?search=..., ?view=corbeille). L'URL reste la source de vérité des filtres.
   const initialStatut = (searchParams.get('statut') as StatutAme | null) ?? '';
   const initialType = (searchParams.get('typeDisciple') as TypeDisciple | null) ?? '';
   const initialSearch = searchParams.get('search') ?? '';
@@ -53,7 +63,6 @@ export default function SoulsPage() {
   const queryClient = useQueryClient();
   const dictionaries = useDictionaries();
 
-  /** Synchronise l'URL avec les filtres courants (replace : pas d'historique). */
   const syncUrl = useCallback((next: { search?: string; typeDisciple?: TypeDisciple | ''; statut?: StatutAme | ''; view?: 'liste' | 'corbeille' }) => {
     const params = new URLSearchParams();
     const s = next.search !== undefined ? next.search : search;
@@ -68,11 +77,7 @@ export default function SoulsPage() {
     setSearchParams(qs ? `?${qs}` : '', { replace: true });
   }, [search, typeFilter, statutFilter, view, setSearchParams]);
 
-  // Réinitialise la page quand les filtres changent depuis un KPI cliquable.
-  useEffect(() => {
-    setPage(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  useEffect(() => { setPage(0); }, [searchParams]);
 
   const typeEntries = useMemo(() => {
     const configured = dictionaries.options('SOUL_TYPE');
@@ -97,6 +102,24 @@ export default function SoulsPage() {
       const url = view === 'corbeille' ? '/souls/trash' : '/souls';
       const res = await api.get(`${url}?${params}`);
       return res.data as PageResponse<Soul>;
+    },
+  });
+
+  // Stats for all souls (loaded once)
+  const { data: allSoulsStats } = useQuery({
+    queryKey: ['souls', 'stats'],
+    queryFn: async () => {
+      const res = await api.get('/souls?size=500');
+      const content = (res.data as PageResponse<Soul>).content;
+      return {
+        total: (res.data as PageResponse<Soul>).totalElements || content.length,
+        actifs: content.filter((s) => s.statut === 'ACTIF').length,
+        enIntegration: content.filter((s) => s.statut === 'EN_INTEGRATION').length,
+        enVeille: content.filter((s) => s.statut === 'EN_VEILLE').length,
+        decroches: content.filter((s) => s.statut === 'DECROCHE').length,
+        convertis: content.filter((s) => s.typeDisciple === 'NOUVEAU_CONVERTI').length,
+        arrivants: content.filter((s) => s.typeDisciple === 'NOUVEL_ARRIVANT').length,
+      };
     },
   });
 
@@ -146,14 +169,19 @@ export default function SoulsPage() {
     {
       header: 'Nom',
       cell: (soul) => (
-        <Link
-          to={`/souls/${soul.id}`}
-          className="text-primary-600 hover:text-primary-700 font-medium transition-colors group"
-        >
-          <span className="group-hover:underline">
-            {soul.prenom ? `${soul.prenom} ${soul.nom}` : soul.nom}
-          </span>
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 ${STATUT_COLORS[soul.statut] || 'bg-gray-400'}`}>
+            {soul.prenom?.[0]}{soul.nom?.[0]}
+          </div>
+          <Link
+            to={`/souls/${soul.id}`}
+            className="text-primary-600 hover:text-primary-700 font-medium transition-colors group"
+          >
+            <span className="group-hover:underline">
+              {soul.prenom ? `${soul.prenom} ${soul.nom}` : soul.nom}
+            </span>
+          </Link>
+        </div>
       ),
     },
     {
@@ -169,6 +197,7 @@ export default function SoulsPage() {
       header: 'Statut',
       cell: (soul) => (
         <span className="badge-info">
+          <span className={`w-1.5 h-1.5 rounded-full mr-1 ${STATUT_COLORS[soul.statut] || 'bg-gray-400'}`} />
           {statusLabel(soul.statut)}
         </span>
       ),
@@ -203,6 +232,8 @@ export default function SoulsPage() {
     },
   ];
 
+  const hasActiveFilters = Boolean(statutFilter || typeFilter || search);
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -211,20 +242,19 @@ export default function SoulsPage() {
             <Heart className="w-5 h-5 text-rose-500" />
             <h1 className="page-title">Âmes</h1>
           </div>
-          <p className="page-subtitle">Gestion des disciples suivis par les faiseurs</p>
+          <p className="page-subtitle">Gestion des disciples suivis par les faiseurs — {allSoulsStats?.total ?? data?.totalElements ?? 0} âme(s) au total</p>
         </div>
         <div className="flex gap-2 animate-fade-in">
           <button
             onClick={() => { const next = view === 'corbeille' ? 'liste' : 'corbeille'; setView(next); setPage(0); syncUrl({ view: next }); }}
             className={`btn-secondary btn-sm ${view === 'corbeille' ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700' : ''}`}
-            title="Âmes supprimées (restauration possible)"
           >
             <Trash2 className="w-4 h-4" />
             {view === 'corbeille' ? 'Voir les âmes' : 'Corbeille'}
           </button>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-700' : ''}`}
+            className={`btn-secondary btn-sm ${showFilters || hasActiveFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-700' : ''}`}
           >
             <Filter className="w-4 h-4" />
             Filtres
@@ -237,6 +267,44 @@ export default function SoulsPage() {
           )}
         </div>
       </div>
+
+      {/* Stats cards — only in liste view */}
+      {view === 'liste' && allSoulsStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
+          {[
+            { label: 'Total', value: allSoulsStats.total, icon: Users, color: 'from-primary-500 to-primary-600', filter: 'total' },
+            { label: 'Actifs', value: allSoulsStats.actifs, icon: Activity, color: 'from-emerald-500 to-green-500', filter: 'ACTIF' },
+            { label: 'Intégration', value: allSoulsStats.enIntegration, icon: Clock, color: 'from-amber-500 to-orange-500', filter: 'EN_INTEGRATION' },
+            { label: 'Veille', value: allSoulsStats.enVeille, icon: BarChart3, color: 'from-blue-500 to-indigo-500', filter: 'EN_VEILLE' },
+            { label: 'Décrochés', value: allSoulsStats.decroches, icon: TrendingUp, color: 'from-red-500 to-rose-500', filter: 'DECROCHE' },
+            { label: 'Convertis', value: allSoulsStats.convertis, icon: Heart, color: 'from-purple-500 to-violet-500', filter: 'NOUVEAU_CONVERTI' },
+          ].map((s, i) => (
+            <button
+              key={s.label}
+              type="button"
+              onClick={() => {
+                if (s.filter === 'total') { setStatutFilter(''); setTypeFilter(''); setPage(0); syncUrl({ statut: '', typeDisciple: '' }); }
+                else if (['ACTIF', 'EN_INTEGRATION', 'EN_VEILLE', 'DECROCHE'].includes(s.filter)) { setStatutFilter(s.filter as StatutAme); setPage(0); syncUrl({ statut: s.filter as StatutAme }); }
+                else if (s.filter === 'NOUVEAU_CONVERTI') { setTypeFilter('NOUVEAU_CONVERTI' as TypeDisciple); setPage(0); syncUrl({ typeDisciple: 'NOUVEAU_CONVERTI' }); }
+              }}
+              className={`stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${
+                (statutFilter === s.filter || (s.filter === 'NOUVEAU_CONVERTI' && typeFilter === 'NOUVEAU_CONVERTI'))
+                  ? 'ring-2 ring-primary-500/50' : ''
+              }`}
+              style={{ animationDelay: `${i * 40}ms` }}
+            >
+              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${s.color} opacity-60`} />
+              <div className="flex items-start justify-between mb-2">
+                <span className="stat-label text-[10px]">{s.label}</span>
+                <div className={`p-1.5 rounded-lg bg-gradient-to-br ${s.color} text-white shadow-sm`}>
+                  <s.icon className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <p className="stat-value text-xl">{s.value}</p>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Search & Filters */}
       <div className="glass-card p-4 mb-6 animate-slide-up">
@@ -254,7 +322,7 @@ export default function SoulsPage() {
         </div>
 
         {showFilters && (
-          <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-white/20 dark:border-white/[0.06] animate-slide-up">
+          <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-white/20 dark:border-white/[0.06] animate-slide-up">
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400 font-medium">Type</span>
               <select
@@ -277,6 +345,14 @@ export default function SoulsPage() {
                 {statusEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
               </select>
             </div>
+            {hasActiveFilters && (
+              <button
+                onClick={() => { setSearch(''); setTypeFilter(''); setStatutFilter(''); setPage(0); syncUrl({ search: '', typeDisciple: '', statut: '' }); }}
+                className="btn-ghost btn-sm"
+              >
+                <X className="w-3.5 h-3.5" /> Réinitialiser
+              </button>
+            )}
           </div>
         )}
       </div>
