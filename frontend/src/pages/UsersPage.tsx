@@ -1,11 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import { useAuth } from '@/contexts/AuthContext';
 import type { User, PageResponse, Family, TransferRequest } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, Key, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, RefreshCw, Users, BarChart3, Star, ClipboardList, Heart, UserX, UserRound } from 'lucide-react';
+import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, RefreshCw, Users, BarChart3, Star, ClipboardList, Heart, UserX, UserRound, Search, Filter, KeyRound, Lock, Unlock, ShieldCheck, Eye, EyeOff, Power, PowerOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
 import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
@@ -56,18 +56,36 @@ export default function UsersPage() {
   const [transferFamilleId, setTransferFamilleId] = useState('');
   const [transferAmes, setTransferAmes] = useState(false);
   const [demoteRole, setDemoteRole] = useState('RESPONSABLE');
+  const [statusFilter, setStatusFilter] = useState<'' | 'ACTIVE' | 'INACTIVE'>('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'activate' | 'deactivate' | ''>('');
+  const [accountModal, setAccountModal] = useState<'' | 'lock' | 'unlock' | 'reset2fa' | 'resetPassword'>('');
   const [formData, setFormData] = useState({
     email: '',
-    password: 'password123',
+    password: '',
     firstName: '',
     lastName: '',
     role: 'FAISEUR',
   });
 
+  // Generate a secure random password
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let pw = '';
+    for (let i = 0; i < 12; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+    setFormData(prev => ({ ...prev, password: pw }));
+    return pw;
+  };
+
   const { data, isLoading } = useQuery({
-    queryKey: ['users', page],
+    queryKey: ['users', page, statusFilter, roleFilter],
     queryFn: async () => {
-      const res = await api.get(`/users?size=20&page=${page}`);
+      const params = new URLSearchParams({ size: '20', page: String(page) });
+      if (roleFilter) params.set('role', roleFilter);
+      if (statusFilter) params.set('statut', statusFilter);
+      const res = await api.get(`/users?${params}`);
       return res.data as PageResponse<User>;
     },
   });
@@ -130,7 +148,7 @@ export default function UsersPage() {
       }
       setShowModal(false);
       customFields.reset();
-      setFormData({ email: '', password: 'password123', firstName: '', lastName: '', role: 'FAISEUR' });
+      setFormData({ email: '', password: '', firstName: '', lastName: '', role: 'FAISEUR' });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -203,7 +221,106 @@ export default function UsersPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
+  const lockMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.patch(`/users/${id}/deactivate`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Compte verrouillé');
+      setAccountModal('');
+      setSelectedUser(null);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const unlockMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.patch(`/users/${id}/activate`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Compte déverrouillé');
+      setAccountModal('');
+      setSelectedUser(null);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/auth/forgot-password`, { userId: id });
+    },
+    onSuccess: () => {
+      toast.success('Email de réinitialisation envoyé');
+      setAccountModal('');
+      setSelectedUser(null);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const bulkActivateMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => api.patch(`/users/${id}/activate`)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success(`${selectedIds.size} compte(s) activé(s)`);
+      setSelectedIds(new Set());
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const bulkDeactivateMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => api.patch(`/users/${id}/deactivate`)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success(`${selectedIds.size} compte(s) désactivé(s)`);
+      setSelectedIds(new Set());
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (!data?.content) return;
+    const allIds = data.content.map((u) => u.id);
+    const allSelected = allIds.every((id) => selectedIds.has(id));
+    setSelectedIds(allSelected ? new Set() : new Set(allIds));
+  };
+
+  const filteredData = data?.content?.filter((u) => {
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    return (u.firstName?.toLowerCase().includes(q)) || (u.lastName?.toLowerCase().includes(q)) || (u.email?.toLowerCase().includes(q));
+  }) || [];
+
   const columns: ColumnDef<User>[] = [
+    {
+      header: () => (
+        <button onClick={toggleSelectAll} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${selectedIds.size === (data?.content?.length || 0) && selectedIds.size > 0 ? 'bg-primary-500 border-primary-500' : 'border-gray-300 dark:border-gray-600'}`}>
+            {selectedIds.size === (data?.content?.length || 0) && selectedIds.size > 0 && <span className="text-white text-[8px] font-bold">✓</span>}
+          </div>
+        </button>
+      ),
+      cell: (user) => (
+        <button onClick={() => toggleSelect(user.id)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${selectedIds.has(user.id) ? 'bg-primary-500 border-primary-500' : 'border-gray-300 dark:border-gray-600'}`}>
+            {selectedIds.has(user.id) && <span className="text-white text-[8px] font-bold">✓</span>}
+          </div>
+        </button>
+      ),
+    },
     {
       header: 'Utilisateur',
       cell: (user) => (
@@ -300,13 +417,37 @@ export default function UsersPage() {
     {
       header: 'Actions',
       cell: (user) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={() => { setSelectedUser(user); setActionModal('detail'); }}
             className="p-1.5 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/20 text-primary-600 hover:text-primary-700 transition-colors"
             title="Voir la fiche complète"
           >
             <UserRound className="w-3.5 h-3.5" />
+          </button>
+          {user.statut === 'ACTIVE' ? (
+            <button
+              onClick={() => { setSelectedUser(user); setAccountModal('lock'); }}
+              className="p-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/20 text-amber-600 hover:text-amber-700 transition-colors"
+              title="Verrouiller le compte"
+            >
+              <Lock className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={() => { setSelectedUser(user); setAccountModal('unlock'); }}
+              className="p-1.5 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/20 text-green-600 hover:text-green-700 transition-colors"
+              title="Déverrouiller le compte"
+            >
+              <Unlock className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            onClick={() => { setSelectedUser(user); setAccountModal('resetPassword'); }}
+            className="p-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/20 text-blue-600 hover:text-blue-700 transition-colors"
+            title="Réinitialiser le mot de passe"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
           </button>
           {user.role === 'FAISEUR' && (
             <>
@@ -362,15 +503,82 @@ export default function UsersPage() {
             <UserCog className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Utilisateurs</h1>
           </div>
-          <p className="page-subtitle">Gestion des comptes et des rôles</p>
+          <p className="page-subtitle">Gestion des comptes, rôles et sécurité</p>
         </div>
         <button
-          onClick={() => { customFields.reset(); setShowModal(true); }}
+          onClick={() => { customFields.reset(); const pw = generatePassword(); setFormData(prev => ({ ...prev, password: pw })); setShowModal(true); }}
           className="btn-primary btn-sm animate-scale-in"
         >
           <Plus className="w-4 h-4" />
           Nouvel utilisateur
         </button>
+      </div>
+
+      {/* Filters bar */}
+      <div className="glass-card p-4 mb-4 animate-slide-up">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Rechercher par nom ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input pl-9"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-4 h-4 text-gray-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value as '' | 'ACTIVE' | 'INACTIVE'); setPage(0); }}
+              className="input !w-auto"
+            >
+              <option value="">Tous les statuts</option>
+              <option value="ACTIVE">Actifs</option>
+              <option value="INACTIVE">Inactifs</option>
+            </select>
+            <select
+              value={roleFilter}
+              onChange={(e) => { setRoleFilter(e.target.value); setPage(0); }}
+              className="input !w-auto"
+            >
+              <option value="">Tous les rôles</option>
+              {Object.entries(ROLE_FALLBACK).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {/* Bulk actions */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-200/60 dark:border-gray-700/60">
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              {selectedIds.size} sélectionné(s)
+            </span>
+            <button
+              onClick={() => bulkActivateMutation.mutate(Array.from(selectedIds))}
+              disabled={bulkActivateMutation.isPending}
+              className="btn-secondary btn-sm"
+            >
+              {bulkActivateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Power className="w-3.5 h-3.5" />}
+              Activer
+            </button>
+            <button
+              onClick={() => {
+                if (confirm(`Désactiver ${selectedIds.size} compte(s) ?`)) bulkDeactivateMutation.mutate(Array.from(selectedIds));
+              }}
+              disabled={bulkDeactivateMutation.isPending}
+              className="btn-secondary btn-sm"
+            >
+              {bulkDeactivateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PowerOff className="w-3.5 h-3.5" />}
+              Désactiver
+            </button>
+            <button onClick={() => setSelectedIds(new Set())} className="btn-ghost btn-sm">
+              <X className="w-3.5 h-3.5" /> Effacer
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Workload section — scopée par rôle actif côté serveur
@@ -507,7 +715,7 @@ export default function UsersPage() {
                 <div className="flex items-start gap-2">
                   <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-amber-700 dark:text-amber-400">
-                    Un email de bienvenue sera envoyé avec les instructions de connexion. Mot de passe temporaire : <code className="font-mono text-amber-800 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30 px-1 rounded">password123</code>
+                    Un email de bienvenue sera envoyé avec les instructions de connexion. Un mot de passe aléatoire sécurisé sera généré automatiquement
                   </p>
                 </div>
               </div>

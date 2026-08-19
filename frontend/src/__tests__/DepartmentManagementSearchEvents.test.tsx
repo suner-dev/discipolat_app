@@ -161,7 +161,7 @@ describe('DepartmentManagementPage — recherche globale & onglets', () => {
     expect(screen.queryByText('Inventaire')).not.toBeInTheDocument();
     expect(screen.queryByText('Checklists')).not.toBeInTheDocument();
     expect(screen.getByText('Documentation')).toBeInTheDocument();
-    expect(screen.getByText('Organisation')).toBeInTheDocument();
+    expect(screen.getByText('Équipes & Organisation')).toBeInTheDocument();
   });
 
   it('gère la documentation du département (ajout + liste par type)', async () => {
@@ -186,7 +186,7 @@ describe('DepartmentManagementPage — recherche globale & onglets', () => {
     await screen.findByText('Gestion de Département A');
     // Tab buttons specifically (not stat-card labels)
     expect(screen.getAllByText('Membres').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Équipes').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Équipes & Organisation').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Tâches').length).toBeGreaterThan(0);
   });
 });

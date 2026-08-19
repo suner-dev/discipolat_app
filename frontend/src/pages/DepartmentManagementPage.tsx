@@ -23,9 +23,8 @@ import type { Team, Position, Assignment, ActivityItem } from '@/components/depa
  */
 const ALL_TABS = [
   { key: 'members', label: 'Membres', icon: Users, roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'] },
-  { key: 'teams', label: 'Équipes', icon: Network, roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'] },
+  { key: 'teams', label: 'Équipes & Organisation', icon: Network, roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'] },
   { key: 'tasks', label: 'Tâches', icon: ListTodo, roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'] },
-  { key: 'org', label: 'Organisation', icon: Network, roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'] },
   { key: 'positions', label: 'Postes', icon: Briefcase, roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'] },
   { key: 'assignments', label: 'Affectations', icon: Users2, roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'] },
   { key: 'checklists', label: 'Checklists', icon: ListChecks, roles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'], module: 'DEPT_CHECKLISTS' },
@@ -217,9 +216,7 @@ export default function DepartmentManagementPage() {
       {tab === 'tasks' && (
         <TasksTab deptId={id || ''} taskStats={taskStats} teams={teams} members={members} onChanged={invalidate} />
       )}
-      {tab === 'org' && (
-        <OrganisationTab deptId={id || ''} teams={teams} rootTeams={rootTeams} members={members} onChanged={invalidate} />
-      )}
+
       {tab === 'positions' && <PositionsTab deptId={id || ''} positions={positions} onChanged={invalidate} />}
       {tab === 'assignments' && (
         <AssignmentsTab deptId={id || ''} assignments={assignments} teams={teams} positions={positions} members={members} onChanged={invalidate} />
