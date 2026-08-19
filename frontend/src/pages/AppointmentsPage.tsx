@@ -11,6 +11,9 @@ import {
   Inbox,
   Clock,
   CalendarCheck2,
+  Search,
+  Filter,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
@@ -44,6 +47,9 @@ export default function AppointmentsPage() {
   const queryClient = useQueryClient();
 
   const [showCreate, setShowCreate] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statutFilter, setStatutFilter] = useState<AppointmentStatut | ''>('');
+  const [showFilters, setShowFilters] = useState(false);
   const [form, setForm] = useState<CreateAppointmentRequest>({
     recepteurId: '', motif: 'CONSEIL', objet: '', datePrevue: '', dureeMinutes: 30,
   });
@@ -98,8 +104,53 @@ export default function AppointmentsPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const requests = requestsQuery.data ?? [];
-  const inbox = inboxQuery.data ?? [];
+  const allRequests = requestsQuery.data ?? [];
+  const allInbox = inboxQuery.data ?? [];
+
+  // Filter
+  const requests = allRequests.filter(a => {
+    if (search && !a.recepteurNom?.toLowerCase().includes(search.toLowerCase()) && !a.objet?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statutFilter && a.statut !== statutFilter) return false;
+    return true;
+  });
+  const inbox = allInbox.filter(a => {
+    if (search && !a.demandeurNom?.toLowerCase().includes(search.toLowerCase()) && !a.objet?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statutFilter && a.statut !== statutFilter) return false;
+    return true;
+  });
+
+  // Stats
+  const allApps = [...allRequests, ...allInbox];
+  const appStats = {
+    total: allApps.length,
+    enAttente: allApps.filter(a => a.statut === 'EN_ATTENTE').length,
+    confirms: allApps.filter(a => a.statut === 'CONFIRME').length,
+    termines: allApps.filter(a => a.statut === 'TERMINE').length,
+  };
+
+  // Export CSV
+  const exportCsv = () => {
+    const rows = [['Type', 'Avec', 'Motif', 'Date', 'Durée', 'Statut', 'Objet']];
+    allApps.forEach((a) => {
+      rows.push([
+        a.demandeurId === user?.id ? 'Envoyé' : 'Reçu',
+        a.demandeurId === user?.id ? (a.recepteurNom || '') : (a.demandeurNom || ''),
+        a.motif,
+        formatDate(a.datePrevue),
+        `${a.dureeMinutes} min`,
+        STATUT_STYLE[a.statut].label,
+        a.objet || '',
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rendez_vous_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   const recipients = (usersQuery.data ?? []).filter(u =>
     u.roles.some(r => ['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'].includes(r)));
 
@@ -186,9 +237,56 @@ export default function AppointmentsPage() {
             Prenez rendez-vous avec le pasteur, votre chef de famille ou votre faiseur
           </p>
         </div>
-        <button onClick={() => setShowCreate(v => !v)} className="btn btn-primary flex items-center gap-2">
-          <CalendarPlus className="w-4 h-4" /> Prendre rendez-vous
-        </button>
+        <div className="flex gap-2">
+          <button onClick={exportCsv} className="btn-secondary btn-sm">
+            <Download className="w-4 h-4" /> Export
+          </button>
+          <button onClick={() => setShowCreate(v => !v)} className="btn btn-primary flex items-center gap-2">
+            <CalendarPlus className="w-4 h-4" /> Prendre rendez-vous
+          </button>
+        </div>
+      </div>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'Total', value: appStats.total, color: 'from-primary-500 to-primary-600' },
+          { label: 'En attente', value: appStats.enAttente, color: 'from-amber-500 to-orange-500' },
+          { label: 'Confirmés', value: appStats.confirms, color: 'from-emerald-500 to-green-500' },
+          { label: 'Terminés', value: appStats.termines, color: 'from-violet-500 to-purple-500' },
+        ].map((s, i) => (
+          <div key={s.label} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
+            <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${s.color} opacity-60`} />
+            <span className="stat-label text-[10px]">{s.label}</span>
+            <p className="stat-value text-xl">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Search & Filters */}
+      <div className="glass-card p-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input type="text" placeholder="Rechercher un rendez-vous..." value={search}
+              onChange={e => setSearch(e.target.value)} className="input pl-10" />
+          </div>
+          <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50' : ''}`}>
+            <Filter className="w-4 h-4" /> Filtres
+          </button>
+        </div>
+        {showFilters && (
+          <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <select value={statutFilter} onChange={e => setStatutFilter(e.target.value as AppointmentStatut | '')} className="input w-auto">
+              <option value="">Tous les statuts</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="CONFIRME">Confirmé</option>
+              <option value="REFUSE">Refusé</option>
+              <option value="ANNULE">Annulé</option>
+              <option value="TERMINE">Terminé</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {showCreate && (

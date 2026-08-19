@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
@@ -15,6 +15,9 @@ import {
   Sprout,
   Church,
   UserPlus,
+  Download,
+  BarChart3,
+  Trophy,
 } from 'lucide-react';
 import type {
   EvangelismTrack,
@@ -72,6 +75,7 @@ export default function EvangelismPage() {
   const [selectedEtape, setSelectedEtape] = useState<EvangelismEtape | ''>('');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'etape' | 'date' | 'name'>('etape');
   const queryClient = useQueryClient();
 
   const statsQuery = useQuery({
@@ -116,6 +120,45 @@ export default function EvangelismPage() {
   const stats = statsQuery.data;
   const tracks = tracksQuery.data ?? [];
 
+  // Export CSV
+  const exportCsv = () => {
+    const rows = [['Nom', 'Étape', 'Progression', 'Date étape', 'Note']];
+    tracks.forEach((t) => {
+      const idx = etapeIndex(t.etape);
+      rows.push([
+        t.soulNom || '',
+        ETAPES[idx]?.label || t.etape,
+        `${progressionPct(t.etape)}%`,
+        new Date(t.dateEtape).toLocaleDateString('fr-FR'),
+        t.note || '',
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `evangelisation_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Sort tracks
+  const sortedTracks = [...tracks].sort((a, b) => {
+    if (sortBy === 'etape') return etapeIndex(a.etape) - etapeIndex(b.etape);
+    if (sortBy === 'date') return new Date(b.dateEtape).getTime() - new Date(a.dateEtape).getTime();
+    return (a.soulNom || '').localeCompare(b.soulNom || '');
+  });
+
+  // Funnel stats for summary
+  const funnelStats = useMemo(() => {
+    const total = tracks.length;
+    const actifs = tracks.filter(t => !['LEADER'].includes(t.etape)).length;
+    const convertis = tracks.filter(t => ['BAPTEME', 'DEPARTEMENT', 'FAMILLE', 'DISCIPOLAT', 'LEADER'].includes(t.etape)).length;
+    const leaders = tracks.filter(t => t.etape === 'LEADER').length;
+    return { total, actifs, convertis, leaders, tauxConversion: total > 0 ? Math.round((convertis / total) * 100) : 0 };
+  }, [tracks]);
+
   const move = (track: EvangelismTrack, delta: 1 | -1) => {
     const next = etapeIndex(track.etape) + delta;
     if (next < 0 || next >= ETAPES.length) return;
@@ -144,6 +187,20 @@ export default function EvangelismPage() {
             className="input w-full pl-9"
           />
         </div>
+        <div className="flex gap-2">
+          <button onClick={exportCsv} className="btn-secondary btn-sm">
+            <Download className="w-4 h-4" /> Export
+          </button>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as typeof sortBy)}
+            className="input w-auto text-xs"
+          >
+            <option value="etape">Trier par étape</option>
+            <option value="date">Trier par date</option>
+            <option value="name">Trier par nom</option>
+          </select>
+        </div>
       </div>
 
       {/* Funnel stats */}
@@ -160,6 +217,27 @@ export default function EvangelismPage() {
             <div className={`w-2 h-2 rounded-full ${ETAPE_COLORS[e.etape]} mb-2`} />
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">{e.label}</p>
             <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats?.parEtape?.[e.etape] ?? 0}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Summary KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Total âmes', value: funnelStats.total, icon: Target, color: 'from-primary-500 to-primary-600' },
+          { label: 'Taux conversion', value: `${funnelStats.tauxConversion}%`, icon: Trophy, color: 'from-emerald-500 to-green-500' },
+          { label: 'Convertis', value: funnelStats.convertis, icon: CheckCircle2, color: 'from-violet-500 to-purple-500' },
+          { label: 'Leaders', value: funnelStats.leaders, icon: Sprout, color: 'from-amber-500 to-orange-500' },
+        ].map((s, i) => (
+          <div key={s.label} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
+            <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${s.color} opacity-60`} />
+            <div className="flex items-start justify-between mb-2">
+              <span className="stat-label text-[10px]">{s.label}</span>
+              <div className={`p-1.5 rounded-lg bg-gradient-to-br ${s.color} text-white shadow-sm`}>
+                <s.icon className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <p className="stat-value text-xl">{s.value}</p>
           </div>
         ))}
       </div>
@@ -213,7 +291,7 @@ export default function EvangelismPage() {
             <p className="text-xs text-gray-400 mt-1">Créez une âme puis ouvrez sa fiche pour la faire progresser.</p>
           </div>
         ) : (
-          tracks.map(track => {
+          sortedTracks.map(track => {
             const idx = etapeIndex(track.etape);
             const isExpanded = expanded === track.soulId;
             const showHistory = historyOpen === track.soulId;

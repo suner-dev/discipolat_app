@@ -8,7 +8,7 @@ import type { FileEntity, PageResponse, CategorieDocument } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
   FolderOpen, Plus, Search, Filter, FileText, Image, BookOpen,
-  Download, Trash2, Loader2, X, Upload, Sparkles, Link2,
+  Download, Trash2, Loader2, X, Upload, Sparkles, Link2, BarChart3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -61,6 +61,36 @@ export default function DocumentsPage() {
       return res.data as PageResponse<FileEntity>;
     },
   });
+
+  // Compute stats from loaded data
+  const allFiles = data?.content || [];
+  const docStats = useMemo(() => ({
+    total: data?.totalElements ?? allFiles.length,
+    totalSize: allFiles.reduce((sum, f) => sum + (f.taille || 0), 0),
+    categories: allFiles.reduce((acc, f) => { acc[f.categorie] = (acc[f.categorie] || 0) + 1; return acc; }, {} as Record<string, number>),
+  }), [data, allFiles]);
+
+  // Export CSV
+  const exportCsv = () => {
+    const rows = [['Nom', 'Description', 'Catégorie', 'Taille', 'Date']];
+    allFiles.forEach((f) => {
+      rows.push([
+        f.nom,
+        f.description || '',
+        categorieLabel(f.categorie),
+        formatFileSize(f.taille),
+        new Date(f.dateCreation).toLocaleDateString('fr-FR'),
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `documents_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const createMutation = useMutation({
     mutationFn: async (file: typeof newFile) => {
@@ -160,6 +190,9 @@ export default function DocumentsPage() {
           <p className="page-subtitle">Gestion documentaire de la famille</p>
         </div>
         <div className="flex gap-2 animate-fade-in">
+          <button onClick={exportCsv} className="btn-secondary btn-sm">
+            <Download className="w-4 h-4" /> Export
+          </button>
           <button onClick={() => setShowFilters(!showFilters)}
             className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
@@ -169,6 +202,46 @@ export default function DocumentsPage() {
           </button>
         </div>
       </div>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'Total documents', value: docStats.total, color: 'from-primary-500 to-primary-600' },
+          { label: 'Taille totale', value: formatFileSize(docStats.totalSize), color: 'from-emerald-500 to-green-500' },
+          { label: 'Catégories', value: Object.keys(docStats.categories).length, color: 'from-violet-500 to-purple-500' },
+          { label: 'Ce mois', value: allFiles.filter(f => { const d = new Date(f.dateCreation); const now = new Date(); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length, color: 'from-amber-500 to-orange-500' },
+        ].map((s, i) => (
+          <div key={s.label} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
+            <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${s.color} opacity-60`} />
+            <span className="stat-label text-[10px]">{s.label}</span>
+            <p className="stat-value text-xl">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Category distribution */}
+      {Object.keys(docStats.categories).length > 0 && (
+        <div className="card p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <BarChart3 className="w-4 h-4 text-gray-400" />
+            <p className="text-xs font-semibold text-gray-500 uppercase">Répartition par catégorie</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {Object.entries(docStats.categories).sort((a, b) => b[1] - a[1]).map(([cat, count]) => {
+              const pct = docStats.total > 0 ? Math.round((count / docStats.total) * 100) : 0;
+              return (
+                <button key={cat} onClick={() => { setCatFilter(catFilter === cat ? '' : cat as CategorieDocument); setPage(0); }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${catFilter === cat ? 'ring-2 ring-primary-500/50 shadow-sm' : ''} bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50`}>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: categorieColor(cat) || '#9ca3af' }} />
+                  <span className="text-gray-700 dark:text-gray-300">{categorieLabel(cat)}</span>
+                  <span className="text-gray-400">{count}</span>
+                  <span className="text-[10px] text-gray-400">{pct}%</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Create form */}
       {showCreate && (
