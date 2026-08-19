@@ -6,25 +6,19 @@ import type { Alert, PageResponse } from '@/types';
 import {
   Bell, BellRing, Plus, Eye, Search, Filter, CheckCircle2,
   AlertTriangle, Clock, Loader2, X, Church, Users, Building2,
-  User as UserIcon, Send, CheckSquare, Square, History, ArrowLeft,
+  User as UserIcon, Send, CheckSquare, Square, ArrowLeft,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-interface AlertDetail {
-  id: string; typeAlerte: string; message: string; statut: string;
-  priorite: string; cible: string; dateDeclenchement: string;
-  entiteType?: string; entiteId?: string; traitePar?: string;
-  dateTraitement?: string; createdAt: string;
-}
 
 export default function PasteurAlertsTab() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
+  const [cibleFilter, setCibleFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [showDetail, setShowDetail] = useState<Alert | AlertDetail | null>(null);
+  const [showDetail, setShowDetail] = useState<Alert | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
   const [form, setForm] = useState({ titre: '', message: '', typeAlerteManuel: '', priorite: 'MOYENNE', cible: 'EGLISE' });
@@ -35,14 +29,18 @@ export default function PasteurAlertsTab() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['alerts', 'pasteur', page, filter, priorityFilter],
+    queryKey: ['alerts', 'pasteur', page, filter, priorityFilter, cibleFilter],
     queryFn: async () => {
       const params = new URLSearchParams({ size: '15', page: String(page) });
       if (filter) params.set('statut', filter);
       const res = await api.get(`/alerts?${params}`);
       let result = res.data as PageResponse<Alert>;
-      if (priorityFilter && result.content) {
-        result = { ...result, content: result.content.filter((a: any) => a.priorite === priorityFilter) };
+      if ((priorityFilter || cibleFilter) && result.content) {
+        result = { ...result, content: result.content.filter((a: any) => {
+          if (priorityFilter && a.priorite !== priorityFilter) return false;
+          if (cibleFilter && a.cible !== cibleFilter) return false;
+          return true;
+        }) };
       }
       return result;
     },
@@ -50,13 +48,13 @@ export default function PasteurAlertsTab() {
 
   const resolveMutation = useMutation({
     mutationFn: async (id: string) => { await api.patch(`/alerts/${id}/resolve`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Alerte résolue'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Alerte résolue'); setShowDetail(null); },
     onError: () => toast.error('Erreur'),
   });
 
   const acknowledgeMutation = useMutation({
     mutationFn: async (id: string) => { await api.post(`/alerts/${id}/acknowledge`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Alerte accusée de réception'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Alerte accusée de réception'); setShowDetail(null); },
     onError: () => toast.error('Erreur'),
   });
 
@@ -66,33 +64,27 @@ export default function PasteurAlertsTab() {
     onError: () => toast.error('Erreur lors de la résolution en lot'),
   });
 
+  const batchAcknowledgeMutation = useMutation({
+    mutationFn: async (ids: string[]) => { await Promise.all(ids.map(id => api.post(`/alerts/${id}/acknowledge`))); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Accusés de réception envoyés'); setSelectedIds(new Set()); setSelectAll(false); },
+    onError: () => toast.error('Erreur'),
+  });
+
   const createMutation = useMutation({
     mutationFn: async (d: typeof form) => { await api.post('/alerts', { ...d, typeAlerteManuel: d.typeAlerteManuel || d.titre }); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Alerte créée'); setShowCreate(false); setForm({ titre: '', message: '', typeAlerteManuel: '', priorite: 'MOYENNE', cible: 'EGLISE' }); },
     onError: () => toast.error('Erreur lors de la création'),
   });
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
+  const toggleSelect = (id: string) => { setSelectedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; }); };
   const toggleSelectAll = () => {
-    if (selectAll) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set((data?.content || []).filter((a: any) => a.statut === 'ACTIVE').map((a: any) => a.id)));
-    }
+    if (selectAll) { setSelectedIds(new Set()); }
+    else { setSelectedIds(new Set((data?.content || []).filter((a: any) => a.statut === 'ACTIVE').map((a: any) => a.id))); }
     setSelectAll(!selectAll);
   };
 
   const priorityBadge = (p: string) => {
-    const m: Record<string, string> = {
-      URGENTE: 'badge-error', HAUTE: 'badge-warning', MOYENNE: 'badge-info', BASSE: 'badge-gray',
-    };
+    const m: Record<string, string> = { URGENTE: 'badge-error', HAUTE: 'badge-warning', MOYENNE: 'badge-info', BASSE: 'badge-gray' };
     return <span className={`badge text-[10px] ${m[p] || 'badge-info'}`}>{p}</span>;
   };
 
@@ -108,6 +100,61 @@ export default function PasteurAlertsTab() {
     return <Icon className="w-3 h-3" />;
   };
 
+  // === VUE DÉTAIL ===
+  if (showDetail) {
+    const a = showDetail;
+    return (
+      <div className="animate-slide-up">
+        <button onClick={() => setShowDetail(null)} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
+          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+        </button>
+        <div className="glass-card p-6">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                {statutBadge(a.statut)}
+                {priorityBadge(a.priorite)}
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{a.typeAlerte}</h2>
+            </div>
+          </div>
+          <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 mb-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{a.message}</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
+              <p className="text-xs text-gray-400">Cible</p>
+              <div className="flex items-center justify-center gap-1 mt-1">
+                {cibleIcon(a.cible)}
+                <p className="font-semibold text-sm">{a.cible}</p>
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
+              <p className="text-xs text-gray-400">Déclenchée le</p>
+              <p className="font-semibold text-sm">{new Date(a.dateDeclenchement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
+              <p className="text-xs text-gray-400">Déclenchée le</p>
+              <p className="font-semibold text-sm">{new Date(a.dateDeclenchement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+          </div>
+          {a.statut === 'ACTIVE' && (
+            <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button onClick={() => acknowledgeMutation.mutate(a.id)} disabled={acknowledgeMutation.isPending} className="btn-secondary btn-sm">
+                {acknowledgeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                Accusé de réception
+              </button>
+              <button onClick={() => resolveMutation.mutate(a.id)} disabled={resolveMutation.isPending} className="btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700">
+                {resolveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Résoudre
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-slide-up">
       <div className="flex items-center justify-between mb-4">
@@ -118,11 +165,15 @@ export default function PasteurAlertsTab() {
         </div>
         <div className="flex gap-2">
           {selectedIds.size > 0 && (
-            <button onClick={() => batchResolveMutation.mutate(Array.from(selectedIds))} disabled={batchResolveMutation.isPending}
-              className="btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700">
-              {batchResolveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckSquare className="w-4 h-4" />}
-              Résoudre ({selectedIds.size})
-            </button>
+            <>
+              <button onClick={() => batchAcknowledgeMutation.mutate(Array.from(selectedIds))} disabled={batchAcknowledgeMutation.isPending}
+                className="btn-secondary btn-sm"><Clock className="w-4 h-4" /> AR ({selectedIds.size})</button>
+              <button onClick={() => batchResolveMutation.mutate(Array.from(selectedIds))} disabled={batchResolveMutation.isPending}
+                className="btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700">
+                {batchResolveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckSquare className="w-4 h-4" />}
+                Résoudre ({selectedIds.size})
+              </button>
+            </>
           )}
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
@@ -152,7 +203,7 @@ export default function PasteurAlertsTab() {
 
       {/* Filters */}
       <div className="glass-card p-4 mb-4">
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <select value={filter} onChange={e => { setFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
             <option value="">Toutes</option>
             <option value="ACTIVE">Actives</option>
@@ -167,6 +218,13 @@ export default function PasteurAlertsTab() {
                 <option value="HAUTE">Haute</option>
                 <option value="MOYENNE">Moyenne</option>
                 <option value="BASSE">Basse</option>
+              </select>
+              <select value={cibleFilter} onChange={e => { setCibleFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
+                <option value="">Toutes cibles</option>
+                <option value="EGLISE">Église</option>
+                <option value="PERSONNE">Personne</option>
+                <option value="FAMILLE">Famille</option>
+                <option value="DEPARTEMENT">Département</option>
               </select>
             </>
           )}
@@ -189,13 +247,14 @@ export default function PasteurAlertsTab() {
       ) : (
         <div className="space-y-2">
           {(data?.content || []).map(a => (
-            <div key={a.id} className={`glass-card p-4 transition-colors ${
+            <div key={a.id} className={`glass-card p-4 transition-colors cursor-pointer ${
               a.statut === 'ACTIVE' ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-green-500 opacity-70'
-            } ${selectedIds.has(a.id) ? 'ring-2 ring-primary-400' : ''}`}>
+            } ${selectedIds.has(a.id) ? 'ring-2 ring-primary-400' : ''}`}
+              onClick={() => setShowDetail(a)}>
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
                   {a.statut === 'ACTIVE' && (
-                    <button onClick={() => toggleSelect(a.id)} className="mt-0.5">
+                    <button onClick={(e) => { e.stopPropagation(); toggleSelect(a.id); }} className="mt-0.5">
                       {selectedIds.has(a.id) ? <CheckSquare className="w-4 h-4 text-primary-500" /> : <Square className="w-4 h-4 text-gray-300" />}
                     </button>
                   )}
@@ -208,14 +267,13 @@ export default function PasteurAlertsTab() {
                       {priorityBadge(a.priorite)}
                       <span className="badge-info text-[10px] flex items-center gap-1">{cibleIcon(a.cible)}{a.cible}</span>
                     </div>
-                    <p className="text-sm text-gray-900 dark:text-gray-100">{a.message}</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100 line-clamp-2">{a.message}</p>
                     <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
                       <span>{new Date(a.dateDeclenchement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                      {(a as any).traitePar && <span>Traité par {(a as any).traitePar}</span>}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
                   {statutBadge(a.statut)}
                   {a.statut === 'ACTIVE' && (
                     <>
