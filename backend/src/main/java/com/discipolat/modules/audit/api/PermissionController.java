@@ -88,7 +88,7 @@ public class PermissionController {
         String label = body.get("label");
         String description = body.getOrDefault("description", "");
         if (key == null || key.isBlank() || label == null || label.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "key et label requis"));
+            throw new IllegalArgumentException("key et label requis");
         }
         permissionService.createRole(key, label, description);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("key", key.toUpperCase()));
@@ -109,7 +109,7 @@ public class PermissionController {
         String newKey = body.get("newKey");
         String label = body.getOrDefault("label", newKey);
         if (sourceKey == null || newKey == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "sourceKey et newKey requis"));
+            throw new IllegalArgumentException("sourceKey et newKey requis");
         }
         permissionService.duplicateRole(sourceKey, newKey, label);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("key", newKey.toUpperCase()));

@@ -111,13 +111,8 @@ public class FamilyController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR') && @perm.has('FAMILY','DELETE')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable UUID id) {
-        try {
-            familyService.delete(id);
-            return ResponseEntity.ok(Map.of("message", "Family dissolved successfully"));
-        } catch (BusinessRuleException e) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                    .body(Map.of("error", e.getMessage()));
-        }
+        familyService.delete(id);
+        return ResponseEntity.ok(Map.of("message", "Family dissolved successfully"));
     }
 
     /**

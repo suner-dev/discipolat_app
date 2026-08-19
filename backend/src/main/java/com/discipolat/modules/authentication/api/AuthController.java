@@ -87,13 +87,13 @@ public class AuthController {
 
         String roleStr = body.get("role");
         if (roleStr == null || roleStr.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Role is required"));
+            throw new IllegalArgumentException("Role is required");
         }
         UserRole newRole;
         try {
             newRole = UserRole.valueOf(roleStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid role: " + roleStr));
+            throw new IllegalArgumentException("Invalid role: " + roleStr);
         }
 
         UUID userId = authService.getCurrentUserId();
