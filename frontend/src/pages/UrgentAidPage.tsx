@@ -17,6 +17,8 @@ interface AidRequest {
 export default function UrgentAidPage() {
   const queryClient = useQueryClient();
   const [showTreated, setShowTreated] = useState(false);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useQuery({
     queryKey: ['urgent-aid', showTreated],
@@ -37,8 +39,11 @@ export default function UrgentAidPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const untreated = (data || []).filter(r => !r.traite);
+  const allData = (data || []);
+  const untreated = allData.filter(r => !r.traite);
+  const treated = allData.filter(r => r.traite);
   const untreatCount = untreated.length;
+  const filtered = allData.filter(r => !search || r.demande.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="page-container">
@@ -55,6 +60,30 @@ export default function UrgentAidPage() {
                 : 'Aucune demande en attente'}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {[
+          { label: 'En attente', value: untreated.length, color: 'from-red-500 to-rose-500' },
+          { label: 'Traitées', value: treated.length, color: 'from-emerald-500 to-green-500' },
+          { label: 'Total', value: allData.length, color: 'from-primary-500 to-primary-600' },
+        ].map((s, i) => (
+          <div key={s.label} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
+            <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${s.color} opacity-60`} />
+            <span className="stat-label text-[10px]">{s.label}</span>
+            <p className="stat-value text-xl">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div className="glass-card p-4 mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input type="text" placeholder="Rechercher une demande..." value={search}
+            onChange={e => setSearch(e.target.value)} className="input pl-10" />
         </div>
       </div>
 
@@ -82,7 +111,7 @@ export default function UrgentAidPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {data.map((req) => (
+          {filtered.map((req) => (
             <div key={req.reportId} className={`glass-card p-5 ${!req.traite ? 'border-l-[3px] border-l-red-500' : ''}`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
