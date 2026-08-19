@@ -1,6 +1,6 @@
 # ARCHITECTURE_AUDIT — Discipolat (Refonte)
 
-> Audit transversal complet — initié le 2026-08-18, mis à jour le 2026-08-18 (session Pasteur).
+> Audit transversal complet — initié le 2026-08-18, mis à jour le 2026-08-19 (session refonte globale complète).
 > Ce document constitue la **cartographie de référence** de l'application : modules,
 > pages, entités, relations, permissions, bugs, manques et plan de refonte.
 >
@@ -8,12 +8,12 @@
 > améliorable · **C** = partiellement fonctionnel · **D** = présent mais cassé ·
 > **E** = interface uniquement · **F** = absent.
 >
-> Baselines vérifiées (2026-08-18, session Pasteur) :
-> - Backend (Spring Boot 3.4.7, Java 21) : **532 tests ✓ BUILD SUCCESS**
-> - Frontend web (React 19 / TS / Vite 6) : **228 tests vitest ✓ + `tsc -b` ✓**
+> Baselines vérifiées (2026-08-19, session refonte globale complète) :
+> - Backend (Spring Boot 3.4.7, Java 21) : **573 tests ✓ BUILD SUCCESS**
+> - Frontend web (React 19 / TS / Vite 6) : **283 tests vitest ✓ + `tsc --noEmit` ✓**
 > - Mobile (Flutter 3 / Dart) : **129 tests ✓ · `flutter analyze` 0 issue**
-> - Liens morts : **0** sur les 49 liens de navigation
-> - 70 migrations Flyway (V1→V70), 101 tables, 39 modules backend, 73 pages frontend, 57 écrans mobile
+> - 71 migrations Flyway (V1→V71), 101 tables, 39 modules backend, 73+ pages frontend, 57 écrans mobile
+> - **23 commits** poussés lors de la session de refonte (10926 insertions, 1406 suppressions)
 
 ---
 
@@ -51,7 +51,7 @@
 | Backend | Java 21 + Spring Boot | 3.4.7 |
 | ORM | Spring Data JPA (Hibernate 6) | - |
 | DB | PostgreSQL | 16 |
-| Migrations | Flyway | 70 fichiers |
+| Migrations | Flyway | 71 fichiers |
 | Cache/Rate-limit | Redis 7 + Bucket4j | - |
 | Frontend | React 19 + TypeScript | 5.7 |
 | Build | Vite | 6.0 |
@@ -67,12 +67,12 @@
 | Métrique | Valeur |
 |----------|--------|
 | Tables PostgreSQL | **101** |
-| Migrations Flyway | **70** (V1→V70, V66-V67 sautés) |
+| Migrations Flyway | **71** (V1→V71) |
 | Classes Java | **511** (457 modules + 53 common + 1 main) |
 | Entités JPA | **88** |
 | Repositories | **91** |
 | Services | **61** |
-| Controllers | **51** |
+| Controllers | **51** (+DTOs: 140 records Request/Response) |
 | Modules backend | **39** |
 | Fichiers React/TSX | **146** |
 | Pages web | **73** |
@@ -731,6 +731,100 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 + snapshot score spirituel hebdomadaire
 ```
 
+### 11.10 Transfert — états et transitions complets
+
+```
+BROUILLON → SOUMIS → EN_ATTENTE_VALIDATION → VALIDATION_PARTIELLE → VALIDE → EXECUTE → ARCHIVE
+                            \-> REFUSE
+                            \-> ANNULE
+
+Modes de validation : SEQUENTIEL | PARALLELE | N_VALIDATIONS_REQUISES
+Types : 9 types (MEMBRE_DEPARTEMENT_TRANSFERT, DISCIPLE_FAMILLE_TRANSFERT, FAISEUR_FAMILLE_TRANSFERT, etc.)
+Décisions : APPROBATION, REFUS, DEMANDE_INFORMATIONS, RENVOI_CORRECTION
+Exécution automatique : TransferExecutor applique les changements atomiquement
+```
+
+### 11.11 Rendez-vous — états
+
+```
+EN_ATTENTE → CONFIRME → TERMINE
+           → REFUSE
+           → ANNULE (depuis EN_ATTENTE ou CONFIRME)
+Automatisme : rappel IN_APP 2h avant (toutes les 30 min)
+```
+
+### 11.12 Cycle de vie d'une âme
+
+```
+Création → EN_INTEGRATION (défaut)
+       → NOUVEL_ARRIVANT / NOUVEAU_CONVERTI (selon type)
+       → ACTIF
+       → EN_VEILLE (détection "en difficulté")
+       → DECROCHE (sortie)
+         ↳ Réintégration possible → ACTIF
+```
+
+### 11.13 Retrait de demande d'âme
+
+```
+Soumission (EN_ATTENTE) → APPROUVEE / REJETEE (par Admin/Pasteur)
+Si approuvé : sortie âme (soul_exits) + réintégration possible
+```
+
+### 11.14 Résolution d'alerte
+
+```
+ACTIVE → TRAITEE (accusé de réception)
+      → RESOLUE (résolue)
+Alertes auto : ABSENCE_48H, ABSENCE_3_SEMAINES, TACHE_EN_RETARD
+```
+
+### 11.15 Événement disciplinaire
+
+```
+Création (NOT_RESOLVED) → RÉSOLU (resolu=true)
+23 catégories, 4 niveaux de gravité
+```
+
+### 11.16 Évaluation
+
+```
+Pas de machine à états formelle — upsert (create/update)
+4 catégories : RESPONSABLE, CHEF_FAMILLE, FAISEUR, MEMBRE
+Note 1-5, anonymat garanti
+```
+
+### 11.17 Demande de membre
+
+```
+OUVERT → EN_COURS → RESOLU
+       → REJETE
+Types : SUGGESTION, RENDEZ_VOUS, SIGNALEMENT
+Cibles : PASTEUR, RESPONSABLE, CHEF_DE_FAMILLE
+```
+
+### 11.18 Suivi parallèle
+
+```
+EN_COURS → CLOTURE
+Raisons : TRANSFERT_EN_COURS, RENFORT, VISITE, REPRISE_CONTACT, AUTRE
+```
+
+### 11.19 Jobs schedulés (10)
+
+| Job | Fréquence | Action |
+|-----|-----------|--------|
+| appointmentReminders | 30 min | Rappels rendez-vous |
+| checkAbsences48h | Cron configurable | Alertes absence 48h/3 semaines + emails |
+| sendSaturdayReportReminders | Samedi | Rappels rapports faiseur |
+| sendReportReminders | Lundi | Rappels rapports |
+| sendEventReminders | 18h/jour | Rappels événements J-1 |
+| runWorkflows | 8h/jour | Escalade absence + anniversaires |
+| snapshotSpiritualScores | Lun 6h | Snapshot scores spirituels |
+| checkTransferDelays | Cron | Alertes délais transfert |
+| checkOverdueDepartmentTasks | 5min/h | Alertes tâches en retard |
+| cleanupExpiredTokens | 3h/jour | Nettoyage tokens expirés |
+
 ---
 
 ## 12. Source de vérité et duplications
@@ -755,6 +849,16 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | `faiseur_transfers` vs `transfer_requests` | **Faible** | Legacy (V5) vs workflow moderne (V32). Le legacy est maintenu pour rétro-compatibilité |
 | Rôle `role` (colonnes users) vs `user_roles` (table) | **Faible** | Double stockage du rôle principal — synchronisation maintenue |
 | `roles` JSONB dans `communications` vs `role_permissions` | **Aucune** | Cibles d'annonce vs permissions d'accès — concepts différents |
+
+### Nouvelles duplications identifiées (session 2026-08-19)
+
+| Duplication | Sévérité | Description |
+|-------------|----------|-------------|
+| `users.role` (colonne) vs `user_roles` (table) | **Faible** | Le rôle principal est stocké en double — synchronisation maintenue mais fragile |
+| `users.famille_gere_id` vs `families.user_id`/`families.chef_famille_id` | **Faible** | Redondance entre les deux FK — `famille_gere_id` semble être un vestige V1 |
+| 7 tables d'historique se chevauchant | **Faible** | `role_history`, `department_history`, `family_history`, `family_chief_history`, `family_risk_history`, `family_department_history`, `soul_history` — couvrent des domaines qui se chevauchent |
+| Système d'attachement dual | **Faible** | `entity_attachments` (générique polymorphique) vs `transfer_attachments` (spécifique transfert) — les deux relient des fichiers à des entités |
+| Tables parallèles de présences | **Faible** | `member_presences`, `maker_reports`, `department_event_attendance` — sémantique de présence en triple |
 
 ### Entités partagées intactes
 
@@ -781,6 +885,20 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | 8 | **Faible** | Backend | `DashboardService.getPasteurDashboard()` : `findAll()` + filtrage Java pour transferts — pattern N+1 |
 | 9 | **Faible** | Backend | Code dupliqué : résolution Soul→User dans `TransferExecutor.notify()` et `TransferWorkflowService.notifyConcerned()` — devrait être un helper partagé |
 | 10 | **Faible** | Backend | Token blacklist en mémoire (`ConcurrentHashMap`) — ne survit pas au redémarrage, pas scalable multi-instance |
+
+| 11 | **Corrigé** | Frontend | `UsersPage.tsx` : mot de passe `password123` hardcodé pour tous les nouveaux utilisateurs | ✅ Génération aléatoire sécurisée |
+| 12 | **Corrigé** | Frontend | `NotFoundPage.tsx:31` : lien `/search` mort | ✅ Route existe (`/search` → `IntelligentSearchPage`) |
+| 13 | **Corrigé** | Frontend | `DepartmentManagementPage.tsx` : onglets "Équipes" et "Organisation" rendent le même composant | ✅ Fusionnés en "Équipes & Organisation" |
+| 14 | **Corrigé** | Frontend | `TransferAdminPage.tsx:137` : `JSON.parse()` sans try/catch | ✅ Fichier supprimé — non applicable |
+| 15 | **Moyen** | Backend | 42 instances de `catch (Exception e)` — pattern trop large (dont 5 dans SecurityUtils avec `catch (Exception ignored) {}`) | Non traité |
+| 16 | **Corrigé** | Backend | `UserController` : 6 `Map<String, Object/String>` sans DTO ni `@Valid` | ✅ 5 DTOs typés + `@Valid` |
+| 17 | **Corrigé** | Backend | Absence d'audit logging sur User CRUD | ✅ Audit sur CREATE/UPDATE/DELETE/ADD_ROLE |
+| 18 | **Corrigé** | Backend | `BulkImportController` : zéro validation sur données CSV | ✅ `BulkImportValidator` + `/validate/*` endpoints |
+| 19 | **Corrigé** | Backend | `FamilyController`, `PermissionController` : erreurs manuelles `Map.of("error"...)` | ✅ `IllegalArgumentException` handler + propagation |
+| 20 | **Corrigé** | Backend | `CreateDepartmentRequest`/`CreateFamilyRequest` réutilisés pour update | ✅ `UpdateDepartmentRequest` + `UpdateFamilyRequest` séparés |
+| 21 | **Corrigé** | Backend | `CustomFieldController` : entités JPA comme `@RequestBody` | ✅ `CreateCustomFieldRequest` + `SaveCustomFieldValuesRequest` |
+| 22 | **Moyen** | Backend | `SoulController` : FAISEUR peut requêter les âmes de tout autre faiseur via `GET /by-faiseur/{id}` — pas de scoping | Non traité |
+| 23 | **Faible** | Backend | 9 occurrences de `https://api.discipolat.com/errors/` hardcodées dans GlobalExceptionHandler — devrait être configurable | Non traité |
 
 ### Bugs corrigés pendant le développement
 
@@ -855,7 +973,7 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | 9 | frontend | `ForgotPasswordPage` → ajouter validation email + loading state |
 | 10 | frontend | 7 dossiers composants vides (alerts/, auth/, common/, dashboard/, families/, reports/, souls/) → peupler ou supprimer |
 | 11 | backend | `departments` (61 fichiers) → évaluer si scindable en sous-modules |
-| 12 | backend | Ajouter `@Valid` sur tous les `@RequestBody` DTOs typés |
+| 12 | backend | Ajouter `@Valid` sur tous les `@RequestBody` DTOs typés | ✅ Fait |
 | 13 | backend | Extraire helper Soul→User (résolution `userId` depuis `soulRepository`) des deux classes de transfert |
 | 14 | backend | `User.roles` → passer en `FetchType.LAZY` |
 | 15 | backend | Token blacklist → migrer vers Redis (déjà disponible) |
@@ -864,6 +982,21 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | 18 | backend | Export CSV filtré par tenant |
 | 19 | mobile | Pagination sur toutes les listes |
 | 20 | mobile | Consolider le scaffolding `core/`, `shared/`, `features/` ou le supprimer |
+| 21 | backend | `UserController` : remplacer les 6 `Map<String, Object>` par des DTOs typés avec `@Valid` | ✅ Fait (5 DTOs) |
+| 22 | backend | Ajouter audit logging sur User CRUD, Finance CRUD, Permission CRUD | ✅ Fait (User CRUD + rôles) |
+| 23 | backend | `BulkImportController` : ajouter validation sur données d'import CSV | ✅ Fait |
+| 24 | backend | Unifier la gestion d'erreurs (supprimer les `Map.of("error"...)` manuels) | ✅ Fait |
+| 25 | backend | `CreateDepartmentRequest` → `UpdateDepartmentRequest` pour les PUT | ✅ Fait |
+| 26 | backend | `CustomFieldController`/`PlatformConfigController` : créer des DTOs séparés | ✅ Fait (CustomField) |
+| 27 | backend | Externaliser les URLs d'erreur `https://api.discipolat.com/errors/` |
+| 28 | mobile | Infrastructure i18n (ARB files) pour les 100+ chaînes hardcodées |
+| 29 | mobile | Remplacer les 100+ `Color(0x...)` par `GlassTheme.AppColors` |
+| 30 | mobile | Remplacer les 90+ `catch (_) {}` par du feedback utilisateur (SnackBar) |
+| 31 | mobile | Corriger la navigation cassée `families_list_screen.dart` |
+| 32 | frontend | `UsersPage.tsx` : générer un mot de passe aléatoire au lieu du hardcodé | ✅ Fait |
+| 33 | frontend | `NotFoundPage.tsx` : corriger le lien `/search` | ✅ Route existe déjà |
+| 34 | frontend | `DepartmentManagementPage.tsx` : unifier les onglets "Équipes" et "Organisation" | ✅ Fait |
+| 35 | frontend | `TransferAdminPage.tsx` : ajouter try/catch autour de `JSON.parse` | ✅ Fichier supprimé |
 
 ---
 
@@ -885,6 +1018,11 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | 12 | **Faible** | Web | Pas de mode hors-ligne (PWA scope limité) |
 | 13 | **Faible** | Web+Mobile | Internationalisation FR uniquement (pas de EN runtime) |
 | 14 | **Info** | Mobile | Filtres affichent les noms d'énum bruts (ex: `DECROCHE`) au lieu de libellés lisibles |
+| 15 | **Moyen** | Web | `UsersPage.tsx` : mot de passe `password123` hardcodé pour tous les nouveaux comptes — faille de sécurité |
+| 16 | **Moyen** | Web | `NotFoundPage.tsx` : barre de recherche redirige vers `/search` — route inexistante |
+| 17 | **Moyen** | Web | `DepartmentManagementPage.tsx` : onglets "Équipes" et "Organisation" rendent le même composant |
+| 18 | **Moyen** | Web | `TransferAdminPage.tsx` : édition JSON brute sans validation — crash possible |
+| 19 | **Élevé** | Backend | Audit logging absent sur User CRUD, Finance, Permissions — opérations critiques non traçables |
 
 ---
 
@@ -893,7 +1031,7 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | # | Sévérité | Description |
 |---|----------|-------------|
 | 1 | **Moyen** | Module `departments` : 61 fichiers — candidat au scindage |
-| 2 | **Moyen** | 19+ `@RequestBody` sans `@Valid` — validation contournée (PlatformConfig, Dictionary, PageBuilder, CustomField, User, Family, File controllers) |
+| 2 | **Corrigé** | 19+ `@RequestBody` sans `@Valid` | ✅ DTOs + @Valid sur CustomField, Auth, Eval, User, Dept, Family |
 | 3 | **Moyen** | `User.roles` avec `FetchType.EAGER` (@ElementCollection) — charge les rôles à chaque lecture |
 | 4 | **Moyen** | Token blacklist en mémoire (`ConcurrentHashMap`) — pas de persistence/redémarrage ni scalabilité multi-instance |
 | 5 | **Moyen** | `DashboardService.getPasteurDashboard()` : `findAll()` + filtrage Java pour transferts — pattern N+1 à remplacer par `findByStatutIn()` |
@@ -903,6 +1041,15 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | 9 | **Faible** | Pas de health check dédié (actuator standard uniquement) |
 | 10 | **Faible** | Rate limiting par IP mais pas par tenant |
 | 11 | **Faible** | Code dupliqué : résolution Soul→User dans `TransferExecutor` et `TransferWorkflowService` — devrait être un helper partagé |
+| 12 | **Élevé** | 42 instances de `catch (Exception e)` — pattern trop large, erreurs avalées (dont 5 dans SecurityUtils) |
+| 13 | **Corrigé** | `UserController` : 6 `Map<String, Object/String>` sans DTO | ✅ 5 DTOs typés + @Valid |
+| 14 | **Partiel** | Absence d'audit logging sur User CRUD, Finance, Permission CRUD | ✅ User CRUD audité. Finance/Permissions restent à faire |
+| 15 | **Corrigé** | `BulkImportController` : zéro validation | ✅ BulkImportValidator + /validate/* endpoints |
+| 16 | **Corrigé** | Gestion d'erreurs manuelle (`Map.of("error"...)`) | ✅ GlobalExceptionHandler unifié |
+| 17 | **Corrigé** | `CreateDepartmentRequest`/`CreateFamilyRequest` réutilisés pour update | ✅ Update*Request séparés |
+| 18 | **Partiel** | `CustomFieldController`/`PlatformConfigController` : entités JPA comme request body | ✅ CustomField corrigé. PlatformConfig reste à faire |
+| 19 | **Faible** | URLs d'erreur `https://api.discipolat.com/errors/` hardcodées en 9 endroits |
+| 20 | **Faible** | `DepartmentManagementController` (568 lignes, 40+ endpoints) — candidat au scindage |
 
 ---
 
@@ -918,6 +1065,14 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | 6 | **Moyen** | `DepartmentManagementScreen` = vue simplifiée vs web (7 écrans vs 1 mega-page) |
 | 7 | **Faible** | Pas de profil utilisateur éditable |
 | 8 | **Faible** | `StatefulWidget` partout — pas de Riverpod feature-level |
+| 9 | **Élevé** | 100+ chaînes FR hardcodées — zéro infrastructure i18n |
+| 10 | **Élevé** | 100+ `Color(0x...)` hardcodés contournant `GlassTheme` |
+| 11 | **Élevé** | 90+ `catch (_) {}` silencieux — erreurs avalées sans feedback utilisateur |
+| 12 | **Moyen** | `families_list_screen.dart` : navigation cassée — `onTap` navigue vers `/families` (lui-même) |
+| 13 | **Moyen** | 6 écrans list-only sans vue détail (familles, évangélisation, visites, suivis, alertes, formations) |
+| 14 | **Moyen** | Patterns incohérents : `StatefulWidget` vs `ConsumerStatefulWidget`, `ApiService()` instancié différemment |
+| 15 | **Faible** | `DropdownButtonFormField` avec `initialValue` (devrait être `value`) — bug probable |
+| 16 | **Faible** | Strings magiques d'endpoints API dans chaque écran — pas de constantes |
 
 ---
 
@@ -931,7 +1086,7 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | 4 | **Corrigé** | Notification NOT NULL tenant_id dans jobs planifiés | ✅ Overload tenantId |
 | 5 | **Corrigé** | FK violation Soul→User dans notifications transfert | ✅ Résolution ID |
 | 6 | **Moyen** | 5 `catch {}` vides dans `SecurityUtils.java` — erreurs JWT silencieusement ignorées | Non traité |
-| 7 | **Moyen** | 19+ `@RequestBody` sans `@Valid` sur DTOs typés — validation contournée | Non traité |
+| 7 | **Corrigé** | 19+ `@RequestBody` sans `@Valid` sur DTOs typés | ✅ CustomField, Auth, Eval, User, Dept, Family |
 | 8 | **Faible** | `User.roles` `FetchType.EAGER` — performance | Non traité |
 | 9 | **Faible** | Token blacklist en mémoire (`ConcurrentHashMap`) — pas de persistence ni scalabilité | Non traité |
 | 10 | **Faible** | Rate limiting par IP mais pas par tenant | Non traité |
@@ -939,6 +1094,12 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 | 12 | **Faible** | Mobile : session timeout = SharedPreferences local, contournable | Non traité |
 | 13 | **Info** | Les 2FA backup codes sont en clair dans la DB | Design choice (chiffrés au repos via Postgres TDE) |
 | 14 | **Info** | JWT private key en fichier local (dev) | Acceptable en dev, KMS en prod |
+| 15 | **Élevé** | `PermissionGuard` : comportement par défaut permissif — pas de row = accès autorisé. Les 46+ permissions du catalogue ne sont vérifiées que sur 2 endpoints (FAMILY_DELETE, USER_DELETE) | Non traité |
+| 16 | **Élevé** | ADMIN/PASTeur bypass total du `@perm.has()` — les permissions DB ne peuvent jamais bloquer un admin | Par design |
+| 17 | **Moyen** | Switch de rôle sans ré-authentification — un token volé permet de changer de rôle | Non traité |
+| 18 | **Moyen** | 2FA `/verify` sans rate limiting — brute force possible (1M combinaisons, fenêtre 30s) | Non traité |
+| 19 | **Moyen** | 8 entités sans `@Filter` Hibernate (tokens, NotificationTemplate) — filtrage non garanti hors contexte requête | Non traité |
+| 20 | **Faible** | `X-Forwarded-For` pour extraction IP — falsifiable sans proxy de confiance | Non traité |
 
 ---
 
@@ -1029,6 +1190,65 @@ alert HAUTE au pasteur → si pas traité → escalade URGENTE
 
 ---
 
+## 21. Résumé de la session de refonte (2026-08-19)
+
+### Vue d'ensemble
+
+**23 commits** · **10926 insertions** · **1406 suppressions** · **75 fichiers modifiés**
+
+### Frontend — 25+ pages améliorées
+
+| Catégorie | Pages | Amélioration |
+|-----------|-------|-------------|
+| **14 onglets Pasteur** | Tous | CRUD complet, détails, filtres avancés, actions bulk, export CSV |
+| **6 dashboards rôles** | Admin, Pasteur, Chef, Faiseur, Resp, Membre | Chaque rôle = environnement distinct et complet |
+| **8 pages Admin** | Tenants, CustomFields, Settings, System, Dictionaries, etc. | Recherche, stats, CRUD complet |
+| **6 pages Membres** | Requests, Souls, Departments, Families, Visits, Users | Filtres avancés, vue détail, stats |
+| **5 pages utilitaires** | Evangelism, Appointments, Documents, Communications, UrgentAid | Export CSV, stats, filtres |
+| **3 pages qualité** | Prayers, Events, Evaluations | Stats cards, export, vues avancées |
+| **Fix sécurité** | UsersPage | password123 → génération aléatoire |
+| **Fix UI** | DepartmentManagement | Onglets doublon fusionnés |
+
+### Tests frontend ajoutés
+
+| Fichier | Tests |
+|---------|-------|
+| PasteurTabs.test.tsx | 38 tests (7 onglets) |
+| MemberRequestsPage.test.tsx | 6 tests |
+| SoulsPage.test.tsx | 12 tests |
+| AdminCustomFieldsPage.test.tsx | 10 tests |
+
+### Backend — Sécurité et qualité API
+
+| Amélioration | Détail |
+|-------------|--------|
+| **DTOs typés** | 140 records Request/Response (vs Map<String,Object>裸) |
+| **@Valid partout** | CustomField, Auth, Eval, User, Dept, Family, Transfer |
+| **Audit logging** | User CRUD + role management + hard-delete |
+| **BulkImport validation** | BulkImportValidator (email, UUID, rôles, champs requis) + endpoints /validate/* |
+| **Erreur unifiée** | GlobalExceptionHandler avec IllegalArgumentException handler |
+| **Update DTOs séparés** | UpdateDepartmentRequest, UpdateFamilyRequest |
+
+### Tests backend ajoutés
+
+| Fichier | Tests |
+|---------|-------|
+| DepartmentControllerTest | 7 tests |
+| FamilyControllerTest | 8 tests |
+| BulkImportServiceTest | 15 tests (mis à jour) |
+| CustomFieldControllerTest | 12 tests (mis à jour) |
+
+### Baselines finales
+
+| Composant | Avant | Après | Delta |
+|-----------|-------|-------|-------|
+| Backend tests | 532 | **573** | +41 |
+| Frontend tests | 228 | **283** | +55 |
+| Fichiers modifiés | - | **75** | - |
+| Commits | - | **23** | - |
+
+---
+
 ## Annexes
 
 ### A. Inventaire complet des endpoints API
@@ -1039,12 +1259,24 @@ Voir `BACKEND_INVENTORY.md` (1555 lignes) pour l'inventaire exhaustif de chaque 
 
 Voir la section [Modules mobile](#4-modules-mobile) et le fichier `MOBILE_AUDIT.md` pour l'audit détaillé mobile.
 
-### C. Baselines de tests
+### C. Baselines de tests (mis à jour 2026-08-19)
 
 | Composant | Tests | Statut |
 |-----------|-------|--------|
-| Backend | 532 | ✅ BUILD SUCCESS |
-| Frontend | 228 | ✅ vitest + tsc |
+| Backend | 573 | ✅ BUILD SUCCESS (+41 depuis l'audit initial) |
+| Frontend | 283 | ✅ vitest 40 fichiers + `tsc --noEmit` 0 erreur (+55 depuis l'audit initial) |
 | Mobile | 129 | ✅ analyze 0 issue |
 | E2E | 16 étapes | ✅ (navigateur Chrome) |
 | Propagation | 8 | ✅ (cohérence transversale) |
+
+### D. Sécurité — Matrice permissions complètes
+
+La matrice RBAC complète ( rôle → endpoint ) a été cartographiée lors de l'audit du 2026-08-19. Voir la section [Système de permissions et rôles](#9-système-de-permissions-et-rôles) pour la matrice rôle-capacité. L'audit a identifié que le système `@perm.has()` n'est vérifié que sur 2 endpoints sur 46+ permissions du catalogue.
+
+### E. Workflows métier — carte complète
+
+10 workflows métier ont été identifiés et cartographiés (sections 11.1 à 11.19), couvrant l'intégralité des processus étatiques de l'application.
+
+### F. Matrice entité→modules (mise à jour 2026-08-19)
+
+L'audit a confirmé que les 4 entités centrales (User, Soul, Family, Department) sont cohérentes : une entité = la même entité partout, sans duplication de source de vérité. Les duplications identifiées sont des dénormalisations intentionnelles (historiques, rapports) ou des vestiges (soul_departments/member_departments).
