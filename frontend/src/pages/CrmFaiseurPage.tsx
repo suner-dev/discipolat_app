@@ -361,6 +361,73 @@ export default function CrmFaiseurPage() {
             )}
           </div>
 
+          {/* Upcoming Visits */}
+          {crm?.visites && crm.visites.length > 0 && (
+            <div className="glass-card p-6 mt-6 animate-slide-up">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-teal-500" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Prochaines visites ({crm.visites.length})</h3>
+              </div>
+              <div className="space-y-2">
+                {crm.visites.slice(0, 5).map((v: any) => (
+                  <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                    <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center"><Calendar className="w-4 h-4 text-teal-500" /></div>
+                    <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100">{v.ameNom || '—'}</p><p className="text-[9px] text-gray-400">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'} · {v.typeVisite}</p></div>
+                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${v.statut === 'PLANIFIEE' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'}`}>{v.statut}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Prayers */}
+          {crm?.prieres && crm.prieres.length > 0 && (
+            <div className="glass-card p-6 mt-6 animate-slide-up" style={{ animationDelay: '40ms' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <BookOpen className="w-4 h-4 text-indigo-500" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Prières de mes disciples ({crm.prieres.length})</h3>
+              </div>
+              <div className="space-y-2">
+                {crm.prieres.slice(0, 5).map((p: any) => (
+                  <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${p.statut === 'EXAUCEE' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'}`}>
+                      {p.statut === 'EXAUCEE' ? <CheckCircle className="w-4 h-4 text-green-500" /> : <BookOpen className="w-4 h-4 text-indigo-500" />}
+                    </div>
+                    <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{p.titre}</p><p className="text-[9px] text-gray-400">{p.priorite} · {p.auteurNom || '—'}</p></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Progression */}
+          {crm?.progression && (
+            <div className="glass-card p-6 mt-6 animate-slide-up" style={{ animationDelay: '80ms' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="w-4 h-4 text-amber-500" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Ma progression</h3>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 text-center">
+                  <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{crm.progression.totalNotes ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">Notes ajoutées</p>
+                </div>
+                <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 text-center">
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{crm.progression.visitesRealisees ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">Visites réalisées</p>
+                </div>
+                <div className="p-3 rounded-xl bg-green-50/50 dark:bg-green-900/10 text-center">
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">{crm.progression.rapportsSoumis ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">Rapports soumis</p>
+                </div>
+                <div className="p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/10 text-center">
+                  <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{crm.progression.prieres ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">Prières actives</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Week info */}
           <div className="text-center mt-6">
             <p className="text-[10px] text-gray-400">
