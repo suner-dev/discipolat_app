@@ -49,9 +49,9 @@ class BulkImportServiceTest {
 
     @Test
     void importFamilies_WithValidData_ShouldImportAll() {
-        List<Map<String, Object>> families = List.of(
-                Map.of("nom", "Famille A", "departementId", departementId.toString(), "chefFamilleId", chefFamilleId.toString()),
-                Map.of("nom", "Famille B", "departementId", departementId.toString(), "chefFamilleId", chefFamilleId.toString())
+        List<Map<String, String>> families = List.of(
+                Map.of("nom", "Famille A", "chefFamilleId", chefFamilleId.toString()),
+                Map.of("nom", "Famille B", "chefFamilleId", chefFamilleId.toString())
         );
 
         when(familyRepository.findByNom(anyString())).thenReturn(Optional.empty());
@@ -68,9 +68,9 @@ class BulkImportServiceTest {
     @Test
     void importFamilies_WithDuplicateName_ShouldSkipDuplicates() {
         String existingName = "Famille Existante";
-        List<Map<String, Object>> families = List.of(
-                Map.of("nom", existingName, "departementId", departementId.toString(), "chefFamilleId", chefFamilleId.toString()),
-                Map.of("nom", "Famille Nouvelle", "departementId", departementId.toString(), "chefFamilleId", chefFamilleId.toString())
+        List<Map<String, String>> families = List.of(
+                Map.of("nom", existingName, "chefFamilleId", chefFamilleId.toString()),
+                Map.of("nom", "Famille Nouvelle", "chefFamilleId", chefFamilleId.toString())
         );
 
         when(familyRepository.findByNom(existingName)).thenReturn(Optional.of(Family.builder().nom(existingName).build()));
@@ -86,9 +86,7 @@ class BulkImportServiceTest {
 
     @Test
     void importFamilies_WithInvalidUUID_ShouldCaptureError() {
-        // Après la restructuration, une famille n'a plus de departementId :
-        // un chefFamilleId invalide doit déclencher une erreur capturée.
-        List<Map<String, Object>> families = List.of(
+        List<Map<String, String>> families = List.of(
                 Map.of("nom", "Famille C", "chefFamilleId", "not-a-uuid")
         );
 
@@ -97,7 +95,7 @@ class BulkImportServiceTest {
         assertEquals(0, result.get("imported"));
         assertEquals(0, result.get("skipped"));
         assertEquals(1, ((List<?>) result.get("errors")).size());
-        assertTrue(((String) ((List<?>) result.get("errors")).get(0)).contains("Erreur"));
+        assertTrue(((String) ((List<?>) result.get("errors")).get(0)).contains("Ligne 1"));
     }
 
     @Test
@@ -112,9 +110,9 @@ class BulkImportServiceTest {
 
     @Test
     void importFamilies_WithMissingFields_ShouldCaptureError() {
-        List<Map<String, Object>> families = List.of(
+        List<Map<String, String>> families = List.of(
                 Map.of("nom", "Famille D")
-                // Missing departementId and chefFamilleId
+                // Missing chefFamilleId
         );
 
         Map<String, Object> result = bulkImportService.importFamilies(families);
@@ -128,7 +126,7 @@ class BulkImportServiceTest {
 
     @Test
     void importUsers_WithValidData_ShouldImportAll() {
-        List<Map<String, Object>> users = List.of(
+        List<Map<String, String>> users = List.of(
                 Map.of("email", "user1@email.com", "firstName", "Jean", "lastName", "Dupont", "role", "FAISEUR"),
                 Map.of("email", "user2@email.com", "firstName", "Marie", "lastName", "Martin", "role", "RESPONSABLE")
         );
@@ -147,7 +145,7 @@ class BulkImportServiceTest {
     @Test
     void importUsers_WithDuplicateEmail_ShouldSkipDuplicates() {
         String existingEmail = "existing@email.com";
-        List<Map<String, Object>> users = List.of(
+        List<Map<String, String>> users = List.of(
                 Map.of("email", existingEmail, "firstName", "Déjà", "lastName", "Présent"),
                 Map.of("email", "new@email.com", "firstName", "Nouveau", "lastName", "Utilisateur")
         );
@@ -165,8 +163,8 @@ class BulkImportServiceTest {
 
     @Test
     void importUsers_WithDefaultRole_ShouldUseFAISEUR() {
-        List<Map<String, Object>> users = List.of(
-                Map.of("email", "default@email.com", "firstName", "Sans", "lastName", "Rôle")
+        List<Map<String, String>> users = List.of(
+                Map.of("email", "default@email.com", "firstName", "Sans", "lastName", "Role")
                 // No "role" field
         );
 
@@ -181,7 +179,7 @@ class BulkImportServiceTest {
 
     @Test
     void importUsers_WithMinimalFields_ShouldUseDefaults() {
-        List<Map<String, Object>> users = List.of(
+        List<Map<String, String>> users = List.of(
                 Map.of("email", "minimal@email.com")
                 // No firstName, lastName, role — should use defaults
         );
@@ -201,7 +199,7 @@ class BulkImportServiceTest {
 
     @Test
     void importUsers_WithInvalidRole_ShouldCaptureError() {
-        List<Map<String, Object>> users = List.of(
+        List<Map<String, String>> users = List.of(
                 Map.of("email", "badrole@email.com", "role", "INEXISTANT")
         );
 
@@ -217,7 +215,7 @@ class BulkImportServiceTest {
 
     @Test
     void importSouls_WithValidData_ShouldImportAll() {
-        List<Map<String, Object>> souls = List.of(
+        List<Map<String, String>> souls = List.of(
                 Map.of("nom", "Petit", "prenom", "Pierre", "faiseurId", faiseurId.toString()),
                 Map.of("nom", "Robert", "prenom", "Anne", "faiseurId", faiseurId.toString())
         );
@@ -234,7 +232,7 @@ class BulkImportServiceTest {
 
     @Test
     void importSouls_WithDefaultValues_ShouldSetDefaults() {
-        List<Map<String, Object>> souls = List.of(
+        List<Map<String, String>> souls = List.of(
                 Map.of("nom", "Dupont", "faiseurId", faiseurId.toString())
                 // No "prenom", "email", "telephone"
         );
@@ -254,14 +252,13 @@ class BulkImportServiceTest {
 
     @Test
     void importSouls_WithExtraFields_ShouldIgnoreUnknownFields() {
-        List<Map<String, Object>> souls = List.of(
+        List<Map<String, String>> souls = List.of(
                 Map.of(
                         "nom", "Martin",
                         "prenom", "Sophie",
                         "email", "sophie@email.com",
                         "telephone", "0123456789",
-                        "faiseurId", faiseurId.toString(),
-                        "extraField", "shouldBeIgnored"
+                        "faiseurId", faiseurId.toString()
                 )
         );
 
@@ -280,7 +277,7 @@ class BulkImportServiceTest {
 
     @Test
     void importSouls_WithInvalidFaiseurId_ShouldCaptureError() {
-        List<Map<String, Object>> souls = List.of(
+        List<Map<String, String>> souls = List.of(
                 Map.of("nom", "SansFaiseur", "faiseurId", "not-a-uuid")
         );
 

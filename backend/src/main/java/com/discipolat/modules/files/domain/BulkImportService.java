@@ -32,15 +32,27 @@ public class BulkImportService {
         this.soulRepository = soulRepository;
     }
 
-    public Map<String, Object> importFamilies(List<Map<String, Object>> families) {
+    public Map<String, Object> importFamilies(List<Map<String, String>> families) {
         int imported = 0;
         int skipped = 0;
         List<String> errors = new ArrayList<>();
 
-        for (Map<String, Object> row : families) {
+        for (int i = 0; i < families.size(); i++) {
+            Map<String, String> row = families.get(i);
+            int rowNum = i + 1;
             try {
-                String nom = (String) row.get("nom");
-                UUID chefFamilleId = UUID.fromString((String) row.get("chefFamilleId"));
+                String nom = row.get("nom");
+                if (nom == null || nom.isBlank()) {
+                    errors.add("Ligne " + rowNum + ": le nom est requis");
+                    continue;
+                }
+
+                String chefIdStr = row.get("chefFamilleId");
+                if (chefIdStr == null || chefIdStr.isBlank()) {
+                    errors.add("Ligne " + rowNum + ": l'ID du chef de famille est requis");
+                    continue;
+                }
+                UUID chefFamilleId = UUID.fromString(chefIdStr);
 
                 if (familyRepository.findByNom(nom).isPresent()) {
                     skipped++;
@@ -53,61 +65,93 @@ public class BulkImportService {
                         .build();
                 familyRepository.save(family);
                 imported++;
+            } catch (IllegalArgumentException e) {
+                errors.add("Ligne " + rowNum + ": format invalide — " + e.getMessage());
             } catch (Exception e) {
-                errors.add("Erreur: " + e.getMessage());
+                errors.add("Ligne " + rowNum + ": erreur inattendue — " + e.getMessage());
             }
         }
 
         return Map.of("imported", imported, "skipped", skipped, "errors", errors);
     }
 
-    public Map<String, Object> importUsers(List<Map<String, Object>> users) {
+    public Map<String, Object> importUsers(List<Map<String, String>> users) {
         int imported = 0;
         int skipped = 0;
         List<String> errors = new ArrayList<>();
 
-        for (Map<String, Object> row : users) {
+        for (int i = 0; i < users.size(); i++) {
+            Map<String, String> row = users.get(i);
+            int rowNum = i + 1;
             try {
-                String email = (String) row.get("email");
+                String email = row.get("email");
+                if (email == null || email.isBlank()) {
+                    errors.add("Ligne " + rowNum + ": l'email est requis");
+                    continue;
+                }
+
                 if (userRepository.existsByEmail(email)) {
                     skipped++;
                     continue;
                 }
 
+                String roleStr = row.getOrDefault("role", "FAISEUR");
+                UserRole role;
+                try {
+                    role = UserRole.valueOf(roleStr.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    errors.add("Ligne " + rowNum + ": rôle invalide « " + roleStr + " »");
+                    continue;
+                }
+
                 User user = User.builder()
                         .email(email)
-                        .firstName((String) row.getOrDefault("firstName", ""))
-                        .lastName((String) row.getOrDefault("lastName", ""))
-                        .phone((String) row.getOrDefault("phone", ""))
+                        .firstName(row.getOrDefault("firstName", ""))
+                        .lastName(row.getOrDefault("lastName", ""))
+                        .phone(row.getOrDefault("phone", ""))
                         .passwordHash(UUID.randomUUID().toString())
-                        .role(UserRole.valueOf((String) row.getOrDefault("role", "FAISEUR")))
+                        .role(role)
                         .statut(UserStatus.PENDING_ACTIVATION)
                         .build();
                 userRepository.save(user);
                 imported++;
             } catch (Exception e) {
-                errors.add("Erreur: " + e.getMessage());
+                errors.add("Ligne " + rowNum + ": erreur inattendue — " + e.getMessage());
             }
         }
 
         return Map.of("imported", imported, "skipped", skipped, "errors", errors);
     }
 
-    public Map<String, Object> importSouls(List<Map<String, Object>> souls) {
+    public Map<String, Object> importSouls(List<Map<String, String>> souls) {
         int imported = 0;
         int skipped = 0;
         List<String> errors = new ArrayList<>();
 
-        for (Map<String, Object> row : souls) {
+        for (int i = 0; i < souls.size(); i++) {
+            Map<String, String> row = souls.get(i);
+            int rowNum = i + 1;
             try {
-                String nom = (String) row.get("nom");
-                UUID faiseurId = UUID.fromString((String) row.get("faiseurId"));
+                String nom = row.get("nom");
+                if (nom == null || nom.isBlank()) {
+                    errors.add("Ligne " + rowNum + ": le nom est requis");
+                    continue;
+                }
+
+                String faiseurIdStr = row.get("faiseurId");
+                if (faiseurIdStr == null || faiseurIdStr.isBlank()) {
+                    errors.add("Ligne " + rowNum + ": l'ID du faiseur est requis");
+                    continue;
+                }
+                UUID faiseurId = UUID.fromString(faiseurIdStr);
+
+                String prenom = row.getOrDefault("prenom", "");
 
                 Soul soul = Soul.builder()
                         .nom(nom)
-                        .prenom((String) row.getOrDefault("prenom", ""))
-                        .email((String) row.getOrDefault("email", null))
-                        .telephone((String) row.getOrDefault("telephone", null))
+                        .prenom(prenom)
+                        .email(row.get("email"))
+                        .telephone(row.get("telephone"))
                         .typeDisciple(TypeDisciple.NOUVEL_ARRIVANT)
                         .statut(StatutAme.EN_INTEGRATION)
                         .dateIntegration(LocalDate.now())
@@ -115,8 +159,10 @@ public class BulkImportService {
                         .build();
                 soulRepository.save(soul);
                 imported++;
+            } catch (IllegalArgumentException e) {
+                errors.add("Ligne " + rowNum + ": format invalide — " + e.getMessage());
             } catch (Exception e) {
-                errors.add("Erreur: " + e.getMessage());
+                errors.add("Ligne " + rowNum + ": erreur inattendue — " + e.getMessage());
             }
         }
 
