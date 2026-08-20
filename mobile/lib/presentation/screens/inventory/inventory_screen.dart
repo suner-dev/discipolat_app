@@ -235,7 +235,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   Widget _buildItemCard(dynamic item) {
     final nom = item['nom']?.toString() ?? 'Sans nom';
-    final categorie = item['categorie']?.toString() ?? '';
+    // final categorie = item['categorie']?.toString() ?? '';
     final statut = item['statut']?.toString() ?? '';
     final quantite = item['quantite'] ?? 0;
     final quantiteDispo = item['quantiteDisponible'] ?? 0;
@@ -387,11 +387,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 await _api.post('/inventory', data: {
                   'nom': nomCtrl.text,
                   'description': descCtrl.text,
-                  'categorie': categorie,
                   'quantite': quantite,
                   'quantiteDisponible': quantite,
                 });
-                Navigator.pop(context);
+                if (mounted) { Navigator.pop(context); }
                 _loadData();
               }
             },
@@ -436,7 +435,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 'nom': nomCtrl.text,
                 'description': descCtrl.text,
               });
-              Navigator.pop(context);
+              if (mounted) { Navigator.pop(context); }
               _loadData();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),

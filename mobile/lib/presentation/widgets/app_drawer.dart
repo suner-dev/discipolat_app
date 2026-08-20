@@ -19,8 +19,8 @@ class AppDrawer extends StatefulWidget {
 class _AppDrawerState extends State<AppDrawer> {
   bool _showRoleMenu = false;
 
-  // Navigation complète — Admin / Pasteur (super-utilisateurs)
-  static const List<Map<String, Object>> _fullNav = [
+  // ── Navigation Admin/Pasteur : items opérationnels ──
+  static const List<Map<String, Object>> _mainNav = [
     {'icon': Icons.dashboard_rounded, 'title': 'Tableau de bord', 'route': '/dashboard'},
     {'icon': Icons.dashboard_customize_rounded, 'title': 'Pilotage Pasteur', 'route': '/dashboard/pasteur'},
     {'icon': Icons.search_rounded, 'title': 'Recherche', 'route': '/search'},
@@ -57,11 +57,11 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.inventory_2_rounded, 'title': 'Inventaire', 'route': '/inventory'},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+  ];
+
+  // ── Section Administration (groupée dans le drawer) ──
+  static const List<Map<String, Object>> _adminNav = [
     {'icon': Icons.auto_fix_high_rounded, 'title': 'Workflows', 'route': '/workflows'},
-    {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
-    {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},
-    {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions'},
-    {'icon': Icons.history_rounded, 'title': 'Audit', 'route': '/audit'},
     {'icon': Icons.inventory_2_rounded, 'title': 'Modules plateforme', 'route': '/admin/modules'},
     {'icon': Icons.menu_book_rounded, 'title': 'Menus plateforme', 'route': '/admin/menus'},
     {'icon': Icons.dashboard_customize_rounded, 'title': 'Pages personnalisées', 'route': '/admin/pages'},
@@ -70,7 +70,16 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.book_rounded, 'title': 'Dictionnaires', 'route': '/admin/dictionaries'},
     {'icon': Icons.language_rounded, 'title': 'Intégrations', 'route': '/admin/integrations'},
     {'icon': Icons.business_rounded, 'title': 'Églises (tenants)', 'route': '/admin/tenants'},
-  ];    // Espace RESPONSABLE — gestion des départements, équipes, tâches, évaluations, discipline, progression
+    {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
+    {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},
+    {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions'},
+    {'icon': Icons.history_rounded, 'title': 'Audit', 'route': '/audit'},
+  ];
+
+  // Computed: main + admin pour ADMIN ; main seul pour Pasteur
+  static List<Map<String, Object>> get _fullNav => [..._mainNav, ..._adminNav];
+
+  // Espace RESPONSABLE — gestion des départements, équipes, tâches, évaluations, discipline, progression
   static const List<Map<String, Object>> _responsableNav = [
     {'icon': Icons.dashboard_rounded, 'title': 'Dashboard Responsable', 'route': '/dashboard/responsable'},
     {'icon': Icons.business_rounded, 'title': 'Départements', 'route': '/departments'},
@@ -375,12 +384,8 @@ class _AppDrawerState extends State<AppDrawer> {
             const SizedBox(height: 8),
 
             // Navigation items — espace métier du rôle actif
-            ...filteredItems.map((item) => _navItem(
-              context,
-              item['icon'] as IconData,
-              item['title'] as String,
-              item['route'] as String,
-            )),
+            // Si le rôle est ADMIN, on affiche la section Administration séparément
+            ..._buildNavWithAdminSection(context, filteredItems, activeRole),
 
             const Divider(color: Colors.white12, height: 24),
 
@@ -411,6 +416,38 @@ class _AppDrawerState extends State<AppDrawer> {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildNavWithAdminSection(BuildContext context, List<Map<String, Object>> items, String activeRole) {
+    final adminRoutes = _adminNav.map((e) => e['route']).toSet();
+    final mainItems = items.where((item) => !adminRoutes.contains(item['route'])).toList();
+    final adminItems = items.where((item) => adminRoutes.contains(item['route'])).toList();
+
+    final widgets = <Widget>[];
+
+    // Main nav items
+    for (final item in mainItems) {
+      widgets.add(_navItem(context, item['icon'] as IconData, item['title'] as String, item['route'] as String));
+    }
+
+    // Admin section header (only if admin items exist and role is ADMIN)
+    if (adminItems.isNotEmpty && activeRole == 'ADMIN') {
+      widgets.add(const Padding(
+        padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+        child: Row(
+          children: [
+            Icon(Icons.admin_panel_settings_rounded, size: 14, color: Colors.white38),
+            SizedBox(width: 8),
+            Text('ADMINISTRATION', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+          ],
+        ),
+      ));
+      for (final item in adminItems) {
+        widgets.add(_navItem(context, item['icon'] as IconData, item['title'] as String, item['route'] as String));
+      }
+    }
+
+    return widgets;
   }
 
   Widget _navItem(BuildContext context, IconData icon, String title, String route) {
