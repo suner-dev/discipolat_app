@@ -68,7 +68,9 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
       }
 
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
 
       setState(() {
@@ -408,7 +410,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
               Switch(
                 value: _isTracking,
                 onChanged: (v) => v ? _startTracking() : _stopTracking(),
-                activeColor: Colors.cyanAccent,
+                activeThumbColor: Colors.cyanAccent,
               ),
             ],
           ),

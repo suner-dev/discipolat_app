@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/glass_theme.dart';
@@ -20,6 +21,7 @@ class DepartmentManagementScreen extends StatefulWidget {
 class _DepartmentManagementScreenState extends State<DepartmentManagementScreen> {
   late final ApiService _apiService = widget.apiService ?? ApiService();
   final _searchCtrl = TextEditingController();
+  Timer? _searchDebounce;
   Map<String, dynamic>? _overview;
   bool _isLoading = true;
   List<dynamic> _members = [];
@@ -35,6 +37,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -134,7 +137,10 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                     child: TextField(
                       controller: _searchCtrl,
                       style: const TextStyle(color: Colors.white),
-                      onChanged: (v) => _runSearch(v),
+                      onChanged: (v) {
+                        _searchDebounce?.cancel();
+                        _searchDebounce = Timer(const Duration(milliseconds: 400), () => _runSearch(v));
+                      },
                       decoration: InputDecoration(
                         hintText: 'Recherche rapide : membre, équipe, tâche…',
                         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13),

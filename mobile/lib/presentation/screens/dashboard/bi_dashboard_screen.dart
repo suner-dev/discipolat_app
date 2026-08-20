@@ -196,7 +196,8 @@ class _BiDashboardScreenState extends State<BiDashboardScreen> {
 
     return _buildCard(
       'Tendance de fréquentation',
-      SizedBox(
+      RepaintBoundary(
+      child: SizedBox(
         height: 200,
         child: BarChart(
           BarChartData(
@@ -259,6 +260,7 @@ class _BiDashboardScreenState extends State<BiDashboardScreen> {
               );
             }),
           ),
+        ),
         ),
       ),
     );
