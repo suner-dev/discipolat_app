@@ -72,8 +72,9 @@ describe('navForRole — cohérence menus / gardes de routes', () => {
     expect(hrefs).toContain('/dashboard/membre');
     expect(hrefs).toContain('/trainings');
     expect(hrefs).toContain('/badges');
+    expect(hrefs).toContain('/events');
     expect(hrefs).not.toContain('/souls');
     expect(hrefs).not.toContain('/alerts');
-    expect(hrefs).not.toContain('/events');
+    expect(hrefs).not.toContain('/departments');
   });
 });

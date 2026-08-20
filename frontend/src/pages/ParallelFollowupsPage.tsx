@@ -117,7 +117,7 @@ export default function ParallelFollowupsPage() {
 
   const clotureMutation = useMutation({
     mutationFn: async ({ id, motifCloture }: { id: string; motifCloture?: string }) => {
-      await api.patch(`/parallel-followups/${id}/cloture`, { motifCloture });
+      await api.patch(`/parallel-followups/${id}/close`, { motifCloture });
     },
     onSuccess: () => {
       invalidate();

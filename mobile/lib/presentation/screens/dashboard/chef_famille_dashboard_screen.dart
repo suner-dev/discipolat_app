@@ -6,14 +6,15 @@ import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
 class ChefFamilleDashboardScreen extends StatefulWidget {
-  const ChefFamilleDashboardScreen({super.key});
+  final ApiService? apiService;
+  const ChefFamilleDashboardScreen({super.key, this.apiService});
 
   @override
   State<ChefFamilleDashboardScreen> createState() => _ChefFamilleDashboardScreenState();
 }
 
 class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen> with SingleTickerProviderStateMixin {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   Map<String, dynamic>? _dashboard;
   List<dynamic> _workload = [];
   List<dynamic> _alerts = [];

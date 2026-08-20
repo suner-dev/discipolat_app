@@ -8,7 +8,8 @@ import '../../widgets/app_drawer.dart';
 /// Consomme : /members/me/dashboard, /members/me/progression,
 ///            /members/me/events, /members/me/notes, /members/me/presences
 class MemberDashboardScreen extends StatefulWidget {
-  const MemberDashboardScreen({super.key});
+  final ApiService? apiService;
+  const MemberDashboardScreen({super.key, this.apiService});
 
   @override
   State<MemberDashboardScreen> createState() => _MemberDashboardScreenState();
@@ -16,7 +17,7 @@ class MemberDashboardScreen extends StatefulWidget {
 
 class _MemberDashboardScreenState extends State<MemberDashboardScreen>
     with SingleTickerProviderStateMixin {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   Map<String, dynamic>? _memberDashboard;
   Map<String, dynamic>? _progression;
   List<dynamic> _events = [];

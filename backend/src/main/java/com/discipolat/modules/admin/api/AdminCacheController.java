@@ -5,7 +5,9 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -71,6 +73,22 @@ public class AdminCacheController {
         ));
 
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{name}")
+    public ResponseEntity<Map<String, String>> evictCache(@PathVariable String name) {
+        var cache = cacheManager.getCache(name);
+        if (cache != null) cache.clear();
+        return ResponseEntity.ok(Map.of("message", "Cache '" + name + "' evicted"));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Map<String, String>> evictAllCaches() {
+        for (String name : cacheManager.getCacheNames()) {
+            var cache = cacheManager.getCache(name);
+            if (cache != null) cache.clear();
+        }
+        return ResponseEntity.ok(Map.of("message", "All caches evicted"));
     }
 
     /**

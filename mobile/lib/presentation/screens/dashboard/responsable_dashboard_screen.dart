@@ -8,7 +8,8 @@ import '../../widgets/app_drawer.dart';
 /// Basé sur les MEMBRES (et non les disciples) : stats par département
 /// avec sélection dynamique quand le responsable gère plusieurs départements.
 class ResponsableDashboardScreen extends StatefulWidget {
-  const ResponsableDashboardScreen({super.key});
+  final ApiService? apiService;
+  const ResponsableDashboardScreen({super.key, this.apiService});
 
   @override
   State<ResponsableDashboardScreen> createState() => _ResponsableDashboardScreenState();
@@ -16,7 +17,7 @@ class ResponsableDashboardScreen extends StatefulWidget {
 
 class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
     with SingleTickerProviderStateMixin {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   Map<String, dynamic>? _dashboard;
   bool _isLoading = true;
   String? _selectedDeptId;

@@ -6,14 +6,15 @@ import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final ApiService? apiService;
+  const DashboardScreen({super.key, this.apiService});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProviderStateMixin {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   Map<String, dynamic>? _kpi;
   List<dynamic> _alerts = [];
   bool _isLoading = true;

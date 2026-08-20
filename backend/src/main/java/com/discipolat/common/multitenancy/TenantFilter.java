@@ -5,11 +5,14 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import org.hibernate.Filter;
 import org.hibernate.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.orm.jpa.EntityManagerFactoryUtils;
 import org.springframework.orm.jpa.EntityManagerHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -36,9 +39,16 @@ import java.util.UUID;
 @Component
 public class TenantFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(TenantFilter.class);
     private static final String FILTER_NAME = "tenantFilter";
     private static final String TENANT_ID_PARAM = "tenantId";
     private static final String BOUND_EM_ATTRIBUTE = TenantFilter.class.getName() + ".BOUND_EM";
+    private static final List<String> PUBLIC_PATH_PREFIXES = List.of(
+            "/api/v1/auth",
+            "/api/v1/public",
+            "/actuator/health",
+            "/actuator/health/"
+    );
 
     private final EntityManagerFactory entityManagerFactory;
 
@@ -58,7 +68,12 @@ public class TenantFilter {
     public boolean enableFilter(HttpServletRequest request) {
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return false;
+            String uri = request.getRequestURI();
+            if (isPublicPath(uri)) {
+                return false;
+            }
+            log.warn("Missing tenantId for non-public request: {}", uri);
+            throw new SecurityException("Authentication required: missing tenant context for " + uri);
         }
         EntityManagerHolder holder = getBoundHolder();
         boolean created = false;
@@ -100,6 +115,15 @@ public class TenantFilter {
             TransactionSynchronizationManager.unbindResource(entityManagerFactory);
         }
         EntityManagerFactoryUtils.closeEntityManager(em);
+    }
+
+    private boolean isPublicPath(String uri) {
+        for (String prefix : PUBLIC_PATH_PREFIXES) {
+            if (uri.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private EntityManagerHolder getBoundHolder() {

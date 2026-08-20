@@ -54,4 +54,11 @@ public class TenantController {
                                                  @Valid @RequestBody UpdateTenantRequest request) {
         return ResponseEntity.ok(tenantService.update(id, request));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        tenantService.deactivate(id);
+        return ResponseEntity.noContent().build();
+    }
 }

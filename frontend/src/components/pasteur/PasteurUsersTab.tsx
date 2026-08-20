@@ -54,7 +54,7 @@ export default function PasteurUsersTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { await api.delete(`/users/${id}`); },
+    mutationFn: async (id: string) => { await api.delete(`/users/${id}/hard-delete`); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); toast.success('Utilisateur supprimé'); setShowDeleteConfirm(null); },
     onError: () => toast.error('Erreur lors de la suppression'),
   });

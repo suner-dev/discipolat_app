@@ -249,3 +249,7 @@ spring:
       ddl-auto: create-drop
   flyway:
     enabled: false
+
+app:
+  rate-limiting:
+    redis-enabled: false

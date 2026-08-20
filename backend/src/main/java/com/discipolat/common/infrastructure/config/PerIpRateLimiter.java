@@ -17,128 +17,98 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Per-IP rate limiter using Bucket4j with a Redis-backed ProxyManager.
+ * Per-IP rate limiter using Bucket4j.
  * <p>
- * Each client IP gets its own set of Buckets (login, refresh, forgot-password, etc.)
- * stored in Redis via {@link LettuceBasedProxyManager}. This enables distributed
- * rate limiting across multiple application instances.
- * <p>
- * Bucket keys are automatically expired in Redis after a period of inactivity
- * (configured via {@code app.rate-limiting.redis-key-expire-minutes}).
+ * When a {@link LettuceBasedProxyManager} bean is available (Redis running), distributed
+ * rate limiting is used. When Redis is unavailable, falls back to an in-memory
+ * ConcurrentHashMap of Bucket4j buckets.
  */
 @Service
 public class PerIpRateLimiter {
 
     private static final Logger log = LoggerFactory.getLogger(PerIpRateLimiter.class);
 
-    // Redis key prefixes per bucket type
-    private static final String KEY_PREFIX = "rl:";
-
-    // ======================== BUCKET CONFIGURATION ========================
-
     @Value("${app.rate-limiting.login-capacity:10}")
     private int loginCapacity;
-
     @Value("${app.rate-limiting.login-refill:10}")
     private int loginRefill;
-
     @Value("${app.rate-limiting.login-period-minutes:1}")
     private int loginPeriodMinutes;
 
     @Value("${app.rate-limiting.refresh-capacity:20}")
     private int refreshCapacity;
-
     @Value("${app.rate-limiting.refresh-refill:20}")
     private int refreshRefill;
-
     @Value("${app.rate-limiting.refresh-period-minutes:1}")
     private int refreshPeriodMinutes;
 
     @Value("${app.rate-limiting.forgot-password-capacity:3}")
     private int forgotPasswordCapacity;
-
     @Value("${app.rate-limiting.forgot-password-refill:3}")
     private int forgotPasswordRefill;
-
     @Value("${app.rate-limiting.forgot-password-period-minutes:1}")
     private int forgotPasswordPeriodMinutes;
 
     @Value("${app.rate-limiting.reset-password-capacity:5}")
     private int resetPasswordCapacity;
-
     @Value("${app.rate-limiting.reset-password-refill:5}")
     private int resetPasswordRefill;
-
     @Value("${app.rate-limiting.reset-password-period-minutes:1}")
     private int resetPasswordPeriodMinutes;
 
     @Value("${app.rate-limiting.activate-capacity:5}")
     private int activateCapacity;
-
     @Value("${app.rate-limiting.activate-refill:5}")
     private int activateRefill;
-
     @Value("${app.rate-limiting.activate-period-minutes:1}")
     private int activatePeriodMinutes;
 
     @Value("${app.rate-limiting.change-password-capacity:5}")
     private int changePasswordCapacity;
-
     @Value("${app.rate-limiting.change-password-refill:5}")
     private int changePasswordRefill;
-
     @Value("${app.rate-limiting.change-password-period-minutes:1}")
     private int changePasswordPeriodMinutes;
 
     @Value("${app.rate-limiting.switch-role-capacity:30}")
     private int switchRoleCapacity;
-
     @Value("${app.rate-limiting.switch-role-refill:30}")
     private int switchRoleRefill;
-
     @Value("${app.rate-limiting.switch-role-period-minutes:1}")
     private int switchRolePeriodMinutes;
 
-    // ======================== DEPENDENCIES ========================
-
-    private final LettuceBasedProxyManager<byte[]> proxyManager;
     private final MeterRegistry meterRegistry;
+    private final boolean usingRedis;
+    private final LettuceBasedProxyManager<byte[]> redisProxyManager;
+    private final ConcurrentHashMap<String, Bucket> localBuckets = new ConcurrentHashMap<>();
 
-    // Counters: total requests checked
-    private Counter counterLoginTotal;
-    private Counter counterRefreshTotal;
-    private Counter counterForgotPasswordTotal;
-    private Counter counterResetPasswordTotal;
-    private Counter counterActivateTotal;
-    private Counter counterChangePasswordTotal;
+    private Counter counterLoginTotal, counterRefreshTotal, counterForgotPasswordTotal;
+    private Counter counterResetPasswordTotal, counterActivateTotal, counterChangePasswordTotal;
     private Counter counterSwitchRoleTotal;
-
-    // Counters: denied (429) requests
-    private Counter counterLoginDenied;
-    private Counter counterRefreshDenied;
-    private Counter counterForgotPasswordDenied;
-    private Counter counterResetPasswordDenied;
-    private Counter counterActivateDenied;
-    private Counter counterChangePasswordDenied;
+    private Counter counterLoginDenied, counterRefreshDenied, counterForgotPasswordDenied;
+    private Counter counterResetPasswordDenied, counterActivateDenied, counterChangePasswordDenied;
     private Counter counterSwitchRoleDenied;
 
-    public PerIpRateLimiter(LettuceBasedProxyManager<byte[]> proxyManager, MeterRegistry meterRegistry) {
-        this.proxyManager = proxyManager;
+    public PerIpRateLimiter(
+            Optional<LettuceBasedProxyManager<byte[]>> redisProxyManager,
+            MeterRegistry meterRegistry) {
+        this.redisProxyManager = redisProxyManager.orElse(null);
         this.meterRegistry = meterRegistry;
+        this.usingRedis = this.redisProxyManager != null;
     }
 
     @PostConstruct
     public void init() {
         registerMetrics();
-        log.info("PerIpRateLimiter initialized — Redis-backed distributed rate limiting");
+        log.info("PerIpRateLimiter initialized — {} rate limiting",
+                usingRedis ? "Redis-backed distributed" : "in-memory (no Redis)");
     }
 
-    // ======================== METRICS ========================
-
     private void registerMetrics() {
-        // Counters — total requests (allowed + denied)
         counterLoginTotal = buildCounter("login", "total");
         counterRefreshTotal = buildCounter("refresh", "total");
         counterForgotPasswordTotal = buildCounter("forgot_password", "total");
@@ -147,7 +117,6 @@ public class PerIpRateLimiter {
         counterChangePasswordTotal = buildCounter("change_password", "total");
         counterSwitchRoleTotal = buildCounter("switch_role", "total");
 
-        // Counters — denied (429)
         counterLoginDenied = buildCounter("login", "denied");
         counterRefreshDenied = buildCounter("refresh", "denied");
         counterForgotPasswordDenied = buildCounter("forgot_password", "denied");
@@ -155,8 +124,6 @@ public class PerIpRateLimiter {
         counterActivateDenied = buildCounter("activate", "denied");
         counterChangePasswordDenied = buildCounter("change_password", "denied");
         counterSwitchRoleDenied = buildCounter("switch_role", "denied");
-
-        log.info("Rate limiter Prometheus metrics registered");
     }
 
     private Counter buildCounter(String endpoint, String result) {
@@ -169,10 +136,6 @@ public class PerIpRateLimiter {
 
     // ======================== PUBLIC API ========================
 
-    /**
-     * Try to consume 1 token from the login bucket for the given IP.
-     * The bucket is stored in Redis, shared across all instances.
-     */
     public RateLimitResult tryConsumeLogin(String ip) {
         return consume("login", loginCapacity, loginRefill, loginPeriodMinutes, ip,
                 counterLoginTotal, counterLoginDenied);
@@ -208,9 +171,6 @@ public class PerIpRateLimiter {
                 counterSwitchRoleTotal, counterSwitchRoleDenied);
     }
 
-    /**
-     * Extract the client IP from the HTTP request.
-     */
     public static String extractClientIp(HttpServletRequest request) {
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank() && !"unknown".equalsIgnoreCase(xff)) {
@@ -225,42 +185,34 @@ public class PerIpRateLimiter {
 
     // ======================== INTERNAL ========================
 
-    /**
-     * Centralized consumption method.
-     * Builds a Redis key from the endpoint type and IP, then uses the ProxyManager
-     * to atomically retrieve-or-create the bucket in Redis and consume one token.
-     */
     private RateLimitResult consume(String endpoint, int capacity, int refillTokens, int periodMinutes,
-                                     String ip, Counter counterTotal, Counter counterDenied) {
+                                      String ip, Counter counterTotal, Counter counterDenied) {
         counterTotal.increment();
 
-        byte[] redisKey = buildKey(endpoint, ip);
-        BucketConfiguration config = buildConfig(capacity, refillTokens, periodMinutes);
+        String bucketKey = endpoint + ":" + ip;
+        Refill refill = Refill.greedy(refillTokens, Duration.ofMinutes(periodMinutes));
+        Bandwidth limit = Bandwidth.classic(capacity, refill);
 
-        Bucket bucket = proxyManager.builder().build(redisKey, config);
-        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+        try {
+            Bucket bucket;
+            if (usingRedis) {
+                byte[] key = bucketKey.getBytes(StandardCharsets.UTF_8);
+                bucket = redisProxyManager.builder()
+                        .build(key, BucketConfiguration.builder().addLimit(limit).build());
+            } else {
+                bucket = localBuckets.computeIfAbsent(bucketKey,
+                        k -> Bucket.builder().addLimit(limit).build());
+            }
 
-        if (probe.isConsumed()) {
-            return RateLimitResult.allowed(probe.getRemainingTokens());
+            ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+            if (probe.isConsumed()) {
+                return RateLimitResult.allowed(probe.getRemainingTokens());
+            }
+            counterDenied.increment();
+            return RateLimitResult.denied(probe.getNanosToWaitForRefill());
+        } catch (Exception e) {
+            log.warn("Rate limiting error for {}: {}", bucketKey, e.getMessage());
+            return RateLimitResult.allowed(999);
         }
-        counterDenied.increment();
-        return RateLimitResult.denied(probe.getNanosToWaitForRefill());
-    }
-
-    /**
-     * Build a Redis key for the given endpoint and IP.
-     * Format: {@code rl:{endpoint}:{ip}}
-     */
-    private static byte[] buildKey(String endpoint, String ip) {
-        return (KEY_PREFIX + endpoint + ":" + ip).getBytes(StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Build a Bucket4j configuration from the given parameters.
-     */
-    private static BucketConfiguration buildConfig(int capacity, int refillTokens, int periodMinutes) {
-        return BucketConfiguration.builder()
-                .addLimit(Bandwidth.classic(capacity, Refill.greedy(refillTokens, Duration.ofMinutes(periodMinutes))))
-                .build();
     }
 }

@@ -135,7 +135,7 @@ describe('Sidebar - Multi-Role Navigation', () => {
 
     renderSidebar();
 
-    expectTextPresent('Dashboard Chef');
+    expectTextPresent('Ma famille');
 
     // Chef should NOT see pasteur-only items
     expectTextAbsent('Pilotage Pasteur');
@@ -160,7 +160,7 @@ describe('Sidebar - Multi-Role Navigation', () => {
 
     renderSidebar();
 
-    expectTextPresent('Dashboard Responsable');
+    expectTextPresent('Mon département');
     expectTextPresent('Départements');
 
     expectTextAbsent('Pilotage Pasteur');

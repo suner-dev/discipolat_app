@@ -248,7 +248,7 @@ const RESPONSABLE_NAV: WorkspaceSection[] = [
     title: 'Suivi & discipline',
     items: [
       { name: 'Évaluations', href: '/evaluations', icon: StarIcon, subtitle: 'Évaluations anonymes' },
-      { name: 'Discipline', href: '/departments', icon: Scale, subtitle: 'Suivi disciplinaire' },
+      { name: 'Discipline', href: '/discipline', icon: Scale, subtitle: 'Suivi disciplinaire' },
       { name: 'Progression', href: '/departments', icon: TrendingUp, subtitle: 'Croissance des membres' },
     ],
   },
@@ -398,6 +398,7 @@ const MEMBRE_NAV: WorkspaceSection[] = [
     items: [
       { name: 'Mes présences', href: '/dashboard/membre', icon: ClipboardCheck, subtitle: 'Pointage & historique' },
       { name: 'Ma progression', href: '/dashboard/membre', icon: TrendingUp, subtitle: 'Croissance spirituelle' },
+      { name: 'Mes activités', href: '/dashboard/membre/activities', icon: Activity, subtitle: 'Timeline personnelle' },
       { name: 'Prières', href: '/prayers', icon: BookOpen, subtitle: 'Sujets & témoignages' },
       { name: 'Actions de grâce', href: '/prayers/actions-de-grace', icon: Heart, subtitle: 'Prières exaucées' },
     ],

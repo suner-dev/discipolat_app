@@ -48,6 +48,8 @@ const PrayersPage = lazy(() => import('@/pages/PrayersPage'));
 const EventsPage = lazy(() => import('@/pages/EventsPage'));
 const DocumentsPage = lazy(() => import('@/pages/DocumentsPage'));
 const AuditPage = lazy(() => import('@/pages/AuditPage'));
+const MemberActivitiesPage = lazy(() => import('@/pages/MemberActivitiesPage'));
+const DisciplinePage = lazy(() => import('@/pages/DisciplinePage'));
 const PermissionsPage = lazy(() => import('@/pages/PermissionsPage'));
 const CompareFamiliesPage = lazy(() => import('@/pages/CompareFamiliesPage'));
 const SoulRetractionsPage = lazy(() => import('@/pages/SoulRetractionsPage'));
@@ -195,6 +197,16 @@ export default function App() {
           <Route path="/dashboard/membre" element={
             <ProtectedRoute roles={['MEMBRE']}>
               <MemberDashboardPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/membre/activities" element={
+            <ProtectedRoute roles={['MEMBRE']}>
+              <MemberActivitiesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/discipline" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <DisciplinePage />
             </ProtectedRoute>
           } />
           <Route path="/dashboard/pasteur" element={

@@ -55,6 +55,10 @@ import 'presentation/screens/communications/communications_screen.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
 import 'presentation/screens/security/security_settings_screen.dart';
 import 'presentation/screens/not_found_screen.dart';
+import 'presentation/screens/departments/presence_entry_screen.dart';
+import 'presentation/screens/discipline/discipline_screen.dart';
+import 'presentation/screens/prayers/actions_de_grace_screen.dart';
+import 'presentation/screens/dashboard/member_activities_screen.dart';
 
 import 'tenant_config.dart';
 
@@ -198,6 +202,10 @@ Map<String, List<String>> _routeRoles = {
   '/search': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/users': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/permissions': ['ADMIN'],
+  '/discipline': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/prayers/actions-de-grace': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/dashboard/membre/activities': ['ADMIN', 'PASTEUR', 'MEMBRE'],
+  '/departments/:id/presences': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/documents': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/audit': ['ADMIN', 'PASTEUR'],
   '/appointments': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -572,6 +580,28 @@ final appRouter = GoRouter(
       path: '/admin/pages',
       name: 'platform-pages',
       builder: (context, state) => const PlatformPagesScreen(),
+    ),
+    GoRoute(
+      path: '/discipline',
+      name: 'discipline',
+      builder: (context, state) => const DisciplineScreen(),
+    ),
+    GoRoute(
+      path: '/prayers/actions-de-grace',
+      name: 'actions-de-grace',
+      builder: (context, state) => const ActionsDeGraceScreen(),
+    ),
+    GoRoute(
+      path: '/dashboard/membre/activities',
+      name: 'membre-activities',
+      builder: (context, state) => const MemberActivitiesScreen(),
+    ),
+    GoRoute(
+      path: '/departments/:id/presences',
+      name: 'presence-entry',
+      builder: (context, state) => PresenceEntryScreen(
+        departmentId: state.pathParameters['id']!,
+      ),
     ),
     GoRoute(
       path: '/finances',

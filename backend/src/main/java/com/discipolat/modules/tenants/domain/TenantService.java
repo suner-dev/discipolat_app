@@ -86,6 +86,13 @@ public class TenantService {
         return TenantResponse.from(tenant);
     }
 
+    public void deactivate(UUID id) {
+        Tenant tenant = getEntity(id);
+        tenant.setStatus(TenantStatus.SUSPENDED);
+        tenantRepository.save(tenant);
+        auditService.logSimple("TENANT_DEACTIVATED", "TENANT", tenant.getId());
+    }
+
     private Tenant getEntity(UUID id) {
         return tenantRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Tenant", id));
