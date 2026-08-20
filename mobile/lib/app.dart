@@ -55,6 +55,11 @@ import 'presentation/screens/communications/communications_screen.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
 import 'presentation/screens/security/security_settings_screen.dart';
 import 'presentation/screens/not_found_screen.dart';
+import 'presentation/screens/platform/admin_settings_screen.dart';
+import 'presentation/screens/platform/admin_custom_fields_screen.dart';
+import 'presentation/screens/platform/admin_dictionaries_screen.dart';
+import 'presentation/screens/platform/admin_integrations_screen.dart';
+import 'presentation/screens/platform/admin_tenants_screen.dart';
 import 'presentation/screens/departments/presence_entry_screen.dart';
 import 'presentation/screens/discipline/discipline_screen.dart';
 import 'presentation/screens/prayers/actions_de_grace_screen.dart';
@@ -225,6 +230,11 @@ Map<String, List<String>> _routeRoles = {
   '/admin/modules': ['ADMIN'],
   '/admin/menus': ['ADMIN'],
   '/admin/pages': ['ADMIN'],
+  '/admin/settings': ['ADMIN'],
+  '/admin/custom-fields': ['ADMIN'],
+  '/admin/dictionaries': ['ADMIN'],
+  '/admin/integrations': ['ADMIN'],
+  '/admin/tenants': ['ADMIN'],
   '/security-settings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/onboarding': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
 };
@@ -580,6 +590,31 @@ final appRouter = GoRouter(
       path: '/admin/pages',
       name: 'platform-pages',
       builder: (context, state) => const PlatformPagesScreen(),
+    ),
+    GoRoute(
+      path: '/admin/settings',
+      name: 'admin-settings',
+      builder: (context, state) => const AdminSettingsScreen(),
+    ),
+    GoRoute(
+      path: '/admin/custom-fields',
+      name: 'admin-custom-fields',
+      builder: (context, state) => const AdminCustomFieldsScreen(),
+    ),
+    GoRoute(
+      path: '/admin/dictionaries',
+      name: 'admin-dictionaries',
+      builder: (context, state) => const AdminDictionariesScreen(),
+    ),
+    GoRoute(
+      path: '/admin/integrations',
+      name: 'admin-integrations',
+      builder: (context, state) => const AdminIntegrationsScreen(),
+    ),
+    GoRoute(
+      path: '/admin/tenants',
+      name: 'admin-tenants',
+      builder: (context, state) => const AdminTenantsScreen(),
     ),
     GoRoute(
       path: '/discipline',

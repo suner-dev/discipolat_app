@@ -63,6 +63,11 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.inventory_2_rounded, 'title': 'Modules plateforme', 'route': '/admin/modules'},
     {'icon': Icons.menu_book_rounded, 'title': 'Menus plateforme', 'route': '/admin/menus'},
     {'icon': Icons.dashboard_customize_rounded, 'title': 'Pages personnalisées', 'route': '/admin/pages'},
+    {'icon': Icons.settings_rounded, 'title': 'Paramètres église', 'route': '/admin/settings'},
+    {'icon': Icons.text_fields_rounded, 'title': 'Champs personnalisés', 'route': '/admin/custom-fields'},
+    {'icon': Icons.book_rounded, 'title': 'Dictionnaires', 'route': '/admin/dictionaries'},
+    {'icon': Icons.language_rounded, 'title': 'Intégrations', 'route': '/admin/integrations'},
+    {'icon': Icons.business_rounded, 'title': 'Églises (tenants)', 'route': '/admin/tenants'},
   ];    // Espace RESPONSABLE — gestion des départements, équipes, tâches, évaluations, discipline, progression
   static const List<Map<String, Object>> _responsableNav = [
     {'icon': Icons.dashboard_rounded, 'title': 'Dashboard Responsable', 'route': '/dashboard/responsable'},
