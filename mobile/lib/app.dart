@@ -65,6 +65,7 @@ import 'presentation/screens/platform/admin_integrations_screen.dart';
 import 'presentation/screens/platform/admin_tenants_screen.dart';
 import 'presentation/screens/souls/soul_qr_screen.dart';
 import 'presentation/screens/departments/qr_scanner_screen.dart';
+import 'presentation/screens/departments/geofencing_screen.dart';
 import 'presentation/screens/departments/presence_entry_screen.dart';
 import 'presentation/screens/discipline/discipline_screen.dart';
 import 'presentation/screens/prayers/actions_de_grace_screen.dart';
@@ -204,6 +205,7 @@ Map<String, List<String>> _routeRoles = {
   '/smart-alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/bi-dashboard': ['ADMIN', 'PASTEUR'],
   '/sermons': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/geofencing': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'MEMBRE'],
   '/profile': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -576,6 +578,11 @@ final appRouter = GoRouter(
       path: '/sermons',
       name: 'sermons',
       builder: (context, state) => const SermonTranscriptionScreen(),
+    ),
+    GoRoute(
+      path: '/geofencing',
+      name: 'geofencing',
+      builder: (context, state) => const GeofencingScreen(),
     ),
     GoRoute(
       path: '/messages',
