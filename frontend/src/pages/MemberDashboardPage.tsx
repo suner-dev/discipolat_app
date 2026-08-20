@@ -20,7 +20,7 @@ import {
   Sparkles, User, Mail, Phone, Calendar, GraduationCap, Briefcase, Heart,
   Users, Building2, Camera, Edit3, Save, X, Loader2, MessageSquare,
   ChevronRight, UserCheck, Church, Cake, CalendarCheck, Send, Paperclip,
-  CheckCircle, Star, TrendingUp,
+  CheckCircle, Star, TrendingUp, Zap, BookOpen, ClipboardCheck, Trophy,
 } from 'lucide-react';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
@@ -216,6 +216,22 @@ export default function MemberDashboardPage() {
     requestMutation.mutate(requestForm);
   };
 
+  // ==================== Phase 3 : progression, événements, notes ====================
+  const { data: progression } = useQuery({
+    queryKey: ['members', 'me', 'progression'],
+    queryFn: async () => (await api.get('/members/me/progression')).data as Record<string, unknown>,
+  });
+
+  const { data: myEvents = [] } = useQuery({
+    queryKey: ['members', 'me', 'events'],
+    queryFn: async () => (await api.get('/members/me/events')).data as Array<Record<string, unknown>>,
+  });
+
+  const { data: myNotes = [] } = useQuery({
+    queryKey: ['members', 'me', 'notes'],
+    queryFn: async () => (await api.get('/members/me/notes')).data as Array<Record<string, unknown>>,
+  });
+
   const openEdit = () => {
     setForm({
       phone: dashboard?.user.phone || '',
@@ -312,6 +328,24 @@ export default function MemberDashboardPage() {
           <Edit3 className="w-4 h-4" /> Modifier mes informations
         </button>
         )}
+      </div>
+
+      {/* ===================== ACTIONS RAPIDES ===================== */}
+      <div className="glass-card p-5 mb-6 animate-slide-up">
+        <div className="flex items-center gap-2 mb-3"><Zap className="w-4 h-4 text-primary-500" /><h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Accès rapides</h3></div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { href: '/events', icon: Calendar, label: 'Événements', color: 'from-blue-500 to-indigo-500' },
+            { href: '/prayers', icon: BookOpen, label: 'Prières', color: 'from-indigo-500 to-violet-500' },
+            { href: '/trainings', icon: GraduationCap, label: 'Formations', color: 'from-emerald-500 to-teal-500' },
+            { href: '/badges', icon: Trophy, label: 'Badges', color: 'from-amber-500 to-orange-500' },
+          ].map((a) => (
+            <Link key={a.href} to={a.href} className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/30 border border-gray-100 dark:border-gray-700/30 transition-all hover:shadow-md group">
+              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${a.color} text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}><a.icon className="w-4 h-4" /></div>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{a.label}</span>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* ===================== CARTE PROFIL ===================== */}
@@ -758,14 +792,17 @@ export default function MemberDashboardPage() {
 
       {/* ===================== ÉVÉNEMENTS À VENIR ===================== */}
       <div className="glass-card p-6 animate-slide-up mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
-            <Calendar className="w-5 h-5" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Événements à venir</h3>
+              <p className="text-xs text-gray-400">Prochains événements de votre communauté</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Événements à venir</h3>
-            <p className="text-xs text-gray-400">Prochains événements de votre communauté</p>
-          </div>
+          <Link to="/events" className="text-[10px] font-medium text-primary-600">Voir tout</Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {((dashboard as any)?.evenements?.slice(0, 6) || []).map((ev: any) => (
@@ -788,14 +825,17 @@ export default function MemberDashboardPage() {
 
       {/* ===================== PRIÈRES & ACTIONS DE GRÂCE ===================== */}
       <div className="glass-card p-6 animate-slide-up mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg">
-            <Church className="w-5 h-5" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg">
+              <Church className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Prières & actions de grâce</h3>
+              <p className="text-xs text-gray-400">Demandes de prière de votre famille et de l'église</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Prières & actions de grâce</h3>
-            <p className="text-xs text-gray-400">Demandes de prière de votre famille et de l'église</p>
-          </div>
+          <Link to="/prayers" className="text-[10px] font-medium text-primary-600">Voir tout</Link>
         </div>
         <div className="space-y-2">
           {((dashboard as any)?.prieres?.slice(0, 5) || []).map((p: any) => (
@@ -855,6 +895,53 @@ export default function MemberDashboardPage() {
                 <p className="text-[10px] text-gray-400">Prières</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===================== PHASE 3 : ÉVÉNEMENTS À VENIR ===================== */}
+      {myEvents.length > 0 && (
+        <div className="glass-card p-5 mb-6 animate-slide-up">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-500" />
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Événements à venir</h3>
+            </div>
+            <Link to="/events" className="text-[10px] font-medium text-primary-600">Voir tout <ChevronRight className="w-3 h-3 inline" /></Link>
+          </div>
+          <div className="space-y-2">
+            {myEvents.slice(0, 4).map((ev: any) => (
+              <div key={ev.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
+                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{ev.titre}</p>
+                  <p className="text-[10px] text-gray-400">{ev.dateDebut ? new Date(ev.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}{ev.lieu ? ` · ${ev.lieu}` : ''}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===================== PHASE 3 : NOTES DU FAISEUR ===================== */}
+      {myNotes.length > 0 && (
+        <div className="glass-card p-5 mb-6 animate-slide-up">
+          <div className="flex items-center gap-2 mb-4">
+            <BookOpen className="w-4 h-4 text-indigo-500" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notes de mon faiseur</h3>
+          </div>
+          <div className="space-y-2">
+            {myNotes.slice(0, 3).map((n: any, idx: number) => (
+              <div key={idx} className="p-3 rounded-xl bg-white/40 dark:bg-gray-800/30 border border-white/40 dark:border-white/[0.04]">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="badge text-[10px] badge-info">{n.type || 'Note'}</span>
+                  <span className="text-[10px] text-gray-400">{n.createdAt ? new Date(n.createdAt).toLocaleDateString('fr-FR') : ''}</span>
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{n.contenu || n.texte || ''}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

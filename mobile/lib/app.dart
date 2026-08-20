@@ -5,6 +5,7 @@ import 'presentation/screens/dashboard/dashboard_screen.dart';
 import 'presentation/screens/dashboard/pasteur_dashboard_screen.dart';
 import 'presentation/screens/dashboard/chef_famille_dashboard_screen.dart';
 import 'presentation/screens/dashboard/responsable_dashboard_screen.dart';
+import 'presentation/screens/dashboard/member_dashboard_screen.dart';
 import 'presentation/screens/souls/souls_list_screen.dart';
 import 'presentation/screens/souls/soul_detail_screen.dart';
 import 'presentation/screens/reports/maker_report_screen.dart';
@@ -160,9 +161,8 @@ String roleHome(String role) {
     case 'RESPONSABLE':
       return '/dashboard/responsable';
     case 'CHEF_DE_FAMILLE':
-      return '/dashboard/chef-famille';
-    case 'MEMBRE':
-      return '/profile';
+      return '/dashboard/chef-famille';      case 'MEMBRE':
+      return '/dashboard/membre';
     default:
       return '/dashboard'; // ADMIN, PASTEUR
   }
@@ -172,6 +172,7 @@ String roleHome(String role) {
 /// null = all authenticated users, [] = no one (public only).
 Map<String, List<String>> _routeRoles = {
   '/dashboard': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/dashboard/membre': ['ADMIN', 'PASTEUR', 'MEMBRE'],
   '/dashboard/pasteur': ['ADMIN', 'PASTEUR'],
   '/dashboard/chef-famille': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE'],
   '/dashboard/responsable': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -322,6 +323,11 @@ final appRouter = GoRouter(
       path: '/dashboard/responsable',
       name: 'responsable-dashboard',
       builder: (context, state) => const ResponsableDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/dashboard/membre',
+      name: 'membre-dashboard',
+      builder: (context, state) => const MemberDashboardScreen(),
     ),
     GoRoute(
       path: '/souls',

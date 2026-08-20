@@ -16,6 +16,10 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
   final _apiService = ApiService();
   Map<String, dynamic>? _dashboard;
   List<dynamic> _workload = [];
+  List<dynamic> _alerts = [];
+  List<dynamic> _upcomingVisits = [];
+  List<dynamic> _prayers = [];
+  List<dynamic> _events = [];
   bool _isLoading = true;
 
   late final AnimationController _animCtrl;
@@ -40,15 +44,53 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
       final familleId = AuthState().familleGereeId;
       final response = await _apiService.get('/dashboard/chef-famille',
           params: familleId != null ? {'familleId': familleId} : null);
-      // Charge de travail des faiseurs de la famille (scopée côté serveur).
+
+      // Charge de travail des faiseurs
       List<dynamic> workload = [];
       try {
         final workloadRes = await _apiService.get('/users/faiseur-workload',
             params: familleId != null ? {'familleId': familleId} : null);
         workload = (workloadRes.data as List?) ?? [];
-      } catch (_) {/* best-effort : la charge n'empêche pas l'affichage du dashboard */}
+      } catch (_) {}
+
+      // Alertes
+      List<dynamic> alerts = [];
+      try {
+        final alertRes = await _apiService.get('/alerts', params: {'familleId': familleId, 'size': 5});
+        alerts = (alertRes.data as Map?)?['content'] as List<dynamic>? ?? [];
+      } catch (_) {}
+
+      // Visites à venir
+      List<dynamic> visits = [];
+      try {
+        final visitRes = await _apiService.get('/visits/upcoming');
+        visits = (visitRes.data as List?) ?? [];
+      } catch (_) {}
+
+      // Prières
+      List<dynamic> prayers = [];
+      try {
+        final prayerRes = await _apiService.get('/prayers', params: {'familleId': familleId, 'size': 5});
+        prayers = (prayerRes.data as Map?)?['content'] as List<dynamic>? ?? [];
+      } catch (_) {}
+
+      // Événements
+      List<dynamic> events = [];
+      try {
+        final eventRes = await _apiService.get('/events', params: {'size': 6});
+        events = (eventRes.data as Map?)?['content'] as List<dynamic>? ?? [];
+      } catch (_) {}
+
       if (mounted) {
-        setState(() { _dashboard = response.data as Map<String, dynamic>?; _workload = workload; _isLoading = false; });
+        setState(() {
+          _dashboard = response.data as Map<String, dynamic>?;
+          _workload = workload;
+          _alerts = alerts;
+          _upcomingVisits = visits;
+          _prayers = prayers;
+          _events = events;
+          _isLoading = false;
+        });
         _animCtrl.forward();
       }
     } catch (_) {
@@ -62,6 +104,20 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
     final faiseurs = _dashboard?['faiseurs'] as List<dynamic>? ?? [];
     final disciples = _dashboard?['disciples'] as List<dynamic>? ?? [];
     final stats = _dashboard?['statistiques'] as Map<String, dynamic>? ?? {};
+
+    final activeAlerts = _alerts.where((a) => (a as Map<String, dynamic>)['statut'] == 'ACTIVE').toList();
+
+    // Progression stats
+    final progression = disciples.isNotEmpty
+        ? (disciples.map((d) => ((d as Map<String, dynamic>)['niveauCroissance'] ?? 1) as int).reduce((a, b) => a + b) / disciples.length).toStringAsFixed(1)
+        : '0';
+
+    // Growth distribution
+    final byStatut = <String, int>{};
+    for (final d in disciples) {
+      final s = (d as Map<String, dynamic>)['statut'] as String? ?? 'ACTIF';
+      byStatut[s] = (byStatut[s] ?? 0) + 1;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -81,20 +137,24 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Stats grid
+                      // ==================== STATS GRID ====================
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2, childAspectRatio: 1.5, crossAxisSpacing: 10, mainAxisSpacing: 10,
                         ),
-                        itemCount: 4,
+                        itemCount: 8,
                         itemBuilder: (_, i) {
                           final items = [
                             {'label': 'Disciples', 'value': '${stats['totalDisciples'] ?? 0}', 'icon': Icons.favorite, 'color': const Color(0xFFD4AF37)},
                             {'label': 'Faiseurs', 'value': '${stats['totalFaiseurs'] ?? 0}', 'icon': Icons.group, 'color': Colors.teal},
                             {'label': 'Actifs', 'value': '${stats['actifs'] ?? 0}', 'icon': Icons.check_circle, 'color': Colors.green},
                             {'label': 'Rapports', 'value': '${stats['rapportsSoumisSemaine'] ?? 0}/${stats['totalDisciples'] ?? 0}', 'icon': Icons.description, 'color': Colors.blue},
+                            {'label': 'Alertes', 'value': '${activeAlerts.length}', 'icon': Icons.warning_amber, 'color': Colors.red},
+                            {'label': 'Visites', 'value': '${_upcomingVisits.length}', 'icon': Icons.map_outlined, 'color': Colors.cyan},
+                            {'label': 'Prières', 'value': '${_prayers.length}', 'icon': Icons.book, 'color': Colors.indigo},
+                            {'label': 'Progression', 'value': progression, 'icon': Icons.trending_up, 'color': Colors.purple},
                           ];
                           final item = items[i];
                           return GlassStatCard(
@@ -103,20 +163,124 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                             icon: item['icon'] as IconData,
                             gradientStart: item['color'] as Color,
                             gradientEnd: (item['color'] as Color).withValues(alpha: 0.7),
-                            onTap: () => context.go(
-                              item['label'] == 'Faiseurs' ? '/users'
-                                  : item['label'] == 'Rapports' ? '/reports/family'
-                                  : '/souls',
-                            ),
+                            onTap: () {
+                              final label = item['label'] as String;
+                              if (label == 'Disciples' || label == 'Actifs') {
+                                context.go('/souls');
+                              } else if (label == 'Faiseurs') {
+                                context.go('/users');
+                              } else if (label == 'Rapports') {
+                                context.go('/reports/family');
+                              } else if (label == 'Alertes') {
+                                context.go('/alerts');
+                              } else if (label == 'Visites') {
+                                context.go('/visits');
+                              } else if (label == 'Prières') {
+                                context.go('/prayers');
+                              } else {
+                                context.go('/families');
+                              }
+                            },
                           );
                         },
                       ),
                       const SizedBox(height: 16),
 
-                      // Charge de travail des faiseurs (US-14)
+                      // ==================== RÉPARTITION DES DISCIPLES ====================
+                      SectionTitle(title: 'Répartition des disciples', icon: Icons.pie_chart),
+                      GlassCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _statusPill('Actifs', byStatut['ACTIF'] ?? 0, Colors.green),
+                            _statusPill('Intégration', byStatut['EN_INTEGRATION'] ?? 0, Colors.amber),
+                            _statusPill('Veille', byStatut['EN_VEILLE'] ?? 0, Colors.blue),
+                            _statusPill('Décrochés', byStatut['DECROCHE'] ?? 0, Colors.red),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ==================== ALERTES ACTIVES ====================
+                      if (activeAlerts.isNotEmpty) ...[
+                        SectionTitle(
+                          title: 'Alertes actives',
+                          icon: Icons.warning_amber,
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                            child: Text('${activeAlerts.length}', style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        ...activeAlerts.take(3).map((a) {
+                          final alert = a as Map<String, dynamic>;
+                          return GlassCard(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            onTap: () => context.go('/alerts'),
+                            borderColor: Colors.red.withValues(alpha: 0.3),
+                            child: Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: Colors.red, size: 18),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(alert['titre'] ?? alert['message'] ?? '',
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      Text(alert['message'] ?? '',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // ==================== VISITES À VENIR ====================
+                      if (_upcomingVisits.isNotEmpty) ...[
+                        SectionTitle(title: 'Visites à venir', icon: Icons.map_outlined),
+                        ..._upcomingVisits.take(4).map((v) {
+                          final visit = v as Map<String, dynamic>;
+                          return GlassCard(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            onTap: () => context.go('/visits'),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: Colors.cyan.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                                  child: const Icon(Icons.map_outlined, color: Colors.cyan, size: 18),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(visit['soulNom'] ?? visit['titre'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                                      Text('${visit['datePrevue'] ?? '—'} · ${visit['motif'] ?? ''}',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // ==================== CHARGE DE TRAVAIL DES FAISEURS ====================
                       if (_workload.isNotEmpty) ...[
                         SectionTitle(title: 'Charge de travail des Faiseurs', icon: Icons.bar_chart),
-                        const SizedBox(height: 8),
                         ..._workload.take(6).map((w) {
                           final charge = (w['charge'] as String?) ?? '';
                           final chargeColor = charge == 'SURCHARGÉ'
@@ -163,7 +327,7 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                         const SizedBox(height: 16),
                       ],
 
-                      // Faiseurs network
+                      // ==================== FAISEURS & DISCIPLES ====================
                       if (faiseurs.isNotEmpty) ...[
                         SectionTitle(title: 'Faiseurs (${faiseurs.length})', icon: Icons.account_tree),
                         const SizedBox(height: 8),
@@ -220,12 +384,92 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                           );
                         }),
                       ],
+                      const SizedBox(height: 16),
+
+                      // ==================== PRIÈRES ====================
+                      if (_prayers.isNotEmpty) ...[
+                        SectionTitle(title: 'Prières récentes', icon: Icons.book),
+                        ..._prayers.take(3).map((p) {
+                          final prayer = p as Map<String, dynamic>;
+                          return GlassCard(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            onTap: () => context.go('/prayers'),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: Colors.indigo.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                                  child: const Icon(Icons.book, color: Colors.indigo, size: 18),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(prayer['titre'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      Text('${prayer['categorie'] ?? ''} · ${prayer['statut'] ?? ''}',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // ==================== ÉVÉNEMENTS À VENIR ====================
+                      if (_events.isNotEmpty) ...[
+                        SectionTitle(title: 'Événements à venir', icon: Icons.event),
+                        ..._events.take(4).map((ev) {
+                          final event = ev as Map<String, dynamic>;
+                          return GlassCard(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            onTap: () => context.go('/events'),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                                  child: Icon(Icons.event, color: AppColors.primaryLight, size: 18),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(event['titre'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      Text('${event['dateDebut'] ?? '—'}${event['lieu'] != null ? ' · ${event['lieu']}' : ''}',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
                       const SizedBox(height: 80),
                     ],
                   ),
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _statusPill(String label, int count, Color color) {
+    return Column(
+      children: [
+        Text('$count', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 20)),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
+      ],
     );
   }
 }

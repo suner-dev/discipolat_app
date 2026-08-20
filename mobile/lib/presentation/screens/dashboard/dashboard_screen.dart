@@ -15,6 +15,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProviderStateMixin {
   final _apiService = ApiService();
   Map<String, dynamic>? _kpi;
+  List<dynamic> _alerts = [];
   bool _isLoading = true;
   int _currentNavIndex = 0;
 
@@ -26,7 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     super.initState();
     _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
-    _loadKpi();
+    _loadData();
   }
 
   @override
@@ -35,7 +36,8 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     super.dispose();
   }
 
-  Future<void> _loadKpi() async {
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
     try {
       Map<String, dynamic> data;
       try {
@@ -45,8 +47,20 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
         final response = await _apiService.get('/dashboard/my-metrics');
         data = response.data as Map<String, dynamic>;
       }
+
+      // Load alerts (best-effort)
+      List<dynamic> alerts = [];
+      try {
+        final alertRes = await _apiService.get('/alerts', params: {'size': 5});
+        alerts = (alertRes.data as Map?)?['content'] as List<dynamic>? ?? [];
+      } catch (_) {}
+
       if (mounted) {
-        setState(() { _kpi = data; _isLoading = false; });
+        setState(() {
+          _kpi = data;
+          _alerts = alerts;
+          _isLoading = false;
+        });
         _animCtrl.forward();
       }
     } catch (e) {
@@ -56,32 +70,37 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    final activeRole = AuthState().activeRole;
+    final isAdminPasteur = activeRole == 'ADMIN' || activeRole == 'PASTEUR';
     final hasFullKpi = _kpi?.containsKey('totalAmes') ?? false;
+
     final stats = _kpi != null ? (hasFullKpi ? [
-      {'label': 'Âmes suivies', 'value': '${_kpi!['totalAmes'] ?? 0}', 'icon': Icons.favorite, 'gradient': [Colors.red, Colors.pink], 'trend': null},
-      {'label': 'Taux de présence', 'value': '${(_kpi!['tauxPresenceGlobal'] ?? 0.0).toStringAsFixed(1)}%', 'icon': Icons.trending_up, 'gradient': [Colors.green, Colors.teal], 'trend': '+${(_kpi!['tendancePresence'] ?? 0).toStringAsFixed(1)}%'},
-      {'label': 'Faiseurs', 'value': '${_kpi!['totalFaiseurs'] ?? 0}', 'icon': Icons.group, 'gradient': [Colors.blue, Colors.indigo], 'trend': null},
-      {'label': 'Familles', 'value': '${_kpi!['totalFamilles'] ?? 0}', 'icon': Icons.home, 'gradient': [Colors.purple, Colors.deepPurple], 'trend': null},
-      {'label': 'Alertes', 'value': '${_kpi!['alertesActives'] ?? 0}', 'icon': Icons.notifications_active, 'gradient': [Colors.orange, Colors.deepOrange], 'trend': null},
-      {'label': 'Rapports', 'value': '${_kpi!['rapportsSoumis'] ?? 0}/${_kpi!['rapportsEnAttente'] ?? 0}', 'icon': Icons.description, 'gradient': [Colors.teal, Colors.cyan], 'trend': null},
+      {'label': 'Âmes suivies', 'value': '${_kpi!['totalAmes'] ?? 0}', 'icon': Icons.favorite, 'gradient': [Colors.red, Colors.pink], 'route': '/souls'},
+      {'label': 'Taux de présence', 'value': '${(_kpi!['tauxPresenceGlobal'] ?? 0.0).toStringAsFixed(1)}%', 'icon': Icons.trending_up, 'gradient': [Colors.green, Colors.teal], 'route': '/departments'},
+      {'label': 'Faiseurs', 'value': '${_kpi!['totalFaiseurs'] ?? 0}', 'icon': Icons.group, 'gradient': [Colors.blue, Colors.indigo], 'route': '/users'},
+      {'label': 'Familles', 'value': '${_kpi!['totalFamilles'] ?? 0}', 'icon': Icons.home, 'gradient': [Colors.purple, Colors.deepPurple], 'route': '/families'},
+      {'label': 'Alertes', 'value': '${_kpi!['alertesActives'] ?? 0}', 'icon': Icons.notifications_active, 'gradient': [Colors.orange, Colors.deepOrange], 'route': '/alerts'},
+      {'label': 'Rapports', 'value': '${_kpi!['rapportsSoumis'] ?? 0}/${_kpi!['rapportsEnAttente'] ?? 0}', 'icon': Icons.description, 'gradient': [Colors.teal, Colors.cyan], 'route': '/reports'},
     ] : [
-      {'label': 'Mes âmes', 'value': '${_kpi!['totalAmes'] ?? _kpi!['totalAmesFamille'] ?? 0}', 'icon': Icons.favorite, 'gradient': [Colors.red, Colors.pink], 'trend': null},
-      {'label': 'Rapport soumis', 'value': _kpi!['rapportSoumisCetteSemaine'] == true ? 'Oui' : 'Non', 'icon': Icons.description, 'gradient': [Colors.teal, Colors.cyan], 'trend': null},
-      {'label': 'Faiseurs', 'value': '${_kpi!['totalFaiseursFamille'] ?? 0}', 'icon': Icons.group, 'gradient': [Colors.blue, Colors.indigo], 'trend': null},
+      {'label': 'Mes âmes', 'value': '${_kpi!['totalAmes'] ?? _kpi!['totalAmesFamille'] ?? 0}', 'icon': Icons.favorite, 'gradient': [Colors.red, Colors.pink], 'route': '/souls'},
+      {'label': 'Rapport soumis', 'value': _kpi!['rapportSoumisCetteSemaine'] == true ? 'Oui' : 'Non', 'icon': Icons.description, 'gradient': [Colors.teal, Colors.cyan], 'route': '/reports/maker'},
+      {'label': 'Faiseurs', 'value': '${_kpi!['totalFaiseursFamille'] ?? 0}', 'icon': Icons.group, 'gradient': [Colors.blue, Colors.indigo], 'route': '/users'},
     ]) : [];
+
+    final activeAlerts = _alerts.where((a) => (a as Map<String, dynamic>)['statut'] == 'ACTIVE').toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tableau de bord'),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadKpi),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
       ),
       drawer: const AppDrawer(),
       body: _isLoading
           ? const ShimmerLoading(itemCount: 6)
           : RefreshIndicator(
-              onRefresh: _loadKpi,
+              onRefresh: _loadData,
               child: FadeTransition(
                 opacity: _fadeAnim,
                 child: SingleChildScrollView(
@@ -90,7 +109,8 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SectionTitle(title: 'Vue densemble', icon: Icons.dashboard),
+                      // ==================== KPI CARDS ====================
+                      SectionTitle(title: 'Vue d\'ensemble', icon: Icons.dashboard),
                       const SizedBox(height: 8),
                       GridView.builder(
                         shrinkWrap: true,
@@ -111,32 +131,45 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                             icon: stat['icon'] as IconData,
                             gradientStart: gradient[0],
                             gradientEnd: gradient[1],
-                            trend: stat['trend'] as String?,
-                            trendUp: true,
-                            onTap: () {
-                              final label = stat['label'] as String;
-                              if (label.contains('Âme')) {
-                                context.go('/souls');
-                              } else if (label.contains('présence')) {
-                                context.go('/departments');
-                              } else if (label.contains('Faiseur')) {
-                                context.go('/users');
-                              } else if (label.contains('Famille')) {
-                                context.go('/families');
-                              } else if (label.contains('Alerte')) {
-                                context.go('/alerts');
-                              } else {
-                                context.go('/reports');
-                              }
-                            },
+                            onTap: () => context.go(stat['route'] as String),
                           );
                         },
                       ),
                       const SizedBox(height: 16),
-                      SectionTitle(title: 'Alertes récentes', icon: Icons.warning_amber),
-                      GestureDetector(
-                        onTap: () => context.go('/alerts'),
-                        child: GlassCard(
+
+                      // ==================== ALERTES ====================
+                      SectionTitle(title: 'Alertes', icon: Icons.warning_amber),
+                      if (activeAlerts.isNotEmpty)
+                        ...activeAlerts.take(3).map((a) {
+                          final alert = a as Map<String, dynamic>;
+                          return GlassCard(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            onTap: () => context.go('/alerts'),
+                            borderColor: Colors.red.withValues(alpha: 0.3),
+                            child: Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: Colors.red, size: 18),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(alert['titre'] ?? alert['message'] ?? '',
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      Text(alert['message'] ?? '',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        })
+                      else
+                        GlassCard(
                           padding: const EdgeInsets.all(20),
                           child: Column(
                             children: [
@@ -148,7 +181,32 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                             ],
                           ),
                         ),
-                      ),
+
+                      // ==================== ACTIONS RAPIDES (ADMIN/PASTEUR) ====================
+                      if (isAdminPasteur) ...[
+                        const SizedBox(height: 16),
+                        SectionTitle(title: 'Actions rapides', icon: Icons.flash_on),
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 0.9,
+                          children: [
+                            _quickAction(Icons.dashboard_customize, 'Pasteur', () => context.go('/dashboard/pasteur')),
+                            _quickAction(Icons.favorite, 'Âmes', () => context.go('/souls')),
+                            _quickAction(Icons.business, 'Départements', () => context.go('/departments')),
+                            _quickAction(Icons.description, 'Rapports', () => context.go('/reports')),
+                            _quickAction(Icons.event, 'Événements', () => context.go('/events')),
+                            _quickAction(Icons.warning_amber, 'Alertes', () => context.go('/alerts')),
+                            _quickAction(Icons.person_search, 'Recherche', () => context.go('/search')),
+                            _quickAction(Icons.person, 'Profil', () => context.go('/profile')),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(height: 80),
                     ],
                   ),
                 ),
@@ -156,7 +214,6 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
             ),
       bottomNavigationBar: GlassBottomNav(currentIndex: _currentNavIndex, onTap: (i) {
         setState(() => _currentNavIndex = i);
-        // Barre de navigation sensible à l'espace métier du rôle actif
         final role = AuthState().activeRole;
         final List<String> routes;
         switch (role) {
@@ -167,7 +224,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
           case 'CHEF_DE_FAMILLE':
             routes = ['/dashboard/chef-famille', '/families', '/reports/family', '/profile'];
           case 'MEMBRE':
-            routes = ['/profile', '/trainings', '/badges', '/appointments'];
+            routes = ['/dashboard/membre', '/trainings', '/badges', '/appointments'];
           default:
             routes = ['/dashboard', '/souls', '/reports/maker', '/profile'];
         }
@@ -176,4 +233,24 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
+  Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.primaryLight, size: 22),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10)),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -63,10 +63,12 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.dashboard_customize_rounded, 'title': 'Pages personnalisées', 'route': '/admin/pages'},
   ];
 
-  // Espace RESPONSABLE — gestion des départements uniquement
+  // Espace RESPONSABLE — gestion des départements, équipes, tâches, évaluations, discipline, progression
   static const List<Map<String, Object>> _responsableNav = [
     {'icon': Icons.dashboard_rounded, 'title': 'Dashboard Responsable', 'route': '/dashboard/responsable'},
     {'icon': Icons.business_rounded, 'title': 'Départements', 'route': '/departments'},
+    {'icon': Icons.star_rounded, 'title': 'Évaluations', 'route': '/evaluations'},
+    {'icon': Icons.trending_up_rounded, 'title': 'Progression', 'route': '/departments'},
     {'icon': Icons.mail_rounded, 'title': 'Demandes & présences', 'route': '/members/requests'},
     {'icon': Icons.swap_horiz_rounded, 'title': 'Transferts', 'route': '/transfers'},
     {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports'},
@@ -79,49 +81,62 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];
 
-  // Espace FAISEUR — discipolat uniquement
+  // Espace FAISEUR — discipolat, visites, prières, rapports, suivi, progression, présence, événements
   static const List<Map<String, Object>> _faiseurNav = [
     {'icon': Icons.people_rounded, 'title': 'CRM Faiseur', 'route': '/crm-faiseur'},
     {'icon': Icons.favorite_rounded, 'title': 'Mes disciples', 'route': '/souls'},
-    {'icon': Icons.swap_horiz_rounded, 'title': 'Transferts', 'route': '/transfers'},
-    {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports'},
-    {'icon': Icons.description_rounded, 'title': 'Rapport faiseur', 'route': '/reports/maker'},
-    {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
-    {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits'},
     {'icon': Icons.route_rounded, 'title': 'Évangélisation', 'route': '/evangelism'},
-    {'icon': Icons.flag_rounded, 'title': 'Objectifs', 'route': '/objectives'},
+    {'icon': Icons.description_rounded, 'title': 'Rapport faiseur', 'route': '/reports/maker'},
+    {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits'},
     {'icon': Icons.swap_horiz_rounded, 'title': 'Suivis parallèles', 'route': '/parallel-followups'},
-    {'icon': Icons.search_rounded, 'title': 'Recherche', 'route': '/search'},
+    {'icon': Icons.flag_rounded, 'title': 'Objectifs', 'route': '/objectives'},
+    {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
+    {'icon': Icons.favorite_border_rounded, 'title': 'Actions de grâce', 'route': '/prayers'},
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
+    {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports'},
+    {'icon': Icons.swap_horiz_rounded, 'title': 'Transferts', 'route': '/transfers'},
     {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
+    {'icon': Icons.search_rounded, 'title': 'Recherche', 'route': '/search'},
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
+    {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];
 
-  // Espace CHEF DE FAMILLE — gestion de la famille uniquement
+  // Espace CHEF DE FAMILLE — faiseurs, disciples, âmes, familles, rapports, prières, progression, alertes
   static const List<Map<String, Object>> _chefNav = [
     {'icon': Icons.dashboard_rounded, 'title': 'Dashboard Chef', 'route': '/dashboard/chef-famille'},
     {'icon': Icons.group_rounded, 'title': 'Familles', 'route': '/families'},
     {'icon': Icons.favorite_rounded, 'title': 'Disciples', 'route': '/souls'},
-    {'icon': Icons.swap_horiz_rounded, 'title': 'Transferts', 'route': '/transfers'},
-    {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports'},
+    {'icon': Icons.route_rounded, 'title': 'Évangélisation', 'route': '/evangelism'},
     {'icon': Icons.group_work_rounded, 'title': 'Rapport famille', 'route': '/reports/family'},
+    {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports'},
     {'icon': Icons.star_rounded, 'title': 'Évaluations', 'route': '/evaluations'},
     {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
+    {'icon': Icons.trending_up_rounded, 'title': 'Progression', 'route': '/families'},
+    {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits'},
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
     {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
     {'icon': Icons.mail_rounded, 'title': 'Demandes', 'route': '/members/requests'},
+    {'icon': Icons.swap_horiz_rounded, 'title': 'Transferts', 'route': '/transfers'},
+    {'icon': Icons.favorite_border_rounded, 'title': 'Actions de grâce', 'route': '/prayers'},
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
+    {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];
 
-  // Espace MEMBRE — personnel
+  // Espace MEMBRE — profil, départements, famille, faiseur, présence, progression, événements, prières, activités
   static const List<Map<String, Object>> _membreNav = [
-    {'icon': Icons.person_rounded, 'title': 'Mon espace', 'route': '/profile'},
+    {'icon': Icons.dashboard_rounded, 'title': 'Mon tableau de bord', 'route': '/dashboard/membre'},
+    {'icon': Icons.person_rounded, 'title': 'Mon profil', 'route': '/profile'},
+    {'icon': Icons.check_circle_rounded, 'title': 'Mes présences', 'route': '/dashboard/membre'},
+    {'icon': Icons.trending_up_rounded, 'title': 'Ma progression', 'route': '/dashboard/membre'},
+    {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
+    {'icon': Icons.favorite_border_rounded, 'title': 'Actions de grâce', 'route': '/prayers'},
+    {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
     {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
     {'icon': Icons.emoji_events_rounded, 'title': 'Badges', 'route': '/badges'},
     {'icon': Icons.calendar_today_rounded, 'title': 'Rendez-vous', 'route': '/appointments'},

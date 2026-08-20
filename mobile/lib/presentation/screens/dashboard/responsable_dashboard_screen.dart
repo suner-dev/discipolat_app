@@ -69,6 +69,9 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
     final departements = _dashboard?['departements'] as List<dynamic>? ?? [];
     final dept = _dashboard?['departement'] as Map<String, dynamic>? ?? {};
     final annivs = dept['anniversaires'] as List<dynamic>? ?? [];
+    final membresSuivi = dept['membresSuivi'] as List<dynamic>? ?? [];
+    final alertes = dept['alertes'] as List<dynamic>? ?? [];
+    final evenementsAvenir = dept['evenementsAvenir'] as List<dynamic>? ?? [];
 
     return Scaffold(
       appBar: AppBar(
@@ -93,18 +96,17 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                       // Sélecteur de département (multi-départements)
                       if (departements.length > 1) ...[
                         SectionTitle(title: 'Département à administrer', icon: Icons.swap_horiz),
-                        DropdownButtonFormField<String>(
-                          initialValue: _selectedDeptId,
+                        DropdownButton<String>(
+                          value: _selectedDeptId,
                           dropdownColor: AppColors.cardDark,
-                          decoration: const InputDecoration(
-                            labelText: 'Choisir le département',
-                            prefixIcon: Icon(Icons.business),
-                          ),
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
                           items: departements.map<DropdownMenuItem<String>>((d) {
                             final dp = d as Map<String, dynamic>;
                             return DropdownMenuItem(
                               value: dp['id'] as String?,
-                              child: Text(dp['nom'] ?? '', style: const TextStyle(color: Colors.white)),
+                              child: Text(dp['nom'] ?? ''),
                             );
                           }).toList(),
                           onChanged: _onDeptChanged,
@@ -112,7 +114,7 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                         const SizedBox(height: 8),
                       ],
 
-                      // Vue d'ensemble (tous départements)
+                      // ==================== STATISTIQUES GLOBALES ====================
                       SectionTitle(title: 'Vue d\'ensemble', icon: Icons.dashboard),
                       const SizedBox(height: 8),
                       GridView.builder(
@@ -121,15 +123,18 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3, childAspectRatio: 1.2, crossAxisSpacing: 8, mainAxisSpacing: 8,
                         ),
-                        itemCount: 6,
+                        itemCount: 9,
                         itemBuilder: (_, i) {
                           final items = [
                             {'label': 'Membres', 'value': '${stats['totalMembres'] ?? 0}', 'icon': Icons.people, 'color': Colors.blue},
                             {'label': 'Actifs', 'value': '${stats['totalActifs'] ?? 0}', 'icon': Icons.check_circle, 'color': Colors.green},
                             {'label': 'Nouveaux', 'value': '${stats['nouveauxMembres'] ?? 0}', 'icon': Icons.person_add, 'color': Colors.teal},
-                            {'label': 'Départements', 'value': '${stats['totalDepartements'] ?? 0}', 'icon': Icons.business, 'color': Colors.purple},
-                            {'label': 'Rapports', 'value': '${stats['rapportsSoumis'] ?? 0}', 'icon': Icons.description, 'color': Colors.amber},
+                            {'label': 'Présence', 'value': '${stats['tauxPresence'] ?? 0}%', 'icon': Icons.trending_up, 'color': Colors.purple},
+                            {'label': 'Rapports', 'value': '${stats['rapportsSoumis'] ?? 0}/${stats['rapportsAttendus'] ?? 0}', 'icon': Icons.description, 'color': Colors.amber},
                             {'label': 'Taux', 'value': '${stats['tauxCompletion'] ?? 0}%', 'icon': Icons.pie_chart, 'color': Colors.cyan},
+                            {'label': 'Équipes', 'value': '${stats['equipesActives'] ?? 0}', 'icon': Icons.account_tree, 'color': Colors.orange},
+                            {'label': 'Tâches retard', 'value': '${stats['tachesEnRetard'] ?? 0}', 'icon': Icons.alarm, 'color': Colors.red},
+                            {'label': 'Transferts', 'value': '${stats['transfertsEnAttente'] ?? 0}', 'icon': Icons.swap_horiz, 'color': Colors.indigo},
                           ];
                           final item = items[i];
                           return GlassStatCard(
@@ -138,15 +143,26 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                             icon: item['icon'] as IconData,
                             gradientStart: item['color'] as Color,
                             gradientEnd: (item['color'] as Color).withValues(alpha: 0.7),
-                            onTap: () => context.go(
-                              ['Rapports', 'Taux'].contains(item['label'] as String) ? '/reports' : '/departments',
-                            ),
+                            onTap: () {
+                              final label = item['label'] as String;
+                              if (label == 'Membres' || label == 'Actifs' || label == 'Nouveaux') {
+                                context.go('/departments/$_selectedDeptId');
+                              } else if (label == 'Présence' || label == 'Taux') {
+                                context.go('/departments/$_selectedDeptId/stats');
+                              } else if (label == 'Rapports') {
+                                context.go('/reports');
+                              } else if (label == 'Équipes' || label == 'Tâches retard') {
+                                context.go('/departments/$_selectedDeptId/manage');
+                              } else {
+                                context.go('/transfers');
+                              }
+                            },
                           );
                         },
                       ),
                       const SizedBox(height: 16),
 
-                      // Département sélectionné
+                      // ==================== DÉPARTEMENT SÉLECTIONNÉ ====================
                       if (dept.isNotEmpty) ...[
                         SectionTitle(
                           title: _dashboard?['selectedDeptNom'] ?? 'Mon département',
@@ -191,12 +207,227 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                             ],
                           ),
                         ),
+                        const SizedBox(height: 16),
                       ],
 
-                      // Anniversaires du département
-                      if (annivs.isNotEmpty) ...[
+                      // ==================== TÂCHES EN RETARD ====================
+                      if ((stats['tachesEnRetard'] ?? 0) > 0) ...[
+                        SectionTitle(
+                          title: 'Tâches en retard',
+                          icon: Icons.alarm,
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text('${stats['tachesEnRetard']}', style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        GlassCard(
+                          padding: const EdgeInsets.all(16),
+                          onTap: () => context.go('/departments/$_selectedDeptId/manage'),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.alarm, color: Colors.red, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('${stats['tachesEnRetard']} tâche${(stats['tachesEnRetard'] ?? 0) > 1 ? 's' : ''} en retard',
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                    Text('${stats['tachesOuvertes'] ?? 0} tâches ouvertes au total',
+                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                                  ],
+                                ),
+                              ),
+                              Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 16),
-                        SectionTitle(title: 'Anniversaires', icon: Icons.cake),
+                      ],
+
+                      // ==================== ÉQUIPES & POSTES ====================
+                      SectionTitle(title: 'Équipes & Postes', icon: Icons.account_tree),
+                      GlassCard(
+                        padding: const EdgeInsets.all(16),
+                        onTap: () => context.go('/departments/$_selectedDeptId/manage'),
+                        child: Row(
+                          children: [
+                            _statChip('Équipes', '${stats['equipesActives'] ?? 0}', Colors.orange),
+                            const SizedBox(width: 24),
+                            _statChip('Postes', '${stats['postesActifs'] ?? 0}', Colors.indigo),
+                            const Spacer(),
+                            Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ==================== PROGRESSION DES RAPPORTS ====================
+                      SectionTitle(title: 'Rapports', icon: Icons.description),
+                      GlassCard(
+                        padding: const EdgeInsets.all(16),
+                        onTap: () => context.go('/reports'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Progression : ${stats['rapportsSoumis'] ?? 0} / ${stats['rapportsAttendus'] ?? 0}',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                Text('${stats['tauxCompletion'] ?? 0}%',
+                                    style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: LinearProgressIndicator(
+                                value: ((stats['tauxCompletion'] ?? 0) as num).toDouble() / 100,
+                                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                                valueColor: AlwaysStoppedAnimation(AppColors.primary),
+                                minHeight: 8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ==================== TRANSFERTS EN ATTENTE ====================
+                      if ((stats['transfertsEnAttente'] ?? 0) > 0) ...[
+                        SectionTitle(title: 'Transferts en attente', icon: Icons.swap_horiz),
+                        GlassCard(
+                          padding: const EdgeInsets.all(16),
+                          onTap: () => context.go('/transfers'),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.swap_horiz, color: Colors.orange, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('${stats['transfertsEnAttente']} demande${(stats['transfertsEnAttente'] ?? 0) > 1 ? 's' : ''} de transfert',
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                    Text('Des membres souhaitent changer de famille',
+                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                                  ],
+                                ),
+                              ),
+                              Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // ==================== ÉVÉNEMENTS À VENIR ====================
+                      if (evenementsAvenir.isNotEmpty) ...[
+                        SectionTitle(title: 'Événements à venir', icon: Icons.event),
+                        ...evenementsAvenir.take(5).map((ev) {
+                          final e = ev as Map<String, dynamic>;
+                          return GlassCard(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            onTap: () => context.go('/events'),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(Icons.event, color: AppColors.primaryLight, size: 18),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(e['titre'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                                      Text('${e['dateDebut'] ?? '—'}${e['lieu'] != null ? ' · ${e['lieu']}' : ''}',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // ==================== ALERTEZ ====================
+                      if (alertes.isNotEmpty) ...[
+                        SectionTitle(
+                          title: 'Alertes à traiter',
+                          icon: Icons.warning_amber,
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text('${alertes.length}', style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        ...alertes.take(5).map((a) {
+                          final alert = a as Map<String, dynamic>;
+                          return GlassCard(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            onTap: () => context.go('/alerts'),
+                            borderColor: Colors.red.withValues(alpha: 0.3),
+                            child: Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded,
+                                    color: alert['priorite'] == 'HAUTE' || alert['priorite'] == 'URGENTE' ? Colors.red : Colors.amber,
+                                    size: 18),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(alert['titre'] ?? alert['message'] ?? '',
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      Text(alert['message'] ?? '',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // ==================== ANNIVERSAIRES ====================
+                      if (annivs.isNotEmpty) ...[
+                        SectionTitle(title: 'Anniversaires du mois', icon: Icons.cake),
                         ...annivs.take(5).map((a) {
                           final m = a as Map<String, dynamic>;
                           return GlassCard(
@@ -217,65 +448,79 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                                   ),
                                 ),
                                 Text(
-                                  '${m['dateNaissance'] ?? ''}'.substring(5, 10),
+                                  '${m['dateNaissance'] ?? ''}'.length >= 10
+                                      ? '${m['dateNaissance']}'.substring(5, 10)
+                                      : '${m['dateNaissance'] ?? ''}',
                                   style: TextStyle(color: AppColors.accent, fontSize: 12),
                                 ),
                               ],
                             ),
                           );
                         }),
+                        const SizedBox(height: 16),
                       ],
 
-                      // Liste des départements gérés
-                      if (departements.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        SectionTitle(title: 'Mes départements', icon: Icons.apartment),
-                        ...departements.map((d) {
-                          final dp = d as Map<String, dynamic>;
-                          final isSelected = dp['id'] == _selectedDeptId;
+                      // ==================== À SUIVRE CETTE SEMAINE ====================
+                      if (membresSuivi.isNotEmpty) ...[
+                        SectionTitle(
+                          title: 'À suivre cette semaine',
+                          icon: Icons.person_search,
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text('${membresSuivi.length}', style: const TextStyle(color: Colors.amber, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        ...membresSuivi.take(5).map((m) {
+                          final member = m as Map<String, dynamic>;
                           return GlassCard(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(16),
-                            onTap: () => _onDeptChanged(dp['id'] as String?),
-                            borderColor: isSelected ? AppColors.primary.withValues(alpha: 0.6) : null,
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            onTap: () => context.go('/departments/$_selectedDeptId/members/${member['id']}'),
                             child: Row(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(Icons.business, color: AppColors.primaryLight, size: 20),
-                                ),
-                                const SizedBox(width: 12),
+                                GradientAvatar(text: '${member['nom'] ?? ''}', radius: 16),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        dp['nom'] ?? '',
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                                      ),
-                                      if (dp['description'] != null)
-                                        Text(
-                                          dp['description'],
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
-                                        ),
+                                      Text(member['nom'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                                      Text(member['statut'] ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
                                     ],
                                   ),
                                 ),
-                                if (isSelected)
-                                  Icon(Icons.check_circle, color: AppColors.primary, size: 20),
-                                const Icon(Icons.chevron_right, color: Colors.white24),
+                                Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
                               ],
                             ),
                           );
                         }),
+                        const SizedBox(height: 16),
                       ],
 
+                      // ==================== ACTIONS RAPIDES ====================
+                      SectionTitle(title: 'Actions rapides', icon: Icons.flash_on),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 4,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        childAspectRatio: 0.9,
+                        children: [
+                          _quickAction(Icons.account_tree, 'Gestion', () => context.go('/departments/$_selectedDeptId/manage')),
+                          _quickAction(Icons.trending_up, 'Stats', () => context.go('/departments/$_selectedDeptId/stats')),
+                          _quickAction(Icons.description, 'Rapport', () => context.go('/reports')),
+                          _quickAction(Icons.event, 'Événements', () => context.go('/events')),
+                          _quickAction(Icons.star, 'Évaluations', () => context.go('/evaluations')),
+                          _quickAction(Icons.warning_amber, 'Alertes', () => context.go('/alerts')),
+                          _quickAction(Icons.swap_horiz, 'Transferts', () => context.go('/transfers')),
+                          _quickAction(Icons.mail, 'Demandes', () => context.go('/members/requests')),
+                        ],
+                      ),
                       const SizedBox(height: 80),
                     ],
                   ),
@@ -291,6 +536,27 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
         Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
         Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9)),
       ],
+    );
+  }
+
+  Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.primaryLight, size: 22),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10)),
+          ],
+        ),
+      ),
     );
   }
 }
