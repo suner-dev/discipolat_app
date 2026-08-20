@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/soul.dart';
@@ -19,6 +20,7 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
   Soul? _soul;
   Map<String, dynamic>? _pastoral360;
   Map<String, dynamic>? _spiritualScore;
+  List<dynamic> _scoreHistory = [];
   List<dynamic> _history = [];
   bool _isLoading = true;
 
@@ -34,6 +36,11 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
       final soulRes = await _apiService.get('/souls/${widget.soulId}');
       final p360Res = await _apiService.get('/souls/${widget.soulId}/pastoral-360');
       final scoreRes = await _apiService.get('/souls/${widget.soulId}/spiritual-score');
+      List<dynamic> scoreHist = [];
+      try {
+        final shRes = await _apiService.get('/souls/${widget.soulId}/spiritual-score/history');
+        scoreHist = (shRes.data as List?) ?? [];
+      } catch (_) {}
       final histRes = await _apiService.get('/souls/${widget.soulId}/history');
       if (mounted) {
         final baseSoul = Soul.fromJson(soulRes.data as Map<String, dynamic>);
@@ -51,6 +58,7 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
           _soul = soul;
           _pastoral360 = p360;
           _spiritualScore = scoreRes.data as Map<String, dynamic>?;
+          _scoreHistory = scoreHist;
           _history = (histRes.data is List ? histRes.data : []) as List<dynamic>;
           _isLoading = false;
         });
@@ -103,29 +111,7 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
                         // Spiritual score
                         if (_spiritualScore != null) ...[
                           _sectionTitle('Score Spirituel', Icons.auto_awesome),
-                          GlassCard(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    _scoreItem('Global', _spiritualScore!['scoreGlobal'] ?? '—', Colors.amber),
-                                    _scoreItem('Présence', _spiritualScore!['presence'] ?? '—', Colors.green),
-                                    _scoreItem('Fidélité', _spiritualScore!['fidelite'] ?? '—', Colors.blue),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    _scoreItem('Engagement', _spiritualScore!['engagement'] ?? '—', Colors.purple),
-                                    _scoreItem('Participation', _spiritualScore!['participation'] ?? '—', Colors.teal),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
+                          _buildSpiritualScoreCard(),
                           const SizedBox(height: 12),
                         ],
 
@@ -248,11 +234,119 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
     );
   }
 
-  Widget _scoreItem(String label, dynamic value, Color color) {
-    return Column(
+  Widget _buildSpiritualScoreCard() {
+    final score = _spiritualScore!;
+    final global = (score['global'] ?? score['scoreGlobal'] ?? 0) as num;
+    final sante = (score['sante'] ?? 0) as num;
+    final fidelite = (score['fidelite'] ?? 0) as num;
+    final engagement = (score['engagement'] ?? 0) as num;
+    final participation = (score['participation'] ?? 0) as num;
+    final label = score['label']?.toString() ?? '';
+    final semaine = score['semaine']?.toString() ?? '';
+    final scoreColor = global >= 80 ? Colors.green
+        : global >= 65 ? Colors.lightGreen
+        : global >= 45 ? Colors.amber
+        : global >= 25 ? Colors.orange
+        : Colors.red;
+
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Gauge + label
+          Row(
+            children: [
+              // Circular gauge
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 80, height: 80,
+                      child: CircularProgressIndicator(
+                        value: global.toDouble() / 100,
+                        strokeWidth: 8,
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
+                        valueColor: AlwaysStoppedAnimation(scoreColor),
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('${global.toInt()}',
+                            style: TextStyle(color: scoreColor, fontSize: 24, fontWeight: FontWeight.bold)),
+                        Text(label.replaceAll('_', ' '),
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 8, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Sub-scores
+              Expanded(
+                child: Column(
+                  children: [
+                    _subScoreBar('Santé', sante, Colors.green),
+                    const SizedBox(height: 6),
+                    _subScoreBar('Fidélité', fidelite, Colors.blue),
+                    const SizedBox(height: 6),
+                    _subScoreBar('Engagement', engagement, Colors.purple),
+                    const SizedBox(height: 6),
+                    _subScoreBar('Participation', participation, Colors.teal),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (semaine.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('Semaine du $semaine',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10)),
+          ],
+          // History sparkline
+          if (_scoreHistory.length > 1) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 40,
+              child: CustomPaint(
+                painter: _SparklinePainter(
+                  data: _scoreHistory.map((h) => (h['global'] as num?)?.toDouble() ?? 0).toList(),
+                  color: scoreColor,
+                ),
+                size: const Size(double.infinity, 40),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _subScoreBar(String label, num value, Color color) {
+    return Row(
       children: [
-        Text('$value', style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold)),
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+        SizedBox(
+          width: 70,
+          child: Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: value.toDouble() / 100,
+              minHeight: 6,
+              backgroundColor: Colors.white.withValues(alpha: 0.08),
+              valueColor: AlwaysStoppedAnimation(color),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text('${value.toInt()}',
+            style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -277,4 +371,52 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
       ),
     );
   }
+}
+
+/// Mini sparkline painter for spiritual score history.
+class _SparklinePainter extends CustomPainter {
+  final List<double> data;
+  final Color color;
+
+  _SparklinePainter({required this.data, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.length < 2) return;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final minVal = data.reduce(min);
+    final maxVal = data.reduce(max);
+    final range = (maxVal - minVal).clamp(1.0, 100.0);
+    final step = size.width / (data.length - 1);
+
+    final path = Path();
+    for (int i = 0; i < data.length; i++) {
+      final x = i * step;
+      final y = size.height - ((data[i] - minVal) / range) * size.height;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(path, paint);
+
+    // Fill under the line
+    final fillPaint = Paint()
+      ..color = color.withValues(alpha: 0.1)
+      ..style = PaintingStyle.fill;
+    final fillPath = Path.from(path)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(fillPath, fillPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparklinePainter old) => old.data != data;
 }
