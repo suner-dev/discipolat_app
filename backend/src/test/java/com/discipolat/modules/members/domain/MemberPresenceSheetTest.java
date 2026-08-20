@@ -5,12 +5,14 @@ import com.discipolat.common.exception.BadRequestException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.files.domain.EntityAttachmentRepository;
 import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.files.domain.FileEntityRepository;
 import com.discipolat.modules.members.api.SubmitDepartmentPresenceItem;
 import com.discipolat.modules.members.api.SubmitDepartmentPresenceRequest;
+import com.discipolat.modules.members.domain.MemberDepartment;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulDepartment;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
@@ -49,6 +51,7 @@ class MemberPresenceSheetTest {
     @Mock private SoulDepartmentRepository soulDepartmentRepository;
     @Mock private MemberPresenceRepository memberPresenceRepository;
     @Mock private MemberRequestRepository memberRequestRepository;
+    @Mock private com.discipolat.modules.events.domain.EventRepository eventRepository;
     @Mock private SecurityUtils securityUtils;
     @Mock private EntityAttachmentRepository attachmentRepository;
     @Mock private FileEntityRepository fileEntityRepository;
@@ -64,7 +67,7 @@ class MemberPresenceSheetTest {
         memberService = new MemberService(
                 userRepository, soulRepository, familyRepository, departmentRepository,
                 memberDepartmentRepository, soulDepartmentRepository,
-                memberPresenceRepository, memberRequestRepository, securityUtils,
+                memberPresenceRepository, memberRequestRepository, eventRepository, securityUtils,
                 new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils));
         responsableId = UUID.randomUUID();
         deptId = UUID.randomUUID();
@@ -202,5 +205,50 @@ class MemberPresenceSheetTest {
         // sans fetch préalable (aucune fuite d'existence du compte)
         assertThrows(org.springframework.security.access.AccessDeniedException.class,
                 () -> memberService.getDepartmentPresenceSheet(deptId, LocalDate.now()));
+    }
+
+    @Test
+    void getMyUpcomingEvents_ShouldReturnFamilyAndDepartmentEvents() {
+        UUID familleId = UUID.randomUUID();
+        UUID autreDept = UUID.randomUUID();
+        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        Soul s = Soul.builder()
+                .id(soulId)
+                .nom("Test")
+                .prenom("Jean")
+                .userId(userId)
+                .familleId(familleId)
+                .build();
+        when(soulRepository.findAllByUserId(userId)).thenReturn(List.of(s));
+        when(memberDepartmentRepository.findBySoulId(soulId))
+                .thenReturn(List.of(MemberDepartment.builder().soulId(soulId).departmentId(autreDept).build()));
+
+        Event evtFamille = Event.builder().id(UUID.randomUUID()).titre("Culte famille")
+                .familleId(familleId).dateDebut(LocalDateTime.now().plusDays(2)).statut("PLANIFIE").build();
+        Event evtDept = Event.builder().id(UUID.randomUUID()).titre("Répétition chorale")
+                .departmentId(autreDept).dateDebut(LocalDateTime.now().plusDays(5)).statut("PLANIFIE").build();
+        Event evtPasse = Event.builder().id(UUID.randomUUID()).titre("Culte passé")
+                .familleId(familleId).dateDebut(LocalDateTime.now().minusDays(1)).statut("PLANIFIE").build();
+
+        when(eventRepository.findByFamilleIdAndStatutAndDeletedFalse(familleId, "PLANIFIE"))
+                .thenReturn(List.of(evtFamille, evtPasse));
+        when(eventRepository.findByDepartmentIdInAndDeletedFalse(List.of(autreDept)))
+                .thenReturn(List.of(evtDept));
+
+        var events = memberService.getMyUpcomingEvents();
+
+        // L'événement passé est exclu ; le doublon éventuel est dédupliqué.
+        assertEquals(2, events.size());
+        assertEquals("Culte famille", events.get(0).get("titre"));
+        assertEquals("Répétition chorale", events.get(1).get("titre"));
+        assertEquals("PLANIFIE", events.get(0).get("statut"));
+    }
+
+    @Test
+    void getMyUpcomingEvents_NoSoul_ShouldReturnEmpty() {
+        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        when(soulRepository.findAllByUserId(userId)).thenReturn(List.of());
+
+        assertTrue(memberService.getMyUpcomingEvents().isEmpty());
     }
 }

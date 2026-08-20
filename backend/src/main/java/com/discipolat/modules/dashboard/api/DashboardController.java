@@ -99,4 +99,10 @@ public class DashboardController {
             @RequestParam(defaultValue = "12") int mois) {
         return ResponseEntity.ok(dashboardService.getPresenceTrend(mois));
     }
+
+    @GetMapping("/pasteur/kpis")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> getPasteurKpis() {
+        return ResponseEntity.ok(dashboardService.getPasteurKpis());
+    }
 }

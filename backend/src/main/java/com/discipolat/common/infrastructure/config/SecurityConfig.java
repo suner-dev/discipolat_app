@@ -1,8 +1,8 @@
 package com.discipolat.common.infrastructure.config;
 
-import com.discipolat.common.infrastructure.security.JwtAuthenticationFilter;
-import com.discipolat.common.infrastructure.security.JwtTokenProvider;
-import jakarta.servlet.http.HttpServletResponse;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,8 +21,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
+import com.discipolat.common.infrastructure.security.JwtAuthenticationFilter;
+import com.discipolat.common.infrastructure.security.JwtTokenProvider;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -86,10 +88,13 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
+@Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
+
+        // Pattern origins : autorise les wildcards (ex. https://*.onrender.com) avec credentials.
+        configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setExposedHeaders(List.of(

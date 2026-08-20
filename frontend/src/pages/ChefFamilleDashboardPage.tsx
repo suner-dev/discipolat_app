@@ -6,7 +6,7 @@ import {
   Users, Heart, UserCheck, FileText, Activity, Bell, Calendar,
   BookOpen, Star, AlertTriangle, TrendingUp, Loader2, ChevronRight,
   Church, Eye, CheckCircle, Clock, UserX, Search, GitBranch, BarChart3,
-  ArrowLeftRight, MapPin, Send,
+  ArrowLeftRight, MapPin, Send, Zap, ClipboardList, Home, Cake,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -60,10 +60,35 @@ export default function ChefFamilleDashboardPage() {
     enabled: !!familleId,
   });
 
+  const { data: events } = useQuery({
+    queryKey: ['events', 'famille', familleId],
+    queryFn: async () => { const res = await api.get('/events', { params: { size: 6 } }); return res.data?.content || []; },
+    enabled: !!familleId,
+  });
+
   const famille = dashboard?.famille ?? {};
   const faiseurs = dashboard?.faiseurs ?? [];
   const disciples = dashboard?.disciples ?? [];
   const stats = dashboard?.statistiques ?? {};
+
+  const birthdaysThisMonth = disciples.filter((d: any) => {
+    if (!d.dateNaissance) return false;
+    const bday = new Date(d.dateNaissance);
+    const now = new Date();
+    return bday.getMonth() === now.getMonth();
+  }).length;
+
+  const avgGrowth = disciples.length > 0
+    ? (disciples.reduce((sum: number, d: any) => sum + (d.niveauCroissance || 1), 0) / disciples.length).toFixed(1)
+    : '0';
+
+  const growthDistribution = [
+    { name: 'Niveau 1', value: disciples.filter((d: any) => d.niveauCroissance === 1).length, color: '#ef4444' },
+    { name: 'Niveau 2', value: disciples.filter((d: any) => d.niveauCroissance === 2).length, color: '#f59e0b' },
+    { name: 'Niveau 3', value: disciples.filter((d: any) => d.niveauCroissance === 3).length, color: '#3b82f6' },
+    { name: 'Niveau 4', value: disciples.filter((d: any) => d.niveauCroissance === 4).length, color: '#22c55e' },
+    { name: 'Niveau 5', value: disciples.filter((d: any) => d.niveauCroissance === 5).length, color: '#8b5cf6' },
+  ].filter(d => d.value > 0);
 
   const disciplesByStatut = [
     { name: 'Actifs', value: stats.actifs ?? 0, color: '#22c55e' },
@@ -151,6 +176,26 @@ export default function ChefFamilleDashboardPage() {
                     <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
                     <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{a.message}</p><p className="text-[9px] text-gray-400">{a.typeAlerte} · {a.priorite}</p></div>
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          {canManage && (
+            <div className="glass-card p-5 mb-6 animate-slide-up" style={{ animationDelay: '50ms' }}>
+              <div className="flex items-center gap-2 mb-3"><Zap className="w-4 h-4 text-primary-500" /><h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Actions rapides</h3></div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { href: '/reports/family', icon: ClipboardList, label: 'Rapport famille', color: 'from-blue-500 to-indigo-500' },
+                  { href: '/souls', icon: Heart, label: 'Disciples', color: 'from-gold-500 to-amber-500' },
+                  { href: '/events', icon: Calendar, label: 'Événements', color: 'from-emerald-500 to-teal-500' },
+                  { href: '/prayers', icon: BookOpen, label: 'Prières', color: 'from-indigo-500 to-violet-500' },
+                ].map((a) => (
+                  <Link key={a.href} to={a.href} className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/30 border border-gray-100 dark:border-gray-700/30 transition-all hover:shadow-md group">
+                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${a.color} text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}><a.icon className="w-4 h-4" /></div>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{a.label}</span>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -281,6 +326,71 @@ export default function ChefFamilleDashboardPage() {
                   ))}
                 </div>
               ) : <div className="text-center py-8"><Users className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Aucun faiseur dans cette famille</p></div>}
+            </div>
+          )}
+
+          {/* Progression & Events Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Progression */}
+            <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '140ms' }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-emerald-500" /><h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Progression spirituelle</h3></div>
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200/40">
+                  <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">{avgGrowth}</span>
+                </div>
+              </div>
+              {growthDistribution.length > 0 ? (
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={growthDistribution} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 11 }} stroke="rgba(128,128,128,0.3)" />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} stroke="rgba(128,128,128,0.3)" width={60} />
+                      <Tooltip />
+                      <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                        {growthDistribution.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : <div className="flex items-center justify-center h-48 text-gray-400 text-sm">Aucune donnée</div>}
+            </div>
+
+            {/* Events */}
+            <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '160ms' }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-emerald-500" /><h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Événements à venir</h3></div>
+                <Link to="/events" className="text-[10px] font-medium text-primary-600">Voir tout</Link>
+              </div>
+              {events && events.length > 0 ? (
+                <div className="space-y-2">
+                  {events.slice(0, 4).map((e: any) => (
+                    <div key={e.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex flex-col items-center justify-center flex-shrink-0">
+                        <span className="text-[9px] text-emerald-500 font-semibold leading-none">{new Date(e.dateEvenement || e.date).toLocaleDateString('fr-FR', { month: 'short' })}</span>
+                        <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300 leading-none">{new Date(e.dateEvenement || e.date).getDate()}</span>
+                      </div>
+                      <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{e.titre}</p><p className="text-[9px] text-gray-400">{e.lieu || '—'} · {e.heureDebut || ''}</p></div>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-xs text-gray-400 text-center py-4">Aucun événement à venir</p>}
+            </div>
+          </div>
+
+          {/* Birthdays */}
+          {birthdaysThisMonth > 0 && (
+            <div className="glass-card p-5 mb-6 animate-slide-up" style={{ animationDelay: '170ms' }}>
+              <div className="flex items-center gap-2 mb-3"><Cake className="w-4 h-4 text-pink-500" /><h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Anniversaires du mois ({birthdaysThisMonth})</h3></div>
+              <div className="flex flex-wrap gap-2">
+                {disciples.filter((d: any) => d.dateNaissance && new Date(d.dateNaissance).getMonth() === new Date().getMonth()).slice(0, 8).map((d: any) => (
+                  <div key={d.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-50 dark:bg-pink-900/20 border border-pink-200/40">
+                    <span className="text-[10px]">🎂</span>
+                    <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{d.nom}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

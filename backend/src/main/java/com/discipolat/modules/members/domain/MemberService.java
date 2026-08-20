@@ -6,6 +6,8 @@ import com.discipolat.common.exception.BadRequestException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
+import com.discipolat.modules.events.domain.Event;
+import com.discipolat.modules.events.domain.EventRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.files.domain.EntityAttachment;
@@ -22,9 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Espace Membre — Phase 2 : présences hebdomadaires et demandes
@@ -46,6 +50,7 @@ public class MemberService {
     private final com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository;
     private final MemberPresenceRepository memberPresenceRepository;
     private final MemberRequestRepository memberRequestRepository;
+    private final EventRepository eventRepository;
     private final SecurityUtils securityUtils;
     private final EntityAttachmentService attachmentService;
 
@@ -57,6 +62,7 @@ public class MemberService {
                          com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository,
                          MemberPresenceRepository memberPresenceRepository,
                          MemberRequestRepository memberRequestRepository,
+                         EventRepository eventRepository,
                          SecurityUtils securityUtils,
                          EntityAttachmentService attachmentService) {
         this.userRepository = userRepository;
@@ -67,6 +73,7 @@ public class MemberService {
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.memberPresenceRepository = memberPresenceRepository;
         this.memberRequestRepository = memberRequestRepository;
+        this.eventRepository = eventRepository;
         this.securityUtils = securityUtils;
         this.attachmentService = attachmentService;
     }
@@ -576,5 +583,130 @@ public class MemberService {
                 : null;
         return MemberRequestResponse.from(r, auteurNom, traiteParNom, deptNom, famNom,
                 attachmentService.itemsFor(EntityAttachment.EntityType.MEMBER_REQUEST, r.getId()));
+    }
+
+    // ============================================================
+    // Phase 3 : progression, événements, notes
+    // ============================================================
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMyProgression() {
+        UUID userId = securityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        // Soul info
+        Soul soul = soulRepository.findByUserId(userId, org.springframework.data.domain.PageRequest.of(0, 1))
+                .stream().findFirst().orElse(null);
+        if (soul != null) {
+            result.put("etatSpirituel", soul.getEtatSpirituel());
+            result.put("niveauCroissance", soul.getNiveauCroissance());
+            result.put("dateIntegration", soul.getDateIntegration() != null ? soul.getDateIntegration().toString() : null);
+            result.put("typeDisciple", soul.getTypeDisciple() != null ? soul.getTypeDisciple().name() : null);
+        }
+
+        // Attendance stats from presences
+        List<MemberPresence> presences = memberPresenceRepository.findByUserIdOrderBySemaineDesc(userId);
+        int totalWeeks = presences.size();
+        long weeksPresent = presences.stream()
+                .filter(p -> p.getPresences() != null && p.getPresences().containsValue(true))
+                .count();
+        double tauxPresence = totalWeeks > 0 ? Math.round((double) weeksPresent / totalWeeks * 1000.0) / 10.0 : 0.0;
+        result.put("totalSemaines", totalWeeks);
+        result.put("semainesPresents", weeksPresent);
+        result.put("tauxPresence", tauxPresence);
+
+        // Streak: consecutive weeks with presence
+        int streak = 0;
+        LocalDate checkDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        for (int i = 0; i < 26; i++) { // Max 26 weeks (~6 months)
+            String weekStr = checkDate.minusWeeks(i).toString();
+            boolean found = presences.stream().anyMatch(p ->
+                    weekStr.equals(p.getSemaine()) && p.getPresences() != null && p.getPresences().containsValue(true));
+            if (found) streak++; else break;
+        }
+        result.put("streak", streak);
+
+        // Department count (via member_department or soul_department)
+        long deptCount = 0;
+        if (soul != null) {
+            deptCount = soulDepartmentRepository.findBySoulId(soul.getId()).stream()
+                    .filter(sd -> Boolean.TRUE.equals(sd.isActif())).count();
+        }
+        result.put("nombreDepartements", deptCount);
+
+        // Family info
+        result.put("famille", soul != null && soul.getFamilleId() != null ?
+                familyRepository.findById(soul.getFamilleId()).map(Family::getNom).orElse(null) : null);
+
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getMyUpcomingEvents() {
+        UUID userId = securityUtils.getCurrentUserId();
+        Soul soul = soulRepository.findAllByUserId(userId).stream()
+                .filter(s -> !s.isDeleted())
+                .findFirst()
+                .orElse(null);
+        if (soul == null) return List.of();
+
+        // Événements de la famille du membre
+        List<Event> familleEvents = soul.getFamilleId() != null
+                ? eventRepository.findByFamilleIdAndStatutAndDeletedFalse(soul.getFamilleId(), "PLANIFIE")
+                : List.of();
+
+        // Événements des départements du membre
+        List<UUID> departmentIds = memberDepartmentRepository.findBySoulId(soul.getId()).stream()
+                .map(MemberDepartment::getDepartmentId)
+                .distinct()
+                .toList();
+        List<Event> departementEvents = departmentIds.isEmpty()
+                ? List.of()
+                : eventRepository.findByDepartmentIdInAndDeletedFalse(departmentIds);
+
+        LocalDateTime now = LocalDateTime.now();
+        Map<UUID, Event> byId = new LinkedHashMap<>();
+        for (Event ev : familleEvents) if (ev.getDateDebut() != null && ev.getDateDebut().isAfter(now)) byId.put(ev.getId(), ev);
+        for (Event ev : departementEvents) if (ev.getDateDebut() != null && ev.getDateDebut().isAfter(now)) byId.put(ev.getId(), ev);
+
+        List<Map<String, Object>> result = byId.values().stream()
+                .sorted(Comparator.comparing(Event::getDateDebut))
+                .map(ev -> {
+                    Map<String, Object> em = new LinkedHashMap<>();
+                    em.put("id", ev.getId());
+                    em.put("titre", ev.getTitre());
+                    em.put("typeEvenement", ev.getTypeEvenement());
+                    em.put("lieu", ev.getLieu());
+                    em.put("dateDebut", ev.getDateDebut().toString());
+                    em.put("dateFin", ev.getDateFin() != null ? ev.getDateFin().toString() : null);
+                    em.put("statut", ev.getStatut());
+                    em.put("familleId", ev.getFamilleId());
+                    em.put("departmentId", ev.getDepartmentId());
+                    em.put("nbInscrits", ev.getNbInscrits());
+                    em.put("limitePlaces", ev.getLimitePlaces());
+                    return em;
+                })
+                .toList();
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getMyNotes() {
+        UUID userId = securityUtils.getCurrentUserId();
+        Soul soul = soulRepository.findByUserId(userId, org.springframework.data.domain.PageRequest.of(0, 1))
+                .stream().findFirst().orElse(null);
+        if (soul == null) return List.of();
+
+        List<Map<String, Object>> notes = new ArrayList<>();
+        if (soul.getNotesPasteur() != null && !soul.getNotesPasteur().isBlank()) {
+            Map<String, Object> note = new LinkedHashMap<>();
+            note.put("type", "PASTEUR");
+            note.put("contenu", soul.getNotesPasteur());
+            note.put("date", soul.getUpdatedAt() != null ? soul.getUpdatedAt().toString() : null);
+            notes.add(note);
+        }
+        return notes;
     }
 }

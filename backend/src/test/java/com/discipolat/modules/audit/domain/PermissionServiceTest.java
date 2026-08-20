@@ -40,7 +40,8 @@ class PermissionServiceTest {
 
         assertEquals(2, result.size());
         assertEquals("ADMIN", result.get(0).get("role"));
-        verify(jdbcTemplate).queryForList("SELECT role, permission, enabled FROM role_permissions ORDER BY role, permission");
+        verify(jdbcTemplate).queryForList(
+                "SELECT role, permission, enabled, can_read, can_write, can_delete, scope FROM role_permissions ORDER BY role, permission");
     }
 
     @Test
@@ -86,16 +87,20 @@ class PermissionServiceTest {
         String permission = "soul_create";
         boolean enabled = true;
 
-        when(jdbcTemplate.update(anyString(), any(), any(), anyString(), anyString())).thenReturn(1);
+        when(jdbcTemplate.update(anyString(), any(), any(), any(), any(), any(), any())).thenReturn(1);
 
         Map<String, Object> result = permissionService.updatePermission(role, permission, enabled);
 
         assertEquals("FAISEUR", result.get("role"));
         assertEquals("SOUL_CREATE", result.get("permission"));
         assertEquals(true, result.get("enabled"));
+        // RWD : activer une permission active lecture ET écriture.
+        assertEquals(true, result.get("canRead"));
+        assertEquals(true, result.get("canWrite"));
+        assertEquals(false, result.get("canDelete"));
         verify(jdbcTemplate).update(
-                eq("UPDATE role_permissions SET enabled = ?, updated_at = ? WHERE role = ? AND permission = ?"),
-                eq(true), any(), eq("FAISEUR"), eq("SOUL_CREATE"));
+                eq("UPDATE role_permissions SET enabled = ?, can_read = ?, can_write = ?, updated_at = ? WHERE role = ? AND permission = ?"),
+                eq(true), eq(true), eq(true), any(), eq("FAISEUR"), eq("SOUL_CREATE"));
     }
 
     @Test
@@ -104,18 +109,21 @@ class PermissionServiceTest {
         String permission = "family_delete";
         boolean enabled = false;
 
-        when(jdbcTemplate.update(anyString(), any(), any(), anyString(), anyString())).thenReturn(1);
+        when(jdbcTemplate.update(anyString(), any(), any(), any(), any(), any(), any())).thenReturn(1);
 
         Map<String, Object> result = permissionService.updatePermission(role, permission, enabled);
 
         assertEquals("PASTEUR", result.get("role"));
         assertEquals("FAMILY_DELETE", result.get("permission"));
         assertEquals(false, result.get("enabled"));
+        assertEquals(false, result.get("canRead"));
+        assertEquals(false, result.get("canWrite"));
+        assertEquals(false, result.get("canDelete"));
     }
 
     @Test
     void updatePermission_WithUnknownRoleOrPermission_ShouldStillReturnResult() {
-        when(jdbcTemplate.update(anyString(), any(), any(), anyString(), anyString())).thenReturn(0);
+        when(jdbcTemplate.update(anyString(), any(), any(), any(), any(), any(), any())).thenReturn(0);
 
         Map<String, Object> result = permissionService.updatePermission("unknown", "unknown_perm", true);
 

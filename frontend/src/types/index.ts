@@ -1282,7 +1282,7 @@ export interface TransferHistoryEntry {
 export interface WorkflowStep {
   id: string;
   etapeOrdre: number;
-  rolesValidateurs: string[];
+  rolesValidateurs: UserRole[];
   label: string;
   description?: string;
   requis: boolean;
@@ -1294,7 +1294,7 @@ export interface WorkflowConfig {
   label: string;
   description?: string;
   actif: boolean;
-  rolesInitiateurs: string[];
+  rolesInitiateurs: UserRole[];
   modeValidation: ValidationMode;
   nombreValidationsRequises: number;
   delaiTraitementHeures: number;
@@ -1790,6 +1790,62 @@ export interface PasteurDashboardData {
   famillesARisque: PasteurDashboardFamilleRisque[];
   transfertsEnAttente: PasteurDashboardTransfert[];
   semaine: string;
+}
+
+// ==================== PASTEUR KPIs ENRICHIS ====================
+
+export interface PasteurKpiHealth {
+  score: number;
+  tauxPresence: number;
+  tauxRapports: number;
+  tauxFidelisation: number;
+  tauxCroissance: number;
+  nouveauxMois: number;
+  croissanceNette: number;
+}
+
+export interface PasteurKpiWorkload {
+  id: string;
+  nom: string;
+  totalAmes: number;
+  actifs: number;
+  rapportSoumis: boolean;
+  charge: number;
+}
+
+export interface PasteurKpiEvent {
+  id: string;
+  titre: string;
+  dateDebut: string;
+  type: string | null;
+  lieu: string | null;
+  inscrits: number;
+}
+
+export interface PasteurKpiOverdueReport {
+  faiseurId: string;
+  faiseurNom: string;
+  nbAmes: number;
+  semaine: string;
+}
+
+export interface PasteurKpis {
+  health: PasteurKpiHealth;
+  workload: PasteurKpiWorkload[];
+  upcomingEvents: PasteurKpiEvent[];
+  overdueReports: PasteurKpiOverdueReport[];
+  overdueReportsCount: number;
+  resume: {
+    totalAmes: number;
+    actifs: number;
+    enIntegration: number;
+    enVeille: number;
+    decroches: number;
+    totalFamilles: number;
+    totalFaiseurs: number;
+    totalDepartements: number;
+    alertesActives: number;
+  };
 }
 
 // ==================== PRESENCE TREND ====================

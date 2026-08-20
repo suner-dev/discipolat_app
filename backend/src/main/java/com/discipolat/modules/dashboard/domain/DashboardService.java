@@ -38,6 +38,10 @@ import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulNoteRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.modules.visits.domain.Visit;
+import com.discipolat.modules.visits.domain.VisitRepository;
+import com.discipolat.modules.prayers.domain.Prayer;
+import com.discipolat.modules.prayers.domain.PrayerRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
@@ -78,6 +82,8 @@ public class DashboardService {
     private final TransferRequestRepository transferRequestRepository;
     private final EventRepository eventRepository;
     private final EventRegistrationRepository eventRegistrationRepository;
+    private final VisitRepository visitRepository;
+    private final PrayerRepository prayerRepository;
     private final SecurityUtils securityUtils;
     private final WorkspaceScopeService workspaceScope;
 
@@ -96,6 +102,8 @@ public class DashboardService {
                            TransferRequestRepository transferRequestRepository,
                            EventRepository eventRepository,
                            EventRegistrationRepository eventRegistrationRepository,
+                           VisitRepository visitRepository,
+                           PrayerRepository prayerRepository,
                            SecurityUtils securityUtils,
                            WorkspaceScopeService workspaceScope) {
         this.soulRepository = soulRepository;
@@ -116,6 +124,8 @@ public class DashboardService {
         this.transferRequestRepository = transferRequestRepository;
         this.eventRepository = eventRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
+        this.visitRepository = visitRepository;
+        this.prayerRepository = prayerRepository;
         this.securityUtils = securityUtils;
         this.workspaceScope = workspaceScope;
     }
@@ -1088,6 +1098,97 @@ public class DashboardService {
         stats.put("semaine", currentWeek.toString());
         crm.put("statistiques", stats);
 
+        // ==================== PRÉSENCE (agrégat des rapports de la semaine) ====================
+        long presentsTotal = 0, cultesTotal = 0;
+        for (Map<String, Object> d : disciples) {
+            Object p = d.get("presences");
+            Object t = d.get("totalCultes");
+            if (p instanceof Number && t instanceof Number) {
+                presentsTotal += ((Number) p).longValue();
+                cultesTotal += ((Number) t).longValue();
+            }
+        }
+        Map<String, Object> presence = new LinkedHashMap<>();
+        presence.put("presents", presentsTotal);
+        presence.put("cultes", cultesTotal);
+        presence.put("taux", cultesTotal > 0 ? Math.round(presentsTotal * 1000.0 / cultesTotal) / 10.0 : 0.0);
+        crm.put("presence", presence);
+
+        // ==================== VISITES (prochaines & récentes de mes disciples) ====================
+        List<Map<String, Object>> visites = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        for (Soul soul : mesAmes) {
+            List<Visit> soulVisits = visitRepository.findBySoulIdOrderByDatePrevueDesc(soul.getId());
+            for (Visit v : soulVisits) {
+                if (v.getStatut() == Visit.StatutVisite.PLANIFIEE || v.getStatut() == Visit.StatutVisite.REPORTEE) {
+                    Map<String, Object> vm = new LinkedHashMap<>();
+                    vm.put("id", v.getId());
+                    vm.put("soulId", soul.getId());
+                    vm.put("soulNom", soul.getNomComplet());
+                    vm.put("datePrevue", v.getDatePrevue() != null ? v.getDatePrevue().toString() : null);
+                    vm.put("statut", v.getStatut().name());
+                    vm.put("motif", v.getMotif());
+                    vm.put("objectif", v.getObjectif());
+                    visites.add(vm);
+                }
+            }
+        }
+        visites.sort(Comparator.comparing(m -> (String) m.get("datePrevue")));
+        crm.put("visites", visites);
+
+        // ==================== PRIÈRES (liées à mes disciples) ====================
+        List<Map<String, Object>> prieres = new ArrayList<>();
+        for (Soul soul : mesAmes) {
+            List<Prayer> soulPrayers = prayerRepository.findByAmeIdAndDeletedFalse(soul.getId());
+            for (Prayer p : soulPrayers) {
+                Map<String, Object> pm = new LinkedHashMap<>();
+                pm.put("id", p.getId());
+                pm.put("soulId", soul.getId());
+                pm.put("soulNom", soul.getNomComplet());
+                pm.put("titre", p.getTitre());
+                pm.put("categorie", p.getCategorie());
+                pm.put("priorite", p.getPriorite());
+                pm.put("statut", p.getStatut());
+                pm.put("createdAt", p.getCreatedAt() != null ? p.getCreatedAt().toString() : null);
+                prieres.add(pm);
+            }
+        }
+        prieres.sort(Comparator.comparing(m -> String.valueOf(m.get("createdAt")), Comparator.reverseOrder()));
+        crm.put("prieres", prieres);
+        long prieresEnCours = prieres.stream().filter(p -> "EN_COURS".equals(p.get("statut"))).count();
+
+        // ==================== ÉVÉNEMENTS À VENIR (familles de mes disciples) ====================
+        Set<UUID> familleIds = mesAmes.stream()
+                .map(Soul::getFamilleId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        List<Map<String, Object>> evenements = new ArrayList<>();
+        for (UUID familleId : familleIds) {
+            List<Event> familleEvents = eventRepository.findAllByFamilleIdAndDeletedFalse(familleId);
+            for (Event ev : familleEvents) {
+                if (ev.getDateDebut() == null || !ev.getDateDebut().isAfter(LocalDateTime.now())) continue;
+                Map<String, Object> em = new LinkedHashMap<>();
+                em.put("id", ev.getId());
+                em.put("titre", ev.getTitre());
+                em.put("typeEvenement", ev.getTypeEvenement());
+                em.put("lieu", ev.getLieu());
+                em.put("dateDebut", ev.getDateDebut().toString());
+                em.put("dateFin", ev.getDateFin() != null ? ev.getDateFin().toString() : null);
+                em.put("statut", ev.getStatut());
+                evenements.add(em);
+            }
+        }
+        evenements.sort(Comparator.comparing(m -> (String) m.get("dateDebut")));
+        crm.put("evenements", evenements);
+
+        // ==================== PROGRESSION (répartition par niveau de croissance) ====================
+        Map<String, Long> progression = new LinkedHashMap<>();
+        for (Map<String, Object> d : disciples) {
+            String niveau = String.valueOf(d.getOrDefault("niveauCroissance", 0));
+            progression.merge(niveau, 1L, Long::sum);
+        }
+        crm.put("progression", progression);
+
         // ==================== ALERTES ====================
         List<Map<String, Object>> alertes = new ArrayList<>();
         for (Soul soul : mesAmes) {
@@ -1221,5 +1322,152 @@ public class DashboardService {
         }
 
         return metrics;
+    }
+
+    // ========================================================================
+    // PASTEUR: KPIs ENRICHIS (health score, retention, growth, workload)
+    // ========================================================================
+
+    public Map<String, Object> getPasteurKpis() {
+        Map<String, Object> kpis = new LinkedHashMap<>();
+        LocalDate currentWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate monthAgo = LocalDate.now().minusDays(30);
+        LocalDate twoMonthsAgo = LocalDate.now().minusDays(60);
+
+        // ==================== HEALTH SCORE (composite) ====================
+        // Score sur 100 basé sur : présence (40%), rapports (30%), croissance (20%), alertes (10%)
+        long totalSouls = soulRepository.count();
+        long actifs = soulRepository.countByStatut(StatutAme.ACTIF);
+        long enIntegration = soulRepository.countByStatut(StatutAme.EN_INTEGRATION);
+        long enVeille = soulRepository.countByStatut(StatutAme.EN_VEILLE);
+        long decroches = soulRepository.countByStatut(StatutAme.DECROCHE);
+        long alertesActives = alertRepository.countByStatut(StatutAlerte.ACTIVE);
+        long totalFamilles = familyRepository.count();
+        long totalFaiseurs = userRepository.countByRole(UserRole.FAISEUR);
+
+        // Présence globale
+        Page<MakerReport> reportsPage = makerReportRepository.findBySemaine(currentWeek,
+                org.springframework.data.domain.PageRequest.of(0, 10000));
+        List<MakerReport> weekReports = reportsPage.getContent();
+        int presents = 0, totalPossibles = 0;
+        for (MakerReport r : weekReports) {
+            if (r.getPresencesParCulte() != null) {
+                for (Boolean p : r.getPresencesParCulte().values()) {
+                    totalPossibles++;
+                    if (p) presents++;
+                }
+            }
+        }
+        double tauxPresence = totalPossibles > 0 ? (double) presents / totalPossibles * 100.0 : 0.0;
+
+        // Rapports soumis
+        int rapportsSoumis = 0, rapportsEnAttente = 0;
+        for (MakerReport r : weekReports) {
+            if (r.isSoumis()) rapportsSoumis++; else rapportsEnAttente++;
+        }
+        double tauxRapports = (rapportsSoumis + rapportsEnAttente) > 0
+                ? (double) rapportsSoumis / (rapportsSoumis + rapportsEnAttente) * 100.0 : 0.0;
+
+        // Croissance mensuelle
+        long nouveauxMois = soulRepository.countByDateIntegrationBetween(monthAgo, LocalDate.now());
+        long nouveauxMoisPrecedent = soulRepository.countByDateIntegrationBetween(twoMonthsAgo, monthAgo);
+        long croissanceBrute = nouveauxMois;
+        double tauxCroissance = totalSouls > 0 ? (double) nouveauxMois / totalSouls * 100.0 : 0.0;
+
+        // Fidélisation
+        double tauxFidelisation = totalSouls > 0 ? (double) actifs / totalSouls * 100.0 : 0.0;
+
+        // Score composite santé (0-100)
+        double scorePresence = Math.min(tauxPresence, 100) * 0.40;
+        double scoreRapports = Math.min(tauxRapports, 100) * 0.30;
+        double scoreCroissance = Math.min(tauxCroissance * 10, 100) * 0.20; // Amplifié pour que 10% = 100
+        double scoreAlertes = Math.max(0, 100 - alertesActives * 10) * 0.10;
+        int healthScore = (int) Math.round(scorePresence + scoreRapports + scoreCroissance + scoreAlertes);
+
+        Map<String, Object> health = new LinkedHashMap<>();
+        health.put("score", Math.min(healthScore, 100));
+        health.put("tauxPresence", Math.round(tauxPresence * 10.0) / 10.0);
+        health.put("tauxRapports", Math.round(tauxRapports * 10.0) / 10.0);
+        health.put("tauxFidelisation", Math.round(tauxFidelisation * 10.0) / 10.0);
+        health.put("tauxCroissance", Math.round(tauxCroissance * 10.0) / 10.0);
+        health.put("nouveauxMois", nouveauxMois);
+        health.put("croissanceNette", croissanceBrute);
+        kpis.put("health", health);
+
+        // ==================== WORKLOAD PER FAISEUR ====================
+        List<User> tousFaiseurs = userRepository.findByRolesContaining(UserRole.FAISEUR);
+        List<Map<String, Object>> workload = new ArrayList<>();
+        for (User faiseur : tousFaiseurs) {
+            List<Soul> amesF = soulRepository.findAllByFaiseurId(faiseur.getId());
+            long actifsF = amesF.stream().filter(s -> s.getStatut() == StatutAme.ACTIF && !s.isDeleted()).count();
+            long totalF = amesF.stream().filter(s -> !s.isDeleted()).count();
+            List<MakerReport> rapportsF = makerReportRepository.findByFaiseurIdAndSemaine(faiseur.getId(), currentWeek);
+            boolean aRapporte = rapportsF.stream().anyMatch(MakerReport::isSoumis);
+
+            Map<String, Object> w = new LinkedHashMap<>();
+            w.put("id", faiseur.getId());
+            w.put("nom", faiseur.getFirstName() + " " + faiseur.getLastName());
+            w.put("totalAmes", totalF);
+            w.put("actifs", actifsF);
+            w.put("rapportSoumis", aRapporte);
+            // Charge de travail : ratio actifs/total — plus le ratio est élevé, plus le faiseur est chargé
+            double charge = totalF > 0 ? (double) actifsF / totalF * 100.0 : 0.0;
+            w.put("charge", Math.round(charge * 10.0) / 10.0);
+            workload.add(w);
+        }
+        // Triés par charge décroissante
+        workload.sort((a, b) -> Double.compare((double) b.get("charge"), (double) a.get("charge")));
+        kpis.put("workload", workload);
+
+        // ==================== ÉVÉNEMENTS À VENIR ====================
+        List<Event> upcomingEvents = eventRepository
+                .findTop10ByDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime.now());
+        List<Map<String, Object>> eventsList = new ArrayList<>();
+        for (Event event : upcomingEvents) {
+            long inscrits = eventRegistrationRepository.findByEventId(event.getId()).size();
+            Map<String, Object> ev = new LinkedHashMap<>();
+            ev.put("id", event.getId());
+            ev.put("titre", event.getTitre());
+            ev.put("dateDebut", event.getDateDebut());
+            ev.put("type", event.getTypeEvenement());
+            ev.put("lieu", event.getLieu());
+            ev.put("inscrits", inscrits);
+            eventsList.add(ev);
+        }
+        kpis.put("upcomingEvents", eventsList);
+
+        // ==================== RAPPORTS EN RETARD ====================
+        List<Map<String, Object>> overdueReports = new ArrayList<>();
+        for (User faiseur : tousFaiseurs) {
+            List<MakerReport> rapportsF = makerReportRepository.findByFaiseurIdAndSemaine(faiseur.getId(), currentWeek);
+            boolean aRapporte = rapportsF.stream().anyMatch(MakerReport::isSoumis);
+            if (!aRapporte) {
+                List<Soul> amesF = soulRepository.findAllByFaiseurId(faiseur.getId());
+                long nbAmes = amesF.stream().filter(s -> !s.isDeleted()).count();
+                Map<String, Object> or = new LinkedHashMap<>();
+                or.put("faiseurId", faiseur.getId());
+                or.put("faiseurNom", faiseur.getFirstName() + " " + faiseur.getLastName());
+                or.put("nbAmes", nbAmes);
+                or.put("semaine", currentWeek.toString());
+                overdueReports.add(or);
+            }
+        }
+        kpis.put("overdueReports", overdueReports);
+        kpis.put("overdueReportsCount", overdueReports.size());
+
+        // ==================== RÉSUMÉ RAPIDE ====================
+        Map<String, Object> resume = new LinkedHashMap<>();
+        resume.put("totalAmes", totalSouls);
+        resume.put("actifs", actifs);
+        resume.put("enIntegration", enIntegration);
+        resume.put("enVeille", enVeille);
+        resume.put("decroches", decroches);
+        resume.put("totalFamilles", totalFamilles);
+        resume.put("totalFaiseurs", totalFaiseurs);
+        resume.put("totalDepartements", departmentRepository.count());
+        resume.put("alertesActives", alertesActives);
+        kpis.put("resume", resume);
+
+        return kpis;
     }
 }

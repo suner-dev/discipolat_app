@@ -400,6 +400,58 @@ export default function CrmFaiseurPage() {
             </div>
           )}
 
+          {/* Events — from backend crm.evenements */}
+          {crm?.evenements && crm.evenements.length > 0 && (
+            <div className="glass-card p-6 mt-6 animate-slide-up" style={{ animationDelay: '60ms' }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-emerald-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Événements à venir ({crm.evenements.length})</h3>
+                </div>
+                <Link to="/events" className="text-[10px] font-medium text-primary-600">Voir tout</Link>
+              </div>
+              <div className="space-y-2">
+                {crm.evenements.slice(0, 5).map((e: any) => (
+                  <div key={e.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex flex-col items-center justify-center flex-shrink-0">
+                      <span className="text-[9px] text-emerald-500 font-semibold leading-none">{new Date(e.dateEvenement || e.date).toLocaleDateString('fr-FR', { month: 'short' })}</span>
+                      <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300 leading-none">{new Date(e.dateEvenement || e.date).getDate()}</span>
+                    </div>
+                    <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{e.titre}</p><p className="text-[9px] text-gray-400">{e.lieu || '—'} · {e.heureDebut || ''}</p></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Presence — from backend crm.presence */}
+          {crm?.presence && (
+            <div className="glass-card p-6 mt-6 animate-slide-up" style={{ animationDelay: '70ms' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle className="w-4 h-4 text-blue-500" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Présence de mes disciples</h3>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 text-center">
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{crm.presence.tauxPresence ?? 0}%</p>
+                  <p className="text-[10px] text-gray-400">Taux de présence</p>
+                </div>
+                <div className="p-3 rounded-xl bg-green-50/50 dark:bg-green-900/10 text-center">
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">{crm.presence.presents ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">Présents cette semaine</p>
+                </div>
+                <div className="p-3 rounded-xl bg-red-50/50 dark:bg-red-900/10 text-center">
+                  <p className="text-xl font-bold text-red-600 dark:text-red-400">{crm.presence.absents ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">Absents</p>
+                </div>
+                <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 text-center">
+                  <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{crm.presence.nonRenseignes ?? 0}</p>
+                  <p className="text-[10px] text-gray-400">Non renseignés</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Progression */}
           {crm?.progression && (
             <div className="glass-card p-6 mt-6 animate-slide-up" style={{ animationDelay: '80ms' }}>

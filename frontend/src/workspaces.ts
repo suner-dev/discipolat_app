@@ -5,6 +5,7 @@ import {
   Map as MapIcon,
   Heart,
   Users,
+  UsersRound,
   Activity,
   Sprout,
   Target,
@@ -27,6 +28,7 @@ import {
   CalendarClock,
   UserCog,
   User,
+  UserCheck,
   Sparkles,
   Church,
   HandHeart,
@@ -36,6 +38,15 @@ import {
   Boxes,
   Menu as MenuList,
   SlidersHorizontal,
+  Globe,
+  Server,
+  ClipboardCheck,
+  ClipboardList,
+  ListTodo,
+  Scale,
+  Briefcase,
+  TrendingUp,
+  ListChecks,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -136,7 +147,7 @@ const FULL_NAV: WorkspaceSection[] = [
   {
     title: 'Structures & rapports',
     items: [
-      { name: 'Départements', href: '/departments', icon: Building2, subtitle: 'Structure de l’église' },
+      { name: 'Départements', href: '/departments', icon: Building2, subtitle: "Structure de l'église" },
       { name: 'Dashboard Responsable', href: '/dashboard/responsable', icon: Building2, subtitle: 'Mon département' },
       { name: 'Dashboard Chef', href: '/dashboard/chef-famille', icon: Users, subtitle: 'Ma famille' },
       { name: 'Rapports', href: '/reports', icon: FileText, subtitle: 'Hebdomadaires' },
@@ -146,7 +157,7 @@ const FULL_NAV: WorkspaceSection[] = [
     ],
   },
   {
-    title: 'Vie de l’église',
+    title: "Vie de l'église",
     items: [
       { name: 'Prières', href: '/prayers', icon: BookOpen, subtitle: 'Sujets & témoignages' },
       { name: 'Espaces prière', href: '/prayers/spaces', icon: Shield, subtitle: 'Par niveau de visibilité' },
@@ -171,7 +182,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Demandes membres', href: '/members/requests', icon: MessageSquare, subtitle: 'Suggestions & présences' },
       { name: 'Documents', href: '/documents', icon: FolderOpen, subtitle: 'Fichiers & rapports' },
       { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
-      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Centre d\'alertes' },
+      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: "Centre d'alertes" },
       { name: 'Messagerie', href: '/messages', icon: MessagesSquare, subtitle: 'Conversations privées' },
       { name: 'Formations', href: '/trainings', icon: GraduationCap, subtitle: 'Cours, quiz & certificats' },
       { name: 'Badges', href: '/badges', icon: Trophy, subtitle: 'Récompenses & classements' },
@@ -181,53 +192,81 @@ const FULL_NAV: WorkspaceSection[] = [
   {
     title: 'Administration',
     items: [
-      { name: 'Centre d\'administration', href: '/admin', icon: SlidersHorizontal, subtitle: 'Toute la configuration' },
+      { name: "Centre d'administration", href: '/admin', icon: SlidersHorizontal, subtitle: 'Toute la configuration' },
       { name: 'Identité & marque', href: '/admin/settings', icon: Palette, subtitle: 'Nom, logo & couleurs' },
-      { name: 'Utilisateurs', href: '/users', icon: UserCog, subtitle: 'Gestion des comptes' },
-      { name: 'Audit', href: '/audit', icon: Activity, subtitle: 'Journal de bord' },
-      { name: 'Permissions', href: '/permissions', icon: Shield, subtitle: 'Matrice des rôles' },
       { name: 'Modules', href: '/admin/modules', icon: Boxes, subtitle: 'Activer / désactiver' },
       { name: 'Menus', href: '/admin/menus', icon: MenuList, subtitle: 'Configurer la navigation' },
+      { name: 'Pages', href: '/admin/pages', icon: FileText, subtitle: 'Pages personnalisées' },
+      { name: 'Utilisateurs', href: '/users', icon: UserCog, subtitle: 'Gestion des comptes' },
+      { name: 'Permissions', href: '/permissions', icon: Shield, subtitle: 'Matrice des rôles' },
       { name: 'Champs personnalisés', href: '/admin/custom-fields', icon: FileText, subtitle: 'Champs des entités' },
       { name: 'Dictionnaires', href: '/admin/dictionaries', icon: BookOpen, subtitle: 'Types, statuts & catégories' },
+      { name: 'Notifications', href: '/admin/notifications', icon: Bell, subtitle: 'Modèles & canaux' },
+      { name: 'Configuration workflow', href: '/admin/transfers', icon: Workflow, subtitle: 'Circuits de validation' },
+      { name: 'Intégrations', href: '/admin/integrations', icon: Globe, subtitle: 'SMTP, stockage, API' },
+      { name: 'Système', href: '/admin/system', icon: Server, subtitle: 'Santé, cache & performances' },
+      { name: 'Églises (tenants)', href: '/admin/tenants', icon: Building2, subtitle: 'Multi-tenant' },
+      { name: 'Audit', href: '/audit', icon: Activity, subtitle: 'Journal de bord' },
+      { name: 'Retours testeurs', href: '/admin/feedback', icon: MessageSquare, subtitle: 'Bugs & suggestions' },
     ],
   },
 ];
 
-/* ----------------------------------------------------------------------------
- * Navigation RESPONSABLE — logiciel de gestion des départements (HRM église).
+/* ============================================================================
+ * RESPONSABLE — Gestionnaire RH de département
+ * Rôle opérationnel : effectifs, présence, absence, tâches, équipes, postes,
+ * progression, événements, rapports, discipline, évaluations.
  * Aucun menu discipolat / familles / âmes / faiseurs.
- * -------------------------------------------------------------------------- */
+ * ========================================================================== */
 
 const RESPONSABLE_NAV: WorkspaceSection[] = [
   {
-    title: 'Pilotage',
+    title: 'Tableau de bord',
     items: [
-      { name: 'Dashboard Responsable', href: '/dashboard/responsable', icon: LayoutDashboard, subtitle: 'Mes départements' },
+      { name: 'Mon département', href: '/dashboard/responsable', icon: LayoutDashboard, subtitle: 'Effectifs, présence & alertes' },
     ],
   },
   {
-    title: 'Gestion du département',
+    title: 'Effectifs & organisation',
     items: [
-      { name: 'Départements', href: '/departments', icon: Building2, subtitle: 'Structure & membres' },
-      { name: 'Membres', href: '/users', icon: UserCog, subtitle: 'Comptes du département' },
-      { name: 'Présences & demandes', href: '/members/requests', icon: MessageSquare, subtitle: 'Fiche hebdomadaire' },
-      { name: 'Transferts', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Demandes & validations' },
+      { name: 'Départements', href: '/departments', icon: Building2, subtitle: 'Structure & hiérarchie' },
+      { name: 'Équipes', href: '/departments', icon: UsersRound, subtitle: 'Organisation & branches' },
+      { name: 'Postes', href: '/departments', icon: Briefcase, subtitle: 'Positions & compétences' },
+      { name: 'Membres', href: '/users', icon: UserCog, subtitle: 'Comptes & affectations' },
     ],
   },
   {
-    title: 'Suivi & reporting',
+    title: 'Présence & activités',
+    items: [
+      { name: 'Saisie des présences', href: '/dashboard/responsable', icon: ClipboardCheck, subtitle: 'Pointage hebdomadaire' },
+      { name: 'Demandes & présences', href: '/members/requests', icon: MessageSquare, subtitle: 'Fiches & suggestions' },
+      { name: 'Tâches', href: '/departments', icon: ListTodo, subtitle: 'Suivi des assignments' },
+      { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier du département' },
+    ],
+  },
+  {
+    title: 'Suivi & discipline',
+    items: [
+      { name: 'Évaluations', href: '/evaluations', icon: StarIcon, subtitle: 'Évaluations anonymes' },
+      { name: 'Discipline', href: '/departments', icon: Scale, subtitle: 'Suivi disciplinaire' },
+      { name: 'Progression', href: '/departments', icon: TrendingUp, subtitle: 'Croissance des membres' },
+    ],
+  },
+  {
+    title: 'Reporting',
     items: [
       { name: 'Rapports', href: '/reports', icon: FileText, subtitle: 'Hebdomadaires' },
+      { name: 'Rapport famille', href: '/reports/family', icon: FileText, subtitle: 'Rapport de famille' },
       { name: 'Aide urgente', href: '/reports/urgent-aid', icon: AlertTriangle, subtitle: "Demandes d'aide" },
-      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
-      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Centre d\'alertes' },
-      { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier du département' },
+      { name: 'Transferts', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Demandes & validations' },
     ],
   },
   {
     title: 'Outils',
     items: [
+      { name: 'Recherche', href: '/search', icon: Search, subtitle: 'Recherche intelligente' },
+      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
+      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: "Centre d'alertes" },
       { name: 'Messagerie', href: '/messages', icon: MessagesSquare, subtitle: 'Conversations privées' },
       { name: 'Documents', href: '/documents', icon: FolderOpen, subtitle: 'Fichiers & rapports' },
       { name: 'Profil', href: '/profile', icon: User, subtitle: 'Mes informations' },
@@ -235,75 +274,104 @@ const RESPONSABLE_NAV: WorkspaceSection[] = [
   },
 ];
 
-/* ----------------------------------------------------------------------------
- * Navigation FAISEUR — uniquement le discipolat (ses disciples, ses rapports).
- * -------------------------------------------------------------------------- */
+/* ============================================================================
+ * FAISEUR — Accompagneur de disciples
+ * Rôle terrain : disciples, visites, prières, rapports, suivi, progression,
+ * présence, événements. Pas de gestion RH.
+ * ========================================================================== */
 
 const FAISEUR_NAV: WorkspaceSection[] = [
   {
-    title: 'Mon espace',
+    title: 'Mon terrain',
     items: [
-      { name: 'CRM Faiseur', href: '/crm/faiseur', icon: HandHeart, subtitle: 'Suivi de mes disciples' },
+      { name: 'CRM Faiseur', href: '/crm/faiseur', icon: HandHeart, subtitle: 'Tableau de bord terrain' },
       { name: 'Mes disciples', href: '/souls', icon: Heart, subtitle: 'Disciples suivis' },
+      { name: 'Évangélisation', href: '/evangelism', icon: Sprout, subtitle: 'Pipeline de croissance' },
     ],
   },
   {
-    title: 'Suivi',
+    title: 'Suivi hebdomadaire',
     items: [
-      { name: 'Rapports', href: '/reports', icon: FileText, subtitle: 'Hebdomadaires' },
-      { name: 'Rapport faiseur', href: '/reports/maker', icon: FileText, subtitle: 'Mon rapport de la semaine' },
-      { name: 'Prières', href: '/prayers', icon: BookOpen, subtitle: 'Sujets & témoignages' },
+      { name: 'Mon rapport', href: '/reports/maker', icon: ClipboardList, subtitle: 'Rapport de la semaine' },
       { name: 'Visites', href: '/visits', icon: DoorOpen, subtitle: 'Planification & comptes rendus' },
-      { name: 'Évangélisation', href: '/evangelism', icon: Sprout, subtitle: 'Pipeline de croissance' },
       { name: 'Suivis parallèles', href: '/parallel-followups', icon: Activity, subtitle: 'Accompagnements' },
       { name: 'Objectifs', href: '/objectives', icon: Target, subtitle: 'Mes objectifs' },
-      { name: 'Recherche', href: '/search', icon: Search, subtitle: 'Recherche intelligente' },
     ],
   },
   {
-    title: 'Réseau & outils',
+    title: 'Prières & accompagnement',
     items: [
-      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
-      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Centre d\'alertes' },
+      { name: 'Prières', href: '/prayers', icon: BookOpen, subtitle: 'Sujets & témoignages' },
+      { name: 'Actions de grâce', href: '/prayers/actions-de-grace', icon: Heart, subtitle: 'Prières exaucées' },
+    ],
+  },
+  {
+    title: "Vie de l'église",
+    items: [
       { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier' },
+      { name: 'Rapports', href: '/reports', icon: FileText, subtitle: 'Vue globale' },
       { name: 'Transferts', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Demandes & validations' },
-      { name: 'Documents', href: '/documents', icon: FolderOpen, subtitle: 'Fichiers & rapports' },
+    ],
+  },
+  {
+    title: 'Outils',
+    items: [
+      { name: 'Recherche', href: '/search', icon: Search, subtitle: 'Recherche intelligente' },
+      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
+      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: "Centre d'alertes" },
       { name: 'Messagerie', href: '/messages', icon: MessagesSquare, subtitle: 'Conversations privées' },
+      { name: 'Documents', href: '/documents', icon: FolderOpen, subtitle: 'Fichiers & rapports' },
       { name: 'Profil', href: '/profile', icon: User, subtitle: 'Mes informations' },
     ],
   },
 ];
 
-/* ----------------------------------------------------------------------------
- * Navigation CHEF DE FAMILLE — gestion de sa famille de disciples.
- * -------------------------------------------------------------------------- */
+/* ============================================================================
+ * CHEF DE FAMILLE — Gestionnaire pastoral de famille
+ * Rôle de supervision : faiseurs, disciples, âmes, familles, rapports,
+ * prières, progression, alertes. Pas de gestion RH / départements.
+ * ========================================================================== */
 
 const CHEF_FAMILLE_NAV: WorkspaceSection[] = [
   {
     title: 'Ma famille',
     items: [
-      { name: 'Dashboard Chef', href: '/dashboard/chef-famille', icon: LayoutDashboard, subtitle: 'Ma famille' },
+      { name: 'Ma famille', href: '/dashboard/chef-famille', icon: LayoutDashboard, subtitle: 'Vue pastorale' },
       { name: 'Familles', href: '/families', icon: Users, subtitle: 'Groupes de disciples' },
       { name: 'Disciples', href: '/souls', icon: Heart, subtitle: 'Disciples de la famille' },
     ],
   },
   {
-    title: 'Suivi',
+    title: 'Mes faiseurs',
     items: [
-      { name: 'Rapports', href: '/reports', icon: FileText, subtitle: 'Hebdomadaires' },
-      { name: 'Rapport famille', href: '/reports/family', icon: FileText, subtitle: 'Rapport de famille' },
-      { name: 'Évaluations', href: '/evaluations', icon: StarIcon, subtitle: 'Anonymes & feedback' },
+      { name: 'Faiseurs & performance', href: '/families', icon: UserCheck, subtitle: 'Charge & résultats' },
+      { name: 'Évangélisation', href: '/evangelism', icon: Sprout, subtitle: 'Pipeline de croissance' },
+    ],
+  },
+  {
+    title: 'Suivi pastoral',
+    items: [
+      { name: 'Rapports famille', href: '/reports/family', icon: ClipboardList, subtitle: 'Mon rapport hebdomadaire' },
+      { name: 'Rapports faiseurs', href: '/reports', icon: FileText, subtitle: 'Rapports reçus' },
+      { name: 'Évaluations', href: '/evaluations', icon: StarIcon, subtitle: 'Évaluations anonymes' },
       { name: 'Prières', href: '/prayers', icon: BookOpen, subtitle: 'Sujets & témoignages' },
+      { name: 'Progression', href: '/families', icon: TrendingUp, subtitle: 'Croissance des disciples' },
+    ],
+  },
+  {
+    title: 'Vie de la famille',
+    items: [
       { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier' },
-      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
-      { name: 'Alertes', href: '/alerts', icon: Bell, subtitle: 'Centre d\'alertes' },
+      { name: 'Alertes', href: '/alerts', icon: AlertTriangle, subtitle: 'Suivi & vigils' },
       { name: 'Demandes membres', href: '/members/requests', icon: MessageSquare, subtitle: 'Suggestions & présences' },
       { name: 'Transferts', href: '/transfers', icon: ArrowLeftRight, subtitle: 'Demandes & validations' },
+      { name: 'Actions de grâce', href: '/prayers/actions-de-grace', icon: Heart, subtitle: 'Prières exaucées' },
     ],
   },
   {
     title: 'Outils',
     items: [
+      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
       { name: 'Messagerie', href: '/messages', icon: MessagesSquare, subtitle: 'Conversations privées' },
       { name: 'Documents', href: '/documents', icon: FolderOpen, subtitle: 'Fichiers & rapports' },
       { name: 'Profil', href: '/profile', icon: User, subtitle: 'Mes informations' },
@@ -311,31 +379,43 @@ const CHEF_FAMILLE_NAV: WorkspaceSection[] = [
   },
 ];
 
-/* ----------------------------------------------------------------------------
- * Navigation MEMBRE — espace personnel.
- * -------------------------------------------------------------------------- */
+/* ============================================================================
+ * MEMBRE — Espace personnel du fidèle
+ * Rôle de consommation : profil, présence, progression, événements,
+ * prières, formations, activités. Pas de gestion d'autrui.
+ * ========================================================================== */
 
 const MEMBRE_NAV: WorkspaceSection[] = [
   {
     title: 'Mon espace',
     items: [
-      { name: 'Espace Membre', href: '/dashboard/membre', icon: LayoutDashboard, subtitle: 'Mes informations' },
-      { name: 'Profil', href: '/profile', icon: User, subtitle: 'Mes données' },
+      { name: 'Mon tableau de bord', href: '/dashboard/membre', icon: LayoutDashboard, subtitle: 'Vue personnelle' },
+      { name: 'Mon profil', href: '/profile', icon: User, subtitle: 'Mes données personnelles' },
     ],
   },
   {
-    title: 'Découverte',
+    title: 'Ma vie spirituelle',
+    items: [
+      { name: 'Mes présences', href: '/dashboard/membre', icon: ClipboardCheck, subtitle: 'Pointage & historique' },
+      { name: 'Ma progression', href: '/dashboard/membre', icon: TrendingUp, subtitle: 'Croissance spirituelle' },
+      { name: 'Prières', href: '/prayers', icon: BookOpen, subtitle: 'Sujets & témoignages' },
+      { name: 'Actions de grâce', href: '/prayers/actions-de-grace', icon: Heart, subtitle: 'Prières exaucées' },
+    ],
+  },
+  {
+    title: 'Ma communauté',
+    items: [
+      { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier' },
+      { name: 'Messagerie', href: '/messages', icon: MessagesSquare, subtitle: 'Conversations privées' },
+      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
+    ],
+  },
+  {
+    title: 'Formation & engagement',
     items: [
       { name: 'Formations', href: '/trainings', icon: GraduationCap, subtitle: 'Cours, quiz & certificats' },
       { name: 'Badges', href: '/badges', icon: Trophy, subtitle: 'Récompenses & classements' },
       { name: 'Rendez-vous', href: '/appointments', icon: CalendarClock, subtitle: 'Prises de RDV' },
-    ],
-  },
-  {
-    title: 'Communauté',
-    items: [
-      { name: 'Notifications', href: '/notifications', icon: BellRing, subtitle: 'Centre de notifications' },
-      { name: 'Messagerie', href: '/messages', icon: MessagesSquare, subtitle: 'Conversations privées' },
     ],
   },
 ];
@@ -351,8 +431,14 @@ const ADMIN_ONLY_HREFS = [
   '/admin/settings',
   '/admin/modules',
   '/admin/menus',
+  '/admin/pages',
   '/admin/custom-fields',
   '/admin/dictionaries',
+  '/admin/notifications',
+  '/admin/system',
+  '/admin/integrations',
+  '/admin/feedback',
+  '/admin/tenants',
 ];
 
 /** Retourne les menus de l'espace métier correspondant au rôle actif. */

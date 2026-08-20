@@ -79,8 +79,9 @@ describe('PlatformMenusPage — administration des menus', () => {
     });
     expect(screen.getByText('Pilotage')).toBeInTheDocument();
     expect(screen.getByText('Vie de l\'église')).toBeInTheDocument();
-    expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
-    expect(screen.getByText('Âmes')).toBeInTheDocument();
+    // Libellés présents deux fois (aperçu en direct + sections) — vérifier la présence globale.
+    expect(screen.getAllByText('Tableau de bord').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Âmes').length).toBeGreaterThan(0);
     // Badge de rôle visible sur une entrée.
     expect(screen.getByText('FAISEUR')).toBeInTheDocument();
     // Badge module visible sur le menu Transferts.
@@ -116,7 +117,7 @@ describe('PlatformMenusPage — administration des menus', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
+      expect(screen.getAllByText('Tableau de bord').length).toBeGreaterThan(0);
     });
 
     const toggle = screen.getByRole('switch', { name: /activer tableau de bord/i });
@@ -134,7 +135,7 @@ describe('PlatformMenusPage — administration des menus', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText('Âmes')).toBeInTheDocument();
+      expect(screen.getAllByText('Âmes').length).toBeGreaterThan(0);
     });
 
     // Bouton « Monter » de la 2e entrée (Âmes) → échange avec Tableau de bord.

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -18,6 +19,28 @@ public class MemberController {
 
     public MemberController(MemberService memberService) {
         this.memberService = memberService;
+    }
+
+    // ============================================================
+    // Espace Membre — Phase 3 : progression, événements, stats
+    // ============================================================
+
+    /** Progression spirituelle et statistiques personnelles du membre connecté. */
+    @GetMapping("/me/progression")
+    public ResponseEntity<Map<String, Object>> myProgression() {
+        return ResponseEntity.ok(memberService.getMyProgression());
+    }
+
+    /** Événements à venir pour le membre connecté (départements + famille + plateforme). */
+    @GetMapping("/me/events")
+    public ResponseEntity<List<Map<String, Object>>> myEvents() {
+        return ResponseEntity.ok(memberService.getMyUpcomingEvents());
+    }
+
+    /** Notes du faiseur visibles par le membre connecté. */
+    @GetMapping("/me/notes")
+    public ResponseEntity<List<Map<String, Object>>> myNotes() {
+        return ResponseEntity.ok(memberService.getMyNotes());
     }
 
     // ============================================================

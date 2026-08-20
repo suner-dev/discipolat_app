@@ -5,13 +5,14 @@ import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import type { Department, User, PageResponse } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { Building2, Plus, Pencil, Trash2, Loader2, X, Calendar, UserPlus, FolderOpen } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, Loader2, X, Calendar, UserPlus, FolderOpen, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function DepartmentsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Department | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -159,23 +160,45 @@ export default function DepartmentsPage() {
     },
   ];
 
+  const allDepartements = data?.content || [];
+  const filteredDepartements = search.trim()
+    ? allDepartements.filter(d => d.nom.toLowerCase().includes(search.toLowerCase()) || d.description?.toLowerCase().includes(search.toLowerCase()))
+    : allDepartements;
+
   return (
     <div className="page-container">
       <div className="page-header">
-        <div>
-          <h1 className="page-title">Départements</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Gestion des départements</p>
+        <div className="animate-fade-in">
+          <div className="flex items-center gap-2 mb-1">
+            <Building2 className="w-5 h-5 text-primary-500" />
+            <h1 className="page-title">Départements</h1>
+          </div>
+          <p className="page-subtitle">Gestion des départements et équipes</p>
         </div>
-        <button onClick={openCreate} className="btn-primary btn-sm">
+        <button onClick={openCreate} className="btn-primary btn-sm animate-scale-in">
           <Plus className="w-4 h-4" /> Nouveau département
         </button>
       </div>
 
+      {/* Search */}
+      <div className="glass-card p-4 mb-6 animate-slide-up">
+        <div className="flex items-center gap-3">
+          <Search className="w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Rechercher un département..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400"
+          />
+        </div>
+      </div>
+
       <DataTable<Department>
         columns={columns}
-        data={data?.content || []}
+        data={filteredDepartements}
         isLoading={isLoading}
-        emptyMessage="Aucun département"
+        emptyMessage="Aucun département trouvé"
         emptyIcon={<Building2 className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />}
         onRowClick={(dept) => navigate(`/departments/${dept.id}`)}
       />

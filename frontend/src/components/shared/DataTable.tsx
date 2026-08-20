@@ -100,7 +100,9 @@ export default function DataTable<T extends { id: string }>({
             <thead>
               <tr>
                 {columns.map((col, i) => (
-                  <th key={i} className="px-4 sm:px-6 py-3.5">{col.header}</th>
+                  <th key={i} className="px-4 sm:px-6 py-3.5">
+                    {typeof col.header === 'function' ? col.header() : col.header}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -139,7 +141,7 @@ export default function DataTable<T extends { id: string }>({
                   onClick={() => handleSort(col.accessor)}
                 >
                   <div className="flex items-center gap-2">
-                    <span>{col.header}</span>
+                    <span>{typeof col.header === 'function' ? col.header() : col.header}</span>
                     {sortable && col.accessor && sortField === col.accessor && (
                       <span className="text-primary-500 transition-transform duration-200">
                         {sortDir === 'asc' ? '↑' : '↓'}

@@ -77,7 +77,7 @@ const AppointmentsPage = lazy(() => import('@/pages/AppointmentsPage'));
 const TransfersPage = lazy(() => import('@/pages/TransfersPage'));
 const TransferDetailPage = lazy(() => import('@/pages/TransferDetailPage'));
 const TransferCreatePage = lazy(() => import('@/pages/TransferCreatePage'));
-const TransferAdminPage = lazy(() => import('@/pages/TransferAdminPage'));
+const AdminWorkflowBuilderPage = lazy(() => import('@/pages/AdminWorkflowBuilderPage'));
 const AdminSettingsPage = lazy(() => import('@/pages/AdminSettingsPage'));
 const PlatformModulesPage = lazy(() => import('@/pages/PlatformModulesPage'));
 const PlatformMenusPage = lazy(() => import('@/pages/PlatformMenusPage'));
@@ -90,6 +90,8 @@ const AdminFeedbackPage = lazy(() => import('@/pages/AdminFeedbackPage'));
 const AdminDictionariesPage = lazy(() => import('@/pages/AdminDictionariesPage'));
 const AdminTenantsPage = lazy(() => import('@/pages/AdminTenantsPage'));
 const AdminNotificationTemplatesPage = lazy(() => import('@/pages/AdminNotificationTemplatesPage'));
+const AdminSystemPage = lazy(() => import('@/pages/AdminSystemPage'));
+const AdminIntegrationsPage = lazy(() => import('@/pages/AdminIntegrationsPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -306,12 +308,12 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/prayers" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
               <PrayersPage />
             </ProtectedRoute>
           } />
           <Route path="/events" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
               <EventsPage />
             </ProtectedRoute>
           } />
@@ -431,7 +433,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/prayers/actions-de-grace" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
               <ActionsDeGracePage />
             </ProtectedRoute>
           } />
@@ -482,7 +484,7 @@ export default function App() {
           } />
           <Route path="/admin/transfers" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
-              <TransferAdminPage />
+              <AdminWorkflowBuilderPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/settings" element={
@@ -543,6 +545,16 @@ export default function App() {
           <Route path="/admin/notifications" element={
             <ProtectedRoute roles={['ADMIN']}>
               <AdminNotificationTemplatesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/system" element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminSystemPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/integrations" element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminIntegrationsPage />
             </ProtectedRoute>
           } />
         </Route>

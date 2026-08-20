@@ -5,6 +5,108 @@
 
 ---
 
+## SESSION 2026-08-19 (bloc 16) — AUDIT PROFOND COMPLET AVANT REFONTE GLOBALE
+
+### Objectif
+
+Audit transversal complet de l'application avant la refonte globale :
+cartographie totale de l'existant, identification des problèmes, classification
+A-F de chaque composant, et préparation du plan de refonte.
+
+### Fait
+
+#### Cartographie complète réalisée
+
+**Backend** (Spring Boot 3.4.7, Java 21) :
+- 39 modules Spring Modulith identifiés et analysés
+- ~180 endpoints API cartographiés (method, path, description, auth)
+- 88 entités JPA, 91 repositories, 61 services, 51 controllers
+- 103 tables PostgreSQL, 71 migrations Flyway (V1→V71)
+- Système multi-tenant : tous les filtres Hibernate `@Filter` vérifiés
+- Système RBAC : 6 rôles, matrice complète rôle→endpoint documentée
+- 10 workflows métier identifiés et cartographiés
+- 10 jobs schedulés identifiés
+
+**Frontend** (React 19, TypeScript 5.7, Vite 6) :
+- 75+ pages web, 54 routes, 146 fichiers React/TSX
+- Design system glassmorphism complet analysé
+- Navigation dynamique (backend-driven menus + fallback statique)
+- Auth multi-rôle avec role switching
+- 4 contextes React (Auth, Settings, Platform, Meta)
+- State management : React Query + React Hook Form + Zod
+
+**Mobile** (Flutter 3, Dart) :
+- 57 écrans, 27 modules, 40+ routes
+- Architecture presentation/data séparée
+- API service Dio avec interceptors JWT + multi-tenant
+- Auth biométrique + PIN + session timeout
+- 89 tables de données identifiées
+
+**Base de données** :
+- 103 tables analysées, relations documentées
+- 6 duplications de données identifiées (dont 1 critique : soul_departments/member_departments)
+- Schéma complet avec 4 entités centrales : User, Soul, Family, Department
+- Multi-tenancy : tenant_id sur toutes les tables métier
+
+#### Problèmes identifiés et classifiés
+
+**Nouveaux bugs trouvés (13) :**
+- password123 hardcodé pour tous les nouveaux comptes (sécurité)
+- Lien /search mort sur page 404
+- Onglets doublon dans DepartmentManagement
+- JSON.parse sans try/catch dans TransferAdmin
+- 42 catch(Exception) trop larges dans le backend
+- 6 Map<String,Object> sans DTO dans UserController
+- Absence d'audit logging sur opérations critiques
+- BulkImport sans validation
+- Erreurs manuelles au lieu de GlobalExceptionHandler
+- Entités JPA comme request body
+- FAISEUR peut requêter les âmes de tout autre faiseur
+
+**Mobile (16 problèmes trouvés) :**
+- 100+ chaînes FR hardcodées (zéro i18n)
+- 100+ couleurs hardcodées contournant le thème
+- 90+ catch(_) silencieux
+- Navigation cassée sur families_list_screen
+- 6 écrans list-only sans vue détail
+- Patterns incohérents (StatefulWidget vs ConsumerStatefulWidget)
+
+**Sécurité (6 nouveaux problèmes) :**
+- PermissionGuard permissif par défaut
+- ADMIN bypass total des permissions DB
+- Switch de rôle sans ré-authentification
+- 2FA sans rate limiting
+- 8 entités sans @Filter Hibernate
+- X-Forwarded-For falsifiable
+
+#### Documents mis à jour
+
+- `ARCHITECTURE_AUDIT.md` : mis à jour avec les 23 nouveaux bugs,
+  16 problèmes mobile, 6 problèmes sécurité, 35 items d'amélioration,
+  workflows complets, duplications étendues
+
+### Baselines
+
+- Backend : **532 tests ✓ BUILD SUCCESS** (inchangé)
+- Frontend : **228 tests vitest ✓ + `tsc -b` ✓** (inchangé)
+- Mobile : **129 tests ✓ · `flutter analyze` 0 issue** (inchangé)
+
+### Prêt pour la suite
+
+**Phase suivante recommandée : Module Pasteur — Refonte de l'espace pasteur.**
+
+L'audit est terminé. La prochaine étape est de commencer la refonte effective
+en commençant par le module Pasteur (centre de supervision pastoral), qui est
+le rôle central de l'application. Les actions prioritaires sont :
+
+1. Pastoral 360 amélioré (graphiques d'évolution, comparaison inter-âmes)
+2. Centre d'alertes pour Pasteur (vue unifiée, actions bulk)
+3. Audit exploitable (filtres avancés, export, tendances)
+4. Consolidation des 13 bugs critiques identifiés
+5. Correction des failles de sécurité prioritaires
+
+---
+
 ## SESSION 2026-08-18 (bloc 15) — REFONDRE PROFONDÉMENT L'ESPACE ADMIN : NOTIFICATIONS CONFIGURABLES + DÉMONOLITHISATION DÉPARTEMENTS + KPIs RÉELS
 
 ### Objectif

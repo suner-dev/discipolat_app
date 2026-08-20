@@ -2,6 +2,7 @@ package com.discipolat.modules.dashboard.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.domain.UserRole;
+import com.discipolat.common.enums.StatutAme;
 import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.domain.FamilyRepository;
@@ -72,6 +73,10 @@ class DashboardServiceTest {
     @Mock
     private com.discipolat.modules.events.domain.EventRegistrationRepository eventRegistrationRepository;
     @Mock
+    private com.discipolat.modules.visits.domain.VisitRepository visitRepository;
+    @Mock
+    private com.discipolat.modules.prayers.domain.PrayerRepository prayerRepository;
+    @Mock
     private SecurityUtils securityUtils;
 
     private DashboardService dashboardService;
@@ -89,6 +94,7 @@ class DashboardServiceTest {
                 departmentAssignmentRepository, departmentTaskRepository,
                 memberPresenceRepository, transferRequestRepository,
                 eventRepository, eventRegistrationRepository,
+                visitRepository, prayerRepository,
                 securityUtils, workspaceScope
         );
         userId = UUID.randomUUID();
@@ -215,5 +221,40 @@ class DashboardServiceTest {
 
         assertNotNull(result);
         assertEquals("FAISEUR", result.get("role"));
+    }
+@Test
+    void getPasteurKpis_ShouldComputeHealthScoreAndLeaderboards() {
+        when(soulRepository.count()).thenReturn(50L);
+        when(soulRepository.countByStatut(StatutAme.ACTIF)).thenReturn(30L);
+        when(soulRepository.countByStatut(StatutAme.EN_INTEGRATION)).thenReturn(5L);
+        when(soulRepository.countByStatut(StatutAme.EN_VEILLE)).thenReturn(5L);
+        when(soulRepository.countByStatut(StatutAme.DECROCHE)).thenReturn(5L);
+        when(alertRepository.countByStatut(any())).thenReturn(2L);
+        when(familyRepository.count()).thenReturn(6L);
+        when(userRepository.countByRole(UserRole.FAISEUR)).thenReturn(3L);
+        when(makerReportRepository.findBySemaine(any(), any())).thenReturn(new PageImpl<>(List.of()));
+        when(userRepository.findByRolesContaining(UserRole.FAISEUR)).thenReturn(List.of());
+        when(eventRepository.findTop10ByDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(any())).thenReturn(List.of());
+        when(soulRepository.countByDateIntegrationBetween(any(), any())).thenReturn(3L);
+
+        var kpis = dashboardService.getPasteurKpis();
+
+        assertNotNull(kpis);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> health = (Map<String, Object>) kpis.get("health");
+        assertNotNull(health);
+        int score = (int) health.get("score");
+        assertTrue(score >= 0 && score <= 100);
+        // 30/50 âmes actives → 60 % de fidélisation
+        assertEquals(60.0, (double) health.get("tauxFidelisation"), 0.01);
+        assertEquals(3L, health.get("nouveauxMois"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> resume = (Map<String, Object>) kpis.get("resume");
+        assertEquals(50L, resume.get("totalAmes"));
+        assertEquals(30L, resume.get("actifs"));
+        assertEquals(0, ((List<?>) kpis.get("workload")).size());
+        assertEquals(0, ((List<?>) kpis.get("upcomingEvents")).size());
+        assertEquals(0, ((List<?>) kpis.get("overdueReports")).size());
+        assertEquals(0, kpis.get("overdueReportsCount"));
     }
 }

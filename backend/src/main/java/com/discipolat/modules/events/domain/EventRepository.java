@@ -20,6 +20,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     Page<Event> findByStatutAndDeletedFalse(String statut, Pageable pageable);
     Page<Event> findByDateDebutBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end, Pageable pageable);
     List<Event> findByFamilleIdAndStatutAndDeletedFalse(UUID familleId, String statut);
+    List<Event> findByDepartmentIdInAndDeletedFalse(List<UUID> departmentIds);
     List<Event> findByDateDebutBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end);
     List<Event> findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(LocalDateTime start, LocalDateTime end);
     long countByFamilleIdAndDeletedFalse(UUID familleId);
@@ -29,4 +30,5 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     long countByDeletedFalseAndDateDebutAfter(LocalDateTime dateDebut);
 
     List<Event> findTop10ByDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime dateDebut);
+    List<Event> findAllByFamilleIdAndDeletedFalse(UUID familleId);
 }

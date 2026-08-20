@@ -39,7 +39,7 @@ services:
     networks:
       - discipolat-net
 
-  # ============================================
+ # ============================================
   # Backend — Spring Boot API
   # ============================================
   api:
@@ -47,6 +47,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: discipolat-api
+    command: ["--seed-demo-accounts=true"]
     ports:
       - "8081:8080"
     environment:
@@ -61,6 +62,9 @@ services:
       MAIL_PORT: "1025"
       MAIL_USERNAME: noreply@discipolat.com
       MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+      APP_BETA_TESTING_SEED_DEMO_ACCOUNTS: "true"
+      FRONTEND_URL: "*"
+      SERVER_FORWARD_HEADERS_STRATEGY: "framework"
     depends_on:
       db:
         condition: service_healthy
@@ -73,7 +77,8 @@ services:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080'"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 200s
     networks:
       - discipolat-net
 

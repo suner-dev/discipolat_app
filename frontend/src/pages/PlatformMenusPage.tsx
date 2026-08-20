@@ -151,9 +151,32 @@ export default function PlatformMenusPage() {
         </div>
       </div>
 
-      <div className="mb-6">
+            <div className="mb-6">
         <ConfigRevisionHistory entityType="PLATFORM_MENU" />
       </div>
+
+      {/* Live preview — shows menus as users will see them */}
+      <div className="glass-card p-4 mb-6">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+          Aperçu en direct
+        </h3>
+        {menus.filter(m => m.enabled).length === 0 ? (
+          <span className="text-sm text-gray-500 dark:text-gray-400">Aucun menu visible pour le moment</span>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {menus.filter(m => m.enabled).sort((a, b) => a.ordre - b.ordre).map((m) => {
+              const Icon = resolveIcon(m.icon);
+              return (
+                <div key={m.id} className="px-3 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-2">
+                  <Icon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{m.label || m.key}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
 
       {Object.keys(grouped).length === 0 && (
         <div className="empty-state glass-card"><Menu className="empty-state-icon" /><p className="text-gray-500 dark:text-gray-400">Aucun menu.</p></div>

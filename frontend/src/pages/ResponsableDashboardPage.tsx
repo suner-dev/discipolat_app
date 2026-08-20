@@ -750,6 +750,14 @@ export default function ResponsableDashboardPage() {
               <Activity className="w-5 h-5 text-violet-500 mx-auto mb-1" />
               <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Statistiques</span>
             </Link>
+            <Link to={`/evaluations`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+              <Star className="w-5 h-5 text-amber-500 mx-auto mb-1" />
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Évaluations</span>
+            </Link>
+            <Link to={`/departments/${activeDeptId}/manage`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
+              <ListTodo className="w-5 h-5 text-red-500 mx-auto mb-1" />
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Tâches & suivi</span>
+            </Link>
           </div>
           )}
 
