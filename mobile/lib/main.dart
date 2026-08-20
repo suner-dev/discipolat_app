@@ -97,6 +97,7 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
       supportedLocales: const [
         Locale('fr'),
         Locale('en'),
+        Locale('pt'),
       ],
       builder: (context, child) {
         return Column(

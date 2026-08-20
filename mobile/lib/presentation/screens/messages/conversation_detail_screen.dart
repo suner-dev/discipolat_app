@@ -109,7 +109,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen>
         },
         onDone: () {
           _wsConnected = false;
-          // Timer annulable (pas de fuite de timer : chaque test dispose proprement).
+          if (_disposed) return; // aucun nouveau timer après le dispose
           _reconnectTimer?.cancel();
           _reconnectTimer = Timer(const Duration(seconds: 3), () {
             if (mounted) _connectWebSocket();
@@ -363,7 +363,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen>
                             const SizedBox(height: 10),
                             OutlinedButton(
                                 onPressed: _loadMessages,
-                                child: const Text('Reessayer')),
+                                child: const Text('Réessayer')),
                           ],
                         ),
                       )
