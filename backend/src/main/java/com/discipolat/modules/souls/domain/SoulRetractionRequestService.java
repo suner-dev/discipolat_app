@@ -46,7 +46,17 @@ public class SoulRetractionRequestService {
 
     @Transactional(readOnly = true)
     public Page<SoulRetractionRequest> findByStatut(String statut, Pageable pageable) {
-        return repository.findByStatutOrderByCreatedAtDesc(statut, pageable);
+        Page<SoulRetractionRequest> all = repository.findByStatutOrderByCreatedAtDesc(statut, pageable);
+        if (securityUtils.isSuperUser()) return all;
+        List<UUID> accessibleSoulIds = new java.util.ArrayList<>(soulService.accessibleSoulIds());
+        if (accessibleSoulIds.isEmpty()) {
+            return new org.springframework.data.domain.PageImpl<>(
+                    java.util.List.of(), pageable, 0);
+        }
+        List<SoulRetractionRequest> filtered = all.getContent().stream()
+                .filter(r -> accessibleSoulIds.contains(r.getAmeId()))
+                .toList();
+        return new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
     }
 
     @Transactional(readOnly = true)
@@ -57,6 +67,7 @@ public class SoulRetractionRequestService {
 
     public SoulRetractionRequest approve(UUID id, String commentaire) {
         SoulRetractionRequest request = findById(id);
+        soulService.assertAccessible(request.getAmeId());
         request.setStatut("APPROUVEE");
         request.setTraitePar(securityUtils.getCurrentUserId());
         request.setDateTraitement(LocalDateTime.now());
@@ -66,6 +77,7 @@ public class SoulRetractionRequestService {
 
     public SoulRetractionRequest reject(UUID id, String commentaire) {
         SoulRetractionRequest request = findById(id);
+        soulService.assertAccessible(request.getAmeId());
         request.setStatut("REJETEE");
         request.setTraitePar(securityUtils.getCurrentUserId());
         request.setDateTraitement(LocalDateTime.now());

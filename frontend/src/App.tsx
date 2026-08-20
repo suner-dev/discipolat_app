@@ -94,6 +94,7 @@ const AdminTenantsPage = lazy(() => import('@/pages/AdminTenantsPage'));
 const AdminNotificationTemplatesPage = lazy(() => import('@/pages/AdminNotificationTemplatesPage'));
 const AdminSystemPage = lazy(() => import('@/pages/AdminSystemPage'));
 const AdminIntegrationsPage = lazy(() => import('@/pages/AdminIntegrationsPage'));
+const AdminGdprPage = lazy(() => import('@/pages/AdminGdprPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -567,6 +568,11 @@ export default function App() {
           <Route path="/admin/integrations" element={
             <ProtectedRoute roles={['ADMIN']}>
               <AdminIntegrationsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/gdpr" element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminGdprPage />
             </ProtectedRoute>
           } />
         </Route>

@@ -27,7 +27,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/transfers")
-@PreAuthorize("isAuthenticated()")
+@PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR','MEMBRE')")
 public class TransferController {
 
     private final TransferWorkflowService workflowService;
@@ -37,6 +37,7 @@ public class TransferController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR','MEMBRE')")
     public ResponseEntity<PageResponse<TransferResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -52,39 +53,46 @@ public class TransferController {
 
     /** Types de transfert que l'utilisateur courant peut initier (configuration active). */
     @GetMapping("/configurations")
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR','MEMBRE')")
     public ResponseEntity<List<TransferConfigurationResponse>> configurations() {
         return ResponseEntity.ok(workflowService.getConfigurations());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR','MEMBRE')")
     public ResponseEntity<TransferDetailResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(workflowService.getDetail(id));
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR')")
     public ResponseEntity<TransferResponse> create(@Valid @RequestBody CreateTransferRequest request) {
         TransferRequest req = workflowService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(req));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR')")
     public ResponseEntity<TransferResponse> update(@PathVariable UUID id,
                                                    @Valid @RequestBody UpdateTransferRequest request) {
         return ResponseEntity.ok(toResponse(workflowService.update(id, request)));
     }
 
     @PostMapping("/{id}/submit")
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR')")
     public ResponseEntity<TransferResponse> submit(@PathVariable UUID id) {
         return ResponseEntity.ok(toResponse(workflowService.submit(id)));
     }
 
     @PostMapping("/{id}/decide")
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE')")
     public ResponseEntity<TransferResponse> decide(@PathVariable UUID id,
                                                    @Valid @RequestBody DecideRequest request) {
         return ResponseEntity.ok(toResponse(workflowService.decide(id, request)));
     }
 
     @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR')")
     public ResponseEntity<TransferResponse> cancel(@PathVariable UUID id) {
         return ResponseEntity.ok(toResponse(workflowService.cancel(id)));
     }
@@ -96,11 +104,13 @@ public class TransferController {
     }
 
     @GetMapping("/{id}/history")
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR','MEMBRE')")
     public ResponseEntity<List<TransferHistoryResponse>> history(@PathVariable UUID id) {
         return ResponseEntity.ok(workflowService.getHistory(id));
     }
 
     @GetMapping("/{id}/decisions")
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR','MEMBRE')")
     public ResponseEntity<List<Map<String, Object>>> decisions(@PathVariable UUID id) {
         List<Map<String, Object>> decisions = workflowService.getDecisions(id).stream()
                 .map(d -> Map.<String, Object>of(

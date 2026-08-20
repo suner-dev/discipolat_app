@@ -185,10 +185,18 @@ public class SoulService {
         return paginate(scoped, pageable);
     }
 
-    /** Corbeille : toutes les âmes soft-deleted, pour restauration. */
+    /** Corbeille : âmes soft-deleted, scopées par rôle actif. */
     @Transactional(readOnly = true)
     public Page<Soul> findTrash(Pageable pageable) {
-        return soulRepository.findByDeletedTrue(pageable);
+        if (securityUtils.isSuperUser()) {
+            return soulRepository.findByDeletedTrue(pageable);
+        }
+        List<UUID> ids = accessibleSoulIds();
+        if (ids.isEmpty()) return new PageImpl<>(List.of(), pageable, 0);
+        List<Soul> trashed = soulRepository.findByDeletedTrue().stream()
+                .filter(s -> ids.contains(s.getId()))
+                .toList();
+        return paginate(trashed, pageable);
     }
 
     public Soul update(UUID id, UpdateSoulRequest request) {
@@ -258,6 +266,7 @@ public class SoulService {
     public Soul restore(UUID id) {
         Soul soul = soulRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Soul", id));
+        assertAccessible(soul);
         soul.setDeleted(false);
         soul.setStatut(StatutAme.ACTIF);
         return soulRepository.save(soul);
@@ -380,7 +389,7 @@ public class SoulService {
     }
 
     /** Ids des âmes accessibles au rôle actif (liste vide si aucun accès). */
-    private List<UUID> accessibleSoulIds() {
+    public List<UUID> accessibleSoulIds() {
         UUID currentUserId = securityUtils.getCurrentUserId();
         if (securityUtils.hasActiveRole("FAISEUR")) {
             return soulRepository.findAllByFaiseurId(currentUserId).stream()

@@ -14,6 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/custom-fields")
+@PreAuthorize("isAuthenticated()")
 public class CustomFieldController {
 
     private final CustomFieldService service;

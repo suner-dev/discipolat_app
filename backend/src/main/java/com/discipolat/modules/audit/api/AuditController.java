@@ -22,6 +22,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/audit")
+@PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
 public class AuditController {
 
     private final AuditService auditService;

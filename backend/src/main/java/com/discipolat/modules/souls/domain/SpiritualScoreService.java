@@ -29,15 +29,18 @@ public class SpiritualScoreService {
     private final SoulRepository soulRepository;
     private final MakerReportRepository makerReportRepository;
     private final EventRegistrationRepository eventRegistrationRepository;
+    private final SoulService soulService;
 
     public SpiritualScoreService(SpiritualScoreRepository scoreRepository,
                                  SoulRepository soulRepository,
                                  MakerReportRepository makerReportRepository,
-                                 EventRegistrationRepository eventRegistrationRepository) {
+                                 EventRegistrationRepository eventRegistrationRepository,
+                                 SoulService soulService) {
         this.scoreRepository = scoreRepository;
         this.soulRepository = soulRepository;
         this.makerReportRepository = makerReportRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
+        this.soulService = soulService;
     }
 
     /**
@@ -49,6 +52,7 @@ public class SpiritualScoreService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> computeScore(UUID soulId) {
+        soulService.assertAccessible(soulId);
         Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("Soul", soulId));
 
@@ -73,6 +77,7 @@ public class SpiritualScoreService {
     /** Historique des scores hebdomadaires (courbe d'évolution). */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getHistory(UUID soulId) {
+        soulService.assertAccessible(soulId);
         return scoreRepository.findBySoulIdOrderBySemaineAsc(soulId)
                 .stream()
                 .map(s -> {

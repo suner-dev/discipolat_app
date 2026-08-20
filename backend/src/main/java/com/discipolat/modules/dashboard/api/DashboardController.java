@@ -11,6 +11,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/dashboard")
+@PreAuthorize("isAuthenticated()")
 public class DashboardController {
 
     private final DashboardService dashboardService;

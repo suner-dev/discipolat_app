@@ -99,6 +99,7 @@ public class UserController {
     }
 
     @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> me() {
         User user = userService.findById(securityUtils.getCurrentUserId());
         return ResponseEntity.ok(UserResponse.from(user));
@@ -113,6 +114,7 @@ public class UserController {
 
     /** Self-update: any authenticated user can update their own profile */
     @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> updateMyProfile(@Valid @RequestBody UpdateProfileRequest request) {
         User user = userService.updateMyProfile(
                 request.firstName(),

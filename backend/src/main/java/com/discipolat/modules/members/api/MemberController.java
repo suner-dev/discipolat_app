@@ -13,6 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/members")
+@PreAuthorize("isAuthenticated()")
 public class MemberController {
 
     private final MemberService memberService;

@@ -493,6 +493,10 @@ public class FamilyService {
     public Family restore(UUID id) {
         Family family = familyRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Family", id));
+        if (!securityUtils.isSuperUser() && !getVisibleFamilyIds().contains(id)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Accès refusé à cette famille dans l'espace métier courant");
+        }
         family.setStatut(StatutEntite.ACTIVE);
         return familyRepository.save(family);
     }

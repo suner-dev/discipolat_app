@@ -58,6 +58,7 @@ public class SoulExitService {
      * US-22: Reintegrate a soul that was previously marked as exited
      */
     public Soul reintegrate(UUID ameId, StatutAme nouveauStatut) {
+        soulService.assertAccessible(ameId);
         Soul soul = soulRepository.findById(ameId)
                 .orElseThrow(() -> new EntityNotFoundException("Soul", ameId));
         soul.setStatut(nouveauStatut != null ? nouveauStatut : StatutAme.EN_INTEGRATION);

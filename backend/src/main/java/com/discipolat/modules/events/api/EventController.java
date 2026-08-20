@@ -24,6 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/events")
+@PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR','MEMBRE')")
 public class EventController {
 
     private final EventService eventService;
