@@ -91,7 +91,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen>
     try {
       final dio = _apiService.dio;
       final baseUrl = dio.options.baseUrl;
-      final wsUrl = baseUrl.replaceFirst('http', 'ws') + '/ws';
+      final wsUrl = '${baseUrl.replaceFirst('http', 'ws')}/ws';
       _wsChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       _wsChannel!.sink.add(

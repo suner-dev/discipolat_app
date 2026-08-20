@@ -6,6 +6,7 @@ import type { UserRole } from '@/types';
 import MainLayout from '@/layouts/MainLayout';
 import AuthLayout from '@/layouts/AuthLayout';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
+import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
 
 /* ============================================================================
  * CHARGEMENT PAR ROUTE (code splitting)
@@ -173,6 +174,7 @@ function HomeGate() {
 export default function App() {
   return (
     <ErrorBoundary>
+      <OfflineIndicator />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
         {/* Auth routes */}

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../widgets/glass_theme.dart';
 
 /// Smart Alerts screen — anomaly detection dashboard.
 /// Shows alert summary and allows manual scan trigger.
@@ -256,7 +255,6 @@ class _SmartAlertsScreenState extends State<SmartAlertsScreen> {
   }
 
   Widget _buildAlertItem(Map<String, dynamic> alert) {
-    final type = alert['typeAlerte']?.toString() ?? '';
     final title = alert['titre']?.toString() ?? alert['message']?.toString() ?? 'Alerte';
     final priority = alert['priorite']?.toString() ?? 'MOYENNE';
     final dateStr = alert['dateDeclenchement']?.toString() ?? '';

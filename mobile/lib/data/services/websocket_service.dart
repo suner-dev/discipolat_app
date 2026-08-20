@@ -23,7 +23,7 @@ class WebSocketService {
     try {
       final apiService = ApiService();
       final baseUrl = apiService.dio.options.baseUrl;
-      final wsUrl = baseUrl.replaceFirst('http', 'ws') + '/ws';
+      final wsUrl = '${baseUrl.replaceFirst('http', 'ws')}/ws';
 
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
