@@ -40,8 +40,10 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen>
   WebSocketChannel? _wsChannel;
   bool _wsConnected = false;
   Timer? _typingDebounce;
+  Timer? _reconnectTimer;
   DateTime? _lastTypingSent;
   bool _isTyping = false;
+  bool _disposed = false;
 
   String? get _myUserId => AuthState().userId;
 
@@ -56,12 +58,16 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen>
 
   @override
   void dispose() {
+    // Marquer d'abord l'état : empêche tout callback WebSocket (en particulier
+    // le onDone de reconnexion) de créer un nouveau timer après le dispose.
+    _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _messageCtrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
     _typingDebounce?.cancel();
     _disconnectWebSocket();
+    _reconnectTimer?.cancel();
     super.dispose();
   }
 
@@ -103,7 +109,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen>
         },
         onDone: () {
           _wsConnected = false;
-          Future.delayed(const Duration(seconds: 3), () {
+          // Timer annulable (pas de fuite de timer : chaque test dispose proprement).
+          _reconnectTimer?.cancel();
+          _reconnectTimer = Timer(const Duration(seconds: 3), () {
             if (mounted) _connectWebSocket();
           });
         },

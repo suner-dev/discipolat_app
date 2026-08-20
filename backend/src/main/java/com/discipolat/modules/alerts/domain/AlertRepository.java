@@ -36,4 +36,10 @@ public interface AlertRepository extends JpaRepository<Alert, UUID> {
 
     /** Source du Page Builder GRAPHIQUE scopée : actives sur des âmes données. */
     List<Alert> findByStatutAndAmeIdIn(StatutAlerte statut, Collection<UUID> ameIds);
+
+    /** Smart Alerts: find by type and tenant for deduplication. */
+    List<Alert> findByTypeAlerteAndTenantId(String typeAlerte, UUID tenantId);
+
+    /** Smart Alerts: count by statut and priorite for anomaly summary. */
+    long countByStatutAndPriorite(StatutAlerte statut, String priorite);
 }

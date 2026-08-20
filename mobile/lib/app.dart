@@ -14,6 +14,7 @@ import 'presentation/screens/reports/reports_screen.dart';
 import 'presentation/screens/reports/report_pdf_viewer_screen.dart';
 import 'presentation/screens/families/families_list_screen.dart';
 import 'presentation/screens/alerts/alerts_list_screen.dart';
+import 'presentation/screens/alerts/smart_alerts_screen.dart';
 import 'presentation/screens/notifications/notifications_screen.dart';
 import 'presentation/screens/profile/profile_screen.dart';
 import 'presentation/screens/prayers/prayers_list_screen.dart';
@@ -198,6 +199,7 @@ Map<String, List<String>> _routeRoles = {
   '/prayers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/events': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/smart-alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/profile': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -403,6 +405,11 @@ final appRouter = GoRouter(
       path: '/alerts',
       name: 'alerts',
       builder: (context, state) => const AlertsListScreen(),
+    ),
+    GoRoute(
+      path: '/smart-alerts',
+      name: 'smart-alerts',
+      builder: (context, state) => const SmartAlertsScreen(),
     ),
     GoRoute(
       path: '/notifications',
