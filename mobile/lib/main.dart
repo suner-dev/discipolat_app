@@ -11,6 +11,8 @@ import 'data/services/providers.dart';
 import 'presentation/widgets/glass_theme.dart';
 import 'app.dart';
 import 'presentation/widgets/offline_banner.dart';
+import 'data/services/push_notification_service.dart';
+import 'data/services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +36,18 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
   /// Dernier branding appliqué à la palette (évite de re-dériver les couleurs
   /// à chaque rebuild alors qu'elles n'ont pas changé).
   Branding? _appliedBranding;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize push notifications
+    try {
+      final pushService = PushNotificationService(ApiService());
+      pushService.initialize();
+    } catch (e) {
+      debugPrint('[Push] Init failed: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

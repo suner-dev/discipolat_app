@@ -13,10 +13,17 @@ class SyncService {
 
   SyncService(this._db, this._api, this._ref);
 
+  /// Tenant courant pour l'isolation du cache local ; repli sur la valeur
+  /// persistée ou `'default'` si aucun tenant n'est encore connu.
+  Future<String> _tenant() async =>
+      (await TenantConfig.resolveOrgId()) ?? 'default';
+
   /// Queue a report for sync and save locally (offline-first)
   ///
   /// Always saves locally first, then attempts API submission if online.
   /// If offline, queues for later sync when connectivity is restored.
+  /// Le tenant courant est tamponné sur le brouillon et la file afin qu'aucune
+  /// donnée d'une organisation ne soit visible depuis une autre.
   Future<String> saveReportLocally({
     required String ameId,
     required String semaine,
@@ -31,10 +38,12 @@ class SyncService {
   }) async {
     final isOnline = _ref.read(isOnlineProvider);
     final draftId = const Uuid().v4();
+    final tenantId = await _tenant();
 
     // Always save as draft locally FIRST (offline-first approach)
     await _db.saveDraft(ReportDraft(
       id: draftId,
+      tenantId: tenantId,
       ameId: ameId,
       semaine: semaine,
       presencesParCulte: jsonEncode(presencesParCulte),
@@ -138,8 +147,10 @@ class SyncService {
   }
 
   Future<void> _queueForSync(String draftId, Map<String, dynamic> payload) async {
+    final tenantId = await _tenant();
     await _db.addToSyncQueue(SyncQueueItem(
       id: const Uuid().v4(),
+      tenantId: tenantId,
       operation: 'CREATE',
       endpoint: '/reports/maker-weekly',
       payload: jsonEncode(payload),
@@ -151,11 +162,15 @@ class SyncService {
   /// Sync all pending items. Called when connectivity is restored.
   ///
   /// Handles retry logic, exponential backoff, and tenant-aware filtering.
+  /// Synchronise la file d'attente du tenant courant uniquement.
+  ///
+  /// Handles retry logic, exponential backoff, and tenant-aware filtering.
   Future<SyncResult> syncPending() async {
     if (_isSyncing) return SyncResult(isSyncing: true);
     _isSyncing = true;
 
-    final items = await _db.getPendingSyncItems();
+    final tenantId = await _tenant();
+    final items = await _db.getPendingSyncItems(tenantId);
     if (items.isEmpty) {
       _isSyncing = false;
       return SyncResult(synced: 0, failed: 0);
@@ -199,18 +214,25 @@ class SyncService {
     return SyncResult(synced: synced, failed: failed);
   }
 
-  /// Get all unsynced drafts for display
-  Future<List<ReportDraft>> getUnsyncedDrafts() => _db.getUnsyncedDrafts();
+  /// Get all unsynced drafts (scoped au tenant courant)
+  Future<List<ReportDraft>> getUnsyncedDrafts() async {
+    final tenantId = await _tenant();
+    return _db.getUnsyncedDrafts(tenantId);
+  }
 
-  /// Get a specific draft
-  Future<ReportDraft?> getDraft(String ameId, String semaine) =>
-      _db.getDraft(ameId, semaine);
+  /// Get a specific draft (scoped au tenant courant)
+  Future<ReportDraft?> getDraft(String ameId, String semaine) async {
+    final tenantId = await _tenant();
+    return _db.getDraft(ameId, semaine, tenantId: tenantId);
+  }
 
-  /// Save souls locally for offline access
+  /// Save souls locally for offline access (scoped au tenant courant)
   Future<void> cacheSouls(dynamic responseData) async {
+    final tenantId = await _tenant();
     final souls = (responseData['content'] as List).map((e) {
       return SoulLocal(
         id: e['id'] as String,
+        tenantId: tenantId,
         nom: e['nom'] as String,
         prenom: e['prenom'] as String?,
         email: e['email'] as String?,
@@ -227,8 +249,11 @@ class SyncService {
     await _db.saveSouls(souls);
   }
 
-  /// Get cached souls (for offline first launch)
-  Future<List<SoulLocal>> getCachedSouls() => _db.getLocalSouls();
+  /// Get cached souls (for offline first launch) — scoped au tenant courant
+  Future<List<SoulLocal>> getCachedSouls() async {
+    final tenantId = await _tenant();
+    return _db.getLocalSouls(tenantId);
+  }
 
   /// Clear all local data (on logout)
   ///

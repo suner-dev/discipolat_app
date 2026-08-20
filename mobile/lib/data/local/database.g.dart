@@ -14,6 +14,12 @@ class $SoulsTableTable extends SoulsTable
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _tenantIdMeta =
+      const VerificationMeta('tenantId');
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+      'tenant_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _nomMeta = const VerificationMeta('nom');
   @override
   late final GeneratedColumn<String> nom = GeneratedColumn<String>(
@@ -79,6 +85,7 @@ class $SoulsTableTable extends SoulsTable
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        tenantId,
         nom,
         prenom,
         email,
@@ -105,6 +112,12 @@ class $SoulsTableTable extends SoulsTable
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(_tenantIdMeta,
+          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
     }
     if (data.containsKey('nom')) {
       context.handle(
@@ -174,13 +187,15 @@ class $SoulsTableTable extends SoulsTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => {id, tenantId};
   @override
   SoulLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SoulLocal(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      tenantId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
       nom: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}nom'])!,
       prenom: attachedDatabase.typeMapping
@@ -214,6 +229,7 @@ class $SoulsTableTable extends SoulsTable
 
 class SoulLocal extends DataClass implements Insertable<SoulLocal> {
   final String id;
+  final String tenantId;
   final String nom;
   final String? prenom;
   final String? email;
@@ -227,6 +243,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
   final String lastSyncAt;
   const SoulLocal(
       {required this.id,
+      required this.tenantId,
       required this.nom,
       this.prenom,
       this.email,
@@ -242,6 +259,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
     map['nom'] = Variable<String>(nom);
     if (!nullToAbsent || prenom != null) {
       map['prenom'] = Variable<String>(prenom);
@@ -269,6 +287,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
   SoulsTableCompanion toCompanion(bool nullToAbsent) {
     return SoulsTableCompanion(
       id: Value(id),
+      tenantId: Value(tenantId),
       nom: Value(nom),
       prenom:
           prenom == null && nullToAbsent ? const Value.absent() : Value(prenom),
@@ -296,6 +315,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SoulLocal(
       id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
       nom: serializer.fromJson<String>(json['nom']),
       prenom: serializer.fromJson<String?>(json['prenom']),
       email: serializer.fromJson<String?>(json['email']),
@@ -315,6 +335,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
       'nom': serializer.toJson<String>(nom),
       'prenom': serializer.toJson<String?>(prenom),
       'email': serializer.toJson<String?>(email),
@@ -331,6 +352,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
 
   SoulLocal copyWith(
           {String? id,
+          String? tenantId,
           String? nom,
           Value<String?> prenom = const Value.absent(),
           Value<String?> email = const Value.absent(),
@@ -344,6 +366,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
           String? lastSyncAt}) =>
       SoulLocal(
         id: id ?? this.id,
+        tenantId: tenantId ?? this.tenantId,
         nom: nom ?? this.nom,
         prenom: prenom.present ? prenom.value : this.prenom,
         email: email.present ? email.value : this.email,
@@ -361,6 +384,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
   SoulLocal copyWithCompanion(SoulsTableCompanion data) {
     return SoulLocal(
       id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
       nom: data.nom.present ? data.nom.value : this.nom,
       prenom: data.prenom.present ? data.prenom.value : this.prenom,
       email: data.email.present ? data.email.value : this.email,
@@ -386,6 +410,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
   String toString() {
     return (StringBuffer('SoulLocal(')
           ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
           ..write('nom: $nom, ')
           ..write('prenom: $prenom, ')
           ..write('email: $email, ')
@@ -404,6 +429,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
   @override
   int get hashCode => Object.hash(
       id,
+      tenantId,
       nom,
       prenom,
       email,
@@ -420,6 +446,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
       identical(this, other) ||
       (other is SoulLocal &&
           other.id == this.id &&
+          other.tenantId == this.tenantId &&
           other.nom == this.nom &&
           other.prenom == this.prenom &&
           other.email == this.email &&
@@ -435,6 +462,7 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
 
 class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
   final Value<String> id;
+  final Value<String> tenantId;
   final Value<String> nom;
   final Value<String?> prenom;
   final Value<String?> email;
@@ -449,6 +477,7 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
   final Value<int> rowid;
   const SoulsTableCompanion({
     this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
     this.nom = const Value.absent(),
     this.prenom = const Value.absent(),
     this.email = const Value.absent(),
@@ -464,6 +493,7 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
   });
   SoulsTableCompanion.insert({
     required String id,
+    required String tenantId,
     required String nom,
     this.prenom = const Value.absent(),
     this.email = const Value.absent(),
@@ -477,6 +507,7 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
     required String lastSyncAt,
     this.rowid = const Value.absent(),
   })  : id = Value(id),
+        tenantId = Value(tenantId),
         nom = Value(nom),
         typeDisciple = Value(typeDisciple),
         statut = Value(statut),
@@ -485,6 +516,7 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
         lastSyncAt = Value(lastSyncAt);
   static Insertable<SoulLocal> custom({
     Expression<String>? id,
+    Expression<String>? tenantId,
     Expression<String>? nom,
     Expression<String>? prenom,
     Expression<String>? email,
@@ -500,6 +532,7 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
       if (nom != null) 'nom': nom,
       if (prenom != null) 'prenom': prenom,
       if (email != null) 'email': email,
@@ -518,6 +551,7 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
 
   SoulsTableCompanion copyWith(
       {Value<String>? id,
+      Value<String>? tenantId,
       Value<String>? nom,
       Value<String?>? prenom,
       Value<String?>? email,
@@ -532,6 +566,7 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
       Value<int>? rowid}) {
     return SoulsTableCompanion(
       id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
       nom: nom ?? this.nom,
       prenom: prenom ?? this.prenom,
       email: email ?? this.email,
@@ -552,6 +587,9 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
     }
     if (nom.present) {
       map['nom'] = Variable<String>(nom.value);
@@ -596,6 +634,7 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
   String toString() {
     return (StringBuffer('SoulsTableCompanion(')
           ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
           ..write('nom: $nom, ')
           ..write('prenom: $prenom, ')
           ..write('email: $email, ')
@@ -623,6 +662,12 @@ class $ReportDraftsTableTable extends ReportDraftsTable
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _tenantIdMeta =
+      const VerificationMeta('tenantId');
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+      'tenant_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _ameIdMeta = const VerificationMeta('ameId');
   @override
@@ -699,6 +744,7 @@ class $ReportDraftsTableTable extends ReportDraftsTable
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        tenantId,
         ameId,
         semaine,
         presencesParCulte,
@@ -725,6 +771,12 @@ class $ReportDraftsTableTable extends ReportDraftsTable
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(_tenantIdMeta,
+          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
     }
     if (data.containsKey('ame_id')) {
       context.handle(
@@ -801,6 +853,8 @@ class $ReportDraftsTableTable extends ReportDraftsTable
     return ReportDraft(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      tenantId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
       ameId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}ame_id'])!,
       semaine: attachedDatabase.typeMapping
@@ -834,6 +888,7 @@ class $ReportDraftsTableTable extends ReportDraftsTable
 
 class ReportDraft extends DataClass implements Insertable<ReportDraft> {
   final String id;
+  final String tenantId;
   final String ameId;
   final String semaine;
   final String presencesParCulte;
@@ -847,6 +902,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
   final bool synced;
   const ReportDraft(
       {required this.id,
+      required this.tenantId,
       required this.ameId,
       required this.semaine,
       required this.presencesParCulte,
@@ -862,6 +918,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
     map['ame_id'] = Variable<String>(ameId);
     map['semaine'] = Variable<String>(semaine);
     map['presences_par_culte'] = Variable<String>(presencesParCulte);
@@ -887,6 +944,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
   ReportDraftsTableCompanion toCompanion(bool nullToAbsent) {
     return ReportDraftsTableCompanion(
       id: Value(id),
+      tenantId: Value(tenantId),
       ameId: Value(ameId),
       semaine: Value(semaine),
       presencesParCulte: Value(presencesParCulte),
@@ -914,6 +972,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ReportDraft(
       id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
       ameId: serializer.fromJson<String>(json['ameId']),
       semaine: serializer.fromJson<String>(json['semaine']),
       presencesParCulte: serializer.fromJson<String>(json['presencesParCulte']),
@@ -934,6 +993,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
       'ameId': serializer.toJson<String>(ameId),
       'semaine': serializer.toJson<String>(semaine),
       'presencesParCulte': serializer.toJson<String>(presencesParCulte),
@@ -950,6 +1010,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
 
   ReportDraft copyWith(
           {String? id,
+          String? tenantId,
           String? ameId,
           String? semaine,
           String? presencesParCulte,
@@ -963,6 +1024,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
           bool? synced}) =>
       ReportDraft(
         id: id ?? this.id,
+        tenantId: tenantId ?? this.tenantId,
         ameId: ameId ?? this.ameId,
         semaine: semaine ?? this.semaine,
         presencesParCulte: presencesParCulte ?? this.presencesParCulte,
@@ -983,6 +1045,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
   ReportDraft copyWithCompanion(ReportDraftsTableCompanion data) {
     return ReportDraft(
       id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
       ameId: data.ameId.present ? data.ameId.value : this.ameId,
       semaine: data.semaine.present ? data.semaine.value : this.semaine,
       presencesParCulte: data.presencesParCulte.present
@@ -1011,6 +1074,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
   String toString() {
     return (StringBuffer('ReportDraft(')
           ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
           ..write('ameId: $ameId, ')
           ..write('semaine: $semaine, ')
           ..write('presencesParCulte: $presencesParCulte, ')
@@ -1029,6 +1093,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
   @override
   int get hashCode => Object.hash(
       id,
+      tenantId,
       ameId,
       semaine,
       presencesParCulte,
@@ -1045,6 +1110,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
       identical(this, other) ||
       (other is ReportDraft &&
           other.id == this.id &&
+          other.tenantId == this.tenantId &&
           other.ameId == this.ameId &&
           other.semaine == this.semaine &&
           other.presencesParCulte == this.presencesParCulte &&
@@ -1060,6 +1126,7 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
 
 class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
   final Value<String> id;
+  final Value<String> tenantId;
   final Value<String> ameId;
   final Value<String> semaine;
   final Value<String> presencesParCulte;
@@ -1074,6 +1141,7 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
   final Value<int> rowid;
   const ReportDraftsTableCompanion({
     this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
     this.ameId = const Value.absent(),
     this.semaine = const Value.absent(),
     this.presencesParCulte = const Value.absent(),
@@ -1089,6 +1157,7 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
   });
   ReportDraftsTableCompanion.insert({
     required String id,
+    required String tenantId,
     required String ameId,
     required String semaine,
     required String presencesParCulte,
@@ -1102,12 +1171,14 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
+        tenantId = Value(tenantId),
         ameId = Value(ameId),
         semaine = Value(semaine),
         presencesParCulte = Value(presencesParCulte),
         updatedAt = Value(updatedAt);
   static Insertable<ReportDraft> custom({
     Expression<String>? id,
+    Expression<String>? tenantId,
     Expression<String>? ameId,
     Expression<String>? semaine,
     Expression<String>? presencesParCulte,
@@ -1123,6 +1194,7 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
       if (ameId != null) 'ame_id': ameId,
       if (semaine != null) 'semaine': semaine,
       if (presencesParCulte != null) 'presences_par_culte': presencesParCulte,
@@ -1141,6 +1213,7 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
 
   ReportDraftsTableCompanion copyWith(
       {Value<String>? id,
+      Value<String>? tenantId,
       Value<String>? ameId,
       Value<String>? semaine,
       Value<String>? presencesParCulte,
@@ -1155,6 +1228,7 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
       Value<int>? rowid}) {
     return ReportDraftsTableCompanion(
       id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
       ameId: ameId ?? this.ameId,
       semaine: semaine ?? this.semaine,
       presencesParCulte: presencesParCulte ?? this.presencesParCulte,
@@ -1175,6 +1249,9 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
     }
     if (ameId.present) {
       map['ame_id'] = Variable<String>(ameId.value);
@@ -1220,6 +1297,7 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
   String toString() {
     return (StringBuffer('ReportDraftsTableCompanion(')
           ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
           ..write('ameId: $ameId, ')
           ..write('semaine: $semaine, ')
           ..write('presencesParCulte: $presencesParCulte, ')
@@ -1247,6 +1325,12 @@ class $SyncQueueTableTable extends SyncQueueTable
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _tenantIdMeta =
+      const VerificationMeta('tenantId');
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+      'tenant_id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _operationMeta =
       const VerificationMeta('operation');
@@ -1287,8 +1371,16 @@ class $SyncQueueTableTable extends SyncQueueTable
       'last_error', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, operation, endpoint, payload, createdAt, retryCount, lastError];
+  List<GeneratedColumn> get $columns => [
+        id,
+        tenantId,
+        operation,
+        endpoint,
+        payload,
+        createdAt,
+        retryCount,
+        lastError
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1303,6 +1395,12 @@ class $SyncQueueTableTable extends SyncQueueTable
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(_tenantIdMeta,
+          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
     }
     if (data.containsKey('operation')) {
       context.handle(_operationMeta,
@@ -1349,6 +1447,8 @@ class $SyncQueueTableTable extends SyncQueueTable
     return SyncQueueItem(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      tenantId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
       operation: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}operation'])!,
       endpoint: attachedDatabase.typeMapping
@@ -1372,6 +1472,7 @@ class $SyncQueueTableTable extends SyncQueueTable
 
 class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
   final String id;
+  final String tenantId;
   final String operation;
   final String endpoint;
   final String payload;
@@ -1380,6 +1481,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
   final String? lastError;
   const SyncQueueItem(
       {required this.id,
+      required this.tenantId,
       required this.operation,
       required this.endpoint,
       required this.payload,
@@ -1390,6 +1492,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
     map['operation'] = Variable<String>(operation);
     map['endpoint'] = Variable<String>(endpoint);
     map['payload'] = Variable<String>(payload);
@@ -1404,6 +1507,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
   SyncQueueTableCompanion toCompanion(bool nullToAbsent) {
     return SyncQueueTableCompanion(
       id: Value(id),
+      tenantId: Value(tenantId),
       operation: Value(operation),
       endpoint: Value(endpoint),
       payload: Value(payload),
@@ -1420,6 +1524,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SyncQueueItem(
       id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
       operation: serializer.fromJson<String>(json['operation']),
       endpoint: serializer.fromJson<String>(json['endpoint']),
       payload: serializer.fromJson<String>(json['payload']),
@@ -1433,6 +1538,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
       'operation': serializer.toJson<String>(operation),
       'endpoint': serializer.toJson<String>(endpoint),
       'payload': serializer.toJson<String>(payload),
@@ -1444,6 +1550,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
 
   SyncQueueItem copyWith(
           {String? id,
+          String? tenantId,
           String? operation,
           String? endpoint,
           String? payload,
@@ -1452,6 +1559,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
           Value<String?> lastError = const Value.absent()}) =>
       SyncQueueItem(
         id: id ?? this.id,
+        tenantId: tenantId ?? this.tenantId,
         operation: operation ?? this.operation,
         endpoint: endpoint ?? this.endpoint,
         payload: payload ?? this.payload,
@@ -1462,6 +1570,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
   SyncQueueItem copyWithCompanion(SyncQueueTableCompanion data) {
     return SyncQueueItem(
       id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
       operation: data.operation.present ? data.operation.value : this.operation,
       endpoint: data.endpoint.present ? data.endpoint.value : this.endpoint,
       payload: data.payload.present ? data.payload.value : this.payload,
@@ -1476,6 +1585,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
   String toString() {
     return (StringBuffer('SyncQueueItem(')
           ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
           ..write('operation: $operation, ')
           ..write('endpoint: $endpoint, ')
           ..write('payload: $payload, ')
@@ -1487,13 +1597,14 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, operation, endpoint, payload, createdAt, retryCount, lastError);
+  int get hashCode => Object.hash(id, tenantId, operation, endpoint, payload,
+      createdAt, retryCount, lastError);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SyncQueueItem &&
           other.id == this.id &&
+          other.tenantId == this.tenantId &&
           other.operation == this.operation &&
           other.endpoint == this.endpoint &&
           other.payload == this.payload &&
@@ -1504,6 +1615,7 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
 
 class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
   final Value<String> id;
+  final Value<String> tenantId;
   final Value<String> operation;
   final Value<String> endpoint;
   final Value<String> payload;
@@ -1513,6 +1625,7 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
   final Value<int> rowid;
   const SyncQueueTableCompanion({
     this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
     this.operation = const Value.absent(),
     this.endpoint = const Value.absent(),
     this.payload = const Value.absent(),
@@ -1523,6 +1636,7 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
   });
   SyncQueueTableCompanion.insert({
     required String id,
+    required String tenantId,
     required String operation,
     required String endpoint,
     required String payload,
@@ -1531,12 +1645,14 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
     this.lastError = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
+        tenantId = Value(tenantId),
         operation = Value(operation),
         endpoint = Value(endpoint),
         payload = Value(payload),
         createdAt = Value(createdAt);
   static Insertable<SyncQueueItem> custom({
     Expression<String>? id,
+    Expression<String>? tenantId,
     Expression<String>? operation,
     Expression<String>? endpoint,
     Expression<String>? payload,
@@ -1547,6 +1663,7 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
       if (operation != null) 'operation': operation,
       if (endpoint != null) 'endpoint': endpoint,
       if (payload != null) 'payload': payload,
@@ -1559,6 +1676,7 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
 
   SyncQueueTableCompanion copyWith(
       {Value<String>? id,
+      Value<String>? tenantId,
       Value<String>? operation,
       Value<String>? endpoint,
       Value<String>? payload,
@@ -1568,6 +1686,7 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
       Value<int>? rowid}) {
     return SyncQueueTableCompanion(
       id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
       operation: operation ?? this.operation,
       endpoint: endpoint ?? this.endpoint,
       payload: payload ?? this.payload,
@@ -1583,6 +1702,9 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
     }
     if (operation.present) {
       map['operation'] = Variable<String>(operation.value);
@@ -1612,6 +1734,7 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
   String toString() {
     return (StringBuffer('SyncQueueTableCompanion(')
           ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
           ..write('operation: $operation, ')
           ..write('endpoint: $endpoint, ')
           ..write('payload: $payload, ')
@@ -1641,6 +1764,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 
 typedef $$SoulsTableTableCreateCompanionBuilder = SoulsTableCompanion Function({
   required String id,
+  required String tenantId,
   required String nom,
   Value<String?> prenom,
   Value<String?> email,
@@ -1656,6 +1780,7 @@ typedef $$SoulsTableTableCreateCompanionBuilder = SoulsTableCompanion Function({
 });
 typedef $$SoulsTableTableUpdateCompanionBuilder = SoulsTableCompanion Function({
   Value<String> id,
+  Value<String> tenantId,
   Value<String> nom,
   Value<String?> prenom,
   Value<String?> email,
@@ -1681,6 +1806,9 @@ class $$SoulsTableTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get nom => $composableBuilder(
       column: $table.nom, builder: (column) => ColumnFilters(column));
@@ -1730,6 +1858,9 @@ class $$SoulsTableTableOrderingComposer
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get nom => $composableBuilder(
       column: $table.nom, builder: (column) => ColumnOrderings(column));
 
@@ -1778,6 +1909,9 @@ class $$SoulsTableTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
 
   GeneratedColumn<String> get nom =>
       $composableBuilder(column: $table.nom, builder: (column) => column);
@@ -1837,6 +1971,7 @@ class $$SoulsTableTableTableManager extends RootTableManager<
               $$SoulsTableTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
+            Value<String> tenantId = const Value.absent(),
             Value<String> nom = const Value.absent(),
             Value<String?> prenom = const Value.absent(),
             Value<String?> email = const Value.absent(),
@@ -1852,6 +1987,7 @@ class $$SoulsTableTableTableManager extends RootTableManager<
           }) =>
               SoulsTableCompanion(
             id: id,
+            tenantId: tenantId,
             nom: nom,
             prenom: prenom,
             email: email,
@@ -1867,6 +2003,7 @@ class $$SoulsTableTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String id,
+            required String tenantId,
             required String nom,
             Value<String?> prenom = const Value.absent(),
             Value<String?> email = const Value.absent(),
@@ -1882,6 +2019,7 @@ class $$SoulsTableTableTableManager extends RootTableManager<
           }) =>
               SoulsTableCompanion.insert(
             id: id,
+            tenantId: tenantId,
             nom: nom,
             prenom: prenom,
             email: email,
@@ -1917,6 +2055,7 @@ typedef $$SoulsTableTableProcessedTableManager = ProcessedTableManager<
 typedef $$ReportDraftsTableTableCreateCompanionBuilder
     = ReportDraftsTableCompanion Function({
   required String id,
+  required String tenantId,
   required String ameId,
   required String semaine,
   required String presencesParCulte,
@@ -1933,6 +2072,7 @@ typedef $$ReportDraftsTableTableCreateCompanionBuilder
 typedef $$ReportDraftsTableTableUpdateCompanionBuilder
     = ReportDraftsTableCompanion Function({
   Value<String> id,
+  Value<String> tenantId,
   Value<String> ameId,
   Value<String> semaine,
   Value<String> presencesParCulte,
@@ -1958,6 +2098,9 @@ class $$ReportDraftsTableTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get ameId => $composableBuilder(
       column: $table.ameId, builder: (column) => ColumnFilters(column));
@@ -2008,6 +2151,9 @@ class $$ReportDraftsTableTableOrderingComposer
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get ameId => $composableBuilder(
       column: $table.ameId, builder: (column) => ColumnOrderings(column));
 
@@ -2057,6 +2203,9 @@ class $$ReportDraftsTableTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
 
   GeneratedColumn<String> get ameId =>
       $composableBuilder(column: $table.ameId, builder: (column) => column);
@@ -2121,6 +2270,7 @@ class $$ReportDraftsTableTableTableManager extends RootTableManager<
                   $db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
+            Value<String> tenantId = const Value.absent(),
             Value<String> ameId = const Value.absent(),
             Value<String> semaine = const Value.absent(),
             Value<String> presencesParCulte = const Value.absent(),
@@ -2136,6 +2286,7 @@ class $$ReportDraftsTableTableTableManager extends RootTableManager<
           }) =>
               ReportDraftsTableCompanion(
             id: id,
+            tenantId: tenantId,
             ameId: ameId,
             semaine: semaine,
             presencesParCulte: presencesParCulte,
@@ -2151,6 +2302,7 @@ class $$ReportDraftsTableTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String id,
+            required String tenantId,
             required String ameId,
             required String semaine,
             required String presencesParCulte,
@@ -2166,6 +2318,7 @@ class $$ReportDraftsTableTableTableManager extends RootTableManager<
           }) =>
               ReportDraftsTableCompanion.insert(
             id: id,
+            tenantId: tenantId,
             ameId: ameId,
             semaine: semaine,
             presencesParCulte: presencesParCulte,
@@ -2204,6 +2357,7 @@ typedef $$ReportDraftsTableTableProcessedTableManager = ProcessedTableManager<
 typedef $$SyncQueueTableTableCreateCompanionBuilder = SyncQueueTableCompanion
     Function({
   required String id,
+  required String tenantId,
   required String operation,
   required String endpoint,
   required String payload,
@@ -2215,6 +2369,7 @@ typedef $$SyncQueueTableTableCreateCompanionBuilder = SyncQueueTableCompanion
 typedef $$SyncQueueTableTableUpdateCompanionBuilder = SyncQueueTableCompanion
     Function({
   Value<String> id,
+  Value<String> tenantId,
   Value<String> operation,
   Value<String> endpoint,
   Value<String> payload,
@@ -2235,6 +2390,9 @@ class $$SyncQueueTableTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get operation => $composableBuilder(
       column: $table.operation, builder: (column) => ColumnFilters(column));
@@ -2267,6 +2425,9 @@ class $$SyncQueueTableTableOrderingComposer
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get operation => $composableBuilder(
       column: $table.operation, builder: (column) => ColumnOrderings(column));
 
@@ -2297,6 +2458,9 @@ class $$SyncQueueTableTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
 
   GeneratedColumn<String> get operation =>
       $composableBuilder(column: $table.operation, builder: (column) => column);
@@ -2345,6 +2509,7 @@ class $$SyncQueueTableTableTableManager extends RootTableManager<
               $$SyncQueueTableTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
+            Value<String> tenantId = const Value.absent(),
             Value<String> operation = const Value.absent(),
             Value<String> endpoint = const Value.absent(),
             Value<String> payload = const Value.absent(),
@@ -2355,6 +2520,7 @@ class $$SyncQueueTableTableTableManager extends RootTableManager<
           }) =>
               SyncQueueTableCompanion(
             id: id,
+            tenantId: tenantId,
             operation: operation,
             endpoint: endpoint,
             payload: payload,
@@ -2365,6 +2531,7 @@ class $$SyncQueueTableTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String id,
+            required String tenantId,
             required String operation,
             required String endpoint,
             required String payload,
@@ -2375,6 +2542,7 @@ class $$SyncQueueTableTableTableManager extends RootTableManager<
           }) =>
               SyncQueueTableCompanion.insert(
             id: id,
+            tenantId: tenantId,
             operation: operation,
             endpoint: endpoint,
             payload: payload,

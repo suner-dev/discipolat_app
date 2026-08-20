@@ -3,11 +3,12 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../tenant_config.dart';
 import '../services/api_service.dart';
 import 'database.dart';
 
 /// Manages automatic sync of pending items when connectivity is restored.
-/// Extends SyncService to handle presences, discipline, and prayers offline.
+/// Handles presences, discipline, prayers, messages, and badge evaluations offline.
 class OfflineSyncManager {
   final AppDatabase _db;
   final ApiService _api;
@@ -21,6 +22,10 @@ class OfflineSyncManager {
   int get pendingCount => _pendingCount;
   bool get isSyncing => _isSyncing;
   Stream<OfflineSyncResult> get syncResults => _syncController.stream;
+
+  /// Current tenant ID for multi-tenant isolation
+  Future<String> _tenant() async =>
+      (await TenantConfig.resolveOrgId()) ?? 'default';
 
   /// Start listening for connectivity changes and auto-sync
   void startListening() {
@@ -42,7 +47,8 @@ class OfflineSyncManager {
   }
 
   Future<void> _refreshPendingCount() async {
-    final items = await _db.getPendingSyncItems();
+    final tenantId = await _tenant();
+    final items = await _db.getPendingSyncItems(tenantId);
     _pendingCount = items.length;
   }
 
@@ -52,9 +58,11 @@ class OfflineSyncManager {
     required String date,
     required List<Map<String, dynamic>> items,
   }) async {
+    final tenantId = await _tenant();
     final id = 'presence-${DateTime.now().millisecondsSinceEpoch}';
     await _db.addToSyncQueue(SyncQueueItem(
       id: id,
+      tenantId: tenantId,
       operation: 'CREATE',
       endpoint: '/departments/$departmentId/presence',
       payload: jsonEncode({'date': date, 'items': items}),
@@ -69,10 +77,12 @@ class OfflineSyncManager {
   Future<void> queueDisciplineEvent({
     required Map<String, dynamic> event,
   }) async {
+    final tenantId = await _tenant();
     final id = 'discipline-${DateTime.now().millisecondsSinceEpoch}';
     final soulId = event['soulId'] ?? '';
     await _db.addToSyncQueue(SyncQueueItem(
       id: id,
+      tenantId: tenantId,
       operation: 'CREATE',
       endpoint: '/souls/$soulId/discipline',
       payload: jsonEncode(event),
@@ -87,9 +97,11 @@ class OfflineSyncManager {
   Future<void> queuePrayer({
     required Map<String, dynamic> prayer,
   }) async {
+    final tenantId = await _tenant();
     final id = 'prayer-${DateTime.now().millisecondsSinceEpoch}';
     await _db.addToSyncQueue(SyncQueueItem(
       id: id,
+      tenantId: tenantId,
       operation: 'CREATE',
       endpoint: '/prayers/actions-de-grace',
       payload: jsonEncode(prayer),
@@ -105,9 +117,11 @@ class OfflineSyncManager {
     required String conversationId,
     required String content,
   }) async {
+    final tenantId = await _tenant();
     final id = 'message-${DateTime.now().millisecondsSinceEpoch}';
     await _db.addToSyncQueue(SyncQueueItem(
       id: id,
+      tenantId: tenantId,
       operation: 'CREATE',
       endpoint: '/conversations/$conversationId/messages',
       payload: jsonEncode({'content': content}),
@@ -122,9 +136,11 @@ class OfflineSyncManager {
   Future<void> queueBadgeEvaluation({
     required String memberId,
   }) async {
+    final tenantId = await _tenant();
     final id = 'badge-${DateTime.now().millisecondsSinceEpoch}';
     await _db.addToSyncQueue(SyncQueueItem(
       id: id,
+      tenantId: tenantId,
       operation: 'CREATE',
       endpoint: '/members/$memberId/badges/evaluate',
       payload: jsonEncode({}),
@@ -141,7 +157,8 @@ class OfflineSyncManager {
     if (_isSyncing) return OfflineSyncResult(isSyncing: true);
 
     _isSyncing = true;
-    final items = await _db.getPendingSyncItems();
+    final tenantId = await _tenant();
+    final items = await _db.getPendingSyncItems(tenantId);
 
     if (items.isEmpty) {
       _isSyncing = false;
