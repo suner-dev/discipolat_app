@@ -68,6 +68,7 @@ import 'presentation/screens/departments/presence_entry_screen.dart';
 import 'presentation/screens/discipline/discipline_screen.dart';
 import 'presentation/screens/prayers/actions_de_grace_screen.dart';
 import 'presentation/screens/dashboard/member_activities_screen.dart';
+import 'presentation/screens/dashboard/bi_dashboard_screen.dart';
 
 import 'tenant_config.dart';
 
@@ -200,6 +201,7 @@ Map<String, List<String>> _routeRoles = {
   '/events': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/smart-alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/bi-dashboard': ['ADMIN', 'PASTEUR'],
   '/profile': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -410,6 +412,11 @@ final appRouter = GoRouter(
       path: '/smart-alerts',
       name: 'smart-alerts',
       builder: (context, state) => const SmartAlertsScreen(),
+    ),
+    GoRoute(
+      path: '/bi-dashboard',
+      name: 'bi-dashboard',
+      builder: (context, state) => const BiDashboardScreen(),
     ),
     GoRoute(
       path: '/notifications',
