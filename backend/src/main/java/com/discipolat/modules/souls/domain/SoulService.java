@@ -9,8 +9,12 @@ import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.files.domain.EntityAttachment;
 import com.discipolat.modules.files.domain.EntityAttachmentService;
+import com.discipolat.modules.notifications.domain.NotificationService;
+import com.discipolat.common.enums.CanalNotification;
+import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.api.CreateSoulRequest;
@@ -47,6 +51,8 @@ public class SoulService {
     private final EvaluationService evaluationService;
     private final EntityAttachmentService attachmentService;
     private final WorkspaceScopeService workspaceScopeService;
+    private final AuditService auditService;
+    private final NotificationService notificationService;
 
     public SoulService(SoulRepository soulRepository, SoulHistoryRepository soulHistoryRepository,
                        SoulNoteRepository soulNoteRepository,
@@ -56,7 +62,9 @@ public class SoulService {
                        MakerReportRepository makerReportRepository,
                        EvaluationService evaluationService,
                        EntityAttachmentService attachmentService,
-                       WorkspaceScopeService workspaceScopeService) {
+                       WorkspaceScopeService workspaceScopeService,
+                       AuditService auditService,
+                       NotificationService notificationService) {
         this.soulRepository = soulRepository;
         this.soulHistoryRepository = soulHistoryRepository;
         this.soulNoteRepository = soulNoteRepository;
@@ -69,6 +77,8 @@ public class SoulService {
         this.evaluationService = evaluationService;
         this.attachmentService = attachmentService;
         this.workspaceScopeService = workspaceScopeService;
+        this.auditService = auditService;
+        this.notificationService = notificationService;
     }
 
     public Soul create(CreateSoulRequest request) {
@@ -95,6 +105,7 @@ public class SoulService {
                 .build();
         soul = soulRepository.save(soul);
         logHistory(soul.getId(), "CREATION", "Âme créée", null, soul.getStatut().name(), null, request.faiseurId());
+        auditService.logSimple("SOUL_CREATED", "SOUL", soul.getId());
         return soul;
     }
 
@@ -250,15 +261,30 @@ public class SoulService {
             logHistory(soul.getId(), "REAFFECTATION",
                     "Réaffecté du faiseur " + oldFaiseurId + " au faiseur " + request.faiseurId(),
                     null, null, oldFaiseurId, request.faiseurId());
+
+            // ===== PROPAGATION: Notifier l'ancien et le nouveau faiseur =====
+            if (oldFaiseurId != null) {
+                notifyMaker(oldFaiseurId, "Disciple réaffecté",
+                        "Le disciple " + soul.getPrenom() + " " + soul.getNom()
+                                + " ne fait plus partie de vos disciples.",
+                        soul.getId(), "SOUL");
+            }
+            notifyMaker(request.faiseurId(), "Nouveau disciple affecté",
+                    "Le disciple " + soul.getPrenom() + " " + soul.getNom()
+                            + " vous a été affecté.",
+                    soul.getId(), "SOUL");
         }
 
-        return soulRepository.save(soul);
+        Soul saved = soulRepository.save(soul);
+        auditService.logSimple("SOUL_UPDATED", "SOUL", saved.getId());
+        return saved;
     }
 
     public void delete(UUID id) {
         Soul soul = findById(id);
         soul.setDeleted(true);
         soulRepository.save(soul);
+        auditService.logSimple("SOUL_SOFT_DELETED", "SOUL", id);
     }
 
     // ======================== US-60: RESTORE SOUL ========================
@@ -644,5 +670,18 @@ public class SoulService {
             // System operations may not have a user context
         }
         soulHistoryRepository.save(history);
+    }
+
+    /**
+     * Envoie une notification in-app au faiseur (ignorer les erreurs).
+     */
+    private void notifyMaker(UUID makerId, String titre, String message,
+                             UUID entityId, String entityType) {
+        try {
+            notificationService.create(makerId, TypeNotification.INFORMATION,
+                    CanalNotification.IN_APP, titre, message, entityId, entityType);
+        } catch (Exception e) {
+            // Notification failure must not block the soul update
+        }
     }
 }

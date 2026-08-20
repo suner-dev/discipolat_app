@@ -62,6 +62,10 @@ class SoulServiceTest {
     private EntityAttachmentService attachmentService;
     @Mock
     private WorkspaceScopeService workspaceScopeService;
+    @Mock
+    private com.discipolat.modules.audit.domain.AuditService auditService;
+    @Mock
+    private com.discipolat.modules.notifications.domain.NotificationService notificationService;
 
     private SoulService soulService;
 
@@ -75,7 +79,8 @@ class SoulServiceTest {
         soulService = new SoulService(soulRepository, soulHistoryRepository,
                 soulNoteRepository, securityUtils, userRepository,
                 familyRepository, departmentRepository, soulDepartmentRepository,
-                makerReportRepository, evaluationService, attachmentService, workspaceScopeService);
+                makerReportRepository, evaluationService, attachmentService, workspaceScopeService,
+                auditService, notificationService);
 
         faiseurId = UUID.randomUUID();
         familleId = UUID.randomUUID();
