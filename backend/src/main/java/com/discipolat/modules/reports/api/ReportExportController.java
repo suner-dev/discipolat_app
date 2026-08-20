@@ -136,16 +136,16 @@ public class ReportExportController {
             @RequestParam(required = false) LocalDate semaine) {
 
         if (semaine == null) {
-            semana = LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+            semaine = LocalDate.now().with(java.time.DayOfWeek.MONDAY);
         }
 
-        Page<MakerReport> reportsPage = reportService.findMakerReports(faiseurId, familleId, null, semana,
+        Page<MakerReport> reportsPage = reportService.findMakerReports(faiseurId, familleId, null, semaine,
                 PageRequest.of(0, 10000));
         List<MakerReport> reports = reportsPage.getContent();
 
-        byte[] pdfBytes = reportPdfService.generateMakerReportPdf(reports, semana);
+        byte[] pdfBytes = reportPdfService.generateMakerReportPdf(reports, semaine);
 
-        String filename = "rapport-faiseur-" + semana.format(DateTimeFormatter.ISO_LOCAL_DATE) + ".pdf";
+        String filename = "rapport-faiseur-" + semaine.format(DateTimeFormatter.ISO_LOCAL_DATE) + ".pdf";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")

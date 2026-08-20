@@ -49,21 +49,33 @@ class _MessagesScreenState extends State<MessagesScreen> {
         builder: (_) => ConversationDetailScreen(conversationId: id, title: title, apiService: _apiService),
       ),
     );
-    _loadData(); // recalcule le compteur de non-lus après la lecture
+    _loadData(); // reload unread count after reading
   }
 
   void _startNewConversation() {
-    showStartConversationSheet(
-      context,
-      _apiService,
-      onStarted: (id, title) {
-        _loadData();
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ConversationDetailScreen(conversationId: id, title: title, apiService: _apiService),
-          ),
-        );
-      },
+    _showStartConversationSheet();
+  }
+
+  void _showStartConversationSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1A202C),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _NewConversationSheet(
+        apiService: _apiService,
+        onStarted: (id, title) {
+          Navigator.of(ctx).pop();
+          _loadData();
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ConversationDetailScreen(conversationId: id, title: title, apiService: _apiService),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -126,7 +138,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               radius: 22,
                               backgroundColor: isGroup ? Colors.blue.withValues(alpha: 0.2) : Colors.teal.withValues(alpha: 0.2),
                               child: Text(
-                                isGroup ? '${_conversations.length}' : initialsFromName(title),
+                                _initials(title),
                                 style: TextStyle(color: isGroup ? Colors.blue : Colors.teal, fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ),
@@ -173,5 +185,150 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     ),
             ),
     );
+  }
+
+  static String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts.last[0]}'.toUpperCase();
+  }
+}
+
+/// Bottom sheet to start a new conversation by selecting a user.
+class _NewConversationSheet extends StatefulWidget {
+  final ApiService apiService;
+  final void Function(String id, String title) onStarted;
+
+  const _NewConversationSheet({required this.apiService, required this.onStarted});
+
+  @override
+  State<_NewConversationSheet> createState() => _NewConversationSheetState();
+}
+
+class _NewConversationSheetState extends State<_NewConversationSheet> {
+  List<dynamic> _users = [];
+  bool _isLoading = true;
+  String _search = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final res = await widget.apiService.get('/users', params: {'size': 200});
+      final data = res.data;
+      if (data is Map && data['content'] is List) {
+        _users = data['content'] as List;
+      } else if (data is List) {
+        _users = data;
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _startConversation(Map<String, dynamic> user) async {
+    try {
+      final userId = user['id']?.toString() ?? '';
+      final name = '${user['prenom'] ?? ''} ${user['nom'] ?? ''}'.trim();
+      if (userId.isEmpty) return;
+      final res = await widget.apiService.post('/messages/conversations', data: {
+        'participantIds': [userId],
+      });
+      final convId = (res.data is Map) ? res.data['id']?.toString() ?? '' : '';
+      if (convId.isNotEmpty) {
+        widget.onStarted(convId, name);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _users.where((u) {
+      if (_search.isEmpty) return true;
+      final name = '${u['prenom'] ?? ''} ${u['nom'] ?? ''}'.toLowerCase();
+      return name.contains(_search.toLowerCase());
+    }).toList();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (ctx, scrollCtrl) {
+        return Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Nouvelle conversation',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                onChanged: (v) => setState(() => _search = v),
+                decoration: InputDecoration(
+                  hintText: 'Rechercher un utilisateur...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      controller: scrollCtrl,
+                      itemCount: filtered.length,
+                      itemBuilder: (ctx, index) {
+                        final user = filtered[index] as Map<String, dynamic>;
+                        final name = '${user['prenom'] ?? ''} ${user['nom'] ?? ''}'.trim();
+                        final email = user['email']?.toString() ?? '';
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.teal.withValues(alpha: 0.2),
+                            child: Text(
+                              _initials(name),
+                              style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          title: Text(name, style: const TextStyle(color: Colors.white)),
+                          subtitle: Text(email, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                          onTap: () => _startConversation(user),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts.last[0]}'.toUpperCase();
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'data/local/sync_service.dart';
 import 'data/local/database.dart';
 import 'data/models/branding.dart';
@@ -73,11 +73,15 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
       theme: GlassTheme.darkTheme,
       darkTheme: GlassTheme.darkTheme,
       themeMode: ThemeMode.dark,
-                  localizationsDelegates: const [
+      localizationsDelegates: [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('fr'),
+        Locale('en'),
       ],
       routerConfig: appRouter,
     );

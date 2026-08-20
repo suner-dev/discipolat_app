@@ -12,7 +12,6 @@ import java.util.List;
 @Service
 public class ReportPdfService {
 
-    // Brand colors
     private static final Color BRAND_PRIMARY = new Color(43, 108, 176);
     private static final Color BRAND_LIGHT = new Color(235, 248, 255);
     private static final Color BRAND_DARK = new Color(26, 54, 93);
@@ -25,19 +24,12 @@ public class ReportPdfService {
         java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
 
         try {
-            PdfWriter writer = PdfWriter.getInstance(document, baos);
+            PdfWriter.getInstance(document, baos);
             document.open();
 
-            // Header
-            addHeader(document, semaine);
-
-            // Summary KPIs
+            addHeader(document, "Rapport Consolidé Discipolat", semaine);
             addSummaryKpis(document, reports);
-
-            // Detail table
             addFamilyTable(document, reports);
-
-            // Footer
             addFooter(document);
 
             document.close();
@@ -53,24 +45,10 @@ public class ReportPdfService {
         java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
 
         try {
-            PdfWriter writer = PdfWriter.getInstance(document, baos);
+            PdfWriter.getInstance(document, baos);
             document.open();
 
-            // Header                Paragraph title = new Paragraph("Rapport Hebdomadaire des Faiseurs", new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 20, com.lowagie.text.Font.BOLD, BRAND_DARK));
-            title.setAlignment(Element.ALIGN_CENTER);
-            document.add(title);                Paragraph period = new Paragraph(
-                    "Semaine du " + formatWeek(semaine),
-                    new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 12, com.lowagie.text.Font.NORMAL, TEXT_COLOR));
-            period.setAlignment(Element.ALIGN_CENTER);
-            period.setSpacingAfter(5);
-            document.add(period);
-
-            Paragraph genDate = new Paragraph(
-                    "Généré le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                    new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.ITALIC, Color.GRAY));
-            genDate.setAlignment(Element.ALIGN_CENTER);
-            genDate.setSpacingAfter(20);
-            document.add(genDate);
+            addHeader(document, "Rapport Hebdomadaire des Faiseurs", semaine);
 
             // Summary
             int totalReports = reports.size();
@@ -90,14 +68,8 @@ public class ReportPdfService {
             table.setWidthPercentage(100);
             table.setWidths(new float[]{2f, 2f, 2f, 1.5f, 1.5f, 1.5f, 1.5f});
 
-            String[] headers = {"Faiseur", "Âme", "Semaine", "Présences", "Difficultés", "Sorties", "Maintenus"};
-            for (String h : headers) {
-                PdfPCell cell = new PdfPCell(new Phrase(h, new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.BOLD, Color.WHITE)));
-                cell.setBackgroundColor(BRAND_PRIMARY);
-                cell.setPadding(8);
-                cell.setBorderWidth(0);
-                table.addCell(cell);
-            }
+            String[] headers = {"Faiseur", "Ame", "Semaine", "Presences", "Difficultes", "Sorties", "Maintenus"};
+            addTableHeaders(table, headers);
 
             boolean alternate = false;
             for (MakerReport r : reports) {
@@ -113,8 +85,6 @@ public class ReportPdfService {
             }
 
             document.add(table);
-
-            // Footer
             addFooter(document);
 
             document.close();
@@ -125,20 +95,21 @@ public class ReportPdfService {
         return baos.toByteArray();
     }
 
-    private void addHeader(Document document, LocalDate semaine) throws DocumentException {
-        Paragraph title = new Paragraph("Rapport Consolidé Discipolat", new Font(Font.HELVETICA, 22, Font.BOLD, BRAND_DARK));
+    private void addHeader(Document document, String titleText, LocalDate semana) throws DocumentException {
+        Paragraph title = new Paragraph(titleText,
+                new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 22, com.lowagie.text.Font.BOLD, BRAND_DARK));
         title.setAlignment(Element.ALIGN_CENTER);
         document.add(title);
 
         Paragraph period = new Paragraph(
-                "Semaine du " + formatWeek(semaine),
+                "Semaine du " + formatWeek(semana),
                 new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 12, com.lowagie.text.Font.NORMAL, TEXT_COLOR));
         period.setAlignment(Element.ALIGN_CENTER);
         period.setSpacingAfter(5);
         document.add(period);
 
         Paragraph genDate = new Paragraph(
-                "Généré le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                "Genere le " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                 new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.ITALIC, Color.GRAY));
         genDate.setAlignment(Element.ALIGN_CENTER);
         genDate.setSpacingAfter(20);
@@ -156,7 +127,7 @@ public class ReportPdfService {
         kpiTable.setWidthPercentage(100);
         kpiTable.setSpacingAfter(20);
         addKpiCell(kpiTable, String.valueOf(totalFamilles), "Familles");
-        addKpiCell(kpiTable, String.valueOf(totalPresents), "Présents");
+        addKpiCell(kpiTable, String.valueOf(totalPresents), "Presents");
         addKpiCell(kpiTable, String.valueOf(totalAbsents), "Absents");
         addKpiCell(kpiTable, String.valueOf(totalSorties), "Sorties");
         addKpiCell(kpiTable, String.valueOf(totalMaintenus), "Maintenus");
@@ -168,14 +139,8 @@ public class ReportPdfService {
         table.setWidthPercentage(100);
         table.setWidths(new float[]{2f, 1.5f, 1.5f, 1.5f, 1.5f, 1.5f, 1.5f, 2f});
 
-        String[] headers = {"Famille", "Présence", "Présents", "Absents", "Sorties", "Maintenus", "Parallèles", "Statut"};
-        for (String h : headers) {
-            PdfPCell cell = new PdfPCell(new Phrase(h, new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.BOLD, Color.WHITE)));
-            cell.setBackgroundColor(BRAND_PRIMARY);
-            cell.setPadding(8);
-            cell.setBorderWidth(0);
-            table.addCell(cell);
-        }
+        String[] headers = {"Famille", "Presence", "Presents", "Absents", "Sorties", "Maintenus", "Paralleles", "Statut"};
+        addTableHeaders(table, headers);
 
         boolean alternate = false;
         for (FamilyReport r : reports) {
@@ -187,11 +152,22 @@ public class ReportPdfService {
             addTableCell(table, String.valueOf(r.getTotalSorties() != null ? r.getTotalSorties() : 0), bg);
             addTableCell(table, String.valueOf(r.getTotalMaintenus() != null ? r.getTotalMaintenus() : 0), bg);
             addTableCell(table, String.valueOf(r.getNbSuivisParalleles() != null ? r.getNbSuivisParalleles() : 0), bg);
-            addTableCell(table, r.getStatutValidation() != null ? r.getStatutValidation() : "-", bg);
+            addTableCell(table, String.valueOf(r.getStatutValidation()), bg);
             alternate = !alternate;
         }
 
         document.add(table);
+    }
+
+    private void addTableHeaders(PdfPTable table, String[] headers) {
+        for (String h : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(h,
+                    new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.BOLD, Color.WHITE)));
+            cell.setBackgroundColor(BRAND_PRIMARY);
+            cell.setPadding(8);
+            cell.setBorderWidth(0);
+            table.addCell(cell);
+        }
     }
 
     private void addKpiCell(PdfPTable table, String value, String label) {
@@ -203,15 +179,18 @@ public class ReportPdfService {
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
 
         Paragraph p = new Paragraph();
-        p.add(new Chunk(value, new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 24, com.lowagie.text.Font.BOLD, BRAND_PRIMARY)));
+        p.add(new Chunk(value,
+                new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 24, com.lowagie.text.Font.BOLD, BRAND_PRIMARY)));
         p.add(Chunk.NEWLINE);
-        p.add(new Chunk(label, new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 9, com.lowagie.text.Font.NORMAL, Color.GRAY)));
+        p.add(new Chunk(label,
+                new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 9, com.lowagie.text.Font.NORMAL, Color.GRAY)));
         cell.setPhrase(p);
         table.addCell(cell);
     }
 
     private void addTableCell(PdfPTable table, String text, Color bgColor) {
-        PdfPCell cell = new PdfPCell(new Phrase(text, new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 9, com.lowagie.text.Font.NORMAL, TEXT_COLOR)));
+        PdfPCell cell = new PdfPCell(new Phrase(text,
+                new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 9, com.lowagie.text.Font.NORMAL, TEXT_COLOR)));
         cell.setBackgroundColor(bgColor);
         cell.setPadding(6);
         cell.setBorderWidth(0);
@@ -222,7 +201,7 @@ public class ReportPdfService {
     private void addFooter(Document document) throws DocumentException {
         document.add(Chunk.NEWLINE);
         Paragraph footer = new Paragraph(
-                "Rapport généré automatiquement par Discipolat © " + LocalDate.now().getYear(),
+                "Rapport genere automatiquement par Discipolat (c) " + LocalDate.now().getYear(),
                 new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 8, com.lowagie.text.Font.ITALIC, Color.GRAY));
         footer.setAlignment(Element.ALIGN_CENTER);
         document.add(footer);
@@ -232,7 +211,7 @@ public class ReportPdfService {
         LocalDate monday = date.with(java.time.DayOfWeek.MONDAY);
         LocalDate sunday = monday.plusDays(6);
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        return monday.format(fmt) + " — " + sunday.format(fmt);
+        return monday.format(fmt) + " - " + sunday.format(fmt);
     }
 
     private String truncate(String s, int maxLen) {

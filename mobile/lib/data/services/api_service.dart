@@ -7,6 +7,9 @@ class ApiService {
   late final Dio _dio;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
+  /// Expose le Dio instance pour les services WebSocket.
+  Dio get dio => _dio;
+
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
 

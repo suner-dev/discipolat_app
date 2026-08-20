@@ -1,15 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../app.dart';
 import '../../../data/services/api_service.dart';
-import '../../widgets/glass_theme.dart';
 
-/// Détail d'une conversation : fil de messages, envoi et marquage « lu ».
-/// Endpoints réels (MessageController) :
-///   GET   /messages/conversations/{id}/messages
-///   POST  /messages/conversations/{id}/messages   {content}
-///   PATCH /messages/conversations/{id}/read
+/// Real-time conversation detail with WebSocket for live messaging.
 class ConversationDetailScreen extends StatefulWidget {
   const ConversationDetailScreen({
     super.key,
@@ -20,45 +17,182 @@ class ConversationDetailScreen extends StatefulWidget {
 
   final String conversationId;
   final String title;
-
-  /// Permet d'injecter un ApiService mocké dans les tests widget.
   final ApiService? apiService;
 
   @override
-  State<ConversationDetailScreen> createState() => _ConversationDetailScreenState();
+  State<ConversationDetailScreen> createState() =>
+      _ConversationDetailScreenState();
 }
 
-class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
+class _ConversationDetailScreenState extends State<ConversationDetailScreen>
+    with WidgetsBindingObserver {
   late final ApiService _apiService = widget.apiService ?? ApiService();
   final _messageCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  final _focusNode = FocusNode();
 
   List<dynamic> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
   String? _error;
+  final Set<String> _typingUsers = {};
+
+  WebSocketChannel? _wsChannel;
+  bool _wsConnected = false;
+  Timer? _typingDebounce;
+  DateTime? _lastTypingSent;
+  bool _isTyping = false;
 
   String? get _myUserId => AuthState().userId;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadMessages();
+    _connectWebSocket();
+    _focusNode.addListener(_onFocusChange);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _messageCtrl.dispose();
     _scrollCtrl.dispose();
+    _focusNode.dispose();
+    _typingDebounce?.cancel();
+    _disconnectWebSocket();
     super.dispose();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadMessages();
+      if (!_wsConnected) _connectWebSocket();
+    }
+  }
+
+  void _onFocusChange() {
+    if (_focusNode.hasFocus) {
+      _sendTypingIndicator(true);
+    }
+  }
+
+  // ======================== WebSocket ========================
+
+  Future<void> _connectWebSocket() async {
+    try {
+      final dio = _apiService.dio;
+      final baseUrl = dio.options.baseUrl;
+      final wsUrl = baseUrl.replaceFirst('http', 'ws') + '/ws';
+      _wsChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
+
+      _wsChannel!.sink.add(
+          'CONNECT\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n\x00');
+
+      _wsChannel!.stream.listen(
+        (data) {
+          final frame = data.toString();
+          if (frame.contains('CONNECTED')) {
+            _wsConnected = true;
+            _subscribeToConversation();
+            return;
+          }
+          _handleWsFrame(frame);
+        },
+        onDone: () {
+          _wsConnected = false;
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) _connectWebSocket();
+          });
+        },
+        onError: (_) {
+          _wsConnected = false;
+        },
+      );
+    } catch (_) {
+      _wsConnected = false;
+    }
+  }
+
+  void _subscribeToConversation() {
+    if (!_wsConnected || _wsChannel == null) return;
+    final dest = '/topic/conversations/${widget.conversationId}';
+    final typingDest = '/topic/conversations/${widget.conversationId}/typing';
+    _wsChannel!.sink.add(
+        'SUBSCRIBE\nid:sub-${widget.conversationId}\ndestination:$dest\n\n\x00');
+    _wsChannel!.sink.add(
+        'SUBSCRIBE\nid:typing-${widget.conversationId}\ndestination:$typingDest\n\n\x00');
+  }
+
+  void _handleWsFrame(String frame) {
+    if (!frame.startsWith('MESSAGE') && !frame.startsWith('message')) return;
+    final bodyStart = frame.indexOf('\n\n');
+    if (bodyStart == -1) return;
+    final body =
+        frame.substring(bodyStart + 2).replaceAll('\x00', '').trim();
+    if (body.isEmpty) return;
+
+    try {
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      if (data.containsKey('typing')) {
+        final userId = data['userId']?.toString() ?? '';
+        if (userId != _myUserId) {
+          setState(() {
+            if (data['typing'] == true) {
+              _typingUsers.add(userId);
+            } else {
+              _typingUsers.remove(userId);
+            }
+          });
+        }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          final id = data['id']?.toString();
+          if (id != null && !_messages.any((m) => m['id']?.toString() == id)) {
+            _messages.add(data);
+          }
+        });
+        _scrollToBottom();
+      }
+    } catch (_) {}
+  }
+
+  void _sendWsMessage(String content) {
+    if (!_wsConnected || _wsChannel == null) return;
+    final payload = jsonEncode({'content': content});
+    _wsChannel!.sink.add(
+        'SEND\ndestination:/app/conversations/${widget.conversationId}/send\ncontent-type:application/json\n\n$payload\x00');
+  }
+
+  void _sendTypingIndicator(bool typing) {
+    if (!_wsConnected || _wsChannel == null) return;
+    final now = DateTime.now();
+    if (typing && _lastTypingSent != null && now.difference(_lastTypingSent!).inSeconds < 2) {
+      return;
+    }
+    _lastTypingSent = now;
+    final payload = jsonEncode({'typing': typing});
+    _wsChannel!.sink.add(
+        'SEND\ndestination:/app/conversations/${widget.conversationId}/typing\ncontent-type:application/json\n\n$payload\x00');
+  }
+
+  void _disconnectWebSocket() {
+    _wsChannel?.sink.close();
+    _wsChannel = null;
+    _wsConnected = false;
+  }
+
+  // ======================== REST ========================
 
   Future<void> _loadMessages() async {
     setState(() => _isLoading = true);
     try {
-      final res = await _apiService.get('/messages/conversations/${widget.conversationId}/messages');
-      // Marquage lu côté serveur (le compteur de non-lus baisse à la prochaine recharge).
-      // Erreur avalée : le marquage lu ne doit jamais faire échouer le chargement.
+      final res = await _apiService
+          .get('/messages/conversations/${widget.conversationId}/messages');
       unawaited(_markAsRead());
       if (mounted) {
         setState(() {
@@ -69,34 +203,59 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         _scrollToBottom();
       }
     } catch (_) {
-      if (mounted) setState(() { _isLoading = false; _error = 'Impossible de charger la conversation'; });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Impossible de charger la conversation';
+        });
+      }
     }
   }
 
   Future<void> _markAsRead() async {
     try {
-      await _apiService.patch('/messages/conversations/${widget.conversationId}/read');
-    } catch (_) {
-      // Ignoré : le marquage lu est une optimisation, pas une obligation.
-    }
+      await _apiService
+          .patch('/messages/conversations/${widget.conversationId}/read');
+    } catch (_) {}
   }
 
   Future<void> _send() async {
     final content = _messageCtrl.text.trim();
     if (content.isEmpty || _isSending) return;
     setState(() => _isSending = true);
+    _sendTypingIndicator(false);
+
     try {
-      await _apiService.post('/messages/conversations/${widget.conversationId}/messages', data: {'content': content});
+      if (_wsConnected) {
+        _sendWsMessage(content);
+        setState(() {
+          _messages.add({
+            'id': DateTime.now().millisecondsSinceEpoch.toString(),
+            'senderId': _myUserId,
+            'content': content,
+            'sentAt': DateTime.now().toIso8601String(),
+          });
+        });
+        _scrollToBottom();
+      } else {
+        await _apiService.post(
+          '/messages/conversations/${widget.conversationId}/messages',
+          data: {'content': content},
+        );
+        await _loadMessages();
+      }
       _messageCtrl.clear();
-      await _loadMessages();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de l\'envoi')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Erreur lors de l'envoi")));
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
   }
+
+  // ======================== UI Helpers ========================
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -119,7 +278,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isGroup = false; // Le backend ne renvoie que des conversations 1-1 (otherUser*).
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -128,32 +286,76 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               radius: 16,
               backgroundColor: Colors.teal.withValues(alpha: 0.2),
               child: Text(
-                initialsFromName(widget.title),
-                style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 12),
+                _initials(widget.title),
+                style: const TextStyle(
+                    color: Colors.teal,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12),
               ),
             ),
             const SizedBox(width: 10),
             Flexible(
-              child: Text(widget.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.title,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 16)),
+                  if (_typingUsers.isNotEmpty)
+                    Text(
+                      'ecrit...',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.teal.withValues(alpha: 0.7),
+                          fontStyle: FontStyle.italic),
+                    )
+                  else
+                    Text(
+                      _wsConnected ? 'En ligne' : 'Hors ligne',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: _wsConnected
+                              ? Colors.green.withValues(alpha: 0.7)
+                              : Colors.orange.withValues(alpha: 0.7)),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Icon(
+              _wsConnected ? Icons.wifi : Icons.wifi_off,
+              size: 18,
+              color: _wsConnected ? Colors.green : Colors.orange,
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
             child: _isLoading
-                ? const ShimmerLoading(itemCount: 5)
+                ? const Center(child: CircularProgressIndicator())
                 : _error != null && _messages.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.error_outline, size: 44, color: Colors.white.withValues(alpha: 0.3)),
+                            Icon(Icons.error_outline,
+                                size: 44,
+                                color: Colors.white.withValues(alpha: 0.3)),
                             const SizedBox(height: 10),
-                            Text(_error!, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                            Text(_error!,
+                                style: TextStyle(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.5))),
                             const SizedBox(height: 10),
-                            OutlinedButton(onPressed: _loadMessages, child: const Text('Réessayer')),
+                            OutlinedButton(
+                                onPressed: _loadMessages,
+                                child: const Text('Reessayer')),
                           ],
                         ),
                       )
@@ -162,10 +364,15 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.chat_bubble_outline, size: 44, color: Colors.white.withValues(alpha: 0.3)),
+                                Icon(Icons.chat_bubble_outline,
+                                    size: 44,
+                                    color:
+                                        Colors.white.withValues(alpha: 0.3)),
                                 const SizedBox(height: 10),
                                 Text('Aucun message — dites bonjour !',
-                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                                    style: TextStyle(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.5))),
                               ],
                             ),
                           )
@@ -174,262 +381,164 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                             padding: const EdgeInsets.all(14),
                             itemCount: _messages.length,
                             itemBuilder: (context, index) {
-                              final m = _messages[index] as Map<String, dynamic>;
-                              final mine = m['senderId'] == _myUserId;
-                              return _messageBubble(m, mine, isGroup);
+                              final m =
+                                  _messages[index] as Map<String, dynamic>;
+                              final mine =
+                                  m['senderId'].toString() == _myUserId;
+                              return _messageBubble(m, mine);
                             },
                           ),
           ),
-          _buildComposer(),
+          if (_typingUsers.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.teal.withValues(alpha: 0.5)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${_typingUsers.length} personne(s) ecrivent...',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.teal.withValues(alpha: 0.7),
+                        fontStyle: FontStyle.italic),
+                  ),
+                ],
+              ),
+            ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2)),
+              ],
+            ),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageCtrl,
+                      focusNode: _focusNode,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _send(),
+                      onChanged: (text) {
+                        if (text.isNotEmpty && !_isTyping) {
+                          _isTyping = true;
+                          _sendTypingIndicator(true);
+                        }
+                        _typingDebounce?.cancel();
+                        _typingDebounce = Timer(
+                            const Duration(seconds: 2), () {
+                          if (_isTyping) {
+                            _isTyping = false;
+                            _sendTypingIndicator(false);
+                          }
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Ecrire un message...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.withValues(alpha: 0.1),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: const Color(0xFF2B6CB0),
+                    child: _isSending
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : IconButton(
+                            icon: const Icon(Icons.send,
+                                color: Colors.white, size: 20),
+                            onPressed: _send,
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _messageBubble(Map<String, dynamic> m, bool mine, bool isGroup) {
-    final content = m['content'] ?? '';
+  Widget _messageBubble(Map<String, dynamic> m, bool mine) {
+    final content = m['content']?.toString() ?? '';
+    final sentAt = m['sentAt']?.toString() ?? m['createdAt']?.toString();
+
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-        decoration: BoxDecoration(
-          gradient: mine
-              ? LinearGradient(colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)])
-              : LinearGradient(colors: [Colors.white.withValues(alpha: 0.07), Colors.white.withValues(alpha: 0.04)]),
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(14),
-            topRight: const Radius.circular(14),
-            bottomLeft: Radius.circular(mine ? 14 : 4),
-            bottomRight: Radius.circular(mine ? 4 : 14),
-          ),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment:
+              mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            if (!mine && !isGroup) ...[
-              Text('${m['senderName'] ?? ''}',
-                  style: TextStyle(color: AppColors.primaryLight, fontSize: 10, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
-            ],
-            Text('$content',
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: mine
+                    ? const Color(0xFF2B6CB0)
+                    : Colors.grey.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(18),
+                  topRight: const Radius.circular(18),
+                  bottomLeft:
+                      mine ? const Radius.circular(18) : Radius.zero,
+                  bottomRight:
+                      mine ? Radius.zero : const Radius.circular(18),
+                ),
+              ),
+              child: Text(
+                content,
                 style: TextStyle(
-                  color: mine ? Colors.white : Colors.white.withValues(alpha: 0.85),
-                  fontSize: 13,
-                  height: 1.3,
-                )),
-            const SizedBox(height: 3),
-            Text(_time(m['createdAt']?.toString()),
-                style: TextStyle(
-                  color: mine ? Colors.white.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.3),
-                  fontSize: 9,
-                )),
+                  color: mine ? Colors.white : Colors.black87,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _time(sentAt),
+              style: TextStyle(
+                  fontSize: 10, color: Colors.white.withValues(alpha: 0.4)),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildComposer() {
-    return Container(
-      padding: EdgeInsets.only(
-        left: 14, right: 8, top: 8, bottom: MediaQuery.of(context).viewInsets.bottom + 8,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _messageCtrl,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              onChanged: (_) => setState(() {}),
-              onSubmitted: (_) => _send(),
-              decoration: InputDecoration(
-                hintText: 'Message...',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13),
-                filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.06),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          IconButton(
-            onPressed: (_isSending || _messageCtrl.text.trim().isEmpty) ? null : _send,
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.primary.withValues(alpha: _isSending ? 0.6 : 1),
-            ),
-            icon: _isSending
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.send, color: Colors.white, size: 18),
-          ),
-        ],
-      ),
-    );
+  static String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts.last[0]}'.toUpperCase();
   }
-
 }
-
-
-/// Lance une conversation avec un autre utilisateur : récupère la liste des
-/// membres, affiche un sélecteur, puis POST /messages/conversations
-/// (retourne la conversation créée — l'écran l'ouvre ensuite).
-Future<void> showStartConversationSheet(
-  BuildContext context,
-  ApiService apiService, {
-  required void Function(String conversationId, String title) onStarted,
-}) async {  List<dynamic> users = [];
-  try {
-    final res = await apiService.get('/users', params: {'size': '100'});
-    users = (res.data is Map ? (res.data as Map)['content'] : res.data) as List? ?? [];
-  } catch (_) {}
-  if (!context.mounted) return;
-
-  final myId = AuthState().userId;
-  final candidates = users
-      .where((u) => u is Map && u['id'] != myId)
-      .whereType<Map<String, dynamic>>()
-      .toList();
-
-  // État partagé entre les rebuilds du StatefulBuilder : déclaré AVANT le
-  // builder, sinon chaque setSheetState réinitialiserait la recherche et
-  // l'état « démarrage en cours ».
-  String query = '';
-  bool starting = false;
-
-  await showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSheetState) {
-        return Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF111827),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 32, height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Nouvelle conversation',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  TextField(
-                    style: const TextStyle(color: Colors.white),
-                    onChanged: (v) => setSheetState(() => query = v),
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher un membre...',
-                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13),
-                      prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4), size: 20),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.05),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Flexible(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 320),
-                      child: candidates.isEmpty
-                              ? Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Center(
-                                    child: Text('Aucun membre disponible',
-                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
-                                  ),
-                                )
-                              : ListView(
-                                  shrinkWrap: true,
-                                  children: [
-                                    for (final u in candidates.where((u) {
-                                      final q = query.trim().toLowerCase();
-                                      if (q.isEmpty) return true;
-                                      return ('${u['firstName'] ?? ''} ${u['lastName'] ?? ''}')
-                                          .toLowerCase()
-                                          .contains(q);
-                                    })) ...[
-                                      ListTile(
-                                        dense: true,
-                                        leading: CircleAvatar(
-                                          radius: 18,
-                                          backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                                          child: Text(
-                                            initialsFromUser(u),
-                                            style: TextStyle(color: AppColors.primaryLight, fontSize: 12, fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        title: Text(
-                                          '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'.trim().isEmpty
-                                              ? '${u['email'] ?? '—'}'
-                                              : '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}',
-                                          style: const TextStyle(color: Colors.white, fontSize: 14),
-                                        ),
-                                        subtitle: Text(
-                                          '${u['role'] ?? u['activeRole'] ?? ''}',
-                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
-                                        ),
-                                        onTap: starting
-                                            ? null
-                                            : () async {
-                                                setSheetState(() => starting = true);
-                                                try {
-                                                  final res = await apiService.post('/messages/conversations',
-                                                      data: {'otherUserId': u['id']});
-                                                  if (ctx.mounted) Navigator.pop(ctx);
-                                                  final conv = res.data as Map<String, dynamic>? ?? {};
-                                                  onStarted(
-                                                    (conv['id'] ?? u['id']) as String,
-                                                    '${u['firstName'] ?? ''} ${u['lastName'] ?? ''}'.trim(),
-                                                  );
-                                                } catch (_) {
-                                                  if (ctx.mounted) {
-                                                    ScaffoldMessenger.of(ctx).showSnackBar(
-                                                      const SnackBar(content: Text('Impossible de démarrer la conversation')),
-                                                    );
-                                                  }
-                                                  setSheetState(() => starting = false);
-                                                }
-                                              },
-                                      ),
-                                      const Divider(height: 1, color: Colors.white10),
-                                    ],
-                                  ],
-                                ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    ),
-  );
-}
-
-
