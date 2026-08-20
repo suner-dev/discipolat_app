@@ -4,14 +4,15 @@ import '../../../data/services/api_service.dart';
 /// Smart Alerts screen — anomaly detection dashboard.
 /// Shows alert summary and allows manual scan trigger.
 class SmartAlertsScreen extends StatefulWidget {
-  const SmartAlertsScreen({super.key});
+  final ApiService? apiService;
+  const SmartAlertsScreen({super.key, this.apiService});
 
   @override
   State<SmartAlertsScreen> createState() => _SmartAlertsScreenState();
 }
 
 class _SmartAlertsScreenState extends State<SmartAlertsScreen> {
-  final _api = ApiService();
+  late final ApiService _api = widget.apiService ?? ApiService();
   Map<String, dynamic>? _summary;
   List<dynamic> _activeAlerts = [];
   bool _isLoading = true;

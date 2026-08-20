@@ -5,14 +5,15 @@ import '../../../data/services/api_service.dart';
 /// Benchmark screen — anonymous cross-church comparison.
 /// Compares this church's metrics against anonymized peer averages.
 class BenchmarkScreen extends StatefulWidget {
-  const BenchmarkScreen({super.key});
+  final ApiService? apiService;
+  const BenchmarkScreen({super.key, this.apiService});
 
   @override
   State<BenchmarkScreen> createState() => _BenchmarkScreenState();
 }
 
 class _BenchmarkScreenState extends State<BenchmarkScreen> {
-  final _api = ApiService();
+  late final ApiService _api = widget.apiService ?? ApiService();
   Map<String, dynamic>? _benchmark;
   Map<String, dynamic>? _trends;
   bool _isLoading = true;

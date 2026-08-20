@@ -3,14 +3,15 @@ import '../../../data/services/api_service.dart';
 
 /// Sermon Transcription screen — browse, search, and view transcribed sermons.
 class SermonTranscriptionScreen extends StatefulWidget {
-  const SermonTranscriptionScreen({super.key});
+  final ApiService? apiService;
+  const SermonTranscriptionScreen({super.key, this.apiService});
 
   @override
   State<SermonTranscriptionScreen> createState() => _SermonTranscriptionScreenState();
 }
 
 class _SermonTranscriptionScreenState extends State<SermonTranscriptionScreen> {
-  final _api = ApiService();
+  late final ApiService _api = widget.apiService ?? ApiService();
   List<dynamic> _sermons = [];
   bool _isLoading = true;
   String _search = '';

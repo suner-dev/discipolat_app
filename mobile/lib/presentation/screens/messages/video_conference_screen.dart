@@ -5,14 +5,15 @@ import '../../../data/services/api_service.dart';
 /// Video Conference screen — opens Jitsi Meet in browser via url_launcher.
 /// For group pastoral meetings, follow-ups, and remote discipleship.
 class VideoConferenceScreen extends StatefulWidget {
-  const VideoConferenceScreen({super.key});
+  final ApiService? apiService;
+  const VideoConferenceScreen({super.key, this.apiService});
 
   @override
   State<VideoConferenceScreen> createState() => _VideoConferenceScreenState();
 }
 
 class _VideoConferenceScreenState extends State<VideoConferenceScreen> {
-  final _api = ApiService();
+  late final ApiService _api = widget.apiService ?? ApiService();
   final _roomController = TextEditingController();
   final _nameController = TextEditingController();
   bool _isLoading = true;

@@ -6,14 +6,15 @@ import '../../../data/services/api_service.dart';
 /// Business Intelligence Dashboard for mobile.
 /// Shows KPIs, attendance trends, department performance, and growth metrics.
 class BiDashboardScreen extends StatefulWidget {
-  const BiDashboardScreen({super.key});
+  final ApiService? apiService;
+  const BiDashboardScreen({super.key, this.apiService});
 
   @override
   State<BiDashboardScreen> createState() => _BiDashboardScreenState();
 }
 
 class _BiDashboardScreenState extends State<BiDashboardScreen> {
-  final _api = ApiService();
+  late final ApiService _api = widget.apiService ?? ApiService();
   Map<String, dynamic>? _bi;
   bool _isLoading = true;
   String _period = '30d';

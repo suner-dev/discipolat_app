@@ -30,6 +30,10 @@ class NotificationServiceTest {
     private NotificationTemplateRepository notificationTemplateRepository;
     @Mock
     private SecurityUtils securityUtils;
+    @Mock
+    private com.discipolat.modules.users.domain.UserRepository userRepository;
+    @Mock
+    private org.springframework.mail.javamail.JavaMailSender mailSender;
 
     private NotificationService service;
     private UUID currentUserId;
@@ -37,7 +41,7 @@ class NotificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new NotificationService(notificationRepository, notificationTemplateRepository, securityUtils);
+        service = new NotificationService(notificationRepository, notificationTemplateRepository, securityUtils, userRepository, mailSender);
         currentUserId = UUID.randomUUID();
         notification = Notification.builder()
                 .id(UUID.randomUUID())
