@@ -94,64 +94,33 @@ public class WorkflowConfigController {
      * Default workflow configurations (same as the hardcoded ones in WorkflowService).
      */
     private List<Map<String, Object>> getDefaultConfigs() {
-        return List.of(
-            Map.of(
-                "key", "ABSENCE_ESCALADE",
-                "label", "Escalade d'absentéisme",
-                "description", "Notifications automatiques whenmember is absent for X weeks",
-                "enabled", true,
-                "rules", Map.of(
-                    "semaines_faiseur", 3,
-                    "semaines_chef", 8,
-                    "semaines_pasteur", 12
-                ),
-                "createdAt", LocalDateTime.now().toString()
-            ),
-            Map.of(
-                "key", "RAPPEL_ANNIVERSAIRE",
-                "label", "Rappels d'anniversaire",
-                "description", "Notifications on member birthday",
-                "enabled", true,
-                "rules", Map.of(
-                    "heure", "08:00",
-                    "canal", "PUSH"
-                ),
-                "createdAt", LocalDateTime.now().toString()
-            ),
-            Map.of(
-                "key", "SNAPSHOT_SCORE_SPIRITUEL",
-                "label", "Snapshot hebdomadaire score spirituel",
-                "description", "Weekly spiritual score snapshot for all souls",
-                "enabled", true,
-                "rules", Map.of(
-                    "jour", "SUNDAY",
-                    "heure", "22:00"
-                ),
-                "createdAt", LocalDateTime.now().toString()
-            ),
-            Map.of(
-                "key", "NOTIFICATION_ABSENCE",
-                "label", "Notification d'absence prolongée",
-                "description", "Alert when member hasn't been seen for X days",
-                "enabled", true,
-                "rules", Map.of(
-                    "jours_absence", 30,
-                    "canal", "EMAIL"
-                ),
-                "createdAt", LocalDateTime.now().toString()
-            ),
-            Map.of(
-                "key", "RAPPEL_RAPPORT_HEBDOMADAIRE",
-                "label", "Rappel de soumission de rapport",
-                "description", "Remind makers to submit weekly reports",
-                "enabled", true,
-                "rules", Map.of(
-                    "jour_rappel", "WEDNESDAY",
-                    "heure", "18:00",
-                    "canal", "PUSH"
-                ),
-                "createdAt", LocalDateTime.now().toString()
-            )
-        );
+        List<Map<String, Object>> list = new java.util.ArrayList<>();
+        list.add(makeConfig("ABSENCE_ESCALADE", "Escalade d'absentéisme",
+                "Notifications automatiques when member is absent for X weeks",
+                new java.util.LinkedHashMap<>(Map.of("semaines_faiseur", 3, "semaines_chef", 8, "semaines_pasteur", 12))));
+        list.add(makeConfig("RAPPEL_ANNIVERSAIRE", "Rappels d'anniversaire",
+                "Notifications on member birthday",
+                new java.util.LinkedHashMap<>(Map.of("heure", "08:00", "canal", "PUSH"))));
+        list.add(makeConfig("SNAPSHOT_SCORE_SPIRITUEL", "Snapshot hebdomadaire score spirituel",
+                "Weekly spiritual score snapshot for all souls",
+                new java.util.LinkedHashMap<>(Map.of("jour", "SUNDAY", "heure", "22:00"))));
+        list.add(makeConfig("NOTIFICATION_ABSENCE", "Notification d'absence prolongée",
+                "Alert when member hasn't been seen for X days",
+                new java.util.LinkedHashMap<>(Map.of("jours_absence", 30, "canal", "EMAIL"))));
+        list.add(makeConfig("RAPPEL_RAPPORT_HEBDOMADAIRE", "Rappel de soumission de rapport",
+                "Remind makers to submit weekly reports",
+                new java.util.LinkedHashMap<>(Map.of("jour_rappel", "WEDNESDAY", "heure", "18:00", "canal", "PUSH"))));
+        return list;
+    }
+
+    private Map<String, Object> makeConfig(String key, String label, String description, Map<String, Object> rules) {
+        Map<String, Object> config = new java.util.LinkedHashMap<>();
+        config.put("key", key);
+        config.put("label", label);
+        config.put("description", description);
+        config.put("enabled", true);
+        config.put("rules", rules);
+        config.put("createdAt", LocalDateTime.now().toString());
+        return config;
     }
 }
