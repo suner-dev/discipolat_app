@@ -22,7 +22,10 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
   Map<String, dynamic>? _spiritualScore;
   List<dynamic> _scoreHistory = [];
   List<dynamic> _history = [];
+  Map<String, dynamic>? _aiAnalysis;
   bool _isLoading = true;
+  bool _isLoadingAI = false;
+  String? _aiEncouragement;
 
   @override
   void initState() {
@@ -62,9 +65,28 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
           _history = (histRes.data is List ? histRes.data : []) as List<dynamic>;
           _isLoading = false;
         });
+        _loadAIAnalysis();
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadAIAnalysis() async {
+    if (!mounted) return;
+    setState(() => _isLoadingAI = true);
+    try {
+      final aiRes = await _apiService.get('/ai/analyze/${widget.soulId}');
+      final encRes = await _apiService.get('/ai/encouragement/${widget.soulId}');
+      if (mounted) {
+        setState(() {
+          _aiAnalysis = aiRes.data as Map<String, dynamic>?;
+          _aiEncouragement = (encRes.data as Map<String, dynamic>?)?['encouragement'] as String?;
+          _isLoadingAI = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingAI = false);
     }
   }
 
@@ -114,6 +136,11 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
                           _buildSpiritualScoreCard(),
                           const SizedBox(height: 12),
                         ],
+
+                        // AI Pastorale analysis
+                        _sectionTitle('Analyse IA Pastorale', Icons.psychology),
+                        _buildAISection(),
+                        const SizedBox(height: 12),
 
                         // Personal info
                         _sectionTitle('Informations personnelles', Icons.person),
@@ -218,6 +245,131 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
                     ),
                   ),
                 ),
+    );
+  }
+
+  Widget _buildAISection() {
+    if (_isLoadingAI) {
+      return GlassCard(
+        padding: const EdgeInsets.all(20),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+            SizedBox(width: 12),
+            Text('Analyse IA en cours...', style: TextStyle(color: Colors.white54)),
+          ],
+        ),
+      );
+    }
+
+    final analysis = _aiAnalysis;
+    final signaux = (analysis?['signaux'] as List?) ?? [];
+    final suggestions = (analysis?['suggestions'] as List?) ?? [];
+    final encouragement = _aiEncouragement ?? analysis?['encouragement']?.toString() ?? '';
+
+    if (analysis == null && signaux.isEmpty) {
+      return GlassCard(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(Icons.psychology, size: 40, color: Colors.white.withValues(alpha: 0.2)),
+            const SizedBox(height: 8),
+            Text('Appuyez pour lancer l\'analyse IA', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _loadAIAnalysis,
+              icon: const Icon(Icons.auto_awesome, size: 16),
+              label: const Text('Analyser'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Signals
+          if (signaux.isNotEmpty) ...[
+            Text('Signaux détectés', style: TextStyle(color: Colors.amber[400], fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 6),
+            ...signaux.map((s) {
+              final message = s['message']?.toString() ?? '';
+              final gravite = s['gravite']?.toString() ?? 'INFO';
+              final color = gravite == 'CRITIQUE' ? Colors.red :
+                            gravite == 'ALERTE' ? Colors.orange : Colors.amber;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.warning_amber_rounded, size: 14, color: color),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(message, style: TextStyle(color: color.withValues(alpha: 0.9), fontSize: 12))),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 12),
+          ],
+
+          // Suggestions
+          if (suggestions.isNotEmpty) ...[
+            Text('Actions suggérées', style: TextStyle(color: Colors.cyan[400], fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 6),
+            ...suggestions.map((s) {
+              final action = s['action']?.toString() ?? '';
+              final priorite = s['priorite']?.toString() ?? 'NORMALE';
+              final color = priorite == 'HAUTE' ? Colors.red : Colors.cyan;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.check_circle_outline, size: 14, color: color),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(action, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12))),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 12),
+          ],
+
+          // Encouragement
+          if (encouragement.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.auto_awesome, size: 16, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(encouragement, style: TextStyle(color: Colors.green.withValues(alpha: 0.9), fontSize: 12, fontStyle: FontStyle.italic))),
+                ],
+              ),
+            ),
+          ],
+
+          // Refresh button
+          const SizedBox(height: 10),
+          Center(
+            child: TextButton.icon(
+              onPressed: _loadAIAnalysis,
+              icon: const Icon(Icons.refresh, size: 14),
+              label: const Text('Rafraîchir l\'analyse', style: TextStyle(fontSize: 12)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
