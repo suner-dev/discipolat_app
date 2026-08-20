@@ -60,6 +60,8 @@ import 'presentation/screens/platform/admin_custom_fields_screen.dart';
 import 'presentation/screens/platform/admin_dictionaries_screen.dart';
 import 'presentation/screens/platform/admin_integrations_screen.dart';
 import 'presentation/screens/platform/admin_tenants_screen.dart';
+import 'presentation/screens/souls/soul_qr_screen.dart';
+import 'presentation/screens/departments/qr_scanner_screen.dart';
 import 'presentation/screens/departments/presence_entry_screen.dart';
 import 'presentation/screens/discipline/discipline_screen.dart';
 import 'presentation/screens/prayers/actions_de_grace_screen.dart';
@@ -211,6 +213,8 @@ Map<String, List<String>> _routeRoles = {
   '/prayers/actions-de-grace': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/dashboard/membre/activities': ['ADMIN', 'PASTEUR', 'MEMBRE'],
   '/departments/:id/presences': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/departments/qr-scan': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  '/souls/:id/qr': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/documents': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/audit': ['ADMIN', 'PASTEUR'],
   '/appointments': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -630,6 +634,19 @@ final appRouter = GoRouter(
       path: '/dashboard/membre/activities',
       name: 'membre-activities',
       builder: (context, state) => const MemberActivitiesScreen(),
+    ),
+    GoRoute(
+      path: '/departments/qr-scan',
+      name: 'qr-scanner',
+      builder: (context, state) => const QrScannerScreen(),
+    ),
+    GoRoute(
+      path: '/souls/:id/qr',
+      name: 'soul-qr',
+      builder: (context, state) => SoulQrScreen(
+        soulId: state.pathParameters['id']!,
+        soulNom: state.uri.queryParameters['nom'] ?? '',
+      ),
     ),
     GoRoute(
       path: '/departments/:id/presences',

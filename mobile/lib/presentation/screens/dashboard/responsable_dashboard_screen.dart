@@ -512,6 +512,7 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                         mainAxisSpacing: 8,
                         childAspectRatio: 0.9,
                         children: [
+                          _quickAction(Icons.qr_code_scanner, 'QR Check-in', () => context.go('/departments/qr-scan')),
                           _quickAction(Icons.check_circle, 'Présences', () => context.go('/departments/$_selectedDeptId/presences')),
                           _quickAction(Icons.account_tree, 'Gestion', () => context.go('/departments/$_selectedDeptId/manage')),
                           _quickAction(Icons.trending_up, 'Stats', () => context.go('/departments/$_selectedDeptId/stats')),
@@ -519,7 +520,6 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                           _quickAction(Icons.event, 'Événements', () => context.go('/events')),
                           _quickAction(Icons.star, 'Évaluations', () => context.go('/evaluations')),
                           _quickAction(Icons.warning_amber, 'Alertes', () => context.go('/alerts')),
-                          _quickAction(Icons.swap_horiz, 'Transferts', () => context.go('/transfers')),
                         ],
                       ),
                       const SizedBox(height: 80),

@@ -19,9 +19,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import javax.imageio.ImageIO;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 
 @RestController
 @RequestMapping("/api/v1/souls")
@@ -282,5 +292,28 @@ public class SoulController {
         return ResponseEntity.ok(PageResponse.of(
                 response.getContent(), response.getNumber(), response.getSize(),
                 response.getTotalElements(), response.getTotalPages()));
+    }
+
+    /** QR code data URL pour le check-in rapide d'un disciple. */
+    @GetMapping("/{id}/qr-code")
+    public ResponseEntity<Map<String, String>> getQrCode(@PathVariable UUID id) {
+        soulService.assertAccessible(id);
+        try {
+            String data = "discipolat:soul:" + id.toString();
+            QRCodeWriter writer = new QRCodeWriter();
+            java.util.Map<EncodeHintType, Object> hints = new java.util.HashMap<>();
+            hints.put(EncodeHintType.MARGIN, 1);
+            BitMatrix matrix = writer.encode(data, BarcodeFormat.QR_CODE, 300, 300, hints);
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(matrix, "PNG", os);
+            String base64 = Base64.getEncoder().encodeToString(os.toByteArray());
+            return ResponseEntity.ok(Map.of(
+                    "dataUrl", "data:image/png;base64," + base64,
+                    "soulId", id.toString(),
+                    "data", data
+            ));
+        } catch (WriterException | java.io.IOException e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "QR generation failed"));
+        }
     }
 }

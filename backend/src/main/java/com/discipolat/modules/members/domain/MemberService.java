@@ -709,4 +709,28 @@ public class MemberService {
         }
         return notes;
     }
+
+    /** Enregistre la présence d'un membre via scan QR code. */
+    public void recordPresenceByQr(UUID soulId) {
+        Soul soul = soulRepository.findById(soulId)
+                .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("Soul", soulId));
+        if (soul.getUserId() == null) {
+            throw new IllegalStateException("Ce membre n'a pas de compte utilisateur lié");
+        }
+        LocalDate monday = java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        MemberPresence existing = memberPresenceRepository
+                .findByUserIdAndSemaine(soul.getUserId(), monday)
+                .orElse(null);
+        if (existing != null) {
+            if (existing.getPresences() == null) existing.setPresences(new java.util.LinkedHashMap<>());
+            existing.getPresences().put("QR_CHECKIN", true);
+            memberPresenceRepository.save(existing);
+        } else {
+            memberPresenceRepository.save(MemberPresence.builder()
+                    .userId(soul.getUserId())
+                    .semaine(monday)
+                    .presences(new java.util.LinkedHashMap<>(java.util.Map.of("QR_CHECKIN", true)))
+                    .build());
+        }
+    }
 }
