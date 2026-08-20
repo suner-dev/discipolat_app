@@ -139,6 +139,11 @@ public class ModuleGateFilter extends OncePerRequestFilter {
         m.put("/api/v1/search", "SEARCH");
         m.put("/api/v1/interactions", "CRM_FAISEUR");
         m.put("/api/v1/programs", "EVENTS");
+        m.put("/api/v1/inventory", "INVENTORY");
+        m.put("/api/v1/geofencing", "GEOFENCING");
+        m.put("/api/v1/smart-alerts", "SMART_ALERTS");
+        m.put("/api/v1/sermons", "TRAININGS");
+        m.put("/api/v1/benchmark", "ADMIN");
         return Map.copyOf(m);
     }
 }

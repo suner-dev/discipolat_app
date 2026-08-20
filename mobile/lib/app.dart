@@ -66,6 +66,8 @@ import 'presentation/screens/platform/admin_dictionaries_screen.dart';
 import 'presentation/screens/platform/admin_integrations_screen.dart';
 import 'presentation/screens/platform/admin_tenants_screen.dart';
 import 'presentation/screens/admin/benchmark_screen.dart';
+import 'presentation/screens/inventory/inventory_screen.dart';
+import 'presentation/screens/workflows/workflows_config_screen.dart';
 import 'presentation/screens/souls/soul_qr_screen.dart';
 import 'presentation/screens/departments/qr_scanner_screen.dart';
 import 'presentation/screens/departments/geofencing_screen.dart';
@@ -210,6 +212,8 @@ Map<String, List<String>> _routeRoles = {
   '/sermons': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/geofencing': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'MEMBRE'],
   '/benchmark': ['ADMIN', 'PASTEUR'],
+  '/inventory': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/workflows': ['ADMIN', 'PASTEUR'],
   '/video-conference': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/soul-map': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/profile': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -681,6 +685,16 @@ final appRouter = GoRouter(
       path: '/benchmark',
       name: 'benchmark',
       builder: (context, state) => const BenchmarkScreen(),
+    ),
+    GoRoute(
+      path: '/inventory',
+      name: 'inventory',
+      builder: (context, state) => const InventoryScreen(),
+    ),
+    GoRoute(
+      path: '/workflows',
+      name: 'workflows',
+      builder: (context, state) => const WorkflowsConfigScreen(),
     ),
     GoRoute(
       path: '/discipline',
