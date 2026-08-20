@@ -15,7 +15,10 @@ import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
+import com.discipolat.common.enums.CanalNotification;
+import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.users.domain.UserDepartmentRepository;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
@@ -48,6 +51,7 @@ public class DepartmentService {
     private final EntityAttachmentService attachmentService;
     private final com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService;
     private final AuditService auditService;
+    private final NotificationService notificationService;
 
     public DepartmentService(DepartmentRepository departmentRepository,
                              FamilyRepository familyRepository,
@@ -61,7 +65,8 @@ public class DepartmentService {
                              com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository,
                              EntityAttachmentService attachmentService,
                              com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService,
-                             AuditService auditService) {
+                             AuditService auditService,
+                             NotificationService notificationService) {
         this.departmentRepository = departmentRepository;
         this.familyRepository = familyRepository;
         this.soulRepository = soulRepository;
@@ -75,6 +80,7 @@ public class DepartmentService {
         this.attachmentService = attachmentService;
         this.workspaceScopeService = workspaceScopeService;
         this.auditService = auditService;
+        this.notificationService = notificationService;
     }
 
     public Department create(Department department) {
@@ -180,11 +186,25 @@ public class DepartmentService {
 
     public Department update(Department updated) {
         Department existing = findById(updated.getId());
+        UUID oldResponsableId = existing.getResponsableId();
         existing.setNom(updated.getNom());
         existing.setDescription(updated.getDescription());
         existing.setResponsableId(updated.getResponsableId());
         Department saved = departmentRepository.save(existing);
         auditService.logSimple("DEPARTMENT_UPDATED", "DEPARTMENT", saved.getId());
+
+        // ===== PROPAGATION: Responsable change notifications =====
+        if (updated.getResponsableId() != null && !updated.getResponsableId().equals(oldResponsableId)) {
+            if (oldResponsableId != null) {
+                notifyUser(oldResponsableId, "Vous n'êtes plus responsable",
+                        "Vous n'êtes plus responsable du département " + saved.getNom(),
+                        saved.getId(), "DEPARTMENT");
+            }
+            notifyUser(updated.getResponsableId(), "Nouveau responsable",
+                    "Vous êtes maintenant responsable du département " + saved.getNom(),
+                    saved.getId(), "DEPARTMENT");
+        }
+
         return saved;
     }
 
@@ -544,5 +564,18 @@ public class DepartmentService {
         report.put("statsParFamille", statsParFamille);
 
         return report;
+    }
+
+    /**
+     * Envoie une notification in-app (ignorer les erreurs).
+     */
+    private void notifyUser(UUID userId, String titre, String message,
+                            UUID entityId, String entityType) {
+        try {
+            notificationService.create(userId, TypeNotification.INFORMATION,
+                    CanalNotification.IN_APP, titre, message, entityId, entityType);
+        } catch (Exception e) {
+            // Notification failure must not block the operation
+        }
     }
 }

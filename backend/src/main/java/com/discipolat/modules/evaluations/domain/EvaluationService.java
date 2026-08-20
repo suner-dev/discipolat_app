@@ -3,11 +3,14 @@ package com.discipolat.modules.evaluations.domain;
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.enums.CanalNotification;
+import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
@@ -35,6 +38,7 @@ public class EvaluationService {
     private final SoulRepository soulRepository;
     private final SoulDepartmentRepository soulDepartmentRepository;
     private final AuditService auditService;
+    private final NotificationService notificationService;
 
     public EvaluationService(EvaluationRepository evaluationRepository,
                              SecurityUtils securityUtils,
@@ -43,7 +47,8 @@ public class EvaluationService {
                              FamilyRepository familyRepository,
                              SoulRepository soulRepository,
                              SoulDepartmentRepository soulDepartmentRepository,
-                             AuditService auditService) {
+                             AuditService auditService,
+                             NotificationService notificationService) {
         this.evaluationRepository = evaluationRepository;
         this.securityUtils = securityUtils;
         this.userRepository = userRepository;
@@ -52,6 +57,7 @@ public class EvaluationService {
         this.soulRepository = soulRepository;
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.auditService = auditService;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -73,6 +79,16 @@ public class EvaluationService {
                 .build();
         Evaluation saved = evaluationRepository.save(evaluation);
         auditService.logSimple("EVALUATION_CREATED", "EVALUATION", saved.getId());
+        // ===== PROPAGATION: Notifier l'évalué =====
+        try {
+            notificationService.create(evalueId, TypeNotification.INFORMATION,
+                    CanalNotification.IN_APP, "Nouvelle évaluation",
+                    "Vous avez reçu une nouvelle évaluation en " + categorie.name().toLowerCase()
+                            + " avec la note: " + note + "/10",
+                    saved.getId(), "EVALUATION");
+        } catch (Exception e) {
+            // Notification failure must not block
+        }
         return saved;
     }
 

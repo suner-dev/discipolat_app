@@ -234,6 +234,13 @@ public class SoulService {
             logHistory(soul.getId(), "CHANGEMENT_ETAT_SPIRITUEL",
                     "État spirituel: " + oldEtat + " -> " + request.etatSpirituel(),
                     oldEtat, request.etatSpirituel(), null, null);
+            // ===== PROPAGATION: Notifier le faiseur du changement d'état spirituel =====
+            if (soul.getFaiseurId() != null) {
+                notifyMaker(soul.getFaiseurId(), "État spirituel modifié",
+                        "L'état spirituel de " + soul.getPrenom() + " " + soul.getNom()
+                                + " est passé de " + oldEtat + " à " + request.etatSpirituel(),
+                        soul.getId(), "SOUL");
+            }
         } else if (request.etatSpirituel() != null) {
             soul.setEtatSpirituel(request.etatSpirituel());
         }
@@ -248,11 +255,18 @@ public class SoulService {
             soul.setNiveauCroissance(request.niveauCroissance());
         }
 
-        if (request.statut() != null) {
+        if (request.statut() != null && !request.statut().name().equals(oldStatut)) {
             soul.setStatut(request.statut());
             logHistory(soul.getId(), "CHANGEMENT_STATUT",
                     "Statut changé: " + oldStatut + " -> " + request.statut(),
                     oldStatut, request.statut().name(), null, null);
+            // ===== PROPAGATION: Notifier le faiseur du changement de statut =====
+            if (soul.getFaiseurId() != null) {
+                notifyMaker(soul.getFaiseurId(), "Statut disciple modifié",
+                        "Le statut de " + soul.getPrenom() + " " + soul.getNom()
+                                + " est passé de " + oldStatut + " à " + request.statut().name(),
+                        soul.getId(), "SOUL");
+            }
         }
 
         if (request.faiseurId() != null && !request.faiseurId().equals(oldFaiseurId)) {

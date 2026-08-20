@@ -5,7 +5,10 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.evangelism.api.EvangelismStatsResponse;
 import com.discipolat.modules.evangelism.api.EvangelismTrackResponse;
 import com.discipolat.modules.evangelism.api.UpdateEvangelismRequest;
+import com.discipolat.common.enums.CanalNotification;
+import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.stereotype.Service;
@@ -31,19 +34,22 @@ public class EvangelismService {
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
     private final AuditService auditService;
+    private final NotificationService notificationService;
 
     public EvangelismService(EvangelismTrackRepository trackRepository,
                              EvangelismStageHistoryRepository historyRepository,
                              SoulRepository soulRepository,
                              UserRepository userRepository,
                              SecurityUtils securityUtils,
-                             AuditService auditService) {
+                             AuditService auditService,
+                             NotificationService notificationService) {
         this.trackRepository = trackRepository;
         this.historyRepository = historyRepository;
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.securityUtils = securityUtils;
         this.auditService = auditService;
+        this.notificationService = notificationService;
     }
 
     /** Récupère ou initialise le track d'une âme (démarre à NOUVELLE_AME). */
@@ -101,6 +107,19 @@ public class EvangelismService {
                     .creePar(securityUtils.getCurrentUserId())
                     .build());
             auditService.logSimple("EVANGELISM_STAGE_CHANGED", "EVANGELISM_TRACK", saved.getId());
+            // ===== PROPAGATION: Notifier le faiseur du changement d'étape =====
+            try {
+                com.discipolat.modules.souls.domain.Soul soul = soulRepository.findById(saved.getSoulId()).orElse(null);
+                if (soul != null && soul.getFaiseurId() != null) {
+                    notificationService.create(soul.getFaiseurId(), TypeNotification.INFORMATION,
+                            CanalNotification.IN_APP, "Étape d'évangélisation avancée",
+                            "Le disciple " + soul.getPrenom() + " " + soul.getNom()
+                                    + " est maintenant à l'étape: " + request.etape(),
+                            saved.getId(), "EVANGELISM_TRACK");
+                }
+            } catch (Exception e) {
+                // Notification failure must not block
+            }
         }
         return toResponse(saved);
     }

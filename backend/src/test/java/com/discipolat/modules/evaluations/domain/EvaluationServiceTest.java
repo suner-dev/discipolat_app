@@ -39,6 +39,7 @@ class EvaluationServiceTest {
     @Mock private SoulRepository soulRepository;
     @Mock private SoulDepartmentRepository soulDepartmentRepository;
     @Mock private com.discipolat.modules.audit.domain.AuditService auditService;
+    @Mock private com.discipolat.modules.notifications.domain.NotificationService notificationService;
 
     private EvaluationService evaluationService;
 
@@ -49,7 +50,7 @@ class EvaluationServiceTest {
     void setUp() {
         evaluationService = new EvaluationService(evaluationRepository, securityUtils,
                 userRepository, departmentRepository, familyRepository, soulRepository,
-                soulDepartmentRepository, auditService);
+                soulDepartmentRepository, auditService, notificationService);
     }
 
     private User user(UUID id, UserRole role) {

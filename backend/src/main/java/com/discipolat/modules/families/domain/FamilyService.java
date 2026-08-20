@@ -17,7 +17,10 @@ import com.discipolat.modules.souls.domain.SoulDepartment;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.common.enums.CanalNotification;
+import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
@@ -47,6 +50,7 @@ public class FamilyService {
     private final PasswordEncoder passwordEncoder;
     private final WorkspaceScopeService workspaceScopeService;
     private final AuditService auditService;
+    private final NotificationService notificationService;
 
     public FamilyService(FamilyRepository familyRepository,
                          FamilyChiefHistoryRepository chiefHistoryRepository,
@@ -58,7 +62,8 @@ public class FamilyService {
                          SecurityUtils securityUtils,
                          PasswordEncoder passwordEncoder,
                          WorkspaceScopeService workspaceScopeService,
-                         AuditService auditService) {
+                         AuditService auditService,
+                         NotificationService notificationService) {
         this.familyRepository = familyRepository;
         this.chiefHistoryRepository = chiefHistoryRepository;
         this.soulRepository = soulRepository;
@@ -70,6 +75,7 @@ public class FamilyService {
         this.passwordEncoder = passwordEncoder;
         this.workspaceScopeService = workspaceScopeService;
         this.auditService = auditService;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -257,6 +263,7 @@ public class FamilyService {
 
     public Family update(UUID id, UpdateFamilyRequest request) {
         Family existing = findById(id);
+        UUID oldChefId = existing.getChefFamilleId();
         existing.setNom(request.nom());
         if (request.chefFamilleId() != null) {
             existing.setChefFamilleId(request.chefFamilleId());
@@ -266,6 +273,27 @@ public class FamilyService {
         }
         Family saved = familyRepository.save(existing);
         auditService.logSimple("FAMILY_UPDATED", "FAMILY", saved.getId());
+
+        // ===== PROPAGATION: Chef change notifications =====
+        if (request.chefFamilleId() != null && !request.chefFamilleId().equals(oldChefId)) {
+            if (oldChefId != null) {
+                notifyUser(oldChefId, "Vous n'êtes plus chef de famille",
+                        "Vous n'êtes plus chef de la famille " + saved.getNom(),
+                        saved.getId(), "FAMILY");
+            }
+            notifyUser(request.chefFamilleId(), "Nouveau chef de famille",
+                    "Vous êtes maintenant chef de la famille " + saved.getNom(),
+                    saved.getId(), "FAMILY");
+            // Enregistrer dans l'historique
+            chiefHistoryRepository.save(FamilyChiefHistory.builder()
+                    .familleId(saved.getId())
+                    .ancienChefId(oldChefId)
+                    .nouveauChefId(request.chefFamilleId())
+                    .changedBy(securityUtils.getCurrentUserId())
+                    .raison("Changement de chef")
+                    .build());
+        }
+
         return saved;
     }
 
@@ -507,5 +535,18 @@ public class FamilyService {
         }
         family.setStatut(StatutEntite.ACTIVE);
         return familyRepository.save(family);
+    }
+
+    /**
+     * Envoie une notification in-app (ignorer les erreurs).
+     */
+    private void notifyUser(UUID userId, String titre, String message,
+                            UUID entityId, String entityType) {
+        try {
+            notificationService.create(userId, TypeNotification.INFORMATION,
+                    CanalNotification.IN_APP, titre, message, entityId, entityType);
+        } catch (Exception e) {
+            // Notification failure must not block the operation
+        }
     }
 }
