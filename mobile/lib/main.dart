@@ -10,6 +10,7 @@ import 'data/models/branding.dart';
 import 'data/services/providers.dart';
 import 'presentation/widgets/glass_theme.dart';
 import 'app.dart';
+import 'presentation/widgets/offline_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,6 +84,14 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
         Locale('fr'),
         Locale('en'),
       ],
+      builder: (context, child) {
+        return Column(
+          children: [
+            const OfflineBanner(),
+            Expanded(child: child ?? const SizedBox.shrink()),
+          ],
+        );
+      },
       routerConfig: appRouter,
     );
   }
