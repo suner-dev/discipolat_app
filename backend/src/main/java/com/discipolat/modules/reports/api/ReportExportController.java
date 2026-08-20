@@ -2,6 +2,7 @@ package com.discipolat.modules.reports.api;
 
 import com.discipolat.modules.reports.domain.FamilyReport;
 import com.discipolat.modules.reports.domain.MakerReport;
+import com.discipolat.modules.reports.domain.ReportPdfService;
 import com.discipolat.modules.reports.domain.ReportService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,9 +22,11 @@ import java.util.UUID;
 public class ReportExportController {
 
     private final ReportService reportService;
+    private final ReportPdfService reportPdfService;
 
-    public ReportExportController(ReportService reportService) {
+    public ReportExportController(ReportService reportService, ReportPdfService reportPdfService) {
         this.reportService = reportService;
+        this.reportPdfService = reportPdfService;
     }
 
     @GetMapping("/maker-weekly")
@@ -99,7 +102,7 @@ public class ReportExportController {
                 .body(csv.toString().getBytes());
     }
 
-    // ======================== US-43: PDF EXPORT ========================
+    // ======================== PDF EXPORT ========================
 
     @GetMapping("/consolidated-pdf")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
@@ -115,73 +118,38 @@ public class ReportExportController {
                 PageRequest.of(0, 10000));
         List<FamilyReport> reports = reportsPage.getContent();
 
-        // Generate HTML report that can be printed/saved as PDF
-        StringBuilder html = new StringBuilder();
-        html.append("<!DOCTYPE html><html lang=\"fr\"><head><meta charset=\"UTF-8\">");
-        html.append("<title>Rapport Consolidé - Discipolat</title>");
-        html.append("<style>");
-        html.append("body { font-family: Arial, sans-serif; margin: 40px; color: #333; }");
-        html.append("h1 { color: #1a365d; border-bottom: 3px solid #2b6cb0; padding-bottom: 10px; }");
-        html.append("h2 { color: #2d3748; margin-top: 30px; }");
-        html.append("table { width: 100%; border-collapse: collapse; margin: 20px 0; }");
-        html.append("th { background-color: #2b6cb0; color: white; padding: 12px; text-align: left; }");
-        html.append("td { padding: 10px; border-bottom: 1px solid #e2e8f0; }");
-        html.append("tr:nth-child(even) { background-color: #f7fafc; }");
-        html.append(".summary { background-color: #ebf8ff; padding: 15px; border-radius: 8px; margin: 20px 0; }");
-        html.append(".kpi { display: inline-block; margin: 10px 20px 10px 0; padding: 10px 20px; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }");
-        html.append(".kpi-value { font-size: 24px; font-weight: bold; color: #2b6cb0; }");
-        html.append(".kpi-label { font-size: 12px; color: #718096; }");
-        html.append("@media print { body { margin: 20px; } }");
-        html.append("</style></head><body>");
+        byte[] pdfBytes = reportPdfService.generateFamilyReportPdf(reports, semaine);
 
-        html.append("<h1>📊 Rapport Consolidé Discipolat</h1>");
-        html.append("<p>Période : semaine du <strong>").append(semaine).append("</strong></p>");
-        html.append("<p>Généré le : ").append(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))).append("</p>");
-
-        int totalFamilles = reports.size();
-        int totalPresents = reports.stream().mapToInt(r -> r.getTotalPresents() != null ? r.getTotalPresents() : 0).sum();
-        int totalAbsents = reports.stream().mapToInt(r -> r.getTotalAbsents() != null ? r.getTotalAbsents() : 0).sum();
-        int totalSorties = reports.stream().mapToInt(r -> r.getTotalSorties() != null ? r.getTotalSorties() : 0).sum();
-        int totalMaintenus = reports.stream().mapToInt(r -> r.getTotalMaintenus() != null ? r.getTotalMaintenus() : 0).sum();
-
-        html.append("<div class=\"summary\">");
-        html.append("<h2>Synthèse Globale</h2>");
-        html.append("<div class=\"kpi\"><div class=\"kpi-value\">").append(totalFamilles).append("</div><div class=\"kpi-label\">Familles</div></div>");
-        html.append("<div class=\"kpi\"><div class=\"kpi-value\">").append(totalPresents).append("</div><div class=\"kpi-label\">Présents</div></div>");
-        html.append("<div class=\"kpi\"><div class=\"kpi-value\">").append(totalAbsents).append("</div><div class=\"kpi-label\">Absents</div></div>");
-        html.append("<div class=\"kpi\"><div class=\"kpi-value\">").append(totalSorties).append("</div><div class=\"kpi-label\">Sorties</div></div>");
-        html.append("<div class=\"kpi\"><div class=\"kpi-value\">").append(totalMaintenus).append("</div><div class=\"kpi-label\">Maintenus</div></div>");
-        html.append("</div>");
-
-        html.append("<h2>Détail par Famille</h2>");
-        html.append("<table><thead><tr>");
-        html.append("<th>Famille</th><th>Présence</th><th>Présents</th><th>Absents</th><th>Sorties</th><th>Maintenus</th><th>Suivis Parallèles</th><th>Statut</th>");
-        html.append("</tr></thead><tbody>");
-
-        for (FamilyReport report : reports) {
-            html.append("<tr>");
-            html.append("<td>").append(report.getFamilleId()).append("</td>");
-            html.append("<td>").append(report.getPresenceMoyenne() != null ? report.getPresenceMoyenne() + "%" : "-").append("</td>");
-            html.append("<td>").append(report.getTotalPresents() != null ? report.getTotalPresents() : 0).append("</td>");
-            html.append("<td>").append(report.getTotalAbsents() != null ? report.getTotalAbsents() : 0).append("</td>");
-            html.append("<td>").append(report.getTotalSorties() != null ? report.getTotalSorties() : 0).append("</td>");
-            html.append("<td>").append(report.getTotalMaintenus() != null ? report.getTotalMaintenus() : 0).append("</td>");
-            html.append("<td>").append(report.getNbSuivisParalleles() != null ? report.getNbSuivisParalleles() : 0).append("</td>");
-            html.append("<td>").append(report.getStatutValidation()).append("</td>");
-            html.append("</tr>");
-        }
-
-        html.append("</tbody></table>");
-        html.append("<p style=\"margin-top: 40px; color: #a0aec0; font-size: 12px; text-align: center;\">");
-        html.append("Rapport généré automatiquement par Discipolat © ").append(LocalDate.now().getYear());
-        html.append("</p>");
-        html.append("</body></html>");
-
-        String filename = "rapport-consolide-" + semaine.format(DateTimeFormatter.ISO_LOCAL_DATE) + ".html";
+        String filename = "rapport-consolide-" + semaine.format(DateTimeFormatter.ISO_LOCAL_DATE) + ".pdf";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.TEXT_HTML)
-                .body(html.toString().getBytes());
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
+    @GetMapping("/maker-pdf")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<byte[]> exportMakerPdf(
+            @RequestParam(required = false) UUID faiseurId,
+            @RequestParam(required = false) UUID familleId,
+            @RequestParam(required = false) LocalDate semaine) {
+
+        if (semaine == null) {
+            semana = LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        }
+
+        Page<MakerReport> reportsPage = reportService.findMakerReports(faiseurId, familleId, null, semana,
+                PageRequest.of(0, 10000));
+        List<MakerReport> reports = reportsPage.getContent();
+
+        byte[] pdfBytes = reportPdfService.generateMakerReportPdf(reports, semana);
+
+        String filename = "rapport-faiseur-" + semana.format(DateTimeFormatter.ISO_LOCAL_DATE) + ".pdf";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
     }
 }

@@ -13,6 +13,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Endpoint de gestion de la 2FA (TOTP). Toutes les opérations exigent une
+ * authentification valide — l’annotation déclarative @PreAuthorize garantit
+ * une protection serveur explicite (403 propre) en complément de l’échec
+ * fermé implicite de SecurityUtils.getCurrentUserId().
+ */
+@PreAuthorize("isAuthenticated()")
 @RestController
 @RequestMapping("/api/v1/auth/2fa")
 public class TwoFactorController {

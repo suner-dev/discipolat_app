@@ -61,6 +61,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # i18n : active la génération automatique de lib/l10n/*.arb → AppLocalizations
+  generate: true
   assets:
     - assets/images/
     - assets/icons/
+

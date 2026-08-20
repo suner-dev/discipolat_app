@@ -1,0 +1,54 @@
+{
+  "@@locale": "en",
+  "appTitle": "Discipolat",
+  "login": "Sign in",
+  "logout": "Sign out",
+  "email": "Email address",
+  "password": "Password",
+  "emailOrUsername": "Email or username",
+  "signIn": "Sign in",
+  "signInBiometric": "Sign in with biometrics",
+  "forgotPassword": "Forgot your password?",
+  "presence": {
+    "title": "Attendance",
+    "present": "Present",
+    "absent": "Absent",
+    "markAllPresent": "Mark all present",
+    "save": "Save attendance"
+  },
+  "souls": {
+    "title": "Disciples",
+    "search": "Search for a disciple",
+    "noResults": "No disciple found",
+    "newArrival": "New arrival",
+    "newConvert": "New convert"
+  },
+  "reports": {
+    "weekly": "Weekly report",
+    "family": "Family report",
+    "submit": "Submit"
+  },
+  "prayers": {
+    "title": "Prayers",
+    "prayed": "Answered",
+    "pending": "Pending"
+  },
+  "events": {
+    "title": "Events",
+    "upcoming": "Upcoming",
+    "register": "Register"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "health": "Wellbeing",
+    "score": "Spiritual score"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading…",
+    "offline": "Offline"
+  }
+}

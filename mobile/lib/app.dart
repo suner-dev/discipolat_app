@@ -11,6 +11,7 @@ import 'presentation/screens/souls/soul_detail_screen.dart';
 import 'presentation/screens/reports/maker_report_screen.dart';
 import 'presentation/screens/reports/family_report_screen.dart';
 import 'presentation/screens/reports/reports_screen.dart';
+import 'presentation/screens/reports/report_pdf_viewer_screen.dart';
 import 'presentation/screens/families/families_list_screen.dart';
 import 'presentation/screens/alerts/alerts_list_screen.dart';
 import 'presentation/screens/notifications/notifications_screen.dart';
@@ -192,6 +193,8 @@ Map<String, List<String>> _routeRoles = {
   '/reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/reports/maker': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/reports/family': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/reports/pdf/consolidated': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  '/reports/pdf/maker': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/prayers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/events': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -380,6 +383,16 @@ final appRouter = GoRouter(
       path: '/reports/family',
       name: 'family-report',
       builder: (context, state) => const FamilyReportScreen(),
+    ),
+    GoRoute(
+      path: '/reports/pdf/consolidated',
+      name: 'report-pdf-consolidated',
+      builder: (context, state) => const ReportPdfViewerScreen(reportType: 'consolidated'),
+    ),
+    GoRoute(
+      path: '/reports/pdf/maker',
+      name: 'report-pdf-maker',
+      builder: (context, state) => const ReportPdfViewerScreen(reportType: 'maker'),
     ),
     GoRoute(
       path: '/families',
