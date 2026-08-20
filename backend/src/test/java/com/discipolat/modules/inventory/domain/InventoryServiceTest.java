@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -327,6 +328,165 @@ class InventoryServiceTest {
         Map<String, Object> stats = service.getStats(UUID.randomUUID());
 
         assertEquals(0L, stats.get("total"));
+    }
+
+    // ==================== EDGE CASES ====================
+
+    @Test
+    void create_NullNom_SucceedsWithNull() {
+        InventoryItem input = buildItem(null, "TECHNIQUE");
+        when(repository.save(any())).thenAnswer(inv -> {
+            InventoryItem saved = inv.getArgument(0);
+            saved.setId(UUID.randomUUID());
+            return saved;
+        });
+
+        InventoryItem result = service.create(input);
+
+        assertNull(result.getNom());
+        verify(repository).save(any());
+    }
+
+    @Test
+    void create_NullCategorie_SucceedsWithNull() {
+        InventoryItem input = buildItem("Micro", null);
+        when(repository.save(any())).thenAnswer(inv -> {
+            InventoryItem saved = inv.getArgument(0);
+            saved.setId(UUID.randomUUID());
+            return saved;
+        });
+
+        InventoryItem result = service.create(input);
+
+        assertNull(result.getCategorie());
+    }
+
+    @Test
+    void assign_AlreadyAssigned_StillWorks() {
+        InventoryItem item = buildItem("Micro", "TECHNIQUE");
+        item.setId(itemId);
+        item.setStatut("AFFECTE");
+        item.setAffecteAId(UUID.randomUUID());
+        item.setQuantiteDisponible(5);
+        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UUID newMember = UUID.randomUUID();
+        InventoryItem result = service.assign(itemId, newMember);
+
+        assertEquals(newMember, result.getAffecteAId());
+        assertEquals(4, result.getQuantiteDisponible());
+    }
+
+    @Test
+    void unassign_NonAssignedItem_StillWorks() {
+        InventoryItem item = buildItem("Micro", "TECHNIQUE");
+        item.setId(itemId);
+        item.setStatut("DISPONIBLE");
+        item.setAffecteAId(null);
+        item.setQuantiteDisponible(5);
+        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        InventoryItem result = service.unassign(itemId);
+
+        assertEquals("DISPONIBLE", result.getStatut());
+        assertEquals(6, result.getQuantiteDisponible());
+    }
+
+    @Test
+    void markMaintenance_AlreadyInMaintenance_StillWorks() {
+        InventoryItem item = buildItem("Micro", "TECHNIQUE");
+        item.setId(itemId);
+        item.setStatut("EN_MAINTENANCE");
+        item.setDerniereMaintenance(LocalDateTime.now().minusDays(10));
+        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        InventoryItem result = service.markMaintenance(itemId);
+
+        assertEquals("EN_MAINTENANCE", result.getStatut());
+        assertNotEquals(LocalDateTime.now().minusDays(10), result.getDerniereMaintenance());
+    }
+
+    @Test
+    void delete_NonExistingItem_DoesNotThrow() {
+        doNothing().when(repository).deleteById(any());
+
+        assertDoesNotThrow(() -> service.delete(UUID.randomUUID()));
+        verify(repository).deleteById(any());
+    }
+
+    @Test
+    void findAll_BlankSearch_IgnoresSearch() {
+        Page<InventoryItem> page = new PageImpl<>(List.of());
+        when(repository.findByTenantIdOrderByCreatedAtDesc(eq(tenantId), any(Pageable.class))).thenReturn(page);
+
+        service.findAll(tenantId, null, null, "   ", Pageable.unpaged());
+
+        verify(repository).findByTenantIdOrderByCreatedAtDesc(eq(tenantId), any(Pageable.class));
+        verify(repository, never()).search(any(), any(), any());
+    }
+
+    @Test
+    void findAll_BlankCategorie_IgnoresCategorie() {
+        Page<InventoryItem> page = new PageImpl<>(List.of());
+        when(repository.findByTenantIdOrderByCreatedAtDesc(eq(tenantId), any(Pageable.class))).thenReturn(page);
+
+        service.findAll(tenantId, "  ", null, null, Pageable.unpaged());
+
+        verify(repository).findByTenantIdOrderByCreatedAtDesc(eq(tenantId), any(Pageable.class));
+        verify(repository, never()).findByTenantIdAndCategorie(any(), any(), any());
+    }
+
+    @Test
+    void findAll_CategorieAndStatut_CategorieTakesPrecedence() {
+        Page<InventoryItem> page = new PageImpl<>(List.of());
+        when(repository.findByTenantIdAndCategorie(eq(tenantId), eq("TECHNIQUE"), any(Pageable.class))).thenReturn(page);
+
+        service.findAll(tenantId, "TECHNIQUE", "AFFECTE", null, Pageable.unpaged());
+
+        verify(repository).findByTenantIdAndCategorie(eq(tenantId), eq("TECHNIQUE"), any(Pageable.class));
+        verify(repository, never()).findByTenantIdAndStatut(any(), any(), any());
+    }
+
+    @Test
+    void update_AllFieldsUpdatable() {
+        InventoryItem existing = buildItem("Old", "MATERIEL");
+        existing.setId(itemId);
+        when(repository.findById(itemId)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        InventoryItem update = buildItem("New", "TECHNIQUE");
+        update.setDescription("Desc");
+        update.setStatut("RETIRE");
+        update.setQuantite(20);
+        update.setQuantiteDisponible(18);
+        update.setValeurUnitaire(500.0);
+        update.setLieuStockage("Warehouse");
+        update.setNumeroSerie("SN-999");
+        update.setDateAcquisition(LocalDateTime.of(2024, 1, 1, 0, 0));
+        update.setDerniereMaintenance(LocalDateTime.of(2024, 6, 1, 0, 0));
+        update.setProchaineMaintenance(LocalDateTime.of(2024, 12, 1, 0, 0));
+        update.setDepartementId(UUID.randomUUID());
+        update.setNotes("Important notes");
+
+        InventoryItem result = service.update(itemId, update);
+
+        assertEquals("New", result.getNom());
+        assertEquals("TECHNIQUE", result.getCategorie());
+        assertEquals("Desc", result.getDescription());
+        assertEquals("RETIRE", result.getStatut());
+        assertEquals(20, result.getQuantite());
+        assertEquals(18, result.getQuantiteDisponible());
+        assertEquals(500.0, result.getValeurUnitaire());
+        assertEquals("Warehouse", result.getLieuStockage());
+        assertEquals("SN-999", result.getNumeroSerie());
+        assertNotNull(result.getDateAcquisition());
+        assertNotNull(result.getDerniereMaintenance());
+        assertNotNull(result.getProchaineMaintenance());
+        assertNotNull(result.getDepartementId());
+        assertEquals("Important notes", result.getNotes());
     }
 
     // ==================== HELPERS ====================

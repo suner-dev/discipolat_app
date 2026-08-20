@@ -3,6 +3,7 @@ package com.discipolat.modules.evaluations.domain;
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.domain.Family;
@@ -33,6 +34,7 @@ public class EvaluationService {
     private final FamilyRepository familyRepository;
     private final SoulRepository soulRepository;
     private final SoulDepartmentRepository soulDepartmentRepository;
+    private final AuditService auditService;
 
     public EvaluationService(EvaluationRepository evaluationRepository,
                              SecurityUtils securityUtils,
@@ -40,7 +42,8 @@ public class EvaluationService {
                              DepartmentRepository departmentRepository,
                              FamilyRepository familyRepository,
                              SoulRepository soulRepository,
-                             SoulDepartmentRepository soulDepartmentRepository) {
+                             SoulDepartmentRepository soulDepartmentRepository,
+                             AuditService auditService) {
         this.evaluationRepository = evaluationRepository;
         this.securityUtils = securityUtils;
         this.userRepository = userRepository;
@@ -48,6 +51,7 @@ public class EvaluationService {
         this.familyRepository = familyRepository;
         this.soulRepository = soulRepository;
         this.soulDepartmentRepository = soulDepartmentRepository;
+        this.auditService = auditService;
     }
 
     /**
@@ -67,7 +71,9 @@ public class EvaluationService {
                 .evalueId(evalueId).evaluateurId(currentUserId)
                 .categorie(categorie).note(note).commentaire(commentaire)
                 .build();
-        return evaluationRepository.save(evaluation);
+        Evaluation saved = evaluationRepository.save(evaluation);
+        auditService.logSimple("EVALUATION_CREATED", "EVALUATION", saved.getId());
+        return saved;
     }
 
     /**

@@ -256,4 +256,115 @@ class WorkflowConfigControllerTest {
         Map<String, Object> config = controller.get("ABSENCE_ESCALADE").getBody();
         assertEquals(false, config.get("enabled"));
     }
+
+    // ==================== ADDITIONAL EDGE CASES ====================
+
+    @Test
+    void update_MultipleFields_AtOnce() {
+        Map<String, Object> update = Map.of(
+                "label", "Nouveau Label",
+                "description", "Nouvelle description",
+                "enabled", false
+        );
+
+        Map<String, Object> result = controller.update("ABSENCE_ESCALADE", update).getBody();
+
+        assertEquals("Nouveau Label", result.get("label"));
+        assertEquals("Nouvelle description", result.get("description"));
+        assertEquals(false, result.get("enabled"));
+        assertNotNull(result.get("updatedAt"));
+    }
+
+    @Test
+    void update_EmptyMap_NoChangesButAddsTimestamp() {
+        Map<String, Object> before = controller.get("ABSENCE_ESCALADE").getBody();
+
+        Map<String, Object> result = controller.update("ABSENCE_ESCALADE", Map.of()).getBody();
+
+        assertEquals(before.get("key"), result.get("key"));
+        assertEquals(before.get("label"), result.get("label"));
+        assertNotNull(result.get("updatedAt"));
+    }
+
+    @Test
+    void toggle_DifferentWorkflows_IndependentState() {
+        // Disable ABSENCE_ESCALADE
+        controller.toggle("ABSENCE_ESCALADE");
+        // RAPPEL_ANNIVERSAIRE should still be enabled
+        Map<String, Object> other = controller.get("RAPPEL_ANNIVERSAIRE").getBody();
+        assertEquals(true, other.get("enabled"));
+
+        // ABSENCE_ESCALADE should be disabled
+        Map<String, Object> absent = controller.get("ABSENCE_ESCALADE").getBody();
+        assertEquals(false, absent.get("enabled"));
+    }
+
+    @Test
+    void get_AllFiveWorkflows_ExistAndUnique() {
+        List<String> keys = List.of(
+                "ABSENCE_ESCALADE", "RAPPEL_ANNIVERSAIRE",
+                "SNAPSHOT_SCORE_SPIRITUEL", "NOTIFICATION_ABSENCE",
+                "RAPPEL_RAPPORT_HEBDOMADAIRE"
+        );
+
+        for (String key : keys) {
+            ResponseEntity<Map<String, Object>> resp = controller.get(key);
+            assertEquals(200, resp.getStatusCode().value(), "Workflow " + key + " should exist");
+            assertEquals(key, resp.getBody().get("key"));
+        }
+    }
+
+    @Test
+    void update_Rules_OverrideCompletely() {
+        Map<String, Object> newRules = Map.of("jour", "MONDAY", "heure", "09:00");
+
+        Map<String, Object> result = controller.update("SNAPSHOT_SCORE_SPIRITUEL", Map.of("rules", newRules)).getBody();
+        Map<String, Object> rules = (Map<String, Object>) result.get("rules");
+
+        assertEquals("MONDAY", rules.get("jour"));
+        assertEquals("09:00", rules.get("heure"));
+    }
+
+    @Test
+    void list_TenantIsolation_FirstCallCreatesDefaults() {
+        // First call for a new tenant should create defaults
+        List<Map<String, Object>> configs = controller.list().getBody();
+        assertNotNull(configs);
+        assertEquals(5, configs.size());
+    }
+
+    @Test
+    void update_KeyField_CanBeOverwrittenByPutAll() {
+        // putAll merges the map, so 'key' field IS overwritten (current behavior)
+        Map<String, Object> result = controller.update("ABSENCE_ESCALADE", Map.of("key", "HACKED_KEY")).getBody();
+
+        assertEquals("HACKED_KEY", result.get("key"));
+        assertNotNull(result.get("updatedAt"));
+    }
+
+    @Test
+    void toggle_TimestampFormat_ContainsISO() {
+        Map<String, Object> result = controller.toggle("RAPPEL_ANNIVERSAIRE").getBody();
+        String timestamp = result.get("updatedAt").toString();
+
+        // Should contain T separator (ISO format)
+        assertTrue(timestamp.contains("T"), "Timestamp should be ISO format with T separator, got: " + timestamp);
+        assertTrue(timestamp.length() >= 19, "Timestamp should be at least 19 chars, got: " + timestamp);
+    }
+
+    @Test
+    void get_DescriptionForEachWorkflow_IsNotEmpty() {
+        List<String> keys = List.of(
+                "ABSENCE_ESCALADE", "RAPPEL_ANNIVERSAIRE",
+                "SNAPSHOT_SCORE_SPIRITUEL", "NOTIFICATION_ABSENCE",
+                "RAPPEL_RAPPORT_HEBDOMADAIRE"
+        );
+
+        for (String key : keys) {
+            Map<String, Object> config = controller.get(key).getBody();
+            String desc = (String) config.get("description");
+            assertNotNull(desc, "Description should exist for " + key);
+            assertFalse(desc.isBlank(), "Description should not be empty for " + key);
+        }
+    }
 }

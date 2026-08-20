@@ -15,6 +15,7 @@ import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
+import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.users.domain.UserDepartmentRepository;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
@@ -46,6 +47,7 @@ public class DepartmentService {
     private final com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository;
     private final EntityAttachmentService attachmentService;
     private final com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService;
+    private final AuditService auditService;
 
     public DepartmentService(DepartmentRepository departmentRepository,
                              FamilyRepository familyRepository,
@@ -58,7 +60,8 @@ public class DepartmentService {
                              PasswordEncoder passwordEncoder,
                              com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository,
                              EntityAttachmentService attachmentService,
-                             com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService) {
+                             com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService,
+                             AuditService auditService) {
         this.departmentRepository = departmentRepository;
         this.familyRepository = familyRepository;
         this.soulRepository = soulRepository;
@@ -71,11 +74,14 @@ public class DepartmentService {
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.attachmentService = attachmentService;
         this.workspaceScopeService = workspaceScopeService;
+        this.auditService = auditService;
     }
 
     public Department create(Department department) {
         department.setStatut(StatutEntite.ACTIVE);
-        return departmentRepository.save(department);
+        Department saved = departmentRepository.save(department);
+        auditService.logSimple("DEPARTMENT_CREATED", "DEPARTMENT", saved.getId());
+        return saved;
     }
 
     /**
@@ -102,6 +108,7 @@ public class DepartmentService {
                 .statut(StatutEntite.ACTIVE)
                 .build();
         department = departmentRepository.save(department);
+        auditService.logSimple("DEPARTMENT_CREATED", "DEPARTMENT", department.getId());
 
         // Lier le responsable au département (table user_departments)
         userDepartmentRepository.save(com.discipolat.modules.users.domain.UserDepartment.builder()
@@ -176,13 +183,16 @@ public class DepartmentService {
         existing.setNom(updated.getNom());
         existing.setDescription(updated.getDescription());
         existing.setResponsableId(updated.getResponsableId());
-        return departmentRepository.save(existing);
+        Department saved = departmentRepository.save(existing);
+        auditService.logSimple("DEPARTMENT_UPDATED", "DEPARTMENT", saved.getId());
+        return saved;
     }
 
     public void delete(UUID id) {
         Department department = findById(id);
         department.setStatut(StatutEntite.ARCHIVED);
         departmentRepository.save(department);
+        auditService.logSimple("DEPARTMENT_ARCHIVED", "DEPARTMENT", id);
     }
 
     @Transactional(readOnly = true)

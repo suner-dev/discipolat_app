@@ -54,6 +54,8 @@ class EventServiceTest {
     private EntityAttachmentRepository attachmentRepository;
     @Mock
     private FileEntityRepository fileEntityRepository;
+    @Mock
+    private com.discipolat.modules.audit.domain.AuditService auditService;
 
     private EventService eventService;
     private EntityAttachmentService attachmentService;
@@ -69,7 +71,7 @@ class EventServiceTest {
     void setUp() {
         attachmentService = new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils);
         eventService = new EventService(eventRepository, registrationRepository, templateRepository,
-                userRepository, notificationService, securityUtils, workspaceScope, attachmentService);
+                userRepository, notificationService, securityUtils, workspaceScope, attachmentService, auditService);
 
         evenementFamille = Event.builder()
                 .id(UUID.randomUUID())

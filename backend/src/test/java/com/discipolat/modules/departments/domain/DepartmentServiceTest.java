@@ -63,6 +63,8 @@ class DepartmentServiceTest {
     private EntityAttachmentService attachmentService;
     @Mock
     private WorkspaceScopeService workspaceScopeService;
+    @Mock
+    private com.discipolat.modules.audit.domain.AuditService auditService;
 
     private DepartmentService service;
     private UUID currentUserId;
@@ -74,7 +76,7 @@ class DepartmentServiceTest {
         service = new DepartmentService(departmentRepository, familyRepository, soulRepository,
                 userRepository, userDepartmentRepository, makerReportRepository,
                 familyReportRepository, securityUtils, passwordEncoder, soulDepartmentRepository,
-                attachmentService, workspaceScopeService);
+                attachmentService, workspaceScopeService, auditService);
         currentUserId = UUID.randomUUID();
         ownDept = Department.builder().id(UUID.randomUUID())
                 .nom("Département 1").responsableId(currentUserId)

@@ -17,6 +17,7 @@ import com.discipolat.modules.souls.domain.SoulDepartment;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
@@ -45,6 +46,7 @@ public class FamilyService {
     private final SecurityUtils securityUtils;
     private final PasswordEncoder passwordEncoder;
     private final WorkspaceScopeService workspaceScopeService;
+    private final AuditService auditService;
 
     public FamilyService(FamilyRepository familyRepository,
                          FamilyChiefHistoryRepository chiefHistoryRepository,
@@ -55,7 +57,8 @@ public class FamilyService {
                          MakerReportRepository makerReportRepository,
                          SecurityUtils securityUtils,
                          PasswordEncoder passwordEncoder,
-                         WorkspaceScopeService workspaceScopeService) {
+                         WorkspaceScopeService workspaceScopeService,
+                         AuditService auditService) {
         this.familyRepository = familyRepository;
         this.chiefHistoryRepository = chiefHistoryRepository;
         this.soulRepository = soulRepository;
@@ -66,6 +69,7 @@ public class FamilyService {
         this.securityUtils = securityUtils;
         this.passwordEncoder = passwordEncoder;
         this.workspaceScopeService = workspaceScopeService;
+        this.auditService = auditService;
     }
 
     /**
@@ -127,6 +131,7 @@ public class FamilyService {
                 .build();
         chiefHistoryRepository.save(history);
 
+        auditService.logSimple("FAMILY_CREATED", "FAMILY", savedFamily.getId());
         return savedFamily;
     }
 
@@ -259,7 +264,9 @@ public class FamilyService {
         if (request.chefAdjointId() != null) {
             existing.setChefAdjointId(request.chefAdjointId());
         }
-        return familyRepository.save(existing);
+        Family saved = familyRepository.save(existing);
+        auditService.logSimple("FAMILY_UPDATED", "FAMILY", saved.getId());
+        return saved;
     }
 
     // ======================== US-09: DELETE/DISSOLVE ========================
@@ -278,6 +285,7 @@ public class FamilyService {
         }
         family.setStatut(StatutEntite.ARCHIVED);
         familyRepository.save(family);
+        auditService.logSimple("FAMILY_DISSOLVED", "FAMILY", id);
     }
 
     // ======================== US-10: FAMILY HISTORY ========================

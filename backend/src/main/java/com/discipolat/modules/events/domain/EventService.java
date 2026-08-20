@@ -9,6 +9,7 @@ import com.discipolat.modules.files.domain.EntityAttachment;
 import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
@@ -38,6 +39,7 @@ public class EventService {
     private final SecurityUtils securityUtils;
     private final WorkspaceScopeService workspaceScope;
     private final EntityAttachmentService attachmentService;
+    private final AuditService auditService;
 
     public EventService(EventRepository eventRepository,
                         EventRegistrationRepository registrationRepository,
@@ -46,7 +48,8 @@ public class EventService {
                         NotificationService notificationService,
                         SecurityUtils securityUtils,
                         WorkspaceScopeService workspaceScope,
-                        EntityAttachmentService attachmentService) {
+                        EntityAttachmentService attachmentService,
+                        AuditService auditService) {
         this.eventRepository = eventRepository;
         this.registrationRepository = registrationRepository;
         this.templateRepository = templateRepository;
@@ -55,6 +58,7 @@ public class EventService {
         this.securityUtils = securityUtils;
         this.workspaceScope = workspaceScope;
         this.attachmentService = attachmentService;
+        this.auditService = auditService;
     }
 
     public Event create(Event event, java.util.List<java.util.UUID> fichierIds) {
@@ -76,6 +80,7 @@ public class EventService {
         event.setNbInscrits(0);
         Event saved = eventRepository.save(event);
         attachmentService.replace(EntityAttachment.EntityType.EVENT, saved.getId(), fichierIds);
+        auditService.logSimple("EVENT_CREATED", "EVENT", saved.getId());
 
         // Notify all PASTEUR users when a non-pasteur creates an event
         User currentUser = userRepository.findById(currentUserId).orElse(null);

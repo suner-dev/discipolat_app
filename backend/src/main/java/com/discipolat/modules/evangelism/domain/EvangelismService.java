@@ -5,6 +5,7 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.evangelism.api.EvangelismStatsResponse;
 import com.discipolat.modules.evangelism.api.EvangelismTrackResponse;
 import com.discipolat.modules.evangelism.api.UpdateEvangelismRequest;
+import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.stereotype.Service;
@@ -29,17 +30,20 @@ public class EvangelismService {
     private final SoulRepository soulRepository;
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
+    private final AuditService auditService;
 
     public EvangelismService(EvangelismTrackRepository trackRepository,
                              EvangelismStageHistoryRepository historyRepository,
                              SoulRepository soulRepository,
                              UserRepository userRepository,
-                             SecurityUtils securityUtils) {
+                             SecurityUtils securityUtils,
+                             AuditService auditService) {
         this.trackRepository = trackRepository;
         this.historyRepository = historyRepository;
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.securityUtils = securityUtils;
+        this.auditService = auditService;
     }
 
     /** Récupère ou initialise le track d'une âme (démarre à NOUVELLE_AME). */
@@ -96,6 +100,7 @@ public class EvangelismService {
                     .etape(request.etape())
                     .creePar(securityUtils.getCurrentUserId())
                     .build());
+            auditService.logSimple("EVANGELISM_STAGE_CHANGED", "EVANGELISM_TRACK", saved.getId());
         }
         return toResponse(saved);
     }
