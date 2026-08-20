@@ -1,4 +1,4 @@
 package com.discipolat.common.enums;
 public enum CanalNotification {
-    PUSH, EMAIL, IN_APP
+    PUSH, EMAIL, SMS, WHATSAPP, IN_APP
 }

@@ -5,14 +5,20 @@ import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.users.domain.User;
+import com.discipolat.modules.users.domain.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -24,13 +30,19 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationTemplateRepository notificationTemplateRepository;
     private final SecurityUtils securityUtils;
+    private final UserRepository userRepository;
+    private final JavaMailSender mailSender;
 
     public NotificationService(NotificationRepository notificationRepository,
                                NotificationTemplateRepository notificationTemplateRepository,
-                               SecurityUtils securityUtils) {
+                               SecurityUtils securityUtils,
+                               UserRepository userRepository,
+                               JavaMailSender mailSender) {
         this.notificationRepository = notificationRepository;
         this.notificationTemplateRepository = notificationTemplateRepository;
         this.securityUtils = securityUtils;
+        this.userRepository = userRepository;
+        this.mailSender = mailSender;
     }
 
     public Notification create(UUID destinataireId, TypeNotification type, CanalNotification canal,
@@ -77,7 +89,52 @@ public class NotificationService {
                 .entiteReferenceId(entiteReferenceId)
                 .entiteReferenceType(entiteReferenceType)
                 .build();
-        return notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        // Dispatch email asynchronously if canal is EMAIL
+        if (effectiveCanal == CanalNotification.EMAIL) {
+            dispatchEmail(destinataireId, renderedTitre, renderedMessage);
+        }
+
+        return saved;
+    }
+
+    /**
+     * Envoie un email asynchrone à l'utilisateur destinataire.
+     */
+    @Async
+    public void dispatchEmail(UUID destinataireId, String titre, String message) {
+        try {
+            User user = userRepository.findById(destinataireId).orElse(null);
+            if (user == null || user.getEmail() == null) return;
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setTo(user.getEmail());
+            mail.setSubject(titre);
+            mail.setText(message);
+            mailSender.send(mail);
+            log.info("Email sent to {} : {}", user.getEmail(), titre);
+        } catch (Exception e) {
+            log.warn("Failed to send email to {}: {}", destinataireId, e.getMessage());
+        }
+    }
+
+    /**
+     * Envoie une notification broadcast à tous les utilisateurs d'un rôle donné.
+     */
+    public int broadcast(String role, TypeNotification type, CanalNotification canal,
+                         String titre, String message) {
+        List<User> users = userRepository.findByRole(
+                com.discipolat.common.domain.UserRole.valueOf(role));
+        int sent = 0;
+        for (User user : users) {
+            try {
+                create(user.getId(), type, canal, titre, message, null, null);
+                sent++;
+            } catch (Exception e) {
+                log.warn("Broadcast failed for user {}: {}", user.getId(), e.getMessage());
+            }
+        }
+        return sent;
     }
 
     @Transactional(readOnly = true)
