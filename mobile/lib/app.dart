@@ -43,8 +43,10 @@ import 'presentation/screens/badges/badges_screen.dart';
 import 'presentation/screens/trainings/trainings_screen.dart';
 import 'presentation/screens/trainings/sermon_transcription_screen.dart';
 import 'presentation/screens/messages/messages_screen.dart';
+import 'presentation/screens/messages/video_conference_screen.dart';
 import 'presentation/screens/parallel_followups/parallel_followups_screen.dart';
 import 'presentation/screens/map/map_screen.dart';
+import 'presentation/screens/map/soul_map_screen.dart';
 import 'presentation/screens/members/member_requests_screen.dart';
 import 'presentation/screens/transfers/transfers_list_screen.dart';
 import 'presentation/screens/transfers/transfer_detail_screen.dart';
@@ -63,6 +65,7 @@ import 'presentation/screens/platform/admin_custom_fields_screen.dart';
 import 'presentation/screens/platform/admin_dictionaries_screen.dart';
 import 'presentation/screens/platform/admin_integrations_screen.dart';
 import 'presentation/screens/platform/admin_tenants_screen.dart';
+import 'presentation/screens/admin/benchmark_screen.dart';
 import 'presentation/screens/souls/soul_qr_screen.dart';
 import 'presentation/screens/departments/qr_scanner_screen.dart';
 import 'presentation/screens/departments/geofencing_screen.dart';
@@ -206,6 +209,9 @@ Map<String, List<String>> _routeRoles = {
   '/bi-dashboard': ['ADMIN', 'PASTEUR'],
   '/sermons': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/geofencing': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'MEMBRE'],
+  '/benchmark': ['ADMIN', 'PASTEUR'],
+  '/video-conference': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/soul-map': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/profile': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -590,9 +596,19 @@ final appRouter = GoRouter(
       builder: (context, state) => const MessagesScreen(),
     ),
     GoRoute(
+      path: '/video-conference',
+      name: 'video-conference',
+      builder: (context, state) => const VideoConferenceScreen(),
+    ),
+    GoRoute(
       path: '/map',
       name: 'map',
       builder: (context, state) => const MapScreen(),
+    ),
+    GoRoute(
+      path: '/soul-map',
+      name: 'soul-map',
+      builder: (context, state) => const SoulMapScreen(),
     ),
     GoRoute(
       path: '/members/requests',
@@ -660,6 +676,11 @@ final appRouter = GoRouter(
       path: '/admin/tenants',
       name: 'admin-tenants',
       builder: (context, state) => const AdminTenantsScreen(),
+    ),
+    GoRoute(
+      path: '/benchmark',
+      name: 'benchmark',
+      builder: (context, state) => const BenchmarkScreen(),
     ),
     GoRoute(
       path: '/discipline',

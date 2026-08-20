@@ -1,6 +1,7 @@
 package com.discipolat.modules.members.api;
 
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.members.domain.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import java.util.UUID;
 public class GeofencingController {
 
     private final MemberService memberService;
+    private final SecurityUtils securityUtils;
 
     /**
      * Verify if a member is within the geofence and record presence.
@@ -31,18 +33,7 @@ public class GeofencingController {
     @PostMapping("/check-in")
     public ResponseEntity<Map<String, Object>> checkIn(@RequestBody GeofenceCheckInRequest request) {
         UUID tenantId = TenantContext.getTenantId();
-        UUID memberId = memberService.getCurrentMemberId();
-
-        // In production: compare against configured geofence center + radius
-        // For now, always allow check-in (geofence validation is configurable)
-        boolean withinGeofence = true;
-
-        if (!withinGeofence) {
-            return ResponseEntity.ok(Map.of(
-                "status", "OUTSIDE",
-                "message", "Vous êtes hors de la zone autorisée"
-            ));
-        }
+        UUID memberId = securityUtils.getCurrentUserId();
 
         return ResponseEntity.ok(Map.of(
             "status", "CHECKED_IN",
@@ -57,7 +48,7 @@ public class GeofencingController {
      */
     @PostMapping("/check-out")
     public ResponseEntity<Map<String, Object>> checkOut() {
-        UUID memberId = memberService.getCurrentMemberId();
+        UUID memberId = securityUtils.getCurrentUserId();
 
         return ResponseEntity.ok(Map.of(
             "status", "CHECKED_OUT",
