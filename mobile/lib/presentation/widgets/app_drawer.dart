@@ -54,8 +54,10 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
     {'icon': Icons.account_balance_wallet_rounded, 'title': 'Finances', 'route': '/finances'},
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
+    {'icon': Icons.inventory_2_rounded, 'title': 'Inventaire', 'route': '/inventory'},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
+    {'icon': Icons.auto_fix_high_rounded, 'title': 'Workflows', 'route': '/workflows'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
     {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},
     {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions'},
@@ -84,6 +86,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.favorite_border_rounded, 'title': 'Actions de grâce', 'route': '/prayers/actions-de-grace'},
     {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
+    {'icon': Icons.inventory_2_rounded, 'title': 'Inventaire', 'route': '/inventory'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
@@ -163,7 +166,7 @@ class _AppDrawerState extends State<AppDrawer> {
       case 'PASTEUR':
         // Pasteur = vue complète, sans la configuration plateforme réservée Admin
         // (matrice des permissions, modules, menus, pages).
-        return _fullNav.where((item) => !const {'/permissions', '/admin/modules', '/admin/menus', '/admin/pages'}.contains(item['route'])).toList();
+        return _fullNav.where((item) => !const {'/permissions', '/admin/modules', '/admin/menus', '/admin/pages', '/workflows'}.contains(item['route'])).toList();
       default:
         return _fullNav; // ADMIN
     }
