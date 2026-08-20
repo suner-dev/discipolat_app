@@ -41,6 +41,7 @@ import 'presentation/screens/evangelism/evangelism_screen.dart';
 import 'presentation/screens/objectives/objectives_screen.dart';
 import 'presentation/screens/badges/badges_screen.dart';
 import 'presentation/screens/trainings/trainings_screen.dart';
+import 'presentation/screens/trainings/sermon_transcription_screen.dart';
 import 'presentation/screens/messages/messages_screen.dart';
 import 'presentation/screens/parallel_followups/parallel_followups_screen.dart';
 import 'presentation/screens/map/map_screen.dart';
@@ -202,6 +203,7 @@ Map<String, List<String>> _routeRoles = {
   '/alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/smart-alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/bi-dashboard': ['ADMIN', 'PASTEUR'],
+  '/sermons': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/profile': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -569,6 +571,11 @@ final appRouter = GoRouter(
       path: '/trainings',
       name: 'trainings',
       builder: (context, state) => const TrainingsScreen(),
+    ),
+    GoRoute(
+      path: '/sermons',
+      name: 'sermons',
+      builder: (context, state) => const SermonTranscriptionScreen(),
     ),
     GoRoute(
       path: '/messages',
