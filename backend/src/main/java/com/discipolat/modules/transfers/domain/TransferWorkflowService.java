@@ -3,6 +3,7 @@ package com.discipolat.modules.transfers.domain;
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.*;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.departments.domain.Department;
@@ -66,6 +67,7 @@ public class TransferWorkflowService {
     private final FileEntityRepository fileEntityRepository;
     private final NotificationService notificationService;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
 
     public TransferWorkflowService(TransferRequestRepository requestRepository,
@@ -83,6 +85,7 @@ public class TransferWorkflowService {
                                    FileEntityRepository fileEntityRepository,
                                    NotificationService notificationService,
                                    AuditService auditService,
+                                   EntityPropagationPublisher propagationPublisher,
                                    SecurityUtils securityUtils) {
         this.requestRepository = requestRepository;
         this.decisionRepository = decisionRepository;
@@ -99,6 +102,7 @@ public class TransferWorkflowService {
         this.fileEntityRepository = fileEntityRepository;
         this.notificationService = notificationService;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
     }
 
@@ -143,7 +147,11 @@ public class TransferWorkflowService {
 
         history(req, "CREATION", null, TransferStatus.BROUILLON, null, null,
                 Map.of("type", req.getType().name(), "personneId", req.getPersonneId()));
-        audit("CREER_TRANSFERT", req, ancienne, request.nouvelleAffectation());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("TRANSFER_REQUEST", req.getId(),
+                Map.of("type", req.getType().name(), "personneId", req.getPersonneId(),
+                        "demandeurId", req.getDemandeurId()),
+                "Transfert créé: " + req.getType().name());
         return req;
     }
 
@@ -231,7 +239,10 @@ public class TransferWorkflowService {
             requestRepository.save(req);
             history(req, "SOUMISSION", TransferStatus.BROUILLON, TransferStatus.VALIDE,
                     "Soumission sans circuit de validation — exécution automatique", null, null);
-            audit("SOUMETTRE_TRANSFERT", req, null, null);
+            // ===== PROPAGATION CENTRALISÉE =====
+            propagationPublisher.publishStatusChanged("TRANSFER_REQUEST", req.getId(),
+                    TransferStatus.BROUILLON.name(), TransferStatus.VALIDE.name(),
+                    "Transfert soumis et exécuté (aucun circuit)");
             completeAndExecute(req, config);
             return req;
         }
@@ -249,7 +260,10 @@ public class TransferWorkflowService {
                 : TransferStatus.EN_ATTENTE_VALIDATION);
         requestRepository.save(req);
         history(req, "SOUMISSION", ancien, req.getStatut(), "Demande soumise au circuit de validation", null, null);
-        audit("SOUMETTRE_TRANSFERT", req, null, null);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("TRANSFER_REQUEST", req.getId(),
+                ancien.name(), req.getStatut().name(),
+                "Transfert soumis au circuit de validation");
 
         notifyValidators(req, config, steps);
         return req;
@@ -330,7 +344,10 @@ public class TransferWorkflowService {
                 requestRepository.save(req);
                 history(req, "REFUS", ancien, TransferStatus.REFUSE,
                         request.motivation() != null ? request.motivation() : "Demande refusée", null, null);
-                audit("REFUSER_TRANSFERT", req, null, Map.of("motivation", request.motivation()));
+                // ===== PROPAGATION CENTRALISÉE =====
+                propagationPublisher.publishStatusChanged("TRANSFER_REQUEST", req.getId(),
+                        ancien.name(), TransferStatus.REFUSE.name(),
+                        "Transfert refusé");
                 notifyUser(req.getDemandeurId(), transfertLabel(req) + " a été refusée. " + orEmpty(request.motivation()),
                         TypeNotification.TRANSFERT_REFUSEE, req.getId());
                 notifyConcerned(req, transfertLabel(req) + " a été refusée.", TypeNotification.TRANSFERT_REFUSEE);
@@ -340,7 +357,11 @@ public class TransferWorkflowService {
                 requestRepository.save(req);
                 history(req, "DEMANDE_INFORMATIONS", ancien, TransferStatus.SOUMIS,
                         request.motivation() != null ? request.motivation() : "Informations complémentaires demandées", null, null);
-                audit("DEMANDER_INFORMATIONS_TRANSFERT", req, null, Map.of("motivation", request.motivation()));
+                // ===== PROPAGATION CENTRALISÉE =====
+                propagationPublisher.publishUpdated("TRANSFER_REQUEST", req.getId(),
+                        Map.of("statut", ancien.name()),
+                        Map.of("statut", TransferStatus.SOUMIS.name()),
+                        "Informations complémentaires demandées");
                 notifyUser(req.getDemandeurId(), "Des informations complémentaires sont demandées pour " + transfertLabel(req)
                         + ". " + orEmpty(request.motivation()), TypeNotification.TRANSFERT_INFOS_DEMANDEES, req.getId());
             }
@@ -349,7 +370,11 @@ public class TransferWorkflowService {
                 requestRepository.save(req);
                 history(req, "RENVOI_CORRECTION", ancien, TransferStatus.SOUMIS,
                         request.motivation() != null ? request.motivation() : "Renvoi pour correction", null, null);
-                audit("RENVOYER_CORRECTION_TRANSFERT", req, null, Map.of("motivation", request.motivation()));
+                // ===== PROPAGATION CENTRALISÉE =====
+                propagationPublisher.publishUpdated("TRANSFER_REQUEST", req.getId(),
+                        Map.of("statut", ancien.name()),
+                        Map.of("statut", TransferStatus.SOUMIS.name()),
+                        "Renvoi pour correction");
                 notifyUser(req.getDemandeurId(), "Votre demande (" + transfertLabel(req) + ") a été renvoyée pour correction. "
                         + orEmpty(request.motivation()), TypeNotification.TRANSFERT_CORRECTION, req.getId());
             }
@@ -371,7 +396,10 @@ public class TransferWorkflowService {
         req.setStatut(TransferStatus.ANNULE);
         requestRepository.save(req);
         history(req, "ANNULATION", ancien, TransferStatus.ANNULE, "Demande annulée", null, null);
-        audit("ANNULER_TRANSFERT", req, null, null);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("TRANSFER_REQUEST", req.getId(),
+                ancien.name(), TransferStatus.ANNULE.name(),
+                "Transfert annulé");
         notifyConcerned(req, transfertLabel(req) + " a été annulée.", TypeNotification.TRANSFERT_ANNULEE);
         return req;
     }
@@ -387,7 +415,10 @@ public class TransferWorkflowService {
         req.setStatut(TransferStatus.ARCHIVE);
         requestRepository.save(req);
         history(req, "ARCHIVAGE", ancien, TransferStatus.ARCHIVE, "Demande archivée", null, null);
-        audit("ARCHIVER_TRANSFERT", req, null, null);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("TRANSFER_REQUEST", req.getId(),
+                ancien.name(), TransferStatus.ARCHIVE.name(),
+                "Transfert archivé");
         return req;
     }
 
@@ -488,7 +519,10 @@ public class TransferWorkflowService {
             requestRepository.save(req);
             history(req, "VALIDATION", ancien, TransferStatus.VALIDE,
                     "Toutes les validations requises ont été obtenues", null, null);
-            audit("VALIDER_TRANSFERT", req, null, Map.of("validateurId", validatorId));
+            // ===== PROPAGATION CENTRALISÉE =====
+            propagationPublisher.publishStatusChanged("TRANSFER_REQUEST", req.getId(),
+                    ancien.name(), TransferStatus.VALIDE.name(),
+                    "Transfert validé — exécution automatique");
             completeAndExecute(req, config);
         } else {
             req.setStatut(req.getEtapeCourante() > 0 || req.getApprobationsObtenues() > 0
@@ -496,7 +530,10 @@ public class TransferWorkflowService {
             requestRepository.save(req);
             history(req, "VALIDATION", ancien, req.getStatut(),
                     "Validation enregistrée — le circuit se poursuit", null, null);
-            audit("VALIDER_TRANSFERT", req, null, Map.of("validateurId", validatorId));
+            // ===== PROPAGATION CENTRALISÉE =====
+            propagationPublisher.publishStatusChanged("TRANSFER_REQUEST", req.getId(),
+                    ancien.name(), req.getStatut().name(),
+                    "Validation partielle enregistrée");
             notifyValidators(req, config, steps);
             notifyUser(req.getDemandeurId(), "Une validation a été enregistrée pour " + transfertLabel(req),
                     TypeNotification.TRANSFERT_VALIDATION, req.getId());
@@ -521,7 +558,10 @@ public class TransferWorkflowService {
             requestRepository.save(req);
             history(req, "EXECUTION", TransferStatus.VALIDE, TransferStatus.EXECUTE,
                     "Transfert exécuté automatiquement", req.getAncienneAffectation(), req.getNouvelleAffectation());
-            audit("EXECUTER_TRANSFERT", req, req.getAncienneAffectation(), req.getNouvelleAffectation());
+            // ===== PROPAGATION CENTRALISÉE =====
+            propagationPublisher.publishStatusChanged("TRANSFER_REQUEST", req.getId(),
+                    TransferStatus.VALIDE.name(), TransferStatus.EXECUTE.name(),
+                    "Transfert exécuté");
             notifyUser(req.getDemandeurId(), transfertLabel(req) + " a été exécuté avec succès",
                     TypeNotification.TRANSFERT_EXECUTEE, req.getId());
             notifyConcerned(req, transfertLabel(req) + " a été exécuté.", TypeNotification.TRANSFERT_EXECUTEE);

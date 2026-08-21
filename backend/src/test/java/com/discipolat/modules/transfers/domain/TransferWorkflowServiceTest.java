@@ -31,6 +31,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import org.mockito.ArgumentCaptor;
@@ -53,6 +55,7 @@ class TransferWorkflowServiceTest {
     @Mock private FileEntityRepository fileEntityRepository;
     @Mock private NotificationService notificationService;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
     @Mock private SecurityUtils securityUtils;
 
     private TransferWorkflowService service;
@@ -82,7 +85,7 @@ class TransferWorkflowServiceTest {
                 historyRepository, attachmentRepository, configRepository, stepRepository,
                 executor, soulRepository, userRepository, familyRepository,
                 departmentRepository, soulDepartmentRepository, fileEntityRepository,
-                notificationService, auditService, securityUtils);
+                notificationService, auditService, propagationPublisher, securityUtils);
 
         config = TransferWorkflowConfig.builder()
                 .id(UUID.randomUUID())
@@ -164,7 +167,7 @@ class TransferWorkflowServiceTest {
         assertEquals(demandeurId, result.getDemandeurId());
         assertNotNull(result.getAncienneAffectation()); // calculée côté serveur
         verify(historyRepository).save(any(TransferHistory.class));
-        verify(auditService).log(eq("CREER_TRANSFERT"), eq("TRANSFER_REQUEST"), any(), any(), any(), isNull());
+        verify(propagationPublisher).publishCreated(eq("TRANSFER_REQUEST"), any(), any(), anyString());
     }
 
     @Test
@@ -334,7 +337,7 @@ class TransferWorkflowServiceTest {
         assertEquals(TransferStatus.EXECUTE, result.getStatut());
         assertNotNull(result.getDateExecution());
         verify(executor).execute(eq(req), any());
-        verify(auditService).log(eq("EXECUTER_TRANSFERT"), eq("TRANSFER_REQUEST"), any(), any(), any(), isNull());
+        verify(propagationPublisher, atLeast(1)).publishStatusChanged(eq("TRANSFER_REQUEST"), any(), anyString(), anyString(), anyString());
     }
 
     @Test

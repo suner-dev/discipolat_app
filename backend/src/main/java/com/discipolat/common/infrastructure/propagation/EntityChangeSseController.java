@@ -4,6 +4,7 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -100,14 +101,15 @@ public class EntityChangeSseController {
 
     /**
      * Health check for the SSE endpoint — returns connection stats.
+     * Restreint au rôle ADMIN : expose le NOMBRE de locataires connectés,
+     * jamais leurs identifiants (évite toute fuite d'informations cross-tenant).
      */
     @GetMapping("/entity-changes/stats")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public Map<String, Object> stats() {
         return Map.of(
                 "totalConnectedClients", broadcaster.getTotalConnectedCount(),
-                "connectedTenants", broadcaster.getConnectedTenantIds().size(),
-                "tenantIds", broadcaster.getConnectedTenantIds().stream()
-                        .map(UUID::toString).collect(Collectors.toSet())
+                "connectedTenants", broadcaster.getConnectedTenantIds().size()
         );
     }
 }

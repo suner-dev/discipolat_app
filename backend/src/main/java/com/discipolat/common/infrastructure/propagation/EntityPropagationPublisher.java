@@ -113,6 +113,14 @@ public class EntityPropagationPublisher {
                               Map<String, Object> oldValues,
                               Map<String, Object> newValues,
                               String description) {
+        // Defense-in-depth : retire les valeurs null des payloads. Les maps
+        // immuables (Map.of) REJETTENT toute valeur null au call-site, mais une
+        // map mutable (LinkedHashMap) peut contenir un getter null. Sans cette
+        // neutralisation, Map.copyOf dans EntityChangedEvent lève une NPE et
+        // casse la transaction métier principale (effet de bord du refactor).
+        oldValues = sanitize(oldValues);
+        newValues = sanitize(newValues);
+
         UUID actorId = null;
         try {
             actorId = securityUtils.getCurrentUserId();
@@ -134,5 +142,22 @@ public class EntityPropagationPublisher {
                     entityType, entityId, e.getMessage());
             // Propagation failure must never block the main transaction
         }
+    }
+
+    /**
+     * Retire les entrées dont la clé ou la valeur est null, pour éviter toute
+     * NPE dans {@code Map.copyOf} du {@link EntityChangedEvent}.
+     */
+    private static Map<String, Object> sanitize(Map<String, Object> values) {
+        if (values == null || values.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Object> cleaned = new LinkedHashMap<>();
+        values.forEach((k, v) -> {
+            if (k != null && v != null) {
+                cleaned.put(k, v);
+            }
+        });
+        return cleaned;
     }
 }
