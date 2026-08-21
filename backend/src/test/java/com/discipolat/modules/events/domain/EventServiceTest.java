@@ -1,11 +1,14 @@
 package com.discipolat.modules.events.domain;
 
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.files.domain.EntityAttachmentRepository;
 import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.files.domain.FileEntityRepository;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,6 +59,10 @@ class EventServiceTest {
     private FileEntityRepository fileEntityRepository;
     @Mock
     private com.discipolat.modules.audit.domain.AuditService auditService;
+    @Mock
+    private EntityPropagationPublisher propagationPublisher;
+    @Mock
+    private EntityPropagationListener propagationListener;
 
     private EventService eventService;
     private EntityAttachmentService attachmentService;
@@ -71,7 +78,8 @@ class EventServiceTest {
     void setUp() {
         attachmentService = new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils);
         eventService = new EventService(eventRepository, registrationRepository, templateRepository,
-                userRepository, notificationService, securityUtils, workspaceScope, attachmentService, auditService);
+                userRepository, notificationService, securityUtils, workspaceScope, attachmentService, auditService,
+                propagationPublisher, propagationListener);
 
         evenementFamille = Event.builder()
                 .id(UUID.randomUUID())
@@ -285,6 +293,12 @@ class EventServiceTest {
         when(workspaceScope.isSuperUser()).thenReturn(false);
         when(workspaceScope.canAccessDepartment(departmentId)).thenReturn(true);
         when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        User orgUser = User.builder().id(userId).firstName("Test").lastName("User")
+                .role(com.discipolat.common.domain.UserRole.MEMBRE)
+                .roles(java.util.Set.of(com.discipolat.common.domain.UserRole.MEMBRE))
+                .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(orgUser));
+        when(userRepository.findByRole(com.discipolat.common.domain.UserRole.PASTEUR)).thenReturn(List.of());
         Event nouveau = Event.builder()
                 .departmentId(departmentId)
                 .titre("Convention 2026")

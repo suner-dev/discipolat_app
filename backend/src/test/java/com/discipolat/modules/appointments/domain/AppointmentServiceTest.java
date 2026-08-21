@@ -27,6 +27,7 @@ class AppointmentServiceTest {
     @Mock private AppointmentRepository appointmentRepository;
     @Mock private UserRepository userRepository;
     @Mock private NotificationService notificationService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
     @Mock private SecurityUtils securityUtils;
 
     @InjectMocks private AppointmentService appointmentService;

@@ -3,6 +3,8 @@ package com.discipolat.modules.evaluations.domain;
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.UserRole;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
@@ -40,6 +42,8 @@ class EvaluationServiceTest {
     @Mock private SoulDepartmentRepository soulDepartmentRepository;
     @Mock private com.discipolat.modules.audit.domain.AuditService auditService;
     @Mock private com.discipolat.modules.notifications.domain.NotificationService notificationService;
+    @Mock private EntityPropagationPublisher propagationPublisher;
+    @Mock private EntityPropagationListener propagationListener;
 
     private EvaluationService evaluationService;
 
@@ -50,7 +54,8 @@ class EvaluationServiceTest {
     void setUp() {
         evaluationService = new EvaluationService(evaluationRepository, securityUtils,
                 userRepository, departmentRepository, familyRepository, soulRepository,
-                soulDepartmentRepository, auditService, notificationService);
+                soulDepartmentRepository, auditService,
+                propagationPublisher, propagationListener, notificationService);
     }
 
     private User user(UUID id, UserRole role) {

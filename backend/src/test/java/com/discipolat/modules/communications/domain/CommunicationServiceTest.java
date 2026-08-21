@@ -38,6 +38,7 @@ class CommunicationServiceTest {
     @Mock private NotificationService notificationService;
     @Mock private SecurityUtils securityUtils;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
     @Mock private UserRepository userRepository;
     @Mock private SoulRepository soulRepository;
     @Mock private SoulDepartmentRepository soulDepartmentRepository;
@@ -50,7 +51,7 @@ class CommunicationServiceTest {
     @BeforeEach
     void setUp() {
         service = new CommunicationService(communicationRepository, notificationService, securityUtils,
-                auditService, userRepository, soulRepository, soulDepartmentRepository, departmentRepository);
+                auditService, propagationPublisher, userRepository, soulRepository, soulDepartmentRepository, departmentRepository);
     }
 
     private User user(UUID id, UserRole role) {
@@ -74,7 +75,7 @@ class CommunicationServiceTest {
         assertThat(result).containsEntry("statut", "PUBLIEE").containsEntry("destinataires", 2);
         verify(notificationService, times(2)).create(any(), eq(TypeNotification.INFORMATION),
                 eq(CanalNotification.IN_APP), any(), any(), eq(c.getId()), eq("COMMUNICATION"));
-        verify(auditService).logSimple("COMMUNICATION_PUBLISHED", "COMMUNICATION", c.getId());
+        verify(propagationPublisher).publishStatusChanged(any(), any(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -126,7 +127,7 @@ class CommunicationServiceTest {
         java.util.Map<String, Object> result = service.create(request);
 
         assertThat(result).containsEntry("cible", "FAMILLE").containsEntry("familleId", request.familleId());
-        verify(auditService).logSimple("COMMUNICATION_CREATED", "COMMUNICATION", (UUID) result.get("id"));
+        verify(propagationPublisher).publishCreated(any(), any(), any(), anyString());
     }
 
     @Test

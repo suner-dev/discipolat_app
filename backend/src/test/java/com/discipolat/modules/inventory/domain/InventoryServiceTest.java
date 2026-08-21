@@ -27,6 +27,8 @@ class InventoryServiceTest {
 
     @Mock private InventoryItemRepository repository;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationListener propagationListener;
     @Mock private SecurityUtils securityUtils;
 
     private InventoryService service;
@@ -35,7 +37,7 @@ class InventoryServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new InventoryService(repository, auditService, securityUtils);
+        service = new InventoryService(repository, auditService, propagationPublisher, propagationListener, securityUtils);
         tenantId = UUID.randomUUID();
         itemId = UUID.randomUUID();
     }
@@ -57,7 +59,7 @@ class InventoryServiceTest {
         assertNotNull(result.getId());
         assertEquals(savedId, result.getId());
         verify(repository).save(any());
-        verify(auditService).logSimple("INVENTORY_CREATED", "INVENTORY_ITEM", savedId);
+        verify(propagationPublisher).publishCreated(eq("INVENTORY_ITEM"), eq(savedId), any(), anyString());
     }
 
     @Test
@@ -187,7 +189,7 @@ class InventoryServiceTest {
         assertEquals(250.0, result.getValeurUnitaire());
         assertEquals("Salle B", result.getLieuStockage());
         assertEquals("SN-123", result.getNumeroSerie());
-        verify(auditService).logSimple("INVENTORY_UPDATED", "INVENTORY_ITEM", itemId);
+        verify(propagationPublisher).publishUpdated(eq("INVENTORY_ITEM"), eq(itemId), any(), any(), anyString());
     }
 
     @Test
@@ -202,12 +204,15 @@ class InventoryServiceTest {
 
     @Test
     void delete_ExistingItem_DeletesAndAudits() {
+        InventoryItem item = buildItem("Micro", "TECHNIQUE");
+        item.setId(itemId);
+        when(repository.findById(itemId)).thenReturn(Optional.of(item));
         doNothing().when(repository).deleteById(itemId);
 
         service.delete(itemId);
 
         verify(repository).deleteById(itemId);
-        verify(auditService).logSimple("INVENTORY_DELETED", "INVENTORY_ITEM", itemId);
+        verify(propagationPublisher).publishDeleted(eq("INVENTORY_ITEM"), eq(itemId), any(), anyString());
     }
 
     // ==================== ASSIGN ====================
@@ -227,7 +232,7 @@ class InventoryServiceTest {
         assertEquals("AFFECTE", result.getStatut());
         assertEquals(memberId, result.getAffecteAId());
         assertEquals(2, result.getQuantiteDisponible());
-        verify(auditService).logSimple("INVENTORY_ASSIGNED", "INVENTORY_ITEM", itemId);
+        verify(propagationPublisher).publishReassigned(eq("INVENTORY_ITEM"), eq(itemId), anyString(), any(), any(), anyString());
     }
 
     @Test
@@ -267,7 +272,7 @@ class InventoryServiceTest {
         assertEquals("DISPONIBLE", result.getStatut());
         assertNull(result.getAffecteAId());
         assertEquals(3, result.getQuantiteDisponible());
-        verify(auditService).logSimple("INVENTORY_UNASSIGNED", "INVENTORY_ITEM", itemId);
+        verify(propagationPublisher).publishReassigned(eq("INVENTORY_ITEM"), eq(itemId), anyString(), any(), any(), anyString());
     }
 
     @Test
@@ -298,7 +303,7 @@ class InventoryServiceTest {
 
         assertEquals("EN_MAINTENANCE", result.getStatut());
         assertNotNull(result.getDerniereMaintenance());
-        verify(auditService).logSimple("INVENTORY_MAINTENANCE", "INVENTORY_ITEM", itemId);
+        verify(propagationPublisher).publishStatusChanged(eq("INVENTORY_ITEM"), eq(itemId), anyString(), anyString(), anyString());
     }
 
     // ==================== GET STATS ====================
@@ -410,11 +415,8 @@ class InventoryServiceTest {
     }
 
     @Test
-    void delete_NonExistingItem_DoesNotThrow() {
-        doNothing().when(repository).deleteById(any());
-
-        assertDoesNotThrow(() -> service.delete(UUID.randomUUID()));
-        verify(repository).deleteById(any());
+    void delete_NonExistingItem_ThrowsEntityNotFound() {
+        assertThrows(EntityNotFoundException.class, () -> service.delete(UUID.randomUUID()));
     }
 
     @Test

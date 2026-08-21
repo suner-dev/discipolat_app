@@ -19,6 +19,8 @@ import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.users.domain.User;
@@ -51,6 +53,8 @@ public class FamilyService {
     private final WorkspaceScopeService workspaceScopeService;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final EntityPropagationPublisher propagationPublisher;
+    private final EntityPropagationListener propagationListener;
 
     public FamilyService(FamilyRepository familyRepository,
                          FamilyChiefHistoryRepository chiefHistoryRepository,
@@ -63,7 +67,9 @@ public class FamilyService {
                          PasswordEncoder passwordEncoder,
                          WorkspaceScopeService workspaceScopeService,
                          AuditService auditService,
-                         NotificationService notificationService) {
+                         NotificationService notificationService,
+                         EntityPropagationPublisher propagationPublisher,
+                         EntityPropagationListener propagationListener) {
         this.familyRepository = familyRepository;
         this.chiefHistoryRepository = chiefHistoryRepository;
         this.soulRepository = soulRepository;
@@ -76,6 +82,8 @@ public class FamilyService {
         this.workspaceScopeService = workspaceScopeService;
         this.auditService = auditService;
         this.notificationService = notificationService;
+        this.propagationPublisher = propagationPublisher;
+        this.propagationListener = propagationListener;
     }
 
     /**
@@ -137,7 +145,10 @@ public class FamilyService {
                 .build();
         chiefHistoryRepository.save(history);
 
-        auditService.logSimple("FAMILY_CREATED", "FAMILY", savedFamily.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("FAMILY", savedFamily.getId(),
+                Map.of("nom", savedFamily.getNom(), "chefFamilleId", savedFamily.getChefFamilleId()),
+                "Famille créée");
         return savedFamily;
     }
 
@@ -272,18 +283,19 @@ public class FamilyService {
             existing.setChefAdjointId(request.chefAdjointId());
         }
         Family saved = familyRepository.save(existing);
-        auditService.logSimple("FAMILY_UPDATED", "FAMILY", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE: mise à jour famille =====
+        propagationPublisher.publishUpdated("FAMILY", saved.getId(),
+                Map.of("nom", existing.getNom()),
+                Map.of("nom", saved.getNom()),
+                "Famille mise à jour");
 
-        // ===== PROPAGATION: Chef change notifications =====
+        // ===== PROPAGATION CENTRALISÉE: changement de chef =====
         if (request.chefFamilleId() != null && !request.chefFamilleId().equals(oldChefId)) {
-            if (oldChefId != null) {
-                notifyUser(oldChefId, "Vous n'êtes plus chef de famille",
-                        "Vous n'êtes plus chef de la famille " + saved.getNom(),
-                        saved.getId(), "FAMILY");
-            }
-            notifyUser(request.chefFamilleId(), "Nouveau chef de famille",
-                    "Vous êtes maintenant chef de la famille " + saved.getNom(),
-                    saved.getId(), "FAMILY");
+            propagationPublisher.publishReassigned("FAMILY", saved.getId(), "chefFamilleId",
+                    oldChefId, request.chefFamilleId(),
+                    "Changement de chef de famille");
+            propagationListener.notifyChefFamilleChange(
+                    saved.getId(), saved.getNom(), oldChefId, request.chefFamilleId());
             // Enregistrer dans l'historique
             chiefHistoryRepository.save(FamilyChiefHistory.builder()
                     .familleId(saved.getId())
@@ -313,7 +325,10 @@ public class FamilyService {
         }
         family.setStatut(StatutEntite.ARCHIVED);
         familyRepository.save(family);
-        auditService.logSimple("FAMILY_DISSOLVED", "FAMILY", id);
+        // ===== PROPAGATION CENTRALISÉE: dissolution =====
+        propagationPublisher.publishStatusChanged("FAMILY", id,
+                StatutEntite.ACTIVE.name(), StatutEntite.ARCHIVED.name(),
+                "Famille dissoute");
     }
 
     // ======================== US-10: FAMILY HISTORY ========================

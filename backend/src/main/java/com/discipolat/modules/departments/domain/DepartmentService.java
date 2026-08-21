@@ -17,6 +17,8 @@ import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.users.domain.UserDepartmentRepository;
@@ -52,6 +54,8 @@ public class DepartmentService {
     private final com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final EntityPropagationPublisher propagationPublisher;
+    private final EntityPropagationListener propagationListener;
 
     public DepartmentService(DepartmentRepository departmentRepository,
                              FamilyRepository familyRepository,
@@ -66,7 +70,9 @@ public class DepartmentService {
                              EntityAttachmentService attachmentService,
                              com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService,
                              AuditService auditService,
-                             NotificationService notificationService) {
+                             NotificationService notificationService,
+                             EntityPropagationPublisher propagationPublisher,
+                             EntityPropagationListener propagationListener) {
         this.departmentRepository = departmentRepository;
         this.familyRepository = familyRepository;
         this.soulRepository = soulRepository;
@@ -81,12 +87,17 @@ public class DepartmentService {
         this.workspaceScopeService = workspaceScopeService;
         this.auditService = auditService;
         this.notificationService = notificationService;
+        this.propagationPublisher = propagationPublisher;
+        this.propagationListener = propagationListener;
     }
 
     public Department create(Department department) {
         department.setStatut(StatutEntite.ACTIVE);
         Department saved = departmentRepository.save(department);
-        auditService.logSimple("DEPARTMENT_CREATED", "DEPARTMENT", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("DEPARTMENT", saved.getId(),
+                Map.of("nom", saved.getNom(), "responsableId", saved.getResponsableId()),
+                "Département créé");
         return saved;
     }
 
@@ -114,7 +125,10 @@ public class DepartmentService {
                 .statut(StatutEntite.ACTIVE)
                 .build();
         department = departmentRepository.save(department);
-        auditService.logSimple("DEPARTMENT_CREATED", "DEPARTMENT", department.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("DEPARTMENT", department.getId(),
+                Map.of("nom", department.getNom(), "responsableId", department.getResponsableId()),
+                "Département créé");
 
         // Lier le responsable au département (table user_departments)
         userDepartmentRepository.save(com.discipolat.modules.users.domain.UserDepartment.builder()
@@ -191,18 +205,19 @@ public class DepartmentService {
         existing.setDescription(updated.getDescription());
         existing.setResponsableId(updated.getResponsableId());
         Department saved = departmentRepository.save(existing);
-        auditService.logSimple("DEPARTMENT_UPDATED", "DEPARTMENT", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE: mise à jour département =====
+        propagationPublisher.publishUpdated("DEPARTMENT", saved.getId(),
+                Map.of("nom", existing.getNom()),
+                Map.of("nom", saved.getNom()),
+                "Département mis à jour");
 
-        // ===== PROPAGATION: Responsable change notifications =====
+        // ===== PROPAGATION CENTRALISÉE: changement de responsable =====
         if (updated.getResponsableId() != null && !updated.getResponsableId().equals(oldResponsableId)) {
-            if (oldResponsableId != null) {
-                notifyUser(oldResponsableId, "Vous n'êtes plus responsable",
-                        "Vous n'êtes plus responsable du département " + saved.getNom(),
-                        saved.getId(), "DEPARTMENT");
-            }
-            notifyUser(updated.getResponsableId(), "Nouveau responsable",
-                    "Vous êtes maintenant responsable du département " + saved.getNom(),
-                    saved.getId(), "DEPARTMENT");
+            propagationPublisher.publishReassigned("DEPARTMENT", saved.getId(), "responsableId",
+                    oldResponsableId, updated.getResponsableId(),
+                    "Changement de responsable");
+            propagationListener.notifyResponsableChange(
+                    saved.getId(), saved.getNom(), oldResponsableId, updated.getResponsableId());
         }
 
         return saved;
@@ -212,7 +227,10 @@ public class DepartmentService {
         Department department = findById(id);
         department.setStatut(StatutEntite.ARCHIVED);
         departmentRepository.save(department);
-        auditService.logSimple("DEPARTMENT_ARCHIVED", "DEPARTMENT", id);
+        // ===== PROPAGATION CENTRALISÉE: archivage =====
+        propagationPublisher.publishStatusChanged("DEPARTMENT", id,
+                StatutEntite.ACTIVE.name(), StatutEntite.ARCHIVED.name(),
+                "Département archivé");
     }
 
     @Transactional(readOnly = true)

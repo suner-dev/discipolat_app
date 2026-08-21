@@ -1,6 +1,7 @@
 package com.discipolat.modules.visits.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.badges.domain.BadgeService;
 import com.discipolat.modules.souls.domain.SoulRepository;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -28,17 +30,20 @@ public class VisitService {
     private final SoulRepository soulRepository;
     private final UserRepository userRepository;
     private final BadgeService badgeService;
+    private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
 
     public VisitService(VisitRepository visitRepository,
                         SoulRepository soulRepository,
                         UserRepository userRepository,
                         BadgeService badgeService,
+                        EntityPropagationPublisher propagationPublisher,
                         SecurityUtils securityUtils) {
         this.visitRepository = visitRepository;
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.badgeService = badgeService;
+        this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
     }
 
@@ -54,7 +59,12 @@ public class VisitService {
                 .objectif(request.objectif())
                 .statut(Visit.StatutVisite.PLANIFIEE)
                 .build();
-        return toResponse(visitRepository.save(visit));
+        Visit saved = visitRepository.save(visit);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("VISIT", saved.getId(),
+                Map.of("soulId", saved.getSoulId(), "motif", saved.getMotif() != null ? saved.getMotif() : ""),
+                "Visite planifiée");
+        return toResponse(saved);
     }
 
     public VisitResponse update(UUID visitId, UpdateVisitRequest request) {
@@ -62,6 +72,7 @@ public class VisitService {
                 .orElseThrow(() -> new EntityNotFoundException("Visit", visitId));
         boolean becomesRealisee = request.statut() == Visit.StatutVisite.REALISEE
                 && visit.getStatut() != Visit.StatutVisite.REALISEE;
+        String oldStatut = visit.getStatut().name();
         visit.setStatut(request.statut());
         if (request.statut() == Visit.StatutVisite.REALISEE) {
             visit.setDateRealisee(request.dateRealisee() != null ? request.dateRealisee() : LocalDate.now());
@@ -74,6 +85,10 @@ public class VisitService {
         if (request.photoUrl() != null) visit.setPhotoUrl(request.photoUrl());
         if (request.present() != null) visit.setPresent(request.present());
         VisitResponse response = toResponse(visitRepository.save(visit));
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("VISIT", visitId,
+                oldStatut, visit.getStatut().name(),
+                "Statut visite: " + oldStatut + " -> " + visit.getStatut());
 
         // Gamification : le score évolue automatiquement quand une visite est réalisée
         if (becomesRealisee) {
@@ -114,6 +129,10 @@ public class VisitService {
                     "Vous ne pouvez supprimer que vos propres visites");
         }
         visitRepository.delete(visit);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishDeleted("VISIT", visitId,
+                Map.of("soulId", visit.getSoulId()),
+                "Visite supprimée");
     }
 
     private VisitResponse toResponse(Visit v) {

@@ -1,6 +1,8 @@
 package com.discipolat.modules.users.domain;
 
 import com.discipolat.common.domain.UserRole;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.souls.domain.Soul;
@@ -43,6 +45,10 @@ class UserServiceTest {
     @Mock
     private AuditService auditService;
     @Mock
+    private EntityPropagationPublisher propagationPublisher;
+    @Mock
+    private EntityPropagationListener propagationListener;
+    @Mock
     private WorkspaceScopeService workspaceScopeService;
     @Mock
     private com.discipolat.modules.souls.domain.SoulDepartmentRepository soulDepartmentRepository;
@@ -63,6 +69,7 @@ class UserServiceTest {
     void setUp() {
         userService = new UserService(userRepository, passwordEncoder, securityUtils,
                 soulRepository, soulExitRepository, soulHistoryRepository, auditService,
+                propagationPublisher, propagationListener,
                 workspaceScopeService, soulDepartmentRepository, familyRepository,
                 departmentRepository, evaluationService, dossierService);
     }

@@ -1,6 +1,7 @@
 package com.discipolat.modules.platform.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +20,13 @@ public class DictionaryService {
 
     private final DictionaryEntryRepository repository;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
 
-    public DictionaryService(DictionaryEntryRepository repository, AuditService auditService) {
+    public DictionaryService(DictionaryEntryRepository repository, AuditService auditService,
+                             EntityPropagationPublisher propagationPublisher) {
         this.repository = repository;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
     }
 
     /** Toutes les entrées (admin) — groupes par clé de dictionnaire. */
@@ -74,7 +78,10 @@ public class DictionaryService {
                 .isDefault(false)
                 .build();
         repository.save(saved);
-        auditService.logSimple("DICTIONARY_ENTRY_CREATED", "PLATFORM_DICTIONARY", null);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("PLATFORM_DICTIONARY", saved.getId() != null ? saved.getId() : UUID.randomUUID(),
+                Map.of("dictKey", saved.getDictKey(), "code", saved.getCode(), "label", saved.getLabel()),
+                "Entrée dictionnaire créée: " + saved.getLabel());
         return saved;
     }
 
@@ -87,15 +94,21 @@ public class DictionaryService {
         entry.setOrdre(request.getOrdre());
         entry.setActif(request.isActif());
         repository.save(entry);
-        auditService.logSimple("DICTIONARY_ENTRY_UPDATED", "PLATFORM_DICTIONARY", id);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("PLATFORM_DICTIONARY", id,
+                Map.of(), Map.of("label", entry.getLabel()),
+                "Entrée dictionnaire mise à jour: " + entry.getLabel());
         return entry;
     }
 
     public void delete(UUID id) {
         DictionaryEntry entry = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("DictionaryEntry", id));
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishDeleted("PLATFORM_DICTIONARY", id,
+                Map.of("dictKey", entry.getDictKey(), "code", entry.getCode()),
+                "Entrée dictionnaire supprimée: " + entry.getLabel());
         repository.delete(entry);
-        auditService.logSimple("DICTIONARY_ENTRY_DELETED", "PLATFORM_DICTIONARY", id);
     }
 
     /**
@@ -138,7 +151,10 @@ public class DictionaryService {
                 ordre++;
             }
         }
-        auditService.logSimple("DICTIONARIES_RESET", "PLATFORM_DICTIONARY", null);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("PLATFORM_DICTIONARY", UUID.randomUUID(),
+                "ACTIVE", "RESET",
+                "Dictionnaires réinitialisés par défaut");
     }
 
     /** Garantit la présence des dictionnaires par défaut (nouvelle base). */

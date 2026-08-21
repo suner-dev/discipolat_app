@@ -2,6 +2,7 @@ package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.tenants.api.CreateTenantRequest;
 import com.discipolat.modules.tenants.api.TenantResponse;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -33,10 +35,13 @@ public class TenantService {
 
     private final TenantRepository tenantRepository;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
 
-    public TenantService(TenantRepository tenantRepository, AuditService auditService) {
+    public TenantService(TenantRepository tenantRepository, AuditService auditService,
+                         EntityPropagationPublisher propagationPublisher) {
         this.tenantRepository = tenantRepository;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -66,7 +71,10 @@ public class TenantService {
                         ? request.plan() : DEFAULT_PLAN)
                 .build();
         tenant = tenantRepository.save(tenant);
-        auditService.logSimple("TENANT_CREATED", "TENANT", tenant.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("TENANT", tenant.getId(),
+                Map.of("name", tenant.getName(), "slug", tenant.getSlug()),
+                "Tenant créé: " + tenant.getName());
         return TenantResponse.from(tenant);
     }
 
@@ -82,15 +90,22 @@ public class TenantService {
             tenant.setPlan(request.plan());
         }
         tenant = tenantRepository.save(tenant);
-        auditService.logSimple("TENANT_UPDATED", "TENANT", tenant.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("TENANT", tenant.getId(),
+                Map.of(), Map.of("name", tenant.getName(), "plan", tenant.getPlan()),
+                "Tenant mis à jour: " + tenant.getName());
         return TenantResponse.from(tenant);
     }
 
     public void deactivate(UUID id) {
         Tenant tenant = getEntity(id);
+        String oldStatus = tenant.getStatus().name();
         tenant.setStatus(TenantStatus.SUSPENDED);
         tenantRepository.save(tenant);
-        auditService.logSimple("TENANT_DEACTIVATED", "TENANT", tenant.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("TENANT", tenant.getId(),
+                oldStatus, TenantStatus.SUSPENDED.name(),
+                "Tenant désactivé: " + tenant.getName());
     }
 
     private Tenant getEntity(UUID id) {

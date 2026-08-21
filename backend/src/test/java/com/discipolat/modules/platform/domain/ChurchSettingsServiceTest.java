@@ -22,12 +22,13 @@ class ChurchSettingsServiceTest {
 
     @Mock private ChurchSettingsRepository repository;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
 
     private ChurchSettingsService service;
 
     @BeforeEach
     void setUp() {
-        service = new ChurchSettingsService(repository, auditService);
+        service = new ChurchSettingsService(repository, auditService, propagationPublisher);
     }
 
     @Test
@@ -102,12 +103,8 @@ class ChurchSettingsServiceTest {
                 "Nouveau Nom", null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null, null));
 
-        ArgumentCaptor<Map> before = ArgumentCaptor.forClass(Map.class);
-        ArgumentCaptor<Map> after = ArgumentCaptor.forClass(Map.class);
-        verify(auditService).log(eq("UPDATE_CHURCH_SETTINGS"), eq("CHURCH_SETTINGS"),
-                eq(existing.getId()), before.capture(), after.capture(), isNull());
-        assertThat(before.getValue().get("churchName")).isEqualTo("Discipolat");
-        assertThat(after.getValue().get("churchName")).isEqualTo("Nouveau Nom");
+        verify(propagationPublisher).publishUpdated(eq("CHURCH_SETTINGS"), eq(existing.getId()), any(), any(), anyString());
+        assertThat(existing.getChurchName()).isEqualTo("Nouveau Nom");
     }
 
     @Test
@@ -126,6 +123,6 @@ class ChurchSettingsServiceTest {
         assertThat(existing.getFontFamily()).isEqualTo("Inter");
         assertThat(existing.isAllowDarkMode()).isTrue();
         assertThat(existing.getSlogan()).isNull();
-        verify(auditService).logSimple("RESET_CHURCH_SETTINGS", "CHURCH_SETTINGS", existing.getId());
+        verify(propagationPublisher).publishStatusChanged(eq("CHURCH_SETTINGS"), eq(existing.getId()), anyString(), anyString(), anyString());
     }
 }

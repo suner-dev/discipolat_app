@@ -4,6 +4,7 @@ import com.discipolat.common.enums.StatutAlerte;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.common.enums.TransferStatus;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.alerts.domain.Alert;
 import com.discipolat.modules.alerts.domain.AlertRepository;
@@ -63,6 +64,7 @@ public class PageBuilderService {
     private final CustomPageRepository pageRepository;
     private final ConfigRevisionService revisionService;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
     private final WorkspaceScopeService scopeService;
     private final SoulRepository soulRepository;
@@ -78,6 +80,7 @@ public class PageBuilderService {
     public PageBuilderService(CustomPageRepository pageRepository,
                               ConfigRevisionService revisionService,
                               AuditService auditService,
+                              EntityPropagationPublisher propagationPublisher,
                               SecurityUtils securityUtils,
                               WorkspaceScopeService scopeService,
                               SoulRepository soulRepository,
@@ -92,6 +95,7 @@ public class PageBuilderService {
         this.pageRepository = pageRepository;
         this.revisionService = revisionService;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
         this.scopeService = scopeService;
         this.soulRepository = soulRepository;
@@ -135,7 +139,10 @@ public class PageBuilderService {
         request.setCreatedBy(securityUtils.getCurrentUserId());
         request.setVersion(1);
         CustomPage saved = pageRepository.save(request);
-        auditService.logSimple("PAGE_CREATED", "CUSTOM_PAGE", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("CUSTOM_PAGE", saved.getId(),
+                Map.of("title", saved.getTitle(), "key", saved.getKey(), "slug", saved.getSlug()),
+                "Page créée: " + saved.getTitle());
         revisionService.record("CUSTOM_PAGE", saved.getKey(), "PAGE_CREATED", pagePayload(saved));
         return saved;
     }
@@ -160,7 +167,11 @@ public class PageBuilderService {
         if (request.getRoles() != null) page.setRoles(new ArrayList<>(request.getRoles()));
         if (request.isEnabled() != page.isEnabled()) page.setEnabled(request.isEnabled());
         pageRepository.save(page);
-        auditService.logSimple("PAGE_UPDATED", "CUSTOM_PAGE", page.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("CUSTOM_PAGE", page.getId(),
+                Map.of("title", before.get("title")),
+                Map.of("title", page.getTitle()),
+                "Page mise à jour: " + page.getTitle());
         revisionService.record("CUSTOM_PAGE", page.getKey(), "PAGE_UPDATED",
                 Map.of("before", before, "after", pagePayload(page)));
         return page;
@@ -168,8 +179,11 @@ public class PageBuilderService {
 
     public void delete(UUID id) {
         CustomPage page = get(id);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishDeleted("CUSTOM_PAGE", id,
+                Map.of("title", page.getTitle(), "key", page.getKey()),
+                "Page supprimée: " + page.getTitle());
         pageRepository.delete(page);
-        auditService.logSimple("PAGE_DELETED", "CUSTOM_PAGE", id);
         revisionService.record("CUSTOM_PAGE", page.getKey(), "PAGE_DELETED", pagePayload(page));
     }
 
@@ -182,7 +196,11 @@ public class PageBuilderService {
                 page.setVersion(page.getVersion() + 1);
             }
             pageRepository.save(page);
-            auditService.logSimple(published ? "PAGE_PUBLISHED" : "PAGE_UNPUBLISHED", "CUSTOM_PAGE", id);
+            // ===== PROPAGATION CENTRALISÉE =====
+            propagationPublisher.publishStatusChanged("CUSTOM_PAGE", id,
+                    page.isPublished() ? "UNPUBLISHED" : "PUBLISHED",
+                    published ? "PUBLISHED" : "UNPUBLISHED",
+                    (published ? "Page publiée" : "Page dépubliée") + ": " + page.getTitle());
             revisionService.record("CUSTOM_PAGE", page.getKey(),
                     published ? "PAGE_PUBLISHED" : "PAGE_UNPUBLISHED",
                     Map.of("published", published, "version", page.getVersion()));

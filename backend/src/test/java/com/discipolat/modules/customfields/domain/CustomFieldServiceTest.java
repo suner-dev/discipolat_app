@@ -23,6 +23,7 @@ class CustomFieldServiceTest {
     @Mock private CustomFieldDefinitionRepository definitionRepository;
     @Mock private CustomFieldValueRepository valueRepository;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
     @Mock private SecurityUtils securityUtils;
 
     private CustomFieldService service;
@@ -32,7 +33,7 @@ class CustomFieldServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CustomFieldService(definitionRepository, valueRepository, auditService, securityUtils);
+        service = new CustomFieldService(definitionRepository, valueRepository, auditService, propagationPublisher, securityUtils);
     }
 
     private CustomFieldDefinition def(List<String> rolesEcriture) {

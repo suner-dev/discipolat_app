@@ -9,6 +9,9 @@ import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.common.infrastructure.propagation.EntityChangedEvent;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.files.domain.EntityAttachment;
 import com.discipolat.modules.files.domain.EntityAttachmentService;
@@ -53,6 +56,8 @@ public class SoulService {
     private final WorkspaceScopeService workspaceScopeService;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final EntityPropagationPublisher propagationPublisher;
+    private final EntityPropagationListener propagationListener;
 
     public SoulService(SoulRepository soulRepository, SoulHistoryRepository soulHistoryRepository,
                        SoulNoteRepository soulNoteRepository,
@@ -64,7 +69,9 @@ public class SoulService {
                        EntityAttachmentService attachmentService,
                        WorkspaceScopeService workspaceScopeService,
                        AuditService auditService,
-                       NotificationService notificationService) {
+                       NotificationService notificationService,
+                       EntityPropagationPublisher propagationPublisher,
+                       EntityPropagationListener propagationListener) {
         this.soulRepository = soulRepository;
         this.soulHistoryRepository = soulHistoryRepository;
         this.soulNoteRepository = soulNoteRepository;
@@ -79,6 +86,8 @@ public class SoulService {
         this.workspaceScopeService = workspaceScopeService;
         this.auditService = auditService;
         this.notificationService = notificationService;
+        this.propagationPublisher = propagationPublisher;
+        this.propagationListener = propagationListener;
     }
 
     public Soul create(CreateSoulRequest request) {
@@ -104,8 +113,11 @@ public class SoulService {
                 .niveauCroissance(request.niveauCroissance() != null ? request.niveauCroissance() : 1)
                 .build();
         soul = soulRepository.save(soul);
-        logHistory(soul.getId(), "CREATION", "Âme créée", null, soul.getStatut().name(), null, request.faiseurId());
-        auditService.logSimple("SOUL_CREATED", "SOUL", soul.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("SOUL", soul.getId(),
+                Map.of("nom", soul.getNom(), "prenom", soul.getPrenom(),
+                        "faiseurId", soul.getFaiseurId(), "familleId", soul.getFamilleId() != null ? soul.getFamilleId() : ""),
+                "Âme créée");
         return soul;
     }
 
@@ -231,16 +243,14 @@ public class SoulService {
         if (request.etatSpirituel() != null && !request.etatSpirituel().equals(soul.getEtatSpirituel())) {
             String oldEtat = soul.getEtatSpirituel();
             soul.setEtatSpirituel(request.etatSpirituel());
-            logHistory(soul.getId(), "CHANGEMENT_ETAT_SPIRITUEL",
-                    "État spirituel: " + oldEtat + " -> " + request.etatSpirituel(),
-                    oldEtat, request.etatSpirituel(), null, null);
-            // ===== PROPAGATION: Notifier le faiseur du changement d'état spirituel =====
-            if (soul.getFaiseurId() != null) {
-                notifyMaker(soul.getFaiseurId(), "État spirituel modifié",
-                        "L'état spirituel de " + soul.getPrenom() + " " + soul.getNom()
-                                + " est passé de " + oldEtat + " à " + request.etatSpirituel(),
-                        soul.getId(), "SOUL");
-            }
+            // ===== PROPAGATION CENTRALISÉE: état spirituel =====
+            propagationPublisher.publishUpdated("SOUL", soul.getId(),
+                    Map.of("etatSpirituel", oldEtat),
+                    Map.of("etatSpirituel", request.etatSpirituel()),
+                    "État spirituel: " + oldEtat + " -> " + request.etatSpirituel());
+            propagationListener.notifyEtatSpirituelChangeToFaiseur(
+                    soul.getId(), soul.getPrenom() + " " + soul.getNom(),
+                    soul.getFaiseurId(), oldEtat, request.etatSpirituel());
         } else if (request.etatSpirituel() != null) {
             soul.setEtatSpirituel(request.etatSpirituel());
         }
@@ -248,49 +258,43 @@ public class SoulService {
         if (request.niveauCroissance() != null && !request.niveauCroissance().equals(soul.getNiveauCroissance())) {
             Integer oldNiveau = soul.getNiveauCroissance();
             soul.setNiveauCroissance(request.niveauCroissance());
-            logHistory(soul.getId(), "CHANGEMENT_NIVEAU_CROISSANCE",
-                    "Niveau de croissance: " + oldNiveau + " -> " + request.niveauCroissance(),
-                    null, null, null, null);
+            // ===== PROPAGATION CENTRALISÉE: niveau croissance =====
+            propagationPublisher.publishUpdated("SOUL", soul.getId(),
+                    Map.of("niveauCroissance", oldNiveau),
+                    Map.of("niveauCroissance", request.niveauCroissance()),
+                    "Niveau de croissance: " + oldNiveau + " -> " + request.niveauCroissance());
         } else if (request.niveauCroissance() != null) {
             soul.setNiveauCroissance(request.niveauCroissance());
         }
 
         if (request.statut() != null && !request.statut().name().equals(oldStatut)) {
             soul.setStatut(request.statut());
-            logHistory(soul.getId(), "CHANGEMENT_STATUT",
-                    "Statut changé: " + oldStatut + " -> " + request.statut(),
-                    oldStatut, request.statut().name(), null, null);
-            // ===== PROPAGATION: Notifier le faiseur du changement de statut =====
-            if (soul.getFaiseurId() != null) {
-                notifyMaker(soul.getFaiseurId(), "Statut disciple modifié",
-                        "Le statut de " + soul.getPrenom() + " " + soul.getNom()
-                                + " est passé de " + oldStatut + " à " + request.statut().name(),
-                        soul.getId(), "SOUL");
-            }
+            // ===== PROPAGATION CENTRALISÉE: statut =====
+            propagationPublisher.publishStatusChanged("SOUL", soul.getId(),
+                    oldStatut, request.statut().name(),
+                    "Statut changé: " + oldStatut + " -> " + request.statut());
+            propagationListener.notifyStatutChangeToFaiseur(
+                    soul.getId(), soul.getPrenom() + " " + soul.getNom(),
+                    soul.getFaiseurId(), oldStatut, request.statut().name());
         }
 
         if (request.faiseurId() != null && !request.faiseurId().equals(oldFaiseurId)) {
             soul.setFaiseurId(request.faiseurId());
             soul.setFamilleId(request.familleId());
-            logHistory(soul.getId(), "REAFFECTATION",
-                    "Réaffecté du faiseur " + oldFaiseurId + " au faiseur " + request.faiseurId(),
-                    null, null, oldFaiseurId, request.faiseurId());
-
-            // ===== PROPAGATION: Notifier l'ancien et le nouveau faiseur =====
-            if (oldFaiseurId != null) {
-                notifyMaker(oldFaiseurId, "Disciple réaffecté",
-                        "Le disciple " + soul.getPrenom() + " " + soul.getNom()
-                                + " ne fait plus partie de vos disciples.",
-                        soul.getId(), "SOUL");
-            }
-            notifyMaker(request.faiseurId(), "Nouveau disciple affecté",
-                    "Le disciple " + soul.getPrenom() + " " + soul.getNom()
-                            + " vous a été affecté.",
-                    soul.getId(), "SOUL");
+            // ===== PROPAGATION CENTRALISÉE: réaffectation faiseur =====
+            propagationPublisher.publishReassigned("SOUL", soul.getId(), "faiseurId",
+                    oldFaiseurId, request.faiseurId(),
+                    "Réaffecté du faiseur " + oldFaiseurId + " au faiseur " + request.faiseurId());
+            propagationListener.notifyFaiseurReassignment(
+                    soul.getId(), soul.getPrenom() + " " + soul.getNom(),
+                    oldFaiseurId, request.faiseurId());
         }
 
         Soul saved = soulRepository.save(soul);
-        auditService.logSimple("SOUL_UPDATED", "SOUL", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE: mise à jour générale =====
+        propagationPublisher.publishUpdated("SOUL", saved.getId(),
+                Map.of(), Map.of(),
+                "Mise à jour de l'âme");
         return saved;
     }
 
@@ -298,7 +302,10 @@ public class SoulService {
         Soul soul = findById(id);
         soul.setDeleted(true);
         soulRepository.save(soul);
-        auditService.logSimple("SOUL_SOFT_DELETED", "SOUL", id);
+        // ===== PROPAGATION CENTRALISÉE: suppression douce =====
+        propagationPublisher.publishSoftDeleted("SOUL", id,
+                Map.of("nom", soul.getNom(), "prenom", soul.getPrenom()),
+                "Âme supprimée (corbeille)");
     }
 
     // ======================== US-60: RESTORE SOUL ========================

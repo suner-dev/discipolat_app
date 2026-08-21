@@ -4,6 +4,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.communications.api.CommunicationRequest;
@@ -38,6 +39,7 @@ public class CommunicationService {
     private final NotificationService notificationService;
     private final SecurityUtils securityUtils;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
     private final UserRepository userRepository;
     private final SoulRepository soulRepository;
     private final SoulDepartmentRepository soulDepartmentRepository;
@@ -47,6 +49,7 @@ public class CommunicationService {
                                 NotificationService notificationService,
                                 SecurityUtils securityUtils,
                                 AuditService auditService,
+                                EntityPropagationPublisher propagationPublisher,
                                 UserRepository userRepository,
                                 SoulRepository soulRepository,
                                 SoulDepartmentRepository soulDepartmentRepository,
@@ -55,6 +58,7 @@ public class CommunicationService {
         this.notificationService = notificationService;
         this.securityUtils = securityUtils;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
         this.userRepository = userRepository;
         this.soulRepository = soulRepository;
         this.soulDepartmentRepository = soulDepartmentRepository;
@@ -96,13 +100,17 @@ public class CommunicationService {
                 .createdBy(securityUtils.getCurrentUserId())
                 .build();
         Communication saved = communicationRepository.save(c);
-        auditService.logSimple("COMMUNICATION_CREATED", "COMMUNICATION", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("COMMUNICATION", saved.getId(),
+                Map.of("titre", saved.getTitre(), "cible", saved.getCible().name()),
+                "Annonce créée: " + saved.getTitre());
         return toMap(saved);
     }
 
     public Map<String, Object> update(UUID id, CommunicationRequest request) {
         Communication c = communicationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Communication", id));
+        String oldTitre = c.getTitre();
         c.setTitre(request.titre().trim());
         c.setContenu(request.contenu().trim());
         c.setCible(request.cible());
@@ -111,7 +119,11 @@ public class CommunicationService {
         c.setFamilleId(request.cible() == Communication.Cible.FAMILLE ? request.familleId() : null);
         c.setDepartmentId(request.cible() == Communication.Cible.DEPARTEMENT ? request.departmentId() : null);
         Communication saved = communicationRepository.save(c);
-        auditService.logSimple("COMMUNICATION_UPDATED", "COMMUNICATION", id);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("COMMUNICATION", saved.getId(),
+                Map.of("titre", oldTitre),
+                Map.of("titre", saved.getTitre()),
+                "Annonce mise à jour: " + saved.getTitre());
         return toMap(saved);
     }
 
@@ -119,10 +131,14 @@ public class CommunicationService {
     public Map<String, Object> publish(UUID id) {
         Communication c = communicationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Communication", id));
+        String oldStatut = c.getStatut().name();
         c.setStatut(Communication.Statut.PUBLIEE);
         c.setDatePublication(LocalDateTime.now());
         communicationRepository.save(c);
-        auditService.logSimple("COMMUNICATION_PUBLISHED", "COMMUNICATION", id);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("COMMUNICATION", id,
+                oldStatut, Communication.Statut.PUBLIEE.name(),
+                "Annonce publiée: " + c.getTitre());
 
         Set<UUID> targets = targetUserIds(c);
         int sent = 0;
@@ -141,9 +157,12 @@ public class CommunicationService {
     public void delete(UUID id) {
         Communication c = communicationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Communication", id));
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishSoftDeleted("COMMUNICATION", id,
+                Map.of("titre", c.getTitre(), "statut", c.getStatut().name()),
+                "Annonce supprimée: " + c.getTitre());
         c.setDeleted(true);
         communicationRepository.save(c);
-        auditService.logSimple("COMMUNICATION_DELETED", "COMMUNICATION", id);
     }
 
     /* ------------------------------ Ciblage ------------------------------ */

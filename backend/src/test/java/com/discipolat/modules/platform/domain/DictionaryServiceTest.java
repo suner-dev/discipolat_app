@@ -34,12 +34,14 @@ class DictionaryServiceTest {
 
     @Mock
     private AuditService auditService;
+    @Mock
+    private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
 
     private DictionaryService service;
 
     @BeforeEach
     void setUp() {
-        service = new DictionaryService(repository, auditService);
+        service = new DictionaryService(repository, auditService, propagationPublisher);
     }
 
     private DictionaryEntry defaultEntry(String key, String code, String label) {
@@ -72,7 +74,7 @@ class DictionaryServiceTest {
         assertThat(created.getCode()).isEqualTo("BAPTEME");
         assertThat(created.getLabel()).isEqualTo("Baptême");
         assertThat(created.isDefault()).isFalse();
-        verify(auditService).logSimple("DICTIONARY_ENTRY_CREATED", "PLATFORM_DICTIONARY", null);
+        verify(propagationPublisher).publishCreated(any(), any(), any(), anyString());
     }
 
     @Test
@@ -109,7 +111,7 @@ class DictionaryServiceTest {
         assertThat(updated.getColor()).isEqualTo("#16a34a");
         assertThat(updated.getOrdre()).isEqualTo(2);
         assertThat(updated.isActif()).isFalse();
-        verify(auditService).logSimple("DICTIONARY_ENTRY_UPDATED", "PLATFORM_DICTIONARY", entry.getId());
+        verify(propagationPublisher).publishUpdated(any(), any(), any(), any(), anyString());
     }
 
     @Test
@@ -121,7 +123,7 @@ class DictionaryServiceTest {
         service.delete(entry.getId());
 
         verify(repository).delete(entry);
-        verify(auditService).logSimple("DICTIONARY_ENTRY_DELETED", "PLATFORM_DICTIONARY", entry.getId());
+        verify(propagationPublisher).publishDeleted(any(), any(), any(), anyString());
     }
 
     @Test
@@ -147,7 +149,7 @@ class DictionaryServiceTest {
         assertThat(editedDefault.isActif()).isTrue();
         // CULTE est la 9e entrée du dictionnaire EVENT_TYPE par défaut
         assertThat(editedDefault.getOrdre()).isEqualTo(9);
-        verify(auditService).logSimple("DICTIONARIES_RESET", "PLATFORM_DICTIONARY", null);
+        verify(propagationPublisher).publishStatusChanged(any(), any(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -161,6 +163,6 @@ class DictionaryServiceTest {
 
         // Les 88 entrées par défaut sont recréées et le reset est journalisé
         verify(repository, org.mockito.Mockito.atLeastOnce()).save(any(DictionaryEntry.class));
-        verify(auditService).logSimple("DICTIONARIES_RESET", "PLATFORM_DICTIONARY", null);
+        verify(propagationPublisher).publishStatusChanged(any(), any(), anyString(), anyString(), anyString());
     }
 }

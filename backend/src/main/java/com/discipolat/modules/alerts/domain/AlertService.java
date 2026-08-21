@@ -2,6 +2,7 @@ package com.discipolat.modules.alerts.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutAlerte;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,17 +20,26 @@ import java.util.UUID;
 public class AlertService {
 
     private final AlertRepository alertRepository;
+    private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
 
-    public AlertService(AlertRepository alertRepository, SecurityUtils securityUtils) {
+    public AlertService(AlertRepository alertRepository, EntityPropagationPublisher propagationPublisher,
+                        SecurityUtils securityUtils) {
         this.alertRepository = alertRepository;
+        this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
     }
 
     public Alert create(Alert alert) {
         alert.setDateDeclenchement(LocalDateTime.now());
         alert.setStatut(StatutAlerte.ACTIVE);
-        return alertRepository.save(alert);
+        Alert saved = alertRepository.save(alert);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("ALERT", saved.getId(),
+                Map.of("typeAlerte", saved.getTypeAlerte() != null ? saved.getTypeAlerte() : "",
+                        "titre", saved.getTitre() != null ? saved.getTitre() : ""),
+                "Alerte créée: " + (saved.getTitre() != null ? saved.getTitre() : ""));
+        return saved;
     }
 
     /**
@@ -78,16 +88,28 @@ public class AlertService {
 
     public Alert resolve(UUID id) {
         Alert alert = findById(id);
+        String oldStatut = alert.getStatut().name();
         alert.setStatut(StatutAlerte.RESOLUE);
         alert.setDateResolution(LocalDateTime.now());
         alert.setResoluPar(securityUtils.getCurrentUserId());
-        return alertRepository.save(alert);
+        Alert saved = alertRepository.save(alert);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("ALERT", id,
+                oldStatut, StatutAlerte.RESOLUE.name(),
+                "Alerte résolue: " + (alert.getTitre() != null ? alert.getTitre() : ""));
+        return saved;
     }
 
     public Alert acknowledge(UUID id) {
         Alert alert = findById(id);
+        String oldStatut = alert.getStatut().name();
         alert.setStatut(StatutAlerte.TRAITEE);
-        return alertRepository.save(alert);
+        Alert saved = alertRepository.save(alert);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("ALERT", id,
+                oldStatut, StatutAlerte.TRAITEE.name(),
+                "Alerte traitée: " + (alert.getTitre() != null ? alert.getTitre() : ""));
+        return saved;
     }
 
     @Transactional(readOnly = true)

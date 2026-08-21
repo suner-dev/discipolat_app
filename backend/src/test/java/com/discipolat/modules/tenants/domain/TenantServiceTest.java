@@ -19,6 +19,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +29,7 @@ class TenantServiceTest {
 
     @Mock private TenantRepository tenantRepository;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
 
     @InjectMocks private TenantService tenantService;
 
@@ -57,7 +60,7 @@ class TenantServiceTest {
         assertEquals("nouvelle-eglise", created.slug());
         assertEquals(TenantStatus.ACTIVE, created.status());
         assertEquals("free", created.plan());
-        verify(auditService).logSimple("TENANT_CREATED", "TENANT", created.id());
+        verify(propagationPublisher).publishCreated(eq("TENANT"), eq(created.id()), any(), anyString());
     }
 
     @Test
@@ -92,7 +95,7 @@ class TenantServiceTest {
         assertEquals("Église Renommée", updated.name());
         assertEquals(TenantStatus.SUSPENDED, updated.status());
         assertEquals("STARTER", updated.plan());
-        verify(auditService).logSimple("TENANT_UPDATED", "TENANT", id);
+        verify(propagationPublisher).publishUpdated(eq("TENANT"), eq(id), any(), any(), anyString());
     }
 
     @Test

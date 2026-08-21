@@ -43,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -52,6 +53,7 @@ class PageBuilderServiceTest {
     @Mock private CustomPageRepository pageRepository;
     @Mock private ConfigRevisionService revisionService;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
     @Mock private SecurityUtils securityUtils;
     @Mock private WorkspaceScopeService scopeService;
     @Mock private SoulRepository soulRepository;
@@ -70,7 +72,7 @@ class PageBuilderServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PageBuilderService(pageRepository, revisionService, auditService, securityUtils,
+        service = new PageBuilderService(pageRepository, revisionService, auditService, propagationPublisher, securityUtils,
                 scopeService, soulRepository, familyRepository, departmentRepository, userRepository,
                 eventRepository, alertRepository, transferRepository, fileRepository, taskRepository);
     }
@@ -106,7 +108,7 @@ class PageBuilderServiceTest {
         assertThat(result.getVersion()).isEqualTo(1);
         // Le créateur est posé sur la requête AVANT la sauvegarde.
         assertThat(request.getCreatedBy()).isEqualTo(USER_ID);
-        verify(auditService).logSimple("PAGE_CREATED", "CUSTOM_PAGE", result.getId());
+        verify(propagationPublisher).publishCreated(eq("CUSTOM_PAGE"), eq(result.getId()), any(), anyString());
         verify(revisionService).record(eq("CUSTOM_PAGE"), eq("APERCU"), eq("PAGE_CREATED"), anyMap());
     }
 
@@ -140,7 +142,7 @@ class PageBuilderServiceTest {
 
         assertThat(result.getTitle()).isEqualTo("Nouveau titre");
         assertThat(result.getDescription()).isEqualTo("Nouvelle description");
-        verify(auditService).logSimple("PAGE_UPDATED", "CUSTOM_PAGE", existing.getId());
+        verify(propagationPublisher).publishUpdated(eq("CUSTOM_PAGE"), eq(existing.getId()), any(), any(), anyString());
         verify(revisionService).record(eq("CUSTOM_PAGE"), eq("APERCU"), eq("PAGE_UPDATED"), anyMap());
     }
 
@@ -153,7 +155,7 @@ class PageBuilderServiceTest {
 
         assertThat(result.isPublished()).isTrue();
         assertThat(result.getVersion()).isEqualTo(2);
-        verify(auditService).logSimple("PAGE_PUBLISHED", "CUSTOM_PAGE", existing.getId());
+        verify(propagationPublisher).publishStatusChanged(eq("CUSTOM_PAGE"), eq(existing.getId()), anyString(), anyString(), anyString());
         verify(revisionService).record(eq("CUSTOM_PAGE"), eq("APERCU"), eq("PAGE_PUBLISHED"), anyMap());
     }
 

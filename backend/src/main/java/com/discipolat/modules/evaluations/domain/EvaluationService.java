@@ -2,6 +2,8 @@ package com.discipolat.modules.evaluations.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
@@ -38,6 +40,8 @@ public class EvaluationService {
     private final SoulRepository soulRepository;
     private final SoulDepartmentRepository soulDepartmentRepository;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
+    private final EntityPropagationListener propagationListener;
     private final NotificationService notificationService;
 
     public EvaluationService(EvaluationRepository evaluationRepository,
@@ -48,6 +52,8 @@ public class EvaluationService {
                              SoulRepository soulRepository,
                              SoulDepartmentRepository soulDepartmentRepository,
                              AuditService auditService,
+                             EntityPropagationPublisher propagationPublisher,
+                             EntityPropagationListener propagationListener,
                              NotificationService notificationService) {
         this.evaluationRepository = evaluationRepository;
         this.securityUtils = securityUtils;
@@ -57,6 +63,8 @@ public class EvaluationService {
         this.soulRepository = soulRepository;
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
+        this.propagationListener = propagationListener;
         this.notificationService = notificationService;
     }
 
@@ -78,17 +86,13 @@ public class EvaluationService {
                 .categorie(categorie).note(note).commentaire(commentaire)
                 .build();
         Evaluation saved = evaluationRepository.save(evaluation);
-        auditService.logSimple("EVALUATION_CREATED", "EVALUATION", saved.getId());
-        // ===== PROPAGATION: Notifier l'évalué =====
-        try {
-            notificationService.create(evalueId, TypeNotification.INFORMATION,
-                    CanalNotification.IN_APP, "Nouvelle évaluation",
-                    "Vous avez reçu une nouvelle évaluation en " + categorie.name().toLowerCase()
-                            + " avec la note: " + note + "/10",
-                    saved.getId(), "EVALUATION");
-        } catch (Exception e) {
-            // Notification failure must not block
-        }
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("EVALUATION", saved.getId(),
+                Map.of("categorie", categorie.name(), "note", note,
+                        "evalueId", evalueId, "evaluateurId", currentUserId),
+                "Évaluation créée: " + categorie.name() + " " + note + "/5");
+        propagationListener.notifyEvaluationCreated(evalueId, saved.getId(),
+                categorie.name(), note);
         return saved;
     }
 

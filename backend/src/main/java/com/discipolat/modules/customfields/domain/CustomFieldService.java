@@ -1,5 +1,6 @@
 package com.discipolat.modules.customfields.domain;
 
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.stereotype.Service;
@@ -19,14 +20,18 @@ public class CustomFieldService {
     private final CustomFieldDefinitionRepository definitionRepository;
     private final CustomFieldValueRepository valueRepository;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
 
     public CustomFieldService(CustomFieldDefinitionRepository definitionRepository,
                               CustomFieldValueRepository valueRepository,
-                              AuditService auditService, SecurityUtils securityUtils) {
+                              AuditService auditService,
+                              EntityPropagationPublisher propagationPublisher,
+                              SecurityUtils securityUtils) {
         this.definitionRepository = definitionRepository;
         this.valueRepository = valueRepository;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
     }
 
@@ -51,13 +56,18 @@ public class CustomFieldService {
         if (def.getRolesLecture() == null) def.setRolesLecture(new ArrayList<>());
         if (def.getRolesEcriture() == null) def.setRolesEcriture(new ArrayList<>());
         definitionRepository.save(def);
-        auditService.logSimple("CUSTOM_FIELD_CREATED", "CUSTOM_FIELD_DEFINITION", def.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("CUSTOM_FIELD_DEFINITION", def.getId(),
+                Map.of("code", def.getCode(), "label", def.getLabel(),
+                        "entiteType", def.getEntiteType()),
+                "Champ personnalisé créé: " + def.getLabel());
         return def;
     }
 
     public CustomFieldDefinition updateDefinition(UUID id, CustomFieldDefinition request) {
         CustomFieldDefinition def = definitionRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Définition introuvable : " + id));
+        String oldLabel = def.getLabel();
         if (request.getLabel() != null && !request.getLabel().isBlank()) def.setLabel(request.getLabel());
         if (request.getType() != null) def.setType(request.getType());
         def.setObligatoire(request.isObligatoire());
@@ -68,14 +78,20 @@ public class CustomFieldService {
         if (request.getRolesEcriture() != null) def.setRolesEcriture(new ArrayList<>(request.getRolesEcriture()));
         def.setActif(request.isActif());
         definitionRepository.save(def);
-        auditService.logSimple("CUSTOM_FIELD_UPDATED", "CUSTOM_FIELD_DEFINITION", def.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("CUSTOM_FIELD_DEFINITION", def.getId(),
+                Map.of("label", oldLabel),
+                Map.of("label", def.getLabel()),
+                "Champ personnalisé mis à jour: " + def.getLabel());
         return def;
     }
 
     public void deleteDefinition(UUID id) {
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishDeleted("CUSTOM_FIELD_DEFINITION", id,
+                Map.of(), "Champ personnalisé supprimé");
         valueRepository.findByFieldId(id).forEach(v -> valueRepository.delete(v));
         definitionRepository.deleteById(id);
-        auditService.logSimple("CUSTOM_FIELD_DELETED", "CUSTOM_FIELD_DEFINITION", id);
     }
 
     /* ======================== Valeurs ======================== */

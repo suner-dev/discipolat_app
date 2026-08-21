@@ -1,6 +1,8 @@
 package com.discipolat.modules.inventory.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,8 @@ public class InventoryService {
 
     private final InventoryItemRepository repository;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
+    private final EntityPropagationListener propagationListener;
     private final SecurityUtils securityUtils;
 
     @Transactional
@@ -29,7 +33,11 @@ public class InventoryService {
             item.setQuantiteDisponible(item.getQuantite());
         }
         InventoryItem saved = repository.save(item);
-        auditService.logSimple("INVENTORY_CREATED", "INVENTORY_ITEM", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("INVENTORY_ITEM", saved.getId(),
+                Map.of("nom", saved.getNom() != null ? saved.getNom() : "",
+                        "categorie", saved.getCategorie() != null ? saved.getCategorie() : ""),
+                "Équipement créé: " + (saved.getNom() != null ? saved.getNom() : "sans nom"));
         return saved;
     }
 
@@ -56,6 +64,8 @@ public class InventoryService {
     @Transactional
     public InventoryItem update(UUID id, InventoryItem update) {
         InventoryItem item = findById(id);
+        String oldNom = item.getNom();
+        String oldStatut = item.getStatut();
         item.setNom(update.getNom());
         item.setDescription(update.getDescription());
         item.setCategorie(update.getCategorie());
@@ -71,14 +81,22 @@ public class InventoryService {
         item.setDepartementId(update.getDepartementId());
         item.setNotes(update.getNotes());
         InventoryItem saved = repository.save(item);
-        auditService.logSimple("INVENTORY_UPDATED", "INVENTORY_ITEM", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("INVENTORY_ITEM", saved.getId(),
+                Map.of("nom", oldNom, "statut", oldStatut),
+                Map.of("nom", saved.getNom(), "statut", saved.getStatut()),
+                "Équipement mis à jour: " + saved.getNom());
         return saved;
     }
 
     @Transactional
     public void delete(UUID id) {
+        InventoryItem item = findById(id);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishDeleted("INVENTORY_ITEM", id,
+                Map.of("nom", item.getNom(), "categorie", item.getCategorie() != null ? item.getCategorie() : ""),
+                "Équipement supprimé: " + item.getNom());
         repository.deleteById(id);
-        auditService.logSimple("INVENTORY_DELETED", "INVENTORY_ITEM", id);
     }
 
     @Transactional
@@ -91,30 +109,42 @@ public class InventoryService {
         item.setStatut("AFFECTE");
         item.setQuantiteDisponible(item.getQuantiteDisponible() - 1);
         InventoryItem saved = repository.save(item);
-        auditService.logSimple("INVENTORY_ASSIGNED", "INVENTORY_ITEM", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishReassigned("INVENTORY_ITEM", saved.getId(), "affecteAId",
+                item.getAffecteAId(), memberId,
+                "Équipement affecté: " + saved.getNom());
+        propagationListener.notifyInventoryAssigned(memberId, saved.getId(), saved.getNom());
         return saved;
     }
 
     @Transactional
     public InventoryItem unassign(UUID id) {
         InventoryItem item = findById(id);
+        UUID oldAffecteAId = item.getAffecteAId();
         item.setAffecteAId(null);
         item.setStatut("DISPONIBLE");
         item.setQuantiteDisponible(
                 (item.getQuantiteDisponible() != null ? item.getQuantiteDisponible() : 0) + 1
         );
         InventoryItem saved = repository.save(item);
-        auditService.logSimple("INVENTORY_UNASSIGNED", "INVENTORY_ITEM", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishReassigned("INVENTORY_ITEM", saved.getId(), "affecteAId",
+                oldAffecteAId, null,
+                "Équipement désaffecté: " + saved.getNom());
         return saved;
     }
 
     @Transactional
     public InventoryItem markMaintenance(UUID id) {
         InventoryItem item = findById(id);
+        String oldStatut = item.getStatut();
         item.setStatut("EN_MAINTENANCE");
         item.setDerniereMaintenance(LocalDateTime.now());
         InventoryItem saved = repository.save(item);
-        auditService.logSimple("INVENTORY_MAINTENANCE", "INVENTORY_ITEM", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("INVENTORY_ITEM", saved.getId(),
+                oldStatut, "EN_MAINTENANCE",
+                "Équipement en maintenance: " + saved.getNom());
         return saved;
     }
 

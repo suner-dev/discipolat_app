@@ -2,6 +2,8 @@ package com.discipolat.modules.departments.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutEntite;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
@@ -67,6 +69,10 @@ class DepartmentServiceTest {
     private com.discipolat.modules.audit.domain.AuditService auditService;
     @Mock
     private com.discipolat.modules.notifications.domain.NotificationService notificationService;
+    @Mock
+    private EntityPropagationPublisher propagationPublisher;
+    @Mock
+    private EntityPropagationListener propagationListener;
 
     private DepartmentService service;
     private UUID currentUserId;
@@ -78,7 +84,8 @@ class DepartmentServiceTest {
         service = new DepartmentService(departmentRepository, familyRepository, soulRepository,
                 userRepository, userDepartmentRepository, makerReportRepository,
                 familyReportRepository, securityUtils, passwordEncoder, soulDepartmentRepository,
-                attachmentService, workspaceScopeService, auditService, notificationService);
+                attachmentService, workspaceScopeService, auditService, notificationService,
+                propagationPublisher, propagationListener);
         currentUserId = UUID.randomUUID();
         ownDept = Department.builder().id(UUID.randomUUID())
                 .nom("Département 1").responsableId(currentUserId)

@@ -7,6 +7,7 @@ import com.discipolat.modules.appointments.api.CreateAppointmentRequest;
 import com.discipolat.modules.appointments.api.UpdateAppointmentStatusRequest;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -29,15 +31,18 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
                               UserRepository userRepository,
                               NotificationService notificationService,
+                              EntityPropagationPublisher propagationPublisher,
                               SecurityUtils securityUtils) {
         this.appointmentRepository = appointmentRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
     }
 
@@ -57,7 +62,12 @@ public class AppointmentService {
                 .statut(Appointment.Statut.EN_ATTENTE)
                 .build();
         Appointment saved = appointmentRepository.save(appointment);
-
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("APPOINTMENT", saved.getId(),
+                Map.of("motif", saved.getMotif() != null ? saved.getMotif() : "",
+                        "demandeurId", saved.getDemandeurId(),
+                        "recepteurId", saved.getRecepteurId()),
+                "Rendez-vous créé: " + (saved.getMotif() != null ? saved.getMotif() : ""));
         // Notifie le récepteur de la demande
         notificationService.create(
                 saved.getRecepteurId(), TypeNotification.INFORMATION, CanalNotification.IN_APP,
@@ -109,6 +119,7 @@ public class AppointmentService {
                     "Statut invalide : utilisez CONFIRME, REFUSE, ANNULE ou TERMINE");
         }
 
+        String oldStatut = appointment.getStatut().name();
         appointment.setStatut(request.statut());
         if (request.reponse() != null && !request.reponse().isBlank()) {
             appointment.setReponse(request.reponse());
@@ -117,6 +128,10 @@ public class AppointmentService {
         appointment.setDateTraitement(LocalDateTime.now());
 
         Appointment saved = appointmentRepository.save(appointment);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("APPOINTMENT", saved.getId(),
+                oldStatut, request.statut().name(),
+                "Rendez-vous: " + oldStatut + " -> " + request.statut().name());
 
         // Notifie le demandeur de la décision
         if (request.statut() == Appointment.Statut.CONFIRME) {

@@ -1,6 +1,7 @@
 package com.discipolat.modules.platform.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.platform.api.MenuGateInfo;
 import com.discipolat.modules.platform.api.MenuOrderItem;
@@ -21,15 +22,18 @@ public class PlatformConfigService {
     private final PlatformModuleRepository moduleRepository;
     private final MenuEntryRepository menuRepository;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
     private final ConfigRevisionService revisionService;
 
     public PlatformConfigService(PlatformModuleRepository moduleRepository,
                                  MenuEntryRepository menuRepository,
                                  AuditService auditService,
+                                 EntityPropagationPublisher propagationPublisher,
                                  ConfigRevisionService revisionService) {
         this.moduleRepository = moduleRepository;
         this.menuRepository = menuRepository;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
         this.revisionService = revisionService;
     }
 
@@ -56,7 +60,11 @@ public class PlatformConfigService {
         if (module.isEnabled() != enabled) {
             module.setEnabled(enabled);
             moduleRepository.save(module);
-            auditService.logSimple(enabled ? "MODULE_ENABLED" : "MODULE_DISABLED", "PLATFORM_MODULE", null);
+            // ===== PROPAGATION CENTRALISÉE =====
+            propagationPublisher.publishStatusChanged("PLATFORM_MODULE", UUID.nameUUIDFromBytes(key.getBytes()),
+                    module.isEnabled() ? "DISABLED" : "ENABLED",
+                    enabled ? "ENABLED" : "DISABLED",
+                    "Module " + key + " " + (enabled ? "activé" : "désactivé"));
             revisionService.record("PLATFORM_MODULE", key,
                     enabled ? "MODULE_ENABLED" : "MODULE_DISABLED",
                     Map.of("enabled", enabled));
@@ -70,7 +78,10 @@ public class PlatformConfigService {
         }
         module.setKey(module.getKey().trim().toUpperCase());
         moduleRepository.save(module);
-        auditService.logSimple("MODULE_CREATED", "PLATFORM_MODULE", null);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("PLATFORM_MODULE", UUID.nameUUIDFromBytes(module.getKey().getBytes()),
+                Map.of("key", module.getKey(), "label", module.getLabel()),
+                "Module créé: " + module.getLabel());
         revisionService.record("PLATFORM_MODULE", module.getKey(), "MODULE_CREATED",
                 modulePayload(module));
         return module;
@@ -85,7 +96,10 @@ public class PlatformConfigService {
         if (request.getSection() != null && !request.getSection().isBlank()) module.setSection(request.getSection());
         module.setOrdre(request.getOrdre());
         moduleRepository.save(module);
-        auditService.logSimple("MODULE_UPDATED", "PLATFORM_MODULE", null);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("PLATFORM_MODULE", UUID.nameUUIDFromBytes(key.getBytes()),
+                Map.of(), Map.of("label", module.getLabel()),
+                "Module mis à jour: " + module.getLabel());
         revisionService.record("PLATFORM_MODULE", key, "MODULE_UPDATED",
                 Map.of("before", before, "after", modulePayload(module)));
         return module;
@@ -99,8 +113,11 @@ public class PlatformConfigService {
             throw new IllegalStateException(
                     "Impossible de supprimer le module : " + linkedMenus + " menu(s) y sont rattachés.");
         }
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishDeleted("PLATFORM_MODULE", UUID.nameUUIDFromBytes(module.getKey().getBytes()),
+                Map.of("key", module.getKey(), "label", module.getLabel()),
+                "Module supprimé: " + module.getLabel());
         moduleRepository.delete(module);
-        auditService.logSimple("MODULE_DELETED", "PLATFORM_MODULE", null);
         revisionService.record("PLATFORM_MODULE", key, "MODULE_DELETED", modulePayload(module));
     }
 
@@ -151,7 +168,10 @@ public class PlatformConfigService {
             throw new IllegalArgumentException("La clé du menu est obligatoire");
         }
         menuRepository.save(menu);
-        auditService.logSimple("MENU_CREATED", "PLATFORM_MENU", menu.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("PLATFORM_MENU", menu.getId(),
+                Map.of("key", menu.getKey(), "label", menu.getLabel()),
+                "Menu créé: " + menu.getLabel());
         revisionService.record("PLATFORM_MENU", menu.getKey(), "MENU_CREATED", menuPayload(menu));
         return menu;
     }
@@ -169,7 +189,11 @@ public class PlatformConfigService {
         menu.setEnabled(request.isEnabled());
         menu.setOrdre(request.getOrdre());
         menuRepository.save(menu);
-        auditService.logSimple("MENU_UPDATED", "PLATFORM_MENU", menu.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("PLATFORM_MENU", menu.getId(),
+                Map.of("label", before.get("label")),
+                Map.of("label", menu.getLabel()),
+                "Menu mis à jour: " + menu.getLabel());
         revisionService.record("PLATFORM_MENU", menu.getKey(), "MENU_UPDATED",
                 Map.of("before", before, "after", menuPayload(menu)));
         return menu;
@@ -178,8 +202,11 @@ public class PlatformConfigService {
     public void deleteMenu(UUID id) {
         MenuEntry menu = menuRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("MenuEntry", id));
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishDeleted("PLATFORM_MENU", id,
+                Map.of("key", menu.getKey(), "label", menu.getLabel()),
+                "Menu supprimé: " + menu.getLabel());
         menuRepository.delete(menu);
-        auditService.logSimple("MENU_DELETED", "PLATFORM_MENU", id);
         revisionService.record("PLATFORM_MENU", menu.getKey(), "MENU_DELETED", menuPayload(menu));
     }
 
@@ -193,7 +220,10 @@ public class PlatformConfigService {
                 updated.add(menuRepository.save(menu));
             });
         }
-        auditService.logSimple("MENUS_REORDERED", "PLATFORM_MENU", null);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("PLATFORM_MENU", UUID.randomUUID(),
+                Map.of(), Map.of("ordre", items.size() + " menus réordonnés"),
+                "Menus réordonnés");
         revisionService.record("PLATFORM_MENU", "reorder", "MENUS_REORDERED",
                 Map.of("ordre", items.stream()
                         .map(MenuOrderItem::id)

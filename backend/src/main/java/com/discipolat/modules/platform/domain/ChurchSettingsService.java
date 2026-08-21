@@ -1,5 +1,6 @@
 package com.discipolat.modules.platform.domain;
 
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.platform.api.UpdateChurchSettingsRequest;
 import org.springframework.stereotype.Service;
@@ -23,10 +24,13 @@ public class ChurchSettingsService {
 
     private final ChurchSettingsRepository repository;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
 
-    public ChurchSettingsService(ChurchSettingsRepository repository, AuditService auditService) {
+    public ChurchSettingsService(ChurchSettingsRepository repository, AuditService auditService,
+                                 EntityPropagationPublisher propagationPublisher) {
         this.repository = repository;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
     }
 
     /** Retourne la configuration existante, ou crée une configuration par défaut si absente. */
@@ -59,8 +63,10 @@ public class ChurchSettingsService {
         if (req.contactNotes() != null) settings.setContactNotes(req.contactNotes().trim());
 
         repository.save(settings);
-        auditService.log("UPDATE_CHURCH_SETTINGS", "CHURCH_SETTINGS", settings.getId(),
-                before, snapshot(settings), null);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("CHURCH_SETTINGS", settings.getId(),
+                before, snapshot(settings),
+                "Paramètres de l'église mis à jour");
         return settings;
     }
 
@@ -86,7 +92,10 @@ public class ChurchSettingsService {
         settings.setSocialLinks(new LinkedHashMap<>());
         settings.setContactNotes(null);
         repository.save(settings);
-        auditService.logSimple("RESET_CHURCH_SETTINGS", "CHURCH_SETTINGS", settings.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("CHURCH_SETTINGS", settings.getId(),
+                "CUSTOMIZED", "DEFAULT",
+                "Paramètres de l'église réinitialisés");
         return settings;
     }
 

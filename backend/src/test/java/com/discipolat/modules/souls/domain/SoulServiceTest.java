@@ -3,6 +3,8 @@ package com.discipolat.modules.souls.domain;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.TypeDisciple;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
@@ -32,7 +34,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,6 +68,10 @@ class SoulServiceTest {
     private com.discipolat.modules.audit.domain.AuditService auditService;
     @Mock
     private com.discipolat.modules.notifications.domain.NotificationService notificationService;
+    @Mock
+    private EntityPropagationPublisher propagationPublisher;
+    @Mock
+    private EntityPropagationListener propagationListener;
 
     private SoulService soulService;
 
@@ -80,7 +86,8 @@ class SoulServiceTest {
                 soulNoteRepository, securityUtils, userRepository,
                 familyRepository, departmentRepository, soulDepartmentRepository,
                 makerReportRepository, evaluationService, attachmentService, workspaceScopeService,
-                auditService, notificationService);
+                auditService, notificationService,
+                propagationPublisher, propagationListener);
 
         faiseurId = UUID.randomUUID();
         familleId = UUID.randomUUID();
@@ -118,7 +125,8 @@ class SoulServiceTest {
         assertEquals("Marie", result.getPrenom());
         assertEquals(TypeDisciple.NOUVEAU_CONVERTI, result.getTypeDisciple());
         verify(soulRepository).save(any(Soul.class));
-        verify(soulHistoryRepository).save(any(SoulHistory.class));
+        verify(propagationPublisher).publishCreated(eq("SOUL"), eq(testSoul.getId()), any(), anyString());
+        verify(soulHistoryRepository, never()).save(any(SoulHistory.class)); // historique centralisé via listener
     }
 
     @Test
@@ -170,7 +178,9 @@ class SoulServiceTest {
 
         assertNotNull(result);
         verify(soulRepository).save(any(Soul.class));
-        verify(soulHistoryRepository).save(any(SoulHistory.class));
+        // Propagation centralisée : statut ACTIF -> EN_VEILLE
+        verify(propagationPublisher).publishStatusChanged(
+                eq("SOUL"), eq(testSoul.getId()), eq("ACTIF"), eq("EN_VEILLE"), anyString());
     }
 
     @Test

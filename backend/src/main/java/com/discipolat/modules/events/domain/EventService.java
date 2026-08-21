@@ -4,6 +4,8 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.files.domain.EntityAttachment;
 import com.discipolat.modules.files.domain.EntityAttachmentService;
@@ -40,6 +42,8 @@ public class EventService {
     private final WorkspaceScopeService workspaceScope;
     private final EntityAttachmentService attachmentService;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
+    private final EntityPropagationListener propagationListener;
 
     public EventService(EventRepository eventRepository,
                         EventRegistrationRepository registrationRepository,
@@ -49,7 +53,9 @@ public class EventService {
                         SecurityUtils securityUtils,
                         WorkspaceScopeService workspaceScope,
                         EntityAttachmentService attachmentService,
-                        AuditService auditService) {
+                        AuditService auditService,
+                        EntityPropagationPublisher propagationPublisher,
+                        EntityPropagationListener propagationListener) {
         this.eventRepository = eventRepository;
         this.registrationRepository = registrationRepository;
         this.templateRepository = templateRepository;
@@ -59,6 +65,8 @@ public class EventService {
         this.workspaceScope = workspaceScope;
         this.attachmentService = attachmentService;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
+        this.propagationListener = propagationListener;
     }
 
     public Event create(Event event, java.util.List<java.util.UUID> fichierIds) {
@@ -80,7 +88,13 @@ public class EventService {
         event.setNbInscrits(0);
         Event saved = eventRepository.save(event);
         attachmentService.replace(EntityAttachment.EntityType.EVENT, saved.getId(), fichierIds);
-        auditService.logSimple("EVENT_CREATED", "EVENT", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        Map<String, Object> eventPayload = new LinkedHashMap<>();
+        eventPayload.put("titre", saved.getTitre() != null ? saved.getTitre() : "");
+        eventPayload.put("typeEvenement", saved.getTypeEvenement() != null ? saved.getTypeEvenement() : "");
+        eventPayload.put("dateDebut", saved.getDateDebut() != null ? saved.getDateDebut() : "");
+        propagationPublisher.publishCreated("EVENT", saved.getId(), eventPayload,
+                "Événement créé: " + saved.getTitre());
 
         // Notify all PASTEUR users when a non-pasteur creates an event
         User currentUser = userRepository.findById(currentUserId).orElse(null);

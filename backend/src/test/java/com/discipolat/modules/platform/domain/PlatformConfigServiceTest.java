@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -27,13 +28,14 @@ class PlatformConfigServiceTest {
     @Mock private PlatformModuleRepository moduleRepository;
     @Mock private MenuEntryRepository menuRepository;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
     @Mock private ConfigRevisionService revisionService;
 
     private PlatformConfigService service;
 
     @BeforeEach
     void setUp() {
-        service = new PlatformConfigService(moduleRepository, menuRepository, auditService, revisionService);
+        service = new PlatformConfigService(moduleRepository, menuRepository, auditService, propagationPublisher, revisionService);
     }
 
     private MenuEntry menu(String key, String href, String moduleKey, List<String> roles, boolean enabled) {
@@ -101,7 +103,7 @@ class PlatformConfigServiceTest {
 
         assertThat(module.isEnabled()).isFalse();
         verify(moduleRepository).save(module);
-        verify(auditService).logSimple("MODULE_DISABLED", "PLATFORM_MODULE", null);
+        verify(propagationPublisher).publishStatusChanged(eq("PLATFORM_MODULE"), any(), anyString(), anyString(), anyString());
     }
 
     @Test

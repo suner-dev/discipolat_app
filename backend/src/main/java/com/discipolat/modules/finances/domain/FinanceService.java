@@ -1,6 +1,7 @@
 package com.discipolat.modules.finances.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.finances.api.FinanceBudgetRequest;
@@ -34,15 +35,18 @@ public class FinanceService {
     private final FinanceBudgetRepository budgetRepository;
     private final SecurityUtils securityUtils;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
 
     public FinanceService(FinanceTransactionRepository transactionRepository,
                           FinanceBudgetRepository budgetRepository,
                           SecurityUtils securityUtils,
-                          AuditService auditService) {
+                          AuditService auditService,
+                          EntityPropagationPublisher propagationPublisher) {
         this.transactionRepository = transactionRepository;
         this.budgetRepository = budgetRepository;
         this.securityUtils = securityUtils;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
     }
 
     /* ----------------------------- Transactions ----------------------------- */
@@ -80,13 +84,18 @@ public class FinanceService {
                 .createdBy(securityUtils.getCurrentUserId())
                 .build();
         FinanceTransaction saved = transactionRepository.save(tx);
-        auditService.logSimple("FINANCE_TRANSACTION_CREATED", "FINANCE_TRANSACTION", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("FINANCE_TRANSACTION", saved.getId(),
+                Map.of("type", saved.getType().name(), "montant", saved.getMontant(),
+                        "categorie", saved.getCategorie()),
+                "Transaction créée: " + saved.getType() + " " + saved.getMontant());
         return toMap(saved);
     }
 
     public Map<String, Object> updateTransaction(UUID id, FinanceTransactionRequest request) {
         FinanceTransaction tx = transactionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("FinanceTransaction", id));
+        String oldType = tx.getType().name();
         tx.setType(request.type());
         tx.setCategorie(request.categorie() == null || request.categorie().isBlank()
                 ? "AUTRE" : request.categorie().trim().toUpperCase());
@@ -94,16 +103,23 @@ public class FinanceService {
         tx.setDescription(request.description());
         tx.setDateTransaction(request.dateTransaction() != null ? request.dateTransaction() : LocalDate.now());
         FinanceTransaction saved = transactionRepository.save(tx);
-        auditService.logSimple("FINANCE_TRANSACTION_UPDATED", "FINANCE_TRANSACTION", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("FINANCE_TRANSACTION", saved.getId(),
+                Map.of("type", oldType, "montant", tx.getMontant()),
+                Map.of("type", saved.getType().name(), "montant", saved.getMontant()),
+                "Transaction mise à jour");
         return toMap(saved);
     }
 
     public void deleteTransaction(UUID id) {
         FinanceTransaction tx = transactionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("FinanceTransaction", id));
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishSoftDeleted("FINANCE_TRANSACTION", id,
+                Map.of("type", tx.getType().name(), "montant", tx.getMontant()),
+                "Transaction supprimée");
         tx.setDeleted(true);
         transactionRepository.save(tx);
-        auditService.logSimple("FINANCE_TRANSACTION_DELETED", "FINANCE_TRANSACTION", id);
     }
 
     /* ------------------------------- Statistiques ---------------------------- */
@@ -210,7 +226,18 @@ public class FinanceService {
             action = "FINANCE_BUDGET_CREATED";
         }
         FinanceBudget saved = budgetRepository.save(budget);
-        auditService.logSimple(action, "FINANCE_BUDGET", saved.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        if ("FINANCE_BUDGET_UPDATED".equals(action)) {
+            propagationPublisher.publishUpdated("FINANCE_BUDGET", saved.getId(),
+                    Map.of(),
+                    Map.of("categorie", saved.getCategorie(), "montant", saved.getMontant()),
+                    "Budget mis à jour: " + saved.getCategorie());
+        } else {
+            propagationPublisher.publishCreated("FINANCE_BUDGET", saved.getId(),
+                    Map.of("categorie", saved.getCategorie(), "montant", saved.getMontant(),
+                            "annee", saved.getAnnee()),
+                    "Budget créé: " + saved.getCategorie());
+        }
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", saved.getId());
         map.put("categorie", saved.getCategorie());
@@ -223,8 +250,11 @@ public class FinanceService {
         FinanceBudget budget = budgetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("FinanceBudget", id));
         budget.setDeleted(true);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishDeleted("FINANCE_BUDGET", id,
+                Map.of("categorie", budget.getCategorie(), "montant", budget.getMontant()),
+                "Budget supprimé: " + budget.getCategorie());
         budgetRepository.save(budget);
-        auditService.logSimple("FINANCE_BUDGET_DELETED", "FINANCE_BUDGET", id);
     }
 
     /* -------------------------------- Helpers -------------------------------- */

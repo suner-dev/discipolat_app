@@ -4,6 +4,8 @@ import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.exception.ForbiddenException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.souls.domain.SoulHistory;
@@ -43,6 +45,8 @@ public class UserService {
     private final SoulExitRepository soulExitRepository;
     private final SoulHistoryRepository soulHistoryRepository;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
+    private final EntityPropagationListener propagationListener;
     private final WorkspaceScopeService workspaceScopeService;
     private final SoulDepartmentRepository soulDepartmentRepository;
     private final FamilyRepository familyRepository;
@@ -55,6 +59,8 @@ public class UserService {
                        SoulExitRepository soulExitRepository,
                        SoulHistoryRepository soulHistoryRepository,
                        AuditService auditService,
+                       EntityPropagationPublisher propagationPublisher,
+                       EntityPropagationListener propagationListener,
                        WorkspaceScopeService workspaceScopeService,
                        SoulDepartmentRepository soulDepartmentRepository,
                        FamilyRepository familyRepository,
@@ -68,6 +74,8 @@ public class UserService {
         this.soulExitRepository = soulExitRepository;
         this.soulHistoryRepository = soulHistoryRepository;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
+        this.propagationListener = propagationListener;
         this.workspaceScopeService = workspaceScopeService;
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.familyRepository = familyRepository;
@@ -83,6 +91,7 @@ public class UserService {
         if (user.getRoles().contains(UserRole.FAISEUR)) {
             throw new BusinessRuleException("User already has the Faiseur role");
         }
+        String oldRole = user.getRole().name();
         user.getRoles().add(UserRole.FAISEUR);
         user.setRole(UserRole.FAISEUR);
         // Auto-set active role if not set
@@ -91,20 +100,14 @@ public class UserService {
         }
         user.markUpdated();
         user = userRepository.save(user);
-
-        // US-12: Log promotion date in soul_history for audit trail
-        try {
-            SoulHistory history = new SoulHistory();
-            history.setAmeId(userId);
-            history.setTypeEvenement("PROMOTION_FAISEUR");
-            history.setDescription("Disciple promu au rang de Faiseur");
-            history.setUtilisateurId(securityUtils.getCurrentUserId());
-            soulHistoryRepository.save(history);
-            log.info("Promotion to Faiseur logged for user: {}", userId);
-        } catch (Exception e) {
-            log.warn("Failed to log promotion to history: {}", e.getMessage());
-        }
-
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("USER", userId,
+                Map.of("role", oldRole),
+                Map.of("role", user.getRole().name()),
+                "Promotion au rang de Faiseur");
+        propagationListener.notifyUserRoleChange(userId,
+                user.getFirstName() + " " + user.getLastName(),
+                oldRole, UserRole.FAISEUR.name());
         return user;
     }
 
@@ -151,8 +154,10 @@ public class UserService {
 
     public void hardDeleteUser(UUID userId) {
         User user = findById(userId);
-        // Log to audit before permanent deletion
-        auditService.logSimple("HARD_DELETE_USER", "USER", userId);
+        // ===== PROPAGATION CENTRALISÉE: suppression définitive =====
+        propagationPublisher.publishDeleted("USER", userId,
+                Map.of("email", user.getEmail(), "role", user.getRole()),
+                "Utilisateur supprimé définitivement (RGPD)");
         userRepository.delete(user);
     }
 
@@ -164,7 +169,12 @@ public class UserService {
         user.setDeleted(false);
         user.setDeletedAt(null);
         user.markUpdated();
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishRestored("USER", userId,
+                Map.of("statut", UserStatus.ACTIVE.name()),
+                "Utilisateur restauré");
+        return saved;
     }
 
     public User create(User user, String rawPassword) {
@@ -185,7 +195,14 @@ public class UserService {
         if (user.getActiveRole() == null) {
             user.setActiveRole(user.getRole());
         }
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("USER", saved.getId(),
+                Map.of("email", saved.getEmail(), "role", saved.getRole(),
+                        "firstName", saved.getFirstName() != null ? saved.getFirstName() : "",
+                        "lastName", saved.getLastName() != null ? saved.getLastName() : ""),
+                "Utilisateur créé");
+        return saved;
     }
 
     public User findById(UUID id) {
@@ -222,6 +239,7 @@ public class UserService {
                 && userRepository.existsByEmail(updatedUser.getEmail())) {
             throw new BusinessRuleException("Email already exists: " + updatedUser.getEmail());
         }
+        String oldEmail = existing.getEmail();
         existing.setEmail(updatedUser.getEmail());
         existing.setFirstName(updatedUser.getFirstName());
         existing.setLastName(updatedUser.getLastName());
@@ -236,21 +254,35 @@ public class UserService {
             existing.setActiveRole(updatedUser.getActiveRole());
         }
         existing.markUpdated();
-        return userRepository.save(existing);
+        User saved = userRepository.save(existing);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("USER", saved.getId(),
+                Map.of("email", oldEmail),
+                Map.of("email", saved.getEmail(), "role", saved.getRole()),
+                "Utilisateur mis à jour");
+        return saved;
     }
 
     public void deactivate(UUID id) {
         User user = findById(id);
+        String oldStatut = user.getStatut().name();
         user.setStatut(UserStatus.INACTIVE);
         user.markUpdated();
         userRepository.save(user);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("USER", id, oldStatut, UserStatus.INACTIVE.name(),
+                "Utilisateur désactivé");
     }
 
     public void activate(UUID id) {
         User user = findById(id);
+        String oldStatut = user.getStatut().name();
         user.setStatut(UserStatus.ACTIVE);
         user.markUpdated();
         userRepository.save(user);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("USER", id, oldStatut, UserStatus.ACTIVE.name(),
+                "Utilisateur activé");
     }
 
     @Transactional(readOnly = true)
@@ -295,14 +327,22 @@ public class UserService {
     public User addRole(UUID userId, UserRole role) {
         assertCanAssignRoles(role, java.util.Set.of(role));
         User user = findById(userId);
+        Set<UserRole> oldRoles = new HashSet<>(user.getRoles());
         user.getRoles().add(role);
         user.markUpdated();
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("USER", userId,
+                Map.of("roles", oldRoles.toString()),
+                Map.of("roles", saved.getRoles().toString()),
+                "Rôle ajouté: " + role);
+        return saved;
     }
 
     /** Remove a role from a user's roles set */
     public User removeRole(UUID userId, UserRole role) {
         User user = findById(userId);
+        Set<UserRole> oldRoles = new HashSet<>(user.getRoles());
         user.getRoles().remove(role);
         // Don't remove the last role — fallback to MEMBRE
         if (user.getRoles().isEmpty()) {
@@ -314,7 +354,13 @@ public class UserService {
             user.setRole(user.getActiveRole());
         }
         user.markUpdated();
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishUpdated("USER", userId,
+                Map.of("roles", oldRoles.toString()),
+                Map.of("roles", saved.getRoles().toString()),
+                "Rôle retiré: " + role);
+        return saved;
     }
 
     /** Set the active role for a user */

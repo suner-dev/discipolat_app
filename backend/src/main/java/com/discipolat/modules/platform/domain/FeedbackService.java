@@ -1,6 +1,7 @@
 package com.discipolat.modules.platform.domain;
 
 import com.discipolat.common.exception.BadRequestException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.platform.api.CreateFeedbackRequest;
 import com.discipolat.modules.platform.api.FeedbackResponse;
@@ -35,14 +36,17 @@ public class FeedbackService {
 
     private final FeedbackRepository repository;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
     private final JdbcTemplate jdbcTemplate;
 
     @Value("${app.version:1.0.0}")
     private String appVersion;
 
-    public FeedbackService(FeedbackRepository repository, AuditService auditService, JdbcTemplate jdbcTemplate) {
+    public FeedbackService(FeedbackRepository repository, AuditService auditService,
+                            EntityPropagationPublisher propagationPublisher, JdbcTemplate jdbcTemplate) {
         this.repository = repository;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -70,7 +74,11 @@ public class FeedbackService {
                 .createdBy(userId)
                 .build();
         repository.save(feedback);
-        auditService.logSimple("FEEDBACK_CREATED", "FEEDBACK", feedback.getId());
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishCreated("FEEDBACK", feedback.getId(),
+                Map.of("category", feedback.getCategory(), "priority", feedback.getPriority(),
+                        "subject", feedback.getSubject()),
+                "Retour créé: " + feedback.getSubject());
         return FeedbackResponse.from(feedback, resolveEmail(userId));
     }
 
@@ -107,9 +115,13 @@ public class FeedbackService {
         }
         Feedback feedback = repository.findById(id)
                 .orElseThrow(() -> new com.discipolat.common.exception.ResourceNotFoundException("Feedback", "id", id));
+        String oldStatus = feedback.getStatus();
         feedback.setStatus(status);
         repository.save(feedback);
-        auditService.logSimple("FEEDBACK_STATUS_" + status, "FEEDBACK", id);
+        // ===== PROPAGATION CENTRALISÉE =====
+        propagationPublisher.publishStatusChanged("FEEDBACK", id,
+                oldStatus, status,
+                "Retour mis à jour: " + feedback.getSubject());
         return FeedbackResponse.from(feedback, resolveEmail(feedback.getCreatedBy()));
     }
 

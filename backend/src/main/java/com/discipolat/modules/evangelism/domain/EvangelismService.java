@@ -7,6 +7,8 @@ import com.discipolat.modules.evangelism.api.EvangelismTrackResponse;
 import com.discipolat.modules.evangelism.api.UpdateEvangelismRequest;
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.SoulRepository;
@@ -34,6 +36,8 @@ public class EvangelismService {
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
     private final AuditService auditService;
+    private final EntityPropagationPublisher propagationPublisher;
+    private final EntityPropagationListener propagationListener;
     private final NotificationService notificationService;
 
     public EvangelismService(EvangelismTrackRepository trackRepository,
@@ -42,6 +46,8 @@ public class EvangelismService {
                              UserRepository userRepository,
                              SecurityUtils securityUtils,
                              AuditService auditService,
+                             EntityPropagationPublisher propagationPublisher,
+                             EntityPropagationListener propagationListener,
                              NotificationService notificationService) {
         this.trackRepository = trackRepository;
         this.historyRepository = historyRepository;
@@ -49,6 +55,8 @@ public class EvangelismService {
         this.userRepository = userRepository;
         this.securityUtils = securityUtils;
         this.auditService = auditService;
+        this.propagationPublisher = propagationPublisher;
+        this.propagationListener = propagationListener;
         this.notificationService = notificationService;
     }
 
@@ -106,19 +114,16 @@ public class EvangelismService {
                     .etape(request.etape())
                     .creePar(securityUtils.getCurrentUserId())
                     .build());
-            auditService.logSimple("EVANGELISM_STAGE_CHANGED", "EVANGELISM_TRACK", saved.getId());
-            // ===== PROPAGATION: Notifier le faiseur du changement d'étape =====
-            try {
-                com.discipolat.modules.souls.domain.Soul soul = soulRepository.findById(saved.getSoulId()).orElse(null);
-                if (soul != null && soul.getFaiseurId() != null) {
-                    notificationService.create(soul.getFaiseurId(), TypeNotification.INFORMATION,
-                            CanalNotification.IN_APP, "Étape d'évangélisation avancée",
-                            "Le disciple " + soul.getPrenom() + " " + soul.getNom()
-                                    + " est maintenant à l'étape: " + request.etape(),
-                            saved.getId(), "EVANGELISM_TRACK");
-                }
-            } catch (Exception e) {
-                // Notification failure must not block
+            // ===== PROPAGATION CENTRALISÉE =====
+            propagationPublisher.publishUpdated("EVANGELISM_TRACK", saved.getId(),
+                    Map.of("etape", track.getEtape().name()),
+                    Map.of("etape", request.etape().name()),
+                    "Étape d'évangélisation changée: " + request.etape());
+            com.discipolat.modules.souls.domain.Soul soul = soulRepository.findById(saved.getSoulId()).orElse(null);
+            if (soul != null) {
+                propagationListener.notifyEvangelismStageChanged(
+                        soul.getFaiseurId(), saved.getId(),
+                        soul.getPrenom() + " " + soul.getNom(), request.etape().name());
             }
         }
         return toResponse(saved);

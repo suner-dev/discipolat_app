@@ -19,6 +19,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +30,7 @@ class FinanceServiceTest {
     @Mock private FinanceBudgetRepository budgetRepository;
     @Mock private SecurityUtils securityUtils;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
 
     private FinanceService service;
 
@@ -35,7 +38,7 @@ class FinanceServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new FinanceService(transactionRepository, budgetRepository, securityUtils, auditService);
+        service = new FinanceService(transactionRepository, budgetRepository, securityUtils, auditService, propagationPublisher);
     }
 
     private FinanceTransaction tx(UUID id, FinanceTransaction.TransactionType type, String categorie,
@@ -60,7 +63,7 @@ class FinanceServiceTest {
                 .containsEntry("categorie", "DIME")
                 .containsEntry("montant", new BigDecimal("1500.00"));
         verify(transactionRepository).save(any(FinanceTransaction.class));
-        verify(auditService).logSimple("FINANCE_TRANSACTION_CREATED", "FINANCE_TRANSACTION", (UUID) result.get("id"));
+        verify(propagationPublisher).publishCreated(eq("FINANCE_TRANSACTION"), any(), any(), anyString());
     }
 
     @Test
@@ -121,7 +124,7 @@ class FinanceServiceTest {
         Map<String, Object> created = service.upsertBudget(
                 new FinanceBudgetRequest("LOGIQUE", 2026, new BigDecimal("10000.00")));
         assertThat(created).containsEntry("categorie", "LOGIQUE").containsEntry("montant", new BigDecimal("10000.00"));
-        verify(auditService).logSimple("FINANCE_BUDGET_CREATED", "FINANCE_BUDGET", (UUID) created.get("id"));
+        verify(propagationPublisher).publishCreated(eq("FINANCE_BUDGET"), any(), any(), anyString());
 
         // Mise à jour : la catégorie existe déjà → pas de doublon, audit UPDATED.
         FinanceBudget existing = FinanceBudget.builder().id(UUID.randomUUID())
@@ -133,7 +136,7 @@ class FinanceServiceTest {
         Map<String, Object> updated = service.upsertBudget(
                 new FinanceBudgetRequest("LOGIQUE", 2026, new BigDecimal("12000.00")));
         assertThat(updated).containsEntry("montant", new BigDecimal("12000.00"));
-        verify(auditService).logSimple("FINANCE_BUDGET_UPDATED", "FINANCE_BUDGET", existing.getId());
+        verify(propagationPublisher).publishUpdated(eq("FINANCE_BUDGET"), eq(existing.getId()), any(), any(), anyString());
     }
 
     @Test
