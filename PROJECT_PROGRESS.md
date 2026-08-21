@@ -3,6 +3,97 @@
 > Fichier de checkpoint : état exact du travail à tout moment, pour reprise
 > immédiate d'une session. Mis à jour à chaque étape stable.
 
+## SESSION 2026-08-21 (bloc 18) — STABILISATION PROPAGATION + QA SÉCURITÉ
+
+### Objectif
+
+Mission finale : audit total, QA, correction. Stabiliser le refactor
+« propagation centralisée » (UNE ENTITÉ = UNE SOURCE DE VÉRITÉ), corriger les
+bugs critiques découverts par les tests d'intégration et l'audit sécurité,
+valider fullstack (backend + frontend + mobile) et pousser.
+
+### Terminé ✅
+
+**Backend — corrections réelles**
+1. **NPE production `EventService.create`** : payload `Map.of("typeEvenement", …)`
+   rejetait les valeurs null (`typeEvenement`/`dateDebut` null à la création) →
+   remplacé par un `LinkedHashMap` null-safe.
+2. **Défense systémique NPE propagation** : `EntityPropagationPublisher.publishEvent`
+   sanitise désormais old/newValues (filtre clés/valeurs null) avant
+   `Map.copyOf` dans `EntityChangedEvent` — protège TOUS les services publish.
+3. **Fuite d'info cross-tenant SSE** : `EntityChangeSseController.stats()`
+   exposait la liste des tenantId connectés à tout utilisateur authentifié →
+   `@PreAuthorize("hasRole('ADMIN')")` + suppression des identifiants bruts.
+
+**Backend — tests corrigés (contrats obsolètes après refactor)**
+4. Constructeurs de tests synchronisés sur les nouvelles signatures
+   (publisher + listener) : Soul/Department/Evaluation/Event/UserServiceTest.
+5. Assertions obsolètes `verify(auditService).logSimple(...)` /
+   `verify(soulHistoryRepository).save(...)` → vérifications du publisher
+   (l'audit/historique sont désormais centralisés dans le listener).
+6. **PropagationChainIntegrationTest** (8 scénarios e2e H2) débuggé :
+   - helper `hasNotification` cherchait uniquement `message` → cherche
+     titre OU message (« Statut disciple modifié » est un titre) ;
+   - données de test incohérentes (`etatSpirituel` seedé = valeur modifiée →
+     aucun changement détecté) → valeurs distinctes ;
+   - getters anglais `getEntityType/getEntityId` → `getEntiteType/getEntiteId`.
+
+**Frontend / Mobile**
+7. Frontend : `npm run build` ✓ (35 s, code-splitting actif ; warning chunk
+   charts 443 kB — optimisation possible via manualChunks).
+8. Mobile : 3 warnings d'imports inutilisés corrigés → **`flutter analyze`
+   0 issue**.
+
+### Audit multi-tenant & permissions (vérifié, non régressif)
+
+- 92 entités JPA : 86 portent `@Filter(tenantFilter)` ; les 6 sans filtre sont
+  légitimes (Tenant lui-même, tokens d'auth sans colonne tenant_id,
+  dictionnaires globaux ProgramType/SubType ; NotificationTemplate filtre
+  explicitement par tenantId dans ses requêtes).
+- 63/65 contrôleurs avec `@PreAuthorize` ; les 2 restants sont publics par
+  design (`/api/v1/public/meta`, auth).
+- Les 21 `@PreAuthorize("isAuthenticated()")` vérifiés un à un : lectures
+  scopées ou self-endpoints (`/users/me`), écritures custom-fields contrôlées
+  par rôles au niveau service (rolesLecture/rolesEcriture par champ).
+- Mobile : en-têtes `X-Org-Id`/`X-Tenant` envoyés sur chaque requête, refresh
+  token 401, biométrie, audit log, offline sync — P0 mobile historiques levés.
+
+### Restant 🔜 (recommandations, non bloquant)
+
+1. Null-safety centralisée des payloads publish (helper défensif unique) +
+   passe de revue `Map.of(` sur tous les call-sites (Finance, User, Tenant,
+   Appointment, Visit, PlatformConfig…).
+2. Performance dashboards : `DashboardService` charge des tables entières
+   (`familyRepository.findAll()` ×5, transfers ×2, alerts) puis filtre en Java
+   → remplacer par des requêtes count/aggregation dédiées.
+3. Uniformiser les tests unitaires restants sur `propagationPublisher.publish*`.
+4. i18n complet (fallback langue, timezone, multi-devise) — P0#3 de l'audit.
+5. Chunk charts 443 kB : `manualChunks` Vite pour splitter Recharts.
+
+### État des tests (2026-08-21, fin)
+
+- Backend : BUILD SUCCESS · **171 tests ciblés 0 fail** dont
+  `PropagationConsistencyTest` 8/8 + `PropagationChainIntegrationTest` 8/8
+  (nouveaux, e2e H2) + suites Soul/Department/Evaluation/Event/User/
+  Communication/CustomField/Finance/Inventory/ChurchSettings/Dictionary/
+  PageBuilder/PlatformConfig.
+- Frontend : build production ✓.
+- Mobile : `flutter analyze` **0 issue**.
+
+### Git
+
+- Dernier commit : `5b6c018` test(propagation): add 8 cross-entity propagation
+  chain integration tests (+ correctifs inclus) — poussé sur `origin/main`.
+
+### Prochain objectif
+
+Exécuter la suite backend complète hors profils docker (H2), puis traiter
+« Restant » §ci-dessus en commençant par la null-safety centralisée et les
+requêtes agrégées des dashboards.
+
+---
+
+
 ---
 
 ## SESSION 2026-08-19 (bloc 16) — AUDIT PROFOND COMPLET AVANT REFONTE GLOBALE
