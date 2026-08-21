@@ -595,9 +595,8 @@ public class DashboardService {
         // Demandes en attente de validation (EN_ATTENTE_VALIDATION ou
         // VALIDATION_PARTIELLE) — le Pasteur est le validateur final : il doit
         // voir immédiatement ce qui requiert son action.
-        List<TransferRequest> transfertsEnValidation = transferRequestRepository.findAll().stream()
-                .filter(t -> t.getStatut() == TransferStatus.EN_ATTENTE_VALIDATION
-                        || t.getStatut() == TransferStatus.VALIDATION_PARTIELLE)
+        List<TransferRequest> transfertsEnValidation = transferRequestRepository.findByStatutIn(
+                        List.of(TransferStatus.EN_ATTENTE_VALIDATION, TransferStatus.VALIDATION_PARTIELLE)).stream()
                 .sorted(Comparator.comparing(TransferRequest::getDateSoumission,
                         Comparator.nullsLast(Comparator.naturalOrder())).reversed())
                 .toList();
@@ -944,12 +943,12 @@ public class DashboardService {
         deptDetail.put("membresSuivi", membresSuivi);
 
         // Transferts en attente concernant les membres du département
+        // (requête count en base — ne charge plus toute la table des transferts).
         List<UUID> deptSoulIds = allSouls.stream().map(Soul::getId).toList();
-        long transfertsEnAttente = transferRequestRepository.findAll().stream()
-                .filter(t -> (t.getStatut() == TransferStatus.EN_ATTENTE_VALIDATION
-                        || t.getStatut() == TransferStatus.VALIDATION_PARTIELLE))
-                .filter(t -> deptSoulIds.contains(t.getPersonneId()))
-                .count();
+        long transfertsEnAttente = deptSoulIds.isEmpty() ? 0L
+                : transferRequestRepository.countByStatutInAndPersonneIdIn(
+                        List.of(TransferStatus.EN_ATTENTE_VALIDATION, TransferStatus.VALIDATION_PARTIELLE),
+                        deptSoulIds);
         deptDetail.put("transfertsEnAttente", transfertsEnAttente);
 
         // Événements à venir (30 jours) liés au département
@@ -974,10 +973,16 @@ public class DashboardService {
                 .toList();
         deptDetail.put("evenementsAvenir", evenementsAvenir);
 
-        // Alertes actives du département (manuel + intelligentes)
-        List<Alert> activeAlerts = alertRepository.findAll().stream()
-                .filter(a -> a.getStatut() == StatutAlerte.ACTIVE
-                        && (deptId.equals(a.getDepartmentId()) || (a.getAmeId() != null && deptSoulIds.contains(a.getAmeId()))))
+        // Alertes actives du département (manuel + intelligentes) — deux
+        // requêtes ciblées (par département / par âmes) au lieu d'un findAll.
+        Map<UUID, Alert> alertsById = new LinkedHashMap<>();
+        alertRepository.findByDepartmentIdAndStatut(deptId, StatutAlerte.ACTIVE)
+                .forEach(a -> alertsById.put(a.getId(), a));
+        if (!deptSoulIds.isEmpty()) {
+            alertRepository.findByStatutAndAmeIdIn(StatutAlerte.ACTIVE, deptSoulIds)
+                    .forEach(a -> alertsById.putIfAbsent(a.getId(), a));
+        }
+        List<Alert> activeAlerts = alertsById.values().stream()
                 .sorted(Comparator.comparing(Alert::getDateDeclenchement).reversed())
                 .toList();
         List<Map<String, Object>> alertesList = activeAlerts.stream().limit(5).map(a -> {

@@ -132,7 +132,7 @@ class DashboardServiceTest {
                 .thenReturn(emptyPage);
         when(soulRepository.findByTypeDisciple(any(), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of()));
-        when(transferRequestRepository.findAll()).thenReturn(List.of());
+        when(transferRequestRepository.findByStatutIn(any())).thenReturn(List.of());
 
         var result = dashboardService.getPasteurDashboard();
 

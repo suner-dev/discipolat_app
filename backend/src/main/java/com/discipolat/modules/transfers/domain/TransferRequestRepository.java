@@ -39,4 +39,10 @@ public interface TransferRequestRepository extends JpaRepository<TransferRequest
     long countByDemandeurIdAndStatut(UUID demandeurId, TransferStatus statut);
 
     List<TransferRequest> findTop10ByDemandeurIdOrderByCreatedAtDesc(UUID demandeurId);
+
+    /** Toutes les demandes dont le statut est dans la collection (évite un findAll filtré en mémoire). */
+    List<TransferRequest> findByStatutIn(Collection<TransferStatus> statuts);
+
+    /** Nombre de demandes dans l'un des statuts donnés concernant l'une des personnes données (dashboards département). */
+    long countByStatutInAndPersonneIdIn(Collection<TransferStatus> statuts, Collection<UUID> personneIds);
 }
