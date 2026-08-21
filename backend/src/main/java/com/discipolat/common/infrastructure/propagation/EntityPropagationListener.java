@@ -2,6 +2,7 @@ package com.discipolat.common.infrastructure.propagation;
 
 import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
+import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.SoulHistory;
@@ -39,13 +40,19 @@ public class EntityPropagationListener {
     private final AuditService auditService;
     private final SoulHistoryRepository soulHistoryRepository;
     private final NotificationService notificationService;
+    private final EntityChangeBroadcaster broadcaster;
+    private final SecurityUtils securityUtils;
 
     public EntityPropagationListener(AuditService auditService,
                                      SoulHistoryRepository soulHistoryRepository,
-                                     NotificationService notificationService) {
+                                     NotificationService notificationService,
+                                     EntityChangeBroadcaster broadcaster,
+                                     SecurityUtils securityUtils) {
         this.auditService = auditService;
         this.soulHistoryRepository = soulHistoryRepository;
         this.notificationService = notificationService;
+        this.broadcaster = broadcaster;
+        this.securityUtils = securityUtils;
     }
 
     // ========================================================================
@@ -57,6 +64,7 @@ public class EntityPropagationListener {
     public void onEntityChanged(EntityChangedEvent event) {
         logAudit(event);
         logSoulHistoryIfApplicable(event);
+        broadcastToSseClients(event);
     }
 
     /**
@@ -88,6 +96,25 @@ public class EntityPropagationListener {
             case STATUS_CHANGED -> event.getEntityType() + "_STATUS_CHANGED";
             case REASSIGNED -> event.getEntityType() + "_REASSIGNED";
         };
+    }
+
+    // ========================================================================
+    // SSE BROADCAST — Push temps réel vers les clients connectés
+    // ========================================================================
+
+    /**
+     * Broadcasts the entity change event to all SSE clients connected to the
+     * same tenant. This ensures real-time UI updates across all browser sessions.
+     */
+    private void broadcastToSseClients(EntityChangedEvent event) {
+        try {
+            UUID tenantId = securityUtils.getCurrentTenantId();
+            broadcaster.broadcast(tenantId, event);
+        } catch (Exception e) {
+            // SSE broadcast failure must never block the main transaction
+            log.debug("SSE broadcast failed for {} {}: {}",
+                    event.getEntityType(), event.getEntityId(), e.getMessage());
+        }
     }
 
     // ========================================================================
