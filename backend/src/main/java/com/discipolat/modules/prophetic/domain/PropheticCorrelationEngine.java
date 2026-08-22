@@ -17,7 +17,7 @@ public class PropheticCorrelationEngine {
             "je", "tu", "il", "elle", "nous", "vous", "ils", "elles",
             "est", "sont", "a", "ont", "fait", "être", "avoir", "cette", "ce",
             "dans", "pour", "avec", "sur", "par", "pas", "plus", "aussi",
-            "the", "a", "an", "is", "are", "was", "were", "have", "has", "had"
+            "the", "an", "is", "are", "was", "were", "have", "has", "had"
     );
 
     /**

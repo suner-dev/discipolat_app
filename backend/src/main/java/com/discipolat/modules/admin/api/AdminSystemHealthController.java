@@ -21,7 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/system-health")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
 public class AdminSystemHealthController {
 
     private final JdbcTemplate jdbc;

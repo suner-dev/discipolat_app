@@ -30,33 +30,33 @@ public class TenantController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<List<TenantResponse>> list() {
         return ResponseEntity.ok(tenantService.list());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<TenantResponse> get(@PathVariable UUID id) {
         return ResponseEntity.ok(tenantService.get(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<TenantResponse> create(@Valid @RequestBody CreateTenantRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tenantService.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<TenantResponse> update(@PathVariable UUID id,
                                                  @Valid @RequestBody UpdateTenantRequest request) {
         return ResponseEntity.ok(tenantService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         tenantService.deactivate(id);
         return ResponseEntity.noContent().build();

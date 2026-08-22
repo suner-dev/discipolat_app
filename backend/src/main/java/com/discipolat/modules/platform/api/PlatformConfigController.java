@@ -76,32 +76,32 @@ public class PlatformConfigController {
     }
 
     @GetMapping("/admin/menus")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<List<MenuEntry>> allMenus() {
         return ResponseEntity.ok(platformService.listAllMenus());
     }
 
     @PostMapping("/menus")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<MenuEntry> createMenu(@Valid @RequestBody MenuEntry menu) {
         return ResponseEntity.status(HttpStatus.CREATED).body(platformService.createMenu(menu));
     }
 
     @PutMapping("/menus/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<MenuEntry> updateMenu(@PathVariable UUID id, @Valid @RequestBody MenuEntry menu) {
         return ResponseEntity.ok(platformService.updateMenu(id, menu));
     }
 
     @DeleteMapping("/menus/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Void> deleteMenu(@PathVariable UUID id) {
         platformService.deleteMenu(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/menus/reorder")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<List<MenuEntry>> reorderMenus(@RequestBody List<MenuOrderItem> items) {
         return ResponseEntity.ok(platformService.reorderMenus(items));
     }
@@ -115,7 +115,7 @@ public class PlatformConfigController {
     }
 
     @PutMapping("/modules/{key}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<PlatformModule> toggleModule(@PathVariable String key,
                                                        @RequestBody Map<String, Boolean> body) {
         boolean enabled = body.getOrDefault("enabled", true);
@@ -123,20 +123,20 @@ public class PlatformConfigController {
     }
 
     @PostMapping("/modules")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<PlatformModule> createModule(@Valid @RequestBody PlatformModule module) {
         return ResponseEntity.status(HttpStatus.CREATED).body(platformService.createModule(module));
     }
 
     @PutMapping("/modules/{key}/edit")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<PlatformModule> updateModule(@PathVariable String key,
                                                        @Valid @RequestBody PlatformModule module) {
         return ResponseEntity.ok(platformService.updateModule(key, module));
     }
 
     @DeleteMapping("/modules/{key}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Void> deleteModule(@PathVariable String key) {
         platformService.deleteModule(key);
         return ResponseEntity.noContent().build();
@@ -149,7 +149,7 @@ public class PlatformConfigController {
      * optionnellement par type d'entité, trié du plus récent au plus ancien.
      */
     @GetMapping("/revisions")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<PageResponse<ConfigRevision>> revisions(
             @RequestParam(required = false) String entityType,
             @RequestParam(defaultValue = "0") int page,

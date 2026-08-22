@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -25,8 +26,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
             WHERE (:utilisateurId IS NULL OR a.utilisateurId = :utilisateurId)
               AND (:entiteType IS NULL OR a.entiteType = :entiteType)
               AND (:action IS NULL OR a.action = :action)
-              AND (:debut IS NULL OR a.createdAt >= cast(:debut as timestamp))
-              AND (:fin IS NULL OR a.createdAt <= cast(:fin as timestamp))
+              AND (:debut IS NULL OR a.createdAt >= :debut)
+              AND (:fin IS NULL OR a.createdAt <= :fin)
             """)
     Page<AuditLog> findFiltered(@Param("utilisateurId") UUID utilisateurId,
                                 @Param("entiteType") String entiteType,
@@ -34,4 +35,15 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
                                 @Param("debut") LocalDateTime debut,
                                 @Param("fin") LocalDateTime fin,
                                 Pageable pageable);
+
+    /**
+     * Requête simplifiée pour les tendances d'audit : tous les logs depuis une date.
+     * Pas de Pageable pour éviter les erreurs de cast sur PostgreSQL.
+     */
+    @Query("""
+            SELECT a FROM AuditLog a
+            WHERE a.createdAt >= :debut
+            ORDER BY a.createdAt DESC
+            """)
+    List<AuditLog> findSince(@Param("debut") LocalDateTime debut);
 }

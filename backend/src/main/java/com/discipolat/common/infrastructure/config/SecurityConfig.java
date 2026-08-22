@@ -65,6 +65,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                // Webhook opérateur Mobile Money : sécurisé par la référence unique
+                // de l'intention + (en production) signature HMAC opérateur / IP allowlist.
+                .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
                 // Actuator: health public (for load balancer / Render healthcheck), details only when authenticated
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR")

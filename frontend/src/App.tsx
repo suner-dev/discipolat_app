@@ -421,12 +421,10 @@ export default function App() {
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AuditPage />
             </ProtectedRoute>
-          } />
-          <Route path="/permissions" element={
-            <ProtectedRoute roles={['ADMIN']}>
+          } />          <Route path="/permissions" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <PermissionsPage />
-            </ProtectedRoute>
-          } />
+            </ProtectedRoute>} />
           <Route path="/families/compare" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <CompareFamiliesPage />
@@ -503,22 +501,22 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/settings" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminSettingsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/modules" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <PlatformModulesPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/menus" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <PlatformMenusPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/pages" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <PlatformPagesPage />
             </ProtectedRoute>
           } />
@@ -533,12 +531,12 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminDashboardPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/custom-fields" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminCustomFieldsPage />
             </ProtectedRoute>
           } />
@@ -548,32 +546,32 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/dictionaries" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminDictionariesPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/tenants" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminTenantsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/notifications" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminNotificationTemplatesPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/system" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminSystemPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/integrations" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminIntegrationsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/gdpr" element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminGdprPage />
             </ProtectedRoute>
           } />

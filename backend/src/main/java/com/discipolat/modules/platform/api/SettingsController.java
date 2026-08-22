@@ -35,14 +35,14 @@ public class SettingsController {
     }
 
     @PutMapping("/api/v1/settings")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<ChurchSettingsResponse> update(@Valid @RequestBody UpdateChurchSettingsRequest request) {
         ChurchSettings settings = settingsService.update(request);
         return ResponseEntity.ok(ChurchSettingsResponse.from(settings));
     }
 
     @PostMapping("/api/v1/settings/reset")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<ChurchSettingsResponse> reset() {
         return ResponseEntity.ok(ChurchSettingsResponse.from(settingsService.resetToDefaults()));
     }

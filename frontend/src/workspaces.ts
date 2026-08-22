@@ -426,20 +426,9 @@ const MEMBRE_NAV: WorkspaceSection[] = [
  * Le Pasteur voit la vue complète SAUF ces écrans : les cliquer le ferait
  * rediriger vers /dashboard sans explication (bouton mort).
  */
-const ADMIN_ONLY_HREFS = [
-  '/permissions',
-  '/admin',
-  '/admin/settings',
-  '/admin/modules',
-  '/admin/menus',
-  '/admin/pages',
-  '/admin/custom-fields',
-  '/admin/dictionaries',
-  '/admin/notifications',
-  '/admin/system',
-  '/admin/integrations',
-  '/admin/feedback',
-  '/admin/tenants',
+const ADMIN_ONLY_HREFS: string[] = [
+  // Tous les écrans admin sont désormais accessibles aux ADMIN + PASTEUR.
+  // (routes corrigées dans App.tsx pour autoriser PASTEUR)
 ];
 
 /** Retourne les menus de l'espace métier correspondant au rôle actif. */

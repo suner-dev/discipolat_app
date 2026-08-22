@@ -186,10 +186,7 @@ public class AuditService {
     public Map<String, Object> getAuditTrend(int jours) {
         Map<String, Object> result = new LinkedHashMap<>();
         LocalDateTime debut = LocalDateTime.now().minusDays(jours);
-        // Compter par type d'action
-        Page<AuditLog> allPage = auditLogRepository.findFiltered(null, null, null, debut, null,
-                PageRequest.of(0, 50000, Sort.by(Sort.Direction.DESC, "createdAt")));
-        List<AuditLog> logs = allPage.getContent();
+        List<AuditLog> logs = auditLogRepository.findSince(debut);
 
         Map<String, Long> parAction = new LinkedHashMap<>();
         Map<String, Long> parEntite = new LinkedHashMap<>();

@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/permissions")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
 public class PermissionController {
 
     private final PermissionService permissionService;
@@ -35,7 +35,7 @@ public class PermissionController {
     }
 
     @PutMapping("/{role}/{permission}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable String role,
             @PathVariable String permission,
@@ -54,7 +54,7 @@ public class PermissionController {
     }
 
     @PutMapping("/{role}/{permission}/rwd")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, Object>> updateRWD(
             @PathVariable String role,
             @PathVariable String permission,
@@ -83,7 +83,7 @@ public class PermissionController {
     }
 
     @PostMapping("/roles")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, String>> createRole(@RequestBody Map<String, String> body) {
         String key = body.get("key");
         String label = body.get("label");
@@ -96,7 +96,7 @@ public class PermissionController {
     }
 
     @PutMapping("/roles/{key}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, String>> updateRole(@PathVariable String key,
                                                           @RequestBody Map<String, String> body) {
         permissionService.updateRole(key, body.get("label"), body.get("description"));
@@ -104,7 +104,7 @@ public class PermissionController {
     }
 
     @PostMapping("/roles/duplicate")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, String>> duplicateRole(@RequestBody Map<String, String> body) {
         String sourceKey = body.get("sourceKey");
         String newKey = body.get("newKey");
@@ -117,7 +117,7 @@ public class PermissionController {
     }
 
     @DeleteMapping("/roles/{key}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Void> deleteRole(@PathVariable String key) {
         permissionService.deleteRole(key);
         return ResponseEntity.noContent().build();

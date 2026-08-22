@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/v1/admin/integrations")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
 public class AdminIntegrationController {
 
     private static final Set<String> VALID_CATEGORIES = Set.of("smtp", "storage", "jwt", "rate-limiting");

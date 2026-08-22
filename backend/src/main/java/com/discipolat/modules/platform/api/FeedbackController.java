@@ -51,7 +51,7 @@ public class FeedbackController {
     }
 
     @PatchMapping("/api/v1/admin/feedback/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<FeedbackResponse> updateStatus(@PathVariable UUID id,
                                                          @RequestBody Map<String, String> body) {
         String status = body.getOrDefault("status", "NOUVEAU");

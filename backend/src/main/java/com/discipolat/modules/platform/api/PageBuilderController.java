@@ -36,32 +36,32 @@ public class PageBuilderController {
     /* ----------------------------- Admin ----------------------------- */
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<List<CustomPage>> listPages() {
         return ResponseEntity.ok(pageBuilderService.listAll());
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<CustomPage> createPage(@Valid @RequestBody CustomPage page) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pageBuilderService.create(page));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<CustomPage> updatePage(@PathVariable UUID id, @Valid @RequestBody CustomPage page) {
         return ResponseEntity.ok(pageBuilderService.update(id, page));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Void> deletePage(@PathVariable UUID id) {
         pageBuilderService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/publish")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<CustomPage> setPublished(@PathVariable UUID id,
                                                    @RequestBody Map<String, Boolean> body) {
         boolean published = body.getOrDefault("published", true);
@@ -70,19 +70,19 @@ public class PageBuilderController {
 
     /** Aperçu (résolu) d'une page, y compris non publiée. */
     @GetMapping("/preview/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<ResolvedPage> preview(@PathVariable UUID id) {
         return ResponseEntity.ok(pageBuilderService.resolvePreview(id));
     }
 
     @GetMapping("/sources")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<List<PageDataSource>> sources() {
         return ResponseEntity.ok(pageBuilderService.sources());
     }
 
     @GetMapping("/options")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, Object>> options() {
         return ResponseEntity.ok(pageBuilderService.roleOptions());
     }

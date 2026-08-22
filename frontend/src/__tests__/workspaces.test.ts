@@ -10,23 +10,27 @@ const allHrefs = (role: string) =>
   navForRole(role).flatMap((s) => s.items.map((i) => i.href));
 
 describe('navForRole — cohérence menus / gardes de routes', () => {
-  it('PASTEUR ne voit aucun écran réservé à l’ADMIN (aucun bouton mort)', () => {
+  it('PASTEUR voit tous les écrans admin accessibles (configuration plateforme)', () => {
     const hrefs = allHrefs('PASTEUR');
-    expect(hrefs).not.toContain('/permissions');
-    expect(hrefs).not.toContain('/admin');
-    expect(hrefs).not.toContain('/admin/settings');
-    expect(hrefs).not.toContain('/admin/modules');
-    expect(hrefs).not.toContain('/admin/menus');
-    expect(hrefs).not.toContain('/admin/custom-fields');
+    expect(hrefs).toContain('/permissions');
+    expect(hrefs).toContain('/admin');
+    expect(hrefs).toContain('/admin/settings');
+    expect(hrefs).toContain('/admin/modules');
+    expect(hrefs).toContain('/admin/menus');
+    expect(hrefs).toContain('/admin/custom-fields');
+    expect(hrefs).toContain('/admin/dictionaries');
+    expect(hrefs).toContain('/admin/pages');
   });
 
-  it('PASTEUR garde la vue complète hors écrans admin', () => {
+  it('PASTEUR garde la vue complète + écrans admin', () => {
     const hrefs = allHrefs('PASTEUR');
     expect(hrefs).toContain('/dashboard');
     expect(hrefs).toContain('/souls');
     expect(hrefs).toContain('/users');
     expect(hrefs).toContain('/audit');
     expect(hrefs).toContain('/admin/transfers');
+    expect(hrefs).toContain('/admin/notifications');
+    expect(hrefs).toContain('/admin/system');
   });
 
   it('ADMIN voit tous les écrans, y compris la configuration', () => {

@@ -33,14 +33,14 @@ public class CustomFieldController {
     }
 
     @GetMapping("/definitions/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<List<CustomFieldDefinition>> getAllDefinitions(
             @RequestParam(required = false, defaultValue = "SOUL") String entiteType) {
         return ResponseEntity.ok(service.getAllDefinitions(entiteType));
     }
 
     @PostMapping("/definitions")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<CustomFieldDefinition> createDefinition(
             @Valid @RequestBody CreateCustomFieldRequest request) {
         CustomFieldDefinition def = new CustomFieldDefinition();
@@ -59,7 +59,7 @@ public class CustomFieldController {
     }
 
     @PutMapping("/definitions/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<CustomFieldDefinition> updateDefinition(
             @PathVariable UUID id, @Valid @RequestBody CreateCustomFieldRequest request) {
         CustomFieldDefinition def = new CustomFieldDefinition();
@@ -78,7 +78,7 @@ public class CustomFieldController {
     }
 
     @DeleteMapping("/definitions/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Void> deleteDefinition(@PathVariable UUID id) {
         service.deleteDefinition(id);
         return ResponseEntity.noContent().build();
