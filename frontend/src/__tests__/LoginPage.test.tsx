@@ -76,7 +76,7 @@ async function submitCredentials(email = 'faiseur@discipolat.com', password = 'p
   const user = userEvent.setup();
   await user.type(screen.getByPlaceholderText('vous@email.com'), email);
   await user.type(screen.getByPlaceholderText('••••••••'), password);
-  await user.click(screen.getByRole('button', { name: /se connecter/i }));
+  await user.click(screen.getByRole('button', { name: 'Se connecter' }));
 }
 
 describe('LoginPage', () => {
@@ -103,7 +103,7 @@ describe('LoginPage', () => {
   it('renders login form with title', () => {
     renderPage();
     expect(screen.getByText('Connexion')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Se connecter' })).toBeInTheDocument();
   });
 
   it('renders email and password inputs', () => {

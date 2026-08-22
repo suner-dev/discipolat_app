@@ -6,6 +6,8 @@ const FLAG_EMOJI: Record<Locale, string> = {
   fr: '🇫🇷',
   en: '🇬🇧',
   pt: '🇧🇷',
+  es: '🇪🇸',
+  sw: '🇰🇪',
 };
 
 export default function LanguageSwitcher() {

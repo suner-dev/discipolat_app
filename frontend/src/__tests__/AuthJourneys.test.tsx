@@ -95,7 +95,7 @@ describe('Parcours d authentification — bout en bout', () => {
     await user.click(cta);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Se connecter' })).toBeInTheDocument();
     });
     expect(screen.getByPlaceholderText('vous@email.com')).toBeInTheDocument();
   });
@@ -123,7 +123,7 @@ describe('Parcours d authentification — bout en bout', () => {
     // Retour à la connexion → le formulaire redevient visible
     await user.click(screen.getByRole('link', { name: /retour à la connexion/i }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Se connecter' })).toBeInTheDocument();
     });
   });
 
@@ -149,9 +149,9 @@ describe('Parcours d authentification — bout en bout', () => {
       expect(screen.getByText('Mot de passe réinitialisé !')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: /se connecter/i }));
+    await user.click(screen.getByRole('button', { name: 'Se connecter' }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Se connecter' })).toBeInTheDocument();
       expect(screen.getByPlaceholderText('vous@email.com')).toBeInTheDocument();
     });
   });
@@ -162,7 +162,7 @@ describe('Parcours d authentification — bout en bout', () => {
 
     await user.type(screen.getByPlaceholderText('vous@email.com'), 'faiseur@discipolat.com');
     await user.type(screen.getByPlaceholderText('••••••••'), 'password123');
-    await user.click(screen.getByRole('button', { name: /se connecter/i }));
+    await user.click(screen.getByRole('button', { name: 'Se connecter' }));
 
     await waitFor(() => {
       expect(screen.getByText('Tableau de bord (stub)')).toBeInTheDocument();

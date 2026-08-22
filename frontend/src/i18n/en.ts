@@ -24,6 +24,7 @@ const en: Record<string, string> = {
   'auth.google': 'Google',
   'auth.magicLink': 'Magic Link',
   'auth.magicLinkSent': 'A login link has been sent to your email',
+  'auth.googleUnavailable': 'Google sign-in is not configured on this server.',
   'auth.noAccount': 'No account yet?',
   'auth.createAccount': 'Create account',
   'auth.welcome': 'Welcome to Discipolat',
@@ -157,6 +158,79 @@ const en: Record<string, string> = {
   'ai.send': 'Send',
   'ai.history': 'History',
   'ai.suggestions': 'Suggestions',
+
+  // Tickets
+  'tickets.title': 'Tickets & Support',
+  'tickets.create': 'New ticket',
+
+  // Surveys
+  'surveys.title': 'Surveys',
+  'surveys.create': 'New survey',
+
+  // Testimonials
+  'testimonials.title': 'Testimonials',
+  'testimonials.share': 'Share testimony',
+
+  // Leave requests
+  'leave.title': 'Leave Requests',
+  'leave.create': 'New request',
+
+  // Referrals
+  'referrals.title': 'Referrals',
+  'referrals.invite': 'Invite',
+
+  // Calendar
+  'calendar.title': 'Calendar',
+  'calendar.create': 'New event',
+
+  // Skills Matrix
+  'skills.title': 'Skills Matrix',
+
+  // Team Gantt
+  'gantt.title': 'Team Planning',
+
+  // Compliance
+  'compliance.title': 'GDPR Compliance',
+
+  // API Docs
+  'apiDocs.title': 'API & Documentation',
+
+  // Portal
+  'portal.title': 'Public Portal',
+
+  // Cercle Faiseurs
+  'cercle.title': 'Mentors Circle',
+  'cercle.share': 'Share',
+
+  // Bible Reading
+  'bibleReading.title': 'Bible Reading Plans',
+  'bibleReading.create': 'New plan',
+
+  // Prayer Journal
+  'prayerJournal.title': 'Prayer Journal',
+  'prayerJournal.add': 'Add',
+
+  // Spiritual Challenges
+  'spiritualChallenges.title': 'Spiritual Challenges',
+  'spiritualChallenges.create': 'Create challenge',
+
+  // Church Directory
+  'directory.title': 'Church Directory',
+
+  // Spiritual Journey
+  'spiritualJourney.title': 'Spiritual Journey',
+
+  // Automations
+  'automations.title': 'Pastoral Automations',
+  'automations.create': 'New automation',
+
+  // Onboarding
+  'onboarding.title': 'Setup Wizard',
+  'onboarding.step1': 'Identity',
+  'onboarding.step2': 'Import members',
+  'onboarding.step3': 'Structure',
+  'onboarding.step4': 'Roles',
+  'onboarding.step5': 'First event',
 };
 
 export default en;

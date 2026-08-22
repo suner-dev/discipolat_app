@@ -133,7 +133,7 @@ describe('ResetPasswordPage — nouveau mot de passe', () => {
     await waitFor(() => {
       expect(screen.getByText('Mot de passe réinitialisé !')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole('button', { name: /se connecter/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
 
     await waitFor(() => {
       expect(screen.getByText('Page de connexion (stub)')).toBeInTheDocument();

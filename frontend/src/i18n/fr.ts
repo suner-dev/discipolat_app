@@ -24,6 +24,7 @@ const fr = {
   'auth.google': 'Google',
   'auth.magicLink': 'Lien magique',
   'auth.magicLinkSent': 'Un lien de connexion a été envoyé à votre email',
+  'auth.googleUnavailable': 'Connexion Google non configurée sur ce serveur.',
   'auth.noAccount': 'Pas encore de compte ?',
   'auth.createAccount': 'Créer un compte',
   'auth.welcome': 'Bienvenue sur Discipolat',
@@ -157,6 +158,79 @@ const fr = {
   'ai.send': 'Envoyer',
   'ai.history': 'Historique',
   'ai.suggestions': 'Suggestions',
+
+  // Tickets
+  'tickets.title': 'Tickets & Support',
+  'tickets.create': 'Nouveau ticket',
+
+  // Surveys
+  'surveys.title': 'Sondages',
+  'surveys.create': 'Nouveau sondage',
+
+  // Testimonials
+  'testimonials.title': 'Témoignages',
+  'testimonials.share': 'Témoigner',
+
+  // Leave requests
+  'leave.title': "Demandes d'absence",
+  'leave.create': 'Nouvelle demande',
+
+  // Referrals
+  'referrals.title': 'Parrainage',
+  'referrals.invite': 'Inviter',
+
+  // Calendar
+  'calendar.title': 'Calendrier',
+  'calendar.create': 'Nouvel événement',
+
+  // Skills Matrix
+  'skills.title': 'Matrice de compétences',
+
+  // Team Gantt
+  'gantt.title': 'Planning équipes',
+
+  // Compliance
+  'compliance.title': 'Conformité RGPD',
+
+  // API Docs
+  'apiDocs.title': 'API & Documentation',
+
+  // Portal
+  'portal.title': 'Portail public',
+
+  // Cercle Faiseurs
+  'cercle.title': 'Cercle de Faiseurs',
+  'cercle.share': 'Partager',
+
+  // Bible Reading
+  'bibleReading.title': 'Plans de Lecture Biblique',
+  'bibleReading.create': 'Nouveau plan',
+
+  // Prayer Journal
+  'prayerJournal.title': 'Journal de Prière',
+  'prayerJournal.add': 'Ajouter',
+
+  // Spiritual Challenges
+  'spiritualChallenges.title': 'Défis Spirituels',
+  'spiritualChallenges.create': 'Créer un défi',
+
+  // Church Directory
+  'directory.title': 'Annuaire de l\'Église',
+
+  // Spiritual Journey
+  'spiritualJourney.title': 'Parcours Spirituel',
+
+  // Automations
+  'automations.title': 'Automatisations Pastorales',
+  'automations.create': 'Nouvelle automatisation',
+
+  // Onboarding
+  'onboarding.title': 'Assistant de configuration',
+  'onboarding.step1': 'Identité',
+  'onboarding.step2': 'Import membres',
+  'onboarding.step3': 'Structure',
+  'onboarding.step4': 'Rôles',
+  'onboarding.step5': 'Premier événement',
 };
 
 export default fr;

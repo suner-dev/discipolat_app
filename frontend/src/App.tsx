@@ -103,10 +103,29 @@ const TontinePage = lazy(() => import('@/pages/TontinePage'));
 const GivingPage = lazy(() => import('@/pages/GivingPage'));
 const AdminWebhooksPage = lazy(() => import('@/pages/AdminWebhooksPage'));
 const DigitalTwinPage = lazy(() => import('@/pages/DigitalTwinPage'));
+const PropheticJournalPage = lazy(() => import('@/pages/PropheticJournalPage'));
 const SermonAssistantPage = lazy(() => import('@/pages/SermonAssistantPage'));
 const VoiceReportsPage = lazy(() => import('@/pages/VoiceReportsPage'));
 const KingdomMappingPage = lazy(() => import('@/pages/KingdomMappingPage'));
 const AiAssistantPage = lazy(() => import('@/pages/AiAssistantPage'));
+const TicketsPage = lazy(() => import('@/pages/TicketsPage'));
+const OnboardingWizardPage = lazy(() => import('@/pages/OnboardingWizardPage'));
+const SurveysPage = lazy(() => import('@/pages/SurveysPage'));
+const LeaveRequestsPage = lazy(() => import('@/pages/LeaveRequestsPage'));
+const PublicPortalPage = lazy(() => import('@/pages/PublicPortalPage'));
+const SkillsMatrixPage = lazy(() => import('@/pages/SkillsMatrixPage'));
+const ReferralPage = lazy(() => import('@/pages/ReferralPage'));
+const CalendarIntegrationPage = lazy(() => import('@/pages/CalendarIntegrationPage'));
+const TeamGanttPage = lazy(() => import('@/pages/TeamGanttPage'));
+const TestimonialsPage = lazy(() => import('@/pages/TestimonialsPage'));
+const ComplianceDashboardPage = lazy(() => import('@/pages/ComplianceDashboardPage'));
+const ApiDocsPage = lazy(() => import('@/pages/ApiDocsPage'));
+const CercleFaiseursPage = lazy(() => import('@/pages/CercleFaiseursPage'));
+const BibleReadingPlanPage = lazy(() => import('@/pages/BibleReadingPlanPage'));
+const PrayerJournalPage = lazy(() => import('@/pages/PrayerJournalPage'));
+const SpiritualChallengesPage = lazy(() => import('@/pages/SpiritualChallengesPage'));
+const ChurchDirectoryPage = lazy(() => import('@/pages/ChurchDirectoryPage'));
+const SpiritualJourneyPage = lazy(() => import('@/pages/SpiritualJourneyPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -429,6 +448,11 @@ export default function App() {
               <DigitalTwinPage />
             </ProtectedRoute>
           } />
+          <Route path="/prophetic-journal" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+              <PropheticJournalPage />
+            </ProtectedRoute>
+          } />
           <Route path="/sermon-assistant" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <SermonAssistantPage />
@@ -635,6 +659,92 @@ export default function App() {
           <Route path="/ai-assistant" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
               <AiAssistantPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/tickets" element={
+            <ProtectedRoute>
+              <TicketsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/onboarding-wizard" element={
+            <ProtectedRoute>
+              <OnboardingWizardPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/surveys" element={
+            <ProtectedRoute>
+              <SurveysPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/leave-requests" element={
+            <ProtectedRoute>
+              <LeaveRequestsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/skills-matrix" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <SkillsMatrixPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/referrals" element={
+            <ProtectedRoute>
+              <ReferralPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/calendar" element={
+            <ProtectedRoute>
+              <CalendarIntegrationPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/team-gantt" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <TeamGanttPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/testimonials" element={
+            <ProtectedRoute>
+              <TestimonialsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/compliance" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <ComplianceDashboardPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/api-docs" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <ApiDocsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/portal" element={<PublicPortalPage />} />
+          <Route path="/cercle-faiseurs" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
+              <CercleFaiseursPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/bible-reading" element={
+            <ProtectedRoute>
+              <BibleReadingPlanPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/prayer-journal" element={
+            <ProtectedRoute>
+              <PrayerJournalPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/spiritual-challenges" element={
+            <ProtectedRoute>
+              <SpiritualChallengesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/directory" element={
+            <ProtectedRoute>
+              <ChurchDirectoryPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/spiritual-journey" element={
+            <ProtectedRoute>
+              <SpiritualJourneyPage />
             </ProtectedRoute>
           } />
         </Route>

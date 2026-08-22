@@ -69,7 +69,7 @@ const DEMO_ACCOUNTS = [
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, roles, user, switchRole, isAuthenticated } = useAuth();
+  const { login, roles, user, switchRole, isAuthenticated, loginWithSocialToken } = useAuth();
   const { meta } = usePlatformMeta();
   const { t } = useI18n();
   const [showPassword, setShowPassword] = useState(false);
@@ -399,24 +399,38 @@ export default function LoginPage() {
           <div className="flex-1 border-t border-gray-200 dark:border-white/5" />
         </div>
 
-        {/* Google OAuth */}
+        {/* Google OAuth — Google Identity Services ; le credential JWT est
+            validé côté serveur (audience + email vérifié). Sans client-id
+            configuré, l'utilisateur reçoit un message clair. */}
         <button
           type="button"
           onClick={async () => {
-            try {
-              // En prod : utiliser google.accounts.id.initialize()
-              // En dev : simuler avec un email test
-              const res = await import('@/lib/api').then(m => m.default.post('/auth/google', {
-                credential: 'demo@discipolat.com',
-                name: 'Utilisateur Google',
-              }));
-              if (res.data.token) {
-                localStorage.setItem('token', res.data.token);
-                window.location.reload();
-              }
-            } catch (e) {
-              setError('Connexion Google non disponible en dev');
+            const google = (window as unknown as {
+              google?: { accounts?: { id?: {
+                initialize: (cfg: { client_id: string; callback: (r: { credential: string }) => void }) => void;
+                prompt: () => void;
+              } } };
+              DISCIPOLAT_GOOGLE_CLIENT_ID?: string;
+            }).google;
+            const clientId = (window as unknown as { DISCIPOLAT_GOOGLE_CLIENT_ID?: string })
+              .DISCIPOLAT_GOOGLE_CLIENT_ID;
+            if (!google?.accounts?.id || !clientId) {
+              setError(t('auth.googleUnavailable'));
+              return;
             }
+            google.accounts.id.initialize({
+              client_id: clientId,
+              callback: async (response) => {
+                try {
+                  const res = await api.post('/auth/google', { credential: response.credential });
+                  loginWithSocialToken(res.data.token, res.data.user);
+                  navigate('/dashboard', { replace: true });
+                } catch {
+                  setError(t('auth.googleUnavailable'));
+                }
+              },
+            });
+            google.accounts.id.prompt();
           }}
           className="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5
                      text-gray-700 dark:text-gray-300 font-medium text-sm
@@ -430,28 +444,6 @@ export default function LoginPage() {
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
           {t('auth.loginWith')} Google
-        </button>
-
-        {/* Magic Link */}
-        <button
-          type="button"
-          onClick={() => {
-            const email = prompt('Entrez votre email pour recevoir un lien magique :');
-            if (email) {
-              import('@/lib/api').then(m => m.default.post('/auth/magic-link', { email }))
-                .then(() => setError(''))
-                .catch(() => setError('Envoi du lien magique en cours...'));
-            }
-          }}
-          className="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5
-                     text-gray-700 dark:text-gray-300 font-medium text-sm
-                     hover:bg-gray-50 dark:hover:bg-white/10 transition-all duration-200
-                     flex items-center justify-center gap-3"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-          </svg>
-          {t('auth.magicLink')}
         </button>
       </div>
 
