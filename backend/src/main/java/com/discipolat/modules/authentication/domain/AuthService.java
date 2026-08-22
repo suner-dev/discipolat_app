@@ -400,7 +400,7 @@ public class AuthService {
 
     /** Envoie le magic link par email. */
     public void sendMagicLinkEmail(String email, String token) {
-        String link = "http://localhost:5173/auth/magic-link?token=" + token;
+        String link = frontendUrl + "/auth/magic-link?token=" + token;
         String subject = "Connexion rapide à Discipolat";
         String body = "Bonjour,\n\nCliquez sur ce lien pour vous connecter (valable 15 min) :\n\n"
                 + link + "\n\nSi vous n'avez pas demandé ce lien, ignorez ce message.";

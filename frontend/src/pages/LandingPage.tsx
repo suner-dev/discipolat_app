@@ -13,6 +13,7 @@ import {
   Moon,
   LayoutDashboard,
   Bell,
+  Globe,
   CheckCircle2,
   Sprout,
   Crown,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useI18n } from '@/i18n';
 import BetaBadge from '@/components/beta/BetaBadge';
 import Reveal from '@/components/shared/Reveal';
 
@@ -162,6 +164,7 @@ const TESTIMONIALS = [
 export default function LandingPage() {
   const { darkMode, toggleTheme } = useTheme();
   const { branding } = useSettings();
+  const { t } = useI18n();
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });

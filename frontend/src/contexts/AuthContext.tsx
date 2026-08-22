@@ -8,6 +8,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<AuthResponse>;
+  /** Session établie par un flux sans mot de passe (magic link, OAuth) : {token, user}. */
+  loginWithSocialToken: (token: string, socialUser: {
+    id: string; email: string; firstName?: string; lastName?: string; role: string;
+    photoUrl?: string;
+  }) => User;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   hasRole: (...roles: string[]) => boolean;
@@ -96,6 +101,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return d;
   }, []);
 
+  /**
+   * Établit la session à partir d'un flux sans mot de passe (magic link, OAuth).
+   * Le backend renvoie { token, user } ; pas de refresh token (session courte).
+   */
+  const loginWithSocialToken = useCallback((token: string, socialUser: {
+    id: string; email: string; firstName?: string; lastName?: string; role: string;
+    photoUrl?: string;
+  }): User => {
+    const role = (socialUser.role as UserRole) || 'MEMBRE';
+    const userData: User = {
+      id: socialUser.id,
+      email: socialUser.email,
+      firstName: socialUser.firstName || '',
+      lastName: socialUser.lastName || '',
+      phone: '',
+      statut: 'ACTIVE',
+      photoUrl: socialUser.photoUrl || '',
+      twoFactorEnabled: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      role,
+      roles: [role],
+      activeRole: role,
+      estChefDeFamille: false,
+      dateNaissance: '',
+      situationFamiliale: '',
+    };
+    localStorage.setItem('accessToken', token);
+    localStorage.setItem('refreshToken', '');
+    localStorage.setItem('user', JSON.stringify(userData));
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(userData);
+    toast.success(`Bienvenue, ${userData.firstName || userData.email}!`);
+    return userData;
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -160,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginWithSocialToken,
         logout,
         updateUser,
         hasRole,

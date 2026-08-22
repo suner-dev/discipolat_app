@@ -6,8 +6,9 @@ import { z } from 'zod';
 import { useAuth, roleLabels } from '@/contexts/AuthContext';
 import { usePlatformMeta } from '@/contexts/MetaContext';
 import BetaBadge from '@/components/beta/BetaBadge';
-import { getErrorMessage } from '@/lib/api';
-import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Shield, RotateCw, ShieldCheck, FlaskConical } from 'lucide-react';
+import api, { getErrorMessage } from '@/lib/api';
+import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Shield, RotateCw, ShieldCheck, FlaskConical, Wand2, MailCheck } from 'lucide-react';
+import { useI18n } from '@/i18n';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide').min(1, 'Email requis'),
@@ -70,11 +71,33 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { login, roles, user, switchRole, isAuthenticated } = useAuth();
   const { meta } = usePlatformMeta();
+  const { t } = useI18n();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
+
+  // ── Magic link (connexion sans mot de passe) ──
+  const [showMagicLink, setShowMagicLink] = useState(false);
+  const [magicEmail, setMagicEmail] = useState('');
+  const [magicPending, setMagicPending] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
+
+  const sendMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!magicEmail.includes('@')) return;
+    setMagicPending(true);
+    try {
+      await api.post('/auth/magic-link', { email: magicEmail.trim() });
+      // Réponse volontairement identique que l'email existe ou non (anti-énumération).
+      setMagicSent(true);
+    } catch {
+      setMagicSent(true);
+    } finally {
+      setMagicPending(false);
+    }
+  };
 
   // Marqueur : la navigation post-connexion a déjà été décidée par le formulaire
   // (dashboard, 2FA, sélecteur de rôle). Empêche le garde ci-dessous d'écraser
@@ -319,7 +342,118 @@ export default function LoginPage() {
             Mot de passe oublié ?
           </Link>
         </div>
+
+        {/* Connexion sans mot de passe (magic link) */}
+        <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+          {!showMagicLink ? (
+            <button
+              type="button"
+              onClick={() => setShowMagicLink(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 dark:border-white/10
+                         text-sm text-gray-600 dark:text-gray-300 hover:border-primary-500/40 hover:text-primary-500
+                         dark:hover:text-primary-400 transition-all duration-200"
+            >
+              <Wand2 className="w-4 h-4" />
+              Recevoir un lien de connexion par email
+            </button>
+          ) : magicSent ? (
+            <div className="p-3.5 rounded-xl bg-green-500/10 border border-green-500/20 flex items-start gap-2">
+              <MailCheck className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-green-600 dark:text-green-400 text-left">
+                Si cet email est enregistré, vous recevrez un lien de connexion
+                (valable 15 minutes). Vérifiez votre boîte de réception.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={sendMagicLink} className="flex gap-2">
+              <input
+                type="email"
+                required
+                value={magicEmail}
+                onChange={(e) => setMagicEmail(e.target.value)}
+                placeholder="vous@email.com"
+                autoComplete="email"
+                className="flex-1 min-w-0 rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10
+                           text-gray-900 dark:text-white placeholder-gray-400 px-3.5 py-2.5 text-sm
+                           focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-all"
+              />
+              <button
+                type="submit"
+                disabled={magicPending}
+                className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-900 dark:bg-white/10 text-white dark:text-white
+                           text-sm font-medium hover:bg-gray-800 disabled:opacity-50 transition-all"
+              >
+                {magicPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                Envoyer
+              </button>
+            </form>
+          )}
+        </div>
       </form>
+
+      {/* Social Auth — Google + Magic Link */}
+      <div className="space-y-3 animate-slide-up" style={{ animationDelay: '150ms' }}>
+        <div className="relative flex items-center">
+          <div className="flex-1 border-t border-gray-200 dark:border-white/5" />
+          <span className="px-3 text-xs text-gray-400 dark:text-gray-500">ou</span>
+          <div className="flex-1 border-t border-gray-200 dark:border-white/5" />
+        </div>
+
+        {/* Google OAuth */}
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              // En prod : utiliser google.accounts.id.initialize()
+              // En dev : simuler avec un email test
+              const res = await import('@/lib/api').then(m => m.default.post('/auth/google', {
+                credential: 'demo@discipolat.com',
+                name: 'Utilisateur Google',
+              }));
+              if (res.data.token) {
+                localStorage.setItem('token', res.data.token);
+                window.location.reload();
+              }
+            } catch (e) {
+              setError('Connexion Google non disponible en dev');
+            }
+          }}
+          className="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5
+                     text-gray-700 dark:text-gray-300 font-medium text-sm
+                     hover:bg-gray-50 dark:hover:bg-white/10 transition-all duration-200
+                     flex items-center justify-center gap-3"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          {t('auth.loginWith')} Google
+        </button>
+
+        {/* Magic Link */}
+        <button
+          type="button"
+          onClick={() => {
+            const email = prompt('Entrez votre email pour recevoir un lien magique :');
+            if (email) {
+              import('@/lib/api').then(m => m.default.post('/auth/magic-link', { email }))
+                .then(() => setError(''))
+                .catch(() => setError('Envoi du lien magique en cours...'));
+            }
+          }}
+          className="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5
+                     text-gray-700 dark:text-gray-300 font-medium text-sm
+                     hover:bg-gray-50 dark:hover:bg-white/10 transition-all duration-200
+                     flex items-center justify-center gap-3"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+          </svg>
+          {t('auth.magicLink')}
+        </button>
+      </div>
 
       {/* Comptes de démonstration — visibles UNIQUEMENT si le serveur les autorise
           (profil bêta) : jamais de données de test mélangées à la production. */}

@@ -8,8 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.UUID;
@@ -45,33 +45,43 @@ public class SocialAuthController {
     }
 
     /**
-     * Google OAuth — valider le token Google et connecter/créer l'utilisateur.
+     * Google OAuth — valider l'id_token Google côté serveur et connecter/créer
+     * l'utilisateur.
      *
-     * Le frontend utilise google.accounts.id.initialize() pour obtenir un
-     * credential JWT, puis l'envoie ici.
+     * SÉCURITÉ : le credential (id_token JWT émis par Google Identity Services)
+     * est TOUJOURS validé auprès de Google (tokeninfo) :
+     *  - signature et expiration vérifiées par Google ;
+     *  - `aud` doit correspondre au client-id configuré ;
+     *  - `email_verified` doit être true.
+     *
+     * Aucun email nu n'est jamais accepté : sans configuration
+     * (`app.auth.google-client-id` vide), l'endpoint répond 503 (désactivé).
      */
     @PostMapping("/google")
     public ResponseEntity<Map<String, Object>> googleLogin(@RequestBody Map<String, String> body) {
+        if (googleClientId == null || googleClientId.isBlank()) {
+            return ResponseEntity.status(503).body(Map.of(
+                    "error", "Google sign-in is not configured on this server"));
+        }
         String credential = body.get("credential");
         if (credential == null || credential.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Google credential is required"));
         }
 
+        Map<String, Object> claims = verifyGoogleIdToken(credential);
+        if (claims == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid Google token"));
+        }
+
+        String email = (String) claims.get("email");
+        String name = claims.get("name") != null ? claims.get("name").toString() : "";
+        String picture = claims.get("picture") != null ? claims.get("picture").toString() : "";
+
         try {
-            // En production : valider le token Google avec googleapis.com
-            // En dev : traiter le credential comme un email direct
-            String email = extractEmailFromGoogleToken(credential);
-            String name = body.getOrDefault("name", email != null ? email.split("@")[0] : "User");
-            String picture = body.getOrDefault("picture", "");
-
-            if (email == null || email.isBlank()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid Google token"));
-            }
-
-            // Chercher ou créer l'utilisateur
+            // Chercher ou créer l'utilisateur (rôle par défaut MEMBRE, mot de passe
+            // aléatoire non communiqué : la connexion passe exclusivement par Google).
             User user = userService.findByEmail(email).orElse(null);
             if (user == null) {
-                // Créer un nouveau compte
                 user = User.builder()
                         .email(email)
                         .firstName(name.contains(" ") ? name.split(" ")[0] : name)
@@ -156,20 +166,37 @@ public class SocialAuthController {
     }
 
     /**
-     * Extraire l'email du token Google (simplifié pour le dev).
-     * En production : utiliser Google's tokeninfo endpoint.
+     * Valide un id_token Google auprès du endpoint tokeninfo de Google.
+     * Retourne les claims si le token est authentique, non expiré, émis pour
+     * notre client-id et avec un email vérifié ; sinon null.
      */
-    private String extractEmailFromGoogleToken(String credential) {
-        // En dev, le credential est directement l'email
-        if (credential.contains("@")) {
-            return credential;
-        }
-        // En production, décoder le JWT Google et extraire l'email
-        // googleapis.com/oauth2/v3/tokeninfo?id_token=...
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> verifyGoogleIdToken(String idToken) {
         try {
-            // TODO: implémenter la validation Google en production
-            return null;
+            RestTemplate rt = new RestTemplate();
+            String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
+            Map<String, Object> claims = rt.getForObject(url, Map.class);
+            if (claims == null) return null;
+
+            // Audience : le token doit avoir été émis pour NOTRE application.
+            if (!googleClientId.equals(claims.get("aud"))) {
+                log.warn("Google token rejected: audience mismatch");
+                return null;
+            }
+            // Email vérifié chez Google (sinon usurpation d'adresse possible).
+            if (!"true".equals(String.valueOf(claims.get("email_verified")))) {
+                log.warn("Google token rejected: email not verified");
+                return null;
+            }
+            // Expiration (tokeninfo valide déjà la signature ; double contrôle).
+            Object exp = claims.get("exp");
+            if (exp instanceof String s && Long.parseLong(s) < System.currentTimeMillis() / 1000) {
+                return null;
+            }
+            if (claims.get("email") == null) return null;
+            return claims;
         } catch (Exception e) {
+            log.warn("Google token validation failed: {}", e.getMessage());
             return null;
         }
     }

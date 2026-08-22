@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { WORKSPACE_HOME, ROLE_META, roleIcon } from '@/workspaces';
 import BetaBadge from '@/components/beta/BetaBadge';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { useTheme } from '@/hooks/useTheme';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -318,6 +319,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400
                              hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-colors"
                   >
+                    <LanguageSwitcher />
                     <LogOut className="w-4 h-4" />
                     Déconnexion
                   </button>
