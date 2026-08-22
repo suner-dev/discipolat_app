@@ -120,4 +120,71 @@ class PaymentGatewayServiceTest {
         assertThat(failed.getStatus()).isEqualTo(PaymentIntent.Status.FAILED);
         assertThat(failed.getFailureReason()).isEqualTo("Solde insuffisant");
     }
+
+    // ==================== Anti-IDOR : accès à UN paiement ====================
+
+    @Test
+    void accesParAuteur_autorisePourSonProprePaiement() {
+        UUID auteur = UUID.randomUUID();
+        PaymentIntent sien = PaymentIntent.builder()
+                .tenantId(tenantId).userId(auteur)
+                .operator(PaymentIntent.Operator.WAVE)
+                .amount(BigDecimal.valueOf(1_000))
+                .build();
+        when(repository.findById(sien.getId())).thenReturn(Optional.of(sien));
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.getCurrentUserId()).thenReturn(auteur);
+
+        assertThat(service.findByIdForCurrentUser(sien.getId())).isSameAs(sien);
+    }
+
+    @Test
+    void accesParAutreUtilisateur_refuseSansFuitedExistence() {
+        UUID auteur = UUID.randomUUID();
+        UUID autre = UUID.randomUUID();
+        PaymentIntent sien = PaymentIntent.builder()
+                .tenantId(tenantId).userId(auteur)
+                .operator(PaymentIntent.Operator.WAVE)
+                .amount(BigDecimal.valueOf(1_000))
+                .build();
+        when(repository.findById(sien.getId())).thenReturn(Optional.of(sien));
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.getCurrentUserId()).thenReturn(autre);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.discipolat.common.domain.EntityNotFoundException.class,
+                () -> service.findByIdForCurrentUser(sien.getId()));
+    }
+
+    @Test
+    void accesSuperUtilisateur_authoriseSurTousLesPaiements() {
+        PaymentIntent deQuelquUn = PaymentIntent.builder()
+                .tenantId(tenantId).userId(UUID.randomUUID())
+                .operator(PaymentIntent.Operator.CARD)
+                .amount(BigDecimal.valueOf(500))
+                .build();
+        when(repository.findById(deQuelquUn.getId())).thenReturn(Optional.of(deQuelquUn));
+        when(securityUtils.isSuperUser()).thenReturn(true);
+
+        assertThat(service.findByIdForCurrentUser(deQuelquUn.getId())).isSameAs(deQuelquUn);
+    }
+
+    @Test
+    void annulationParAutreUtilisateur_refusee() {
+        UUID autre = UUID.randomUUID();
+        PaymentIntent sien = PaymentIntent.builder()
+                .tenantId(tenantId).userId(UUID.randomUUID())
+                .operator(PaymentIntent.Operator.ORANGE_MONEY)
+                .amount(BigDecimal.valueOf(3_000))
+                .status(PaymentIntent.Status.PENDING)
+                .providerReference("OM-Z")
+                .build();
+        when(repository.findById(sien.getId())).thenReturn(Optional.of(sien));
+        when(securityUtils.isSuperUser()).thenReturn(false);
+        when(securityUtils.getCurrentUserId()).thenReturn(autre);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.discipolat.common.domain.EntityNotFoundException.class,
+                () -> service.cancel(sien.getId()));
+    }
 }

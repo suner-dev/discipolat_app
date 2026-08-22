@@ -191,6 +191,8 @@ void main() {
 
     final searchField = find.byType(TextField).first;
     await tester.enterText(searchField, 'jean');
+    // Le debounce de recherche est déclenché après 400 ms (perf 314a03c).
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
 
     // Le panneau de résultats remplace les onglets

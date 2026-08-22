@@ -61,6 +61,8 @@ class ReportServiceTest {
     private EntityAttachmentRepository attachmentRepository;
     @Mock
     private FileEntityRepository fileEntityRepository;
+    @Mock
+    private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
 
     private ReportService reportService;
     private EntityAttachmentService attachmentService;
@@ -83,7 +85,7 @@ class ReportServiceTest {
     void setUp() {
         attachmentService = new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils);
         reportService = new ReportService(makerReportRepository, familyReportRepository, securityUtils,
-                workspaceScope, soulRepository, userRepository, parallelFollowupRepository, attachmentService);
+                workspaceScope, soulRepository, userRepository, parallelFollowupRepository, attachmentService, propagationPublisher);
 
         rapportMoi = new MakerReport();
         rapportMoi.setId(UUID.randomUUID());

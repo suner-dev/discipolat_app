@@ -13,6 +13,7 @@ import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +40,7 @@ public class ReportService {
     private final UserRepository userRepository;
     private final ParallelFollowupRepository parallelFollowupRepository;
     private final EntityAttachmentService attachmentService;
+    private final EntityPropagationPublisher propagationPublisher;
 
     public ReportService(MakerReportRepository makerReportRepository,
                          FamilyReportRepository familyReportRepository,
@@ -47,7 +49,8 @@ public class ReportService {
                          SoulRepository soulRepository,
                          UserRepository userRepository,
                          ParallelFollowupRepository parallelFollowupRepository,
-                         EntityAttachmentService attachmentService) {
+                         EntityAttachmentService attachmentService,
+                         EntityPropagationPublisher propagationPublisher) {
         this.makerReportRepository = makerReportRepository;
         this.familyReportRepository = familyReportRepository;
         this.securityUtils = securityUtils;
@@ -56,6 +59,7 @@ public class ReportService {
         this.userRepository = userRepository;
         this.parallelFollowupRepository = parallelFollowupRepository;
         this.attachmentService = attachmentService;
+        this.propagationPublisher = propagationPublisher;
     }
 
     /**
@@ -99,6 +103,11 @@ public class ReportService {
 
         MakerReport saved = makerReportRepository.save(report);
         attachmentService.replace(EntityAttachment.EntityType.MAKER_REPORT, saved.getId(), request.fichierIds());
+        propagationPublisher.publishCreated("MAKER_REPORT", saved.getId(),
+                Map.of("faiseurId", request.faiseurId().toString(),
+                       "ameId", request.ameId() != null ? request.ameId().toString() : "",
+                       "semaine", request.semaine().toString()),
+                "Rapport faiseur soumis pour la semaine " + request.semaine());
         return saved;
     }
 
@@ -236,6 +245,11 @@ public class ReportService {
 
         FamilyReport saved = familyReportRepository.save(report);
         attachmentService.replace(EntityAttachment.EntityType.FAMILY_REPORT, saved.getId(), request.fichierIds());
+        propagationPublisher.publishCreated("FAMILY_REPORT", saved.getId(),
+                Map.of("familleId", request.familleId().toString(),
+                       "chefFamilleId", request.chefFamilleId().toString(),
+                       "semaine", request.semaine().toString()),
+                "Rapport famille soumis pour la semaine " + request.semaine());
         return saved;
     }
 
@@ -396,8 +410,15 @@ public class ReportService {
             report.setStatutValidation(StatutValidation.VU_PAR_PASTEUR);
             report.setDateValidationPasteur(LocalDateTime.now());
         }
+        FamilyReport saved = familyReportRepository.save(report);
+        propagationPublisher.publishStatusChanged("FAMILY_REPORT", saved.getId(),
+                "SOUMIS", validationLabel(validationType),
+                "Rapport famille validé: " + validationType);
+        return saved;
+    }
 
-        return familyReportRepository.save(report);
+    private String validationLabel(String type) {
+        return "RESPONSABLE".equalsIgnoreCase(type) ? "VU_PAR_RESPONSABLE" : "VU_PAR_PASTEUR";
     }
 
     // ======================== US-26: PRE-FILLED REPORT ========================
