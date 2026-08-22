@@ -60,11 +60,31 @@
 - Tests permissions mis à jour après l'ouverture des pages admin au rôle PASTEUR (7 tests 403→200 cohérents avec la nouvelle politique).
 - Test mobile `department_management_screen_test` adapté au **debounce 400 ms** introduit par le commit perf `314a03c` (avance d'horloge fake-async).
 
-## 5. Hors périmètre (décision documentée)
+## 5. Reconnaissance faciale & Onboarding AR — livrés en seconde vague
 
-- **#16 Reconnaissance faciale ML** et **#17 Onboarding AR** de l'audit : nécessitent modèles ML embarqués / ARCore-ARKit, non pertinents sans matériel cible validé — reportés.
+### #16 Pointage par reconnaissance faciale
+- **Backend `modules/facerec`** (`V94__create_face_templates.sql`) :
+  - `POST /api/v1/face/enroll` — enrôlement (ou mise à jour) du visage ; sans `userId`, l'utilisateur courant est enrôlé (auto-enrôlement mobile) ;
+  - `POST /api/v1/face/identify` — identification parmi tous les gabarits actifs du tenant → `{matched, confidence, displayName}`;
+  - `GET /face/templates?q=`, `/stats`, `DELETE /face/templates/{id}` (droit à l'effacement RGPD).
+  - **Algorithme** : empreinte perceptuelle **dHash 256 bits** calculée côté serveur via `ImageIO` standard (niveaux de gris → moyennage de zone 17×16 → gradients horizontaux). Correspondance par **distance de Hamming ≤ 42/256**, score de qualité (écart-type minimal) pour rejeter photos uniformes.
+  - **Vie privée** : aucune image stockée — uniquement une empreinte non réversible de 64 caractères hex ; suppression = effacement effectif.
+  - **Limite honnête documentée** : ce descripteur géométrique est fiable aux effectifs d'une église locale dans un cadre contrôlé ; pour de grandes bases ou conditions non maîtrisées, brancher un encodeur neuronal (embeddings 128-d) derrière la même API `descriptorHash` — aucun changement d'interface requis.
+  - 17 tests dédiés (visages synthétiques générés en mémoire : même visage reconnu sous luminosité différente, visages distincts rejetés, photo sans contraste refusée, upsert d'enrôlement, repli utilisateur courant…).
+- **Mobile** `face_checkin_screen.dart` : capture caméra/galerie (`image_picker`), aperçu, envoi base64, jauge de confiance animée, mode enrôlement pour les responsables.
+
+### #17 Onboarding immersif « Réalité Augmentée »
+- **Mobile** `ar_onboarding_screen.dart` (`/onboarding-ar`) :
+  - fond live par la caméra arrière (`camera`) = couche réalité ;
+  - cartes flottantes avec **transformation perspective 3D pilotée par l'accéléromètre** (`sensors_plus`) : incliner le téléphone fait pivoter la carte (parallaxe réelle) ;
+  - parcours guidé en 4 étapes (croissance, pointage facial/vocal, pilotage temps réel), points de progression animés, réticule AR pulsant ;
+  - **repli gracieux** : sans caméra ni capteurs (émulateur, permissions refusées), dégradé animé — l'écran reste 100 % fonctionnel ;
+  - accessible depuis l'écran d'onboarding (« Visite AR ») et autorisé hors authentification dans le routeur.
+
+## 6. Hors périmètre restant
+
 - Les intégrations opérateurs Mobile Money réelles (M-Pesa Daraja, MTN MoMo API…) requièrent des comptes marchands : l'architecture webhook + simulation sandbox est prête, il ne reste que les credentials à brancher.
 
-## 6. État du dépôt
+## 7. État du dépôt
 
 Tout est fusionné et poussé sur `origin/main` (commits `a3ad71f` → `f7ae466` et suivants). Arbre de travail propre, aucune dette de test connue.

@@ -125,12 +125,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
               // Navigation buttons
               Padding(
                 padding: EdgeInsets.all(24),
-                child: Row(
+                  child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextButton(
                       onPressed: () => _completeOnboarding(),
                       child: Text('Passer', style: TextStyle(color: Colors.white70)),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => context.push('/onboarding-ar'),
+                      icon: Icon(Icons.view_in_ar_rounded, color: Colors.white70, size: 18),
+                      label: Text('Visite AR', style: TextStyle(color: Colors.white70, fontSize: 13)),
                     ),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -146,7 +151,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                                 duration: Duration(milliseconds: 300),
                                 curve: Curves.easeInOut,
                               ),
-                        child: Row(
+                child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
