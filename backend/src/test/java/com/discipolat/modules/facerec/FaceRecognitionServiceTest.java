@@ -138,6 +138,16 @@ class FaceRecognitionServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void userIdAbsentRepliSurUtilisateurCourant() throws IOException {
+        UUID courant = UUID.randomUUID();
+        when(securityUtils.getCurrentUserId()).thenReturn(courant);
+
+        FaceTemplate saved = service.enroll(null, null, "Auto-enrôlement", faceImage(14));
+
+        assertThat(saved.getUserId()).isEqualTo(courant);
+    }
+
     // ── Identification ───────────────────────────────────────────────
 
     @Test

@@ -55,6 +55,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.volunteer_activism_rounded, 'title': 'Dîmes & offrandes', 'route': '/giving'},
     {'icon': Icons.savings_rounded, 'title': 'Tontines', 'route': '/tontines'},
     {'icon': Icons.mic_rounded, 'title': 'Rapports vocaux', 'route': '/voice-reports'},
+    {'icon': Icons.face_retouching_natural_rounded, 'title': 'Pointage facial', 'route': '/face-checkin'},
     {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
     {'icon': Icons.account_balance_wallet_rounded, 'title': 'Finances', 'route': '/finances'},
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},

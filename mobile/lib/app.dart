@@ -44,6 +44,8 @@ import 'presentation/screens/quest/quest_screen.dart';
 import 'presentation/screens/giving/giving_screen.dart';
 import 'presentation/screens/tontine/tontine_screen.dart';
 import 'presentation/screens/voice_reports/voice_report_screen.dart';
+import 'presentation/screens/face_checkin/face_checkin_screen.dart';
+import 'presentation/screens/ar_onboarding/ar_onboarding_screen.dart';
 import 'presentation/screens/trainings/trainings_screen.dart';
 import 'presentation/screens/trainings/sermon_transcription_screen.dart';
 import 'presentation/screens/messages/messages_screen.dart';
@@ -251,6 +253,7 @@ Map<String, List<String>> _routeRoles = {
   '/giving': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/tontines': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/voice-reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/face-checkin': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/trainings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/communications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/messages': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -290,7 +293,11 @@ final appRouter = GoRouter(
       } catch (_) {
         // Storage unavailable (tests) — skip onboarding, go to login
       }
-      if (!onboardingComplete && state.matchedLocation != onboardingRoute) {
+      // La visite AR fait partie du parcours de première connexion.
+      const arOnboardingRoute = '/onboarding-ar';
+      if (!onboardingComplete &&
+          state.matchedLocation != onboardingRoute &&
+          state.matchedLocation != arOnboardingRoute) {
         return onboardingRoute;
       }
       if (onboardingComplete && state.matchedLocation == onboardingRoute) {
@@ -606,6 +613,19 @@ final appRouter = GoRouter(
       path: '/voice-reports',
       name: 'voice-reports',
       builder: (context, state) => const VoiceReportScreen(),
+    ),
+    GoRoute(
+      path: '/face-checkin',
+      name: 'face-checkin',
+      builder: (context, state) {
+        final enroll = state.uri.queryParameters['enroll'] == '1';
+        return FaceCheckinScreen(enrollMode: enroll);
+      },
+    ),
+    GoRoute(
+      path: '/onboarding-ar',
+      name: 'onboarding-ar',
+      builder: (context, state) => const ArOnboardingScreen(),
     ),
     GoRoute(
       path: '/trainings',

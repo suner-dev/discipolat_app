@@ -30,7 +30,11 @@ public class FaceRecognitionService {
         this.securityUtils = securityUtils;
     }
 
-    /** Enrôle (ou met à jour) le gabarit facial d'un utilisateur. */
+    /**
+     * Enrôle (ou met à jour) le gabarit facial d'un utilisateur.
+     * Si {@code userId} est absent, l'utilisateur courant est utilisé
+     * (auto-enrôlement depuis le mobile).
+     */
     @Transactional
     public FaceTemplate enroll(UUID userId, UUID soulId, String displayName, byte[] image) throws IOException {
         FaceHasher.FaceDescriptor descriptor = FaceHasher.hash(image);
@@ -41,11 +45,13 @@ public class FaceRecognitionService {
         if (displayName == null || displayName.isBlank()) {
             throw new IllegalArgumentException("Le nom d'affichage est obligatoire");
         }
+        UUID effectiveUserId = userId != null ? userId : securityUtils.getCurrentUserId();
 
-        FaceTemplate template = repository.findByTenantIdAndUserId(securityUtils.getCurrentTenantId(), userId)
+        FaceTemplate template = repository
+                .findByTenantIdAndUserId(securityUtils.getCurrentTenantId(), effectiveUserId)
                 .orElseGet(() -> FaceTemplate.builder().build());
         template.setTenantId(securityUtils.getCurrentTenantId());
-        template.setUserId(userId);
+        template.setUserId(effectiveUserId);
         template.setSoulId(soulId);
         template.setDisplayName(displayName.trim());
         template.setDescriptorHash(descriptor.descriptorHash());
