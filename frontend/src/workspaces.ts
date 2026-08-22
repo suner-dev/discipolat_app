@@ -137,6 +137,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Recherche', href: '/search', icon: Search, subtitle: 'Recherche intelligente' },
       { name: 'Cartographie', href: '/map', icon: MapIcon, subtitle: 'Carte des disciples' },
       { name: 'Kingdom Mapping', href: '/kingdom-map', icon: Compass, subtitle: 'Heatmap & secteurs prioritaires' },
+      { name: 'Assistant IA', href: '/ai-assistant', icon: Sparkles, subtitle: 'Chat IA pastoral intelligent' },
       { name: 'Observatoire santé', href: '/health-observatory', icon: HeartPulse, subtitle: 'Prédiction de décrochage' },
       { name: 'Jumeau numérique', href: '/digital-twin', icon: GitBranch, subtitle: "Simulateur de croissance" },
     ],

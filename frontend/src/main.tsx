@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { I18nProvider } from './i18n/index';
 import { PlatformProvider } from './contexts/PlatformContext';
 import { MetaProvider } from './contexts/MetaContext';
 import { bootstrapBranding } from './lib/branding';
@@ -44,6 +45,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <AuthProvider>
             <PlatformProvider>
               <MetaProvider>
+                <I18nProvider>
                 <App />
                 <Toaster
                   position="top-right"
@@ -67,10 +69,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                       },
                     },
                   }}
-                />
-              </MetaProvider>
-            </PlatformProvider>
-          </AuthProvider>
+                />                </I18nProvider>
+                </MetaProvider>
+              </PlatformProvider>
+            </AuthProvider>
         </SettingsProvider>
       </BrowserRouter>
     </QueryClientProvider>

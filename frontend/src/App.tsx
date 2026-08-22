@@ -105,6 +105,7 @@ const DigitalTwinPage = lazy(() => import('@/pages/DigitalTwinPage'));
 const SermonAssistantPage = lazy(() => import('@/pages/SermonAssistantPage'));
 const VoiceReportsPage = lazy(() => import('@/pages/VoiceReportsPage'));
 const KingdomMappingPage = lazy(() => import('@/pages/KingdomMappingPage'));
+const AiAssistantPage = lazy(() => import('@/pages/AiAssistantPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -627,6 +628,11 @@ export default function App() {
           <Route path="/admin/gdpr" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminGdprPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-assistant" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+              <AiAssistantPage />
             </ProtectedRoute>
           } />
         </Route>

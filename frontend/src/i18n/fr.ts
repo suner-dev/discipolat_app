@@ -1,0 +1,162 @@
+const fr = {
+  // Navigation
+  'nav.dashboard': 'Tableau de bord',
+  'nav.souls': 'Âmes',
+  'nav.families': 'Familles',
+  'nav.departments': 'Départements',
+  'nav.reports': 'Rapports',
+  'nav.prayers': 'Prières',
+  'nav.events': 'Événements',
+  'nav.alerts': 'Alertes',
+  'nav.search': 'Recherche',
+  'nav.messages': 'Messagerie',
+  'nav.profile': 'Profil',
+  'nav.settings': 'Paramètres',
+  'nav.admin': 'Administration',
+  'nav.logout': 'Déconnexion',
+
+  // Auth
+  'auth.login': 'Connexion',
+  'auth.email': 'Email',
+  'auth.password': 'Mot de passe',
+  'auth.forgotPassword': 'Mot de passe oublié ?',
+  'auth.loginWith': 'Se connecter avec',
+  'auth.google': 'Google',
+  'auth.magicLink': 'Lien magique',
+  'auth.magicLinkSent': 'Un lien de connexion a été envoyé à votre email',
+  'auth.noAccount': 'Pas encore de compte ?',
+  'auth.createAccount': 'Créer un compte',
+  'auth.welcome': 'Bienvenue sur Discipolat',
+  'auth.welcomeMessage': 'Connectez-vous pour gérer votre église',
+
+  // Dashboard
+  'dashboard.title': 'Tableau de bord',
+  'dashboard.totalSouls': 'Total des âmes',
+  'dashboard.activeSouls': 'Âmes actives',
+  'dashboard.newConverts': 'Nouveaux convertis',
+  'dashboard.activeAlerts': 'Alertes actives',
+  'dashboard.pendingReports': 'Rapports en attente',
+  'dashboard.familyRisk': 'Familles à risque',
+  'dashboard.presenceRate': 'Taux de présence',
+
+  // Souls
+  'souls.title': 'Âmes / Disciples',
+  'souls.create': 'Nouvelle âme',
+  'souls.search': 'Rechercher une âme...',
+  'souls.name': 'Nom',
+  'souls.firstName': 'Prénom',
+  'souls.phone': 'Téléphone',
+  'souls.email': 'Email',
+  'souls.status': 'Statut',
+  'souls.faiseur': 'Faiseur',
+  'souls.family': 'Famille',
+  'souls.department': 'Département',
+  'souls.integrationDate': 'Date d\'intégration',
+  'souls.spiritualState': 'État spirituel',
+
+  // Status
+  'status.active': 'Actif',
+  'status.integration': 'En intégration',
+  'status.sleep': 'En veille',
+  'status.dropped': 'Décroché',
+
+  // Reports
+  'reports.title': 'Rapports',
+  'reports.makerReport': 'Rapport faiseur',
+  'reports.familyReport': 'Rapport famille',
+  'reports.submit': 'Soumettre',
+  'reports.draft': 'Brouillon',
+  'reports.submitted': 'Soumis',
+  'reports.validated': 'Validé',
+  'reports.week': 'Semaine',
+  'reports.present': 'Présent',
+  'reports.absent': 'Absent',
+
+  // Prayers
+  'prayers.title': 'Prières',
+  'prayers.create': 'Nouvelle prière',
+  'prayers.priority': 'Priorité',
+  'prayers.category': 'Catégorie',
+  'prayers.visibility': 'Visibilité',
+  'prayers.answered': 'Exaucée',
+  'prayers.pending': 'En cours',
+  'prayers.testimony': 'Témoignage',
+
+  // Events
+  'events.title': 'Événements',
+  'events.create': 'Nouvel événement',
+  'events.date': 'Date',
+  'events.location': 'Lieu',
+  'events.register': 'S\'inscrire',
+  'events.attendees': 'Participants',
+
+  // Notifications
+  'notifications.title': 'Notifications',
+  'notifications.markAllRead': 'Tout marquer comme lu',
+  'notifications.empty': 'Aucune notification',
+
+  // Settings
+  'settings.title': 'Paramètres',
+  'settings.language': 'Langue',
+  'settings.theme': 'Thème',
+  'settings.darkMode': 'Mode sombre',
+  'settings.notifications': 'Notifications',
+  'settings.privacy': 'Confidentialité',
+
+  // Languages
+  'lang.fr': 'Français',
+  'lang.en': 'English',
+  'lang.pt': 'Português',
+
+  // Common
+  'common.save': 'Enregistrer',
+  'common.cancel': 'Annuler',
+  'common.delete': 'Supprimer',
+  'common.edit': 'Modifier',
+  'common.create': 'Créer',
+  'common.search': 'Rechercher',
+  'common.filter': 'Filtrer',
+  'common.loading': 'Chargement...',
+  'common.noData': 'Aucune donnée',
+  'common.confirm': 'Confirmer',
+  'common.back': 'Retour',
+  'common.next': 'Suivant',
+  'common.previous': 'Précédent',
+  'common.success': 'Succès',
+  'common.error': 'Erreur',
+  'common.warning': 'Attention',
+  'common.info': 'Information',
+  'common.yes': 'Oui',
+  'common.no': 'Non',
+  'common.all': 'Tous',
+  'common.none': 'Aucun',
+  'common.total': 'Total',
+  'common.actions': 'Actions',
+  'common.details': 'Détails',
+  'common.status': 'Statut',
+  'common.date': 'Date',
+  'common.amount': 'Montant',
+  'common.description': 'Description',
+
+  // Payments
+  'payments.title': 'Dîmes & Offrandes',
+  'payments.give': 'Donner maintenant',
+  'payments.amount': 'Montant (XOF)',
+  'payments.operator': 'Opérateur',
+  'payments.destination': 'Destination',
+  'payments.phone': 'Téléphone Mobile Money',
+  'payments.history': 'Historique des dons',
+  'payments.confirmed': 'Confirmé',
+  'payments.pending': 'En attente',
+  'payments.failed': 'Échoué',
+
+  // AI Assistant
+  'ai.title': 'Assistant IA Pastoral',
+  'ai.placeholder': 'Posez une question à l\'assistant...',
+  'ai.thinking': 'L\'IA réfléchit...',
+  'ai.send': 'Envoyer',
+  'ai.history': 'Historique',
+  'ai.suggestions': 'Suggestions',
+};
+
+export default fr;

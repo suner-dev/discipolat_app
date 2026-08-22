@@ -374,4 +374,42 @@ public class AuthService {
         }
         return user.getRole();
     }
+
+    // ======================== MAGIC LINK ========================
+
+    private final java.util.concurrent.ConcurrentHashMap<String, MagicLinkEntry> magicLinks = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Génère un token magic link valide 15 minutes. */
+    public String generateMagicLink(String email) {
+        String token = java.util.UUID.randomUUID().toString();
+        magicLinks.put(token, new MagicLinkEntry(email, java.time.LocalDateTime.now().plusMinutes(15)));
+        return token;
+    }
+
+    /** Vérifie et consomme un magic link. */
+    public User verifyMagicLink(String token) {
+        MagicLinkEntry entry = magicLinks.remove(token);
+        if (entry == null || entry.expiresAt.isBefore(java.time.LocalDateTime.now())) {
+            throw new com.discipolat.common.domain.BusinessRuleException(
+                    "MAGIC_LINK_EXPIRED", "Lien magique invalide ou expiré");
+        }
+        return userRepository.findByEmail(entry.email)
+                .orElseThrow(() -> new com.discipolat.common.domain.BusinessRuleException(
+                        "USER_NOT_FOUND", "Aucun compte associé à cet email"));
+    }
+
+    /** Envoie le magic link par email. */
+    public void sendMagicLinkEmail(String email, String token) {
+        String link = "http://localhost:5173/auth/magic-link?token=" + token;
+        String subject = "Connexion rapide à Discipolat";
+        String body = "Bonjour,\n\nCliquez sur ce lien pour vous connecter (valable 15 min) :\n\n"
+                + link + "\n\nSi vous n'avez pas demandé ce lien, ignorez ce message.";
+        try {
+            emailService.send(email, subject, body);
+        } catch (Exception e) {
+            log.warn("Failed to send magic link email to {}: {}", email, e.getMessage());
+        }
+    }
+
+    private record MagicLinkEntry(String email, java.time.LocalDateTime expiresAt) {}
 }
