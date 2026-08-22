@@ -149,15 +149,22 @@ class PageBuilderControllerTest {
     }
 
     @Test
-    @DisplayName("POST /pages par non-ADMIN → 403")
-    void createPage_nonAdmin_403() throws Exception {
+    @DisplayName("POST /pages par PASTEUR → 201 (admin ouvert au pasteur)")
+    void createPage_parPasteur_201() throws Exception {
+        CustomPage created = CustomPage.builder()
+                .id(UUID.randomUUID()).key("PRIERES").title("Prière").slug("priere")
+                .layout("STACK").blocks(List.of()).roles(List.of()).enabled(true).published(false).version(1)
+                .build();
+        when(pageBuilderService.create(any(CustomPage.class))).thenReturn(created);
+
         mockMvc.perform(post("/api/v1/pages")
                         .header("Authorization", bearer("PASTEUR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"key\":\"x\",\"title\":\"X\",\"slug\":\"x\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.key").value("PRIERES"));
 
-        verify(pageBuilderService, never()).create(any());
+        verify(pageBuilderService).create(any(CustomPage.class));
     }
 
     @Test
@@ -219,13 +226,17 @@ class PageBuilderControllerTest {
     }
 
     @Test
-    @DisplayName("GET /pages/sources par non-ADMIN → 403")
-    void sources_nonAdmin_403() throws Exception {
+    @DisplayName("GET /pages/sources par PASTEUR → 200 (admin ouvert au pasteur)")
+    void sources_parPasteur_200() throws Exception {
+        when(pageBuilderService.sources()).thenReturn(List.of(
+                new PageDataSource("SOULS_TOTAL", "Âmes suivies", "KPI", "Total des âmes", false)));
+
         mockMvc.perform(get("/api/v1/pages/sources")
                         .header("Authorization", bearer("PASTEUR")))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].key").value("SOULS_TOTAL"));
 
-        verify(pageBuilderService, never()).sources();
+        verify(pageBuilderService).sources();
     }
 
     @Test

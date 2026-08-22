@@ -103,9 +103,9 @@ public class PaymentGatewayService {
         return saved;
     }
 
-    /** Annulation par l'utilisateur avant confirmation. */
+    /** Annulation par l'utilisateur avant confirmation (son propre paiement uniquement). */
     public PaymentIntent cancel(UUID id) {
-        PaymentIntent intent = findById(id);
+        PaymentIntent intent = findByIdForCurrentUser(id);
         if (intent.getStatus() == PaymentIntent.Status.PENDING) {
             intent.setStatus(PaymentIntent.Status.CANCELLED);
             repository.save(intent);
@@ -116,6 +116,28 @@ public class PaymentGatewayService {
     @Transactional(readOnly = true)
     public List<PaymentIntent> recent() {
         return repository.findTop50ByOrderByCreatedAtDesc();
+    }
+
+    /** Paiements de l'utilisateur courant — vue « Mes dons » (tous rôles). */
+    @Transactional(readOnly = true)
+    public List<PaymentIntent> mine() {
+        return repository.findTop50ByUserIdOrderByCreatedAtDesc(securityUtils.getCurrentUserId());
+    }
+
+    /**
+     * Accès à UN paiement : uniquement son auteur ou un super-utilisateur
+     * (anti-IDOR — une 404 est renvoyée sinon, sans fuite d'existence).
+     */
+    @Transactional(readOnly = true)
+    public PaymentIntent findByIdForCurrentUser(UUID id) {
+        PaymentIntent intent = findById(id);
+        if (!securityUtils.isSuperUser()) {
+            UUID currentUserId = securityUtils.getCurrentUserId();
+            if (intent.getUserId() == null || !intent.getUserId().equals(currentUserId)) {
+                throw new EntityNotFoundException("PaymentIntent", id);
+            }
+        }
+        return intent;
     }
 
     @Transactional(readOnly = true)

@@ -1,6 +1,7 @@
 package com.discipolat.modules.objectives.domain;
 
 import com.discipolat.common.domain.UserRole;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evangelism.domain.EvangelismTrackRepository;
@@ -40,6 +41,7 @@ class ObjectiveServiceTest {
     @Mock private FamilyRepository familyRepository;
     @Mock private UserRepository userRepository;
     @Mock private SecurityUtils securityUtils;
+    @Mock private EntityPropagationPublisher propagationPublisher;
 
     @InjectMocks private ObjectiveService objectiveService;
 

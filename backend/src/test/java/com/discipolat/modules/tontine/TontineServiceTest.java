@@ -40,6 +40,7 @@ class TontineServiceTest {
                 propagationPublisher, securityUtils);
         lenient().when(securityUtils.getCurrentTenantId()).thenReturn(tenantId);
         lenient().when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        lenient().when(securityUtils.getCurrentUserRole()).thenReturn("ADMIN");
         lenient().when(groupRepository.save(any(TontineGroup.class))).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(memberRepository.save(any(TontineMember.class))).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(contributionRepository.save(any(TontineContribution.class)))

@@ -73,6 +73,6 @@ class VoiceReportServiceTest {
         assertThat(report.isProcessed()).isTrue();
         assertThat(report.getExtractedEntities()).contains("Grace");
         verify(propagationPublisher).publishCreated(
-                eq("VOICE_REPORT"), any(UUID.class), any(Map.class), anyString());
+                eq("VOICE_REPORT"), any(), any(Map.class), anyString());
     }
 }

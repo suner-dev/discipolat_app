@@ -12,6 +12,8 @@ public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, UU
 
     List<PaymentIntent> findTop50ByOrderByCreatedAtDesc();
 
+    List<PaymentIntent> findTop50ByUserIdOrderByCreatedAtDesc(UUID userId);
+
     List<PaymentIntent> findByStatusOrderByCreatedAtDesc(PaymentIntent.Status status);
 
     Optional<PaymentIntent> findByProviderReference(String providerReference);

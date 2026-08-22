@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,16 +37,16 @@ class DigitalTwinServiceTest {
         when(soulRepository.countByStatut(com.discipolat.common.enums.StatutAme.EN_INTEGRATION)).thenReturn(25L);
         when(soulRepository.countByStatut(com.discipolat.common.enums.StatutAme.EN_VEILLE)).thenReturn(4L);
         when(soulRepository.countByStatut(com.discipolat.common.enums.StatutAme.DECROCHE)).thenReturn(1L);
-        when(trackRepository.findAll()).thenReturn(List.of(
+        lenient().when(trackRepository.findAll()).thenReturn(List.of(
                 EvangelismTrack.builder().soulId(soulId).build()));
-        when(trackRepository.findByEtapeOrderByDateEtapeDesc(EvangelismEtape.LEADER)).thenReturn(List.of());
+        lenient().when(trackRepository.findByEtapeOrderByDateEtapeDesc(EvangelismEtape.LEADER)).thenReturn(List.of());
     }
 
     @Test
     void snapshot_refleteLesStatsReelles() {
         Map<String, Object> snap = service.snapshot();
         assertThat(snap.get("totalSouls")).isEqualTo(200L);
-        assertThat(snap.get("pipelinesActifs")).isEqualTo(1L);
+        assertThat(snap.get("pipelinesActifs")).isEqualTo(1);
     }
 
     @Test

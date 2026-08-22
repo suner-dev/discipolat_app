@@ -86,15 +86,18 @@ class WebhookServiceTest {
         ApiKey saved = ApiKey.builder()
                 .id(UUID.randomUUID()).name("Zapier").prefix("dk_ABCDEFGHI").keyHash("hash")
                 .scopes("read").build();
-        when(apiKeyRepository.save(any(ApiKey.class))).thenReturn(saved);
+        when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Map<String, Object> result = service.createApiKey("Zapier", "read");
 
         assertThat(result).containsKeys("key", "warning");
         assertThat((String) result.get("key")).startsWith("dk_");
-        org.mockito.Mockito.verify(apiKeyRepository).save(any(ApiKey.class));
-        // Le hash stocké n'est PAS la clé brute
-        assertThat(saved.getKeyHash()).isNotEqualTo(result.get("key"));
-        assertThat(saved.getKeyHash()).hasSize(64);
+        // L'entité réellement persistée contient le hash de la clé brute
+        org.mockito.ArgumentCaptor<ApiKey> captor = org.mockito.ArgumentCaptor.forClass(ApiKey.class);
+        org.mockito.Mockito.verify(apiKeyRepository).save(captor.capture());
+        ApiKey persisted = captor.getValue();
+        assertThat(persisted.getKeyHash()).isNotEqualTo(result.get("key"));
+        assertThat(persisted.getKeyHash()).hasSize(64);
+        assertThat(persisted.getPrefix()).isEqualTo(((String) result.get("key")).substring(0, 11));
     }
 }

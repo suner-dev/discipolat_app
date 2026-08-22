@@ -2,6 +2,7 @@ package com.discipolat.modules.members.domain;
 
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.exception.BadRequestException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
@@ -55,6 +56,7 @@ class MemberPresenceSheetTest {
     @Mock private SecurityUtils securityUtils;
     @Mock private EntityAttachmentRepository attachmentRepository;
     @Mock private FileEntityRepository fileEntityRepository;
+    @Mock private EntityPropagationPublisher propagationPublisher;
 
     private MemberService memberService;
     private UUID responsableId;
@@ -68,7 +70,8 @@ class MemberPresenceSheetTest {
                 userRepository, soulRepository, familyRepository, departmentRepository,
                 memberDepartmentRepository, soulDepartmentRepository,
                 memberPresenceRepository, memberRequestRepository, eventRepository, securityUtils,
-                new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils));
+                new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils),
+                propagationPublisher);
         responsableId = UUID.randomUUID();
         deptId = UUID.randomUUID();
         soulId = UUID.randomUUID();

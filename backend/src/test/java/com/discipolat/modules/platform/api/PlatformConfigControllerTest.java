@@ -386,12 +386,15 @@ class PlatformConfigControllerTest {
     }
 
     @Test
-    @DisplayName("GET /platform/revisions par non-ADMIN → 403")
-    void revisions_nonAdmin_403() throws Exception {
+    @DisplayName("GET /platform/revisions par PASTEUR → 200 (pages admin ouvertes au pasteur)")
+    void revisions_parPasteur_200() throws Exception {
+        when(revisionService.list(isNull(), any()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
         mockMvc.perform(get("/api/v1/platform/revisions")
                         .header("Authorization", bearer("PASTEUR")))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
 
-        verify(revisionService, never()).list(any(), any());
+        verify(revisionService).list(isNull(), any());
     }
 }

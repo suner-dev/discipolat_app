@@ -114,32 +114,37 @@ public class TontineService {
                 .findFirst();
 
         if (beneficiary.isPresent()) {
-            beneficiary.get().setARecuTour(true);
-            memberRepository.save(beneficiary.get());
+            TontineMember b = beneficiary.get();
+            b.setARecuTour(true);
+            memberRepository.save(b);
         }
 
-        boolean allReceived = members.stream().filter(m -> !m.equals(beneficiary.orElse(null)))
+        boolean cycleComplete = memberRepository.findByGroupIdOrderByOrdrePassageAsc(groupId).stream()
                 .allMatch(TontineMember::isARecuTour);
-        int newRound = group.getTourActuel() + 1;
-        group.setTourActuel(allReceived && beneficiary.isEmpty() ? group.getTourActuel() : newRound);
-
-        // Génère l'échéancier du nouveau tour pour les membres qui n'ont pas encore payé ce tour
-        for (TontineMember m : members) {
-            if (contributionRepository.findByGroupIdAndMemberIdAndTour(groupId, m.getId(), newRound).isEmpty()) {
-                contributionRepository.save(TontineContribution.builder()
-                        .groupId(groupId).memberId(m.getId()).tour(newRound)
-                        .montant(group.getMontantParTour()).build());
-            }
-        }
-        groupRepository.save(group);
-        propagationPublisher.publishStatusChanged("TONTINE_GROUP", groupId,
-                String.valueOf(group.getTourActuel() - 1), String.valueOf(newRound),
-                "Nouveau tour de tontine: " + newRound);
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("newRound", newRound);
         result.put("beneficiary", beneficiary.map(TontineMember::getNom).orElse(null));
-        result.put("complete", allReceived);
+        result.put("complete", cycleComplete);
+        result.put("newRound", group.getTourActuel());
+
+        if (!cycleComplete && beneficiary.isPresent()) {
+            int newRound = group.getTourActuel() + 1;
+            // Génère l'échéancier du nouveau tour pour chaque membre
+            for (TontineMember m : members) {
+                if (contributionRepository.findByGroupIdAndMemberIdAndTour(groupId, m.getId(), newRound).isEmpty()) {
+                    contributionRepository.save(TontineContribution.builder()
+                            .groupId(groupId).memberId(m.getId()).tour(newRound)
+                            .montant(group.getMontantParTour()).build());
+                }
+            }
+            group.setTourActuel(newRound);
+            groupRepository.save(group);
+            propagationPublisher.publishStatusChanged("TONTINE_GROUP", groupId,
+                    String.valueOf(newRound - 1), String.valueOf(newRound),
+                    "Nouveau tour de tontine: " + newRound + " — bénéficiaire: "
+                            + beneficiary.map(TontineMember::getNom).orElse("?"));
+            result.put("newRound", newRound);
+        }
         return result;
     }
 

@@ -21,9 +21,11 @@ import com.discipolat.modules.objectives.api.ObjectiveProgressResponse;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Map;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -51,6 +53,7 @@ public class ObjectiveService {
     private final FamilyRepository familyRepository;
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
+    private final EntityPropagationPublisher propagationPublisher;
 
     public ObjectiveService(ObjectiveRepository objectiveRepository,
                             SoulRepository soulRepository,
@@ -61,7 +64,8 @@ public class ObjectiveService {
                             DepartmentRepository departmentRepository,
                             FamilyRepository familyRepository,
                             UserRepository userRepository,
-                            SecurityUtils securityUtils) {
+                            SecurityUtils securityUtils,
+                            EntityPropagationPublisher propagationPublisher) {
         this.objectiveRepository = objectiveRepository;
         this.soulRepository = soulRepository;
         this.interactionRepository = interactionRepository;
@@ -72,6 +76,7 @@ public class ObjectiveService {
         this.familyRepository = familyRepository;
         this.userRepository = userRepository;
         this.securityUtils = securityUtils;
+        this.propagationPublisher = propagationPublisher;
     }
 
     // ============================================================
@@ -92,17 +97,28 @@ public class ObjectiveService {
                 .actif(true)
                 .creePar(securityUtils.getCurrentUserId())
                 .build();
-        return objectiveRepository.save(objective);
+        Objective saved = objectiveRepository.save(objective);
+        propagationPublisher.publishCreated("OBJECTIVE", saved.getId(),
+                Map.of("role", String.valueOf(saved.getRole()), "type", String.valueOf(saved.getType()),
+                       "cible", String.valueOf(saved.getCible())),
+                "Objectif créé: " + saved.getType() + " pour " + saved.getRole());
+        return saved;
     }
 
     public Objective toggle(UUID id) {
         Objective objective = objectiveRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Objective", id));
-        objective.setActif(!objective.isActif());
-        return objectiveRepository.save(objective);
+        boolean oldActif = objective.isActif();
+        objective.setActif(!oldActif);
+        Objective saved = objectiveRepository.save(objective);
+        propagationPublisher.publishStatusChanged("OBJECTIVE", id,
+                oldActif ? "ACTIF" : "INACTIF", saved.isActif() ? "ACTIF" : "INACTIF",
+                "Objectif " + (saved.isActif() ? "activé" : "désactivé") + ": " + saved.getType());
+        return saved;
     }
 
     public void delete(UUID id) {
+        propagationPublisher.publishDeleted("OBJECTIVE", id, Map.of(), "Objectif supprimé");
         objectiveRepository.deleteById(id);
     }
 

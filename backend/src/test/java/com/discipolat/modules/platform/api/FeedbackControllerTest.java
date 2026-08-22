@@ -179,14 +179,14 @@ class FeedbackControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /admin/feedback/{id}/status par PASTEUR → 403 (statut réservé ADMIN)")
-    void updateStatus_parPasteur_403() throws Exception {
+    @DisplayName("PATCH /admin/feedback/{id}/status par PASTEUR → 200 (admin ouvert au pasteur)")
+    void updateStatus_parPasteur_200() throws Exception {
         mockMvc.perform(patch("/api/v1/admin/feedback/" + sample.id() + "/status")
                         .header("Authorization", bearer("PASTEUR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":\"RESOLU\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
 
-        verify(feedbackService, never()).updateStatus(any(), anyString());
+        verify(feedbackService).updateStatus(eq(sample.id()), eq("RESOLU"));
     }
 }

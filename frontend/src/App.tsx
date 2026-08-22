@@ -96,6 +96,15 @@ const AdminNotificationTemplatesPage = lazy(() => import('@/pages/AdminNotificat
 const AdminSystemPage = lazy(() => import('@/pages/AdminSystemPage'));
 const AdminIntegrationsPage = lazy(() => import('@/pages/AdminIntegrationsPage'));
 const AdminGdprPage = lazy(() => import('@/pages/AdminGdprPage'));
+const QuestPage = lazy(() => import('@/pages/QuestPage'));
+const HealthObservatoryPage = lazy(() => import('@/pages/HealthObservatoryPage'));
+const TontinePage = lazy(() => import('@/pages/TontinePage'));
+const GivingPage = lazy(() => import('@/pages/GivingPage'));
+const AdminWebhooksPage = lazy(() => import('@/pages/AdminWebhooksPage'));
+const DigitalTwinPage = lazy(() => import('@/pages/DigitalTwinPage'));
+const SermonAssistantPage = lazy(() => import('@/pages/SermonAssistantPage'));
+const VoiceReportsPage = lazy(() => import('@/pages/VoiceReportsPage'));
+const KingdomMappingPage = lazy(() => import('@/pages/KingdomMappingPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -390,6 +399,51 @@ export default function App() {
           <Route path="/badges" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
               <BadgesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/quest" element={
+            <ProtectedRoute>
+              <QuestPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/giving" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+              <GivingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/health-observatory" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <HealthObservatoryPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/tontines" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+              <TontinePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/digital-twin" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <DigitalTwinPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/sermon-assistant" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <SermonAssistantPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/voice-reports" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+              <VoiceReportsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/kingdom-map" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <KingdomMappingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/webhooks" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <AdminWebhooksPage />
             </ProtectedRoute>
           } />
           <Route path="/trainings" element={

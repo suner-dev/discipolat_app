@@ -5,9 +5,11 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.interactions.api.CreateInteractionRequest;
 import com.discipolat.modules.interactions.api.InteractionResponse;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Map;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,15 +27,18 @@ public class InteractionService {
     private final SoulRepository soulRepository;
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
+    private final EntityPropagationPublisher propagationPublisher;
 
     public InteractionService(InteractionRepository interactionRepository,
                               SoulRepository soulRepository,
                               UserRepository userRepository,
-                              SecurityUtils securityUtils) {
+                              SecurityUtils securityUtils,
+                              EntityPropagationPublisher propagationPublisher) {
         this.interactionRepository = interactionRepository;
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.securityUtils = securityUtils;
+        this.propagationPublisher = propagationPublisher;
     }
 
     public InteractionResponse create(UUID soulId, CreateInteractionRequest request) {
@@ -55,6 +60,9 @@ public class InteractionService {
                 .build();
 
         Interaction saved = interactionRepository.save(interaction);
+        propagationPublisher.publishCreated("INTERACTION", saved.getId(),
+                Map.of("type", String.valueOf(request.type()), "soulId", soulId.toString()),
+                "Interaction créée: " + request.type() + " avec l'âme " + soulId);
         // Met à jour la date de dernier contact de l'âme
         final LocalDateTime contactDate = saved.getDateInteraction();
         soulRepository.findById(soulId).ifPresent(soul -> {

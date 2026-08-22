@@ -123,14 +123,17 @@ class CustomFieldControllerTest {
     }
 
     @Test
-    @DisplayName("GET /custom-fields/definitions/all par non-ADMIN → 403")
-    void getAllDefinitions_nonAdmin_403() throws Exception {
+    @DisplayName("GET /custom-fields/definitions/all par PASTEUR → 200 (admin ouvert au pasteur)")
+    void getAllDefinitions_parPasteur_200() throws Exception {
+        when(service.getAllDefinitions("SOUL")).thenReturn(List.of(def));
+
         mockMvc.perform(get("/api/v1/custom-fields/definitions/all")
                         .header("Authorization", bearer("PASTEUR"))
                         .param("entiteType", "SOUL"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].code").value("LANGUE"));
 
-        verify(service, never()).getAllDefinitions(any());
+        verify(service).getAllDefinitions("SOUL");
     }
 
     @Test

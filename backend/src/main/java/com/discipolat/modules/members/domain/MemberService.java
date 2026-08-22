@@ -16,6 +16,7 @@ import com.discipolat.modules.members.api.*;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,7 @@ public class MemberService {
     private final EventRepository eventRepository;
     private final SecurityUtils securityUtils;
     private final EntityAttachmentService attachmentService;
+    private final EntityPropagationPublisher propagationPublisher;
 
     public MemberService(UserRepository userRepository,
                          SoulRepository soulRepository,
@@ -64,7 +66,8 @@ public class MemberService {
                          MemberRequestRepository memberRequestRepository,
                          EventRepository eventRepository,
                          SecurityUtils securityUtils,
-                         EntityAttachmentService attachmentService) {
+                         EntityAttachmentService attachmentService,
+                         EntityPropagationPublisher propagationPublisher) {
         this.userRepository = userRepository;
         this.soulRepository = soulRepository;
         this.familyRepository = familyRepository;
@@ -76,6 +79,7 @@ public class MemberService {
         this.eventRepository = eventRepository;
         this.securityUtils = securityUtils;
         this.attachmentService = attachmentService;
+        this.propagationPublisher = propagationPublisher;
     }
 
     // ============================================================
@@ -397,6 +401,10 @@ public class MemberService {
 
         MemberRequest saved = memberRequestRepository.save(req);
         attachmentService.replace(EntityAttachment.EntityType.MEMBER_REQUEST, saved.getId(), request.fichierIds());
+        propagationPublisher.publishCreated("MEMBER_REQUEST", saved.getId(),
+                Map.of("type", String.valueOf(request.type()), "cible", String.valueOf(request.cible()),
+                       "userId", userId.toString()),
+                "Demande membre créée: " + request.type());
         return toResponse(saved);
     }
 
@@ -463,8 +471,11 @@ public class MemberService {
         }
         req.setTraitePar(userId);
         req.setDateTraitement(java.time.LocalDateTime.now());
-
-        return toResponse(memberRequestRepository.save(req));
+        MemberRequest saved = memberRequestRepository.save(req);
+        propagationPublisher.publishStatusChanged("MEMBER_REQUEST", saved.getId(),
+                "OUVERT", String.valueOf(saved.getStatut()),
+                "Demande membre traitée: " + saved.getStatut());
+        return toResponse(saved);
     }
 
     // ============================================================

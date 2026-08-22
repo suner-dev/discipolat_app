@@ -9,11 +9,13 @@ import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Map;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -31,21 +33,29 @@ public class PrayerService {
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final SoulRepository soulRepository;
+    private final EntityPropagationPublisher propagationPublisher;
 
     public PrayerService(PrayerRepository prayerRepository, SecurityUtils securityUtils,
                          NotificationService notificationService, UserRepository userRepository,
-                         SoulRepository soulRepository) {
+                         SoulRepository soulRepository,
+                         EntityPropagationPublisher propagationPublisher) {
         this.prayerRepository = prayerRepository;
         this.securityUtils = securityUtils;
         this.notificationService = notificationService;
         this.userRepository = userRepository;
         this.soulRepository = soulRepository;
+        this.propagationPublisher = propagationPublisher;
     }
 
     public Prayer create(Prayer prayer) {
         prayer.setAuteurId(securityUtils.getCurrentUserId());
         prayer.setStatut("EN_COURS");
-        return prayerRepository.save(prayer);
+        Prayer saved = prayerRepository.save(prayer);
+        propagationPublisher.publishCreated("PRAYER", saved.getId(),
+                Map.of("titre", saved.getTitre() != null ? saved.getTitre() : "",
+                       "visibilite", saved.getVisibilite() != null ? saved.getVisibilite() : ""),
+                "Prière créée: " + saved.getTitre());
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -188,10 +198,10 @@ public class PrayerService {
         prayer.setTemoignage(temoignage);
         prayer.setDateExaucee(LocalDateTime.now());
         Prayer saved = prayerRepository.save(prayer);
-
-        // Notify subscribers about the answered prayer
+        propagationPublisher.publishStatusChanged("PRAYER", saved.getId(),
+                "EN_COURS", "EXAUCE",
+                "Prière exaucée: " + saved.getTitre());
         notifyAnsweredPrayer(saved);
-
         return saved;
     }
 
@@ -258,5 +268,8 @@ public class PrayerService {
         }
         prayer.setDeleted(true);
         prayerRepository.save(prayer);
+        propagationPublisher.publishSoftDeleted("PRAYER", id,
+                Map.of("titre", prayer.getTitre() != null ? prayer.getTitre() : ""),
+                "Prière supprimée: " + prayer.getTitre());
     }
 }

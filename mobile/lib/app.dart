@@ -40,6 +40,8 @@ import 'presentation/screens/visits/visits_screen.dart';
 import 'presentation/screens/evangelism/evangelism_screen.dart';
 import 'presentation/screens/objectives/objectives_screen.dart';
 import 'presentation/screens/badges/badges_screen.dart';
+import 'presentation/screens/quest/quest_screen.dart';
+import 'presentation/screens/voice_reports/voice_report_screen.dart';
 import 'presentation/screens/trainings/trainings_screen.dart';
 import 'presentation/screens/trainings/sermon_transcription_screen.dart';
 import 'presentation/screens/messages/messages_screen.dart';
@@ -243,6 +245,8 @@ Map<String, List<String>> _routeRoles = {
   '/evangelism': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/objectives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/badges': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/quest': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/voice-reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/trainings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/communications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/messages': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -578,6 +582,16 @@ final appRouter = GoRouter(
       path: '/badges',
       name: 'badges',
       builder: (context, state) => const BadgesScreen(),
+    ),
+    GoRoute(
+      path: '/quest',
+      name: 'quest',
+      builder: (context, state) => const QuestScreen(),
+    ),
+    GoRoute(
+      path: '/voice-reports',
+      name: 'voice-reports',
+      builder: (context, state) => const VoiceReportScreen(),
     ),
     GoRoute(
       path: '/trainings',

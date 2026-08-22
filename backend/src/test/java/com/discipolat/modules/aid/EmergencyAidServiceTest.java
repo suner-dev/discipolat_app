@@ -54,7 +54,7 @@ class EmergencyAidServiceTest {
     @Test
     void convert_usdVersXof() {
         var result = service.convert(BigDecimal.valueOf(100), "USD", "XOF");
-        assertThat((long) result.get("converted")).isEqualTo(60_500L);
+        assertThat((double) result.get("converted")).isEqualTo(60_500.0);
         assertThat(result.get("from")).isEqualTo("USD");
         assertThat(result.get("to")).isEqualTo("XOF");
     }

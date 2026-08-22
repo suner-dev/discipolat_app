@@ -81,7 +81,6 @@ class ConversionScoringServiceTest {
         EvangelismTrack froid = EvangelismTrack.builder()
                 .soulId(soulB).etape(EvangelismEtape.NOUVELLE_AME)
                 .dateEtape(LocalDate.now().minusDays(60)).build();
-        when(trackRepository.findAll()).thenReturn(List.of(froid, avance));
         when(historyRepository.countByTrackId(any())).thenReturn(0L);
 
         List<Map<String, Object>> scores = service.scoreAll(List.of(froid, avance));
