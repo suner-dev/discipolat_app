@@ -41,6 +41,8 @@ import 'presentation/screens/evangelism/evangelism_screen.dart';
 import 'presentation/screens/objectives/objectives_screen.dart';
 import 'presentation/screens/badges/badges_screen.dart';
 import 'presentation/screens/quest/quest_screen.dart';
+import 'presentation/screens/giving/giving_screen.dart';
+import 'presentation/screens/tontine/tontine_screen.dart';
 import 'presentation/screens/voice_reports/voice_report_screen.dart';
 import 'presentation/screens/trainings/trainings_screen.dart';
 import 'presentation/screens/trainings/sermon_transcription_screen.dart';
@@ -246,6 +248,8 @@ Map<String, List<String>> _routeRoles = {
   '/objectives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/badges': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/quest': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/giving': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/tontines': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/voice-reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/trainings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/communications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -587,6 +591,16 @@ final appRouter = GoRouter(
       path: '/quest',
       name: 'quest',
       builder: (context, state) => const QuestScreen(),
+    ),
+    GoRoute(
+      path: '/giving',
+      name: 'giving',
+      builder: (context, state) => const GivingScreen(),
+    ),
+    GoRoute(
+      path: '/tontines',
+      name: 'tontines',
+      builder: (context, state) => const TontineScreen(),
     ),
     GoRoute(
       path: '/voice-reports',

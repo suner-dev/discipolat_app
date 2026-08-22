@@ -17,4 +17,5 @@ public interface FamilyReportRepository extends JpaRepository<FamilyReport, UUID
     List<FamilyReport> findByFamilleIdAndSemaine(UUID familleId, LocalDate semaine);
     List<FamilyReport> findByFamilleIdOrderBySemaineDesc(UUID familleId);
     List<FamilyReport> findByFamilleIdAndSemaineOrderByCreatedAtDesc(UUID familleId, LocalDate semaine);
+    List<FamilyReport> findByFamilleIdInAndSemaine(List<UUID> familleIds, LocalDate semaine);
 }

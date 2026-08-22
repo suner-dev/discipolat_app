@@ -23,4 +23,5 @@ public interface MakerReportRepository extends JpaRepository<MakerReport, UUID> 
     long countByFaiseurIdAndSemaineAndSoumisTrue(UUID faiseurId, LocalDate semaine);
     long countByFaiseurIdAndSoumisTrue(UUID faiseurId);
     List<MakerReport> findByFaiseurIdInAndSemaine(List<UUID> faiseurIds, LocalDate semaine);
+    List<MakerReport> findByAmeIdInAndSemaine(List<UUID> ameIds, LocalDate semaine);
 }

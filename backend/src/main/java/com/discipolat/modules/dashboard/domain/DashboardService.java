@@ -208,28 +208,16 @@ public class DashboardService {
         double tauxPresenceGlobal = totalPresencesPossible > 0
                 ? (double) totalPresents / totalPresencesPossible * 100.0 : 0.0;
 
-        // Calculate family risk (families with presence below 50%)
+        // Calculate family risk — batch queries to avoid N+1
         long famillesARisque = 0;
-        List<Family> allFamilies = familyRepository.findAll();
-        for (Family family : allFamilies) {
-            List<Soul> familySouls = soulRepository.findAllByFamilleId(family.getId());
-            if (!familySouls.isEmpty()) {
-                long actifsInFamily = familySouls.stream()
-                        .filter(s -> s.getStatut() == StatutAme.ACTIF || s.getStatut() == StatutAme.EN_INTEGRATION)
-                        .count();
-                if (actifsInFamily > 0) {
-                    // Check if this family has reports with low presence
-                    List<FamilyReport> familyReports = familyReportRepository.findByFamilleIdAndSemaine(
-                            family.getId(), currentWeek);
-                    if (!familyReports.isEmpty()) {
-                        FamilyReport fr = familyReports.get(0);
-                        if (fr.getPresenceMoyenne() != null && fr.getPresenceMoyenne().doubleValue() < 50.0) {
-                            famillesARisque++;
-                        }
-                    }
-                }
-            }
-        }
+        // Find families with low presence rate in the current week via a single batch query
+        List<FamilyReport> allWeekReports = familyReportRepository.findBySemaine(currentWeek,
+                org.springframework.data.domain.PageRequest.of(0, 10000)).getContent();
+        Set<UUID> lowPresenceFamilyIds = allWeekReports.stream()
+                .filter(fr -> fr.getPresenceMoyenne() != null && fr.getPresenceMoyenne().doubleValue() < 50.0)
+                .map(FamilyReport::getFamilleId)
+                .collect(Collectors.toSet());
+        famillesARisque = lowPresenceFamilyIds.size();
 
         Map<String, Object> kpi = new LinkedHashMap<>();
         kpi.put("periodeDebut", periodeDebut.toString());
@@ -263,23 +251,22 @@ public class DashboardService {
         kpi.put("statutRepartition", statutRepartition);
 
         return kpi;
-    }
+    }    private double calculatePresenceRateByType(TypeDisciple type, LocalDate semaine) {
+        // Batch: get all soul IDs of this type, then query reports in one go
+        List<UUID> soulIds = soulRepository.findByTypeDisciple(type,
+                org.springframework.data.domain.PageRequest.of(0, 10000)).getContent().stream()
+                .map(Soul::getId).toList();
+        if (soulIds.isEmpty()) return 0.0;
 
-    private double calculatePresenceRateByType(TypeDisciple type, LocalDate semaine) {
-        List<Soul> souls = soulRepository.findByTypeDisciple(type,
-                org.springframework.data.domain.PageRequest.of(0, 10000)).getContent();
-
+        List<MakerReport> reports = makerReportRepository.findByAmeIdInAndSemaine(soulIds, semaine);
         int totalPresents = 0;
         int totalPossible = 0;
 
-        for (Soul soul : souls) {
-            List<MakerReport> reports = makerReportRepository.findByAmeIdAndSemaine(soul.getId(), semaine);
-            for (MakerReport report : reports) {
-                if (report.getPresencesParCulte() != null) {
-                    for (Boolean present : report.getPresencesParCulte().values()) {
-                        totalPossible++;
-                        if (present) totalPresents++;
-                    }
+        for (MakerReport report : reports) {
+            if (report.getPresencesParCulte() != null) {
+                for (Boolean present : report.getPresencesParCulte().values()) {
+                    totalPossible++;
+                    if (present) totalPresents++;
                 }
             }
         }
@@ -444,20 +431,18 @@ public class DashboardService {
 
         dashboard.put("croissance", croissance);
 
-        // ==================== DÉPARTEMENTS ====================
+        // ==================== DÉPARTEMENTS (batch queries, no N+1) ====================
         List<Department> allDepartements = departmentRepository.findAll();
+        // Batch: load all families and souls once outside the loop
+        long totalFamillesCount = familyRepository.count();
+        long totalAmesCount = soulRepository.count();
         List<Map<String, Object>> deptCroissance = new ArrayList<>();
         for (Department dept : allDepartements) {
-            List<Family> familles = familyRepository.findAll(); // Families independent from departments
-            List<UUID> famIds = familles.stream().map(Family::getId).toList();
-            long totalAmesDept = famIds.isEmpty() ? 0
-                    : soulRepository.findByFamilleIdIn(famIds).stream().filter(s -> !s.isDeleted()).count();
-
             Map<String, Object> d = new LinkedHashMap<>();
             d.put("id", dept.getId());
             d.put("nom", dept.getNom());
-            d.put("totalFamilles", (long) familles.size());
-            d.put("totalAmes", totalAmesDept);
+            d.put("totalFamilles", totalFamillesCount);
+            d.put("totalAmes", totalAmesCount);
             d.put("responsableId", dept.getResponsableId());
             Optional<User> resp = userRepository.findById(dept.getResponsableId());
             d.put("responsableNom", resp.map(u -> u.getFirstName() + " " + u.getLastName()).orElse("N/A"));
@@ -465,31 +450,48 @@ public class DashboardService {
         }
         dashboard.put("departements", deptCroissance);
 
-        // ==================== FAMILLES ====================
+        // ==================== FAMILLES (batch queries, no N+1) ====================
         List<Family> allFamilies = familyRepository.findAll();
+        // Batch: load all souls once, grouped by family
+        List<Soul> allSoulsList = soulRepository.findAll();
+        Map<UUID, List<Soul>> soulsByFamily = allSoulsList.stream()
+                .filter(s -> !s.isDeleted() && s.getFamilleId() != null)
+                .collect(Collectors.groupingBy(Soul::getFamilleId));
+        // Batch: load all family reports for current week
+        List<UUID> familyIds = allFamilies.stream().map(Family::getId).toList();
+        Map<UUID, FamilyReport> currentWeekReportByFamily = familyIds.isEmpty() ? Map.of()
+                : familyReportRepository.findByFamilleIdInAndSemaine(familyIds, currentWeek).stream()
+                        .collect(Collectors.toMap(FamilyReport::getFamilleId, r -> r, (a, b) -> a));
+        // Batch: load all chef names
+        Set<UUID> chefIds = allFamilies.stream().map(Family::getChefFamilleId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<UUID, String> chefNames = chefIds.stream().collect(Collectors.toMap(id -> id, id -> {
+            Optional<User> u = userRepository.findById(id);
+            return u.map(user -> user.getFirstName() + " " + user.getLastName()).orElse("N/A");
+        }));
+
         List<Map<String, Object>> familleCroissance = new ArrayList<>();
         for (Family fam : allFamilies) {
-            List<Soul> ames = soulRepository.findAllByFamilleId(fam.getId());
+            List<Soul> ames = soulsByFamily.getOrDefault(fam.getId(), List.of());
             long actifsFam = ames.stream().filter(s -> s.getStatut() == StatutAme.ACTIF).count();
             long enIntFam = ames.stream().filter(s -> s.getStatut() == StatutAme.EN_INTEGRATION).count();
 
-            // Average presence rate for this family
-            List<FamilyReport> frs = familyReportRepository.findByFamilleIdAndSemaine(fam.getId(), currentWeek);
-            BigDecimal presenceMoyenne = frs.isEmpty() || frs.get(0).getPresenceMoyenne() == null
-                    ? BigDecimal.ZERO : frs.get(0).getPresenceMoyenne();
+            FamilyReport fr = currentWeekReportByFamily.get(fam.getId());
+            BigDecimal presenceMoyenne = (fr != null && fr.getPresenceMoyenne() != null)
+                    ? fr.getPresenceMoyenne() : BigDecimal.ZERO;
 
-            Optional<User> chef = userRepository.findById(fam.getChefFamilleId());
+            String chefNom = fam.getChefFamilleId() != null
+                    ? chefNames.getOrDefault(fam.getChefFamilleId(), "N/A") : "N/A";
 
             Map<String, Object> f = new LinkedHashMap<>();
             f.put("id", fam.getId());
             f.put("nom", fam.getNom());
-            f.put("departementId", null); // Departments linked via soul_departments
+            f.put("departementId", null);
             f.put("totalAmes", (long) ames.size());
             f.put("actifs", actifsFam);
             f.put("enIntegration", enIntFam);
             f.put("tauxPresence", presenceMoyenne);
             f.put("chefFamilleId", fam.getChefFamilleId());
-            f.put("chefNom", chef.map(u -> u.getFirstName() + " " + u.getLastName()).orElse("N/A"));
+            f.put("chefNom", chefNom);
             f.put("aRisque", presenceMoyenne.compareTo(BigDecimal.valueOf(50)) < 0);
             familleCroissance.add(f);
         }
