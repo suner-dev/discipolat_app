@@ -186,21 +186,16 @@ public class PaymentGatewayService {
             case PROJET_SPECIAL -> "PROJET_SPECIAL";
             case DON_DIASPORA -> "DON_DIASPORA";
         };
-        try {
-            return financeService.createTransaction(new FinanceTransactionRequest(
-                    type, categorie, intent.getAmount(),
-                    "Paiement " + intent.getOperator().getLabel()
-                            + (intent.getPurpose() == PaymentIntent.Purpose.DIME ? " — dîme" : " — offrande")
-                            + " [" + intent.getProviderReference() + "]",
-                    LocalDate_now()));
-        } catch (Exception e) {
-            log.warn("Comptabilisation impossible du paiement {}: {}", intent.getProviderReference(), e.getMessage());
-            return Map.of();
-        }
-    }
-
-    private static java.time.LocalDate LocalDate_now() {
-        return java.time.LocalDate.now();
+        // Pas de try/catch ici : toute erreur de comptabilisation doit faire
+        // échouer le webhook (le paiement reste PENDING, l'opérateur renverra
+        // sa notification — handleWebhook est idempotent). Avaler l'exception
+        // marquerait la transaction « rollback-only » sans lever d'erreur.
+        return financeService.createTransaction(new FinanceTransactionRequest(
+                type, categorie, intent.getAmount(),
+                "Paiement " + intent.getOperator().getLabel()
+                        + (intent.getPurpose() == PaymentIntent.Purpose.DIME ? " — dîme" : " — offrande")
+                        + " [" + intent.getProviderReference() + "]",
+                java.time.LocalDate.now()));
     }
 
     /** Référence unique type « MP-240822-XXXX ». En production : renvoyée par l'API opérateur. */

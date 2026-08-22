@@ -81,7 +81,8 @@ public class FinanceService {
                 .montant(request.montant())
                 .description(request.description())
                 .dateTransaction(request.dateTransaction() != null ? request.dateTransaction() : LocalDate.now())
-                .createdBy(securityUtils.getCurrentUserId())
+                // Contexte système (webhook opérateur) : pas d'utilisateur authentifié.
+                .createdBy(currentUserIdOrNull())
                 .build();
         FinanceTransaction saved = transactionRepository.save(tx);
         // ===== PROPAGATION CENTRALISÉE =====
@@ -258,6 +259,19 @@ public class FinanceService {
     }
 
     /* -------------------------------- Helpers -------------------------------- */
+
+    /**
+     * Identifiant de l'utilisateur courant, ou null en contexte système
+     * (webhook opérateur non authentifié) — évite une exception qui marquerait
+     * la transaction « rollback-only » et ferait échouer la confirmation.
+     */
+    private UUID currentUserIdOrNull() {
+        try {
+            return securityUtils.getCurrentUserId();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     private Map<String, Object> toMap(FinanceTransaction t) {
         Map<String, Object> map = new LinkedHashMap<>();
