@@ -246,5 +246,4 @@ class _TontineScreenState extends State<TontineScreen> {
         ),
       ),
     ];
-  }
-}
+  }}
