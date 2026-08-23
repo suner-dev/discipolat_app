@@ -1,7 +1,8 @@
 package com.discipolat.modules.tickets.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
-import com.discipolat.common.infrastructure.api.TenantContext;
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.tickets.api.CreateTicketRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

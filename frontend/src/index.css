@@ -796,3 +796,81 @@
   font-size: 11px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
+
+/* ====== EXCELLENCE UI — lisibilité & typographie ======
+ * Corrections globales remontées en QA :
+ *  1) titres de colonnes trop serrés dans les tableaux ;
+ *  2) mots coupés aux tirets / césures parasites dans les libellés ;
+ *  3) débordements de textes longs dans les badges et cellules.
+ * ------------------------------------------------------------------ */
+
+/* Pas de césure automatique : un mot ne doit jamais être coupé avec un
+   tiret en fin de ligne (ex. « faiseur- » / « performance »). La césure
+   reste possible uniquement si un auteur la demande explicitement
+   (classe .hyphenate). */
+body,
+button,
+input,
+select,
+textarea,
+p,
+h1, h2, h3, h4, h5, h6,
+span, label, td, th, li, a {
+  hyphens: manual;
+  -webkit-hyphens: manual;
+  -moz-hyphens: manual;
+  -ms-hyphens: manual;
+}
+
+/* Les titres et libellés courts ne coupent jamais au milieu d'un mot :
+   ils passent à la ligne proprement sur les espaces. */
+h1, h2, h3, h4, h5, h6,
+button, label, th,
+.text-sm, .text-xs, .text-base, .font-medium, .font-semibold, .font-bold {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* Autorise la césure explicite là où c'est réellement utile (textes longs). */
+.hyphenate {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/* En-têtes de tableaux : aérés, alignés, jamais écrasés ni tronqués. */
+th {
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+/* Cellules : respiration verticale homogène. */
+td {
+  vertical-align: middle;
+}
+
+/* Dans les conteneurs très étroits (mobile), autorise le retour à la ligne
+   des en-têtes plutôt que l'écrasement : on relâche le nowrap. */
+@media (max-width: 400px) {
+  th {
+    white-space: normal;
+    min-width: 4.5rem;
+  }
+}
+
+/* Badges et puces : jamais coupés en deux mots arbitrairement. */
+.badge,
+.chip,
+[class*='rounded-full'] {
+  word-break: keep-all;
+}
+
+/* Em-dashes / tirets cadratins insécables : évite qu'un tiret isolé se
+   retrouve rejeté seul en début ou fin de ligne. */
+p, span, td, li, div {
+  text-wrap: pretty;
+}
+

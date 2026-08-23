@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { X, ChevronLeft, Church, Star as StarIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { navForRole, ROLE_META, type WorkspaceNavItem } from '@/workspaces';
+import { filterNavByRole } from '@/lib/routeAccess';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePlatformConfig, menusToSections } from '@/contexts/PlatformContext';
 import { resolveIcon } from '@/lib/menuIcons';
@@ -112,13 +113,25 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   // Espace métier du rôle actif : menus strictement dédiés au métier.
   // Les menus sont pilotés par la configuration (backend) quand elle est
   // disponible ; sinon repli sur la navigation statique (dégradé sans régression).
+  // FIX: les menus configurables sont TOUJOURS filtrés selon le rôle actif —
+  // sans ce filtre, un compte dont le rôle actif est FAISEUR voyait des menus
+  // Responsable/Admin qui rebondissaient vers son propre espace (boutons morts).
   const activeRole = user?.activeRole || user?.role || 'FAISEUR';
   const workspaceSections: NavSectionData[] = configMenus.length > 0
-    ? menusToSections(configMenus).map((s) => ({
+    ? (() => {
+        const sections = menusToSections(configMenus).map((s) => ({
+          title: s.title,
+          items: filterNavByRole(s.items.map(menuToNav), activeRole),
+        }));
+        const nonEmpty = sections.filter((s) => s.items.length > 0);
+        // Si la configuration ne laisse aucun menu accessible pour ce rôle,
+        // repli sur la navigation statique du rôle (jamais vide).
+        return nonEmpty.length > 0 ? nonEmpty : navForRole(activeRole) as NavSectionData[];
+      })()
+    : navForRole(activeRole).map((s) => ({
         title: s.title,
-        items: s.items.map(menuToNav),
-      }))
-    : navForRole(activeRole);
+        items: filterNavByRole(s.items, activeRole),
+      })).filter((s) => s.items.length > 0) as NavSectionData[];
   const meta = ROLE_META[activeRole as keyof typeof ROLE_META] || ROLE_META.FAISEUR;
 
   return (

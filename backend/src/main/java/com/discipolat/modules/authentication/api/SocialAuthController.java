@@ -80,7 +80,7 @@ public class SocialAuthController {
         try {
             // Chercher ou créer l'utilisateur (rôle par défaut MEMBRE, mot de passe
             // aléatoire non communiqué : la connexion passe exclusivement par Google).
-            User user = userService.findByEmail(email).orElse(null);
+            User user = userService.findByEmail(email);
             if (user == null) {
                 user = User.builder()
                         .email(email)

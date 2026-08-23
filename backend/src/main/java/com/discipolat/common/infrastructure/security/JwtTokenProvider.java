@@ -1,5 +1,6 @@
 package com.discipolat.common.infrastructure.security;
 
+import com.discipolat.modules.users.domain.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.slf4j.Logger;
@@ -123,6 +124,21 @@ public class JwtTokenProvider {
                 .expiration(Date.from(Instant.now().plus(Duration.ofDays(REFRESH_TOKEN_VALIDITY_DAYS))))
                 .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
+    }
+
+    /**
+     * Convenience : génère un access token complet depuis une entité User
+     * (utilisé par le flux OAuth Google).
+     */
+    public String generateToken(User user) {
+        String activeRole = user.getActiveRole() != null
+                ? user.getActiveRole().name()
+                : user.getRole().name();
+        java.util.Set<String> rolesSet = user.getRoles() != null
+                ? user.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet())
+                : java.util.Collections.emptySet();
+        return generateAccessToken(user.getId(), user.getEmail(), activeRole,
+                rolesSet, user.isEstChefDeFamille(), user.getTenantId());
     }
 
     public java.util.List<String> extractRoles(String token) {

@@ -231,6 +231,47 @@ const fr = {
   'onboarding.step3': 'Structure',
   'onboarding.step4': 'Rôles',
   'onboarding.step5': 'Premier événement',
+
+  // Streaming
+  'nav.streaming': 'Streaming & Live',
+  'streaming.live': 'En direct',
+  'streaming.scheduled': 'Planifié',
+  'streaming.ended': 'Terminé',
+
+  // Broadcast
+  'nav.broadcast': 'Diffusion / Broadcast',
+  'broadcast.new': 'Nouveau broadcast',
+  'broadcast.send': 'Envoyer',
+  'broadcast.draft': 'Brouillon',
+
+  // Inventory
+  'nav.inventory': 'Inventaire intelligent',
+  'inventory.lowStock': 'Stock bas',
+  'inventory.categories': 'Catégories',
+
+  // Department KPIs
+  'nav.departmentKpis': 'KPIs Départementaux',
+  'kpi.progress': 'Progression',
+  'kpi.target': 'Objectif',
+
+  // Rewards
+  'nav.rewards': 'Récompenses & Gamification',
+  'rewards.points': 'Mes points',
+  'rewards.claimed': 'Obtenu',
+  'rewards.locked': 'Verrouillé',
+
+  // Marketplace
+  'nav.marketplace': 'Marketplace communautaire',
+  'marketplace.offer': 'Offre',
+  'marketplace.request': 'Demande',
+  'marketplace.service': 'Service',
+  'marketplace.free': 'Gratuit',
+
+  // Community
+  'nav.community': 'Communauté',
+  'community.testimony': 'Témoignage',
+  'community.prayer': 'Prière',
+  'community.encouragement': 'Encouragement',
 };
 
 export default fr;

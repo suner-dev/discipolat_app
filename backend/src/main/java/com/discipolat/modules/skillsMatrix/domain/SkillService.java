@@ -1,6 +1,6 @@
 package com.discipolat.modules.skillsMatrix.domain;
 
-import com.discipolat.common.infrastructure.api.TenantContext;
+import com.discipolat.common.multitenancy.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

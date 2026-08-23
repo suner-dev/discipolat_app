@@ -166,6 +166,47 @@ const pt: Record<string, string> = {
   'onboarding.step3': 'Estrutura',
   'onboarding.step4': 'Funções',
   'onboarding.step5': 'Primeiro evento',
+
+  // Streaming
+  'nav.streaming': 'Streaming ao Vivo',
+  'streaming.live': 'Ao vivo',
+  'streaming.scheduled': 'Agendado',
+  'streaming.ended': 'Encerrado',
+
+  // Broadcast
+  'nav.broadcast': 'Difusão / Broadcast',
+  'broadcast.new': 'Nova difusão',
+  'broadcast.send': 'Enviar',
+  'broadcast.draft': 'Rascunho',
+
+  // Inventory
+  'nav.inventory': 'Inventário Inteligente',
+  'inventory.lowStock': 'Estoque Baixo',
+  'inventory.categories': 'Categorias',
+
+  // Department KPIs
+  'nav.departmentKpis': 'KPIs Departamentais',
+  'kpi.progress': 'Progresso',
+  'kpi.target': 'Meta',
+
+  // Rewards
+  'nav.rewards': 'Recompensas & Gamificação',
+  'rewards.points': 'Meus pontos',
+  'rewards.claimed': 'Conquistado',
+  'rewards.locked': 'Bloqueado',
+
+  // Marketplace
+  'nav.marketplace': 'Marketplace Comunitário',
+  'marketplace.offer': 'Oferta',
+  'marketplace.request': 'Demanda',
+  'marketplace.service': 'Serviço',
+  'marketplace.free': 'Grátis',
+
+  // Community
+  'nav.community': 'Comunidade',
+  'community.testimony': 'Testemunho',
+  'community.prayer': 'Oração',
+  'community.encouragement': 'Encorajamento',
 };
 
 export default pt;

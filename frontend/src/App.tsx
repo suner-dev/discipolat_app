@@ -126,6 +126,13 @@ const PrayerJournalPage = lazy(() => import('@/pages/PrayerJournalPage'));
 const SpiritualChallengesPage = lazy(() => import('@/pages/SpiritualChallengesPage'));
 const ChurchDirectoryPage = lazy(() => import('@/pages/ChurchDirectoryPage'));
 const SpiritualJourneyPage = lazy(() => import('@/pages/SpiritualJourneyPage'));
+const StreamingPage = lazy(() => import('@/pages/StreamingPage'));
+const BroadcastPage = lazy(() => import('@/pages/BroadcastPage'));
+const InventoryPage = lazy(() => import('@/pages/InventoryPage'));
+const DepartmentKPIsPage = lazy(() => import('@/pages/DepartmentKPIsPage'));
+const RewardsPage = lazy(() => import('@/pages/RewardsPage'));
+const MarketplacePage = lazy(() => import('@/pages/MarketplacePage'));
+const CommunityPage = lazy(() => import('@/pages/CommunityPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -161,7 +168,10 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
     || (currentRole && (roles.includes(currentRole)
         || (currentRole === 'ADMIN' && roles.includes('PASTEUR'))));
   if (!allowed) {
-    return <Navigate to="/dashboard" replace />;
+    // Redirection directe vers l'espace métier du rôle actif (au lieu de
+    // /dashboard qui re-redirige) : un menu jamais accessible au rôle actif
+    // ne doit pas donner l'impression d'un bouton mort vers le CRM Faiseur.
+    return <Navigate to={WORKSPACE_HOME[(currentRole || 'FAISEUR') as UserRole] || '/dashboard'} replace />;
   }
 
   return <>{children}</>;
@@ -745,6 +755,41 @@ export default function App() {
           <Route path="/spiritual-journey" element={
             <ProtectedRoute>
               <SpiritualJourneyPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/streaming" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <StreamingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/broadcast" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <BroadcastPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/inventory" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <InventoryPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/department-kpis" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <DepartmentKPIsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/rewards" element={
+            <ProtectedRoute>
+              <RewardsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/marketplace" element={
+            <ProtectedRoute>
+              <MarketplacePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/community" element={
+            <ProtectedRoute>
+              <CommunityPage />
             </ProtectedRoute>
           } />
         </Route>

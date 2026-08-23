@@ -68,4 +68,19 @@ public class EmailService {
             log.error("Failed to send password reset email to {}: {}", to, e.getMessage());
         }
     }
+
+    /** Envoie un email simple (utilisé par le magic link & flow OAuth). */
+    public void send(String to, String subject, String body) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+            mailSender.send(message);
+            log.info("Email sent to {}: {}", to, subject);
+        } catch (Exception e) {
+            log.error("Failed to send email to {}: {}", to, e.getMessage());
+        }
+    }
 }

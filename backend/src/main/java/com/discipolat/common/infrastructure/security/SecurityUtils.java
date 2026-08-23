@@ -1,6 +1,7 @@
 package com.discipolat.common.infrastructure.security;
 
 import com.discipolat.common.exception.UnauthorizedException;
+import com.discipolat.common.multitenancy.TenantContext;
 import io.jsonwebtoken.Claims;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,7 +19,12 @@ public class SecurityUtils {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    public UUID getCurrentUserId() {
+        /**
+     * Returns the current authenticated user's ID.
+     * Static so it can be used both via an injected bean
+     * (`securityUtils.getCurrentUserId()`) and statically in controllers.
+     */
+    public static UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || "anonymousUser".equals(authentication.getPrincipal())
@@ -37,17 +43,15 @@ public class SecurityUtils {
     }
 
     /**
-     * Returns the current tenant ID from the JWT token.
-     * Used for multi-tenant isolation.
+     * Returns the current tenant ID from the tenant context (set by the
+     * TenantInterceptor from the JWT claim). Static for direct service use.
      */
-    public UUID getCurrentTenantId() {
-        String token = getCurrentJwtToken();
-        if (token != null) {
-            try {
-                return jwtTokenProvider.extractTenantId(token);
-            } catch (Exception ignored) {}
+    public static UUID getCurrentTenantId() {
+        try {
+            return TenantContext.requireTenantId();
+        } catch (IllegalStateException e) {
+            return null;
         }
-        return null;
     }
 
     public boolean isAuthenticated() {

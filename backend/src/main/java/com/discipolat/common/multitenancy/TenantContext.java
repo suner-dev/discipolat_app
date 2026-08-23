@@ -33,6 +33,11 @@ public final class TenantContext {
         return CURRENT_TENANT.get();
     }
 
+    /** Alias demandé par les services métier (modules calendar, tickets, …). */
+    public static UUID getCurrentTenantId() {
+        return CURRENT_TENANT.get();
+    }
+
     public static UUID requireTenantId() {
         UUID tenantId = CURRENT_TENANT.get();
         if (tenantId == null) {
@@ -45,3 +50,4 @@ public final class TenantContext {
         CURRENT_TENANT.remove();
     }
 }
+

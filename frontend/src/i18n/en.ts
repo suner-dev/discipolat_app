@@ -231,6 +231,47 @@ const en: Record<string, string> = {
   'onboarding.step3': 'Structure',
   'onboarding.step4': 'Roles',
   'onboarding.step5': 'First event',
+
+  // Streaming
+  'nav.streaming': 'Streaming & Live',
+  'streaming.live': 'Live',
+  'streaming.scheduled': 'Scheduled',
+  'streaming.ended': 'Ended',
+
+  // Broadcast
+  'nav.broadcast': 'Broadcast Messaging',
+  'broadcast.new': 'New broadcast',
+  'broadcast.send': 'Send',
+  'broadcast.draft': 'Draft',
+
+  // Inventory
+  'nav.inventory': 'Smart Inventory',
+  'inventory.lowStock': 'Low Stock',
+  'inventory.categories': 'Categories',
+
+  // Department KPIs
+  'nav.departmentKpis': 'Department KPIs',
+  'kpi.progress': 'Progress',
+  'kpi.target': 'Target',
+
+  // Rewards
+  'nav.rewards': 'Rewards & Gamification',
+  'rewards.points': 'My points',
+  'rewards.claimed': 'Claimed',
+  'rewards.locked': 'Locked',
+
+  // Marketplace
+  'nav.marketplace': 'Community Marketplace',
+  'marketplace.offer': 'Offer',
+  'marketplace.request': 'Request',
+  'marketplace.service': 'Service',
+  'marketplace.free': 'Free',
+
+  // Community
+  'nav.community': 'Community',
+  'community.testimony': 'Testimony',
+  'community.prayer': 'Prayer',
+  'community.encouragement': 'Encouragement',
 };
 
 export default en;

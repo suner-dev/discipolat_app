@@ -10,7 +10,13 @@ const FLAG_EMOJI: Record<Locale, string> = {
   sw: '🇰🇪',
 };
 
-export default function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  /** Mode compact : drapeaux inline (utilisé dans les menus déroulants où un
+   * sous-menu absolu serait tronqué par `overflow-hidden`). */
+  compact?: boolean;
+}
+
+export default function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
   const { locale, setLocale, availableLocales } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -26,6 +32,30 @@ export default function LanguageSwitcher() {
   }, []);
 
   const current = availableLocales.find((l) => l.code === locale);
+
+  // Mode compact : sélection directe par drapeau, sans sous-menu.
+  if (compact) {
+    return (
+      <div ref={ref} className="flex items-center gap-0.5" role="group" aria-label="Choix de la langue">
+        {availableLocales.map((l) => (
+          <button
+            key={l.code}
+            onClick={(e) => { e.stopPropagation(); setLocale(l.code); }}
+            title={l.label}
+            aria-label={l.label}
+            aria-pressed={l.code === locale}
+            className={`px-1.5 py-1 rounded-lg text-base leading-none transition-all duration-150
+              ${l.code === locale
+                ? 'bg-primary-500/15 ring-1 ring-primary-500/40 scale-105'
+                : 'opacity-50 hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+          >
+            {FLAG_EMOJI[l.code]}
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div ref={ref} className="relative">

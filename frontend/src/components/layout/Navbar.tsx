@@ -15,6 +15,7 @@ import {
   Sparkles,
   ShieldCheck,
   CheckCircle2,
+  Globe,
 } from 'lucide-react';
 import { WORKSPACE_HOME, ROLE_META, roleIcon } from '@/workspaces';
 import BetaBadge from '@/components/beta/BetaBadge';
@@ -313,13 +314,27 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                   )}
                 </div>
 
+                <div className="border-t border-gray-100/50 dark:border-gray-700/30 mt-1 pt-1">
+                  {/* Sélecteur de langue — ligne dédiée (FIX: il était imbriqué
+                      dans le bouton Déconnexion, masquait son icône et le clic
+                      sur une langue provoquait la déconnexion). */}
+                  <div className="px-4 py-2 flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                      <Globe className="w-4 h-4 text-gray-400" />
+                      Langue
+                    </span>
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <LanguageSwitcher compact />
+                    </span>
+                  </div>
+                </div>
+
                 <div className="border-t border-gray-100/50 dark:border-gray-700/30 pt-1">
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400
                              hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-colors"
                   >
-                    <LanguageSwitcher />
                     <LogOut className="w-4 h-4" />
                     Déconnexion
                   </button>

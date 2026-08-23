@@ -1,7 +1,7 @@
 package com.discipolat.modules.gantt.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
-import com.discipolat.common.infrastructure.api.TenantContext;
+import com.discipolat.common.multitenancy.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class AuthService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuthService.class);
+
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 30;
     private static final int PASSWORD_RESET_VALIDITY_MINUTES = 30;
@@ -114,10 +116,13 @@ public class AuthService {
             user.setRoles(roles);
         }
 
-        // Set active role to default (highest priority)
-        if (user.getActiveRole() == null) {
-            user.setActiveRole(getDefaultActiveRole(user));
-        }
+        // Set active role to default (highest priority) at every login.
+        // FIX: un rôle actif obsolète (ex: FAISEUR persisté pour un compte
+        // RESPONSABLE) provoquait une redirection de tous les menus vers le
+        // mauvais espace métier. Le rôle actif repart toujours du rôle
+        // prioritaire à chaque connexion ; l'utilisateur peut ensuite changer
+        // de rôle via /auth/switch-role pendant sa session.
+        user.setActiveRole(getDefaultActiveRole(user));
         userRepository.save(user);
 
         String activeRoleStr = user.getActiveRole().name();
