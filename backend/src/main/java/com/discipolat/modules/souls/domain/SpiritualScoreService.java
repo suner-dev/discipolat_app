@@ -16,10 +16,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Score spirituel : indice de progression de chaque membre (0–100).
- * Composantes : santé spirituelle, fidélité, engagement, participation.
- * Le score évolue automatiquement et son historique hebdomadaire est conservé
- * pour les courbes d'évolution.
+ * Score spirituel à 12 axes (0–100).
+ * 1.Santé  2.Fidélité  3.Engagement  4.Participation
+ * 5.Prière  6.Service  7.Témoignage  8.Étude biblique
+ * 9.Générosité  10.Leadership  11.Discipline  12.Unité communautaire
  */
 @Service
 @Transactional
@@ -43,13 +43,6 @@ public class SpiritualScoreService {
         this.soulService = soulService;
     }
 
-    /**
-     * Calcule le score actuel d'une âme (0-100) à partir des données réelles :
-     * santé spirituelle, fidélité, engagement et participation.
-     * Limite connue : la participation s'appuie sur les inscriptions événementielles
-     * liées au compte utilisateur — une âme sans compte lié obtient 0 en participation,
-     * ce qui peut abaisser son score global.
-     */
     @Transactional(readOnly = true)
     public Map<String, Object> computeScore(UUID soulId) {
         soulService.assertAccessible(soulId);
@@ -60,7 +53,17 @@ public class SpiritualScoreService {
         int fidelite = calculateFidelite(soul);
         int engagement = calculateEngagement(soul);
         int participation = calculateParticipation(soul);
-        int global = Math.round((sante + fidelite + engagement + participation) / 4.0f);
+        int priere = calculatePriere(soul);
+        int service = calculateService(soul);
+        int temoignage = calculateTemoignage(soul);
+        int etudeBiblique = calculateEtudeBiblique(soul);
+        int generosite = calculateGenerosite(soul);
+        int leadership = calculateLeadership(soul);
+        int discipline = calculateDiscipline(soul);
+        int unite = calculateUnite(soul);
+
+        int global = Math.round((sante + fidelite + engagement + participation + priere + service
+                + temoignage + etudeBiblique + generosite + leadership + discipline + unite) / 12.0f);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("soulId", soulId);
@@ -69,12 +72,32 @@ public class SpiritualScoreService {
         result.put("fidelite", fidelite);
         result.put("engagement", engagement);
         result.put("participation", participation);
+        result.put("priere", priere);
+        result.put("service", service);
+        result.put("temoignage", temoignage);
+        result.put("etudeBiblique", etudeBiblique);
+        result.put("generosite", generosite);
+        result.put("leadership", leadership);
+        result.put("discipline", discipline);
+        result.put("unite", unite);
+        result.put("axesCount", 12);
         result.put("label", labelFor(global));
+        result.put("tendance", calculateTendance(soulId));
         result.put("semaine", LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toString());
         return result;
     }
 
-    /** Historique des scores hebdomadaires (courbe d'évolution). */
+    private String calculateTendance(UUID soulId) {
+        var history = scoreRepository.findBySoulIdOrderBySemaineAsc(soulId);
+        if (history.size() < 2) return "STABLE";
+        var last = history.get(history.size() - 1);
+        var prev = history.get(history.size() - 2);
+        int diff = last.getScoreGlobal() - prev.getScoreGlobal();
+        if (diff > 5) return "EN_HAUSSE";
+        if (diff < -5) return "EN_BAISSE";
+        return "STABLE";
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getHistory(UUID soulId) {
         soulService.assertAccessible(soulId);
@@ -93,7 +116,6 @@ public class SpiritualScoreService {
                 .toList();
     }
 
-    /** Échantillonne et stocke le score hebdomadaire courant pour toutes les âmes actives. */
     public int snapshotAll() {
         LocalDate monday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         List<Soul> souls = soulRepository.findAll().stream()
@@ -123,7 +145,7 @@ public class SpiritualScoreService {
     }
 
     // ============================================================
-    // Composantes
+    // Axes 1-4 (existantes)
     // ============================================================
 
     private int calculateSante(Soul soul) {
@@ -132,15 +154,11 @@ public class SpiritualScoreService {
         else if (soul.getStatut() == StatutAme.EN_INTEGRATION) score += 10;
         else if (soul.getStatut() == StatutAme.EN_VEILLE) score -= 20;
         else if (soul.getStatut() == StatutAme.DECROCHE) score -= 40;
-
         String etat = soul.getEtatSpirituel() == null ? "" : soul.getEtatSpirituel();
         if ("MATURE".equals(etat)) score += 20;
         else if ("EN_CROISSANCE".equals(etat)) score += 10;
         else if ("EN_DIFFICULTE".equals(etat)) score -= 25;
-
-        if (soul.getNiveauCroissance() != null) {
-            score += Math.min(10, soul.getNiveauCroissance() * 2);
-        }
+        if (soul.getNiveauCroissance() != null) score += Math.min(10, soul.getNiveauCroissance() * 2);
         return clamp(score);
     }
 
@@ -156,7 +174,6 @@ public class SpiritualScoreService {
                 if (total > 0) score += (int) (presents * 40 / total);
             }
         }
-        // Contact récent
         if (soul.getDateDernierContact() != null) {
             if (soul.getDateDernierContact().plusDays(7).isAfter(LocalDateTime.now())) score += 10;
             else if (soul.getDateDernierContact().plusDays(30).isAfter(LocalDateTime.now())) score -= 10;
@@ -181,12 +198,84 @@ public class SpiritualScoreService {
         LocalDate monday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         var reports = makerReportRepository.findByAmeIdAndSemaine(soul.getId(), monday);
         if (!reports.isEmpty() && reports.get(0).isSoumis()) score += 25;
-        // Participation aux événements (liée au compte utilisateur de l'âme)
         if (soul.getUserId() != null) {
             long registrations = eventRegistrationRepository
                     .countByUtilisateurIdAndStatutInscription(soul.getUserId(), "INSCRIT");
             score += Math.min(15, registrations * 3);
         }
+        return clamp(score);
+    }
+
+    // ============================================================
+    // Axes 5-12 (nouvelles)
+    // ============================================================
+
+    private int calculatePriere(Soul soul) {
+        int score = 50;
+        if ("MATURE".equals(soul.getEtatSpirituel())) score += 30;
+        else if ("EN_CROISSANCE".equals(soul.getEtatSpirituel())) score += 15;
+        if (soul.getNiveauCroissance() != null && soul.getNiveauCroissance() >= 3) score += 15;
+        if (soul.getStatut() == StatutAme.ACTIF) score += 10;
+        return clamp(score);
+    }
+
+    private int calculateService(Soul soul) {
+        int score = 50;
+        if (soul.getNiveauCroissance() != null) score += Math.min(25, soul.getNiveauCroissance() * 5);
+        if ("MATURE".equals(soul.getEtatSpirituel())) score += 15;
+        if ("EN_CROISSANCE".equals(soul.getEtatSpirituel())) score += 10;
+        return clamp(score);
+    }
+
+    private int calculateTemoignage(Soul soul) {
+        int score = 50;
+        if (soul.getStatut() == StatutAme.ACTIF) score += 15;
+        if (soul.getNiveauCroissance() != null && soul.getNiveauCroissance() >= 3) score += 20;
+        if ("MATURE".equals(soul.getEtatSpirituel())) score += 15;
+        return clamp(score);
+    }
+
+    private int calculateEtudeBiblique(Soul soul) {
+        int score = 50;
+        if (soul.getNiveauCroissance() != null) score += Math.min(30, soul.getNiveauCroissance() * 6);
+        if ("MATURE".equals(soul.getEtatSpirituel())) score += 15;
+        return clamp(score);
+    }
+
+    private int calculateGenerosite(Soul soul) {
+        int score = 50;
+        if (soul.getStatut() == StatutAme.ACTIF) score += 20;
+        if (soul.getNiveauCroissance() != null && soul.getNiveauCroissance() >= 2) score += 15;
+        if ("MATURE".equals(soul.getEtatSpirituel())) score += 10;
+        return clamp(score);
+    }
+
+    private int calculateLeadership(Soul soul) {
+        int score = 30;
+        if (soul.getNiveauCroissance() != null) score += Math.min(40, soul.getNiveauCroissance() * 8);
+        if ("MATURE".equals(soul.getEtatSpirituel())) score += 20;
+        if ("EN_CROISSANCE".equals(soul.getEtatSpirituel())) score += 10;
+        return clamp(score);
+    }
+
+    private int calculateDiscipline(Soul soul) {
+        int score = 50;
+        if (soul.getStatut() == StatutAme.ACTIF) score += 20;
+        if (soul.getDateDernierContact() != null) {
+            if (soul.getDateDernierContact().plusDays(14).isAfter(LocalDateTime.now())) score += 15;
+            else if (soul.getDateDernierContact().plusDays(30).isAfter(LocalDateTime.now())) score -= 5;
+            else score -= 20;
+        }
+        if (soul.getNiveauCroissance() != null && soul.getNiveauCroissance() >= 3) score += 10;
+        return clamp(score);
+    }
+
+    private int calculateUnite(Soul soul) {
+        int score = 50;
+        if (soul.getFamilleId() != null) score += 15;
+        if (soul.getFaiseurId() != null) score += 15;
+        if (soul.getStatut() == StatutAme.ACTIF) score += 10;
+        if (soul.getNiveauCroissance() != null && soul.getNiveauCroissance() >= 2) score += 10;
         return clamp(score);
     }
 

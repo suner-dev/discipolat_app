@@ -60,4 +60,9 @@ public class TontineController {
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.stats());
     }
+
+    @GetMapping("/{id}/dashboard")
+    public ResponseEntity<Map<String, Object>> dashboard(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.getDashboard(id));
+    }
 }

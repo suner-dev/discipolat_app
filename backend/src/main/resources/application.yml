@@ -78,6 +78,13 @@ app:
   cors:
     allowed-origins: ${FRONTEND_URL:http://localhost:3000,http://localhost:5173}
   frontend-url: ${FRONTEND_URL_BASE:http://localhost:5173}
+  whatsapp:
+    # Pont WhatsApp Business Cloud API — désactivé tant que les credentials Meta ne sont pas fournis.
+    enabled: ${WHATSAPP_ENABLED:false}
+  encryption:
+    # Clé AES-256 (base64, 32 octets) pour le chiffrement au repos des données sensibles.
+    # Générer avec : openssl rand -base64 32
+    aes-key: ${ENCRYPTION_AES_KEY:ZGVmYXVsdC1kZXZlbG9wbWVudC1rZXktMzItYnl0ZXMhIQ==}
   rate-limiting:
     # Redis connection URL for distributed rate limiting
     redis-url: ${REDIS_URL:redis://localhost:6379}

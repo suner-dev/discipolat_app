@@ -49,5 +49,23 @@ public final class TenantContext {
     public static void clear() {
         CURRENT_TENANT.remove();
     }
+
+    /**
+     * Exécute un traitement dans le contexte d'un tenant donné puis restaure
+     * l'état précédent. Utilisé par les webhooks publics et les jobs multi-tenants.
+     */
+    public static void runAsTenant(UUID tenantId, Runnable action) {
+        UUID previous = CURRENT_TENANT.get();
+        try {
+            CURRENT_TENANT.set(tenantId);
+            action.run();
+        } finally {
+            if (previous != null) {
+                CURRENT_TENANT.set(previous);
+            } else {
+                CURRENT_TENANT.remove();
+            }
+        }
+    }
 }
 

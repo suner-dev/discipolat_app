@@ -71,8 +71,8 @@ public class SecurityConfig {
                 // Actuator: health public (for load balancer / Render healthcheck), details only when authenticated
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR")
-                // Swagger: restrict in production
-                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAnyRole("ADMIN", "PASTEUR")
+                // Swagger: public for API consumers (read-only docs)
+                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)

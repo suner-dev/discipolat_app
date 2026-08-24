@@ -45,4 +45,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     long countByRole(UserRole role);
 
     Optional<User> findByFamilleGereeIdAndEstChefDeFamilleTrue(UUID familleId);
+
+    List<User> findByTenantIdAndWhatsappOptInTrue(UUID tenantId);
+
+    Optional<User> findByTenantIdAndPhone(UUID tenantId, String phone);
 }

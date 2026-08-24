@@ -102,6 +102,7 @@ const HealthObservatoryPage = lazy(() => import('@/pages/HealthObservatoryPage')
 const TontinePage = lazy(() => import('@/pages/TontinePage'));
 const GivingPage = lazy(() => import('@/pages/GivingPage'));
 const AdminWebhooksPage = lazy(() => import('@/pages/AdminWebhooksPage'));
+const AdminWhatsappPage = lazy(() => import('@/pages/AdminWhatsappPage'));
 const DigitalTwinPage = lazy(() => import('@/pages/DigitalTwinPage'));
 const PropheticJournalPage = lazy(() => import('@/pages/PropheticJournalPage'));
 const SermonAssistantPage = lazy(() => import('@/pages/SermonAssistantPage'));
@@ -501,6 +502,11 @@ export default function App() {
           <Route path="/kingdom-map" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
               <KingdomMappingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/whatsapp" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <AdminWhatsappPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/webhooks" element={

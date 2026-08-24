@@ -287,6 +287,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Configuration workflow', href: '/admin/transfers', icon: Workflow, subtitle: 'Circuits de validation' },
       { name: 'Intégrations', href: '/admin/integrations', icon: Globe, subtitle: 'SMTP, stockage, API' },
       { name: 'Webhooks & API', href: '/admin/webhooks', icon: WebhookIcon, subtitle: 'Connecteur écosystème' },
+      { name: 'Pont WhatsApp', href: '/admin/whatsapp', icon: MessageCircle, subtitle: 'Diffusion & commandes' },
       { name: 'API & Documentation', href: '/api-docs', icon: Code, subtitle: 'Clés API & Swagger' },
       { name: 'Conformité RGPD', href: '/admin/compliance', icon: ShieldCheck, subtitle: 'Rétention & portabilité' },
       { name: 'Onboarding wizard', href: '/onboarding-wizard', icon: Rocket, subtitle: 'Configuration église' },

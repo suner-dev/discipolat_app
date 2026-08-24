@@ -197,6 +197,52 @@ public class TontineService {
         return stats;
     }
 
+    /**
+     * Dashboard tontine : santé du groupe, contributions, impayés, rotation.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getDashboard(UUID groupId) {
+        TontineGroup group = findGroup(groupId);
+        Map<String, Object> dashboard = new LinkedHashMap<>();
+        dashboard.put("groupId", groupId);
+        dashboard.put("groupName", group.getName());
+        dashboard.put("statut", group.getStatut().name());
+        dashboard.put("montantParTour", group.getMontantParTour());
+        dashboard.put("periodicite", group.getPeriodicite().name());
+
+        var members = memberRepository.findByGroupIdOrderByOrdrePassageAsc(groupId);
+        dashboard.put("totalMembers", members.size());
+        dashboard.put("activeMembers", members.size());
+        dashboard.put("nextRecipient", members.stream()
+                .filter(m -> !m.isARecuTour())
+                .min(Comparator.comparingInt(TontineMember::getOrdrePassage))
+                .map(TontineMember::getNom)
+                .orElse("Aucun"));
+
+        // Contributions
+        var contributions = contributionRepository.findByGroupIdAndTourOrderByMemberIdAsc(groupId, group.getTourActuel());
+        dashboard.put("totalContributions", contributions.size());
+        long totalCollected = contributions.stream()
+                .filter(TontineContribution::isPaye)
+                .mapToLong(c -> c.getMontant().longValue())
+                .sum();
+        dashboard.put("totalCollected", totalCollected);
+        dashboard.put("expectedPerPeriod", group.getMontantParTour().longValue() * members.size());
+
+        // Impayés
+        var unpaid = contributions.stream().filter(c -> !c.isPaye()).toList();
+        dashboard.put("pendingPayments", unpaid.size());
+        dashboard.put("overduePayments", 0);
+
+        // Rotation
+        dashboard.put("tourActuel", group.getTourActuel());
+        long receivedCount = members.stream().filter(TontineMember::isARecuTour).count();
+        dashboard.put("toursCompleted", receivedCount);
+        dashboard.put("totalTours", members.size());
+
+        return dashboard;
+    }
+
     private TontineGroup findGroup(UUID id) {
         return groupRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("TontineGroup", id));

@@ -97,6 +97,15 @@ public class User {
     @Column(name = "two_factor_backup_codes")
     private String twoFactorBackupCodes;
 
+    /** Opt-in diffusion WhatsApp (annonces, rappels). */
+    @Builder.Default
+    @Column(name = "whatsapp_opt_in", nullable = false)
+    private boolean whatsappOptIn = false;
+
+    /** Fuseau horaire préféré (ex. Africa/Abidjan). */
+    @Column(name = "timezone", length = 64)
+    private String timezone;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
