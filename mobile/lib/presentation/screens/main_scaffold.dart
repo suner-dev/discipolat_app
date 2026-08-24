@@ -156,7 +156,9 @@ class _MorePage extends StatelessWidget {
         // Analytics
         _moreItem(context, Icons.analytics, 'Analytics engagement', 'Pages vues & funnel', route: '/engagement-analytics'),
         _moreItem(context, Icons.insights, 'Prédictions ML', 'Séries historiques', route: '/predictions'),
+        _moreItem(context, Icons.health_and_safety, 'Observatoire santé', 'Décrochage & tendance', route: '/health-observatory'),
         _moreItem(context, Icons.dashboard, 'Centre intelligence', '50+ KPIs temps réel', route: '/intelligence-center'),
+        _moreItem(context, Icons.account_tree, 'Jumeau numérique', 'Simulations croissance', route: '/digital-twin'),
         _moreItem(context, Icons.leaderboard, 'Insights exécutifs', 'Dashboard IA', route: '/executive-insights'),
         // Opérationnel
         _moreItem(context, Icons.checklist, 'Checklist événement', 'Tâches auto-générées', route: '/event-checklist'),

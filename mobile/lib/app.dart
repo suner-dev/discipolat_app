@@ -107,7 +107,9 @@ import 'presentation/screens/skill_matching/skill_matching_screen.dart';
 import 'presentation/screens/executive_insights/executive_insights_screen.dart';
 import 'presentation/screens/ai_visit_notes/ai_visit_notes_screen.dart';
 import 'presentation/screens/predictions/predictions_screen.dart';
+import 'presentation/screens/predictions/health_observatory_screen.dart';
 import 'presentation/screens/intelligence/intelligence_center_screen.dart';
+import 'presentation/screens/intelligence/digital_twin_screen.dart';
 import 'presentation/screens/engagement/analytics_screen.dart';
 import 'presentation/screens/mentoring/ai_mentoring_screen.dart';
 import 'presentation/screens/succession/succession_screen.dart';
@@ -332,6 +334,8 @@ Map<String, List<String>> _routeRoles = {
   '/admin/tenants': ['ADMIN'],
   '/security-settings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/onboarding': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/health-observatory': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  '/digital-twin': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
 };
 
 final appRouter = GoRouter(
@@ -907,7 +911,9 @@ final appRouter = GoRouter(
     GoRoute(path: '/executive-insights', name: 'executive-insights', builder: (ctx, s) => const ExecutiveInsightsScreen()),
     GoRoute(path: '/ai-visit-notes', name: 'ai-visit-notes', builder: (ctx, s) => const AiVisitNotesScreen()),
     GoRoute(path: '/predictions', name: 'predictions', builder: (ctx, s) => const PredictionsScreen()),
+    GoRoute(path: '/health-observatory', name: 'health-observatory', builder: (ctx, s) => const HealthObservatoryScreen()),
     GoRoute(path: '/intelligence-center', name: 'intelligence-center', builder: (ctx, s) => const IntelligenceCenterScreen()),
+    GoRoute(path: '/digital-twin', name: 'digital-twin', builder: (ctx, s) => const DigitalTwinScreen()),
     GoRoute(path: '/engagement-analytics', name: 'engagement-analytics', builder: (ctx, s) => const EngagementAnalyticsScreen()),
     GoRoute(path: '/ai-mentoring', name: 'ai-mentoring', builder: (ctx, s) => const AiMentoringScreen()),
     GoRoute(path: '/succession', name: 'succession', builder: (ctx, s) => const SuccessionScreen()),

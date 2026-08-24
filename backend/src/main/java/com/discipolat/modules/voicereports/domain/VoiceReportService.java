@@ -125,4 +125,118 @@ public class VoiceReportService {
         }
         return sb.append("]").toString();
     }
+
+    /**
+     * P14 — Génère un rapport structuré Markdown à partir des entités extraites.
+     */
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Object> generateStructuredReport(java.util.UUID reportId) {
+        VoiceReport report = repository.findById(reportId)
+                .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("VoiceReport", reportId));
+
+        String entities = report.getExtractedEntities();
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("id", report.getId());
+        result.put("authorId", report.getAuthorId());
+        result.put("createdAt", report.getCreatedAt().toString());
+        result.put("durationSeconds", report.getDurationSeconds());
+
+        // Parse extracted entities JSON
+        String personnes = extractJsonArray(entities, "personnes");
+        String humeur = extractJsonValue(entities, "humeur");
+        String besoinsPriere = extractJsonValue(entities, "besoinPriere");
+        String actions = extractJsonArray(entities, "actions");
+
+        // Build structured markdown
+        StringBuilder md = new StringBuilder();
+        md.append("# Rapport Pastoral Structuré\n\n");
+        md.append("**Date :** ").append(report.getCreatedAt() != null ? report.getCreatedAt().toLocalDate() : "N/A").append("\n");
+        md.append("**Durée :** ").append(report.getDurationSeconds()).append(" secondes\n\n");
+
+        if (!personnes.isEmpty()) {
+            md.append("## Personnes mentionnées\n");
+            for (String p : personnes.split(",")) {
+                md.append("- ").append(p.trim()).append("\n");
+            }
+            md.append("\n");
+        }
+
+        if (!humeur.isEmpty()) {
+            md.append("## Humeur dominante\n");
+            md.append(humeur).append("\n\n");
+        }
+
+        if ("true".equals(besoinsPriere)) {
+            md.append("## Besoins de prière\n");
+            md.append("Oui — des personnes mentionnées ont besoin de prière.\n\n");
+        }
+
+        if (!actions.isEmpty()) {
+            md.append("## Actions à suivre\n");
+            for (String a : actions.split(",")) {
+                md.append("- [ ] ").append(a.trim()).append("\n");
+            }
+            md.append("\n");
+        }
+
+        md.append("---\n");
+        md.append("*Rapport généré automatiquement à partir de la transcription vocale.*");
+
+        result.put("markdown", md.toString());
+        result.put("personnes", personnes.isEmpty() ? java.util.List.of() : java.util.List.of(personnes.split(",")));
+        result.put("humeur", humeur);
+        result.put("besoinPriere", "true".equals(besoinsPriere));
+        result.put("actions", actions.isEmpty() ? java.util.List.of() : java.util.List.of(actions.split(",")));
+
+        return result;
+    }
+
+    /**
+     * P14 — Extrait toutes les actions à suivre de tous les rapports.
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<java.util.Map<String, Object>> extractAllActionItems() {
+        List<VoiceReport> reports = repository.findTop50ByOrderByCreatedAtDesc();
+        java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+
+        for (VoiceReport report : reports) {
+            String entities = report.getExtractedEntities();
+            String actions = extractJsonArray(entities, "actions");
+            if (!actions.isEmpty()) {
+                for (String action : actions.split(",")) {
+                    java.util.Map<String, Object> item = new java.util.LinkedHashMap<>();
+                    item.put("reportId", report.getId());
+                    item.put("authorId", report.getAuthorId());
+                    item.put("createdAt", report.getCreatedAt().toString());
+                    item.put("action", action.trim());
+                    item.put("done", false);
+                    items.add(item);
+                }
+            }
+        }
+        return items;
+    }
+
+    private String extractJsonArray(String json, String key) {
+        if (json == null) return "";
+        String searchKey = "\"" + key + "\":[";
+        int start = json.indexOf(searchKey);
+        if (start < 0) return "";
+        start = json.indexOf('[', start);
+        int end = json.indexOf(']', start);
+        if (end < 0) return "";
+        String content = json.substring(start + 1, end);
+        return content.replace("\"", "").trim();
+    }
+
+    private String extractJsonValue(String json, String key) {
+        if (json == null) return "";
+        String search = "\"" + key + "\":\"";
+        int start = json.indexOf(search);
+        if (start < 0) return "";
+        start += search.length();
+        int end = json.indexOf('"', start);
+        if (end < 0) return "";
+        return json.substring(start, end);
+    }
 }

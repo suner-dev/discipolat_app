@@ -36,4 +36,18 @@ public class VoiceReportController {
     public ResponseEntity<List<VoiceReport>> mine() {
         return ResponseEntity.ok(service.mine());
     }
+
+    /** P14 — Génère un rapport structuré Markdown à partir des entités extraites. */
+    @GetMapping("/{id}/structured")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<java.util.Map<String, Object>> structured(@PathVariable java.util.UUID id) {
+        return ResponseEntity.ok(service.generateStructuredReport(id));
+    }
+
+    /** P14 — Liste des actions à suivre (extraites de tous les rapports). */
+    @GetMapping("/action-items")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> actionItems() {
+        return ResponseEntity.ok(service.extractAllActionItems());
+    }
 }

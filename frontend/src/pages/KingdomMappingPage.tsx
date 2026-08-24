@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { useEffect, useMemo, useState } from 'react';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import api from '@/lib/api';
-import { Loader2, Flame, MapPin, Compass } from 'lucide-react';
+import { Loader2, Flame, MapPin, Compass, Filter } from 'lucide-react';
 
 interface HeatCell {
   lat: number;
@@ -29,9 +29,40 @@ const PRIORITY_STYLES: Record<string, string> = {
   MOYENNE: 'badge-info',
 };
 
+/** Simple client-side clustering — groups nearby points at low zoom. */
+function clusterPoints(cells: HeatCell[], zoomLevel: number): { lat: number; lng: number; count: number; intensity: number; points: HeatCell[] }[] {
+  // Cluster radius shrinks with zoom
+  const clusterRadius = Math.max(0.001, 0.05 / Math.pow(2, zoomLevel - 10));
+  const used = new Set<number>();
+  const clusters: { lat: number; lng: number; count: number; intensity: number; points: HeatCell[] }[] = [];
+  for (let i = 0; i < cells.length; i++) {
+    if (used.has(i)) continue;
+    const group: HeatCell[] = [cells[i]];
+    used.add(i);
+    for (let j = i + 1; j < cells.length; j++) {
+      if (used.has(j)) continue;
+      const dLat = cells[i].lat - cells[j].lat;
+      const dLng = cells[i].lng - cells[j].lng;
+      if (Math.sqrt(dLat * dLat + dLng * dLng) < clusterRadius) {
+        group.push(cells[j]);
+        used.add(j);
+      }
+    }
+    clusters.push({
+      lat: group.reduce((s, c) => s + c.lat, 0) / group.length,
+      lng: group.reduce((s, c) => s + c.lng, 0) / group.length,
+      count: group.reduce((s, c) => s + c.count, 0),
+      intensity: group.reduce((s, c) => s + c.intensity, 0) / group.length,
+      points: group,
+    });
+  }
+  return clusters;
+}
+
 /** Kingdom Mapping — heatmap géographique de l'implantation & secteurs prioritaires. */
 export default function KingdomMappingPage() {
   const [view, setView] = useState<'heatmap' | 'sectors'>('heatmap');
+  const [densityFilter, setDensityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
   const heatQuery = useQuery({
     queryKey: ['map-heatmap'],
@@ -43,7 +74,25 @@ export default function KingdomMappingPage() {
     queryFn: async () => (await api.get<Sector[]>('/map/sectors')).data,
   });
 
-  const cells = heatQuery.data ?? [];
+  const allCells = heatQuery.data ?? [];
+
+  // P16 — Density filter
+  const cells = useMemo(() => {
+    if (densityFilter === 'all') return allCells;
+    if (densityFilter === 'high') return allCells.filter((c) => c.intensity > 0.75);
+    if (densityFilter === 'medium') return allCells.filter((c) => c.intensity > 0.25 && c.intensity <= 0.75);
+    return allCells.filter((c) => c.intensity <= 0.25);
+  }, [allCells, densityFilter]);
+
+  // P16 — Client-side clustering
+  const [mapZoom, setMapZoom] = useState(12);
+  const clustered = useMemo(() => clusterPoints(cells, mapZoom), [cells, mapZoom]);
+
+  function ZoomTracker() {
+    useMapEvents({ zoomend: (e) => setMapZoom(e.target.getZoom()) });
+    return null;
+  }
+
   const center: [number, number] =
     cells.length > 0
       ? [
@@ -70,8 +119,7 @@ export default function KingdomMappingPage() {
         <div>
           <h1 className="page-title">Kingdom Mapping</h1>
           <p className="page-subtitle">Où l'œuvre porte-t-elle du fruit ? Cartes et secteurs prioritaires</p>
-        </div>
-        <div className="ml-auto flex gap-2">
+        </div>            <div className="ml-auto flex gap-2">
           <button
             onClick={() => setView('heatmap')}
             className={`btn-sm px-4 py-2 rounded-lg font-medium ${view === 'heatmap' ? 'btn-primary' : 'glass-card'}`}
@@ -100,41 +148,59 @@ export default function KingdomMappingPage() {
           ) : (
             <div className="glass-card overflow-hidden rounded-2xl animate-slide-up" style={{ height: 480 }}>
               <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }}>
+                <ZoomTracker />
                 <TileLayer
                   attribution='&copy; OpenStreetMap'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {cells.map((c, i) => (
+                {clustered.map((cl, i) => (
                   <CircleMarker
                     key={i}
-                    center={[c.lat, c.lng]}
-                    radius={8 + (c.count / maxCount) * 24}
+                    center={[cl.lat, cl.lng]}
+                    radius={cl.points.length > 1 ? 16 + Math.min(cl.count, 20) * 1.5 : 8 + (cl.count / maxCount) * 24}
                     pathOptions={{
-                      color: CIRCLE_COLOR(c.intensity),
-                      fillColor: CIRCLE_COLOR(c.intensity),
+                      color: CIRCLE_COLOR(cl.intensity),
+                      fillColor: CIRCLE_COLOR(cl.intensity),
                       fillOpacity: 0.45,
-                      weight: 1,
+                      weight: cl.points.length > 1 ? 2 : 1,
                     }}
                   >
                     <Popup>
-                      <strong>{c.count} âme(s)</strong> dans ce secteur
-                      <br />
-                      Intensité : {(c.intensity * 100).toFixed(0)}%
+                      {cl.points.length > 1 ? (
+                        <>
+                          <strong>Cluster de {cl.points.length} points</strong> — {cl.count} âme(s) total
+                          <br />Densité moyenne : {(cl.intensity * 100).toFixed(0)}%
+                          <br /><em className="text-xs">Zoomez pour détailler</em>
+                        </>
+                      ) : (
+                        <>
+                          <strong>{cl.count} âme(s)</strong> dans ce secteur
+                          <br />Intensité : {(cl.intensity * 100).toFixed(0)}%
+                        </>
+                      )}
                     </Popup>
                   </CircleMarker>
                 ))}
               </MapContainer>
             </div>
           )}
-          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
-            <span>Densité :</span>
-            {[['#22c55e', 'Faible'], ['#eab308', 'Moyenne'], ['#f97316', 'Forte'], ['#dc2626', 'Très forte']].map(
+          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+            <span className="flex items-center gap-1"><Filter className="w-3 h-3" /> Densité :</span>
+            {([['all', 'Tous'], ['#22c55e', 'Faible'], ['#eab308', 'Moyenne'], ['#f97316', 'Forte'], ['#dc2626', 'Très forte']] as const).map(
               ([color, label]) => (
-                <span key={label} className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full inline-block" style={{ background: color }} /> {label}
-                </span>
+                <button
+                  key={label}
+                  onClick={() => setDensityFilter(color === 'all' ? 'all' : label === 'Faible' ? 'low' : label === 'Moyenne' ? 'medium' : 'high')}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full transition ${
+                    densityFilter === (color === 'all' ? 'all' : label === 'Faible' ? 'low' : label === 'Moyenne' ? 'medium' : 'high')
+                      ? 'bg-primary-500/20 text-primary-400 ring-1 ring-primary-500/50' : ''
+                  }`}
+                >
+                  {color !== 'all' && <span className="w-3 h-3 rounded-full inline-block" style={{ background: color }} />}{' '}{label}
+                </button>
               ),
             )}
+            <span className="ml-2 text-gray-400">Clustering auto : {clustered.length} points affichés (zoom {mapZoom})</span>
           </div>
         </>
       )}

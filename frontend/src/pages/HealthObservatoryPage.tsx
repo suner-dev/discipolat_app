@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Loader2, HeartPulse, AlertTriangle, ShieldCheck, Users } from 'lucide-react';
+import { Loader2, HeartPulse, AlertTriangle, ShieldCheck, Users, TrendingUp, Building } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 interface Observatory {
   healthScore: number;
@@ -33,6 +34,16 @@ export default function HealthObservatoryPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['health-observatory'],
     queryFn: async () => (await api.get<Observatory>('/health-observatory')).data,
+  });
+
+  const { data: trend } = useQuery({
+    queryKey: ['health-trend'],
+    queryFn: async () => (await api.get('/health-observatory/trend')).data,
+  });
+
+  const { data: deptScores } = useQuery({
+    queryKey: ['health-departments'],
+    queryFn: async () => (await api.get('/health-observatory/departments')).data,
   });
 
   if (isLoading || !data) {
@@ -116,6 +127,62 @@ export default function HealthObservatoryPage() {
           <p className="text-center text-sm text-gray-500 py-8">Aucune âme à risque détectée. Continuez ainsi !</p>
         )}
       </div>
+
+      {/* P19 — Tendance 6 mois */}
+      {trend?.snapshots && (
+        <div className="glass-card p-6 mb-6 animate-slide-up">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-primary-500" />
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Tendance santé — 6 mois</h3>
+            {trend.trend && (
+              <span className={`badge ${trend.trend === 'AMÉLIORATION' ? 'badge-success' : trend.trend === 'DÉGRADATION' ? 'badge-danger' : 'badge-info'} ml-auto`}>
+                {trend.trend} ({trend.delta > 0 ? '+' : ''}{trend.delta})
+              </span>
+            )}
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={trend.snapshots}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="rgba(128,128,128,0.5)" />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="rgba(128,128,128,0.5)" />
+              <Tooltip
+                contentStyle={{ background: '#1e1b4b', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8 }}
+                labelStyle={{ color: '#a5b4fc' }}
+              />
+              <Line type="monotone" dataKey="healthScore" stroke="#6366f1" strokeWidth={2} dot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* P19 — Score par département */}
+      {deptScores?.length > 0 && (
+        <div className="glass-card mb-6 divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="px-5 py-4 flex items-center gap-2">
+            <Building className="w-5 h-5 text-primary-500" />
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Santé par département</h3>
+          </div>
+          {deptScores.map((d: { departmentId: string; departmentName: string; healthScore: number; totalSouls: number; atRiskCount: number; label: string }) => (
+            <div key={d.departmentId} className="flex items-center justify-between px-5 py-3">
+              <div>
+                <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{d.departmentName}</p>
+                <p className="text-xs text-gray-500">{d.totalSouls} âmes · {d.atRiskCount} à risque</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${d.healthScore >= 70 ? 'bg-green-500' : d.healthScore >= 45 ? 'bg-amber-500' : 'bg-red-500'}`}
+                    style={{ width: `${d.healthScore}%` }}
+                  />
+                </div>
+                <span className={`badge ${d.label === 'SAIN' ? 'badge-success' : d.label === 'ATTENTION' ? 'badge-warning' : 'badge-danger'}`}>
+                  {d.healthScore}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Familles à risque */}
       <div className="glass-card divide-y divide-gray-100 dark:divide-gray-800">

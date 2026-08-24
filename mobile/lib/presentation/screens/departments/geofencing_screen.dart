@@ -23,6 +23,8 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
   StreamSubscription<Position>? _positionStream;
   Timer? _updateTimer;
   double _distanceToChurch = 0;
+  List<dynamic> _gpsHistory = [];
+  bool _showHistory = false;
 
   @override
   void initState() {
@@ -199,6 +201,10 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
 
                 // GPS info
                 _buildGPSInfo(),
+                const SizedBox(height: 20),
+
+                // P20 — GPS History
+                _buildHistorySection(),
               ],
             ),
     );
@@ -381,6 +387,71 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildHistorySection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () async {
+              setState(() => _showHistory = !_showHistory);
+              if (_showHistory && _gpsHistory.isEmpty) {
+                try {
+                  final res = await _api.get('/geofencing/history');
+                  setState(() => _gpsHistory = res.data as List<dynamic>);
+                } catch (_) {}
+              }
+            },
+            child: Row(
+              children: [
+                Icon(Icons.history, color: Colors.cyanAccent.withAlpha(200), size: 20),
+                const SizedBox(width: 8),
+                Text('Historique GPS (${_gpsHistory.length})',
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                const Spacer(),
+                Icon(_showHistory ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.white.withAlpha(150)),
+              ],
+            ),
+          ),
+          if (_showHistory) ...[
+            const SizedBox(height: 12),
+            if (_gpsHistory.isEmpty)
+              Text('Aucun historique', style: TextStyle(color: Colors.white.withAlpha(100), fontSize: 13)),
+            ..._gpsHistory.take(10).map((ping) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    ping['inZone'] == true ? Icons.check_circle : Icons.cancel,
+                    color: ping['inZone'] == true ? Colors.green : Colors.red.withAlpha(200),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${ping['kind'] ?? ''} · ${ping['distanceMeters'] ?? '?'}m · ${ping['powerMode'] ?? 'NORMAL'}',
+                      style: TextStyle(color: Colors.white.withAlpha(150), fontSize: 12),
+                    ),
+                  ),
+                  Text(
+                    (ping['createdAt'] ?? '').toString().substring(0, 16),
+                    style: TextStyle(color: Colors.white.withAlpha(100), fontSize: 11),
+                  ),
+                ],
+              ),
+            )),
+          ],
+        ],
+      ),
     );
   }
 

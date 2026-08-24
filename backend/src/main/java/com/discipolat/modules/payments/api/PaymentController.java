@@ -22,14 +22,17 @@ public class PaymentController {
 
     private final PaymentGatewayService service;
     private final TaxReceiptService taxReceiptService;
+    private final com.discipolat.modules.payments.domain.RecurringDonationService recurringDonationService;
 
     /** Secret partagé du webhook opérateur (vide en dev → endpoint ouvert). */
     @Value("${app.payments.webhook-secret:}")
     private String webhookSecret;
 
-    public PaymentController(PaymentGatewayService service, TaxReceiptService taxReceiptService) {
+    public PaymentController(PaymentGatewayService service, TaxReceiptService taxReceiptService,
+                             com.discipolat.modules.payments.domain.RecurringDonationService recurringDonationService) {
         this.service = service;
         this.taxReceiptService = taxReceiptService;
+        this.recurringDonationService = recurringDonationService;
     }
 
     /** P12 — Reçu fiscal PDF pour un paiement confirmé. */
@@ -117,5 +120,37 @@ public class PaymentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.stats());
+    }
+
+    // === P12 — Dons récurrents ===
+
+    /** Crée un don récurrent (dîme mensuelle, offrande hebdomadaire…). */
+    @PostMapping("/recurring")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<com.discipolat.modules.payments.domain.RecurringDonation> createRecurring(
+            @RequestBody com.discipolat.modules.payments.domain.RecurringDonation donation) {
+        return ResponseEntity.ok(recurringDonationService.create(donation));
+    }
+
+    /** Annule un don récurrent. */
+    @PostMapping("/recurring/{id}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<com.discipolat.modules.payments.domain.RecurringDonation> cancelRecurring(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(recurringDonationService.cancel(id));
+    }
+
+    /** Mes dons récurrents. */
+    @GetMapping("/recurring/mine")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> myRecurring() {
+        return ResponseEntity.ok(recurringDonationService.mine());
+    }
+
+    /** Stats dons récurrents (admin). */
+    @GetMapping("/recurring/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<Map<String, Object>> recurringStats() {
+        return ResponseEntity.ok(recurringDonationService.stats());
     }
 }

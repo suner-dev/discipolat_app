@@ -81,6 +81,49 @@ public class FaceRecognitionController {
         return ResponseEntity.noContent().build();
     }
 
+    /** P13 — Batch enrollment : enrôle plusieurs visages en une requête. */
+    @PostMapping("/enroll-batch")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<Map<String, Object>> enrollBatch(@RequestBody List<EnrollRequest> bodies) {
+        int success = 0;
+        int failed = 0;
+        List<Map<String, Object>> results = new java.util.ArrayList<>();
+        for (EnrollRequest body : bodies) {
+            try {
+                FaceTemplate t = service.enroll(body.userId(), body.soulId(), body.displayName(), decode(body.imageBase64()));
+                results.add(Map.of("displayName", body.displayName, "status", "OK", "templateId", t.getId()));
+                success++;
+            } catch (Exception e) {
+                results.add(Map.of("displayName", body.displayName, "status", "ERROR", "error", e.getMessage()));
+                failed++;
+            }
+        }
+        return ResponseEntity.ok(Map.of("total", bodies.size(), "success", success, "failed", failed, "details", results));
+    }
+
+    /** P13 — Identifie avec seuil de confiance configurable. */
+    @PostMapping("/identify-configurable")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> identifyConfigurable(
+            @RequestBody IdentifyWithThresholdRequest body) throws Exception {
+        FaceRecognitionService.IdentificationResult result =
+                service.identify(decode(body.imageBase64()));
+        double effectiveConfidence = result.confidence();
+        boolean matched = effectiveConfidence >= body.minConfidence();
+
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("matched", matched);
+        payload.put("confidence", Math.round(effectiveConfidence * 1000) / 1000.0);
+        payload.put("threshold", body.minConfidence());
+        payload.put("message", matched ? result.message() : "Confiance insuffisante (" + Math.round(effectiveConfidence * 100) + "% < " + Math.round(body.minConfidence() * 100) + "%)");
+        if (result.template() != null && matched) {
+            payload.put("templateId", result.template().getId());
+            payload.put("userId", result.template().getUserId());
+            payload.put("displayName", result.template().getDisplayName());
+        }
+        return ResponseEntity.ok(payload);
+    }
+
     private static byte[] decode(String base64) {
         if (base64 == null || base64.isBlank()) {
             throw new IllegalArgumentException("imageBase64 est obligatoire");
@@ -95,5 +138,8 @@ public class FaceRecognitionController {
     }
 
     public record IdentifyRequest(String imageBase64) {
+    }
+
+    public record IdentifyWithThresholdRequest(String imageBase64, double minConfidence) {
     }
 }

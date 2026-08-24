@@ -150,6 +150,107 @@ class OfflineSyncManager {
     _pendingCount++;
   }
 
+  // === P3 — Extended offline sync: visit reports, evaluations, appointments ===
+
+  /// Queue a visit report (pastoral visit note) for offline sync
+  Future<void> queueVisitReport({
+    required String soulId,
+    required Map<String, dynamic> report,
+  }) async {
+    final tenantId = await _tenant();
+    final id = 'visit-${DateTime.now().millisecondsSinceEpoch}';
+    await _db.addToSyncQueue(SyncQueueItem(
+      id: id,
+      tenantId: tenantId,
+      operation: 'CREATE',
+      endpoint: '/souls/$soulId/visits',
+      payload: jsonEncode(report),
+      createdAt: DateTime.now().toIso8601String(),
+      retryCount: 0,
+    ));
+    _pendingCount++;
+    debugPrint('[OfflineSync] Queued visit report: $id');
+  }
+
+  /// Queue an evaluation (360° feedback) for offline sync
+  Future<void> queueEvaluation({
+    required String memberId,
+    required Map<String, dynamic> evaluation,
+  }) async {
+    final tenantId = await _tenant();
+    final id = 'eval-${DateTime.now().millisecondsSinceEpoch}';
+    await _db.addToSyncQueue(SyncQueueItem(
+      id: id,
+      tenantId: tenantId,
+      operation: 'CREATE',
+      endpoint: '/members/$memberId/evaluations',
+      payload: jsonEncode(evaluation),
+      createdAt: DateTime.now().toIso8601String(),
+      retryCount: 0,
+    ));
+    _pendingCount++;
+    debugPrint('[OfflineSync] Queued evaluation: $id');
+  }
+
+  /// Queue an appointment (rendez-vous) for offline sync
+  Future<void> queueAppointment({
+    required Map<String, dynamic> appointment,
+  }) async {
+    final tenantId = await _tenant();
+    final id = 'appt-${DateTime.now().millisecondsSinceEpoch}';
+    await _db.addToSyncQueue(SyncQueueItem(
+      id: id,
+      tenantId: tenantId,
+      operation: 'CREATE',
+      endpoint: '/appointments',
+      payload: jsonEncode(appointment),
+      createdAt: DateTime.now().toIso8601String(),
+      retryCount: 0,
+    ));
+    _pendingCount++;
+    debugPrint('[OfflineSync] Queued appointment: $id');
+  }
+
+  /// Queue a form submission for offline sync
+  Future<void> queueFormSubmission({
+    required String formId,
+    required Map<String, dynamic> data,
+  }) async {
+    final tenantId = await _tenant();
+    final id = 'form-${DateTime.now().millisecondsSinceEpoch}';
+    await _db.addToSyncQueue(SyncQueueItem(
+      id: id,
+      tenantId: tenantId,
+      operation: 'CREATE',
+      endpoint: '/forms/$formId/submit',
+      payload: jsonEncode(data),
+      createdAt: DateTime.now().toIso8601String(),
+      retryCount: 0,
+    ));
+    _pendingCount++;
+    debugPrint('[OfflineSync] Queued form submission: $id');
+  }
+
+  /// Queue a document upload metadata for offline sync
+  Future<void> queueDocumentUpload({
+    required String path,
+    required Map<String, dynamic> metadata,
+  }) async {
+    final tenantId = await _tenant();
+    final id = 'doc-${DateTime.now().millisecondsSinceEpoch}';
+    await _db.addToSyncQueue(SyncQueueItem(
+      id: id,
+      tenantId: tenantId,
+      operation: 'CREATE',
+      endpoint: '/files/upload',
+      payload: jsonEncode({...metadata, 'localPath': path}),
+      createdAt: DateTime.now().toIso8601String(),
+      retryCount: 0,
+    ));
+    _pendingCount++;
+    debugPrint('[OfflineSync] Queued document upload: $id');
+  }
+
   /// Manually trigger sync of all pending items
   Future<OfflineSyncResult> syncPendingItems() => _syncPendingItems();
 
