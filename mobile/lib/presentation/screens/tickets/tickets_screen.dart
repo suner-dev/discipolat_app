@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/api/api_service.dart';
+import '../../../data/services/api_service.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -20,7 +20,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   Future<void> _loadTickets() async {
     try {
-      final res = await ApiService.get('/tickets');
+      final res = await ApiService().get('/tickets');
       setState(() {
         tickets = (res.data['content'] ?? res.data ?? []) as List;
         loading = false;
@@ -127,7 +127,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
           FilledButton(
             onPressed: () async {
               if (titreCtrl.text.isNotEmpty) {
-                await ApiService.post('/tickets', {
+                await ApiService().post('/tickets', data: {
                   'titre': titreCtrl.text,
                   'description': descCtrl.text,
                   'categorie': 'QUESTION',

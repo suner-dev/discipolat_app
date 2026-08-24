@@ -8,6 +8,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "surveys")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class Survey {
 
     public enum Type { CHOIX_UNIQUE, CHOIX_MULTIPLE, ECHAUFFEMENT, TEXTE_LIBRE }

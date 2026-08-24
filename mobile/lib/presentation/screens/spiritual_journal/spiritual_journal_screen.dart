@@ -75,9 +75,9 @@ class _SpiritualJournalScreenState extends State<SpiritualJournalScreen> {
                 final e = _entries[i];
                 return Card(
                   child: ListTile(
-                    leading: Text(e['type']!, style: const TextStyle(fontSize: 28)),
-                    title: Text(e['title']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(e['date']!),
+                    leading: Text(e['type'].toString(), style: const TextStyle(fontSize: 28)),
+                    title: Text(e['title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(e['date'].toString()),
                     trailing: IconButton(
                       icon: Icon(
                         e['fav'] == true ? Icons.star : Icons.star_border,

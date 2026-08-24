@@ -128,6 +128,46 @@ public class ReportExportController {
                 .body(pdfBytes);
     }
 
+/** P22 — Rapport exécutif automatique (mensuel / trimestriel). */
+    @GetMapping("/executive-pdf")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<byte[]> exportExecutivePdf(
+            @RequestParam(defaultValue = "MONTHLY") String periode,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to) {
+
+        LocalDate end = to != null ? to : LocalDate.now();
+        LocalDate start = from;
+        if (start == null) {
+            if ("QUARTERLY".equalsIgnoreCase(periode)) {
+                start = end.minusMonths(3);
+            } else {
+                start = end.minusMonths(1);
+            }
+        }
+
+        Page<MakerReport> makerReports = reportService.findMakerReports(null, null, null, start,
+                PageRequest.of(0, 100000));
+        long totalReports = makerReports.getTotalElements();
+        long totalSorties = makerReports.getContent()
+                .stream().mapToLong(r -> r.getNbSorties() != null ? r.getNbSorties() : 0).sum();
+        long totalMaintenus = makerReports.getContent()
+                .stream().mapToLong(r -> r.getNbMaintenus() != null ? r.getNbMaintenus() : 0).sum();
+
+        long totalFamilles = reportService.countFamilies(start, end);
+        long totalMembres = reportService.countSouls();
+
+        String titre = "Rapport Exécutif " + ("QUARTERLY".equalsIgnoreCase(periode) ? "Trimestriel" : "Mensuel");
+        byte[] pdf = reportPdfService.generateExecutiveReportPdf(titre, start, end,
+                totalReports, totalSorties, totalMaintenus, totalFamilles, totalMembres);
+
+        String filename = "rapport-executif-" + start + "-" + end + ".pdf";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="" + filename + """)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @GetMapping("/maker-pdf")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<byte[]> exportMakerPdf(

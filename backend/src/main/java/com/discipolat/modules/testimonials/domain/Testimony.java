@@ -6,6 +6,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "testimonies")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class Testimony {
 
     public enum Categorie { GUERISON, DELIVRANCE, PROVISION, FAMILLE, CONVERSION, AUTRE }

@@ -40,6 +40,12 @@ public class GroupMessageController {
         return ResponseEntity.ok(Map.of("message", "Message supprimé"));
     }
 
+    /** P10 — Recherche plein-texte simple dans les messages d'un groupe. */
+    @GetMapping("/search")
+    public ResponseEntity<?> search(@RequestParam UUID groupId, @RequestParam String q) {
+        return ResponseEntity.ok(groupMessageService.search(groupId, q));
+    }
+
     @GetMapping("/group/{groupId}/stats")
     public ResponseEntity<?> stats(@PathVariable UUID groupId) {
         return ResponseEntity.ok(groupMessageService.getGroupStats(groupId));

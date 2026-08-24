@@ -9,6 +9,8 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "church_comparisons")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class ChurchComparison {
 
     @Id

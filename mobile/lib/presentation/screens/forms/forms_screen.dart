@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'form_fill_screen.dart';
 
 /// P1 #13 — Formulaires drag & drop: vue des formulaires et soumission
 class FormsScreen extends StatelessWidget {
@@ -34,24 +35,29 @@ class FormsScreen extends StatelessWidget {
           const Text('Formulaires publiés',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          _buildFormCard('Satisfaction culte', 'Sondage post-culte', 42, Colors.blue),
-          _buildFormCard('Inscription événement', 'Inscription gratuit', 18, Colors.green),
-          _buildFormCard('Feedback formation', 'Évaluation formations', 31, Colors.orange),
+          _buildFormCard(context, 'Satisfaction culte', 'Sondage post-culte', 42, Colors.blue),
+          _buildFormCard(context, 'Inscription événement', 'Inscription gratuit', 18, Colors.green),
+          _buildFormCard(context, 'Feedback formation', 'Évaluation formations', 31, Colors.orange),
         ],
       ),
     );
   }
 
-  Widget _buildFormCard(String title, String desc, int responses, Color color) {
+  Widget _buildFormCard(BuildContext context, String title, String desc, int responses, Color color) {
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.1),
+          backgroundColor: color.withValues(alpha: 0.1),
           child: Icon(Icons.description, color: color),
         ),
         title: Text(title),
         subtitle: Text(desc),
         trailing: Chip(label: Text('$responses réponses')),
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => FormFillScreen(form: {'id': title, 'titre': title}),
+          ));
+        },
       ),
     );
   }
@@ -66,7 +72,6 @@ class FormBuilderScreen extends StatefulWidget {
 
 class _FormBuilderScreenState extends State<FormBuilderScreen> {
   final List<Map<String, dynamic>> _fields = [];
-  String _formTitle = '';
   final _fieldTypes = ['Texte', 'Choix multiple', 'Date', 'Fichier', 'Signature', 'Note'];
 
   @override
@@ -98,7 +103,6 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
                 labelText: 'Titre du formulaire',
                 border: OutlineInputBorder(),
               ),
-              onChanged: (v) => setState(() => _formTitle = v),
             ),
           ),
           // Field types chips (simulating drag & drop)

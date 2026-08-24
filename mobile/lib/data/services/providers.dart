@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_service.dart';
+import 'group_message_service.dart';
 import '../models/branding.dart';
 import '../models/platform_meta.dart';
 
@@ -39,7 +40,14 @@ final brandingProvider = FutureProvider<Branding>((ref) async {
       return Branding.fromJson(response.data as Map<String, dynamic>);
     }
     return const Branding();
-  } catch (_) {
+    } catch (_) {
     return const Branding();
   }
 });
+
+/// P10 — Service messagerie de groupe (backend GroupMessageController).
+final groupMessageServiceProvider = Provider<GroupMessageService>((ref) {
+  final api = ref.watch(apiServiceProvider);
+  return GroupMessageService(api);
+});
+

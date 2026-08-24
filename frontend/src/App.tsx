@@ -7,6 +7,7 @@ import MainLayout from '@/layouts/MainLayout';
 import AuthLayout from '@/layouts/AuthLayout';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
+import { useUsageTracking } from '@/hooks/useUsageTracking';
 
 /* ============================================================================
  * CHARGEMENT PAR ROUTE (code splitting)
@@ -113,6 +114,16 @@ const AiAssistantPage = lazy(() => import('@/pages/AiAssistantPage'));
 const TicketsPage = lazy(() => import('@/pages/TicketsPage'));
 const OnboardingWizardPage = lazy(() => import('@/pages/OnboardingWizardPage'));
 const SurveysPage = lazy(() => import('@/pages/SurveysPage'));
+const DataMigrationPage = lazy(() => import('@/pages/DataMigrationPage'));
+const LoadPredictionPage = lazy(() => import('@/pages/LoadPredictionPage'));
+const GrowthProjectionPage = lazy(() => import('@/pages/GrowthProjectionPage'));
+const NeighborhoodHealthPage = lazy(() => import('@/pages/NeighborhoodHealthPage'));
+const SabbathDashboardPage = lazy(() => import('@/pages/SabbathDashboardPage'));
+const ChurchBenchmarkPage = lazy(() => import('@/pages/ChurchBenchmarkPage'));
+const AdminUsageAnalyticsPage = lazy(() => import('@/pages/AdminUsageAnalyticsPage'));
+const AdminBackupsPage = lazy(() => import('@/pages/AdminBackupsPage'));
+const FollowUpRequestsPage = lazy(() => import('@/pages/FollowUpRequestsPage'));
+const NotificationPreferencesPage = lazy(() => import('@/pages/NotificationPreferencesPage'));
 const LeaveRequestsPage = lazy(() => import('@/pages/LeaveRequestsPage'));
 const PublicPortalPage = lazy(() => import('@/pages/PublicPortalPage'));
 const SkillsMatrixPage = lazy(() => import('@/pages/SkillsMatrixPage'));
@@ -160,6 +171,14 @@ const FamilyMeetingPage = lazy(() => import('@/pages/FamilyMeetingPage'));
 const ExecutiveInsightsPage = lazy(() => import('@/pages/ExecutiveInsightsPage'));
 const UpcomingEventsMemberPage = lazy(() => import('@/pages/UpcomingEventsMemberPage'));
 const MyTeamFamilyPage = lazy(() => import('@/pages/MyTeamFamilyPage'));
+const VoiceAssistantPage = lazy(() => import('@/pages/VoiceAssistantPage'));
+const FormsPage = lazy(() => import('@/pages/FormsPage'));
+const VolunteersPage = lazy(() => import('@/pages/VolunteersPage'));
+const DevPlanPage = lazy(() => import('@/pages/DevPlanPage'));
+const ModerationPage = lazy(() => import('@/pages/ModerationPage'));
+const ChurchComparisonPage = lazy(() => import('@/pages/ChurchComparisonPage'));
+const UsageAnalyticsPage = lazy(() => import('@/pages/UsageAnalyticsPage'));
+const EncouragementsPage = lazy(() => import('@/pages/EncouragementsPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -239,6 +258,8 @@ function HomeGate() {
 }
 
 export default function App() {
+  // P3 #109 — Tracking d'usage self-hosted (pages vues, best-effort).
+  useUsageTracking();
   return (
     <ErrorBoundary>
       <OfflineIndicator />
@@ -890,6 +911,27 @@ export default function App() {
           <Route path="/executive-insights" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ExecutiveInsightsPage /></ProtectedRoute>} />
           <Route path="/upcoming-events" element={<ProtectedRoute><UpcomingEventsMemberPage /></ProtectedRoute>} />
           <Route path="/my-team" element={<ProtectedRoute><MyTeamFamilyPage /></ProtectedRoute>} />
+          <Route path="/notification-preferences" element={<ProtectedRoute><NotificationPreferencesPage /></ProtectedRoute>} />
+          {/* ===== P3 — Innovation / futuriste ===== */}
+          <Route path="/admin/data-migration" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><DataMigrationPage /></ProtectedRoute>} />
+          <Route path="/load-prediction" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><LoadPredictionPage /></ProtectedRoute>} />
+          <Route path="/growth-projections" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><GrowthProjectionPage /></ProtectedRoute>} />
+          <Route path="/neighborhood-health" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><NeighborhoodHealthPage /></ProtectedRoute>} />
+          <Route path="/sabbath-dashboard" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><SabbathDashboardPage /></ProtectedRoute>} />
+          <Route path="/church-benchmark" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ChurchBenchmarkPage /></ProtectedRoute>} />
+          <Route path="/admin/usage-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AdminUsageAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/admin/backups" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AdminBackupsPage /></ProtectedRoute>} />
+          <Route path="/follow-up-requests" element={<ProtectedRoute><FollowUpRequestsPage /></ProtectedRoute>} />
+          <Route path="/my-team" element={<ProtectedRoute><MyTeamFamilyPage /></ProtectedRoute>} />
+          <Route path="/notification-preferences" element={<ProtectedRoute><NotificationPreferencesPage /></ProtectedRoute>} />
+          <Route path="/voice-assistant" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><VoiceAssistantPage /></ProtectedRoute>} />
+          <Route path="/forms" element={<ProtectedRoute><FormsPage /></ProtectedRoute>} />
+          <Route path="/volunteers" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><VolunteersPage /></ProtectedRoute>} />
+          <Route path="/dev-plans" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}><DevPlanPage /></ProtectedRoute>} />
+          <Route path="/moderation" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ModerationPage /></ProtectedRoute>} />
+          <Route path="/church-comparison" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ChurchComparisonPage /></ProtectedRoute>} />
+          <Route path="/usage-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><UsageAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/encouragements" element={<ProtectedRoute><EncouragementsPage /></ProtectedRoute>} />
         </Route>
 
         {/* Page d'accueil publique (landing) — redirige vers /dashboard si connecté */}

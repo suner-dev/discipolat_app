@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/weekly-challenges")
+@RequestMapping("/api/v1/weekly-challenges")
 public class WeeklyChallengeController {
 
     private final WeeklyChallengeService challengeService;

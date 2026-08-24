@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "live_streams")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class LiveStream {
 
     @Id

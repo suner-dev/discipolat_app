@@ -44,6 +44,13 @@ public class QuestController {
         return ResponseEntity.ok(service.leaderboard());
     }
 
+    /** P9 — Classement agrégé par famille ou département (?by=FAMILLE|DEPARTMENT). */
+    @GetMapping("/leaderboard/groups")
+    public ResponseEntity<List<Map<String, Object>>> groupLeaderboard(
+            @RequestParam(defaultValue = "FAMILLE") String by) {
+        return ResponseEntity.ok(service.groupLeaderboard(by));
+    }
+
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.stats());
@@ -59,5 +66,19 @@ public class QuestController {
                 ? Integer.valueOf(body.get("points").toString()) : null;
         String description = body.containsKey("description") ? body.get("description").toString() : null;
         return ResponseEntity.ok(service.award(userId, action, points, description));
+    }
+
+    // ======================== P9 — DÉFIS HEBDO AUTO + BADGES CONTEXTUALISÉS ========================
+
+    /** Défis hebdomadaires générés automatiquement selon le profil. */
+    @GetMapping("/weekly-challenges")
+    public ResponseEntity<Map<String, Object>> weeklyChallenges() {
+        return ResponseEntity.ok(service.generateWeeklyChallenges());
+    }
+
+    /** Badges contextualisés par rôle et actions. */
+    @GetMapping("/contextual-badges")
+    public ResponseEntity<List<Map<String, Object>>> contextualBadges() {
+        return ResponseEntity.ok(service.getContextualBadges());
     }
 }

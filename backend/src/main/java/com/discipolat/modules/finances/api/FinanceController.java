@@ -63,6 +63,15 @@ public class FinanceController {
         return ResponseEntity.ok(financeService.stats(annee != null ? annee : LocalDate.now().getYear()));
     }
 
+    /** P0 #6 — Statistiques financières avec conversion multi-devise. */
+    @GetMapping("/stats/currency")
+    public ResponseEntity<Map<String, Object>> statsWithCurrency(
+            @RequestParam(required = false) Integer annee,
+            @RequestParam(required = false) String currency) {
+        return ResponseEntity.ok(financeService.statsWithCurrency(
+                annee != null ? annee : LocalDate.now().getYear(), currency));
+    }
+
     @GetMapping("/budgets")
     public ResponseEntity<List<Map<String, Object>>> listBudgets(@RequestParam(required = false) Integer annee) {
         return ResponseEntity.ok(financeService.listBudgets(annee != null ? annee : LocalDate.now().getYear()));

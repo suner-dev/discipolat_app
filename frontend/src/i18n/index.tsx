@@ -4,10 +4,11 @@ import en from './en';
 import pt from './pt';
 import es from './es';
 import sw from './sw';
+import ar from './ar';
 
-export type Locale = 'fr' | 'en' | 'pt' | 'es' | 'sw';
+export type Locale = 'fr' | 'en' | 'pt' | 'es' | 'sw' | 'ar';
 
-const dictionaries: Record<Locale, Record<string, string>> = { fr, en, pt, es, sw };
+const dictionaries: Record<Locale, Record<string, string>> = { fr, en, pt, es, sw, ar };
 
 const frDict: Record<string, string> = fr;
 
@@ -46,7 +47,7 @@ const STORAGE_KEY = 'discipolat-locale';
 function getInitialLocale(): Locale {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && (stored === 'fr' || stored === 'en' || stored === 'pt' || stored === 'es' || stored === 'sw')) return stored;
+    if (stored && (stored === 'fr' || stored === 'en' || stored === 'pt' || stored === 'es' || stored === 'sw' || stored === 'ar')) return stored;
   } catch { /* SSR / private browsing */ }
   return 'fr';
 }
@@ -75,6 +76,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     { code: 'pt' as Locale, label: 'Português' },
     { code: 'es' as Locale, label: 'Español' },
     { code: 'sw' as Locale, label: 'Kiswahili' },
+    { code: 'ar' as Locale, label: 'العربية' },
   ];
 
   return (

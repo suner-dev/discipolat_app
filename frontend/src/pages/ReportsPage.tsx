@@ -202,6 +202,14 @@ export default function ReportsPage() {
                 {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
                 PDF consolidé
               </button>
+              <button
+                onClick={() => exportReport({ endpoint: '/reports/export/executive-pdf?periode=MONTHLY', filename: `rapport-executif-${new Date().toISOString().split('T')[0]}.pdf` })}
+                disabled={isExporting}
+                className="btn-primary btn-sm"
+              >
+                {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                Rapport exécutif (PDF)
+              </button>
             </>
           )}
         </div>

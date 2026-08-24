@@ -46,4 +46,13 @@ public class GroupMessageService {
         stats.put("totalMessages", messageRepo.countByTenantIdAndGroupIdAndIsDeletedFalse(tenantId, groupId));
         return stats;
     }
+
+
+    /** P10 — Recherche plein-texte simple dans les messages d'un groupe. */
+    @Transactional(readOnly = true)
+    public List<GroupMessage> search(UUID groupId, String q) {
+        UUID tenantId = TenantContext.getTenantId();
+        return messageRepo.findByTenantIdAndGroupIdAndContentContainingIgnoreCaseAndIsDeletedFalseOrderByCreatedAtDesc(
+                tenantId, groupId, q).stream().limit(50).toList();
+    }
 }

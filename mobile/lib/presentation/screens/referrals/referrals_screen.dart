@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/api/api_service.dart';
+import '../../../data/services/api_service.dart';
 
 class ReferralsScreen extends StatefulWidget {
   const ReferralsScreen({super.key});
@@ -21,8 +21,8 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
 
   Future<void> _loadData() async {
     try {
-      final res = await ApiService.get('/referrals');
-      final statsRes = await ApiService.get('/referrals/stats');
+      final res = await ApiService().get('/referrals');
+      final statsRes = await ApiService().get('/referrals/stats');
       setState(() {
         referrals = (res.data['content'] ?? res.data ?? []) as List;
         stats = Map<String, dynamic>.from(statsRes.data);
@@ -123,7 +123,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
           FilledButton(
             onPressed: () async {
               if (nomCtrl.text.isNotEmpty) {
-                await ApiService.post('/referrals', {
+                await ApiService().post('/referrals', data: {
                   'nomComplet': nomCtrl.text,
                   'telephone': telCtrl.text,
                 });

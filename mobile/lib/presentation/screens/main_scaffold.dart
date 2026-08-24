@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../data/services/session_timeout_service.dart';
-import '../../data/services/data_saver_service.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'members/member_requests_screen.dart';
@@ -34,17 +33,58 @@ class _MainScaffoldState extends State<MainScaffold> {
       onTap: () => SessionTimeoutService.instance.resetTimer(),
       onPanDown: (_) => SessionTimeoutService.instance.resetTimer(),
       child: Scaffold(
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
+        // P3 #99 — Breakpoint tablette : NavigationRail sur écrans larges (≥900dp),
+        // bottom navigation bar sur mobile.
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = constraints.maxWidth >= 900;
+            if (isTablet) {
+              return Row(
+                children: [
+                  NavigationRail(
+                    selectedIndex: _currentIndex,
+                    onDestinationSelected: (index) {
+                      SessionTimeoutService.instance.resetTimer();
+                      setState(() => _currentIndex = index);
+                    },
+                    labelType: NavigationRailLabelType.all,
+                    minExtendedWidth: 180,
+                    destinations: const [
+                      NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('Accueil')),
+                      NavigationRailDestination(icon: Icon(Icons.inbox_outlined), selectedIcon: Icon(Icons.inbox), label: Text('Demandes')),
+                      NavigationRailDestination(icon: Icon(Icons.volunteer_activism_outlined), selectedIcon: Icon(Icons.volunteer_activism), label: Text('Prières')),
+                      NavigationRailDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: Text('Messages')),
+                      NavigationRailDestination(icon: Icon(Icons.apps), label: Text('Plus')),
+                    ],
+                  ),
+                  Expanded(
+                    child: IndexedStack(
+                      index: _currentIndex,
+                      children: _pages,
+                    ),
+                  ),
+                ],
+              );
+            }
+            return IndexedStack(
+              index: _currentIndex,
+              children: _pages,
+            );
+          },
         ),
-        bottomNavigationBar: BottomNavBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            SessionTimeoutService.instance.resetTimer();
-            setState(() {
-              _currentIndex = index;
-            });
+        bottomNavigationBar: LayoutBuilder(
+          builder: (context, constraints) {
+            // Masque la barre inférieure sur tablette (le rail la remplace).
+            if (constraints.maxWidth >= 900) return const SizedBox.shrink();
+            return BottomNavBar(
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                SessionTimeoutService.instance.resetTimer();
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+            );
           },
         ),
       ),
@@ -101,6 +141,12 @@ class _MorePage extends StatelessWidget {
         _moreItem(context, Icons.sticky_note_2, 'KPI narratif', 'Drill-down récits', route: '/kpi-narrative'),
         // Espace membre
         _moreItem(context, Icons.book, 'Journal spirituel', 'Prières & réflexions', route: '/spiritual-journal'),
+        // P3 — Innovation / futuriste
+        _moreItem(context, Icons.handshake_outlined, 'Demandes de suivi', 'Demander un faiseur', route: '/follow-up-requests'),
+        _moreItem(context, Icons.groups_2, 'Mon équipe / ma famille', 'Encouragements', route: '/my-team-family'),
+        _moreItem(context, Icons.speed, 'Prédiction de charge', 'Anticipation des pics', route: '/load-prediction'),
+        _moreItem(context, Icons.favorite_outline, 'Santé par quartier', 'Heatmap spirituelle', route: '/neighborhood-health'),
+        _moreItem(context, Icons.church_outlined, 'Tableau sabbatique', '12 axes de maturité', route: '/sabbath-dashboard'),
         _moreItem(context, Icons.menu_book, 'Plan lecture biblique', 'Progression partagée', route: '/bible-reading'),
         _moreItem(context, Icons.auto_stories, 'Journal prière', 'Suivi réponses', route: '/prayer-journal'),
         _moreItem(context, Icons.flash_on, 'Défis spirituels', 'Défis & badges', route: '/spiritual-challenges'),
@@ -130,7 +176,7 @@ class _MorePage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.purple.withOpacity(0.1),
+          backgroundColor: Colors.purple.withValues(alpha: 0.1),
           child: Icon(icon, color: Colors.purple.shade600, size: 20),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),

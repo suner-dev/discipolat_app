@@ -8,6 +8,7 @@ const FLAG_EMOJI: Record<Locale, string> = {
   pt: '🇧🇷',
   es: '🇪🇸',
   sw: '🇰🇪',
+  ar: '🇸🇦',
 };
 
 interface LanguageSwitcherProps {

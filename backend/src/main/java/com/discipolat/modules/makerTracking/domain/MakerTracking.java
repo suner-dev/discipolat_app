@@ -10,6 +10,8 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "maker_trackings")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class MakerTracking {
 
     public enum TypeEvenement { FORMATION, COMPETENCE_ACQUISE, AIME_ACCOMPAGNEE, REUNION_FREQUENTEE, DEFI_REUSSI, CERTIFICAT }

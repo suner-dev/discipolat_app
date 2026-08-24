@@ -40,6 +40,38 @@ public class ReportPdfService {
         return baos.toByteArray();
     }
 
+/** P22 — Rapport exécutif synthétique : remontée des indicateurs clés sur la période. */
+    public byte[] generateExecutiveReportPdf(String titre, java.time.LocalDate from, java.time.LocalDate to,
+                                             long totalReports, long totalSorties, long totalMaintenus,
+                                             long totalFamilles, long totalMembres) {
+        try {
+            Document document = new Document(PageSize.A4, 40, 40, 40, 40);
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            addHeader(document, titre, from);
+
+            document.add(new Paragraph("Période : " + from + " → " + to,
+                    new Font(Font.HELVETICA, 11)));
+            document.add(new Paragraph(" "));
+
+            PdfPTable kpi = new PdfPTable(2);
+            kpi.setWidthPercentage(100);
+            kpi.setSpacingAfter(20);
+            addKpiCell(kpi, String.valueOf(totalMembres), "Membres");
+            addKpiCell(kpi, String.valueOf(totalFamilles), "Familles");
+            addKpiCell(kpi, String.valueOf(totalReports), "Rapports soumis");
+            addKpiCell(kpi, String.valueOf(totalSorties), "Sorties pastorales");
+            addKpiCell(kpi, String.valueOf(totalMaintenus), "Âmes maintenues");
+            document.add(kpi);
+
+            document.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate executive PDF report", e);
+        }
+    }
     public byte[] generateMakerReportPdf(List<MakerReport> reports, LocalDate semaine) {
         Document document = new Document(PageSize.A4, 40, 40, 40, 40);
         java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();

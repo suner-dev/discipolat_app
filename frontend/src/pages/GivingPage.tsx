@@ -210,6 +210,9 @@ export default function GivingPage() {
                 <CheckCircle2 className="w-3 h-3" /> Confirmé
               </span>
             )}
+            {p.status === 'CONFIRMED' && (
+              <RecuFiscalButton id={p.id} />
+            )}
             {p.status === 'PENDING' && (
               <span className="badge badge-warning flex items-center gap-1">
                 <Clock className="w-3 h-3" /> En attente
@@ -227,5 +230,32 @@ export default function GivingPage() {
         )}
       </div>
     </div>
+  );
+}
+/** P12 — Téléchargement du reçu fiscal PDF pour un paiement confirmé. */
+function RecuFiscalButton({ id }: { id: string }) {
+  const [loading, setLoading] = useState(false);
+  const download = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/payments/${id}/tax-receipt`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `recu-fiscal-${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Reçu indisponible.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button onClick={download} disabled={loading} className="btn-secondary btn-sm flex items-center gap-1.5 ml-2">
+      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>🧾</span>} Reçu fiscal
+    </button>
   );
 }

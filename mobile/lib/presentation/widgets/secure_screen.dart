@@ -41,7 +41,7 @@ class _SecureScreenState extends State<SecureScreen>
     WidgetsBinding.instance.addObserver(this);
 
     if (widget.enableScreenshotProtection) {
-      ScreenshotProtectionService.instance.enable();
+      ScreenshotProtectionService.enable();
     }
 
     if (widget.logAccess) {
@@ -59,7 +59,7 @@ class _SecureScreenState extends State<SecureScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     if (widget.enableScreenshotProtection) {
-      ScreenshotProtectionService.instance.disable();
+      ScreenshotProtectionService.disable();
     }
     super.dispose();
   }

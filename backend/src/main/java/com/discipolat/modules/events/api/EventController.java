@@ -169,6 +169,26 @@ public class EventController {
                 .stream().map(EventRegistrationResponse::from).toList());
     }
 
+    // ======================== P3 #113 — ÉVÉNEMENTS À VENIR (MEMBRE) ========================
+
+    /** Calendrier personnel du membre : événements à venir + son RSVP. */
+    @GetMapping("/upcoming/mine")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Map<String, Object>>> myUpcoming(
+            @RequestParam(defaultValue = "60") int days) {
+        return ResponseEntity.ok(eventService.myUpcomingEvents(days));
+    }
+
+    /** RSVP membre : GOING / INTERESTED / CANCEL. */
+    @PutMapping("/{eventId}/rsvp")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<EventRegistrationResponse> setRsvp(
+            @PathVariable UUID eventId,
+            @RequestBody Map<String, String> body) {
+        EventRegistration reg = eventService.setRsvp(eventId, body.get("rsvp"));
+        return ResponseEntity.ok(reg == null ? null : EventRegistrationResponse.from(reg));
+    }
+
     // ======================== WEEKLY PROGRAM TEMPLATES (US-50) ========================
 
     @GetMapping("/templates")

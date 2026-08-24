@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/api/api_service.dart';
+import '../../../data/services/api_service.dart';
 
 class LeaveRequestsScreen extends StatefulWidget {
   const LeaveRequestsScreen({super.key});
@@ -20,7 +20,7 @@ class _LeaveRequestsScreenState extends State<LeaveRequestsScreen> {
 
   Future<void> _loadRequests() async {
     try {
-      final res = await ApiService.get('/leave-requests');
+      final res = await ApiService().get('/leave-requests');
       setState(() {
         requests = (res.data['content'] ?? res.data ?? []) as List;
         loading = false;

@@ -316,4 +316,12 @@ public class SoulController {
             return ResponseEntity.internalServerError().body(Map.of("error", "QR generation failed"));
         }
     }
+
+    // ======================== P7 — SCORE SPIRITUEL DÉTAILLÉ 12 AXES ========================
+
+    /** Score spirituel détaillé à 12 axes + tendance 6 mois. */
+    @GetMapping("/{id}/spiritual-score")
+    public ResponseEntity<Map<String, Object>> getSpiritualScore(@PathVariable UUID id) {
+        return ResponseEntity.ok(soulService.getDetailedSpiritualScore(id));
+    }
 }

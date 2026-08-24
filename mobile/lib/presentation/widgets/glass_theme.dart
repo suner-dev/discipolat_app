@@ -73,6 +73,15 @@ class GlassTheme {
       colorSchemeSeed: AppColors.primary,
       scaffoldBackgroundColor: const Color(0xFF030712),
       fontFamily: 'Inter',
+      // P3 #97 — Cibles tactiles ≥ 48dp (recommandation Material/accessibilité)
+      visualDensity: VisualDensity.standard,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          tapTargetSize: MaterialTapTargetSize.padded,
+        ),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,

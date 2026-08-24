@@ -33,4 +33,16 @@ public class OnboardingWizardController {
 
     @PostMapping("/{id}/skip")
     public ResponseEntity<?> skip(@PathVariable UUID id) { return ResponseEntity.ok(service.skipStep(id)); }
+
+    // ======================== P3 #116 — ONBOARDING INTERACTIF PAR RÔLE ========================
+
+    /**
+     * Checklist de première connexion + tutoriel guidé, adapté au rôle.
+     * Chaque étape : clé, titre, description, chemin de l'app, tooltip.
+     */
+    @GetMapping("/templates/{role}")
+    public ResponseEntity<?> roleTemplate(@PathVariable String role) {
+        return ResponseEntity.ok(service.roleTemplate(role.toUpperCase()));
+    }
 }
+

@@ -10,6 +10,8 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "spiritual_journals")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class SpiritualJournal {
 
     public enum TypeEntree { PRIERE, REFLEXION, REMERCIEMENT, CONFESSION, LOUANGE, LECON }

@@ -2,10 +2,12 @@ package com.discipolat.modules.marketplace.api;
 
 import com.discipolat.modules.marketplace.domain.MarketplaceListing;
 import com.discipolat.modules.marketplace.domain.MarketplaceService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/marketplace")
@@ -46,4 +48,23 @@ public class MarketplaceController {
         service.deactivate(id);
         return ResponseEntity.noContent().build();
     }
+
+    // ======================== P3 #105 — MARKETPLACE DE TEMPLATES ========================
+
+    /** Publie un template de département/famille/rapport partageable entre églises. */
+    @PostMapping("/templates/publish")
+    public ResponseEntity<MarketplaceListing> publishTemplate(@RequestBody MarketplaceListing listing) {
+        listing.setId(null);
+        listing.setCategory(listing.getCategory() == null ? "TEMPLATE" : listing.getCategory());
+        listing.setIsActive(true);
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(listing));
+    }
+
+    /** Installe un template : renvoie sa définition complète pour import dans l'église. */
+    @PostMapping("/{id}/install")
+    public ResponseEntity<Map<String, Object>> install(@PathVariable Long id,
+                                                       @RequestParam Long tenantId) {
+        return ResponseEntity.ok(service.install(id, tenantId));
+    }
 }
+

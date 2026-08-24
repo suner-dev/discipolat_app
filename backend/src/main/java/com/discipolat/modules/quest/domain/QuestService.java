@@ -4,6 +4,8 @@ import com.discipolat.common.infrastructure.propagation.EntityPropagationPublish
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,9 @@ import java.util.*;
 @Service
 @Transactional
 public class QuestService {
+
+    @PersistenceContext
+    private EntityManager em;
 
     private static final Logger log = LoggerFactory.getLogger(QuestService.class);
 
@@ -138,6 +143,50 @@ public class QuestService {
         return board;
     }
 
+    /**
+     * P9 — Classement agrégé par famille ou par département.
+     * Agrège l'XP des membres (xp_ledger) et classe par total puis moyenne.
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> groupLeaderboard(String by) {
+        UUID tenantId = currentTenantId();
+        if (tenantId == null) return List.of();
+        boolean byDepartment = "DEPARTMENT".equalsIgnoreCase(by);
+        String sql = byDepartment ? """
+                SELECT g.name, count(DISTINCT q.user_id), sum(q.points), avg(q.points)
+                FROM xp_ledger q
+                JOIN souls s ON s.user_id = q.user_id AND s.deleted = false
+                JOIN soul_departments sd ON sd.soul_id = s.id AND sd.actif = true
+                JOIN departments g ON g.id = sd.department_id
+                WHERE q.tenant_id = :t
+                GROUP BY g.name ORDER BY sum(q.points) DESC LIMIT 20
+                """ : """
+                SELECT g.nom, count(DISTINCT q.user_id), sum(q.points), avg(q.points)
+                FROM xp_ledger q
+                JOIN souls s ON s.user_id = q.user_id AND s.deleted = false
+                JOIN families g ON g.id = s.famille_id AND g.deleted = false
+                WHERE q.tenant_id = :t
+                GROUP BY g.nom ORDER BY sum(q.points) DESC LIMIT 20
+                """;
+        List<?> rows = em.createNativeQuery(sql)
+                .setParameter("t", tenantId)
+                .getResultList();
+        List<Map<String, Object>> board = new ArrayList<>();
+        int rank = 1;
+        for (Object rowObj : rows) {
+            Object[] row = (Object[]) rowObj;
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("rank", rank++);
+            m.put("nom", row[0]);
+            m.put("type", byDepartment ? "DEPARTEMENT" : "FAMILLE");
+            m.put("membres", ((Number) row[1]).longValue());
+            m.put("xpTotal", ((Number) row[2]).longValue());
+            m.put("xpMoyen", Math.round(((Number) row[3]).doubleValue()));
+            board.add(m);
+        }
+        return board;
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> stats() {
         UUID tenantId = currentTenantId();
@@ -200,5 +249,97 @@ public class QuestService {
             this.target = target;
             this.xpReward = xpReward;
         }
+    }
+
+    // ======================== P9 — DÉFIS HEBDO AUTO + BADGES CONTEXTUALISÉS ========================
+
+    /**
+     * P9 — Génère automatiquement les défis hebdomadaires pour un utilisateur
+     * en fonction de son profil et de ses actions récentes.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> generateWeeklyChallenges() {
+        UUID userId = securityUtils.getCurrentUserId();
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        List<Map<String, Object>> challenges = new ArrayList<>();
+        for (QuestDefinition def : QuestDefinition.values()) {
+            Map<String, Object> challenge = new LinkedHashMap<>();
+            challenge.put("id", def.name());
+            challenge.put("label", def.label);
+            challenge.put("target", def.target);
+            challenge.put("xpReward", def.xpReward);
+            challenge.put("action", def.action.name());
+
+            // Progress actuelle
+            long currentCount = repository.countByUserIdAndActionAndCreatedAtAfter(
+                    userId, def.action,
+                    java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY).atStartOfDay());
+            challenge.put("current", currentCount);
+            challenge.put("completed", currentCount >= def.target);
+            challenge.put("progressPct", Math.min(100, (int)(currentCount * 100 / def.target)));
+
+            challenges.add(challenge);
+        }
+
+        result.put("challenges", challenges);
+        result.put("weekStart", java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY));
+        result.put("weekEnd", java.time.LocalDate.now().with(java.time.DayOfWeek.SUNDAY));
+        result.put("totalXpAvailable", challenges.stream().mapToInt(c -> (int) c.get("xpReward")).sum());
+
+        return result;
+    }
+
+    /**
+     * P9 — Badges contextualisés par profil.
+     * Détermine les badges pertinents selon le rôle et les actions de l'utilisateur.
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getContextualBadges() {
+        UUID userId = securityUtils.getCurrentUserId();
+        String role = securityUtils.getCurrentUserRole();
+        List<Map<String, Object>> badges = new ArrayList<>();
+
+        // Badges communs
+        badges.add(badgeInfo("FIRST_VISIT", "Première Visite", "Réaliser votre première visite", 50));
+        badges.add(badgeInfo("PRAYER_WARRIOR", "Guerrier de Prière", "Enregistrer 10 prières", 100));
+        badges.add(badgeInfo("RAPPORT_MASTER", "Maître Rapport", "Soumettre 4 rapports consécutifs", 150));
+        badges.add(badgeInfo("FOLLOWER_FIDEL", "Suivi Fidèle", "Contacter 5 disciples cette semaine", 80));
+
+        // Badges spécifiques au rôle
+        if ("FAISEUR".equals(role) || "CHEF_DE_FAMILLE".equals(role)) {
+            badges.add(badgeInfo("PASTORAL_SHEPHERD", "Berger Pastoral", "Suivre 10 disciples actifs", 200));
+            badges.add(badgeInfo("CONVERSION_LEADER", "Leader de Conversion", "Accompagner 3 conversions", 300));
+        }
+        if ("ADMIN".equals(role) || "PASTEUR".equals(role)) {
+            badges.add(badgeInfo("CHURCH_BUILDER", "Bâtisseur d'Église", "Gérer 50+ membres", 500));
+            badges.add(badgeInfo("DATA_ORACLE", "Oracle des Données", "Générer 10 rapports analytiques", 250));
+        }
+        if ("MEMBRE".equals(role)) {
+            badges.add(badgeInfo("COMMUNITY_PILLAR", "Pilier Communautaire", "Participer à 8 événements", 150));
+            badges.add(badgeInfo("GROWTH_SEEKER", "Chercheur de Croissance", "Suivre 2 formations", 120));
+        }
+
+        return badges;
+    }
+
+    private Map<String, Object> badgeInfo(String code, String name, String description, int xpValue) {
+        Map<String, Object> badge = new LinkedHashMap<>();
+        badge.put("code", code);
+        badge.put("name", name);
+        badge.put("description", description);
+        badge.put("xpValue", xpValue);
+        // Check if earned
+        UUID userId = null;
+        try { userId = securityUtils.getCurrentUserId(); } catch (Exception ignored) {}
+        if (userId != null) {
+            long count = em.createQuery(
+                    "SELECT COUNT(ub) FROM UserBadge ub WHERE ub.userId = :uid AND ub.badge.code = :code", Long.class)
+                    .setParameter("uid", userId).setParameter("code", code).getSingleResult();
+            badge.put("earned", count > 0);
+        } else {
+            badge.put("earned", false);
+        }
+        return badge;
     }
 }

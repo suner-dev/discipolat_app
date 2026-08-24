@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/api/api_service.dart';
+import '../../../data/services/api_service.dart';
 
 class TestimonialsScreen extends StatefulWidget {
   const TestimonialsScreen({super.key});
@@ -20,7 +20,7 @@ class _TestimonialsScreenState extends State<TestimonialsScreen> {
 
   Future<void> _loadTestimonies() async {
     try {
-      final res = await ApiService.get('/testimonies');
+      final res = await ApiService().get('/testimonies');
       setState(() {
         testimonies = (res.data['content'] ?? res.data ?? []) as List;
         loading = false;

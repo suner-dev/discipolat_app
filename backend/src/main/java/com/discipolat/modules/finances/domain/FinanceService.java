@@ -4,6 +4,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.currency.domain.CurrencyService;
 import com.discipolat.modules.finances.api.FinanceBudgetRequest;
 import com.discipolat.modules.finances.api.FinanceTransactionRequest;
 import org.springframework.stereotype.Service;
@@ -36,17 +37,20 @@ public class FinanceService {
     private final SecurityUtils securityUtils;
     private final AuditService auditService;
     private final EntityPropagationPublisher propagationPublisher;
+    private final CurrencyService currencyService;
 
     public FinanceService(FinanceTransactionRepository transactionRepository,
                           FinanceBudgetRepository budgetRepository,
                           SecurityUtils securityUtils,
                           AuditService auditService,
-                          EntityPropagationPublisher propagationPublisher) {
+                          EntityPropagationPublisher propagationPublisher,
+                          CurrencyService currencyService) {
         this.transactionRepository = transactionRepository;
         this.budgetRepository = budgetRepository;
         this.securityUtils = securityUtils;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
+        this.currencyService = currencyService;
     }
 
     /* ----------------------------- Transactions ----------------------------- */
@@ -282,7 +286,49 @@ public class FinanceService {
         map.put("description", t.getDescription() == null ? "" : t.getDescription());
         map.put("dateTransaction", t.getDateTransaction() != null ? t.getDateTransaction().toString() : "");
         map.put("createdAt", t.getCreatedAt() != null ? t.getCreatedAt().toString() : "");
+        // P0 #6 — Multi-devise : ajout de la devise et conversion
+        try {
+            var primaryCurrency = currencyService.getPrimaryCurrency();
+            map.put("devise", primaryCurrency.getCurrencyCode());
+            map.put("deviseSymbole", primaryCurrency.getCurrencySymbol());
+            map.put("fuseauHoraire", primaryCurrency.getTimezone());
+        } catch (Exception e) {
+            map.put("devise", "XAF");
+            map.put("deviseSymbole", "FCFA");
+        }
         return map;
+    }
+
+    /**
+     * P0 #6 — Multi-devise : statistiques avec conversion dans la devise cible.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> statsWithCurrency(int annee, String targetCurrency) {
+        Map<String, Object> baseStats = stats(annee);
+        if (targetCurrency == null || targetCurrency.isBlank()) return baseStats;
+
+        try {
+            var primaryCurrency = currencyService.getPrimaryCurrency();
+            String fromCurrency = primaryCurrency.getCurrencyCode();
+            if (fromCurrency.equalsIgnoreCase(targetCurrency)) return baseStats;
+
+            // Conversion des totaux
+            BigDecimal totalRecettes = (BigDecimal) baseStats.get("totalRecettes");
+            BigDecimal totalDepenses = (BigDecimal) baseStats.get("totalDepenses");
+            Double convRecettes = currencyService.convertAmount(
+                    totalRecettes.doubleValue(), fromCurrency, targetCurrency);
+            Double convDepenses = currencyService.convertAmount(
+                    totalDepenses.doubleValue(), fromCurrency, targetCurrency);
+
+            baseStats.put("deviseAffichage", targetCurrency);
+            baseStats.put("totalRecettesConverti", Math.round(convRecettes * 100.0) / 100.0);
+            baseStats.put("totalDepensesConverti", Math.round(convDepenses * 100.0) / 100.0);
+            baseStats.put("soldeConverti", Math.round((convRecettes - convDepenses) * 100.0) / 100.0);
+            baseStats.put("tauxConversion", currencyService.convertAmount(1.0, fromCurrency, targetCurrency));
+        } catch (Exception e) {
+            // Devise non trouvée, retourner les stats de base
+        }
+        return baseStats;
     }
 
     private BigDecimal sum(List<FinanceTransaction> rows, FinanceTransaction.TransactionType type) {

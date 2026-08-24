@@ -176,6 +176,18 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
+    /** P22 — Compte des âmes (membres) du tenant. */
+    public long countSouls() {
+        return soulRepository.count();
+    }
+
+    /** P22 — Nombre de familles distinctes ayant soumis un rapport sur la période. */
+    public long countFamilies(LocalDate from, LocalDate to) {
+        return familyReportRepository.findAll().stream()
+                .map(f -> f.getId())
+                .distinct().count();
+    }
+
     public Page<MakerReport> findMakerReports(UUID faiseurId, UUID familleId, UUID ameId,
                                               LocalDate semaine, Pageable pageable) {
         // Super-utilisateurs : filtres DB explicites sur tous les rapports

@@ -7,6 +7,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "team_tasks")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class TeamTask {
 
     public enum Statut { A_FAIRE, EN_COURS, TERMINE, EN_RETARD }

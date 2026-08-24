@@ -622,4 +622,85 @@ public class EventService {
 
         return stats;
     }
+
+    // ======================== P3 #113 — ÉVÉNEMENTS À VENIR (MEMBRE) ========================
+
+    /**
+     * Calendrier personnel : événements à venir avec le statut RSVP de l'utilisateur courant.
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> myUpcomingEvents(int days) {
+        UUID userId = securityUtils.getCurrentUserId();
+        LocalDateTime from = LocalDateTime.now();
+        LocalDateTime to = from.plusDays(Math.max(1, Math.min(days, 90)));
+        Page<Event> upcoming = eventRepository
+                .findByTenantIdAndDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(
+                        com.discipolat.common.multitenancy.TenantContext.getCurrentTenantId(), from,
+                        Pageable.unpaged());
+        Map<UUID, EventRegistration> myRegs = registrationRepository.findByUtilisateurId(userId).stream()
+                .collect(Collectors.toMap(EventRegistration::getEventId, r -> r, (a, b) -> a));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Event e : upcoming.getContent()) {
+            if (e.getDateDebut().isAfter(to)) continue;
+            EventRegistration reg = myRegs.get(e.getId());
+            String rsvp = "NONE";
+            if (reg != null) {
+                rsvp = switch (reg.getStatutInscription()) {
+                    case "INSCRIT", "PRESENT" -> "GOING";
+                    case "EN_ATTENTE" -> "WAITLIST";
+                    case "INTERESSE" -> "INTERESTED";
+                    default -> "NONE";
+                };
+            }
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", e.getId());
+            item.put("titre", e.getTitre());
+            item.put("description", e.getDescription());
+            item.put("lieu", e.getLieu());
+            item.put("typeEvenement", e.getTypeEvenement());
+            item.put("dateDebut", e.getDateDebut());
+            item.put("dateFin", e.getDateFin());
+            item.put("limitePlaces", e.getLimitePlaces());
+            item.put("nbInscrits", e.getNbInscrits());
+            item.put("rsvp", rsvp);
+            result.add(item);
+        }
+        return result;
+    }
+
+    /**
+     * RSVP membre : GOING (inscription), INTERESTED (marqué intéressé), CANCEL (annule).
+     */
+    public EventRegistration setRsvp(UUID eventId, String rsvp) {
+        UUID userId = securityUtils.getCurrentUserId();
+        findById(eventId); // contrôle d'accès
+        String value = rsvp == null ? "" : rsvp.toUpperCase();
+        switch (value) {
+            case "GOING": {
+                EventRegistration existing =
+                        registrationRepository.findByEventIdAndUtilisateurId(eventId, userId).orElse(null);
+                if (existing == null) return register(eventId);
+                existing.setStatutInscription("INSCRIT");
+                return registrationRepository.save(existing);
+            }
+            case "INTERESTED": {
+                EventRegistration reg =
+                        registrationRepository.findByEventIdAndUtilisateurId(eventId, userId).orElse(null);
+                if (reg == null) {
+                    reg = EventRegistration.builder().eventId(eventId).utilisateurId(userId).build();
+                    reg.setStatutInscription("INTERESSE");
+                } else {
+                    reg.setStatutInscription("INTERESSE");
+                }
+                return registrationRepository.save(reg);
+            }
+            case "CANCEL": {
+                unregister(eventId);
+                return null;
+            }
+            default:
+                throw new IllegalArgumentException("RSVP invalide : " + rsvp);
+        }
+    }
 }

@@ -61,6 +61,18 @@ public class TontineController {
         return ResponseEntity.ok(service.stats());
     }
 
+    /** P11 — Impayés du groupe. */
+    @GetMapping("/{id}/overdue")
+    public ResponseEntity<java.util.List<Map<String, Object>>> overdue(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.overdue(id));
+    }
+
+    /** P11 — Envoie les notifications d'échéance aux retardataires. */
+    @PostMapping("/{id}/notify-due")
+    public ResponseEntity<Map<String, Object>> notifyDue(@PathVariable UUID id) {
+        return ResponseEntity.ok(Map.of("notificationsEnvoyees", service.notifyDue(id)));
+    }
+
     @GetMapping("/{id}/dashboard")
     public ResponseEntity<Map<String, Object>> dashboard(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getDashboard(id));

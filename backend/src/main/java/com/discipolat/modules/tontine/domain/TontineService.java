@@ -32,17 +32,23 @@ public class TontineService {
     private final TontineContributionRepository contributionRepository;
     private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
+    private final com.discipolat.modules.notifications.domain.NotificationService notificationService;
+    private final jakarta.persistence.EntityManager em;
 
     public TontineService(TontineGroupRepository groupRepository,
                           TontineMemberRepository memberRepository,
                           TontineContributionRepository contributionRepository,
                           EntityPropagationPublisher propagationPublisher,
-                          SecurityUtils securityUtils) {
+                          SecurityUtils securityUtils,
+                          com.discipolat.modules.notifications.domain.NotificationService notificationService,
+                          jakarta.persistence.EntityManager em) {
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
         this.contributionRepository = contributionRepository;
         this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
+        this.notificationService = notificationService;
+        this.em = em;
     }
 
     public TontineGroup createGroup(TontineGroup group) {
@@ -255,5 +261,60 @@ public class TontineService {
         if (!manager) {
             throw new AccessDeniedException("Seuls ADMIN, PASTEUR et RESPONSABLE gèrent les tontines");
         }
+    }
+
+
+    /**
+     * P11 — Liste des impayés du tour courant (contributions non réglées).
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> overdue(UUID groupId) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.getTenantId();
+        List<Object[]> rows = em.createNativeQuery("""
+                SELECT m.nom, m.ordre_passage, c.tour, c.montant
+                FROM tontine_contributions c
+                JOIN tontine_members m ON m.id = c.member_id
+                WHERE c.group_id = :g AND c.tenant_id = :t AND c.paye = false
+                ORDER BY c.tour, m.ordre_passage
+                """)
+                .setParameter("g", groupId)
+                .setParameter("t", tenantId)
+                .getResultList();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Object rowObj : rows) {
+            Object[] row = (Object[]) rowObj;
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("membre", row[0]);
+            m.put("ordrePassage", ((Number) row[1]).intValue());
+            m.put("tour", ((Number) row[2]).intValue());
+            m.put("montantDu", row[3]);
+            out.add(m);
+        }
+        return out;
+    }
+
+    /**
+     * P11 — Notifie les membres ayant une contribution impayée au tour courant.
+     * Réutilise NotificationService (canal IN_APP/PUSH selon préférences).
+     */
+    public int notifyDue(UUID groupId) {
+        var group = groupRepository.findById(groupId).orElse(null);
+        if (group == null) return 0;
+        int sent = 0;
+        for (var member : memberRepository.findByGroupIdOrderByOrdrePassageAsc(groupId)) {
+            boolean paidForCurrentRound = contributionRepository.findByGroupIdAndTourOrderByMemberIdAsc(groupId, group.getTourActuel())
+                    .stream().anyMatch(c -> c.getMemberId().equals(member.getId()) && c.isPaye());
+            if (!paidForCurrentRound && member.getUserId() != null) {
+                notificationService.create(member.getUserId(),
+                        com.discipolat.common.enums.TypeNotification.RAPPEL,
+                        com.discipolat.common.enums.CanalNotification.PUSH,
+                        "Échéance tontine",
+                        "Votre contribution pour le tour " + group.getTourActuel() + " de « "
+                                + group.getName() + " » est attendue (" + group.getMontantParTour() + ").",
+                        groupId, "TONTINE");
+                sent++;
+            }
+        }
+        return sent;
     }
 }

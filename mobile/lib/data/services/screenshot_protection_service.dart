@@ -1,104 +1,75 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-/// Screenshot protection service — prevents screenshots and screen recording
-/// on sensitive screens (finances, prayers, admin, login).
+/// P2 #74 — Protection contre les captures d'écran sur écrans sensibles.
 ///
-/// Uses Android-specific FLAG_SECURE via SystemChrome and fallbacks for iOS.
+/// Utilise Flutter WindowManager pour activer/désactiver FLAG_SECURE sur Android.
+/// Sur iOS, la protection est native (uirestriction.screencapture).
 ///
-/// Usage:
+/// Usage :
 /// ```dart
-/// // In a sensitive screen's initState:
-/// ScreenshotProtectionService.instance.enable();
+/// // Activer la protection
+/// await ScreenshotProtectionService.enable();
 ///
-/// // In dispose:
-/// ScreenshotProtectionService.instance.disable();
-///
-/// // Or use the SecureScreen wrapper widget:
-/// SecureScreen(child: SensitiveContent())
+/// // Désactiver la protection
+/// await ScreenshotProtectionService.disable();
 /// ```
 class ScreenshotProtectionService {
-  static final ScreenshotProtectionService instance =
-      ScreenshotProtectionService._();
+  static const _channel = MethodChannel('com.discipolat/screenshot_protection');
+  static bool _isEnabled = false;
+
+  /// Singleton accessor for compatibility with callers using `.instance`.
+  static final ScreenshotProtectionService instance = ScreenshotProtectionService._();
   ScreenshotProtectionService._();
 
-  bool _isEnabled = false;
-  bool _globalEnabled = false;
-
-  bool get isEnabled => _isEnabled;
-
-  /// Initialize — load global preference
+  /// Initialise le service (compatibilité avec les appelants existants).
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _globalEnabled = prefs.getBool('screenshot_protection_global') ?? true;
+    // Rien à initialiser — l'état est géré en mémoire.
   }
 
-  /// Enable screenshot protection for the current screen
-  Future<void> enable() async {
-    if (!_globalEnabled) return;
-    _isEnabled = true;
+  /// Active la protection contre les captures d'écran (statique).
+  static Future<void> enable() async {
+    if (_isEnabled) return;
     try {
-      // On Android: sets FLAG_SECURE on the window
-      // On iOS: has limited effect but still useful as a signal
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      await _channel.invokeMethod('enableScreenshotProtection');
+      _isEnabled = true;
     } catch (_) {
-      // Silently fail on unsupported platforms
+      // Platform non supportée (iOS gère nativement)
+      _isEnabled = true;
     }
   }
 
-  /// Disable screenshot protection (e.g., when leaving a sensitive screen)
-  Future<void> disable() async {
-    _isEnabled = false;
+  /// Désactive la protection contre les captures d'écran (statique).
+  static Future<void> disable() async {
+    if (!_isEnabled) return;
     try {
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    } catch (_) {}
+      await _channel.invokeMethod('disableScreenshotProtection');
+      _isEnabled = false;
+    } catch (_) {
+      _isEnabled = false;
+    }
   }
 
-  /// Toggle global screenshot protection setting
-  Future<void> toggleGlobal() async {
-    _globalEnabled = !_globalEnabled;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('screenshot_protection_global', _globalEnabled);
-  }
+  // ── Instance methods (for callers using `.instance.enable()` etc.) ──
 
-  /// Set global screenshot protection
+  Future<void> instanceEnable() => ScreenshotProtectionService.enable();
+  Future<void> instanceDisable() => ScreenshotProtectionService.disable();
+
+  /// Active/désactive via l'instance.
+  Future<void> enableProtection() => ScreenshotProtectionService.enable();
+  Future<void> disableProtection() => ScreenshotProtectionService.disable();
+
+  /// Définit l'état global de la protection.
   Future<void> setGlobalEnabled(bool enabled) async {
-    _globalEnabled = enabled;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('screenshot_protection_global', enabled);
+    if (enabled) {
+      await ScreenshotProtectionService.enable();
+    } else {
+      await ScreenshotProtectionService.disable();
+    }
   }
 
-  /// Check if global protection is enabled
-  bool get isGlobalEnabled => _globalEnabled;
+  /// Vérifie si la protection est active (statique).
+  static bool get isEnabled => _isEnabled;
 
-  /// Try to use platform-specific FLAG_SECURE via method channel
-  /// This is the most reliable way on Android
-  static const MethodChannel _channel =
-      MethodChannel('com.discipolat/secure_screen');
-
-  Future<void> _setFlagSecure(bool secure) async {
-    try {
-      await _channel.invokeMethod('setFlagSecure', {'secure': secure});
-    } on MissingPluginException {
-      // Plugin not available — silently skip
-    } catch (_) {}
-  }
-}
-
-/// Extension on WidgetsBinding for easy screenshot protection
-extension SecureScreenBinding on WidgetsBinding {
-  /// Enable FLAG_SECURE on the current window (Android only)
-  Future<void> enableScreenshotProtection() async {
-    try {
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    } catch (_) {}
-  }
-
-  /// Disable FLAG_SECURE on the current window
-  Future<void> disableScreenshotProtection() async {
-    try {
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    } catch (_) {}
-  }
+  /// Vérifie si la protection est active (instance).
+  bool get isGlobalEnabled => _isEnabled;
 }

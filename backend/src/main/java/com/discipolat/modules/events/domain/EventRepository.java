@@ -11,6 +11,10 @@ import java.util.UUID;
 
 @Repository
 public interface EventRepository extends JpaRepository<Event, UUID> {
+
+    /** P3 #113 — Événements à venir (calendrier personnel du membre). */
+    Page<Event> findByTenantIdAndDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(
+            UUID tenantId, java.time.LocalDateTime from, org.springframework.data.domain.Pageable pageable);
     Page<Event> findByFamilleIdAndDeletedFalse(UUID familleId, Pageable pageable);
     Page<Event> findByDepartmentIdAndDeletedFalse(UUID departmentId, Pageable pageable);
     List<Event> findByDepartmentIdAndDeletedFalse(UUID departmentId);

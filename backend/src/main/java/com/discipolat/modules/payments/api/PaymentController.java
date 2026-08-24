@@ -1,12 +1,16 @@
 package com.discipolat.modules.payments.api;
 
 import com.discipolat.modules.payments.domain.PaymentGatewayService;
+import com.discipolat.modules.payments.domain.TaxReceiptService;
 import com.discipolat.modules.payments.domain.PaymentIntent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 import java.util.Map;
@@ -17,13 +21,32 @@ import java.util.UUID;
 public class PaymentController {
 
     private final PaymentGatewayService service;
+    private final TaxReceiptService taxReceiptService;
 
     /** Secret partagé du webhook opérateur (vide en dev → endpoint ouvert). */
     @Value("${app.payments.webhook-secret:}")
     private String webhookSecret;
 
-    public PaymentController(PaymentGatewayService service) {
+    public PaymentController(PaymentGatewayService service, TaxReceiptService taxReceiptService) {
         this.service = service;
+        this.taxReceiptService = taxReceiptService;
+    }
+
+    /** P12 — Reçu fiscal PDF pour un paiement confirmé. */
+    @GetMapping("/{id}/tax-receipt")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> taxReceipt(@PathVariable UUID id) {
+        PaymentIntent payment = service.findById(id);
+        if (payment.getStatus() != PaymentIntent.Status.CONFIRMED) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .build();
+        }
+        byte[] pdf = taxReceiptService.generatePdf(payment);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.set(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=recu-fiscal-" + id + ".pdf");
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
     }
 
     /** Démarre un paiement (dîme, offrande, don diaspora…). */

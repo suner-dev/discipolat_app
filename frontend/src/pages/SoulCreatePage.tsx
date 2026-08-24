@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
@@ -11,6 +11,7 @@ import { ArrowLeft, Save, Loader2, Heart, Users, ClipboardList } from 'lucide-re
 import toast from 'react-hot-toast';
 import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
 import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
+import FormStepper from '@/components/shared/FormStepper';
 
 const soulSchema = z.object({
   nom: z.string().min(1, 'Nom requis'),
@@ -37,6 +38,23 @@ const soulSchema = z.object({
 );
 
 type SoulForm = z.infer<typeof soulSchema>;
+
+/// P3 #91 — Progression live : utilise useWatch pour ne re-render que ce composant.
+function SoulFormProgress({ control, customFieldsComplete }: {
+  control: Control<SoulForm>;
+  customFieldsComplete: boolean;
+}) {
+  const values = useWatch({ control });
+  return (
+    <FormStepper
+      steps={[
+        { label: 'Identité du disciple', completed: !!(values.nom && values.dateIntegration) },
+        { label: 'Suivi & affectation', completed: !!values.faiseurId },
+        { label: 'Champs additionnels', completed: customFieldsComplete },
+      ]}
+    />
+  );
+}
 
 export default function SoulCreatePage() {
   const navigate = useNavigate();
@@ -94,6 +112,7 @@ export default function SoulCreatePage() {
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<SoulForm>({
     resolver: zodResolver(soulSchema),
@@ -155,6 +174,8 @@ export default function SoulCreatePage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <SoulFormProgress control={control} customFieldsComplete={customFields.definitions.length === 0 || customFields.missingRequired.length === 0} />
+
         {/* Identity */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">

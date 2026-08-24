@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/api/api_service.dart';
+import '../../../data/services/api_service.dart';
 
 class SurveysScreen extends StatefulWidget {
   const SurveysScreen({super.key});
@@ -20,7 +20,7 @@ class _SurveysScreenState extends State<SurveysScreen> {
 
   Future<void> _loadSurveys() async {
     try {
-      final res = await ApiService.get('/surveys');
+      final res = await ApiService().get('/surveys');
       setState(() {
         surveys = (res.data['content'] ?? res.data ?? []) as List;
         loading = false;

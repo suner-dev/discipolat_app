@@ -98,6 +98,11 @@ import 'presentation/screens/maker_tracking/maker_tracking_screen.dart';
 import 'presentation/screens/growth_projection/growth_projection_screen.dart';
 import 'presentation/screens/church_comparison/church_comparison_screen.dart';
 import 'presentation/screens/volunteers/volunteers_screen.dart';
+import 'presentation/screens/dashboard/load_prediction_screen.dart';
+import 'presentation/screens/neighborhood_health/neighborhood_health_screen.dart';
+import 'presentation/screens/sabbath_dashboard/sabbath_dashboard_screen.dart';
+import 'presentation/screens/my_team/my_team_family_screen.dart';
+import 'presentation/screens/follow_up_requests/follow_up_requests_screen.dart';
 import 'presentation/screens/skill_matching/skill_matching_screen.dart';
 import 'presentation/screens/executive_insights/executive_insights_screen.dart';
 import 'presentation/screens/ai_visit_notes/ai_visit_notes_screen.dart';
@@ -120,6 +125,17 @@ import 'presentation/screens/event_checklist/event_checklist_screen.dart';
 import 'presentation/screens/skills_matrix/skills_matrix_screen.dart';
 import 'presentation/screens/group_messages/group_messages_screen.dart';
 import 'presentation/screens/broadcast/broadcast_screen.dart';
+import 'presentation/screens/gantt/team_gantt_screen.dart';
+import 'presentation/screens/dashboard/discipleship_path_screen.dart';
+import 'presentation/screens/dashboard/weekly_challenges_screen.dart';
+import 'presentation/screens/voice_assistant/voice_assistant_screen.dart';
+import 'presentation/screens/compliance/compliance_manager_screen.dart';
+import 'presentation/screens/whatsapp/whatsapp_reminders_screen.dart';
+import 'presentation/screens/data_migration/data_migration_screen.dart';
+import 'presentation/screens/usage_analytics/usage_analytics_screen.dart';
+import 'presentation/screens/encouragements/encouragements_screen.dart';
+import 'presentation/screens/dashboard/moderation_screen.dart';
+import 'presentation/screens/rewards/rewards_screen.dart';
 import 'tenant_config.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -290,6 +306,12 @@ Map<String, List<String>> _routeRoles = {
   '/giving': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/tontines': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/voice-reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/voice-assistant': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/compliance': ['ADMIN', 'PASTEUR'],
+  '/whatsapp-reminders': ['ADMIN', 'PASTEUR'],
+  '/discipleship-path': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/weekly-challenges': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/team-gantt': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/face-checkin': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/trainings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/communications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -903,6 +925,25 @@ final appRouter = GoRouter(
     GoRoute(path: '/skills-matrix', name: 'skills-matrix', builder: (ctx, s) => const SkillsMatrixScreen()),
     GoRoute(path: '/group-messages', name: 'group-messages', builder: (ctx, s) => const GroupMessagesScreen()),
     GoRoute(path: '/broadcast', name: 'broadcast', builder: (ctx, s) => const BroadcastScreen()),
+    // ===== P3 — Innovation / futuriste =====
+    GoRoute(path: '/load-prediction', name: 'load-prediction', builder: (ctx, s) => const LoadPredictionScreen()),
+    GoRoute(path: '/neighborhood-health', name: 'neighborhood-health', builder: (ctx, s) => const NeighborhoodHealthScreen()),
+    GoRoute(path: '/sabbath-dashboard', name: 'sabbath-dashboard', builder: (ctx, s) => const SabbathDashboardScreen()),
+    GoRoute(path: '/my-team-family', name: 'my-team-family', builder: (ctx, s) => const MyTeamFamilyScreen()),
+    GoRoute(path: '/follow-up-requests', name: 'follow-up-requests', builder: (ctx, s) => const FollowUpRequestsScreen()),
+    // P1 routes
+    GoRoute(path: '/discipleship-path', name: 'discipleship-path', builder: (ctx, s) => const DiscipleshipPathScreen()),
+    GoRoute(path: '/weekly-challenges', name: 'weekly-challenges', builder: (ctx, s) => const WeeklyChallengesScreen()),
+    GoRoute(path: '/team-gantt', name: 'team-gantt', builder: (ctx, s) => const TeamGanttScreen()),
+    // P0 new screens
+    GoRoute(path: '/voice-assistant', name: 'voice-assistant', builder: (ctx, s) => const VoiceAssistantScreen()),
+    GoRoute(path: '/compliance', name: 'compliance', builder: (ctx, s) => const ComplianceManagerScreen()),
+    GoRoute(path: '/whatsapp-reminders', name: 'whatsapp-reminders', builder: (ctx, s) => const WhatsAppRemindersScreen()),
+    GoRoute(path: '/data-migration', name: 'data-migration', builder: (ctx, s) => const DataMigrationScreen()),
+    GoRoute(path: '/usage-analytics', name: 'usage-analytics', builder: (ctx, s) => const UsageAnalyticsScreen()),
+    GoRoute(path: '/encouragements', name: 'encouragements', builder: (ctx, s) => const EncouragementsScreen()),
+    GoRoute(path: '/moderation', name: 'moderation', builder: (ctx, s) => const ModerationScreen()),
+    GoRoute(path: '/rewards', name: 'rewards', builder: (ctx, s) => const RewardsScreen()),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
 );

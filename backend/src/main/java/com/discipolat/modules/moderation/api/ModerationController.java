@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/moderation")
+@RequestMapping("/api/v1/moderation")
 public class ModerationController {
 
     private final ContentModerationService moderationService;

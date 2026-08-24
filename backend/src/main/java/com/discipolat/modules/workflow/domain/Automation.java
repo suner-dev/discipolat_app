@@ -8,6 +8,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "automations")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class Automation {
 
     public enum Statut { ACTIVE, PAUSEE, BROUILLON }

@@ -7,12 +7,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Pont WhatsApp ↔ Discipolat — WhatsApp Business Cloud API (Meta).
@@ -27,19 +29,25 @@ public class WhatsAppService {
 
     private final WhatsAppConfigRepository configRepository;
     private final WhatsAppMessageRepository messageRepository;
+    private final WhatsAppReminderRepository reminderRepository;
     private final SoulRepository soulRepository;
     private final RestClient restClient;
     private final CryptoService cryptoService;
+
+    /** Abonnés WhatsApp par famille (numéro → set de families) */
+    private final Map<String, Set<String>> familySubscribers = new ConcurrentHashMap<>();
 
     @Value("${app.whatsapp.enabled:false}")
     private boolean globalEnabled;
 
     public WhatsAppService(WhatsAppConfigRepository configRepository,
                            WhatsAppMessageRepository messageRepository,
+                           WhatsAppReminderRepository reminderRepository,
                            SoulRepository soulRepository,
                            CryptoService cryptoService) {
         this.configRepository = configRepository;
         this.messageRepository = messageRepository;
+        this.reminderRepository = reminderRepository;
         this.soulRepository = soulRepository;
         this.cryptoService = cryptoService;
         this.restClient = RestClient.create();
@@ -196,20 +204,122 @@ public class WhatsAppService {
     }
 
     private void processCommand(UUID tenantId, WhatsAppConfig cfg, WhatsAppMessage inbound, String body) {
-        if (body.startsWith("#rejoindre")) {
-            sendText(tenantId, inbound.getPhoneNumber(),
+        String phone = inbound.getPhoneNumber();
+        if (body.startsWith("#rejoindre famille")) {
+            // P0 #1 — #rejoindre Famille-Nom : s'abonner aux annonces d'une famille
+            String familyName = body.substring("#rejoindre famille".length()).trim();
+            if (!familyName.isEmpty()) {
+                familySubscribers.computeIfAbsent(phone, k -> new HashSet<>()).add(familyName.toUpperCase());
+                sendText(tenantId, phone,
+                        "✅ Vous êtes maintenant abonné(e) aux annonces de la famille '" + familyName.toUpperCase() + "'. " +
+                        "Vous recevrez les rappels et annonces de cette famille.\n" +
+                        "#rejoindre famille <nom> — ajouter une famille\n#quitter famille <nom> — se désabonner\n#afamille — voir vos familles",
+                        null, null, WhatsAppMessage.Kind.COMMAND);
+            } else {
+                sendText(tenantId, phone,
+                        "Usage : #rejoindre famille <nom-de-la-famille>\n" +
+                        "Exemple : #rejoindre famille Grâce",
+                        null, null, WhatsAppMessage.Kind.COMMAND);
+            }
+        } else if (body.startsWith("#quitter famille")) {
+            String familyName = body.substring("#quitter famille".length()).trim();
+            if (!familyName.isEmpty()) {
+                Set<String> subs = familySubscribers.get(phone);
+                if (subs != null) subs.remove(familyName.toUpperCase());
+                sendText(tenantId, phone,
+                        "❌ Vous ne recevrez plus les annonces de la famille '" + familyName.toUpperCase() + "'.",
+                        null, null, WhatsAppMessage.Kind.COMMAND);
+            }
+        } else if (body.startsWith("#afamille")) {
+            Set<String> subs = familySubscribers.getOrDefault(phone, Set.of());
+            if (subs.isEmpty()) {
+                sendText(tenantId, phone,
+                        "Vous n'êtes abonné(e) à aucune famille.\n" +
+                        "#rejoindre famille <nom> pour vous abonner.",
+                        null, null, WhatsAppMessage.Kind.COMMAND);
+            } else {
+                sendText(tenantId, phone,
+                        "📋 Vos familles abonnées :\n" + String.join(", ", subs),
+                        null, null, WhatsAppMessage.Kind.COMMAND);
+            }
+        } else if (body.startsWith("#rejoindre")) {
+            sendText(tenantId, phone,
                     cfg != null && cfg.getWelcomeMessage() != null ? cfg.getWelcomeMessage()
-                    : "Bienvenue ! Vous êtes inscrit(e) aux annonces. #stop pour vous désabonner.",
+                    : "Bienvenue ! Vous êtes inscrit(e) aux annonces. #stop pour vous désabonner.\n"
+                    + "#rejoindre famille <nom> — recevoir les annonces d'une famille",
                     null, null, WhatsAppMessage.Kind.COMMAND);
         } else if (body.startsWith("#stop") || body.startsWith("#arreter")) {
-            sendText(tenantId, inbound.getPhoneNumber(),
+            sendText(tenantId, phone,
                     "Vous ne recevrez plus d'annonces. #rejoindre pour revenir.",
                     null, null, WhatsAppMessage.Kind.COMMAND);
         } else if (body.startsWith("#aide")) {
-            sendText(tenantId, inbound.getPhoneNumber(),
-                    "Commandes :\n#rejoindre — recevoir les annonces\n#stop — se désabonner\n#aide — cette aide",
+            sendText(tenantId, phone,
+                    "Commandes :\n" +
+                    "#rejoindre — recevoir les annonces générales\n" +
+                    "#rejoindre famille <nom> — annonces d'une famille\n" +
+                    "#quitter famille <nom> — se désabonner d'une famille\n" +
+                    "#afamille — voir vos familles abonnées\n" +
+                    "#stop — se désabonner de tout\n" +
+                    "#aide — cette aide",
                     null, null, WhatsAppMessage.Kind.COMMAND);
         }
+    }
+
+    // ======================== P0 #1 — RAPPELS AUTOMATIQUES ========================
+
+    /** Programme un rappel WhatsApp pour un événement ou suivi. */
+    public WhatsAppReminder scheduleReminder(UUID tenantId, String referenceType, UUID referenceId,
+                                              String phoneNumber, String message, LocalDateTime scheduledAt) {
+        WhatsAppReminder reminder = new WhatsAppReminder();
+        reminder.setTenantId(tenantId);
+        reminder.setReferenceType(referenceType);
+        reminder.setReferenceId(referenceId);
+        reminder.setPhoneNumber(phoneNumber);
+        reminder.setMessage(message);
+        reminder.setScheduledAt(scheduledAt);
+        return reminderRepository.save(reminder);
+    }
+
+    /** Envoie tous les rappels en attente dont l'heure est passée. Exécuté toutes les 5 min. */
+    @Scheduled(cron = "0 */5 * * * *")
+    @Transactional
+    public void sendPendingReminders() {
+        // Trouver tous les tenants qui ont des rappels en attente
+        Set<UUID> tenants = new HashSet<>();
+        reminderRepository.findAll().stream()
+                .filter(r -> "PENDING".equals(r.getStatus()) && r.getScheduledAt().isBefore(LocalDateTime.now()))
+                .forEach(r -> tenants.add(r.getTenantId()));
+
+        for (UUID tenantId : tenants) {
+            List<WhatsAppReminder> tenantReminders = reminderRepository
+                    .findByTenantIdAndStatusAndScheduledAtBeforeOrderByScheduledAtAsc(
+                            tenantId, "PENDING", LocalDateTime.now());
+            for (WhatsAppReminder r : tenantReminders) {
+                try {
+                    sendText(tenantId, r.getPhoneNumber(), r.getMessage(),
+                            r.getReferenceType(), r.getReferenceId(), WhatsAppMessage.Kind.REMINDER);
+                    r.setStatus("SENT");
+                    r.setSentAt(LocalDateTime.now());
+                } catch (Exception e) {
+                    r.setStatus("FAILED");
+                    log.warn("Rappel WhatsApp échoué pour {} : {}", r.getPhoneNumber(), e.getMessage());
+                }
+                reminderRepository.save(r);
+            }
+        }
+    }
+
+    /** Rappel d'événement à envoyer 24h avant. */
+    public void scheduleEventReminder(UUID tenantId, UUID eventId, String eventTitle,
+                                       String phoneNumber, LocalDateTime eventDate) {
+        LocalDateTime remindAt = eventDate.minusHours(24);
+        if (remindAt.isBefore(LocalDateTime.now())) {
+            remindAt = LocalDateTime.now().plusMinutes(5); // Fallback : dans 5 min
+        }
+        String msg = "🔔 Rappel : '" + eventTitle + "' demain à " +
+                eventDate.getHour() + "h" + String.format("%02d", eventDate.getMinute()) + ". " +
+                "Répondez GOING pour confirmer votre présence.";
+        scheduleReminder(tenantId, "EVENT", eventId, phoneNumber, msg, remindAt);
     }
 
     private WhatsAppConfig requireConfig(UUID tenantId) {

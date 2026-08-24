@@ -9,7 +9,7 @@ class PredictionsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('🔮 Prédictions ML'),
-        backgroundColor: Colors.violet.shade700,
+        backgroundColor: Colors.deepPurple.shade700,
         foregroundColor: Colors.white,
       ),
       body: ListView(
@@ -17,7 +17,7 @@ class PredictionsScreen extends StatelessWidget {
         children: [
           // Model overview
           Card(
-            color: Colors.violet.shade50,
+            color: Colors.deepPurple.shade50,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -32,17 +32,20 @@ public class NotificationService {
     private final SecurityUtils securityUtils;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
+    private final NotificationPreferenceRepository notificationPreferenceRepository;
 
     public NotificationService(NotificationRepository notificationRepository,
                                NotificationTemplateRepository notificationTemplateRepository,
                                SecurityUtils securityUtils,
                                UserRepository userRepository,
-                               JavaMailSender mailSender) {
+                               JavaMailSender mailSender,
+            NotificationPreferenceRepository notificationPreferenceRepository) {
         this.notificationRepository = notificationRepository;
         this.notificationTemplateRepository = notificationTemplateRepository;
         this.securityUtils = securityUtils;
         this.userRepository = userRepository;
         this.mailSender = mailSender;
+        this.notificationPreferenceRepository = notificationPreferenceRepository;
     }
 
     public Notification create(UUID destinataireId, TypeNotification type, CanalNotification canal,
@@ -76,6 +79,17 @@ public class NotificationService {
             }
         } catch (Exception e) {
             log.warn("Modèle de notification non appliqué pour {} : {}", type, e.getMessage());
+        }
+
+        // P21 — Respect des préférences utilisateur : canal refusé → repli IN_APP.
+        try {
+            var pref = notificationPreferenceRepository.findByUserId(destinataireId).orElse(null);
+            if (pref != null && !pref.allows(effectiveCanal)) {
+                log.debug("Préférences utilisateur {} : canal {} refusé → IN_APP", destinataireId, effectiveCanal);
+                effectiveCanal = CanalNotification.IN_APP;
+            }
+        } catch (Exception e) {
+            log.debug("Préférences non consultables pour {} : {}", destinataireId, e.getMessage());
         }
 
         Notification notification = Notification.builder()

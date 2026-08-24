@@ -54,4 +54,12 @@ public class ChurchComparisonController {
     public Map<String, Object> benchmark(@PathVariable UUID id) {
         return service.benchmark(id);
     }
+
+    // P3 #107 — Benchmark amélioré avec clustering anonyme
+    @GetMapping("/clusters")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+    public Map<String, Object> clusters(@RequestParam(required = false) UUID ourId) {
+        return service.clusters(ourId);
+    }
 }
+

@@ -6,6 +6,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "onboarding_wizard_steps")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class OnboardingWizardStep {
 
     public enum StepType { CHURCH_IDENTITY, MEMBER_IMPORT, STRUCTURE, ROLES, FIRST_EVENT, BRANDING, MODULES }

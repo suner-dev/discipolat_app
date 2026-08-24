@@ -13,6 +13,8 @@ import 'app.dart';
 import 'presentation/widgets/offline_banner.dart';
 import 'data/services/push_notification_service.dart';
 import 'data/services/api_service.dart';
+import 'data/services/data_saver_service.dart';
+import 'data/services/orientation_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,12 +42,28 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
   @override
   void initState() {
     super.initState();
+    _initAccessibilityServices();
     // Initialize push notifications
     try {
       final pushService = PushNotificationService(ApiService());
       pushService.initialize();
     } catch (e) {
       debugPrint('[Push] Init failed: $e');
+    }
+  }
+
+  /// P3 #95/#96 — Initialise le mode data-saver (zones à faible connectivité)
+  /// et la gestion d'orientation au démarrage. Best-effort : ne bloque jamais l'app.
+  Future<void> _initAccessibilityServices() async {
+    try {
+      await DataSaverService.instance.init();
+    } catch (e) {
+      debugPrint('[DataSaver] Init failed: $e');
+    }
+    try {
+      await OrientationService.instance.init();
+    } catch (e) {
+      debugPrint('[Orientation] Init failed: $e');
     }
   }
 

@@ -1,8 +1,12 @@
 package com.discipolat.modules.marketplace.domain;
 
+import com.discipolat.common.domain.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class MarketplaceService {
@@ -35,8 +39,36 @@ public class MarketplaceService {
     }
 
     public void deactivate(Long id) {
-        MarketplaceListing listing = repository.findById(id).orElseThrow();
-        listing.setIsActive(false);
-        repository.save(listing);
+        MarketplaceListing l = repository.findById(id).orElseThrow();
+        l.setIsActive(false);
+        repository.save(l);
+    }
+
+    // ======================== P3 #105 — MARKETPLACE DE TEMPLATES ========================
+
+    /**
+     * Installe un template dans une église : valide la disponibilité et renvoie
+     * la définition complète (structure à importer) + instructions.
+     */
+    @Transactional
+    public Map<String, Object> install(Long id, Long tenantId) {
+        MarketplaceListing listing = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("MarketplaceListing", "id", String.valueOf(id)));
+        if (!Boolean.TRUE.equals(listing.getIsActive())) {
+            throw new IllegalStateException("Ce template n'est plus disponible.");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("templateId", listing.getId());
+        result.put("title", listing.getTitle());
+        result.put("category", listing.getCategory());
+        result.put("description", listing.getDescription());
+        result.put("installedForTenant", tenantId);
+        result.put("installedAt", java.time.LocalDateTime.now());
+        result.put("nextSteps", List.of(
+                "Vérifiez les éléments proposés par le template.",
+                "Adaptez les noms et responsabilités à votre contexte.",
+                "Activez le template depuis la page correspondante."));
+        return result;
     }
 }

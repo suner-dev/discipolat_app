@@ -53,9 +53,9 @@ class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
                 if (!show) return const SizedBox.shrink();
                 return Card(child: ListTile(
                   leading: Icon(Icons.favorite, color: p['color'] as Color),
-                  title: Text(p['title']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('${p['date']}'),
-                  trailing: Chip(label: Text(p['status']!, style: const TextStyle(fontSize: 11))),
+                  title: Text(p['title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(p['date'].toString()),
+                  trailing: Chip(label: Text(p['status'].toString(), style: const TextStyle(fontSize: 11))),
                 ));
               },
             ),

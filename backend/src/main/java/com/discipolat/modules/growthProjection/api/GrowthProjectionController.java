@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -18,6 +19,11 @@ public class GrowthProjectionController {
 
     @GetMapping
     public List<GrowthProjection> list() { return service.listAll(); }
+
+    // P3 #103 — Prophétie de croissance (modèle prédictif sur données réelles)
+    @GetMapping("/prophecy")
+    public Map<String, Object> prophecy() { return service.prophesy(); }
+
 
     @GetMapping("/{id}")
     public GrowthProjection get(@PathVariable UUID id) { return service.get(id); }
