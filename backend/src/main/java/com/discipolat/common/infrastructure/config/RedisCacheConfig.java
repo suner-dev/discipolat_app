@@ -1,5 +1,6 @@
 package com.discipolat.common.infrastructure.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -19,6 +20,7 @@ import java.time.Duration;
 @EnableCaching
 @Profile("!test")
 @ConditionalOnClass(name = "org.springframework.data.redis.cache.RedisCacheManager")
+@ConditionalOnBean(RedisConnectionFactory.class)
 public class RedisCacheConfig {
 
     @Bean

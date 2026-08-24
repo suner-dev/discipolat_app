@@ -1,5 +1,6 @@
 package com.discipolat.common.infrastructure.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -27,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Configuration
 @EnableCaching
+@ConditionalOnMissingBean(name = "cacheManager")
 public class CacheConfig {
 
     /**

@@ -2,6 +2,8 @@ server:
   port: ${PORT:8080}
 
 spring:
+  main:
+    allow-bean-definition-overriding: true
   application:
     name: discipolat-api
   datasource:
@@ -16,7 +18,7 @@ spring:
       max-lifetime: 1200000
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -84,7 +86,7 @@ app:
   encryption:
     # Clé AES-256 (base64, 32 octets) pour le chiffrement au repos des données sensibles.
     # Générer avec : openssl rand -base64 32
-    aes-key: ${ENCRYPTION_AES_KEY:ZGVmYXVsdC1kZXZlbG9wbWVudC1rZXktMzItYnl0ZXMhIQ==}
+    aes-key: ${ENCRYPTION_AES_KEY:EniEFhLt4UbrkhRDPXNjJ98Rn4dTiTTDu9QgLk6NW6Y=}
   rate-limiting:
     # Redis connection URL for distributed rate limiting
     redis-url: ${REDIS_URL:redis://localhost:6379}
