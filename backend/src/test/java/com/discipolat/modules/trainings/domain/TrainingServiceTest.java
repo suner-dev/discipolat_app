@@ -85,7 +85,7 @@ class TrainingServiceTest {
     }
 
     @Test
-    void submitQuiz_perfectScore_shouldCompleteAndIssueCertificate() {
+    void submitQuiz_perfectScore_shouldCompleteAndIssueTrainingCertificate() {
         UUID userId = UUID.randomUUID();
         UUID courseId = UUID.randomUUID();
         UUID moduleId = UUID.randomUUID();
@@ -111,7 +111,7 @@ class TrainingServiceTest {
                 .thenAnswer(inv -> inv.getArgument(0));
         when(completionRepository.countByEnrollmentId(any())).thenReturn(1L);
         when(certificateRepository.findByEnrollmentId(any())).thenReturn(Optional.empty());
-        when(certificateRepository.save(any(Certificate.class)))
+        when(certificateRepository.save(any(TrainingCertificate.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         QuizResultResponse result = trainingService.submitQuiz(courseId,
@@ -167,7 +167,7 @@ class TrainingServiceTest {
     }
 
     @Test
-    void submitQuiz_failingScore_shouldNotIssueCertificate() {
+    void submitQuiz_failingScore_shouldNotIssueTrainingCertificate() {
         UUID userId = UUID.randomUUID();
         UUID courseId = UUID.randomUUID();
         UUID moduleId = UUID.randomUUID();

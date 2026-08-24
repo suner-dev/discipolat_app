@@ -14,7 +14,6 @@ import java.util.UUID;
         @Index(name = "idx_gfp_user", columnList = "userId"),
         @Index(name = "idx_gfp_tenant_time", columnList = "tenantId, createdAt")
 })
-@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
 @org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class GeofencePing {
 

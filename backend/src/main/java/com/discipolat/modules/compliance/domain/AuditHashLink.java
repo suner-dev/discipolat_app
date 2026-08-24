@@ -15,7 +15,6 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "audit_hash_chain")
-@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = UUID.class))
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class AuditHashLink {
 

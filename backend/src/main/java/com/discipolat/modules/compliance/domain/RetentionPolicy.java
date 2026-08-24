@@ -11,7 +11,6 @@ import java.util.UUID;
 /** Politique de rétention des données configurable par type (RGPD Art. 5-1-e). */
 @Entity
 @Table(name = "retention_policies", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "data_type"}))
-@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = UUID.class))
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class RetentionPolicy {
 

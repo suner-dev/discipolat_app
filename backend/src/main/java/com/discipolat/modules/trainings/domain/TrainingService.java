@@ -168,7 +168,7 @@ public class TrainingService {
     }
 
     @Transactional(readOnly = true)
-    public List<Certificate> myCertificates() {
+    public List<TrainingCertificate> myCertificates() {
         return certificateRepository.findByUserIdOrderByDelivreLeDesc(securityUtils.getCurrentUserId());
     }
 
@@ -224,7 +224,7 @@ public class TrainingService {
         }
         String numero = "CERT-" + enrollment.getUserId().toString().substring(0, 8).toUpperCase()
                 + "-" + enrollment.getCourseId().toString().substring(0, 8).toUpperCase();
-        certificateRepository.save(Certificate.builder()
+        certificateRepository.save(TrainingCertificate.builder()
                 .enrollmentId(enrollment.getId())
                 .numero(numero)
                 .userId(enrollment.getUserId())

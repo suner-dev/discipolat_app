@@ -76,7 +76,7 @@ public class TrainingController {
 
     @GetMapping("/my-certificates")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
-    public ResponseEntity<List<Certificate>> myCertificates() {
+    public ResponseEntity<List<TrainingCertificate>> myCertificates() {
         return ResponseEntity.ok(trainingService.myCertificates());
     }
 

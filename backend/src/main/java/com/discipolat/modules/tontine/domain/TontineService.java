@@ -306,7 +306,7 @@ public class TontineService {
                     .stream().anyMatch(c -> c.getMemberId().equals(member.getId()) && c.isPaye());
             if (!paidForCurrentRound && member.getUserId() != null) {
                 notificationService.create(member.getUserId(),
-                        com.discipolat.common.enums.TypeNotification.RAPPEL,
+                        com.discipolat.common.enums.TypeNotification.EVENEMENT_RAPPEL,
                         com.discipolat.common.enums.CanalNotification.PUSH,
                         "Échéance tontine",
                         "Votre contribution pour le tour " + group.getTourActuel() + " de « "

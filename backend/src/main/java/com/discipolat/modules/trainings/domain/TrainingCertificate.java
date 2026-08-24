@@ -8,14 +8,14 @@ import java.util.UUID;
 import org.hibernate.annotations.Filter;
 
 @Entity
-@Table(name = "certificates")
+@Table(name = "training_certificates")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
-public class Certificate {
+public class TrainingCertificate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

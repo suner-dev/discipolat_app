@@ -1,6 +1,8 @@
 package com.discipolat.modules.payments.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -12,7 +14,8 @@ public interface RecurringDonationRepository extends JpaRepository<RecurringDona
 
     List<RecurringDonation> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
-    List<RecurringDonation> findByActiveTrueAndNextDonationDateLessThanOrEqual(LocalDate date);
+    @Query("SELECT r FROM RecurringDonation r WHERE r.active = true AND r.nextDonationDate <= :date")
+    List<RecurringDonation> findDueDonations(@Param("date") LocalDate date);
 
     List<RecurringDonation> findByTenantIdAndActiveTrue(UUID tenantId);
 

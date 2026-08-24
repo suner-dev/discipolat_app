@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/souls")
+@RequestMapping("/api/v1/soul-tags")
 public class SoulTagController {
 
     private final SoulTagService soulTagService;
@@ -19,26 +19,26 @@ public class SoulTagController {
         this.soulTagService = soulTagService;
     }
 
-    @GetMapping("/{id}/tags")
+    @GetMapping("/{soulId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
-    public ResponseEntity<List<String>> getTags(@PathVariable UUID id) {
-        return ResponseEntity.ok(soulTagService.getTags(id));
+    public ResponseEntity<List<String>> getTags(@PathVariable UUID soulId) {
+        return ResponseEntity.ok(soulTagService.getTags(soulId));
     }
 
-    @PostMapping("/{id}/tags")
+    @PostMapping("/{soulId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
-    public ResponseEntity<List<String>> addTag(@PathVariable UUID id,
+    public ResponseEntity<List<String>> addTag(@PathVariable UUID soulId,
                                                @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(soulTagService.addTag(id, body.getOrDefault("tag", "")));
+        return ResponseEntity.ok(soulTagService.addTag(soulId, body.getOrDefault("tag", "")));
     }
 
-    @DeleteMapping("/{id}/tags/{tag}")
+    @DeleteMapping("/{soulId}/{tag}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
-    public ResponseEntity<List<String>> removeTag(@PathVariable UUID id, @PathVariable String tag) {
-        return ResponseEntity.ok(soulTagService.removeTag(id, tag));
+    public ResponseEntity<List<String>> removeTag(@PathVariable UUID soulId, @PathVariable String tag) {
+        return ResponseEntity.ok(soulTagService.removeTag(soulId, tag));
     }
 
-    @GetMapping("/tags/available")
+    @GetMapping("/available")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<List<String>> allTags() {
         return ResponseEntity.ok(soulTagService.listAllTags());

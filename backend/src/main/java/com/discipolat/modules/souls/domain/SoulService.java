@@ -35,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 
@@ -680,7 +681,7 @@ public class SoulService {
      * P7 — Score complet à 12 axes avec tendance sur 6 mois.
      */
     public Map<String, Object> getDetailedSpiritualScore(UUID soulId) {
-        Soul soul = repo.findById(soulId).orElseThrow(() ->
+        Soul soul = soulRepository.findById(soulId).orElseThrow(() ->
                 new com.discipolat.common.domain.EntityNotFoundException("Soul", soulId));
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -728,7 +729,7 @@ public class SoulService {
 
     private int calculateServiceIndex(Soul soul) {
         int score = 50;
-        if (soul.getFonctionDansEglise() != null && !soul.getFonctionDansEglise().isEmpty()) score += 25;
+        if (soul.getProfession() != null && !soul.getProfession().isEmpty()) score += 25;
         if (soul.getNiveauCroissance() != null && soul.getNiveauCroissance() >= 3) score += 15;
         return Math.max(0, Math.min(100, score));
     }
@@ -756,7 +757,7 @@ public class SoulService {
         int score = 50;
         // In production: check if soul is mentoring others or being mentored
         if ("MATURE".equals(soul.getEtatSpirituel())) score += 20;
-        if (soul.getFonctionDansEglise() != null) score += 15;
+        if (soul.getProfession() != null) score += 15;
         return Math.max(0, Math.min(100, score));
     }
 
@@ -770,7 +771,7 @@ public class SoulService {
 
     private int calculateLeadershipIndex(Soul soul) {
         int score = 50;
-        String fonction = soul.getFonctionDansEglise();
+        String fonction = soul.getProfession();
         if (fonction != null) {
             if (fonction.contains("PASTEUR") || fonction.contains("ADMIN")) score += 30;
             else if (fonction.contains("CHEF") || fonction.contains("RESPONSABLE")) score += 20;
@@ -783,7 +784,8 @@ public class SoulService {
     private int calculateCommunityIndex(Soul soul) {
         int score = 50;
         if (soul.getFamilleId() != null) score += 15;
-        if (soul.getDepartementId() != null) score += 10;
+        // Check if soul belongs to a department via memberDepartmentRepository
+        if (!soulDepartmentRepository.findBySoulId(soul.getId()).isEmpty()) score += 10;
         if (soul.getStatut() == StatutAme.ACTIF) score += 15;
         return Math.max(0, Math.min(100, score));
     }

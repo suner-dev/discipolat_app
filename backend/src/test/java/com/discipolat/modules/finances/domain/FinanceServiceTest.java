@@ -31,6 +31,7 @@ class FinanceServiceTest {
     @Mock private SecurityUtils securityUtils;
     @Mock private AuditService auditService;
     @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
+    @Mock private com.discipolat.modules.currency.domain.CurrencyService currencyService;
 
     private FinanceService service;
 
@@ -38,7 +39,7 @@ class FinanceServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new FinanceService(transactionRepository, budgetRepository, securityUtils, auditService, propagationPublisher);
+        service = new FinanceService(transactionRepository, budgetRepository, securityUtils, auditService, propagationPublisher, currencyService);
     }
 
     private FinanceTransaction tx(UUID id, FinanceTransaction.TransactionType type, String categorie,

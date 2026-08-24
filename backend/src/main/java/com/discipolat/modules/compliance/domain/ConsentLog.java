@@ -6,7 +6,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "consent_logs")
-@org.hibernate.annotations.FilterDef(name = "tenantFilter", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
 @org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class ConsentLog {
 

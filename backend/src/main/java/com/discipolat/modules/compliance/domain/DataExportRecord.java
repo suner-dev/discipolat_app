@@ -11,7 +11,6 @@ import java.util.UUID;
 /** Trace d'un export RGPD (portabilité Art. 20) effectué avant purge ou sur demande. */
 @Entity
 @Table(name = "data_export_records")
-@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = UUID.class))
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class DataExportRecord {
 

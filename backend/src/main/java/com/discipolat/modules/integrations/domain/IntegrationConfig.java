@@ -14,7 +14,6 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "integration_configs")
-@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = UUID.class))
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class IntegrationConfig {
 

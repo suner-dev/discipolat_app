@@ -2,8 +2,8 @@ package com.discipolat.modules.members.api;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.members.domain.GeofencePingRepository;
 import org.junit.jupiter.api.AfterEach;
-import com.discipolat.modules.members.domain.MemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class GeofencingControllerTest {
 
-    @Mock private MemberService memberService;
+    @Mock private GeofencePingRepository pingRepository;
     @Mock private SecurityUtils securityUtils;
 
     private GeofencingController controller;
@@ -28,7 +28,7 @@ class GeofencingControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new GeofencingController(memberService, securityUtils);
+        controller = new GeofencingController(securityUtils, pingRepository);
         userId = UUID.randomUUID();
         TenantContext.setTenantId(UUID.randomUUID());
     }
@@ -41,7 +41,7 @@ class GeofencingControllerTest {
     @Test
     void checkIn_WithinGeofence_ReturnsCheckedIn() {
         when(securityUtils.getCurrentUserId()).thenReturn(userId);
-        var request = new GeofenceCheckInRequest(48.8566, 2.3522, 10.0);
+        var request = new GeofenceCheckInRequest(48.8566, 2.3522, 10.0, "NORMAL");
 
         ResponseEntity<Map<String, Object>> response = controller.checkIn(request);
 
@@ -54,7 +54,7 @@ class GeofencingControllerTest {
     @Test
     void checkIn_IncludesTimestamp() {
         when(securityUtils.getCurrentUserId()).thenReturn(userId);
-        var request = new GeofenceCheckInRequest(48.8566, 2.3522, 10.0);
+        var request = new GeofenceCheckInRequest(48.8566, 2.3522, 10.0, "NORMAL");
 
         Map<String, Object> body = controller.checkIn(request).getBody();
 
@@ -66,8 +66,9 @@ class GeofencingControllerTest {
     @Test
     void checkOut_ReturnsCheckedOut() {
         when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        var request = new GeofenceCheckInRequest(48.8566, 2.3522, 10.0, "NORMAL");
 
-        ResponseEntity<Map<String, Object>> response = controller.checkOut();
+        ResponseEntity<Map<String, Object>> response = controller.checkOut(request);
 
         assertEquals(200, response.getStatusCode().value());
         assertEquals("CHECKED_OUT", response.getBody().get("status"));

@@ -29,6 +29,8 @@ class TontineServiceTest {
     @Mock private TontineContributionRepository contributionRepository;
     @Mock private EntityPropagationPublisher propagationPublisher;
     @Mock private SecurityUtils securityUtils;
+    @Mock private com.discipolat.modules.notifications.domain.NotificationService notificationService;
+    @Mock private jakarta.persistence.EntityManager entityManager;
 
     private TontineService service;
     private final UUID tenantId = UUID.randomUUID();
@@ -37,7 +39,7 @@ class TontineServiceTest {
     @BeforeEach
     void setUp() {
         service = new TontineService(groupRepository, memberRepository, contributionRepository,
-                propagationPublisher, securityUtils);
+                propagationPublisher, securityUtils, notificationService, entityManager);
         lenient().when(securityUtils.getCurrentTenantId()).thenReturn(tenantId);
         lenient().when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
         lenient().when(securityUtils.getCurrentUserRole()).thenReturn("ADMIN");

@@ -42,7 +42,7 @@ class SpiritualHealthServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SpiritualHealthService(soulRepository);
+        service = new SpiritualHealthService(soulRepository, null, null);
     }
 
     @Test

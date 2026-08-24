@@ -91,8 +91,7 @@ public class RecurringDonationService {
     @Scheduled(cron = "0 30 6 * * *")
     @Transactional
     public void processDueDonations() {
-        List<RecurringDonation> due = repository
-                .findByActiveTrueAndNextDonationDateLessThanOrEqual(LocalDate.now());
+        List<RecurringDonation> due = repository.findDueDonations(LocalDate.now());
         log.info("[RecurringDonation] Processing {} due donations", due.size());
 
         for (RecurringDonation donation : due) {
