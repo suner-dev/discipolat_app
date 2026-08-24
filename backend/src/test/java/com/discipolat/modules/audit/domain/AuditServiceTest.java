@@ -1,6 +1,7 @@
 package com.discipolat.modules.audit.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.compliance.domain.ComplianceManagerService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,12 +30,13 @@ class AuditServiceTest {
     @Mock private AuditLogRepository auditLogRepository;
     @Mock private SecurityUtils securityUtils;
     @Mock private UserRepository userRepository;
+    @Mock private ComplianceManagerService complianceManagerService;
 
     private AuditService auditService;
 
     @BeforeEach
     void setUp() {
-        auditService = new AuditService(auditLogRepository, securityUtils, userRepository);
+        auditService = new AuditService(auditLogRepository, securityUtils, userRepository, complianceManagerService);
     }
 
     @Test

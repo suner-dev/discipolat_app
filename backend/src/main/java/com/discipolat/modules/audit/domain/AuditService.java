@@ -1,6 +1,7 @@
 package com.discipolat.modules.audit.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.compliance.domain.ComplianceManagerService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,12 +25,14 @@ public class AuditService {
     private final AuditLogRepository auditLogRepository;
     private final SecurityUtils securityUtils;
     private final UserRepository userRepository;
+    private final ComplianceManagerService complianceManagerService;
 
     public AuditService(AuditLogRepository auditLogRepository, SecurityUtils securityUtils,
-                        UserRepository userRepository) {
+                        UserRepository userRepository, ComplianceManagerService complianceManagerService) {
         this.auditLogRepository = auditLogRepository;
         this.securityUtils = securityUtils;
         this.userRepository = userRepository;
+        this.complianceManagerService = complianceManagerService;
     }
 
     public AuditLog findById(UUID id) {
@@ -56,7 +59,8 @@ public class AuditService {
             // System operations
         }
 
-        auditLogRepository.save(log);
+        AuditLog saved = auditLogRepository.save(log);
+        extendHashChain(saved);
     }
 
     public void logSimple(String action, String entiteType, UUID entiteId) {
@@ -72,7 +76,22 @@ public class AuditService {
             // System operations
         }
 
-        auditLogRepository.save(log);
+        AuditLog saved = auditLogRepository.save(log);
+        extendHashChain(saved);
+    }
+
+    /** Journal d'audit immuable : chaque entrée est chaînée par hachage (feature #4). */
+    private void extendHashChain(AuditLog saved) {
+        try {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("action", saved.getAction());
+            payload.put("entiteType", saved.getEntiteType());
+            payload.put("entiteId", saved.getEntiteId() == null ? "" : saved.getEntiteId().toString());
+            payload.put("createdAt", String.valueOf(saved.getCreatedAt()));
+            complianceManagerService.appendAuditHash(saved.getId(), payload);
+        } catch (Exception e) {
+            // La chaîne ne doit jamais bloquer l'écriture métier
+        }
     }
 
     /**

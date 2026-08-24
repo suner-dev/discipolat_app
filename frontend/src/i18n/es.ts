@@ -500,6 +500,69 @@ const es: Record<string, string> = {
   'myTeam.title': 'Mi equipo / Mi familia',
   'myTeam.message': 'Enviar mensaje',
   'myTeam.encourage': 'Animar',
+
+  // P1 — Formulaires
+  'nav.forms': 'Formularios',
+  'forms.title': 'Constructor de formularios',
+  'forms.create': 'Crear formulario',
+  'forms.dragDrop': 'Arrastrar y soltar campos',
+
+  // P1 — Traduction sermons
+  'nav.sermonTranslations': 'Traducción de sermones',
+  'sermonTranslations.title': 'Traducción en vivo de sermones',
+  'sermonTranslations.whisper': 'Whisper → LLM → subtítulos',
+
+  // P1 — Journal spirituel
+  'nav.spiritualJournal': 'Diario espiritual',
+  'spiritualJournal.title': 'Mi diario espiritual',
+  'spiritualJournal.prayer': 'Oración',
+  'spiritualJournal.reflection': 'Reflexión',
+  'spiritualJournal.streak': 'Racha',
+
+  // P1 — Demandes admin
+  'nav.adminRequests': 'Solicitudes administrativas',
+  'adminRequests.title': 'Solicitudes administrativas',
+  'adminRequests.baptism': 'Bautismo',
+  'adminRequests.dedication': 'Dedicación',
+
+  // P1 — Plan développement
+  'nav.devPlans': 'Plan de desarrollo',
+  'devPlans.title': 'Mi plan de desarrollo',
+  'devPlans.progress': 'Progreso',
+  'devPlans.autoGenerate': 'Generar automáticamente',
+
+  // P1 — Suivi faiseur
+  'nav.makerTracking': 'Seguimiento del hacedor',
+  'makerTracking.title': 'Mi trayectoria de hacedor',
+  'makerTracking.formations': 'Formaciones',
+  'makerTracking.skills': 'Habilidades',
+
+  // P1 — Projection croissance
+  'nav.growthProjection': 'Proyección de crecimiento',
+  'growthProjection.title': 'Proyección de crecimiento',
+  'growthProjection.simulate': 'Simular',
+
+  // P1 — Comparaison églises
+  'nav.churchComparison': 'Comparación de iglesias',
+  'churchComparison.title': 'Benchmark de red',
+  'churchComparison.benchmark': 'Comparar',
+
+  // P1 — Bénévoles
+  'nav.volunteers': 'Voluntarios',
+  'volunteers.title': 'Gestión de voluntarios',
+  'volunteers.match': 'Emparejar voluntarios',
+
+  // P1 — Matching compétences
+  'nav.skillMatching': 'Emparejamiento de habilidades',
+  'skillMatching.title': 'Emparejamiento IA',
+  'skillMatching.accept': 'Aceptar',
+  'skillMatching.decline': 'Rechazar',
+
+  // P1 — Modération IA
+  'nav.contentModeration': 'Moderación de contenido',
+  'contentModeration.title': 'Moderación por IA',
+  'contentModeration.approve': 'Aprobar',
+  'contentModeration.reject': 'Rechazar',
 };
 
 export default es;

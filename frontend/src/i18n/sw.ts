@@ -484,6 +484,69 @@ const sw: Record<string, string> = {
   'myTeam.title': 'Timu / Familia yangu',
   'myTeam.message': 'Tuma ujumbe',
   'myTeam.encourage': 'Himiza',
+
+  // P1 — Fomu
+  'nav.forms': 'Fomu',
+  'forms.title': 'Mtengenezaji wa fomu',
+  'forms.create': 'Unda fomu',
+  'forms.dragDrop': 'Buruta na kudondosha sehemu',
+
+  // P1 — Tafsiri mahubiri
+  'nav.sermonTranslations': 'Tafsiri ya mahubiri',
+  'sermonTranslations.title': 'Tafsiri ya moja kwa moja',
+  'sermonTranslations.whisper': 'Whisper → LLM → manukuu',
+
+  // P1 — Jarida la kiroho
+  'nav.spiritualJournal': 'Jarida la kiroho',
+  'spiritualJournal.title': 'Jarida langu la kiroho',
+  'spiritualJournal.prayer': 'Maombi',
+  'spiritualJournal.reflection': 'Kutafakari',
+  'spiritualJournal.streak': 'Mfululizo',
+
+  // P1 — Maombi ya usimamizi
+  'nav.adminRequests': 'Maombi ya usimamizi',
+  'adminRequests.title': 'Maombi ya usimamizi',
+  'adminRequests.baptism': 'Ubatizo',
+  'adminRequests.dedication': 'Kujitolea',
+
+  // P1 — Mpango wa ukuaji
+  'nav.devPlans': 'Mpango wa maendeleo',
+  'devPlans.title': 'Mpango wangu wa maendeleo',
+  'devPlans.progress': 'Maendeleo',
+  'devPlans.autoGenerate': 'Zalisha kiotomatiki',
+
+  // P1 — Fuatiliaji wa mhudumu
+  'nav.makerTracking': 'Fuatiliaji wa mhudumu',
+  'makerTracking.title': 'Njia yangu ya mhudumu',
+  'makerTracking.formations': 'Mafunzo',
+  'makerTracking.skills': 'Ujuzi',
+
+  // P1 — Makadirio ya ukuaji
+  'nav.growthProjection': 'Makadirio ya ukuaji',
+  'growthProjection.title': 'Makadirio ya ukuaji',
+  'growthProjection.simulate': 'Simulate',
+
+  // P1 — Linganisha kanisa
+  'nav.churchComparison': 'Linganisha kanisa',
+  'churchComparison.title': 'Benchmark ya mtandao',
+  'churchComparison.benchmark': 'Linganisha',
+
+  // P1 — Kujitolea
+  'nav.volunteers': 'Wajitolea',
+  'volunteers.title': 'Usimamizi wa wajitolea',
+  'volunteers.match': 'Linganisha wajitolea',
+
+  // P1 — Linganisha ujuzi
+  'nav.skillMatching': 'Ulinganishaji wa ujuzi',
+  'skillMatching.title': 'Ulinganishaji wa AI',
+  'skillMatching.accept': 'Kubali',
+  'skillMatching.decline': 'Kataa',
+
+  // P1 — Udhibiti wa maudhui
+  'nav.contentModeration': 'Udhibiti wa maudhui',
+  'contentModeration.title': 'Udhibiti kwa AI',
+  'contentModeration.approve': 'Idhinisha',
+  'contentModeration.reject': 'Kataa',
 };
 
 export default sw;

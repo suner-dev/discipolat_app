@@ -62,6 +62,7 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   // Administration
   '/admin/webhooks': ['ADMIN', 'PASTEUR'],
   '/admin/whatsapp': ['ADMIN', 'PASTEUR'],
+  '/admin/connectors': ['ADMIN', 'PASTEUR'],
   '/admin/transfers': ['ADMIN', 'PASTEUR'],
   '/admin/settings': ['ADMIN', 'PASTEUR'],
   '/admin/modules': ['ADMIN', 'PASTEUR'],

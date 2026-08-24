@@ -89,6 +89,16 @@ import 'data/services/biometric_auth_service.dart';
 import 'data/services/data_saver_service.dart';
 import 'data/services/orientation_service.dart';
 import 'presentation/screens/security/mobile_security_settings_screen.dart';
+import 'presentation/screens/forms/forms_screen.dart';
+import 'presentation/screens/sermon_translations/sermon_translation_screen.dart';
+import 'presentation/screens/spiritual_journal/spiritual_journal_screen.dart';
+import 'presentation/screens/admin_requests/admin_requests_screen.dart';
+import 'presentation/screens/dev_plans/dev_plan_screen.dart';
+import 'presentation/screens/maker_tracking/maker_tracking_screen.dart';
+import 'presentation/screens/growth_projection/growth_projection_screen.dart';
+import 'presentation/screens/church_comparison/church_comparison_screen.dart';
+import 'presentation/screens/volunteers/volunteers_screen.dart';
+import 'presentation/screens/skill_matching/skill_matching_screen.dart';
 import 'tenant_config.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -799,6 +809,57 @@ final appRouter = GoRouter(
       path: '/communications',
       name: 'communications',
       builder: (context, state) => const CommunicationsScreen(),
+    ),
+    // P1 New screens
+    GoRoute(
+      path: '/forms',
+      name: 'forms',
+      builder: (context, state) => const FormsScreen(),
+    ),
+    GoRoute(
+      path: '/sermon-translations',
+      name: 'sermon-translations',
+      builder: (context, state) => const SermonTranslationScreen(),
+    ),
+    GoRoute(
+      path: '/spiritual-journal',
+      name: 'spiritual-journal',
+      builder: (context, state) => const SpiritualJournalScreen(),
+    ),
+    GoRoute(
+      path: '/admin-requests',
+      name: 'admin-requests',
+      builder: (context, state) => const AdminRequestsScreen(),
+    ),
+    GoRoute(
+      path: '/dev-plans',
+      name: 'dev-plans',
+      builder: (context, state) => const DevelopmentPlanScreen(),
+    ),
+    GoRoute(
+      path: '/maker-tracking',
+      name: 'maker-tracking',
+      builder: (context, state) => const MakerTrackingScreen(),
+    ),
+    GoRoute(
+      path: '/growth-projection',
+      name: 'growth-projection',
+      builder: (context, state) => const GrowthProjectionScreen(),
+    ),
+    GoRoute(
+      path: '/church-comparison',
+      name: 'church-comparison',
+      builder: (context, state) => const ChurchComparisonScreen(),
+    ),
+    GoRoute(
+      path: '/volunteers',
+      name: 'volunteers',
+      builder: (context, state) => const VolunteersScreen(),
+    ),
+    GoRoute(
+      path: '/skill-matching',
+      name: 'skill-matching',
+      builder: (context, state) => const SkillMatchingScreen(),
     ),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),

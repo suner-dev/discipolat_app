@@ -2,6 +2,7 @@ package com.discipolat.modules.compliance.api;
 
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.compliance.domain.ComplianceManagerService;
 import com.discipolat.modules.compliance.domain.ComplianceService;
 import com.discipolat.modules.gdpr.domain.GdprRequest;
 import org.springframework.data.domain.Page;
@@ -19,15 +20,65 @@ import java.util.UUID;
 public class ComplianceController {
 
     private final ComplianceService service;
+    private final ComplianceManagerService managerService;
 
-    public ComplianceController(ComplianceService service) {
+    public ComplianceController(ComplianceService service, ComplianceManagerService managerService) {
         this.service = service;
+        this.managerService = managerService;
     }
 
     @GetMapping("/stats")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, Object>> stats() {
-        return ResponseEntity.ok(service.getStats());
+        return ResponseEntity.ok(managerService.getComplianceStats());
+    }
+
+    // ── Rétention & purge (feature #4) ───────────────────────────
+
+    @GetMapping("/retention-policies")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Object> retentionPolicies() {
+        return ResponseEntity.ok(managerService.listRetentionPolicies());
+    }
+
+    public record RetentionPolicyRequest(String dataType, int retentionDays,
+                                         String description, boolean hardDelete) {}
+
+    @PutMapping("/retention-policies")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> setRetentionPolicy(@RequestBody RetentionPolicyRequest request) {
+        return ResponseEntity.ok(managerService.setRetentionPolicy(
+                request.dataType(), request.retentionDays(), request.description(), request.hardDelete()));
+    }
+
+    @PostMapping("/retention-policies/purge-all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> purgeAll() {
+        return ResponseEntity.ok(managerService.executeAutomatedPurge());
+    }
+
+    // ── Exports / portabilité (feature #4) ──────────────────────
+
+    @GetMapping("/exports")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Object> exports() {
+        return ResponseEntity.ok(managerService.listExports());
+    }
+
+    public record ExportRequest(UUID userId, String format) {}
+
+    @PostMapping("/exports")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> createExport(@RequestBody ExportRequest request) {
+        return ResponseEntity.ok(managerService.exportUserData(request.userId(), request.format()));
+    }
+
+    // ── Chaîne de hachage du journal d'audit (feature #4) ───────
+
+    @GetMapping("/audit-hash/verify")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> verifyAuditHash() {
+        return ResponseEntity.ok(managerService.verifyAuditChain());
     }
 
     @GetMapping("/gdpr")

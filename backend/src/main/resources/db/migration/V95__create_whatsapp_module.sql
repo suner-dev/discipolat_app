@@ -77,3 +77,57 @@ CREATE TABLE IF NOT EXISTS onboarding_wizard_steps (
     started_at TIMESTAMP,
     completed_at TIMESTAMP
 );
+
+-- ── Connecteurs tiers (feature #3) ────────────────────────────────────
+CREATE TABLE IF NOT EXISTS integration_configs (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    connector VARCHAR(32) NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    endpoint_url VARCHAR(512),
+    api_key_encrypted TEXT,
+    ical_url VARCHAR(512),
+    last_sync_at TIMESTAMP,
+    last_sync_status VARCHAR(32),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_integration_configs_tenant ON integration_configs(tenant_id);
+
+-- ── Chaîne de hachage du journal d'audit (feature #4) ─────────────────
+CREATE TABLE IF NOT EXISTS audit_hash_chain (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    audit_log_id UUID NOT NULL,
+    previous_hash VARCHAR(64),
+    entry_hash VARCHAR(64) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_hash_chain_tenant ON audit_hash_chain(tenant_id, created_at);
+
+-- ── Politiques de rétention RGPD (feature #4) ────────────────────────
+CREATE TABLE IF NOT EXISTS retention_policies (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    data_type VARCHAR(64) NOT NULL,
+    retention_days INTEGER NOT NULL,
+    description VARCHAR(255),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    hard_delete BOOLEAN NOT NULL DEFAULT FALSE,
+    last_purge_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE (tenant_id, data_type)
+);
+
+-- ── Traces d'export RGPD (feature #4) ────────────────────────────────
+CREATE TABLE IF NOT EXISTS data_export_records (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    user_id UUID,
+    format VARCHAR(16) NOT NULL,
+    motif VARCHAR(32) NOT NULL,
+    record_count INTEGER,
+    fichier_path VARCHAR(512),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_data_export_tenant ON data_export_records(tenant_id, created_at);

@@ -72,7 +72,7 @@ export default function ApiDocsPage() {
   const loadApiKeys = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/api-keys');
+      const res = await api.get('/admin/webhooks/api-keys');
       setApiKeys(res.data.content || res.data || []);
     } catch {
       setApiKeys([]);
@@ -87,7 +87,7 @@ export default function ApiDocsPage() {
       return;
     }
     try {
-      const res = await api.post('/api-keys', { nom: newKeyName });
+      const res = await api.post('/admin/webhooks/api-keys', { nom: newKeyName });
       Toast.success('Clé API créée ! Copiez-la maintenant.');
       setApiKeys([res.data, ...apiKeys]);
       setShowCreateKey(false);
@@ -100,7 +100,7 @@ export default function ApiDocsPage() {
   const revokeApiKey = async (id: string) => {
     if (!confirm('Révoquer cette clé API ? Cette action est irréversible.')) return;
     try {
-      await api.delete(`/api-keys/${id}`);
+      await api.delete(`/admin/webhooks/api-keys/${id}`);
       Toast.success('Clé révoquée');
       setApiKeys(apiKeys.filter(k => k.id !== id));
     } catch {

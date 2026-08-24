@@ -103,6 +103,7 @@ const TontinePage = lazy(() => import('@/pages/TontinePage'));
 const GivingPage = lazy(() => import('@/pages/GivingPage'));
 const AdminWebhooksPage = lazy(() => import('@/pages/AdminWebhooksPage'));
 const AdminWhatsappPage = lazy(() => import('@/pages/AdminWhatsappPage'));
+const AdminConnectorsPage = lazy(() => import('@/pages/AdminConnectorsPage'));
 const DigitalTwinPage = lazy(() => import('@/pages/DigitalTwinPage'));
 const PropheticJournalPage = lazy(() => import('@/pages/PropheticJournalPage'));
 const SermonAssistantPage = lazy(() => import('@/pages/SermonAssistantPage'));
@@ -507,6 +508,11 @@ export default function App() {
           <Route path="/admin/whatsapp" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminWhatsappPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/connectors" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <AdminConnectorsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/webhooks" element={
