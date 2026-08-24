@@ -36,6 +36,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class SoulServiceTest {
@@ -81,6 +82,7 @@ class SoulServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         lenient().when(securityUtils.isSuperUser()).thenReturn(true);
         soulService = new SoulService(soulRepository, soulHistoryRepository,
                 soulNoteRepository, securityUtils, userRepository,

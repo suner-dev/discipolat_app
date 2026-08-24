@@ -29,6 +29,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 /**
  * Isolation des espaces métiers : les événements liés à une famille ne sont
@@ -76,6 +77,7 @@ class EventServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         attachmentService = new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils);
         eventService = new EventService(eventRepository, registrationRepository, templateRepository,
                 userRepository, notificationService, securityUtils, workspaceScope, attachmentService, auditService,

@@ -15,6 +15,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 /**
  * Pièces jointes génériques (entity_attachments) : le service partagé remplace la
@@ -37,6 +38,7 @@ class EntityAttachmentServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         service = new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils);
     }
 

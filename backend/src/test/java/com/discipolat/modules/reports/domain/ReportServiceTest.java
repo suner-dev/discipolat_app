@@ -33,6 +33,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 /**
  * Isolation des espaces métiers : les rapports faiseur / famille sont scopés par
@@ -83,6 +84,7 @@ class ReportServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         attachmentService = new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils);
         reportService = new ReportService(makerReportRepository, familyReportRepository, securityUtils,
                 workspaceScope, soulRepository, userRepository, parallelFollowupRepository, attachmentService, propagationPublisher);

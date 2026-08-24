@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class DepartmentReportingServiceTest {
@@ -52,6 +53,7 @@ class DepartmentReportingServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         service = new DepartmentReportingService(departmentService, dossierService, reportRepository,
                 checklistRepository, checklistItemRepository, equipmentRepository, documentRepository,
                 objectiveRepository, securityUtils);

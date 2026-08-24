@@ -37,6 +37,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class DepartmentServiceTest {
@@ -81,6 +82,7 @@ class DepartmentServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         service = new DepartmentService(departmentRepository, familyRepository, soulRepository,
                 userRepository, userDepartmentRepository, makerReportRepository,
                 familyReportRepository, securityUtils, passwordEncoder, soulDepartmentRepository,

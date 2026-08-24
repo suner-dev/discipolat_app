@@ -16,6 +16,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class SoulExitServiceTest {
@@ -36,6 +37,7 @@ class SoulExitServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         soulExitService = new SoulExitService(soulExitRepository, soulRepository, securityUtils, soulService);
         userId = UUID.randomUUID();
         ameId = UUID.randomUUID();

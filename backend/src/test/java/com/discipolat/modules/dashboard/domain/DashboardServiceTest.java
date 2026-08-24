@@ -30,6 +30,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class DashboardServiceTest {
@@ -84,6 +85,7 @@ class DashboardServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         dashboardService = new DashboardService(
                 soulRepository, userRepository, familyRepository,
                 makerReportRepository, familyReportRepository,

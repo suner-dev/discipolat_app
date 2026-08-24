@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class CommunicationServiceTest {
@@ -50,6 +51,7 @@ class CommunicationServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         service = new CommunicationService(communicationRepository, notificationService, securityUtils,
                 auditService, propagationPublisher, userRepository, soulRepository, soulDepartmentRepository, departmentRepository);
     }

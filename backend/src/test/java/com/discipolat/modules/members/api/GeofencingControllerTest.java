@@ -16,6 +16,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class GeofencingControllerTest {
@@ -28,6 +29,7 @@ class GeofencingControllerTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         controller = new GeofencingController(securityUtils, pingRepository);
         userId = UUID.randomUUID();
         TenantContext.setTenantId(UUID.randomUUID());

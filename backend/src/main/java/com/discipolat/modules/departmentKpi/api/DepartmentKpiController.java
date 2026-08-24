@@ -51,7 +51,6 @@ public class DepartmentKpiController {
      */
     @GetMapping("/department/{departmentId}/computed")
     public ResponseEntity<Map<String, Object>> getComputedKpis(@PathVariable Long departmentId) {
-        Long tenantId = TenantContext.getTenantId();
-        return ResponseEntity.ok(service.getComputedKpis(departmentId, tenantId));
+        return ResponseEntity.ok(service.getComputedKpis(departmentId, departmentId));
     }
 }

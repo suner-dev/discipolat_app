@@ -46,6 +46,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class PageBuilderServiceTest {
@@ -72,6 +73,7 @@ class PageBuilderServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         service = new PageBuilderService(pageRepository, revisionService, auditService, propagationPublisher, securityUtils,
                 scopeService, soulRepository, familyRepository, departmentRepository, userRepository,
                 eventRepository, alertRepository, transferRepository, fileRepository, taskRepository);

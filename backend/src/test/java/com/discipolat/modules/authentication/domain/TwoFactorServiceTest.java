@@ -16,6 +16,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class TwoFactorServiceTest {
@@ -31,6 +32,7 @@ class TwoFactorServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         twoFactorService = new TwoFactorService(userRepository, securityUtils);
         userId = UUID.randomUUID();
         testUser = User.builder()

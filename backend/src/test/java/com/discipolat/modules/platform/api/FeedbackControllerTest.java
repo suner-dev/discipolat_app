@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
 /**
  * Tests de régression API du {@link FeedbackController} (retours testeurs).
@@ -64,6 +65,7 @@ class FeedbackControllerTest {
 
     @BeforeEach
     void setUp() {
+        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         sample = new FeedbackResponse(
                 UUID.randomUUID(), "BUG", "HAUTE", "Sujet de test", "Description",
                 "/dashboard", "Chrome", "Desktop", "Linux", "1.0.0", "NOUVEAU",
