@@ -99,6 +99,27 @@ import 'presentation/screens/growth_projection/growth_projection_screen.dart';
 import 'presentation/screens/church_comparison/church_comparison_screen.dart';
 import 'presentation/screens/volunteers/volunteers_screen.dart';
 import 'presentation/screens/skill_matching/skill_matching_screen.dart';
+import 'presentation/screens/executive_insights/executive_insights_screen.dart';
+import 'presentation/screens/ai_visit_notes/ai_visit_notes_screen.dart';
+import 'presentation/screens/predictions/predictions_screen.dart';
+import 'presentation/screens/intelligence/intelligence_center_screen.dart';
+import 'presentation/screens/engagement/analytics_screen.dart';
+import 'presentation/screens/mentoring/ai_mentoring_screen.dart';
+import 'presentation/screens/succession/succession_screen.dart';
+import 'presentation/screens/family_meeting/family_meeting_screen.dart';
+import 'presentation/screens/family_cohesion/family_cohesion_screen.dart';
+import 'presentation/screens/family_resources/family_resources_screen.dart';
+import 'presentation/screens/kpi_narrative/kpi_narrative_screen.dart';
+import 'presentation/screens/bible_reading/bible_reading_screen.dart';
+import 'presentation/screens/prayer_journal/prayer_journal_screen.dart';
+import 'presentation/screens/spiritual_challenges/spiritual_challenges_screen.dart';
+import 'presentation/screens/reverse_mentoring/reverse_mentoring_screen.dart';
+import 'presentation/screens/personal_objectives/personal_objectives_screen.dart';
+import 'presentation/screens/directory/church_directory_screen.dart';
+import 'presentation/screens/event_checklist/event_checklist_screen.dart';
+import 'presentation/screens/skills_matrix/skills_matrix_screen.dart';
+import 'presentation/screens/group_messages/group_messages_screen.dart';
+import 'presentation/screens/broadcast/broadcast_screen.dart';
 import 'tenant_config.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -861,6 +882,27 @@ final appRouter = GoRouter(
       name: 'skill-matching',
       builder: (context, state) => const SkillMatchingScreen(),
     ),
+    GoRoute(path: '/executive-insights', name: 'executive-insights', builder: (ctx, s) => const ExecutiveInsightsScreen()),
+    GoRoute(path: '/ai-visit-notes', name: 'ai-visit-notes', builder: (ctx, s) => const AiVisitNotesScreen()),
+    GoRoute(path: '/predictions', name: 'predictions', builder: (ctx, s) => const PredictionsScreen()),
+    GoRoute(path: '/intelligence-center', name: 'intelligence-center', builder: (ctx, s) => const IntelligenceCenterScreen()),
+    GoRoute(path: '/engagement-analytics', name: 'engagement-analytics', builder: (ctx, s) => const EngagementAnalyticsScreen()),
+    GoRoute(path: '/ai-mentoring', name: 'ai-mentoring', builder: (ctx, s) => const AiMentoringScreen()),
+    GoRoute(path: '/succession', name: 'succession', builder: (ctx, s) => const SuccessionScreen()),
+    GoRoute(path: '/family-meeting', name: 'family-meeting', builder: (ctx, s) => const FamilyMeetingScreen()),
+    GoRoute(path: '/family-cohesion', name: 'family-cohesion', builder: (ctx, s) => const FamilyCohesionScreen()),
+    GoRoute(path: '/family-resources', name: 'family-resources', builder: (ctx, s) => const FamilyResourcesScreen()),
+    GoRoute(path: '/kpi-narrative', name: 'kpi-narrative', builder: (ctx, s) => const KpiNarrativeScreen()),
+    GoRoute(path: '/bible-reading', name: 'bible-reading', builder: (ctx, s) => const BibleReadingScreen()),
+    GoRoute(path: '/prayer-journal', name: 'prayer-journal', builder: (ctx, s) => const PrayerJournalScreen()),
+    GoRoute(path: '/spiritual-challenges', name: 'spiritual-challenges', builder: (ctx, s) => const SpiritualChallengesScreen()),
+    GoRoute(path: '/reverse-mentoring', name: 'reverse-mentoring', builder: (ctx, s) => const ReverseMentoringScreen()),
+    GoRoute(path: '/personal-objectives', name: 'personal-objectives', builder: (ctx, s) => const PersonalObjectivesScreen()),
+    GoRoute(path: '/church-directory', name: 'church-directory', builder: (ctx, s) => const ChurchDirectoryScreen()),
+    GoRoute(path: '/event-checklist', name: 'event-checklist', builder: (ctx, s) => const EventChecklistScreen()),
+    GoRoute(path: '/skills-matrix', name: 'skills-matrix', builder: (ctx, s) => const SkillsMatrixScreen()),
+    GoRoute(path: '/group-messages', name: 'group-messages', builder: (ctx, s) => const GroupMessagesScreen()),
+    GoRoute(path: '/broadcast', name: 'broadcast', builder: (ctx, s) => const BroadcastScreen()),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
 );
