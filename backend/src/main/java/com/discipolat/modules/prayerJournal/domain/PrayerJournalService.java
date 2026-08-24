@@ -3,15 +3,18 @@ package com.discipolat.modules.prayerJournal.domain;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.multitenancy.TenantContext;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
+/**
+ * P1 #50 — Journal de prière personnel avec partage avec faiseur.
+ */
 @Service
 @Transactional
 public class PrayerJournalService {
@@ -58,18 +61,41 @@ public class PrayerJournalService {
         return repository.save(entry);
     }
 
-    public void delete(UUID id) {
+    /**
+     * Share prayer with faiseur (change visibility).
+     */
+    public PrayerJournalEntry shareWithFaiseur(UUID id) {
         PrayerJournalEntry entry = getById(id);
-        repository.delete(entry);
+        entry.setVisibilité(PrayerJournalEntry.Visibilité.FAISEUR);
+        entry.setUpdatedAt(LocalDateTime.now());
+        return repository.save(entry);
     }
 
+    /**
+     * Get prayers that are still in progress (need follow-up).
+     */
+    public List<PrayerJournalEntry> getPendingPrayers(UUID membreId) {
+        return repository.findByMembreIdOrderByCreatedAtDesc(membreId, PageRequest.of(0, 100))
+                .stream()
+                .filter(e -> e.getStatut() == PrayerJournalEntry.Statut.EN_COURS)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get prayer journal statistics for a member.
+     */
     public Map<String, Object> getStats(UUID membreId) {
-        UUID tenantId = TenantContext.getCurrentTenantId();
+        var entries = repository.findByMembreIdOrderByCreatedAtDesc(membreId, PageRequest.of(0, 1000));
         Map<String, Object> stats = new HashMap<>();
-        stats.put("total", repository.countByTenantIdAndMembreId(tenantId, membreId));
-        stats.put("enCours", repository.countByTenantIdAndMembreIdAndStatut(tenantId, membreId, PrayerJournalEntry.Statut.EN_COURS));
-        stats.put("exaucées", repository.countByTenantIdAndMembreIdAndStatut(tenantId, membreId, PrayerJournalEntry.Statut.EXAUCÉE));
-        stats.put("mémorisées", repository.countByTenantIdAndMembreIdAndStatut(tenantId, membreId, PrayerJournalEntry.Statut.MÉMORISÉE));
+        stats.put("total", entries.getNumberOfElements());
+        stats.put("enCours", entries.stream().filter(e -> e.getStatut() == PrayerJournalEntry.Statut.EN_COURS).count());
+        stats.put("exaucées", entries.stream().filter(e -> e.getStatut() == PrayerJournalEntry.Statut.EXAUCÉE).count());
+        stats.put("mémorisées", entries.stream().filter(e -> e.getStatut() == PrayerJournalEntry.Statut.MÉMORISÉE).count());
+        stats.put("partagées", entries.stream().filter(e -> e.getVisibilité() == PrayerJournalEntry.Visibilité.FAISEUR).count());
         return stats;
+    }
+
+    public void delete(UUID id) {
+        repository.deleteById(id);
     }
 }

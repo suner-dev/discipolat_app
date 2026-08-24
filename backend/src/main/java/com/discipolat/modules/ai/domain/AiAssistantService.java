@@ -61,6 +61,8 @@ public class AiAssistantService {
     private final WorkspaceScopeService workspaceScope;
     private final SecurityUtils securityUtils;
 
+    private final AiChatConversationRepository chatRepo;
+
     /** Cache simple de l'historique chat par userId (session). */
     private final ConcurrentHashMap<UUID, List<Map<String, Object>>> chatHistories = new ConcurrentHashMap<>();
 
@@ -71,7 +73,8 @@ public class AiAssistantService {
                                AlertRepository alertRepository,
                                MemberPresenceRepository memberPresenceRepository,
                                WorkspaceScopeService workspaceScope,
-                               SecurityUtils securityUtils) {
+                               SecurityUtils securityUtils,
+                               AiChatConversationRepository chatRepo) {
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.familyRepository = familyRepository;
@@ -80,6 +83,68 @@ public class AiAssistantService {
         this.memberPresenceRepository = memberPresenceRepository;
         this.workspaceScope = workspaceScope;
         this.securityUtils = securityUtils;
+        this.chatRepo = chatRepo;
+    }
+
+    /**
+     * Generate an executive report as markdown (for PDF generation).
+     */
+    public Map<String, Object> generateReport() {
+        Map<String, Object> context = buildChurchContext("rapport");
+        Map<String, Object> report = new LinkedHashMap<>();
+        report.put("titre", "Rapport Exécutif — " + java.time.LocalDate.now());
+        report.put("totalSouls", context.get("totalSouls"));
+        report.put("totalFamilies", context.get("totalFamilies"));
+        report.put("presenceRate", context.get("presenceRate"));
+        report.put("activeAlerts", context.get("activeAlerts"));
+        report.put("weekReportsSubmitted", context.get("weekReportsSubmitted"));
+        report.put("weekReportsTotal", context.get("weekReportsTotal"));
+        report.put("recentConverts", context.get("recentConverts"));
+
+        // Generate narrative
+        double rate = (double) context.getOrDefault("presenceRate", 0.0);
+        long submitted = (long) context.getOrDefault("weekReportsSubmitted", 0L);
+        long total = (long) context.getOrDefault("weekReportsTotal", 0L);
+        StringBuilder narrative = new StringBuilder();
+        narrative.append("## Résumé Exécutif\n\n");
+        narrative.append("**Date :** ").append(java.time.LocalDate.now()).append("\n\n");
+        narrative.append("### Effectifs\n");
+        narrative.append("- Total âmes : ").append(context.get("totalSouls")).append("\n");
+        narrative.append("- Familles : ").append(context.get("totalFamilies")).append("\n");
+        narrative.append("- Nouveaux convertis : ").append(context.get("recentConverts")).append("\n\n");
+        narrative.append("### Présence\n");
+        narrative.append("- Taux : **").append(rate).append("%**\n");
+        narrative.append(rate >= 75 ? "- ✅ Excellent\n" : rate >= 50 ? "- ⚠️ À améliorer\n" : "- 🔴 Critique\n");
+        narrative.append("\n### Rapports\n");
+        narrative.append("- Soumis : ").append(submitted).append("/").append(total).append("\n");
+        narrative.append("- Complétion : ").append(total > 0 ? Math.round((double) submitted / total * 100) : 0).append("%\n\n");
+        narrative.append("### Alertes\n");
+        narrative.append("- Actives : ").append(context.get("activeAlerts")).append("\n");
+        report.put("narrative", narrative.toString());
+        return report;
+    }
+
+    /**
+     * RAG context: enrich question with relevant member/family data.
+     */
+    public Map<String, Object> getRagContext(String query) {
+        Map<String, Object> rag = new LinkedHashMap<>();
+        String q = query.toLowerCase();
+
+        // Search for matching souls
+        if (q.contains("membre") || q.contains("âme") || q.contains("personne")) {
+            List<Soul> souls = soulRepository.findAll().stream()
+                    .filter(s -> s.getNomComplet() != null && q.contains(s.getNomComplet().toLowerCase()))
+                    .limit(5)
+                    .toList();
+            if (!souls.isEmpty()) {
+                rag.put("matchedSouls", souls.stream()
+                        .map(s -> Map.of("id", s.getId(), "nom", s.getNomComplet(),
+                                "statut", s.getStatut().name()))
+                        .toList());
+            }
+        }
+        return rag;
     }
 
     /**
@@ -118,7 +183,29 @@ public class AiAssistantService {
         chatHistories.computeIfAbsent(userId, k -> new ArrayList<>()).add(userMsg);
         chatHistories.get(userId).add(assistantMsg);
 
-        return Map.of("reply", reply, "sources", context.getOrDefault("sources", List.of()));
+        // Persist to DB
+        UUID sessionId = chatHistories.containsKey(userId) && !chatHistories.get(userId).isEmpty()
+                ? UUID.fromString((String) chatHistories.get(userId).get(0).getOrDefault("sessionId", UUID.randomUUID().toString()))
+                : UUID.randomUUID();
+        AiChatConversation userEntity = new AiChatConversation();
+        userEntity.setTenantId(securityUtils.getCurrentTenantId());
+        userEntity.setUserId(userId);
+        userEntity.setSessionId(sessionId);
+        userEntity.setRole(AiChatConversation.Role.USER);
+        userEntity.setContent(message);
+        chatRepo.save(userEntity);
+
+        AiChatConversation assistantEntity = new AiChatConversation();
+        assistantEntity.setTenantId(securityUtils.getCurrentTenantId());
+        assistantEntity.setUserId(userId);
+        assistantEntity.setSessionId(sessionId);
+        assistantEntity.setRole(AiChatConversation.Role.ASSISTANT);
+        assistantEntity.setContent(reply);
+        assistantEntity.setSourcesJson(context.getOrDefault("sources", List.of()).toString());
+        chatRepo.save(assistantEntity);
+
+        return Map.of("reply", reply, "sources", context.getOrDefault("sources", List.of()),
+                "sessionId", sessionId.toString());
     }
 
     /**
@@ -139,6 +226,16 @@ public class AiAssistantService {
      * Historique du chat pour un utilisateur.
      */
     public List<Map<String, Object>> getChatHistory(UUID userId) {
+        // Return from DB first, fall back to in-memory
+        List<AiChatConversation> dbHistory = chatRepo.findByUserIdOrderByCreatedAtDesc(userId);
+        if (!dbHistory.isEmpty()) {
+            return dbHistory.stream().map(c -> Map.<String, Object>of(
+                    "id", c.getId().toString(),
+                    "role", c.getRole().name().toLowerCase(),
+                    "content", c.getContent(),
+                    "timestamp", c.getCreatedAt().toString()
+            )).toList();
+        }
         return chatHistories.getOrDefault(userId, List.of());
     }
 
