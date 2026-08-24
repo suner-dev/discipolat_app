@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
+import '../../widgets/secure_screen.dart';
 
 /// Outil métier FINANCES (ADMIN / PASTEUR) — parité web.
 ///
@@ -103,7 +104,10 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SecureScreen(
+      screenName: 'FinanceScreen',
+      auditAction: AuditActions.viewFinances,
+      child: Scaffold(
       appBar: AppBar(title: const Text('Finances')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAdd,
@@ -144,6 +148,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
                 ],
               ),
             ),
+    ),
     );
   }
 

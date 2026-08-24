@@ -14,6 +14,12 @@ public interface ConversationMessageRepository extends JpaRepository<Conversatio
 
     List<ConversationMessage> findByConversationIdOrderByCreatedAtAsc(UUID conversationId);
 
+    List<ConversationMessage> findByConversationIdOrderByCreatedAtDesc(UUID conversationId);
+
+    List<ConversationMessage> findByGroupIdOrderByCreatedAtAsc(UUID groupId);
+
+    List<ConversationMessage> findByReplyToIdOrderByCreatedAtAsc(UUID replyToId);
+
     long countByConversationIdAndSenderIdNotAndReadAtIsNull(UUID conversationId, UUID senderId);
 
     @Modifying

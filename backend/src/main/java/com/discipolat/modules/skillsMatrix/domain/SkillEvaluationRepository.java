@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Repository
 public interface SkillEvaluationRepository extends JpaRepository<SkillEvaluation, UUID> {
-    List<SkillEvaluation> findByTenantId(UUID tenantId);
-    List<SkillEvaluation> findByTenantIdAndMembreId(UUID tenantId, UUID membreId);
-    List<SkillEvaluation> findByTenantIdAndCompetence(UUID tenantId, String competence);
+    List<SkillEvaluation> findByMembreId(UUID membreId);
+    List<SkillEvaluation> findByTenantIdOrderByCreatedAtDesc(UUID tenantId);
+    List<SkillEvaluation> findByTenantIdAndCompétence(UUID tenantId, String compétence);
 }

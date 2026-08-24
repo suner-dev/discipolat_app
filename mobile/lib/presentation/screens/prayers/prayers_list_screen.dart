@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../widgets/secure_screen.dart';
 
 class PrayersListScreen extends StatefulWidget {
   const PrayersListScreen({super.key});
@@ -100,7 +101,10 @@ class _PrayersListScreenState extends State<PrayersListScreen> with SingleTicker
     final enCours = _prayers.where((p) => (p as Map)['statut'] == 'EN_COURS').length;
     final exauces = _prayers.where((p) => (p as Map)['statut'] == 'EXAUCE').length;
 
-    return Scaffold(
+    return SecureScreen(
+      screenName: 'PrayersListScreen',
+      auditAction: AuditActions.viewPrayers,
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Prières'),
         actions: [
@@ -162,6 +166,7 @@ class _PrayersListScreenState extends State<PrayersListScreen> with SingleTicker
                 ),
               ],
             ),
+    ),
     );
   }
 

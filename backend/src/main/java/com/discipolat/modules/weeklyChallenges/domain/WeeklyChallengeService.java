@@ -1,0 +1,103 @@
+package com.discipolat.modules.weeklyChallenges.domain;
+
+import com.discipolat.common.multitenancy.TenantContext;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.temporal.WeekFields;
+import java.util.*;
+
+@Service
+@Transactional
+public class WeeklyChallengeService {
+
+    private final WeeklyChallengeRepository challengeRepo;
+
+    // Auto-generated challenge templates
+    private static final List<Map<String, Object>> CHALLENGE_TEMPLATES = List.of(
+        Map.of("title", "5 jours de prière consécutive", "description", "Priez au moins 10 minutes chaque jour pendant 5 jours", "category", WeeklyChallenge.Category.PRAYER, "difficulty", WeeklyChallenge.Difficulty.EASY, "xp", 50),
+        Map.of("title", "Lisez 3 chapitres de la Bible", "description", "Lisez au moins 3 chapitres cette semaine et notez un enseignement", "category", WeeklyChallenge.Category.READING, "difficulty", WeeklyChallenge.Difficulty.MEDIUM, "xp", 75),
+        Map.of("title", "Rendez visite à un membre", "description", "Visitez un membre de votre famille ou département cette semaine", "category", WeeklyChallenge.Category.SERVICE, "difficulty", WeeklyChallenge.Difficulty.MEDIUM, "xp", 100),
+        Map.of("title", "Jour de jeûne", "description", "Jeûnez un jour complet cette semaine (eau autorisée)", "category", WeeklyChallenge.Category.FASTING, "difficulty", WeeklyChallenge.Difficulty.HARD, "xp", 150),
+        Map.of("title", "Partagez votre foi", "description", "Partagez un témoignage ou un mot d'encouragement avec quelqu'un", "category", WeeklyChallenge.Category.EVANGELISM, "difficulty", WeeklyChallenge.Difficulty.MEDIUM, "xp", 100),
+        Map.of("title", "Gratitude quotidienne", "description", "Notez 3 choses dont vous êtes reconnaissant chaque jour", "category", WeeklyChallenge.Category.GRATITUDE, "difficulty", WeeklyChallenge.Difficulty.EASY, "xp", 40),
+        Map.of("title", "Prière en famille", "description", "Organisez une session de prière en famille au moins 2 fois", "category", WeeklyChallenge.Category.FAMILY, "difficulty", WeeklyChallenge.Difficulty.EASY, "xp", 60)
+    );
+
+    public WeeklyChallengeService(WeeklyChallengeRepository challengeRepo) {
+        this.challengeRepo = challengeRepo;
+    }
+
+    public List<WeeklyChallenge> listActive() {
+        return challengeRepo.findByTenantIdAndStatusOrderByCreatedAtDesc(
+                TenantContext.getCurrentTenantId(), WeeklyChallenge.Status.ACTIVE);
+    }
+
+    public List<WeeklyChallenge> listMyChallenges() {
+        // In production, would filter by current user
+        return listActive();
+    }
+
+    public WeeklyChallenge create(WeeklyChallenge challenge) {
+        challenge.setTenantId(TenantContext.getCurrentTenantId());
+        var now = LocalDateTime.now();
+        challenge.setWeekNumber(now.get(WeekFields.ISO.weekOfWeekBasedYear()));
+        challenge.setYear(now.getYear());
+        return challengeRepo.save(challenge);
+    }
+
+    public WeeklyChallenge updateProgress(UUID id, Integer progress) {
+        WeeklyChallenge challenge = challengeRepo.findById(id).orElseThrow();
+        challenge.setProgress(Math.min(100, progress));
+        if (progress >= 100) {
+            challenge.setStatus(WeeklyChallenge.Status.COMPLETED);
+            challenge.setCompletedAt(LocalDateTime.now());
+        }
+        return challengeRepo.save(challenge);
+    }
+
+    /** Auto-generate challenges for the current week */
+    public List<WeeklyChallenge> generateWeeklyChallenges() {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        var now = LocalDateTime.now();
+        Integer week = now.get(WeekFields.ISO.weekOfWeekBasedYear());
+        Integer year = now.getYear();
+
+        // Check if challenges already exist for this week
+        var existing = challengeRepo.findByTenantIdAndWeekNumberAndYearOrderByCreatedAtDesc(tenantId, week, year);
+        if (!existing.isEmpty()) return existing;
+
+        List<WeeklyChallenge> generated = new ArrayList<>();
+        Random rand = new Random();
+        // Pick 3 random templates
+        var shuffled = new ArrayList<>(CHALLENGE_TEMPLATES);
+        Collections.shuffle(shuffled, rand);
+        for (var template : shuffled.subList(0, Math.min(3, shuffled.size()))) {
+            WeeklyChallenge challenge = new WeeklyChallenge();
+            challenge.setTenantId(tenantId);
+            challenge.setTitle((String) template.get("title"));
+            challenge.setDescription((String) template.get("description"));
+            challenge.setCategory((WeeklyChallenge.Category) template.get("category"));
+            challenge.setDifficulty((WeeklyChallenge.Difficulty) template.get("difficulty"));
+            challenge.setXpReward((Integer) template.get("xp"));
+            challenge.setWeekNumber(week);
+            challenge.setYear(year);
+            challenge.setIsAutoGenerated(true);
+            challenge.setStatus(WeeklyChallenge.Status.ACTIVE);
+            generated.add(challengeRepo.save(challenge));
+        }
+        return generated;
+    }
+
+    public Map<String, Object> getStats() {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("active", challengeRepo.countByTenantIdAndStatus(tenantId, WeeklyChallenge.Status.ACTIVE));
+        stats.put("completed", challengeRepo.countByTenantIdAndStatus(tenantId, WeeklyChallenge.Status.COMPLETED));
+        stats.put("total", challengeRepo.countByTenantIdAndStatus(tenantId, WeeklyChallenge.Status.ACTIVE)
+                + challengeRepo.countByTenantIdAndStatus(tenantId, WeeklyChallenge.Status.COMPLETED)
+                + challengeRepo.countByTenantIdAndStatus(tenantId, WeeklyChallenge.Status.FAILED));
+        return stats;
+    }
+}

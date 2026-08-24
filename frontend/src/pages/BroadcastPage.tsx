@@ -1,141 +1,152 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
-import { Megaphone, Send, Users, Mail, Smartphone, MessageSquare, Plus, Check, Clock } from 'lucide-react';
+import api from '@/lib/api';
+import SkeletonLoader from '@/components/shared/SkeletonLoader';
+import EmptyState from '@/components/shared/EmptyState';
+import Toast from '@/components/shared/Toast';
+import { Megaphone, Plus, Send, Eye, Clock, Users } from 'lucide-react';
 
-interface Broadcast {
+interface BroadcastMsg {
   id: string;
-  title: string;
-  body: string;
-  channel: 'all' | 'push' | 'email' | 'sms' | 'in_app';
-  targetRoles: string[];
-  sentAt?: string;
-  readCount: number;
-  totalRecipients: number;
-  status: 'draft' | 'sent';
+  titre: string;
+  contenu: string;
+  cible: string;
+  statut: 'BROUILLON' | 'PROGRAMMÉ' | 'ENVOYÉ' | 'ÉCHOUÉ';
+  totalEnvoyé: number;
+  totalLu: number;
+  createdAt: string;
+  envoyéAt?: string;
 }
-
-const MOCK_BROADCASTS: Broadcast[] = [
-  { id: '1', title: 'Culte spécial de jeûne', body: 'Invitation au culte spécial de jeûne et de prière ce samedi.', channel: 'all', targetRoles: ['ALL'], sentAt: '2026-08-20T10:00', readCount: 156, totalRecipients: 230, status: 'sent' },
-  { id: '2', title: 'Rappel: Réunion des responsables', body: 'Réunion des responsables de département demain à 14h.', channel: 'push', targetRoles: ['ADMIN', 'PASTEUR', 'RESPONSABLE'], sentAt: '2026-08-19T08:00', readCount: 12, totalRecipients: 15, status: 'sent' },
-  { id: '3', title: 'Nouveau programme de formation', body: 'Découvrez notre nouveau programme de formation pour les faiseurs.', channel: 'email', targetRoles: ['FAISEUR'], readCount: 0, totalRecipients: 0, status: 'draft' },
-];
 
 export default function BroadcastPage() {
   const { t } = useI18n();
-  const [showComposer, setShowComposer] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newBody, setNewBody] = useState('');
-  const [newChannel, setNewChannel] = useState<Broadcast['channel']>('all');
+  const [messages, setMessages] = useState<BroadcastMsg[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newMsg, setNewMsg] = useState({ titre: '', contenu: '', cible: 'TOUS' });
 
-  const channelIcon = (ch: string) => {
-    if (ch === 'all') return <Megaphone className="w-4 h-4" />;
-    if (ch === 'push') return <Smartphone className="w-4 h-4" />;
-    if (ch === 'email') return <Mail className="w-4 h-4" />;
-    if (ch === 'sms') return <MessageSquare className="w-4 h-4" />;
-    return <Send className="w-4 h-4" />;
+  useEffect(() => { loadMessages(); }, []);
+
+  const loadMessages = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/broadcast');
+      setMessages(res.data.content || res.data || []);
+    } catch { setMessages([]); }
+    finally { setLoading(false); }
+  };
+
+  const createAndSend = async () => {
+    if (!newMsg.titre.trim() || !newMsg.contenu.trim()) { Toast.warning('Remplissez tous les champs'); return; }
+    try {
+      const res = await api.post('/broadcast', newMsg);
+      await api.patch(`/broadcast/${res.data.id}/send`);
+      Toast.success('Broadcast envoyé !');
+      setShowCreate(false);
+      setNewMsg({ titre: '', contenu: '', cible: 'TOUS' });
+      loadMessages();
+    } catch { Toast.error('Erreur'); }
+  };
+
+  const saveDraft = async () => {
+    if (!newMsg.titre.trim()) { Toast.warning('Titre requis'); return; }
+    try {
+      await api.post('/broadcast', newMsg);
+      Toast.success('Brouillon sauvegardé');
+      setShowCreate(false);
+      loadMessages();
+    } catch { Toast.error('Erreur'); }
+  };
+
+  const getStatutInfo = (s: string) => {
+    switch (s) {
+      case 'ENVOYÉ': return { color: 'bg-green-100 text-green-700', icon: Send };
+      case 'PROGRAMMÉ': return { color: 'bg-blue-100 text-blue-700', icon: Clock };
+      case 'ÉCHOUÉ': return { color: 'bg-red-100 text-red-700', icon: Megaphone };
+      default: return { color: 'bg-gray-100 text-gray-500', icon: Megaphone };
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <Megaphone className="w-7 h-7 text-orange-500" />
-            {t('nav.broadcast') ?? 'Diffusion / Broadcast'}
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <Megaphone className="w-8 h-8 text-rose-500" />
+            {t('nav.broadcast')}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Envoyez des messages à toute l'église</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Envoi ciblé de messages avec accusé de lecture</p>
         </div>
-        <button onClick={() => setShowComposer(!showComposer)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white font-medium text-sm hover:bg-orange-600 transition">
-          <Plus className="w-4 h-4" />
-          Nouveau broadcast
+        <button onClick={() => setShowCreate(true)}
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-medium hover:from-rose-600 hover:to-pink-600 transition-all shadow-lg flex items-center gap-2">
+          <Plus className="w-4 h-4" /> {t('broadcast.new')}
         </button>
       </div>
 
-      {/* Composer */}
-      {showComposer && (
-        <div className="glass rounded-2xl p-6 border border-white/20 dark:border-white/[0.06] space-y-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Composer un message</h3>
-          <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Titre du message"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" />
-          <textarea value={newBody} onChange={(e) => setNewBody(e.target.value)}
-            placeholder="Contenu du message..."
-            rows={4}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none" />
-          <div className="flex gap-2">
-            <p className="text-xs text-gray-500 pt-2">Canal :</p>
-            {(['all', 'push', 'email', 'sms', 'in_app'] as const).map((ch) => (
-              <button key={ch} onClick={() => setNewChannel(ch)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${newChannel === ch ? 'bg-orange-500 text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`}>
-                {channelIcon(ch)} {ch === 'all' ? 'Tous' : ch.toUpperCase()}
-              </button>
-            ))}
+      {loading ? <SkeletonLoader lines={4} variant="card" /> :
+        messages.length === 0 ? (
+          <EmptyState icon={<Megaphone className="w-8 h-8 text-gray-400" />}
+            title="Aucun broadcast"
+            message="Envoyez des messages ciblés à votre congrégation"
+            action={{ label: 'Nouveau broadcast', onClick: () => setShowCreate(true) }} />
+        ) : (
+          <div className="space-y-3">
+            {messages.map(msg => {
+              const info = getStatutInfo(msg.statut);
+              const StatusIcon = info.icon;
+              return (
+                <div key={msg.id} className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <StatusIcon className={`w-4 h-4 ${info.color.includes('green') ? 'text-green-500' : info.color.includes('blue') ? 'text-blue-500' : 'text-gray-400'}`} />
+                        <h3 className="font-medium text-gray-900 dark:text-white text-sm">{msg.titre}</h3>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${info.color}`}>{msg.statut}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-2">{msg.contenu}</p>
+                      <div className="flex items-center gap-4 text-xs text-gray-400">
+                        <span className="flex items-center gap-1"><Users className="w-3 h-3" />{msg.cible}</span>
+                        <span className="flex items-center gap-1"><Send className="w-3 h-3" />{msg.totalEnvoyé} envoyés</span>
+                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{msg.totalLu} lus</span>
+                        <span>{new Date(msg.createdAt).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div className="flex gap-3 pt-2">
-            <button className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition flex items-center gap-2">
-              <Send className="w-4 h-4" /> Envoyer maintenant
-            </button>
-            <button className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-white/5 transition">
-              Sauvegarder brouillon
-            </button>
+        )}
+
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau broadcast</h2>
+            <div className="space-y-4">
+              <input type="text" value={newMsg.titre} onChange={e => setNewMsg({ ...newMsg, titre: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" placeholder="Titre" />
+              <textarea value={newMsg.contenu} onChange={e => setNewMsg({ ...newMsg, contenu: e.target.value })}
+                rows={4} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none" placeholder="Message à envoyer..." />
+              <select value={newMsg.cible} onChange={e => setNewMsg({ ...newMsg, cible: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm">
+                <option value="TOUS">Tous les membres</option>
+                <option value="DÉPARTEMENT">Par département</option>
+                <option value="FAMILLE">Par famille</option>
+                <option value="RÔLE">Par rôle</option>
+                <option value="SEGMENT">Segment personnalisé</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={saveDraft} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-sm text-gray-600">{t('broadcast.draft')}</button>
+              <button onClick={createAndSend} className="px-4 py-2 rounded-xl bg-rose-500 text-white text-sm font-medium hover:bg-rose-600 flex items-center gap-2">
+                <Send className="w-4 h-4" /> {t('broadcast.send')}
+              </button>
+            </div>
           </div>
         </div>
       )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-              <Send className="w-5 h-5 text-orange-500" />
-            </div>
-            <div><p className="text-2xl font-bold text-gray-900 dark:text-white">2</p><p className="text-xs text-gray-500">Messages envoyés</p></div>
-          </div>
-        </div>
-        <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <Check className="w-5 h-5 text-green-500" />
-            </div>
-            <div><p className="text-2xl font-bold text-gray-900 dark:text-white">73%</p><p className="text-xs text-gray-500">Taux de lecture</p></div>
-          </div>
-        </div>
-        <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-500" />
-            </div>
-            <div><p className="text-2xl font-bold text-gray-900 dark:text-white">230</p><p className="text-xs text-gray-500">Destinataires</p></div>
-          </div>
-        </div>
-      </div>
-
-      {/* History */}
-      <div className="space-y-3">
-        <h3 className="font-semibold text-gray-900 dark:text-white">Historique</h3>
-        {MOCK_BROADCASTS.map((b) => (
-          <div key={b.id} className="glass rounded-2xl p-4 border border-white/20 dark:border-white/[0.06] flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${b.status === 'sent' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-white/5'}`}>
-                {channelIcon(b.channel)}
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-white text-sm">{b.title}</h4>
-                <p className="text-xs text-gray-500 line-clamp-1">{b.body}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${b.status === 'sent' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-white/5'}`}>
-                {b.status === 'sent' ? <><Check className="w-3 h-3" /> Envoyé</> : <><Clock className="w-3 h-3" /> Brouillon</>}
-              </span>
-              {b.status === 'sent' && (
-                <p className="text-xs text-gray-400 mt-1">{b.readCount}/{b.totalRecipients} lus</p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

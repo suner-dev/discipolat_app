@@ -133,6 +133,31 @@ const DepartmentKPIsPage = lazy(() => import('@/pages/DepartmentKPIsPage'));
 const RewardsPage = lazy(() => import('@/pages/RewardsPage'));
 const MarketplacePage = lazy(() => import('@/pages/MarketplacePage'));
 const CommunityPage = lazy(() => import('@/pages/CommunityPage'));
+const AiPredictionsPage = lazy(() => import('@/pages/AiPredictionsPage'));
+const PersonalObjectivesPage = lazy(() => import('@/pages/PersonalObjectivesPage'));
+const FamilyCohesionPage = lazy(() => import('@/pages/FamilyCohesionPage'));
+const SuccessionPage = lazy(() => import('@/pages/SuccessionPage'));
+const PastoralVisitsPage = lazy(() => import('@/pages/PastoralVisitsPage'));
+const FamilyResourcesPage = lazy(() => import('@/pages/FamilyResourcesPage'));
+const AutomationsPage = lazy(() => import('@/pages/AutomationsPage'));
+const MentoratIAPage = lazy(() => import('@/pages/MentoratIAPage'));
+const KpiDrillDownPage = lazy(() => import('@/pages/KpiDrillDownPage'));
+const CurrencySettingsPage = lazy(() => import('@/pages/CurrencySettingsPage'));
+const ContentModerationPage = lazy(() => import('@/pages/ContentModerationPage'));
+const PredictionsMLPage = lazy(() => import('@/pages/PredictionsMLPage'));
+const IntelligenceCenterPage = lazy(() => import('@/pages/IntelligenceCenterPage'));
+const EngagementAnalyticsPage = lazy(() => import('@/pages/EngagementAnalyticsPage'));
+const ScheduledAnnouncementsPage = lazy(() => import('@/pages/ScheduledAnnouncementsPage'));
+const EventChecklistsPage = lazy(() => import('@/pages/EventChecklistsPage'));
+const GroupMessagesPage = lazy(() => import('@/pages/GroupMessagesPage'));
+const WeeklyChallengesPage = lazy(() => import('@/pages/WeeklyChallengesPage'));
+const DiscipleshipPathPage = lazy(() => import('@/pages/DiscipleshipPathPage'));
+const AiVisitNotesPage = lazy(() => import('@/pages/AiVisitNotesPage'));
+const ReverseMentoringPage = lazy(() => import('@/pages/ReverseMentoringPage'));
+const FamilyMeetingPage = lazy(() => import('@/pages/FamilyMeetingPage'));
+const ExecutiveInsightsPage = lazy(() => import('@/pages/ExecutiveInsightsPage'));
+const UpcomingEventsMemberPage = lazy(() => import('@/pages/UpcomingEventsMemberPage'));
+const MyTeamFamilyPage = lazy(() => import('@/pages/MyTeamFamilyPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -792,6 +817,67 @@ export default function App() {
               <CommunityPage />
             </ProtectedRoute>
           } />
+          <Route path="/ai-predictions" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <AiPredictionsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/personal-objectives" element={
+            <ProtectedRoute>
+              <PersonalObjectivesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/family-cohesion" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}>
+              <FamilyCohesionPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/succession" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <SuccessionPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/pastoral-visits" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
+              <PastoralVisitsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/family-resources" element={
+            <ProtectedRoute>
+              <FamilyResourcesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/automations" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <AutomationsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/mentoring" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}>
+              <MentoratIAPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/kpi-drilldown" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <KpiDrillDownPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/currency-settings" element={<ProtectedRoute roles={['ADMIN']}><CurrencySettingsPage /></ProtectedRoute>} />
+          <Route path="/content-moderation" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ContentModerationPage /></ProtectedRoute>} />
+          <Route path="/predictions-ml" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><PredictionsMLPage /></ProtectedRoute>} />
+          <Route path="/intelligence-center" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><IntelligenceCenterPage /></ProtectedRoute>} />
+          <Route path="/engagement-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EngagementAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/scheduled-announcements" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ScheduledAnnouncementsPage /></ProtectedRoute>} />
+          <Route path="/event-checklists" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EventChecklistsPage /></ProtectedRoute>} />
+          <Route path="/group-messages" element={<ProtectedRoute><GroupMessagesPage /></ProtectedRoute>} />
+          <Route path="/weekly-challenges" element={<ProtectedRoute><WeeklyChallengesPage /></ProtectedRoute>} />
+          <Route path="/discipleship-path" element={<ProtectedRoute><DiscipleshipPathPage /></ProtectedRoute>} />
+          <Route path="/ai-visit-notes" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}><AiVisitNotesPage /></ProtectedRoute>} />
+          <Route path="/reverse-mentoring" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><ReverseMentoringPage /></ProtectedRoute>} />
+          <Route path="/family-meetings" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}><FamilyMeetingPage /></ProtectedRoute>} />
+          <Route path="/executive-insights" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ExecutiveInsightsPage /></ProtectedRoute>} />
+          <Route path="/upcoming-events" element={<ProtectedRoute><UpcomingEventsMemberPage /></ProtectedRoute>} />
+          <Route path="/my-team" element={<ProtectedRoute><MyTeamFamilyPage /></ProtectedRoute>} />
         </Route>
 
         {/* Page d'accueil publique (landing) — redirige vers /dashboard si connecté */}

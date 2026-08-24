@@ -1,12 +1,9 @@
 package com.discipolat.modules.calendar.api;
 
-import com.discipolat.common.infrastructure.api.PageResponse;
-import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.calendar.domain.CalendarEvent;
 import com.discipolat.modules.calendar.domain.CalendarService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,19 +24,13 @@ public class CalendarController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponse<CalendarEvent>> list(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        Page<CalendarEvent> result = service.list(PageRequest.of(page, size));
-        return ResponseEntity.ok(PageResponse.of(result.getContent(), page, size,
-                result.getTotalElements(), result.getTotalPages()));
-    }
-
-    @GetMapping("/range")
-    public ResponseEntity<List<CalendarEvent>> range(
-            @RequestParam String start,
-            @RequestParam String end) {
-        return ResponseEntity.ok(service.getBetween(LocalDateTime.parse(start), LocalDateTime.parse(end)));
+    public ResponseEntity<List<CalendarEvent>> list(
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end) {
+        if (start != null && end != null) {
+            return ResponseEntity.ok(service.listByRange(LocalDateTime.parse(start), LocalDateTime.parse(end)));
+        }
+        return ResponseEntity.ok(service.listAll());
     }
 
     @GetMapping("/{id}")
@@ -50,33 +41,33 @@ public class CalendarController {
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CalendarEvent> create(@RequestBody Map<String, Object> body) {
-        UUID userId = SecurityUtils.getCurrentUserId();
         CalendarEvent event = service.create(
                 (String) body.get("titre"),
-                (String) body.getOrDefault("description", ""),
-                LocalDateTime.parse((String) body.get("dateDebut")),
-                LocalDateTime.parse((String) body.get("dateFin")),
+                (String) body.get("description"),
+                LocalDateTime.parse((String) body.get("début")),
+                LocalDateTime.parse((String) body.get("fin")),
                 (String) body.get("lieu"),
-                (String) body.get("categorie"),
-                userId
+                (String) body.get("source"),
+                body.get("événementId") != null ? UUID.fromString((String) body.get("événementId")) : null
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(event);
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CalendarEvent> update(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
-        return ResponseEntity.ok(service.update(id,
-                (String) body.get("titre"),
-                (String) body.get("description"),
-                body.get("dateDebut") != null ? LocalDateTime.parse((String) body.get("dateDebut")) : null,
-                body.get("dateFin") != null ? LocalDateTime.parse((String) body.get("dateFin")) : null,
-                (String) body.get("lieu")
-        ));
+    public ResponseEntity<CalendarEvent> updateStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(service.updateStatut(id, body.get("statut")));
+    }
+
+    @GetMapping("/{id}/ical")
+    public ResponseEntity<String> getICal(@PathVariable UUID id) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/calendar"))
+                .body(service.generateICal(id));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

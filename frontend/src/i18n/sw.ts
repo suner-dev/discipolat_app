@@ -160,6 +160,330 @@ const sw: Record<string, string> = {
   'ai.send': 'Tuma',
   'ai.history': 'Historia',
   'ai.suggestions': 'Mapendekezo',
+
+  // Tiketi
+  'tickets.title': 'Tiketi na Msaada',
+  'tickets.create': 'Tiketi mpya',
+  'tickets.open': 'Fungua',
+  'tickets.closed': 'Funga',
+
+  // Uchaguzi
+  'surveys.title': 'Uchaguzi wa haraka',
+  'surveys.create': 'Uchaguzi mpya',
+  'surveys.vote': 'Kura',
+  'surveys.results': 'Matokeo',
+
+  // Ushahidi
+  'testimonials.title': 'Ukumbusho wa ushahidi',
+  'testimonials.create': 'Shiriki ushahidi',
+  'testimonials.approved': 'Imekubalika',
+  'testimonials.pending': 'Inasubiri',
+
+  'leaveRequests.title': 'Maombi ya likizo',
+  'leaveRequests.create': 'Ombi jipya',
+  'leaveRequests.approved': 'Imekubalika',
+  'leaveRequests.rejected': 'Imekataliwa',
+
+  'referrals.title': 'Mapendekezo',
+  'referrals.invite': 'Alika',
+  'referrals.rewards': 'Zawadi',
+
+  'calendar.title': 'Muunganisho wa kalenda',
+  'calendar.sync': 'Sawazisha',
+  'calendar.connect': 'Unganisha',
+
+  'skillsMatrix.title': 'Matriisi ya ujuzi',
+  'skillsMatrix.evaluate': 'Tathmini',
+  'skillsMatrix.level': 'Kiwango',
+
+  'teamGantt.title': 'Chati ya Gantt ya timu',
+  'teamGantt.tasks': 'Kazi',
+  'teamGantt.timeline': 'Ratiba',
+
+  'compliance.title': 'Dashibodi ya kufuata sheria',
+  'compliance.export': 'Hamisha',
+  'compliance.delete': 'Futa data',
+
+  'apiDocs.title': 'API na Nyaraka',
+  'apiDocs.keys': 'Ufunguo wa API',
+  'apiDocs.swagger': 'Swagger',
+
+  'onboarding.title': 'Msaidizi wa usanidi',
+  'onboarding.step1': 'Utambulisho',
+  'onboarding.step2': 'Ingiza wanachama',
+  'onboarding.step3': 'Muundo',
+  'onboarding.step4': 'Majukumu',
+  'onboarding.step5': 'Tukio la kwanza',
+
+  'cercleFaiseurs.title': 'Duara la washauri',
+  'cercleFaiseurs.members': 'Wanachama',
+  'cercleFaiseurs.sessions': 'Vikao',
+
+  'bibleReading.title': 'Mpango wa kusoma Biblia',
+  'bibleReading.progress': 'Maendeleo',
+  'bibleReading.daily': 'Kila siku',
+
+  'prayerJournal.title': 'Diari ya maombi',
+  'prayerJournal.add': 'Ongeza',
+
+  'spiritualChallenges.title': 'Changamoto za kiroho',
+  'spiritualChallenges.create': 'Unda changamoto',
+
+  'directory.title': 'Orodha ya kanisa',
+  'spiritualJourney.title': 'Safari ya kiroho',
+
+  'automations.title': 'Automatiksheni za kihuduma',
+  'automations.create': 'Automatiksheni mpya',
+
+  // Streaming
+  'nav.streaming': 'Kutiririka moja kwa moja',
+  'streaming.live': 'Moja kwa moja',
+  'streaming.scheduled': 'Imepangwa',
+  'streaming.ended': 'Imekwisha',
+
+  // Broadcast
+  'nav.broadcast': 'Kutangaza / Broadcast',
+  'broadcast.new': 'Ujumbe mpya',
+  'broadcast.send': 'Tuma',
+  'broadcast.draft': 'Rasimu',
+
+  // Inventory
+  'nav.inventory': 'Hifadhidata akili',
+  'inventory.lowStock': 'Hifadhi ndogo',
+  'inventory.categories': 'Aina',
+
+  // Department KPIs
+  'nav.departmentKpis': 'Vipimo vya Idara',
+  'kpi.progress': 'Maendeleo',
+  'kpi.target': 'Lengo',
+
+  // Rewards
+  'nav.rewards': 'Zawadi na Gamification',
+  'rewards.points': 'Alama zangu',
+  'rewards.claimed': 'Imepatikana',
+  'rewards.locked': 'Imefungwa',
+
+  // Marketplace
+  'nav.marketplace': 'Soko la jamii',
+  'marketplace.offer': 'Ofa',
+  'marketplace.request': 'Ombi',
+  'marketplace.service': 'Huduma',
+  'marketplace.free': 'Bure',
+
+  // Community
+  'nav.community': 'Jamii',
+  'community.testimony': 'Ushahidi',
+  'community.prayer': 'Maombi',
+  'community.encouragement': 'Uhimilisho',
+
+  // AI Predictions
+  'nav.aiPredictions': 'Utabiri wa AI',
+  'aiPredictions.title': 'Utabiri na uchambuzi wa AI',
+  'aiPredictions.growth': 'Kuongoza ukuaji',
+  'aiPredictions.risk': 'Hatari ya kuondoka',
+  'aiPredictions.trends': 'Mwenendo',
+
+  // Automatisations — new keys
+  'nav.automations': 'Automatiksheni',
+  'automations.trigger': 'Kiendeshaji',
+  'automations.action': 'Kitendo',
+  'automations.active': 'Hai',
+  'automations.paused': 'Imesimamishwa',
+  'automations.executions': 'utekelezaji',
+
+  // Mentorat IA
+  'nav.mentoring': 'Ushauri wa AI',
+  'mentoring.title': 'Ushauri wa AI — Viongozi wa Familia',
+  'mentoring.generate': 'Zalisha mapendekezo',
+  'mentoring.accompaniment': 'Ufuatiliaji',
+  'mentoring.formation': 'Mafunzo',
+  'mentoring.delegation': 'Uwakilishi',
+  'mentoring.recognition': 'Utambuzi',
+  'mentoring.actionRecommanded': 'Kitendo kilichopendekezwa',
+  'mentoring.reasoning': 'Sababu',
+  'mentoring.confidence': 'Ujasiri',
+
+  // KPI Drill-down
+  'nav.kpiDrilldown': 'Uchambuzi wa KPI',
+  'kpiDrilldown.title': 'Uchambuzi wa Hadithi wa KPI',
+  'kpiDrilldown.clickToAnalyze': 'Bofya ili uchambue',
+  'kpiDrilldown.narrative': 'Hadithi',
+  'kpiDrilldown.causes': 'Sababu zilizotambuliwa',
+  'kpiDrilldown.recommendations': 'Mapendekezo',
+  'kpiDrilldown.trend': 'Mwenendo',
+
+  // Prayer Journal — new keys
+  'nav.prayerJournal': 'Diari ya Maombi',
+  'prayerJournal.answered': 'Imejibiwa',
+  'prayerJournal.remembered': 'Imekumbukwa',
+  'prayerJournal.inProgress': 'Inaendelea',
+
+  // Spiritual Challenges — new keys
+  'nav.spiritualChallenges': 'Changamoto za Kiroho',
+  'spiritualChallenges.progress': '+1 siku',
+
+  // Skills Matrix — new keys
+  'nav.skillsMatrix': 'Matriisi ya Ujuzi',
+  'skills.evaluate': 'Tathmini',
+  'skills.level': 'Kiwango',
+
+  // Team Gantt — new keys
+  'nav.teamGantt': 'Ratiba ya Timu',
+  'gantt.team': 'Timu',
+  'gantt.timeline': 'Muda',
+
+  // Calendar Integration — new keys
+  'nav.calendar': 'Kalenda',
+  'calendar.export': 'Hamisha iCal',
+
+  // Broadcast — new keys
+  'broadcast.title': 'Utangazaji / Broadcast',
+  'broadcast.sent': 'Imetumwa',
+  'broadcast.scheduled': 'Imepangwa',
+  'broadcast.readReceipts': 'Ushahidi wa kusoma',
+
+  // Church Directory — new keys
+  'nav.directory': 'Orodha',
+  'directory.myProfile': 'Wasifu wangu',
+  'directory.public': 'Ya umma',
+  'directory.private': 'Ya kibinafsi',
+
+  // Personal Objectives
+  'nav.personalObjectives': 'Malengo ya Kiroho',
+  'personalObjectives.title': 'Malengo ya Kiroho Binafsi',
+  'personalObjectives.create': 'Lengo jipya',
+  'personalObjectives.progress': '+1 maendeleo',
+
+  // Succession
+  'nav.succession': 'Mpango wa Urithi',
+  'succession.title': 'Mpango wa Urithi',
+  'succession.create': 'Mpango mpya',
+  'succession.readiness': 'Uko tayari',
+
+  // Pastoral Visits
+  'nav.pastoralVisits': 'Ziara za Kihuduma',
+  'pastoralVisits.title': 'Ziara za Kihuduma',
+  'pastoralVisits.autoGenerate': 'Zalisha moja kwa moja',
+  'pastoralVisits.completed': 'Imekamilika',
+
+  // Family Resources
+  'nav.familyResources': 'Rasilimali za Familia',
+  'familyResources.title': 'Benki ya Rasilimali',
+  'familyResources.share': 'Shiriki',
+  'familyResources.document': 'Hati',
+  'familyResources.video': 'Video',
+
+  // Family Cohesion
+  'nav.familyCohesion': 'Umoja wa Familia',
+  'familyCohesion.title': 'Umoja wa Familia',
+  'familyCohesion.score': 'Alama ya umoja',
+  'familyCohesion.recommendations': 'Mapendekezo',
+
+  // Currency
+  'nav.currency': 'Sarafu Nyingi & Muda',
+  'currency.primary': 'Sarafu kuu',
+  'currency.all': 'Sarafu zilizowekwa',
+  'currency.add': 'Ongeza',
+  'currency.timezones': 'Muda wa eneo',
+
+  // Content Moderation
+  'nav.moderation': 'Ufilisi wa AI',
+  'moderation.title': 'Kichujio cha moderation AI',
+  'moderation.pending': 'Inasubiri',
+  'moderation.approved': 'Imekubalika',
+  'moderation.rejected': 'Imekataliwa',
+
+  // Predictions ML
+  'nav.predictionsMl': 'Utabiri ML',
+  'predictions.title': 'Utabiri ML',
+  'predictions.growth': 'Ukuaji',
+  'predictions.risk': 'Hatari',
+  'predictions.trends': 'Mwenendo',
+
+  // Intelligence Center
+  'nav.intelligenceCenter': 'Kituo cha Akili',
+  'intelligence.title': 'Kituo cha Akili (50+ KPIs)',
+  'intelligence.alerts': 'Tahadhari hai',
+
+  // Engagement Analytics
+  'nav.engagementAnalytics': 'Uchambuzi Ushiriki',
+  'engagement.title': 'Uchambuzi wa ushiriki',
+  'engagement.pages': 'Kurasa zilizotazamwa',
+  'engagement.actions': 'Vitendo vya mtumiaji',
+  'engagement.funnels': 'Funnel',
+  'engagement.retention': 'Kushikilia',
+
+  // Scheduled Announcements
+  'nav.scheduledAnnouncements': 'Tangazo zilizopangwa',
+  'announcements.title': 'Tangazo zilizopangwa',
+  'announcements.draft': 'Rasimu',
+  'announcements.scheduled': 'Imepangwa',
+  'announcements.published': 'Imetolewa',
+
+  // Event Checklists
+  'nav.eventChecklists': 'Orodha ya matukio',
+  'checklist.title': 'Orodha za matukio',
+  'checklist.generate': 'Zalisha',
+  'checklist.completed': 'Imekamilika',
+
+  // Group Messages
+  'nav.groupMessages': 'Ujumbe wa kikundi',
+  'groupMessages.title': 'Ujumbe wa kikundi',
+  'groupMessages.groups': 'Vikundi',
+  'groupMessages.placeholder': 'Andika ujumbe...',
+  'groupMessages.empty': 'Hakuna ujumbe',
+
+  // Weekly Challenges
+  'nav.weeklyChallenges': 'Changamoto za wiki',
+  'challenges.title': 'Changamoto za wiki',
+  'challenges.progress': 'Maendeleo',
+  'challenges.active': 'Hai',
+  'challenges.completed': 'Imekamilika',
+
+  // Discipleship Path
+  'nav.discipleshipPath': 'Njia ya ufunzi',
+  'discipleship.title': 'Njia ya ufunzi ya AI',
+  'discipleship.progress': 'Maendeleo',
+  'discipleship.recommendation': 'Mapendekezo ya AI',
+
+  // AI Visit Notes
+  'nav.aiVisitNotes': 'Vidokezo vya AI Ziara',
+  'visitNotes.title': 'Vidokezo vya AI Ziara',
+  'visitNotes.summary': 'Muhtasari wa AI',
+  'visitNotes.actions': 'Vitendo vinavyopendekezwa',
+  'visitNotes.sentiment': 'Hisia',
+
+  // Reverse Mentoring
+  'nav.reverseMentoring': 'Ushauri wa kinyume',
+  'reverseMentoring.title': 'Ushauri wa kinyume',
+  'reverseMentoring.request': 'Omba msaada',
+  'reverseMentoring.pending': 'Inasubiri',
+
+  // Family Meetings
+  'nav.familyMeetings': 'Mikutano ya familia auto',
+  'familyMeeting.title': 'Mikutano ya familia iliyotolewa kiotomatiki',
+  'familyMeeting.agenda': 'Agenda ya kiotomatiki',
+  'familyMeeting.generate': 'Zalisha',
+
+  // Executive Insights
+  'nav.executiveInsights': 'Ufahamu wa Utendaji AI',
+  'executiveInsights.title': 'Ufahamu wa Utendaji AI',
+  'executiveInsights.critical': 'Hatari',
+  'executiveInsights.warning': 'Tahadhari',
+  'executiveInsights.opportunity': 'Fursa',
+  'executiveInsights.action': 'Kitendo kilichopendekezwa',
+
+  // Upcoming Events
+  'nav.upcomingEvents': 'Matukio yajayo',
+  'upcomingEvents.title': 'Matukio yangu yajayo',
+  'upcomingEvents.going': 'Nitaenda',
+  'upcomingEvents.interested': 'Ninapenda',
+
+  // My Team/Family
+  'nav.myTeam': 'Timu / Familia yangu',
+  'myTeam.title': 'Timu / Familia yangu',
+  'myTeam.message': 'Tuma ujumbe',
+  'myTeam.encourage': 'Himiza',
 };
 
 export default sw;

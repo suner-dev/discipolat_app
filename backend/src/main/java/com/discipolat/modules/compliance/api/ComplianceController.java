@@ -3,7 +3,7 @@ package com.discipolat.modules.compliance.api;
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.compliance.domain.ComplianceService;
-import com.discipolat.modules.compliance.domain.GdprRequest;
+import com.discipolat.modules.gdpr.domain.GdprRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;

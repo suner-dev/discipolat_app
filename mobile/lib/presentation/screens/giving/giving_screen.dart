@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../widgets/secure_screen.dart';
 
 /// Dîmes & Offrandes 2.0 — don par Mobile Money avec suivi du statut.
 class GivingScreen extends StatefulWidget {
@@ -135,7 +136,10 @@ class _GivingScreenState extends State<GivingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SecureScreen(
+      screenName: 'GivingScreen',
+      auditAction: AuditActions.viewPayments,
+      child: Scaffold(
       appBar: AppBar(title: const Text('Dîmes & Offrandes')),
       drawer: const AppDrawer(),
       body: RefreshIndicator(
@@ -265,6 +269,7 @@ class _GivingScreenState extends State<GivingScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 

@@ -4,26 +4,26 @@ import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
-import { Zap, Plus, Trophy, Clock, CheckCircle2, Flame } from 'lucide-react';
+import { Flame, Plus, Target, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
 
 interface Challenge {
   id: string;
   titre: string;
   description: string;
-  type: 'JEUNE' | 'LECTURE' | 'SERVICE' | 'PRIERE' | 'AUTRE';
-  dureeJours: number;
-  progression: number;
-  statut: 'EN_COURS' | 'TERMINE' | 'NON_DEMARRE';
-  creePar: { firstName: string; lastName: string };
-  createdAt: string;
+  type: string;
+  statut: 'EN_COURS' | 'TERMINÉ' | 'ABANDONNÉ';
+  objectifJours: number;
+  joursComplétés: number;
+  deadline?: string;
 }
 
-const CHALLENGE_TYPES = [
-  { key: 'JEUNE', label: 'Jeûne', icon: '🌙', color: 'bg-purple-100 text-purple-700' },
-  { key: 'LECTURE', label: 'Lecture', icon: '📖', color: 'bg-blue-100 text-blue-700' },
-  { key: 'SERVICE', label: 'Service', icon: '🤝', color: 'bg-green-100 text-green-700' },
-  { key: 'PRIERE', label: 'Prière', icon: '🙏', color: 'bg-amber-100 text-amber-700' },
-  { key: 'AUTRE', label: 'Autre', icon: '⭐', color: 'bg-gray-100 text-gray-700' },
+const TYPES = [
+  { key: 'JEÛNE', label: 'Jeûne', icon: '🙏' },
+  { key: 'LECTURE', label: 'Lecture', icon: '📖' },
+  { key: 'PRIÈRE', label: 'Prière', icon: '🙌' },
+  { key: 'SERVICE', label: 'Service', icon: '🤝' },
+  { key: 'ÉVANGÉLISATION', label: 'Évangélisation', icon: '📢' },
+  { key: 'AUTRE', label: 'Autre', icon: '⭐' },
 ];
 
 export default function SpiritualChallengesPage() {
@@ -31,117 +31,145 @@ export default function SpiritualChallengesPage() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [newChallenge, setNewChallenge] = useState({ titre: '', description: '', type: 'PRIERE', dureeJours: 7 });
+  const [stats, setStats] = useState({ enCours: 0, terminés: 0, abandonnés: 0 });
+  const [newChallenge, setNewChallenge] = useState({ titre: '', description: '', type: 'AUTRE', objectifJours: 7 });
 
-  useEffect(() => { loadChallenges(); }, []);
+  useEffect(() => { loadChallenges(); loadStats(); }, []);
 
   const loadChallenges = async () => {
     try {
       setLoading(true);
       const res = await api.get('/spiritual-challenges');
       setChallenges(res.data.content || res.data || []);
-    } catch { setChallenges([]); } finally { setLoading(false); }
+    } catch { setChallenges([]); }
+    finally { setLoading(false); }
+  };
+
+  const loadStats = async () => {
+    try { const res = await api.get('/spiritual-challenges/stats'); setStats(res.data); } catch {}
   };
 
   const createChallenge = async () => {
-    if (!newChallenge.titre.trim()) { Toast.warning('Titre requis'); return; }
-    try { await api.post('/spiritual-challenges', newChallenge); Toast.success('Défi créé !'); setShowCreate(false); loadChallenges(); }
-    catch { Toast.error('Erreur'); }
+    if (!newChallenge.titre.trim()) { Toast.warning('Entrez un titre'); return; }
+    try {
+      await api.post('/spiritual-challenges', newChallenge);
+      Toast.success('Défi créé !');
+      setShowCreate(false);
+      setNewChallenge({ titre: '', description: '', type: 'AUTRE', objectifJours: 7 });
+      loadChallenges(); loadStats();
+    } catch { Toast.error('Erreur'); }
   };
 
-  const joinChallenge = async (id: string) => {
-    try { await api.post(`/spiritual-challenges/${id}/join`); Toast.success('Défi accepté ! 💪'); loadChallenges(); }
-    catch { Toast.error('Erreur'); }
+  const progress = async (id: string) => {
+    try {
+      await api.patch(`/spiritual-challenges/${id}/progress`);
+      Toast.success('Jour marqué ! Continuez 💪');
+      loadChallenges(); loadStats();
+    } catch { Toast.error('Erreur'); }
   };
-
-  const getTypeInfo = (key: string) => CHALLENGE_TYPES.find(c => c.key === key) || CHALLENGE_TYPES[4];
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-6xl mx-auto">
+    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <Zap className="w-8 h-8 text-yellow-500" />
-            Défis Spirituels
+            <Flame className="w-8 h-8 text-orange-500" />
+            {t('spiritualChallenges.title')}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Relevez des défis pour grandir spirituellement</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Défis pour grandir dans la foi</p>
         </div>
         <button onClick={() => setShowCreate(true)}
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm font-medium hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg shadow-yellow-500/25 flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Créer un défi
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-medium hover:from-orange-600 hover:to-red-600 transition-all shadow-lg flex items-center gap-2">
+          <Plus className="w-4 h-4" /> {t('spiritualChallenges.create')}
         </button>
       </div>
 
-      {loading ? <SkeletonLoader lines={4} variant="card" /> : challenges.length === 0 ? (
-        <EmptyState icon={<Zap className="w-8 h-8 text-gray-400" />} title="Aucun défi"
-          message="Créez votre premier défi spirituel pour motiver la communauté"
-          action={{ label: 'Créer un défi', onClick: () => setShowCreate(true) }} />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {challenges.map(ch => {
-            const typeInfo = getTypeInfo(ch.type);
-            return (
-              <div key={ch.id} className="p-5 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:shadow-lg transition-all">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xl">{typeInfo.icon}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeInfo.color}`}>{typeInfo.label}</span>
-                  {ch.statut === 'TERMINE' && <Trophy className="w-4 h-4 text-yellow-500" />}
-                  {ch.statut === 'EN_COURS' && <Flame className="w-4 h-4 text-orange-500" />}
-                </div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{ch.titre}</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{ch.description}</p>
-                <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{ch.dureeJours} jours</span>
-                  <span>Par {ch.creePar.firstName} {ch.creePar.lastName}</span>
-                </div>
-                <div className="mb-3">
-                  <div className="h-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all"
-                      style={{ width: `${ch.progression}%` }} />
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {[
+          { label: 'En cours', value: stats.enCours, color: 'text-orange-600', icon: Clock },
+          { label: 'Terminés', value: stats.terminés, color: 'text-green-600', icon: CheckCircle2 },
+          { label: 'Abandonnés', value: stats.abandonnés, color: 'text-gray-400', icon: TrendingUp },
+        ].map(s => (
+          <div key={s.label} className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10 text-center">
+            <s.icon className={`w-5 h-5 mx-auto mb-1 ${s.color}`} />
+            <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
+            <div className="text-xs text-gray-500">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {loading ? <SkeletonLoader lines={4} variant="card" /> :
+        challenges.length === 0 ? (
+          <EmptyState icon={<Flame className="w-8 h-8 text-gray-400" />}
+            title="Aucun défi spirituel"
+            message="Créez un défi pour stimuler votre croissance spirituelle"
+            action={{ label: 'Créer un défi', onClick: () => setShowCreate(true) }} />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {challenges.map(c => {
+              const progressPct = c.objectifJours > 0 ? Math.min((c.joursComplétés / c.objectifJours) * 100, 100) : 0;
+              const typeInfo = TYPES.find(t => t.key === c.type) || TYPES[5];
+              return (
+                <div key={c.id} className="bg-white dark:bg-white/5 rounded-xl p-5 border border-gray-200 dark:border-white/10">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{c.titre}</h3>
+                    <span className="text-lg">{typeInfo.icon}</span>
                   </div>
-                  <span className="text-xs text-gray-500 mt-1 block">{ch.progression}%</span>
+                  {c.description && <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">{c.description}</p>}
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-500">{c.joursComplétés}/{c.objectifJours} jours</span>
+                      <span className="text-orange-600 font-medium">{Math.round(progressPct)}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-orange-400 to-red-400 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.statut === 'TERMINÉ' ? 'bg-green-100 text-green-700' : c.statut === 'ABANDONNÉ' ? 'bg-gray-100 text-gray-500' : 'bg-orange-100 text-orange-700'}`}>
+                      {c.statut === 'EN_COURS' ? 'En cours' : c.statut === 'TERMINÉ' ? 'Terminé' : 'Abandonné'}
+                    </span>
+                    {c.statut === 'EN_COURS' && (
+                      <button onClick={() => progress(c.id)}
+                        className="px-3 py-1 rounded-lg bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition-all">
+                        +1 jour
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {ch.statut === 'NON_DEMARRE' && (
-                  <button onClick={() => joinChallenge(ch.id)}
-                    className="w-full px-3 py-2 rounded-lg bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-xs font-medium hover:bg-yellow-200 dark:hover:bg-yellow-500/20 transition-all">
-                    Relever le défi 💪
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
 
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau défi</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau défi spirituel</h2>
             <div className="space-y-4">
-              <div className="grid grid-cols-5 gap-2">
-                {CHALLENGE_TYPES.map(c => (
-                  <button key={c.key} onClick={() => setNewChallenge({ ...newChallenge, type: c.key })}
-                    className={`p-2 rounded-xl border text-center text-xs transition-all ${newChallenge.type === c.key ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-500/10' : 'border-gray-200 dark:border-white/10'}`}>
-                    <span className="text-lg">{c.icon}</span>
-                    <div className="mt-1">{c.label}</div>
-                  </button>
-                ))}
-              </div>
               <input type="text" value={newChallenge.titre} onChange={e => setNewChallenge({ ...newChallenge, titre: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                placeholder="Titre du défi..." />
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Titre du défi" />
               <textarea value={newChallenge.description} onChange={e => setNewChallenge({ ...newChallenge, description: e.target.value })}
-                rows={3} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 resize-none" />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Durée (jours)</label>
-                <input type="number" value={newChallenge.dureeJours} onChange={e => setNewChallenge({ ...newChallenge, dureeJours: +e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+                rows={3} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                placeholder="Description (optionnel)" />
+              <div className="grid grid-cols-2 gap-4">
+                <select value={newChallenge.type} onChange={e => setNewChallenge({ ...newChallenge, type: e.target.value })}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm">
+                  {TYPES.map(tp => <option key={tp.key} value={tp.key}>{tp.icon} {tp.label}</option>)}
+                </select>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Objectif (jours)</label>
+                  <input type="number" value={newChallenge.objectifJours} onChange={e => setNewChallenge({ ...newChallenge, objectifJours: parseInt(e.target.value) || 7 })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm" min={1} />
+                </div>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-gray-700 dark:text-gray-300 text-sm">Annuler</button>
-              <button onClick={createChallenge} className="px-4 py-2 rounded-xl bg-yellow-600 text-white text-sm font-medium hover:bg-yellow-700 transition-all">Créer</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={createChallenge} className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600">Créer</button>
             </div>
           </div>
         </div>

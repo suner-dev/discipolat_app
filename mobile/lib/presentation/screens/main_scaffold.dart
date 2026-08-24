@@ -1,0 +1,113 @@
+import 'package:flutter/material.dart';
+import '../../data/services/session_timeout_service.dart';
+import '../../data/services/data_saver_service.dart';
+import '../widgets/bottom_nav_bar.dart';
+import 'dashboard/dashboard_screen.dart';
+import 'members/member_requests_screen.dart';
+import 'prayers/prayers_list_screen.dart';
+import 'messages/messages_screen.dart';
+
+/// Main scaffold with bottom navigation bar.
+/// Replaces the default drawer-only navigation with a modern mobile pattern.
+class MainScaffold extends StatefulWidget {
+  const MainScaffold({super.key});
+
+  @override
+  State<MainScaffold> createState() => _MainScaffoldState();
+}
+
+class _MainScaffoldState extends State<MainScaffold> {
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = [
+    const DashboardScreen(),
+    const MemberRequestsScreen(),
+    const PrayersListScreen(),
+    const MessagesScreen(),
+    const _MorePage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    // Reset session timeout on any interaction
+    return GestureDetector(
+      onTap: () => SessionTimeoutService.instance.resetTimer(),
+      onPanDown: (_) => SessionTimeoutService.instance.resetTimer(),
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: _pages,
+        ),
+        bottomNavigationBar: BottomNavBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            SessionTimeoutService.instance.resetTimer();
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// "More" page with quick access to additional features
+class _MorePage extends StatelessWidget {
+  const _MorePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const SizedBox(height: 8),
+        const Text(
+          'Plus de fonctionnalités',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        _moreItem(context, Icons.calendar_month, 'Calendrier', 'Sync Google/Outlook'),
+        _moreItem(context, Icons.store, 'Marketplace', 'Échanges communautaires'),
+        _moreItem(context, Icons.emoji_events, 'Récompenses', 'Badges & gamification'),
+        _moreItem(context, Icons.people, 'Communauté', 'Fil social & témoignages'),
+        _moreItem(context, Icons.play_circle, 'Streaming', 'Cultes en direct'),
+        _moreItem(context, Icons.bar_chart, 'KPIs', 'Objectifs départementaux'),
+        _moreItem(context, Icons.inventory_2, 'Inventaire', 'Gestion matérielle'),
+        _moreItem(context, Icons.how_to_vote, 'Sondages', 'Votes & opinions'),
+        _moreItem(context, Icons.assignment_turned_in, 'Témoignages', 'Partager un témoignage'),
+        _moreItem(context, Icons.person_add, 'Parrainage', 'Inviter un proche'),
+        _moreItem(context, Icons.event_busy, 'Absences', 'Demandes de congé'),
+        _moreItem(context, Icons.auto_awesome, 'Prédictions IA', 'Analyse prédictive'),
+        const SizedBox(height: 16),
+        _moreItem(context, Icons.person, 'Mon profil', 'Informations personnelles'),
+        _moreItem(context, Icons.shield, 'Sécurité', 'Session, biométrie, données', route: '/mobile-security'),
+        _moreItem(context, Icons.settings, 'Paramètres', 'Configuration'),
+      ],
+    );
+  }
+
+  Widget _moreItem(BuildContext context, IconData icon, String title, String subtitle, {String? route}) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.purple.withOpacity(0.1),
+          child: Icon(icon, color: Colors.purple.shade600, size: 20),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        trailing: const Icon(Icons.chevron_right, size: 20),
+        onTap: () {
+          if (route != null) {
+            Navigator.pushNamed(context, route);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$title — bientôt disponible')),
+            );
+          }
+        },
+      ),
+    );
+  }
+}

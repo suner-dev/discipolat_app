@@ -1,7 +1,5 @@
 package com.discipolat.modules.calendar.domain;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,6 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface CalendarEventRepository extends JpaRepository<CalendarEvent, UUID> {
-    Page<CalendarEvent> findByTenantIdOrderByDateDebutAsc(UUID tenantId, Pageable pageable);
-    List<CalendarEvent> findByTenantIdAndDateDebutBetween(UUID tenantId, LocalDateTime start, LocalDateTime end);
+    List<CalendarEvent> findByTenantIdAndDébutBetweenOrderByDébutAsc(UUID tenantId, LocalDateTime start, LocalDateTime end);
+    List<CalendarEvent> findByTenantIdOrderByDébutAsc(UUID tenantId);
+    List<CalendarEvent> findByExternalId(String externalId);
 }

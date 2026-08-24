@@ -8,6 +8,9 @@ import java.util.UUID;
 @Table(name = "calendar_events")
 public class CalendarEvent {
 
+    public enum Source { INTERNE, GOOGLE, OUTLOOK, ICAL }
+    public enum Statut { CONFIRMÉ, EN_ATTENTE, ANNULÉ }
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -22,21 +25,28 @@ public class CalendarEvent {
     private String description;
 
     @Column(nullable = false)
-    private LocalDateTime dateDebut;
+    private LocalDateTime début;
 
     @Column(nullable = false)
-    private LocalDateTime dateFin;
+    private LocalDateTime fin;
 
     private String lieu;
 
-    private String categorie;
+    private UUID événementId;
 
-    private boolean rappelActif = true;
-
-    private int rappelMinutesAvant = 30;
-
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UUID creePar;
+    private Source source = Source.INTERNE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Statut statut = Statut.CONFIRMÉ;
+
+    private String externalId;
+
+    private boolean rappelActivé = true;
+
+    private int rappelMinutesAvant = 60;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -50,20 +60,24 @@ public class CalendarEvent {
     public void setTitre(String titre) { this.titre = titre; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public LocalDateTime getDateDebut() { return dateDebut; }
-    public void setDateDebut(LocalDateTime dateDebut) { this.dateDebut = dateDebut; }
-    public LocalDateTime getDateFin() { return dateFin; }
-    public void setDateFin(LocalDateTime dateFin) { this.dateFin = dateFin; }
+    public LocalDateTime getDébut() { return début; }
+    public void setDébut(LocalDateTime début) { this.début = début; }
+    public LocalDateTime getFin() { return fin; }
+    public void setFin(LocalDateTime fin) { this.fin = fin; }
     public String getLieu() { return lieu; }
     public void setLieu(String lieu) { this.lieu = lieu; }
-    public String getCategorie() { return categorie; }
-    public void setCategorie(String categorie) { this.categorie = categorie; }
-    public boolean isRappelActif() { return rappelActif; }
-    public void setRappelActif(boolean rappelActif) { this.rappelActif = rappelActif; }
+    public UUID getÉvénementId() { return événementId; }
+    public void setÉvénementId(UUID événementId) { this.événementId = événementId; }
+    public Source getSource() { return source; }
+    public void setSource(Source source) { this.source = source; }
+    public Statut getStatut() { return statut; }
+    public void setStatut(Statut statut) { this.statut = statut; }
+    public String getExternalId() { return externalId; }
+    public void setExternalId(String externalId) { this.externalId = externalId; }
+    public boolean isRappelActivé() { return rappelActivé; }
+    public void setRappelActivé(boolean rappelActivé) { this.rappelActivé = rappelActivé; }
     public int getRappelMinutesAvant() { return rappelMinutesAvant; }
     public void setRappelMinutesAvant(int rappelMinutesAvant) { this.rappelMinutesAvant = rappelMinutesAvant; }
-    public UUID getCreePar() { return creePar; }
-    public void setCreePar(UUID creePar) { this.creePar = creePar; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

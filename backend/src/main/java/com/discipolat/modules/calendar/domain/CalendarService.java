@@ -2,8 +2,6 @@ package com.discipolat.modules.calendar.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.multitenancy.TenantContext;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,44 +19,55 @@ public class CalendarService {
         this.repository = repository;
     }
 
-    public Page<CalendarEvent> list(Pageable pageable) {
-        return repository.findByTenantIdOrderByDateDebutAsc(TenantContext.getCurrentTenantId(), pageable);
+    public List<CalendarEvent> listByRange(LocalDateTime start, LocalDateTime end) {
+        return repository.findByTenantIdAndDébutBetweenOrderByDébutAsc(
+                TenantContext.getCurrentTenantId(), start, end);
     }
 
-    public List<CalendarEvent> getBetween(LocalDateTime start, LocalDateTime end) {
-        return repository.findByTenantIdAndDateDebutBetween(TenantContext.getCurrentTenantId(), start, end);
+    public List<CalendarEvent> listAll() {
+        return repository.findByTenantIdOrderByDébutAsc(TenantContext.getCurrentTenantId());
     }
 
     public CalendarEvent getById(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new EntityNotFoundException("CalendarEvent", id));
+        return repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("CalendarEvent", id));
     }
 
-    public CalendarEvent create(String titre, String description, LocalDateTime dateDebut, LocalDateTime dateFin,
-                                String lieu, String categorie, UUID userId) {
+    public CalendarEvent create(String titre, String description, LocalDateTime début, LocalDateTime fin,
+                                 String lieu, String source, UUID événementId) {
         CalendarEvent event = new CalendarEvent();
         event.setTenantId(TenantContext.getCurrentTenantId());
         event.setTitre(titre);
         event.setDescription(description);
-        event.setDateDebut(dateDebut);
-        event.setDateFin(dateFin);
+        event.setDébut(début);
+        event.setFin(fin);
         event.setLieu(lieu);
-        event.setCategorie(categorie);
-        event.setCreePar(userId);
+        event.setSource(CalendarEvent.Source.valueOf(source != null ? source : "INTERNE"));
+        event.setÉvénementId(événementId);
         return repository.save(event);
     }
 
-    public CalendarEvent update(UUID id, String titre, String description, LocalDateTime dateDebut,
-                                LocalDateTime dateFin, String lieu) {
+    public CalendarEvent updateStatut(UUID id, String statut) {
         CalendarEvent event = getById(id);
-        if (titre != null) event.setTitre(titre);
-        if (description != null) event.setDescription(description);
-        if (dateDebut != null) event.setDateDebut(dateDebut);
-        if (dateFin != null) event.setDateFin(dateFin);
-        if (lieu != null) event.setLieu(lieu);
+        event.setStatut(CalendarEvent.Statut.valueOf(statut));
         return repository.save(event);
     }
 
     public void delete(UUID id) {
-        repository.deleteById(id);
+        repository.delete(getById(id));
+    }
+
+    public String generateICal(UUID id) {
+        CalendarEvent event = getById(id);
+        return "BEGIN:VCALENDAR\n" +
+                "VERSION:2.0\n" +
+                "BEGIN:VEVENT\n" +
+                "DTSTART:" + event.getDébut().toString().replace("-", "").replace(":", "") + "\n" +
+                "DTEND:" + event.getFin().toString().replace("-", "").replace(":", "") + "\n" +
+                "SUMMARY:" + event.getTitre() + "\n" +
+                "DESCRIPTION:" + (event.getDescription() != null ? event.getDescription() : "") + "\n" +
+                "LOCATION:" + (event.getLieu() != null ? event.getLieu() : "") + "\n" +
+                "END:VEVENT\n" +
+                "END:VCALENDAR";
     }
 }

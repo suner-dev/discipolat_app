@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useI18n } from '@/i18n';
-import { Video, Radio, Play, Square, Users, Calendar, Plus, Clock, Eye } from 'lucide-react';
+import { Video, Radio, Play, Square, Users, Calendar, Plus, Clock, Eye, MessageCircle } from 'lucide-react';
+import StreamingChat from '@/pages/StreamingChat';
 
 interface Stream {
   id: string;
@@ -22,6 +23,7 @@ const MOCK_STREAMS: Stream[] = [
 export default function StreamingPage() {
   const { t } = useI18n();
   const [filter, setFilter] = useState<'all' | 'live' | 'scheduled' | 'ended'>('all');
+  const [showChat, setShowChat] = useState(false);
 
   const filtered = filter === 'all' ? MOCK_STREAMS : MOCK_STREAMS.filter((s) => s.status === filter);
 
@@ -93,6 +95,15 @@ export default function StreamingPage() {
           </button>
         ))}
       </div>
+
+      {/* Chat toggle for live streams */}
+      <div className="flex items-center gap-2">
+        <button onClick={() => setShowChat(!showChat)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${showChat ? 'bg-pink-500 text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`}>
+          <MessageCircle className="w-4 h-4" /> Chat en direct {showChat ? '✓' : ''}
+        </button>
+      </div>
+      {showChat && <StreamingChat />}
 
       {/* Streams grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

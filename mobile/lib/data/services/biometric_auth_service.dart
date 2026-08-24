@@ -1,144 +1,171 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Service for handling biometric authentication (fingerprint, Face ID)
+/// Biometric authentication service — supports fingerprint and face ID.
 ///
-/// Features:
-/// - Check biometric availability
-/// - Authenticate with biometrics
-/// - Save/retrieve biometric preference
-/// - Fallback to PIN if biometrics unavailable
-/// - Secure credential storage
+/// Usage:
+/// ```dart
+/// final biometric = BiometricAuthService.instance;
+/// await biometric.init();
+///
+/// if (await biometric.isAvailable()) {
+///   final success = await biometric.authenticate();
+///   if (success) { /* proceed */ }
+/// }
+/// ```
 class BiometricAuthService {
-  static final BiometricAuthService _instance = BiometricAuthService._internal();
-  factory BiometricAuthService() => _instance;
-  BiometricAuthService._internal();
+  static final BiometricAuthService instance = BiometricAuthService._();
+  BiometricAuthService._();
 
-  static const String _biometricEnabledKey = 'biometric_auth_enabled';
-  static const String _pinCodeKey = 'pin_code';
+  // Allow non-singleton construction for backward compatibility
+  BiometricAuthService();
 
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final LocalAuthentication _localAuth = LocalAuthentication();
+  bool _isAvailable = false;
+  bool _isEnabled = false;
+  List<BiometricType> _availableBiometrics = [];
 
-  /// Check if biometric authentication is available on the device
-  Future<bool> isBiometricAvailable() async {
-    // Using platform channels to check biometric availability
-    // This avoids hard dependency on local_auth
+  bool get isAvailable => _isAvailable;
+  bool get isEnabled => _isEnabled;
+  List<BiometricType> get availableBiometrics => _availableBiometrics;
+
+  /// Initialize — check device capabilities and load preferences
+  Future<void> init() async {
     try {
-      const platform = MethodChannel('discipolat/biometric');
-      final result = await platform.invokeMethod<bool>('isBiometricAvailable');
-      return result ?? false;
+      _isAvailable = await _localAuth.canCheckBiometrics;
+      if (_isAvailable) {
+        _availableBiometrics = await _localAuth.getAvailableBiometrics();
+      }
+      final prefs = await SharedPreferences.getInstance();
+      _isEnabled = prefs.getBool('biometric_enabled') ?? false;
+    } on PlatformException {
+      _isAvailable = false;
+      _isEnabled = false;
+    }
+  }
+
+  // ── Backward-compatible methods (used by existing security_settings_screen) ──
+
+  /// Check if biometric auth is enabled (backward compat)
+  Future<bool> isBiometricEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('biometric_enabled') ?? false;
+  }
+
+  /// Check if biometric auth is available (backward compat)
+  Future<bool> isBiometricAvailable() async {
+    try {
+      return await _localAuth.canCheckBiometrics;
     } on PlatformException {
       return false;
     }
   }
 
-  /// Authenticate using biometrics (fingerprint or Face ID)
-  Future<BiometricAuthResult> authenticate() async {
+  /// Set biometric enabled (backward compat)
+  Future<void> setBiometricEnabled(bool value) async {
+    _isEnabled = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('biometric_enabled', value);
+  }
+
+  /// Get stored PIN code (backward compat)
+  Future<String?> getPinCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('pin_code');
+  }
+
+  /// Save PIN code (backward compat)
+  Future<void> savePinCode(String pin) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('pin_code', pin);
+  }
+
+  /// Check if biometric auth is supported on this device
+  Future<bool> isDeviceSupported() async {
     try {
-      const platform = MethodChannel('discipolat/biometric');
-      final result = await platform.invokeMethod<Map>('authenticate');
-
-      final success = result?['success'] == true;
-      final errorMessage = result?['errorMessage'] as String?;
-
-      return BiometricAuthResult(
-        success: success,
-        errorMessage: errorMessage,
-        authType: _parseAuthType(result?['authType'] as String?),
-      );
-    } on PlatformException catch (e) {
-      return BiometricAuthResult(
-        success: false,
-        errorMessage: e.message ?? 'Biometric authentication failed',
-      );
+      return await _localAuth.isDeviceSupported();
+    } on PlatformException {
+      return false;
     }
   }
 
-  /// Get the available biometric types
-  Future<List<BiometricType>> getAvailableBiometrics() async {
+  /// Get the list of available biometric types
+  Future<List<BiometricType>> getAvailableTypes() async {
     try {
-      const platform = MethodChannel('discipolat/biometric');
-      final result = await platform.invokeListMethod<String>('getAvailableBiometrics');
-      if (result == null) return [];
-      return result.map(_parseBiometricType).toList();
+      return await _localAuth.getAvailableBiometrics();
     } on PlatformException {
       return [];
     }
   }
 
-  /// Check if biometric auth is enabled for the current user
-  Future<bool> isBiometricEnabled() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_biometricEnabledKey) ?? false;
-  }
+  /// Authenticate with biometrics
+  ///
+  /// [reason] — message shown to the user (e.g., "Authentifiez-vous")
+  /// [useErrorDialogs] — show system error dialogs on failure
+  /// [stickyAuth] — keep auth session alive when app goes to background
+  Future<bool> authenticate({
+    String reason = 'Authentifiez-vous pour continuer',
+    bool useErrorDialogs = true,
+    bool stickyAuth = true,
+  }) async {
+    if (!_isAvailable || !_isEnabled) return false;
 
-  /// Enable/disable biometric auth for the current user
-  Future<void> setBiometricEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_biometricEnabledKey, enabled);
-  }
-
-  /// Save PIN code as fallback for biometric auth
-  Future<void> savePinCode(String pin) async {
-    await _secureStorage.write(key: _pinCodeKey, value: pin);
-  }
-
-  /// Validate PIN code
-  Future<bool> validatePin(String pin) async {
-    final storedPin = await _secureStorage.read(key: _pinCodeKey);
-    return storedPin == pin;
-  }
-
-  /// Delete PIN code
-  Future<void> deletePinCode() async {
-    await _secureStorage.delete(key: _pinCodeKey);
-  }
-
-  /// Get saved PIN code (for validation only, never for display)
-  Future<String?> getPinCode() async {
-    return await _secureStorage.read(key: _pinCodeKey);
-  }
-
-  BiometricType _parseBiometricType(String? type) {
-    switch (type) {
-      case 'fingerprint':
-        return BiometricType.fingerprint;
-      case 'face':
-        return BiometricType.face;
-      case 'iris':
-        return BiometricType.iris;
-      default:
-        return BiometricType.unknown;
+    try {
+      return await _localAuth.authenticate(
+        localizedReason: reason,
+        options: AuthenticationOptions(
+          useErrorDialogs: useErrorDialogs,
+          stickyAuth: stickyAuth,
+          biometricOnly: false, // Allow PIN fallback
+          sensitiveTransaction: true,
+        ),
+      );
+    } on PlatformException {
+      return false;
     }
   }
 
-  AuthType _parseAuthType(String? type) {
+  /// Enable biometric authentication and persist
+  Future<bool> enable() async {
+    if (!_isAvailable) return false;
+
+    // First, verify the user can authenticate
+    final success = await authenticate(reason: 'Activez la biométrie pour vos prochaines connexions');
+    if (success) {
+      _isEnabled = true;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('biometric_enabled', true);
+      return true;
+    }
+    return false;
+  }
+
+  /// Disable biometric authentication
+  Future<void> disable() async {
+    _isEnabled = false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('biometric_enabled', false);
+  }
+
+  /// Get a human-readable name for a biometric type
+  static String biometricTypeName(BiometricType type) {
     switch (type) {
-      case 'biometric':
-        return AuthType.biometric;
-      case 'pin':
-        return AuthType.pin;
+      case BiometricType.face:
+        return 'Reconnaissance faciale';
+      case BiometricType.fingerprint:
+        return 'Empreinte digitale';
+      case BiometricType.iris:
+        return 'Reconnaissance de l\'iris';
       default:
-        return AuthType.unknown;
+        return 'Biométrie';
     }
   }
+
+  /// Get a human-readable list of available biometrics
+  String getAvailableTypesText() {
+    if (_availableBiometrics.isEmpty) return 'Aucune biométrie disponible';
+    return _availableBiometrics.map(biometricTypeName).join(', ');
+  }
 }
-
-enum BiometricType { fingerprint, face, iris, unknown }
-
-enum AuthType { biometric, pin, unknown }
-
-class BiometricAuthResult {
-  final bool success;
-  final String? errorMessage;
-  final AuthType? authType;
-
-  BiometricAuthResult({required this.success, this.errorMessage, this.authType});
-}
-
-/// Provider for biometric auth service
-final biometricAuthServiceProvider = Provider<BiometricAuthService>((ref) {
-  return BiometricAuthService();
-});

@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
+import 'presentation/screens/main_scaffold.dart';
 import 'presentation/screens/dashboard/pasteur_dashboard_screen.dart';
 import 'presentation/screens/dashboard/chef_famille_dashboard_screen.dart';
 import 'presentation/screens/dashboard/responsable_dashboard_screen.dart';
@@ -83,6 +84,11 @@ import 'presentation/screens/prayers/actions_de_grace_screen.dart';
 import 'presentation/screens/dashboard/member_activities_screen.dart';
 import 'presentation/screens/dashboard/bi_dashboard_screen.dart';
 
+import 'data/services/session_timeout_service.dart';
+import 'data/services/biometric_auth_service.dart';
+import 'data/services/data_saver_service.dart';
+import 'data/services/orientation_service.dart';
+import 'presentation/screens/security/mobile_security_settings_screen.dart';
 import 'tenant_config.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -358,6 +364,11 @@ final appRouter = GoRouter(
       builder: (context, state) => const SecuritySettingsScreen(),
     ),
     GoRoute(
+      path: '/mobile-security',
+      name: 'mobile-security',
+      builder: (context, state) => const MobileSecuritySettingsScreen(),
+    ),
+    GoRoute(
       path: '/login',
       name: 'login',
       builder: (context, state) => const LoginScreen(),
@@ -365,7 +376,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/dashboard',
       name: 'dashboard',
-      builder: (context, state) => const DashboardScreen(),
+      builder: (context, state) => const MainScaffold(),
     ),
     GoRoute(
       path: '/dashboard/pasteur',

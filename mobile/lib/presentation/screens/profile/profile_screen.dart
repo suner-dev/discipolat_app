@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/secure_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -55,7 +56,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final phone = _userInfo?['phone'] ?? '—';
     final initials = '${(firstName as String).isNotEmpty ? firstName[0] : ''}${(lastName as String).isNotEmpty ? lastName[0] : ''}';
 
-    return Scaffold(
+    return SecureScreen(
+      screenName: 'ProfileScreen',
+      auditAction: AuditActions.viewProfiles,
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Profil'),
         actions: [
@@ -171,6 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (i < routes.length) context.go(routes[i]);
         },
       ),
+    ),
     );
   }
 

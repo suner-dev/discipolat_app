@@ -2,74 +2,86 @@ package com.discipolat.modules.broadcast.domain;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "broadcast_messages")
 public class BroadcastMessage {
 
+    public enum Statut { BROUILLON, PROGRAMMÉ, ENVOYÉ, ÉCHOUÉ }
+    public enum Cible { TOUS, DÉPARTEMENT, FAMILLE, RÔLE, SEGMENT }
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false)
-    private String title;
+    private UUID tenantId;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String body;
+    @Column(nullable = false)
+    private String titre;
 
-    @Column(name = "channel")
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String contenu;
+
     @Enumerated(EnumType.STRING)
-    private BroadcastChannel channel = BroadcastChannel.ALL;
+    @Column(nullable = false)
+    private Cible cible = Cible.TOUS;
 
-    @Column(name = "target_roles")
-    private String targetRoles;
+    @Column(columnDefinition = "TEXT")
+    private String cibleIds; // JSON array of target IDs
 
-    @Column(name = "tenant_id", nullable = false)
-    private Long tenantId;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Statut statut = Statut.BROUILLON;
 
-    @Column(name = "created_by", nullable = false)
-    private Long createdBy;
+    @Column(nullable = false)
+    private UUID envoyéPar;
 
-    @Column(name = "sent_at")
-    private LocalDateTime sentAt;
+    private LocalDateTime programméAt;
+    private LocalDateTime envoyéAt;
+    private LocalDateTime expiresAt;
 
-    @Column(name = "read_count")
-    private Integer readCount = 0;
+    private int totalEnvoyé = 0;
+    private int totalLu = 0;
 
-    @Column(name = "total_recipients")
-    private Integer totalRecipients = 0;
+    @OneToMany(mappedBy = "broadcast", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<BroadcastReceipt> receipts = new ArrayList<>();
 
-    public enum BroadcastChannel {
-        ALL, PUSH, EMAIL, SMS, IN_APP
-    }
+    @Column(nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    public String getBody() { return body; }
-    public void setBody(String body) { this.body = body; }
-    public BroadcastChannel getChannel() { return channel; }
-    public void setChannel(BroadcastChannel channel) { this.channel = channel; }
-    public String getTargetRoles() { return targetRoles; }
-    public void setTargetRoles(String targetRoles) { this.targetRoles = targetRoles; }
-    public Long getTenantId() { return tenantId; }
-    public void setTenantId(Long tenantId) { this.tenantId = tenantId; }
-    public Long getCreatedBy() { return createdBy; }
-    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
-    public LocalDateTime getSentAt() { return sentAt; }
-    public void setSentAt(LocalDateTime sentAt) { this.sentAt = sentAt; }
-    public Integer getReadCount() { return readCount; }
-    public void setReadCount(Integer readCount) { this.readCount = readCount; }
-    public Integer getTotalRecipients() { return totalRecipients; }
-    public void setTotalRecipients(Integer totalRecipients) { this.totalRecipients = totalRecipients; }
+    // Getters and setters
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getTenantId() { return tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
+    public String getTitre() { return titre; }
+    public void setTitre(String titre) { this.titre = titre; }
+    public String getContenu() { return contenu; }
+    public void setContenu(String contenu) { this.contenu = contenu; }
+    public Cible getCible() { return cible; }
+    public void setCible(Cible cible) { this.cible = cible; }
+    public String getCibleIds() { return cibleIds; }
+    public void setCibleIds(String cibleIds) { this.cibleIds = cibleIds; }
+    public Statut getStatut() { return statut; }
+    public void setStatut(Statut statut) { this.statut = statut; }
+    public UUID getEnvoyéPar() { return envoyéPar; }
+    public void setEnvoyéPar(UUID envoyéPar) { this.envoyéPar = envoyéPar; }
+    public LocalDateTime getProgramméAt() { return programméAt; }
+    public void setProgramméAt(LocalDateTime programméAt) { this.programméAt = programméAt; }
+    public LocalDateTime getEnvoyéAt() { return envoyéAt; }
+    public void setEnvoyéAt(LocalDateTime envoyéAt) { this.envoyéAt = envoyéAt; }
+    public LocalDateTime getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
+    public int getTotalEnvoyé() { return totalEnvoyé; }
+    public void setTotalEnvoyé(int totalEnvoyé) { this.totalEnvoyé = totalEnvoyé; }
+    public int getTotalLu() { return totalLu; }
+    public void setTotalLu(int totalLu) { this.totalLu = totalLu; }
+    public List<BroadcastReceipt> getReceipts() { return receipts; }
+    public void setReceipts(List<BroadcastReceipt> receipts) { this.receipts = receipts; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

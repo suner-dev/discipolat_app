@@ -8,7 +8,7 @@ import java.util.UUID;
 @Table(name = "skill_evaluations")
 public class SkillEvaluation {
 
-    public enum Niveau { DEBUTANT, INTERMEDIAIRE, AVANCE, EXPERT }
+    public enum Niveau { DÉBUTANT, INTERMÉDIAIRE, AVANCÉ, EXPERT }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -21,20 +21,21 @@ public class SkillEvaluation {
     private UUID membreId;
 
     @Column(nullable = false)
-    private String competence;
+    private String compétence;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Niveau niveau = Niveau.DEBUTANT;
+    private Niveau niveau = Niveau.DÉBUTANT;
+
+    private UUID évaluéPar;
 
     @Column(columnDefinition = "TEXT")
     private String commentaire;
 
     @Column(nullable = false)
-    private UUID evaluePar;
-
-    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    private LocalDateTime updatedAt;
 
     // Getters and setters
     public UUID getId() { return id; }
@@ -43,14 +44,16 @@ public class SkillEvaluation {
     public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
     public UUID getMembreId() { return membreId; }
     public void setMembreId(UUID membreId) { this.membreId = membreId; }
-    public String getCompetence() { return competence; }
-    public void setCompetence(String competence) { this.competence = competence; }
+    public String getCompétence() { return compétence; }
+    public void setCompétence(String compétence) { this.compétence = compétence; }
     public Niveau getNiveau() { return niveau; }
     public void setNiveau(Niveau niveau) { this.niveau = niveau; }
+    public UUID getÉvaluéPar() { return évaluéPar; }
+    public void setÉvaluéPar(UUID évaluéPar) { this.évaluéPar = évaluéPar; }
     public String getCommentaire() { return commentaire; }
     public void setCommentaire(String commentaire) { this.commentaire = commentaire; }
-    public UUID getEvaluePar() { return evaluePar; }
-    public void setEvaluePar(UUID evaluePar) { this.evaluePar = evaluePar; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

@@ -18,31 +18,31 @@ public class SkillService {
     }
 
     public List<SkillEvaluation> listAll() {
-        return repository.findByTenantId(TenantContext.getCurrentTenantId());
+        return repository.findByTenantIdOrderByCreatedAtDesc(TenantContext.getCurrentTenantId());
     }
 
     public List<SkillEvaluation> getByMembre(UUID membreId) {
-        return repository.findByTenantIdAndMembreId(TenantContext.getCurrentTenantId(), membreId);
+        return repository.findByMembreId(membreId);
     }
 
     public SkillEvaluation create(UUID membreId, String competence, String niveau, String commentaire, UUID evalPar) {
         SkillEvaluation eval = new SkillEvaluation();
         eval.setTenantId(TenantContext.getCurrentTenantId());
         eval.setMembreId(membreId);
-        eval.setCompetence(competence);
+        eval.setCompétence(competence);
         eval.setNiveau(SkillEvaluation.Niveau.valueOf(niveau));
         eval.setCommentaire(commentaire);
-        eval.setEvaluePar(evalPar);
+        eval.setÉvaluéPar(evalPar);
         return repository.save(eval);
     }
 
     public Map<String, Object> getMatrix() {
         UUID tenantId = TenantContext.getCurrentTenantId();
-        List<SkillEvaluation> evaluations = repository.findByTenantId(tenantId);
+        List<SkillEvaluation> evaluations = repository.findByTenantIdOrderByCreatedAtDesc(tenantId);
 
         Map<String, Map<String, Long>> matrix = evaluations.stream()
                 .collect(Collectors.groupingBy(
-                        SkillEvaluation::getCompetence,
+                        SkillEvaluation::getCompétence,
                         Collectors.groupingBy(e -> e.getNiveau().name(), Collectors.counting())
                 ));
 
