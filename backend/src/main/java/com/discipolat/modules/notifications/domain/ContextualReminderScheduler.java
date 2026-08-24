@@ -81,7 +81,7 @@ public class ContextualReminderScheduler {
                             ? event.getDateDebut().toLocalTime().toString().substring(0, 5)
                             : "l'heure prévue";
                     notificationService.create(reg.getUtilisateurId(),
-                            TypeNotification.RAPPEL,
+                            TypeNotification.EVENEMENT_RAPPEL,
                             CanalNotification.PUSH,
                             "📅 Rappel : " + event.getTitre(),
                             "N'oubliez pas : \"" + event.getTitre() + "\" demain à " +
@@ -113,10 +113,10 @@ public class ContextualReminderScheduler {
         for (Soul soul : atRisk) {
             try {
                 long daysSince = soul.getDateDernierContact() != null
-                        ? ChronoUnit.DAYS.between(s.getDateDernierContact(), LocalDateTime.now())
+                        ? ChronoUnit.DAYS.between(soul.getDateDernierContact(), LocalDateTime.now())
                         : 30;
                 notificationService.create(soul.getFaiseurId(),
-                        TypeNotification.ALARME,
+                        TypeNotification.ALERTE_ABSENCE,
                         CanalNotification.PUSH,
                         "⚠️ Absence détectée",
                         soul.getNomComplet() + " n'a plus eu de contact depuis " +
@@ -148,7 +148,7 @@ public class ContextualReminderScheduler {
                             && conversion.getYear() != today.getYear()) {
                         int years = today.getYear() - conversion.getYear();
                         notificationService.create(soul.getUserId(),
-                                TypeNotification.ENCOURAGEMENT,
+                                TypeNotification.INFORMATION,
                                 CanalNotification.PUSH,
                                 "🎉 Anniversaire de conversion !",
                                 "Joyeux anniversaire de conversion ! Cela fait " + years +

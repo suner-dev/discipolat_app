@@ -219,7 +219,7 @@ public class SpiritualHealthService {
         List<Map<String, Object>> scores = new ArrayList<>();
 
         for (Department dept : departments) {
-            List<UUID> soulIds = memberDepartmentRepository.findByDepartmentId(dept.getId())
+            List<UUID> soulIds = memberDepartmentRepository.findByDepartmentIdIn(List.of(dept.getId()))
                     .stream().map(MemberDepartment::getSoulId).toList();
             if (soulIds.isEmpty()) continue;
 

@@ -1,5 +1,6 @@
 package com.discipolat.modules.rewards.domain;
 
+import java.util.UUID;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 

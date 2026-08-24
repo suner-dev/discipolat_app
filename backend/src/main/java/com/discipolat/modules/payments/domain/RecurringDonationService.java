@@ -55,7 +55,7 @@ public class RecurringDonationService {
         propagationPublisher.publishCreated("RECURRING_DONATION", saved.getId(),
                 Map.of("amount", saved.getAmount(), "frequency", saved.getFrequency().name()),
                 "Don récurrent créé : " + saved.getAmount() + " " + saved.getCurrency()
-                        + " / " + saved.frequency.getLabel());
+                        + " / " + saved.getFrequency().getLabel());
         return saved;
     }
 

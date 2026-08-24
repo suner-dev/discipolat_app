@@ -22,17 +22,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - Strict-Transport-Security (HSTS)
  * - Cache-Control sur les endpoints sensibles
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebMockEnvironment.MOCK)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("P2 #70 — Tests de sécurité OWASP")
 class SecurityHeadersTest {
 
-    private final MockMvc mockMvc;
-
-    SecurityHeadersTest(MockMvc mockMvc) {
-        this.mockMvc = mockMvc;
-    }
+    @Autowired
+    private MockMvc mockMvc;
 
     @Test
     @DisplayName("X-Content-Type-Options doit être 'nosniff'")

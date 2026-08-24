@@ -1,5 +1,6 @@
 package com.discipolat.modules.streaming.domain;
 
+import java.util.UUID;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 

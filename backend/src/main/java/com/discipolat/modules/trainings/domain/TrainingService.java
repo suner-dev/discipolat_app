@@ -23,7 +23,7 @@ public class TrainingService {
     private final CourseModuleRepository moduleRepository;
     private final QuizQuestionRepository quizRepository;
     private final CourseEnrollmentRepository enrollmentRepository;
-    private final CertificateRepository certificateRepository;
+    private final TrainingCertificateRepository certificateRepository;
     private final ModuleCompletionRepository completionRepository;
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
@@ -31,8 +31,7 @@ public class TrainingService {
     public TrainingService(CourseRepository courseRepository,
                            CourseModuleRepository moduleRepository,
                            QuizQuestionRepository quizRepository,
-                           CourseEnrollmentRepository enrollmentRepository,
-                           CertificateRepository certificateRepository,
+                           CourseEnrollmentRepository enrollmentRepository,                            TrainingCertificateRepository certificateRepository,
                            ModuleCompletionRepository completionRepository,
                            UserRepository userRepository,
                            SecurityUtils securityUtils) {

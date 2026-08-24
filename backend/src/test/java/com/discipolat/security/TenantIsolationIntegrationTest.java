@@ -2,6 +2,7 @@ package com.discipolat.security;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -17,22 +18,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Chaque test simule une requête avec un token JWT du tenant A pour accéder
  * à des ressources du tenant B — doit renvoyer 403 ou 404.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebMockEnvironment.MOCK)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("P2 #67 — Tests IDOR / Multi-tenant Isolation")
 class TenantIsolationIntegrationTest {
-
-    private final MockMvc mockMvc;
 
     // Token JWT du tenant A (test)
     private static final String TOKEN_TENANT_A = "Bearer test-token-tenant-a";
     // Token JWT du tenant B (test)
     private static final String TOKEN_TENANT_B = "Bearer test-token-tenant-b";
 
-    TenantIsolationIntegrationTest(MockMvc mockMvc) {
-        this.mockMvc = mockMvc;
-    }
+    @Autowired
+    private MockMvc mockMvc;
 
     @Test
     @DisplayName("Un membre du tenant A ne peut pas lire les âmes du tenant B")

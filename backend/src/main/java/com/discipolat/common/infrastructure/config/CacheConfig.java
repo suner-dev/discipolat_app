@@ -1,6 +1,9 @@
 package com.discipolat.common.infrastructure.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.ApplicationEventPublisher;
@@ -18,11 +21,22 @@ import java.util.concurrent.ConcurrentHashMap;
  * Overrides {@link ConcurrentMapCacheManager#createConcurrentMapCache(String)}
  * to return a decorated cache that publishes an event when
  * {@link Cache#get(Object)} returns a miss.
+ *
+ * Fallback : ce CacheManager in-memory n'est créé QUE si aucun autre
+ * CacheManager n'existe déjà (ex : {@link RedisCacheConfig} actif en prod).
  */
 @Configuration
+@EnableCaching
 public class CacheConfig {
 
+    /**
+     * Fallback in-memory — utilisé uniquement quand aucun CacheManager Redis
+     * n'est disponible (profil test / environnement sans Redis).
+     * Conditionné sur la présence d'une DataSource embarquée (H2) pour ne pas
+     * entrer en conflit avec le RedisCacheManager de production.
+     */
     @Bean
+    @ConditionalOnMissingBean(CacheManager.class)
     public ConcurrentMapCacheManager cacheManager(ApplicationEventPublisher eventPublisher) {
         return new ConcurrentMapCacheManager() {
             @Override

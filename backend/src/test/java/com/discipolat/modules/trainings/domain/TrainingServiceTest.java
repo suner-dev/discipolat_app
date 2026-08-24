@@ -28,7 +28,7 @@ class TrainingServiceTest {
     @Mock private CourseModuleRepository moduleRepository;
     @Mock private QuizQuestionRepository quizRepository;
     @Mock private CourseEnrollmentRepository enrollmentRepository;
-    @Mock private CertificateRepository certificateRepository;
+    @Mock private TrainingCertificateRepository certificateRepository;
     @Mock private ModuleCompletionRepository completionRepository;
     @Mock private UserRepository userRepository;
     @Mock private SecurityUtils securityUtils;
