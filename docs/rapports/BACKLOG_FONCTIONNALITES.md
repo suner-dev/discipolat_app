@@ -314,8 +314,12 @@ Fais# 📋 BACKLOG COMPLET — Fonctionnalités Non Implémentées & Partielleme
 | **P20 Géofencing** | Confirmation que auto check-in + history + power mode existent déjà | `GeofencingController.java`, `geofencing_screen.dart` (history ajoutée) |
 | **P21 Notifications** | Confirmation que préférences + templates existent déjà | `NotificationService.java` |
 | **P22 Rapports PDF** | Génération auto mensuelle/trimestrielle + notifications leaders | `AutoReportScheduler.java` (nouveau) |
+| **P24 Calendrier** | Export iCal RFC 5545 complet + flux de souscription `/calendar/feed.ics` (Google/Outlook/Apple) | `CalendarService.java`, `CalendarController.java` |
+| **P32 Inventaire** | Alertes stock intelligentes : seuil bas, maintenance prochaine/retard, valeur totale, réappro suggérée | `InventoryService.java`, `InventoryController.java` |
+| **P34 KPIs Département** | KPIs calculés automatiquement : taux remplissage, réalisation, satisfaction, alertes | `DepartmentKpiService.java`, `DepartmentKpiController.java` |
+| **P35 Matching** | Algorithme de matching amélioré : skills matrix × besoins départements, score pondéré | `SkillMatchService.java`, `SkillMatchRepository.java` |
 | **Fix** | Erreur compilation ReportExportController corrigée | `ReportExportController.java` |
 
-**Résultat** : 16/23 fonctionnalités partiellement implémentées portées au statut ✅ "Amélioré". Les 7 restantes nécessitent des services externes (Twilio, M-Pesa, Whisper, encodeur neuronal) ou sont déjà au meilleur état possible (P12 sandbox, P13 petit effectif, P14 entités basique, P17 jumeau web, P18 playgound, P19 ML fédéré).
+**Résultat** : 16/23 fonctionnalités partiellement implémentées portées au statut ✅ "Amélioré". 4 améliorations techniques sur les modules P24-P39. Backend + Frontend + Mobile compilés avec succès.
 
 *Document mis à jour le 24 août 2026. Backend + Frontend + Mobile tous compilés avec succès. Basé sur l'analyse du code source du dépôt.*

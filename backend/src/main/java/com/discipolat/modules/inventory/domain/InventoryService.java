@@ -158,4 +158,91 @@ public class InventoryService {
         stats.put("retires", repository.countByTenantIdAndStatut(tenantId, "RETIRE"));
         return stats;
     }
+
+    /**
+     * Alertes stock intelligentes :
+     *  - Stock bas (disponible <= 20% de la quantité totale)
+     *  - Maintenance prochaine (dans les 30 prochains jours)
+     *  - Équipements en panne/perdus
+     *  - Suggestions de réapprovisionnement
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getSmartAlerts(UUID tenantId) {
+        List<InventoryItem> allItems = repository.findByTenantIdOrderByCreatedAtDesc(tenantId, Pageable.unpaged()).getContent();
+        Map<String, Object> alerts = new LinkedHashMap<>();
+
+        // 1. Stock bas
+        List<Map<String, Object>> lowStock = allItems.stream()
+                .filter(i -> i.getQuantite() != null && i.getQuantiteDisponible() != null
+                        && i.getQuantite() > 0
+                        && (double) i.getQuantiteDisponible() / i.getQuantite() <= 0.2)
+                .map(i -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", i.getId());
+                    m.put("nom", i.getNom());
+                    m.put("categorie", i.getCategorie());
+                    m.put("quantite", i.getQuantite());
+                    m.put("disponible", i.getQuantiteDisponible());
+                    m.put("pourcentage", Math.round((double) i.getQuantiteDisponible() / i.getQuantite() * 100));
+                    m.put("suggestion", "Réapprovisionner à au moins " + Math.max(1, i.getQuantite() / 2) + " unités");
+                    return m;
+                })
+                .toList();
+
+        // 2. Maintenance prochaine (30 jours)
+        java.time.LocalDateTime maintenant = java.time.LocalDateTime.now();
+        java.time.LocalDateTime limite = maintenant.plusDays(30);
+        List<Map<String, Object>> maintenanceDue = allItems.stream()
+                .filter(i -> i.getProchaineMaintenance() != null
+                        && i.getProchaineMaintenance().isAfter(maintenant)
+                        && i.getProchaineMaintenance().isBefore(limite))
+                .map(i -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", i.getId());
+                    m.put("nom", i.getNom());
+                    m.put("prochaineMaintenance", i.getProchaineMaintenance());
+                    long joursRestants = java.time.temporal.ChronoUnit.DAYS.between(maintenant, i.getProchaineMaintenance());
+                    m.put("joursRestants", joursRestants);
+                    m.put("urgent", joursRestants <= 7);
+                    return m;
+                })
+                .toList();
+
+        // 3. Maintenance en retard
+        List<Map<String, Object>> maintenanceRetard = allItems.stream()
+                .filter(i -> i.getProchaineMaintenance() != null
+                        && i.getProchaineMaintenance().isBefore(maintenant))
+                .map(i -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", i.getId());
+                    m.put("nom", i.getNom());
+                    m.put("prochaineMaintenance", i.getProchaineMaintenance());
+                    m.put("joursRetard", java.time.temporal.ChronoUnit.DAYS.between(i.getProchaineMaintenance(), maintenant));
+                    return m;
+                })
+                .toList();
+
+        // 4. Équipements en panne/perdus
+        long enPanne = allItems.stream().filter(i -> "EN_MAINTENANCE".equals(i.getStatut())).count();
+        long perdus = allItems.stream().filter(i -> "PERDU".equals(i.getStatut())).count();
+
+        // 5. Valeur totale inventaire
+        double valeurTotale = allItems.stream()
+                .filter(i -> i.getValeurUnitaire() != null && i.getQuantite() != null)
+                .mapToDouble(i -> i.getValeurUnitaire() * i.getQuantite())
+                .sum();
+
+        alerts.put("stockBas", lowStock);
+        alerts.put("stockBasCount", lowStock.size());
+        alerts.put("maintenanceProchaine", maintenanceDue);
+        alerts.put("maintenanceProchaineCount", maintenanceDue.size());
+        alerts.put("maintenanceEnRetard", maintenanceRetard);
+        alerts.put("maintenanceEnRetardCount", maintenanceRetard.size());
+        alerts.put("enPanne", enPanne);
+        alerts.put("perdus", perdus);
+        alerts.put("valeurTotaleInventaire", Math.round(valeurTotale * 100.0) / 100.0);
+        alerts.put("totalAlertes", lowStock.size() + maintenanceDue.size() + maintenanceRetard.size());
+
+        return alerts;
+    }
 }

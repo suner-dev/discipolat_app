@@ -9,4 +9,5 @@ public interface SkillMatchRepository extends JpaRepository<SkillMatch, UUID> {
     List<SkillMatch> findByMembreIdOrderByScoreMatchDesc(UUID membreId);
     List<SkillMatch> findByDepartementIdAndStatut(UUID departementId, SkillMatch.Statut statut);
     long countByTenantIdAndStatut(UUID tenantId, SkillMatch.Statut statut);
+    boolean existsByTenantIdAndMembreIdAndDepartementIdAndCompetence(UUID tenantId, UUID membreId, UUID departementId, String competence);
 }

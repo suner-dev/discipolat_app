@@ -76,4 +76,10 @@ public class InventoryController {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.ok(inventoryService.getStats(tenantId));
     }
+
+    @GetMapping("/alerts")
+    public ResponseEntity<Map<String, Object>> smartAlerts() {
+        UUID tenantId = TenantContext.getTenantId();
+        return ResponseEntity.ok(inventoryService.getSmartAlerts(tenantId));
+    }
 }

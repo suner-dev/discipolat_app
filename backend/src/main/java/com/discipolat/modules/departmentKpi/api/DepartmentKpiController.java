@@ -1,11 +1,14 @@
 package com.discipolat.modules.departmentKpi.api;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.departmentKpi.domain.DepartmentKpi;
 import com.discipolat.modules.departmentKpi.domain.DepartmentKpiService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/department-kpis")
@@ -41,5 +44,14 @@ public class DepartmentKpiController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * KPIs calculés automatiquement : taux remplissage, réalisation, satisfaction, alertes.
+     */
+    @GetMapping("/department/{departmentId}/computed")
+    public ResponseEntity<Map<String, Object>> getComputedKpis(@PathVariable Long departmentId) {
+        Long tenantId = TenantContext.getTenantId();
+        return ResponseEntity.ok(service.getComputedKpis(departmentId, tenantId));
     }
 }

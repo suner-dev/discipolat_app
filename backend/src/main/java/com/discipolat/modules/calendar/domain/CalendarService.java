@@ -59,15 +59,91 @@ public class CalendarService {
 
     public String generateICal(UUID id) {
         CalendarEvent event = getById(id);
-        return "BEGIN:VCALENDAR\n" +
-                "VERSION:2.0\n" +
-                "BEGIN:VEVENT\n" +
-                "DTSTART:" + event.getDébut().toString().replace("-", "").replace(":", "") + "\n" +
-                "DTEND:" + event.getFin().toString().replace("-", "").replace(":", "") + "\n" +
-                "SUMMARY:" + event.getTitre() + "\n" +
-                "DESCRIPTION:" + (event.getDescription() != null ? event.getDescription() : "") + "\n" +
-                "LOCATION:" + (event.getLieu() != null ? event.getLieu() : "") + "\n" +
-                "END:VEVENT\n" +
-                "END:VCALENDAR";
+        return formatICalSingleEvent(event);
+    }
+
+    /**
+     * Génère un flux iCal complet (RFC 5545) avec tous les événements actifs.
+     * Compatible Google Calendar, Outlook, Apple Calendar (subscription URL).
+     */
+    public String generateICalFeed() {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        List<CalendarEvent> events = repository.findByTenantIdOrderByDébutAsc(tenantId);
+        StringBuilder ical = new StringBuilder();
+        ical.append("BEGIN:VCALENDAR\r\n");
+        ical.append("VERSION:2.0\r\n");
+        ical.append("PRODID:-//Discipolat//Calendar Feed//FR\r\n");
+        ical.append("CALSCALE:GREGORIAN\r\n");
+        ical.append("METHOD:PUBLISH\r\n");
+        ical.append("X-WR-CALNAME:Discipolat - Église\r\n");
+        ical.append("X-WR-TIMEZONE:UTC\r\n");
+        for (CalendarEvent event : events) {
+            if (event.getStatut() != CalendarEvent.Statut.ANNULÉ) {
+                ical.append(formatICalEvent(event));
+            }
+        }
+        ical.append("END:VCALENDAR");
+        return ical.toString();
+    }
+
+    /**
+     * Génère un fichier iCal pour un seul événement (RFC 5545 complet).
+     */
+    private String formatICalSingleEvent(CalendarEvent event) {
+        StringBuilder ical = new StringBuilder();
+        ical.append("BEGIN:VCALENDAR\r\n");
+        ical.append("VERSION:2.0\r\n");
+        ical.append("PRODID:-//Discipolat//Calendar//FR\r\n");
+        ical.append("CALSCALE:GREGORIAN\r\n");
+        ical.append(formatICalEvent(event));
+        ical.append("END:VCALENDAR");
+        return ical.toString();
+    }
+
+    private String formatICalEvent(CalendarEvent event) {
+        StringBuilder e = new StringBuilder();
+        e.append("BEGIN:VEVENT\r\n");
+        e.append("UID:").append(event.getId()).append("@discipolat.com\r\n");
+        e.append("DTSTAMP:").append(java.time.Instant.now().toString().replace("-", "").replace(":", "").replace(".", "Z") + "\r\n");
+        e.append("DTSTART:").append(formatICalDate(event.getDébut())).append("\r\n");
+        e.append("DTEND:").append(formatICalDate(event.getFin())).append("\r\n");
+        e.append("SUMMARY:").append(escapeICal(event.getTitre())).append("\r\n");
+        if (event.getDescription() != null && !event.getDescription().isBlank()) {
+            e.append("DESCRIPTION:").append(escapeICal(event.getDescription())).append("\r\n");
+        }
+        if (event.getLieu() != null && !event.getLieu().isBlank()) {
+            e.append("LOCATION:").append(escapeICal(event.getLieu())).append("\r\n");
+        }
+        if (event.isRappelActivé()) {
+            e.append("BEGIN:VALARM\r\n");
+            e.append("TRIGGER:-PT").append(event.getRappelMinutesAvant()).append("M\r\n");
+            e.append("ACTION:DISPLAY\r\n");
+            e.append("DESCRIPTION:Rappel: ").append(escapeICal(event.getTitre())).append("\r\n");
+            e.append("END:VALARM\r\n");
+        }
+        e.append("STATUS:").append(mapStatut(event.getStatut())).append("\r\n");
+        e.append("END:VEVENT\r\n");
+        return e.toString();
+    }
+
+    private String formatICalDate(LocalDateTime dt) {
+        return dt.atZone(java.time.ZoneId.of("UTC")).format(
+            java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"));
+    }
+
+    private String escapeICal(String text) {
+        if (text == null) return "";
+        return text.replace("\\", "\\\\")
+                   .replace(";", "\\;")
+                   .replace(",", "\\,")
+                   .replace("\n", "\\n");
+    }
+
+    private String mapStatut(CalendarEvent.Statut statut) {
+        return switch (statut) {
+            case CONFIRMÉ -> "CONFIRMED";
+            case EN_ATTENTE -> "TENTATIVE";
+            case ANNULÉ -> "CANCELLED";
+        };
     }
 }

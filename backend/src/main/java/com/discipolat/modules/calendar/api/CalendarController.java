@@ -63,7 +63,20 @@ public class CalendarController {
     public ResponseEntity<String> getICal(@PathVariable UUID id) {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/calendar"))
+                .header("Content-Disposition", "attachment; filename=event-" + id + ".ics")
                 .body(service.generateICal(id));
+    }
+
+    /**
+     * Flux iCal complet — URL de souscription pour Google Calendar / Outlook / Apple.
+     * GET /api/v1/calendar/feed.ics
+     */
+    @GetMapping(value = "/feed.ics", produces = "text/calendar")
+    public ResponseEntity<String> getICalFeed() {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/calendar"))
+                .header("Content-Disposition", "inline; filename=discipolat-calendar.ics")
+                .body(service.generateICalFeed());
     }
 
     @DeleteMapping("/{id}")
