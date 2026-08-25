@@ -91,6 +91,12 @@ class SessionTimeoutService {
     resetTimer();
   }
 
+  /// Read the persisted timeout duration (fallback: in-memory value).
+  Future<int> getTimeoutMinutes() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('session_timeout_minutes') ?? _timeoutMinutes;
+  }
+
   /// Update warning duration and persist
   Future<void> setWarningMinutes(int minutes) async {
     _warningMinutes = minutes;

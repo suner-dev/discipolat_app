@@ -175,9 +175,6 @@ const pt: Record<string, string> = {
 
   // Broadcast
   'nav.broadcast': 'Difusão / Broadcast',
-  'broadcast.new': 'Nova difusão',
-  'broadcast.send': 'Enviar',
-  'broadcast.draft': 'Rascunho',
 
   // Inventory
   'nav.inventory': 'Inventário Inteligente',
@@ -207,6 +204,11 @@ const pt: Record<string, string> = {
   'community.testimony': 'Testemunho',
   'community.prayer': 'Oração',
   'community.encouragement': 'Encorajamento',
+
+    'aiPredictions.title': 'Previsões de IA',
+  'broadcast.new': 'Nova transmissão',
+  'broadcast.send': 'Enviar',
+  'broadcast.draft': 'Rascunho',
 };
 
 export default pt;

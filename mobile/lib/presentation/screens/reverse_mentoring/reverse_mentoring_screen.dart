@@ -1,71 +1,90 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
+import '../../../core/format.dart';
 
-/// P1 #54 — Mentorat inversé: demander de l'aide à un faiseur expérimenté
-class ReverseMentoringScreen extends StatelessWidget {
-  const ReverseMentoringScreen({super.key});
+/// Mentorat inversé — branché sur GET /api/v1/reverse-mentoring.
+class ReverseMentoringScreen extends StatefulWidget {
+  const ReverseMentoringScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<ReverseMentoringScreen> createState() => _ReverseMentoringScreenState();
+}
+
+class _ReverseMentoringScreenState extends State<ReverseMentoringScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/reverse-mentoring');
+      final d = res.data;
+      setState(() {
+        _items = d is List ? d : (d is Map ? (d['content'] as List<dynamic>? ?? []) : <dynamic>[]);
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger les demandes.'; _loading = false; });
+    }
+  }
+
+  Color _statusColor(String? s) {
+    switch (s) {
+      case 'ACCEPTED': return Colors.green;
+      case 'RESOLVED': return Colors.teal;
+      case 'REJECTED': return Colors.red;
+      default: return Colors.amber;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🔄 Mentorat Inversé'),
-        backgroundColor: Colors.orange.shade700,
-        foregroundColor: Colors.white,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        backgroundColor: Colors.orange.shade700,
-        icon: const Icon(Icons.help, color: Colors.white),
-        label: const Text('Demander de l\'aide', style: TextStyle(color: Colors.white)),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // How it works
-          Card(
-            color: Colors.orange.shade50,
-            child: const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Vous pouvez demander de l\'aide à un faiseur plus expérimenté ou au pasteur pour des cas difficiles.',
-                style: TextStyle(fontSize: 14),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Active requests
-          const Text('Demandes actives', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _requestCard('Cas difficile: Famille en crise', 'Assigné à: Pasteur Samuel', 'En cours', Colors.orange),
-          _requestCard('Orientation: Formation leadership', 'Assigné à: Jean-Pierre M.', 'Planifié', Colors.blue),
-          const SizedBox(height: 16),
-          // Available mentors
-          const Text('Mentors disponibles', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _mentorCard('Pasteur Samuel', 'Accompagnement pastoral', 5.0),
-          _mentorCard('Jean-Pierre M.', 'Leadership famille', 4.5),
-          _mentorCard('Marie K.', 'Accueil & intégration', 4.8),
-        ],
-      ),
+      appBar: AppBar(title: const Text('🔄 Mentorat inversé'), backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : _items.isEmpty
+                  ? const Center(child: Text('Aucune demande de mentorat inversé.'))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _items.length,
+                        itemBuilder: (context, i) {
+                          final r = _items[i] as Map<String, dynamic>;
+                          final status = r['status']?.toString() ?? 'PENDING';
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: CircleAvatar(backgroundColor: _statusColor(status).withValues(alpha: .15), child: Icon(Icons.swap_horiz, color: _statusColor(status), size: 20)),
+                              title: Text(r['topic']?.toString() ?? 'Sujet', style: const TextStyle(fontWeight: FontWeight.w600)),
+                              subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                if ((r['description'] ?? '').toString().isNotEmpty)
+                                  Padding(padding: const EdgeInsets.only(top: 2), child: Text(r['description'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                                const SizedBox(height: 4),
+                                Row(children: [
+                                  Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: _statusColor(status).withValues(alpha: .12), borderRadius: BorderRadius.circular(10)), child: Text(formatLabel(status), style: TextStyle(fontSize: 10, color: _statusColor(status), fontWeight: FontWeight.bold))),
+                                  const SizedBox(width: 8),
+                                  Text('Urgence ${r['urgencyLevel'] ?? 3}/5', style: const TextStyle(fontSize: 11)),
+                                ]),
+                              ]),
+                              isThreeLine: true,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
-  }
-
-  Widget _requestCard(String title, String assignee, String status, Color color) {
-    return Card(child: ListTile(
-      leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(Icons.help, color: color, size: 18)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(assignee),
-      trailing: Chip(label: Text(status, style: TextStyle(fontSize: 11, color: color)), backgroundColor: color.withOpacity(0.1)),
-    ));
-  }
-
-  Widget _mentorCard(String name, String expertise, double rating) {
-    return Card(child: ListTile(
-      leading: CircleAvatar(child: Text(name[0])),
-      title: Text(name),
-      subtitle: Text(expertise),
-      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.star, color: Colors.amber, size: 16),
-        Text(rating.toString(), style: const TextStyle(fontSize: 13)),
-      ]),
-    ));
   }
 }

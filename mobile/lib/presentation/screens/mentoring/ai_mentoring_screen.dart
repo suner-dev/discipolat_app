@@ -1,79 +1,82 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
+import '../../../core/format.dart';
 
-/// P1 #38 — Mentorat IA pour chefs de famille
-class AiMentoringScreen extends StatelessWidget {
-  const AiMentoringScreen({super.key});
+/// Suggestions IA de mentorat — branché sur GET /api/v1/mentoring/all.
+class AiMentoringScreen extends StatefulWidget {
+  const AiMentoringScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<AiMentoringScreen> createState() => _AiMentoringScreenState();
+}
+
+class _AiMentoringScreenState extends State<AiMentoringScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/mentoring/all');
+      final d = res.data;
+      setState(() { _items = d is List ? d : <dynamic>[]; _loading = false; });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger les suggestions.'; _loading = false; });
+    }
+  }
+
+  Color _prioriteColor(String? p) {
+    switch (p) {
+      case 'HAUTE': return Colors.red;
+      case 'BASSE': return Colors.grey;
+      default: return Colors.orange;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🎓 Mentorat IA'),
-        backgroundColor: Colors.indigo.shade700,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // AI suggestion card
-          Card(
-            color: Colors.indigo.shade50,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  const Icon(Icons.auto_awesome, color: Colors.indigo),
-                  const SizedBox(width: 8),
-                  const Text('Suggestion IA', style: TextStyle(fontWeight: FontWeight.bold)),
-                ]),
-                const SizedBox(height: 8),
-                const Text(
-                  'Basé sur le profil de Jean-Pierre (style visuel, force: accueil, '
-                  'zone de croissance: leadership), suggérez-lui de co-animer un accueil.',
-                  style: TextStyle(fontSize: 13),
-                ),
-                const SizedBox(height: 8),
-                Row(children: [
-                  ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.check, size: 16), label: const Text('Appliquer')),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.close, size: 16), label: const Text('Passer')),
-                ]),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Mentoring profiles
-          const Text('Mes chefs de famille', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _profileCard('Jean-Pierre M.', 'Famille Grâce', '8/10', 'Leadership', Colors.green),
-          _profileCard('Marie K.', 'Famille Espoir', '6/10', 'Accueil', Colors.orange),
-          _profileCard('David L.', 'Famille Paix', '7/10', 'Enseignement', Colors.blue),
-          const SizedBox(height: 16),
-          // Approaches
-          const Text('Approches recommandées', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _approachItem('Style visuel → utiliser des schémas', Icons.visibility),
-          _approachItem('Préfère l\'apprentissage pratique', Icons.build),
-          _approachItem('Besoin de feedback régulier', Icons.chat),
-        ],
-      ),
-    );
-  }
-
-  Widget _profileCard(String name, String family, String score, String strength, Color color) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Text(score.split('/')[0], style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12))),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('$family • Force: $strength'),
-        trailing: const Icon(Icons.chevron_right),
-      ),
-    );
-  }
-
-  Widget _approachItem(String text, IconData icon) {
-    return ListTile(
-      leading: Icon(icon, size: 20, color: Colors.indigo),
-      title: Text(text, style: const TextStyle(fontSize: 13)),
-      dense: true,
+      appBar: AppBar(title: const Text('🧠 Mentorat IA'), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : _items.isEmpty
+                  ? const Center(child: Text('Aucune suggestion. Générez-en depuis le web.'))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _items.length,
+                        itemBuilder: (context, i) {
+                          final s = _items[i] as Map<String, dynamic>;
+                          final priorite = s['priorité']?.toString() ?? s['priorite']?.toString() ?? 'MOYENNE';
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: CircleAvatar(backgroundColor: _prioriteColor(priorite).withValues(alpha: .15), child: Icon(Icons.psychology, color: _prioriteColor(priorite), size: 20)),
+                              title: Text(s['titre']?.toString() ?? 'Suggestion', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                              subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                if ((s['analyse'] ?? '').toString().isNotEmpty)
+                                  Padding(padding: const EdgeInsets.only(top: 2), child: Text(s['analyse'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                                const SizedBox(height: 4),
+                                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: _prioriteColor(priorite).withValues(alpha: .12), borderRadius: BorderRadius.circular(10)), child: Text(formatLabel(priorite), style: TextStyle(fontSize: 10, color: _prioriteColor(priorite), fontWeight: FontWeight.bold))),
+                              ]),
+                              isThreeLine: true,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 }

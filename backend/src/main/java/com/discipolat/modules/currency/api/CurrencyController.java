@@ -11,7 +11,7 @@ import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/currencies")
+@RequestMapping({"/api/currencies", "/api/v1/currencies"})
 @PreAuthorize("isAuthenticated()")
 public class CurrencyController {
 

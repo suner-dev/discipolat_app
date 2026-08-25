@@ -469,6 +469,11 @@ const fr = {
   'myTeam.title': 'Mon équipe / Ma famille',
   'myTeam.message': 'Envoyer un message',
   'myTeam.encourage': 'Encourager',
+
+  'aiPredictions.title': 'Prédictions IA',
+  'broadcast.new': 'Nouvelle diffusion',
+  'broadcast.send': 'Envoyer',
+  'broadcast.draft': 'Brouillon',
 };
 
 export default fr;

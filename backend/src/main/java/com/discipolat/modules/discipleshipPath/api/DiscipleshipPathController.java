@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/discipleship-paths")
+@RequestMapping({"/api/discipleship-paths", "/api/v1/discipleship-paths"})
 @PreAuthorize("isAuthenticated()")
 public class DiscipleshipPathController {
 

@@ -2,10 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../data/services/biometric_auth_service.dart';
-import '../../../data/services/session_manager.dart';
+import '../../../data/services/session_timeout_service.dart';
+import '../../../data/services/screenshot_protection_service.dart';
 import '../../../data/services/audit_log_service.dart';
 import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
+
+/// Options de délai d'expiration de session proposées dans les réglages.
+class SessionTimeoutOption {
+  final int minutes;
+  final String label;
+  const SessionTimeoutOption(this.minutes, this.label);
+}
+
+class SessionTimeoutConfig {
+  static const List<SessionTimeoutOption> options = <SessionTimeoutOption>[
+    SessionTimeoutOption(0, 'Jamais'),
+    SessionTimeoutOption(5, '5 minutes'),
+    SessionTimeoutOption(15, '15 minutes'),
+    SessionTimeoutOption(30, '30 minutes'),
+    SessionTimeoutOption(60, '60 minutes'),
+  ];
+}
 
 /// Screen for security and privacy settings
 /// Features: biometric auth, session timeout, screenshot protection, PIN, audit logs
@@ -18,7 +36,8 @@ class SecuritySettingsScreen extends ConsumerStatefulWidget {
 
 class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen> {
   final BiometricAuthService _biometricService = BiometricAuthService();
-  final SessionManager _sessionManager = SessionManager();
+  final SessionTimeoutService _session = SessionTimeoutService.instance;
+  final ScreenshotProtectionService _screenshotService = ScreenshotProtectionService.instance;
   final AuditLogService _auditService = AuditLogService();
 
     int _timeoutMinutes = 30;
@@ -34,9 +53,9 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
   }
 
   Future<void> _loadSettings() async {
-    final timeout = await _sessionManager.getSessionTimeout();
+    final timeout = await _session.getTimeoutMinutes();
     final biometric = await _biometricService.isBiometricEnabled();
-    final screenshot = await _sessionManager.isScreenshotProtectionEnabled();
+    final screenshot = _screenshotService.isGlobalEnabled;
     final logCount = await _auditService.getLogCount();
     final biometricAvailable = await _biometricService.isBiometricAvailable();
 
@@ -51,7 +70,7 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
 
   Future<void> _updateTimeout(int? minutes) async {
     if (minutes == null) return;
-    await _sessionManager.setSessionTimeout(minutes);
+    await _session.setTimeoutMinutes(minutes);
     setState(() => _timeoutMinutes = minutes);
     AuditLogger.securityEvent(
       AuthState().userId ?? '',
@@ -72,7 +91,7 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
   }
 
   Future<void> _toggleScreenshotProtection(bool value) async {
-    await _sessionManager.setScreenshotProtection(value);
+    await _screenshotService.setGlobalEnabled(value);
     setState(() => _screenshotProtection = value);
   }
 

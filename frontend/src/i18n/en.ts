@@ -240,9 +240,6 @@ const en: Record<string, string> = {
 
   // Broadcast
   'nav.broadcast': 'Broadcast Messaging',
-  'broadcast.new': 'New broadcast',
-  'broadcast.send': 'Send',
-  'broadcast.draft': 'Draft',
 
   // Inventory
   'nav.inventory': 'Smart Inventory',
@@ -272,6 +269,11 @@ const en: Record<string, string> = {
   'community.testimony': 'Testimony',
   'community.prayer': 'Prayer',
   'community.encouragement': 'Encouragement',
+
+    'aiPredictions.title': 'AI Predictions',
+  'broadcast.new': 'New broadcast',
+  'broadcast.send': 'Send',
+  'broadcast.draft': 'Draft',
 };
 
 export default en;

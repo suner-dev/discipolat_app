@@ -10,7 +10,7 @@ import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/reverse-mentoring")
+@RequestMapping({"/api/reverse-mentoring", "/api/v1/reverse-mentoring"})
 @PreAuthorize("isAuthenticated()")
 public class ReverseMentoringController {
 

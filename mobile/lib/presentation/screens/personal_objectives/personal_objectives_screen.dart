@@ -1,84 +1,77 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
 
-/// P1 #56 — Objectifs spirituels personnels
-class PersonalObjectivesScreen extends StatelessWidget {
-  const PersonalObjectivesScreen({super.key});
+/// Objectifs personnels — branché sur GET /api/v1/personal-objectives.
+class PersonalObjectivesScreen extends StatefulWidget {
+  const PersonalObjectivesScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<PersonalObjectivesScreen> createState() => _PersonalObjectivesScreenState();
+}
+
+class _PersonalObjectivesScreenState extends State<PersonalObjectivesScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/personal-objectives');
+      final d = res.data;
+      setState(() { _items = d is List ? d : <dynamic>[]; _loading = false; });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger vos objectifs.'; _loading = false; });
+    }
+  }
+
+  Color _statutColor(String? s) => s == 'COMPLÉTÉ' || s == 'TERMINE' ? Colors.green : (s == 'EN_COURS' ? Colors.blue : Colors.grey);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🎯 Mes Objectifs Spirituels'),
-        backgroundColor: Colors.teal.shade700,
-        foregroundColor: Colors.white,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Colors.teal.shade700,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Overview
-          Card(
-            color: Colors.teal.shade50,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Progression', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                  _objStat('Actifs', '4', Colors.blue),
-                  _objStat('Terminés', '6', Colors.green),
-                  _objStat('Taux', '60%', Colors.teal),
-                ]),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Active objectives
-          const Text('Objectifs actifs', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _objectiveItem('📖 Lire la Bible chaque jour', 0.45, 'Jour 12/30', Colors.blue),
-          _objectiveItem('🙏 Prier 30min/jour', 0.67, '20/30 jours', Colors.green),
-          _objectiveItem('💪 Servir 1 fois/mois', 0.50, '1/2 cette mois', Colors.orange),
-          _objectiveItem('🤝 Inviter 1 personne', 0.0, '0/1', Colors.red),
-          const SizedBox(height: 16),
-          // Achievements
-          const Text('🏆 Accomplissements', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _achievementItem('Complété 7 jours de prière consécutifs'),
-          _achievementItem('Lu 5 livres de la Bible'),
-          _achievementItem('Servi 3 fois ce trimestre'),
-        ],
-      ),
-    );
-  }
-
-  Widget _objStat(String label, String value, Color color) {
-    return Column(children: [
-      Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-      Text(label, style: const TextStyle(fontSize: 12)),
-    ]);
-  }
-
-  Widget _objectiveItem(String title, double progress, String detail, Color color) {
-    return Card(child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 4),
-        Text(detail, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(value: progress, color: color),
-      ]),
-    ));
-  }
-
-  Widget _achievementItem(String text) {
-    return ListTile(
-      leading: const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
-      title: Text(text, style: const TextStyle(fontSize: 13)),
-      dense: true,
+      appBar: AppBar(title: const Text('🎯 Objectifs personnels'), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : _items.isEmpty
+                  ? const Center(child: Text('Aucun objectif défini.'))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _items.length,
+                        itemBuilder: (context, i) {
+                          final o = _items[i] as Map<String, dynamic>;
+                          final cible = (o['objectifCible'] as num?)?.toInt() ?? 1;
+                          final progression = (o['progressionActuelle'] as num?)?.toInt() ?? 0;
+                          final statut = o['statut']?.toString() ?? 'EN_COURS';
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: CircleAvatar(backgroundColor: _statutColor(statut).withValues(alpha: .15), child: Icon(Icons.flag, color: _statutColor(statut), size: 20)),
+                              title: Text(o['titre']?.toString() ?? 'Objectif', style: const TextStyle(fontWeight: FontWeight.w600)),
+                              subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                if ((o['description'] ?? '').toString().isNotEmpty)
+                                  Padding(padding: const EdgeInsets.only(top: 2, bottom: 4), child: Text(o['description'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                                LinearProgressIndicator(value: cible > 0 ? progression / cible : 0, minHeight: 5, borderRadius: BorderRadius.circular(3)),
+                                Text('$progression / $cible', style: const TextStyle(fontSize: 11)),
+                              ]),
+                              isThreeLine: true,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 }

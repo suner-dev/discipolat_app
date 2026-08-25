@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/engagement-analytics")
+@RequestMapping({"/api/engagement-analytics", "/api/v1/engagement-analytics"})
 @PreAuthorize("isAuthenticated()")
 public class EngagementAnalyticsController {
 

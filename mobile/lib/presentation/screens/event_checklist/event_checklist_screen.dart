@@ -1,73 +1,81 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
 
-/// P1 #33 — Checklist événementielle
-class EventChecklistScreen extends StatelessWidget {
-  const EventChecklistScreen({super.key});
+/// Checklists événementielles — branché sur GET /api/v1/event-checklists.
+class EventChecklistScreen extends StatefulWidget {
+  const EventChecklistScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<EventChecklistScreen> createState() => _EventChecklistScreenState();
+}
+
+class _EventChecklistScreenState extends State<EventChecklistScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/event-checklists');
+      final d = res.data;
+      setState(() { _items = d is List ? d : <dynamic>[]; _loading = false; });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger les checklists.'; _loading = false; });
+    }
+  }
+
+  Future<void> _toggle(String id) async {
+    try {
+      await _api.post('/event-checklists/' + id + '/toggle');
+      await _load();
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
+    final completed = _items.where((x) => x is Map && x['status'] == 'COMPLETED').length;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('✅ Checklist Événement'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Colors.green.shade700,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Upcoming event
-          Card(
-            color: Colors.green.shade50,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Culte dimanche 31 août', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 8),
-                const LinearProgressIndicator(value: 0.6),
-                const SizedBox(height: 4),
-                const Text('12/20 tâches complétées'),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Material
-          const Text('📦 Matériel', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          _checkItem('Sonorisation vérifiée', true),
-          _checkItem('Projecteur prêt', true),
-          _checkItem('Chaises disposées', false),
-          _checkItem('Boutique merchandise', false),
-          const SizedBox(height: 16),
-          // Équipes
-          const Text('👥 Équipes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          _checkItem('Équipe accueil confirmée', true),
-          _checkItem('Équipe louange confirmée', true),
-          _checkItem('Équipe technique confirmée', false),
-          _checkItem('Équipe enfant confirmée', true),
-          const SizedBox(height: 16),
-          // Documents
-          const Text('📄 Documents', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          _checkItem('Paroles proclamées', true),
-          _checkItem('Ordre du jour', true),
-          _checkItem('Annonces préparées', false),
-        ],
-      ),
+      appBar: AppBar(title: const Text('✅ Checklists'), backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: Column(children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(completed.toString() + ' / ' + _items.length.toString() + ' tâches terminées', style: const TextStyle(fontSize: 12)),
+                    ),
+                    Expanded(
+                      child: _items.isEmpty
+                          ? const Center(child: Text('Aucune tâche de checklist.'))
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: _items.length,
+                              itemBuilder: (context, i) {
+                                final it = _items[i] as Map<String, dynamic>;
+                                final status = it['status']?.toString() ?? 'PENDING';
+                                return CheckboxListTile(
+                                  value: status == 'COMPLETED',
+                                  onChanged: (_) => _toggle(it['id'].toString()),
+                                  title: Text(it['title']?.toString() ?? 'Tâche', style: TextStyle(fontSize: 13, decoration: status == 'COMPLETED' ? TextDecoration.lineThrough : null)),
+                                  subtitle: it['isAutoGenerated'] == true ? const Text('Auto-générée', style: TextStyle(fontSize: 10)) : null,
+                                );
+                              },
+                            ),
+                    ),
+                  ]),
+                ),
     );
-  }
-
-  Widget _checkItem(String text, bool done) {
-    return Card(child: CheckboxListTile(
-      value: done,
-      onChanged: (_) {},
-      title: Text(text, style: TextStyle(
-        decoration: done ? TextDecoration.lineThrough : null,
-        color: done ? Colors.grey : null,
-      )),
-      activeColor: Colors.green,
-    ));
   }
 }

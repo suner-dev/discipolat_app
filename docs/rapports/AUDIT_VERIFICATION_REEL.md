@@ -174,6 +174,10 @@ Suite à cet audit, les corrections suivantes ont été appliquées et validées
 | **Smoke-test automatisé** | `scripts/smoke-check.sh` : détection MOCK + routes fantômes frontend→backend + builds tsc/flutter | 🎉 SMOKE TEST GLOBAL : PASS |
 
 ### Reste à faire (documenté, non bloquant web)
-1. ~~**~42 écrans mobiles statiques**~~ → ✅ **TRAITEMENT APPLIQUÉ (25 août)** : overlay global `DemoDataOverlay` (`mobile/lib/presentation/widgets/demo_data_overlay.dart`) inséré dans le `builder` du `MaterialApp` (`main.dart`) — affiche un bandeau « Aperçu — données de démonstration » sur les 35 routes encore statiques. Un seul point de suppression quand ils seront branchés. `flutter analyze` : 0 erreur, 0 issue sur les nouveaux fichiers.
-2. ~~**RBAC fin** sur les ~21 autres contrôleurs sans `@PreAuthorize`~~ → ✅ **APPLIQUÉ** : 16 contrôleurs annotés `isAuthenticated()` + garde-fou démarrage `SecurityStartupAudit.java`. Voir `AUDIT_SECURITE_REEL.md`.
-3. ~~Swagger public en dev~~ → ✅ couvert par le garde-fou (alerte au démarrage si environment=dev déployé).
+1. ~~**~42 écrans mobiles statiques**~~ → ✅ **TRAITEMENT APPLIQUÉ (25 août)** :
+   - **13 écrans branchés sur leurs vraies APIs** : weekly_challenges, reverse_mentoring (×2), volunteers, ai_visit_notes, engagement_analytics, intelligence_center, predictions, succession, spiritual_challenges, personal_objectives, kpi_narrative, rewards (/mine), ai_mentoring, family_meeting, event_checklist (+ toggle réel), church_comparison, admin_requests — tous avec pattern ApiService injectable + loading/error/empty/pull-to-refresh.
+   - **Bug backend découvert & corrigé au passage** : 10 contrôleurs montés sur `/api/x` (sans `/v1`) alors que le web appelle via baseURL `/api/v1` → **routes fantômes réelles** (404). Corrigé par double mapping `@RequestMapping({"/api/x", "/api/v1/x"})` sur Prediction, EngagementAnalytics, AiVisitNote, ReverseMentoring, Currency, GroupMessage, EventChecklist, FamilyMeeting, Announcement, DiscipleshipPath. `mvn compile` exit 0.
+   - Les ~18 écrans restants nécessitent des paramètres contextuels (faiseurId, familleId, authorId…) ou n'ont pas d'endpoint liste → **étiquetés honnêtement** via l'overlay global `DemoDataOverlay` (bandeau « Aperçu — données de démonstration »).
+2. ~~RBAC fin sur les ~21 autres contrôleurs~~ → ✅ **APPLIQUÉ** : 16 contrôleurs annotés + garde-fou `SecurityStartupAudit.java`.
+3. ~~Swagger public en dev~~ → ✅ couvert par le garde-fou.
+4. Erreur résiduelle agent (`SessionTimeoutConfig` indéfini dans security_settings_screen) → ✅ classe créée localement.

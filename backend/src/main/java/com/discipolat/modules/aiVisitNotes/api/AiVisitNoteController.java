@@ -9,7 +9,7 @@ import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/ai-visit-notes")
+@RequestMapping({"/api/ai-visit-notes", "/api/v1/ai-visit-notes"})
 @PreAuthorize("isAuthenticated()")
 public class AiVisitNoteController {
 

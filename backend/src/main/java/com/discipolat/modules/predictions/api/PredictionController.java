@@ -11,7 +11,7 @@ import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/predictions")
+@RequestMapping({"/api/predictions", "/api/v1/predictions"})
 @PreAuthorize("isAuthenticated()")
 public class PredictionController {
 

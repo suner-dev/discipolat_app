@@ -1,96 +1,77 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
 
-/// P1 #64 — Centre d'intelligence organisationnelle (50+ KPIs temps réel)
-class IntelligenceCenterScreen extends StatelessWidget {
-  const IntelligenceCenterScreen({super.key});
+/// Centre d'intelligence — branché sur GET /api/v1/intelligence (KPIs réels).
+class IntelligenceCenterScreen extends StatefulWidget {
+  const IntelligenceCenterScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<IntelligenceCenterScreen> createState() => _IntelligenceCenterScreenState();
+}
+
+class _IntelligenceCenterScreenState extends State<IntelligenceCenterScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _kpis = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/intelligence');
+      final d = res.data;
+      setState(() {
+        _kpis = d is List ? d : <dynamic>[];
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger les KPIs. Le centre doit être initialisé côté admin.'; _loading = false; });
+    }
+  }
+
+  Color _trendColor(String? t) => t == 'UP' ? Colors.green : (t == 'DOWN' ? Colors.red : Colors.grey);
 
   @override
   Widget build(BuildContext context) {
+    final alerts = _kpis.where((k) => k is Map && k['isAlert'] == true).toList();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🏛️ Centre d\'Intelligence'),
-        backgroundColor: Colors.blueGrey.shade700,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Real-time alert
-          Card(
-            color: Colors.amber.shade50,
-            child: ListTile(
-              leading: const Icon(Icons.warning_amber, color: Colors.amber),
-              title: const Text('Alerte: 3 membres à risque', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Présence en baisse depuis 3 semaines'),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // KPI categories
-          const Text('📈 Aperçu rapide', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          _kpiGrid([
-            ('Effectifs', '156', Colors.blue),
-            ('Présence', '78%', Colors.green),
-            ('Conversions', '12/mois', Colors.teal),
-            ('Générosité', '45K€', Colors.green),
-            ('Rétention', '85%', Colors.green),
-            ('Décrochage', '3%', Colors.orange),
-            ('Bénévoles', '24', Colors.purple),
-            ('Événements', '8/mois', Colors.blue),
-          ]),
-          const SizedBox(height: 16),
-          // Early warnings
-          const Text('⚠️ Signes avant-coureurs', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _warningItem('3 membres sans présence depuis 4+ semaines', Colors.red),
-          _warningItem('Département Jeunesse en baisse -12%', Colors.orange),
-          _warningItem('2 demandes de transfert en cours', Colors.amber),
-          const SizedBox(height: 16),
-          // Quick actions
-          const Text('🚀 Actions rapides', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _actionItem(Icons.people, 'Envoyer relance décrochage', Colors.teal),
-          _actionItem(Icons.bar_chart, 'Rapport mensuel auto', Colors.blue),
-          _actionItem(Icons.share, 'Partager dashboard', Colors.grey),
-        ],
-      ),
-    );
-  }
-
-  Widget _kpiGrid(List<(String, String, Color)> items) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 2.2),
-      itemCount: items.length,
-      itemBuilder: (ctx, i) {
-        final (label, value, color) = items[i];
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-              Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-            ]),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _warningItem(String text, Color color) {
-    return ListTile(
-      leading: Icon(Icons.circle, color: color, size: 8),
-      title: Text(text, style: const TextStyle(fontSize: 13)),
-      dense: true,
-    );
-  }
-
-  Widget _actionItem(IconData icon, String text, Color color) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon, color: color),
-        title: Text(text),
-        trailing: const Icon(Icons.chevron_right, size: 20),
-      ),
+      appBar: AppBar(title: const Text('🏛️ Centre d\'intelligence'), backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (alerts.isNotEmpty) ...[
+                        Card(color: Colors.amber.shade50, child: ListTile(leading: const Icon(Icons.warning_amber, color: Colors.amber), title: Text('${alerts.length} alerte(s) active(s)', style: const TextStyle(fontWeight: FontWeight.bold)))),
+                        const SizedBox(height: 12),
+                      ],
+                      ..._kpis.map((k) {
+                        final kpi = k as Map<String, dynamic>;
+                        final trend = kpi['trend']?.toString() ?? 'STABLE';
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: Icon(Icons.insert_chart, color: _trendColor(trend)),
+                            title: Text(kpi['name']?.toString() ?? 'KPI', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                            subtitle: Text(kpi['description']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
+                            trailing: Text('${((kpi['currentValue'] as num?) ?? 0).toStringAsFixed(1)}${kpi['unit'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
     );
   }
 }

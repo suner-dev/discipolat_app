@@ -1,97 +1,77 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
 
-/// P1 #61 — Analytics d'engagement (Plausible/Umami intégré)
-class EngagementAnalyticsScreen extends StatelessWidget {
-  const EngagementAnalyticsScreen({super.key});
+/// Analytics d'engagement — branché sur GET /api/v1/engagement-analytics.
+class EngagementAnalyticsScreen extends StatefulWidget {
+  const EngagementAnalyticsScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<EngagementAnalyticsScreen> createState() => _EngagementAnalyticsScreenState();
+}
+
+class _EngagementAnalyticsScreenState extends State<EngagementAnalyticsScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/engagement-analytics');
+      final d = res.data;
+      setState(() {
+        _items = d is List ? d : (d is Map ? (d['content'] as List<dynamic>? ?? []) : <dynamic>[]);
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger les métriques.'; _loading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('📊 Analytics d\'Engagement'),
-        backgroundColor: Colors.orange.shade700,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Period selector
-          Row(children: [
-            _periodChip('7j', true), _periodChip('30j', false), _periodChip('90j', false), _periodChip('1an', false),
-          ]),
-          const SizedBox(height: 16),
-          // Overview
-          Row(children: [
-            _statCard('Pages vues', '12.4K', Colors.blue),
-            const SizedBox(width: 8),
-            _statCard('Utilisateurs', '892', Colors.green),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            _statCard('Taux engagement', '34%', Colors.teal),
-            const SizedBox(width: 8),
-            _statCard('Sessions/mois', '2.3K', Colors.purple),
-          ]),
-          const SizedBox(height: 16),
-          // Top pages
-          const Text('Pages les plus visitées', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _pageRow('/dashboard', '3,245', 0.85),
-          _pageRow('/souls', '1,892', 0.58),
-          _pageRow('/events', '1,456', 0.45),
-          _pageRow('/prayers', '987', 0.30),
-          const SizedBox(height: 16),
-          // Funnel
-          const Text('Funnel inscription → engagement', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          _funnelStep('Visite', 1000, 1.0),
-          _funnelStep('Inscription', 450, 0.45),
-          _funnelStep('Première action', 280, 0.28),
-          _funnelStep('Membre actif', 180, 0.18),
-        ],
-      ),
-    );
-  }
-
-  Widget _periodChip(String label, bool selected) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(label: Text(label), selected: selected, onSelected: (_) {}),
-    );
-  }
-
-  Widget _statCard(String label, String value, Color color) {
-    return Expanded(
-      child: Card(child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-        ]),
-      )),
-    );
-  }
-
-  Widget _pageRow(String page, String views, double ratio) {
-    return Card(child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(children: [
-        Expanded(flex: 3, child: Text(page, style: const TextStyle(fontSize: 13))),
-        Expanded(flex: 4, child: LinearProgressIndicator(value: ratio)),
-        const SizedBox(width: 8),
-        Expanded(flex: 2, child: Text(views, textAlign: TextAlign.right, style: const TextStyle(fontSize: 12))),
-      ]),
-    ));
-  }
-
-  Widget _funnelStep(String label, int count, double ratio) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(children: [
-        SizedBox(width: 100, child: Text(label, style: const TextStyle(fontSize: 12))),
-        Expanded(child: LinearProgressIndicator(value: ratio, minHeight: 20)),
-        const SizedBox(width: 8),
-        Text('$count', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-      ]),
+      appBar: AppBar(title: const Text('📈 Engagement'), backgroundColor: Colors.deepOrange, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : _items.isEmpty
+                  ? const Center(child: Text('Aucune métrique enregistrée.'))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1.5, crossAxisSpacing: 10, mainAxisSpacing: 10),
+                        itemCount: _items.length,
+                        itemBuilder: (context, i) {
+                          final m = _items[i] as Map<String, dynamic>;
+                          final change = (m['changePercentage'] as num?)?.toDouble() ?? 0;
+                          return Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                                Text(m['metricCategory']?.toString().toUpperCase() ?? '', style: TextStyle(fontSize: 9, color: Colors.grey.shade600)),
+                                Text('${((m['metricValue'] as num?) ?? 0).toStringAsFixed(1)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                Text(m['metricName']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+                                Row(children: [
+                                  Icon(change >= 0 ? Icons.trending_up : Icons.trending_down, size: 12, color: change >= 0 ? Colors.green : Colors.red),
+                                  Text('${change >= 0 ? '+' : ''}${change.toStringAsFixed(1)}%', style: TextStyle(fontSize: 10, color: change >= 0 ? Colors.green : Colors.red)),
+                                ]),
+                              ]),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 }

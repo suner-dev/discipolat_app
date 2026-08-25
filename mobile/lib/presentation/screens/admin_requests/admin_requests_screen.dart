@@ -1,116 +1,75 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
 
-/// P1 #57 — Demandes administratives (baptême, dédicace, accueil nouveau)
-class AdminRequestsScreen extends StatelessWidget {
-  const AdminRequestsScreen({super.key});
+/// Demandes administratives — branché sur GET /api/v1/admin-requests.
+class AdminRequestsScreen extends StatefulWidget {
+  const AdminRequestsScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<AdminRequestsScreen> createState() => _AdminRequestsScreenState();
+}
+
+class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/admin-requests');
+      final d = res.data;
+      setState(() { _items = d is List ? d : <dynamic>[]; _loading = false; });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger les demandes.'; _loading = false; });
+    }
+  }
+
+  Color _statutColor(String? s) => s == 'APPROUVÉE' ? Colors.green : (s == 'REJETÉE' ? Colors.red : (s == 'SOUMISE' ? Colors.amber : Colors.grey));
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('📋 Demandes administratives'),
-        backgroundColor: Colors.brown.shade600,
-        foregroundColor: Colors.white,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showNewRequestSheet(context),
-        backgroundColor: Colors.brown.shade600,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Quick request types
-          const Text('Types de demandes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _requestTypeChip(context, '⛪', 'Baptême'),
-              _requestTypeChip(context, '🏠', 'Dédicace'),
-              _requestTypeChip(context, '👋', 'Accueil nouveau'),
-              _requestTypeChip(context, '🔄', 'Transfert'),
-              _requestTypeChip(context, '💍', 'Mariage'),
-              _requestTypeChip(context, '🙏', 'Bénédiction'),
-            ],
-          ),
-          const SizedBox(height: 24),
-          // My requests
-          const Text('Mes demandes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          _requestCard('Baptême', 'Demande du 20 août', 'Approuvée', Colors.green),
-          _requestCard('Dédicace', 'Demande du 15 août', 'En examen', Colors.orange),
-          _requestCard('Accueil nouveau', 'Demande du 10 août', 'Traitée', Colors.blue),
-        ],
-      ),
-    );
-  }
-
-  Widget _requestTypeChip(BuildContext ctx, String icon, String label) {
-    return ActionChip(
-      avatar: Text(icon),
-      label: Text(label),
-      onPressed: () => _showNewRequestSheet(ctx),
-    );
-  }
-
-  Widget _requestCard(String type, String date, String status, Color statusColor) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: statusColor.withOpacity(0.1),
-          child: Icon(Icons.description, color: statusColor),
-        ),
-        title: Text(type, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(date),
-        trailing: Chip(
-          label: Text(status, style: TextStyle(fontSize: 12, color: statusColor)),
-          backgroundColor: statusColor.withOpacity(0.1),
-        ),
-      ),
-    );
-  }
-
-  void _showNewRequestSheet(BuildContext ctx) {
-    showModalBottomSheet(
-      context: ctx,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        expand: false,
-        builder: (ctx, _) => Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Nouvelle demande', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const TextField(decoration: InputDecoration(labelText: 'Type', border: OutlineInputBorder())),
-                      const SizedBox(height: 12),
-                      const TextField(maxLines: 3, decoration: InputDecoration(labelText: 'Motif', border: OutlineInputBorder())),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.brown.shade600),
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Soumettre', style: TextStyle(color: Colors.white)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text('📋 Demandes admin'), backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : _items.isEmpty
+                  ? const Center(child: Text('Aucune demande.'))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _items.length,
+                        itemBuilder: (context, i) {
+                          final r = _items[i] as Map<String, dynamic>;
+                          final statut = r['statut']?.toString() ?? 'SOUMISE';
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: CircleAvatar(backgroundColor: _statutColor(statut).withValues(alpha: .15), child: Icon(Icons.description, color: _statutColor(statut), size: 20)),
+                              title: Text(r['typeDemande']?.toString() ?? 'Demande', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                              subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                if ((r['motif'] ?? '').toString().isNotEmpty)
+                                  Padding(padding: const EdgeInsets.only(top: 2), child: Text(r['motif'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                                const SizedBox(height: 4),
+                                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: _statutColor(statut).withValues(alpha: .12), borderRadius: BorderRadius.circular(10)), child: Text(statut, style: TextStyle(fontSize: 10, color: _statutColor(statut), fontWeight: FontWeight.bold))),
+                              ]),
+                              isThreeLine: true,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 }

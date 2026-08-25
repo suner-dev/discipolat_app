@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatEnum, formatTarget } from '@/lib/labels';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useI18n } from '@/i18n';
 import api, { getErrorMessage } from '@/lib/api';
@@ -65,8 +66,8 @@ export default function ScheduledAnnouncementsPage() {
             <div className="flex-1">
               <h3 className="text-white font-medium">{a.title}</h3>
               <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-                <span className={`px-2 py-0.5 rounded-full ${statusColor(a.status)}`}>{a.status}</span>
-                <span>Cible: {a.target}</span>
+                <span className={`px-2 py-0.5 rounded-full ${statusColor(a.status)}`}>{formatEnum(a.status)}</span>
+                <span>Cible : {formatTarget(a.target)}</span>
                 {a.scheduledAt && <span>Planifié: {a.scheduledAt}</span>}
                 {a.publishedAt && <span>Publié: {a.publishedAt}</span>}
               </div>

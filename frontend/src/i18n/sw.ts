@@ -547,6 +547,7 @@ const sw: Record<string, string> = {
   'contentModeration.title': 'Udhibiti kwa AI',
   'contentModeration.approve': 'Idhinisha',
   'contentModeration.reject': 'Kataa',
+
 };
 
 export default sw;

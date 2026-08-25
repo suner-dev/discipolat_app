@@ -1,79 +1,71 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
 
-class RewardsScreen extends StatelessWidget {
-  const RewardsScreen({super.key});
+/// Récompenses (certificats) — branché sur GET /api/v1/reward-certificates/mine.
+class RewardsScreen extends StatefulWidget {
+  const RewardsScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<RewardsScreen> createState() => _RewardsScreenState();
+}
+
+class _RewardsScreenState extends State<RewardsScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/reward-certificates/mine');
+      final d = res.data;
+      setState(() { _items = d is List ? d : <dynamic>[]; _loading = false; });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger vos récompenses.'; _loading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Récompenses'),
-        backgroundColor: Colors.amber.shade600,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Points card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.amber.shade300, Colors.amber.shade600]),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Row(
-              children: [
-                Text('⭐', style: TextStyle(fontSize: 40)),
-                SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Mes points', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    Text('1 250', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                Spacer(),
-                Column(
-                  children: [
-                    Text('2', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                    Text('Obtenues', style: TextStyle(color: Colors.white70, fontSize: 10)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text('Récompenses disponibles', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          _rewardCard('⭐', 'Fidèle Inébranlable', '500 pts', true),
-          _rewardCard('🔥', 'Évangéliste', '1 000 pts', true),
-          _rewardCard('📜', 'Mentor d\'excellence', '2 000 pts', false),
-          _rewardCard('🪑', 'Siège VIP', '300 pts', false),
-          _rewardCard('👕', 'T-shirt Discipolat', '1 500 pts', false),
-          _rewardCard('🏆', 'Parrain d\'or', '800 pts', false),
-        ],
-      ),
-    );
-  }
-
-  Widget _rewardCard(String icon, String name, String points, bool claimed) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Text(icon, style: const TextStyle(fontSize: 28)),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(points, style: TextStyle(color: Colors.amber.shade600, fontWeight: FontWeight.bold)),
-        trailing: claimed
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text('Obtenu', style: TextStyle(fontSize: 11, color: Colors.green)),
-              )
-            : Icon(Icons.lock_outline, color: Colors.grey.shade400, size: 20),
-      ),
+      appBar: AppBar(title: const Text('🏅 Mes récompenses'), backgroundColor: Colors.amber.shade800, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : _items.isEmpty
+                  ? const Center(child: Text('Aucun certificat pour le moment. Continuez vos efforts !'))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _items.length,
+                        itemBuilder: (context, i) {
+                          final r = _items[i] as Map<String, dynamic>;
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: CircleAvatar(backgroundColor: Colors.amber.withValues(alpha: .18), child: const Icon(Icons.emoji_events, color: Colors.amber, size: 20)),
+                              title: Text(r['title']?.toString() ?? 'Certificat', style: const TextStyle(fontWeight: FontWeight.w600)),
+                              subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                if ((r['mention'] ?? '').toString().isNotEmpty) Text(r['mention'].toString(), style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic)),
+                                if ((r['description'] ?? '').toString().isNotEmpty)
+                                  Padding(padding: const EdgeInsets.only(top: 2), child: Text(r['description'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
+                              ]),
+                              isThreeLine: true,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 }

@@ -563,6 +563,7 @@ const es: Record<string, string> = {
   'contentModeration.title': 'Moderación por IA',
   'contentModeration.approve': 'Aprobar',
   'contentModeration.reject': 'Rechazar',
+
 };
 
 export default es;

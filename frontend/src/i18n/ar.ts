@@ -210,6 +210,11 @@ const ar: Record<string, string> = {
   'onboarding.finish': 'إنهاء',
   'onboarding.step': 'خطوة',
   'onboarding.of': 'من',
+
+  'aiPredictions.title': 'تنبؤات الذكاء الاصطناعي',
+  'broadcast.new': 'بث جديد',
+  'broadcast.send': 'إرسال',
+  'broadcast.draft': 'مسودة',
 };
 
 export default ar;

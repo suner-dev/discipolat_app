@@ -11,7 +11,7 @@ import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/group-messages")
+@RequestMapping({"/api/group-messages", "/api/v1/group-messages"})
 @PreAuthorize("isAuthenticated()")
 public class GroupMessageController {
 

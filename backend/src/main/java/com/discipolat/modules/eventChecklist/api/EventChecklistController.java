@@ -13,7 +13,7 @@ import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/event-checklists")
+@RequestMapping({"/api/event-checklists", "/api/v1/event-checklists"})
 @PreAuthorize("isAuthenticated()")
 public class EventChecklistController {
 

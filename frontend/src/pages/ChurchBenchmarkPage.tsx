@@ -51,7 +51,21 @@ export default function ChurchBenchmarkPage() {
             {create.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Ajouter mon église au benchmark
           </button>
         </div>
-        {byCatQ.data != null && <p className="text-xs text-sky-300 mb-3">Position de votre église dans la catégorie « {category} » : {JSON.stringify(byCatQ.data).slice(0, 220)}</p>}
+                {byCatQ.data != null && (
+          <div className="text-xs text-sky-300 mb-3 flex flex-wrap gap-x-4 gap-y-1">
+            {(() => {
+              const d = byCatQ.data as { rang?: number; total?: number; effectifMoyen?: number } | null;
+              if (!d || typeof d !== 'object') return null;
+              return (
+                <>
+                  {d.rang != null && <span>🏆 Rang : <strong>{d.rang}</strong>{d.total != null ? ` / ${d.total}` : ''}</span>}
+                  {d.effectifMoyen != null && <span>Effectif moyen : <strong>{Math.round(d.effectifMoyen)}</strong></span>}
+                  {d.rang == null && d.total != null && <span>Catégorie de <strong>{d.total}</strong> église(s)</span>}
+                </>
+              );
+            })()}
+          </div>
+        )}
         <div className="space-y-2">
           {churches.map((c) => (
             <div key={c.id} className="flex items-center justify-between bg-black/20 rounded-xl px-4 py-3 text-sm">
@@ -69,10 +83,25 @@ export default function ChurchBenchmarkPage() {
         </div>
       </div>
 
-      {clustersQ.data != null && (
+            {clustersQ.data != null && (
         <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
           <h2 className="text-white font-semibold mb-3">Clusters d'églises similaires</h2>
-          <pre className="text-xs text-gray-400 overflow-auto max-h-60 whitespace-pre-wrap">{typeof clustersQ.data === 'string' ? clustersQ.data : JSON.stringify(clustersQ.data, null, 2)}</pre>
+          {Array.isArray(clustersQ.data) && clustersQ.data.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {(clustersQ.data as Array<Record<string, unknown>>).map((cl, idx) => (
+                <div key={idx} className="bg-black/20 rounded-xl p-3 text-sm">
+                  <p className="text-white font-medium">{(cl.nom ?? cl.nomCluster ?? `Cluster ${idx + 1}`) as string}</p>
+                  <p className="text-gray-400 mt-1">
+                    {(cl.nbEglises as number | undefined) != null && <span>{String(cl.nbEglises)} église(s)</span>}
+                    {(cl.effectifMoyen as number | undefined) != null && <span> · Effectif moyen {Math.round(cl.effectifMoyen as number)}</span>}
+                    {(cl.tauxPresenceMoyen as number | undefined) != null && <span> · Présence {Math.round(cl.tauxPresenceMoyen as number)}%</span>}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">Aucun cluster disponible pour le moment.</p>
+          )}
         </div>
       )}
     </div>

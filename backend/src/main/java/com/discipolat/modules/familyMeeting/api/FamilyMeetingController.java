@@ -10,7 +10,7 @@ import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
-@RequestMapping("/api/family-meetings")
+@RequestMapping({"/api/family-meetings", "/api/v1/family-meetings"})
 @PreAuthorize("isAuthenticated()")
 public class FamilyMeetingController {
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { formatEnum } from '@/lib/labels';
 import { useI18n } from '@/i18n';
 import { HelpCircle, Clock, CheckCircle, UserPlus, RefreshCw, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -98,7 +99,7 @@ export default function ReverseMentoringPage() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
                   <span className="text-white font-medium">{r.requesterId ? `Demandeur #${r.requesterId.slice(0, 6)}` : 'Demandeur'}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(r.status)}`}>{r.status}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(r.status)}`}>{formatEnum(r.status)}</span>
                 </div>
                 {r.urgencyLevel != null && <div className="flex items-center gap-1">{urgencyDots(r.urgencyLevel)}</div>}
               </div>

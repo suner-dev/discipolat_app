@@ -1,5 +1,5 @@
 # PROJECT PROGRESS — DISCIPOLAT
-**Dernière mise à jour:** 2026-08-25
+**Dernière mise à jour:** 2026-08-25 (session 2 — reprise après interruption)
 
 ## AUDIT FORENSIQUE TERMINÉ
 
@@ -85,6 +85,52 @@ Rapports dans `docs/`:
 6. Double service session mobile → unifier
 7. AuthState singleton → Riverpod provider
 8. Screens mobile >1000 lignes → extraire composants
+
+---
+
+## SESSION 2 — ÉCRANS MOBILE BRANCHÉS + ROUTES BACKEND (2026-08-25, reprise)
+
+### Contexte
+Session précédente interrompue **après les modifications mais avant commit**.
+Reprise : validation rejouée puis commit.
+
+### Travail réalisé (ce lot, non commité au moment de l'interruption)
+1. **Backend — routes fantômes réparées**
+   - 10 contrôleurs montés sur `/api/x` (sans `/v1`) alors que le web appelle via baseURL
+     `/api/v1` → double mapping `@RequestMapping({"/api/x", "/api/v1/x"})` sur :
+     Prediction, EngagementAnalytics, AiVisitNote, ReverseMentoring, Currency,
+     GroupMessage, EventChecklist, FamilyMeeting, Announcement, DiscipleshipPath.
+2. **Frontend — labels techniques éliminés**
+   - Nouveau `frontend/src/lib/labels.ts` : `formatEnum()` centralisé (SNAKE_CASE → lisible).
+   - Clés i18n ajoutées (fr/en/es/pt/ar/sw) + 4 pages migrées : ChurchBenchmark,
+     FamilyMeeting, ReverseMentoring, ScheduledAnnouncements.
+3. **Mobile — ~17 écrans statiques branchés sur leurs vraies APIs**
+   - admin_requests, ai_visit_notes, church_comparison, weekly_challenges,
+     reverse_mentoring (dashboard + standalone), volunteers, engagement_analytics,
+     intelligence_center, predictions, succession, spiritual_challenges,
+     personal_objectives, kpi_narrative, rewards (/mine), ai_mentoring, family_meeting,
+     event_checklist (+ toggle réel).
+   - Pattern commun : ApiService injectable + loading/error/empty/pull-to-refresh.
+   - `session_manager.dart` supprimé (double service session unifié dans
+     `session_timeout_service.dart`, + `getTimeoutMinutes()`) ;
+     `SessionTimeoutConfig` définie localement dans security_settings_screen.
+   - Routes correspondantes retirées de `kDemoDataRoutes` (demo_data_overlay.dart).
+4. **Docs** : addendum « Corrections appliquées » ajouté à
+   `docs/rapports/AUDIT_VERIFICATION_REEL.md`.
+
+### Validation (rejouée lors de la reprise)
+- Backend : `mvn compile` ✅ exit 0
+- Frontend : `tsc -b` ✅ exit 0
+- Mobile : `flutter analyze` ✅ 0 erreur / 0 warning (65 infos seulement)
+
+### Reste à faire (prochaine session)
+1. Mobile i18n (strings hardcodées restantes)
+2. AuthState singleton → Riverpod provider
+3. Screens mobile >1000 lignes → extraire composants
+4. Les routes encore dans `kDemoDataRoutes` (~18 écrans nécessitant un paramètre
+   contextuel ou sans endpoint liste) : brancher ou garder l'étiquette démo.
+5. Second audit complet + FINAL_VALIDATION.md
+6. Tests mobiles des ~17 écrans rewirés (régression `flutter test`)
 
 ---
 

@@ -1,90 +1,74 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
+import '../../../core/format.dart';
 
-/// P1 #62 — Gestion avancée des bénévoles
-class VolunteersScreen extends StatelessWidget {
-  const VolunteersScreen({super.key});
+/// Bénévoles — branché sur GET /api/v1/volunteers.
+class VolunteersScreen extends StatefulWidget {
+  const VolunteersScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<VolunteersScreen> createState() => _VolunteersScreenState();
+}
+
+class _VolunteersScreenState extends State<VolunteersScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/volunteers');
+      final d = res.data;
+      setState(() {
+        _items = d is List ? d : (d is Map ? (d['content'] as List<dynamic>? ?? []) : <dynamic>[]);
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger les bénévoles.'; _loading = false; });
+    }
+  }
+
+  Color _statutColor(String? s) => s == 'ACTIF' ? Colors.green : (s == 'SUSPENDU' ? Colors.orange : Colors.grey);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🙋 Bénévoles'),
-        backgroundColor: Colors.cyan.shade600,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Colors.cyan.shade600,
-        child: const Icon(Icons.person_add, color: Colors.white),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Stats
-          Row(
-            children: [
-              _statChip('Actifs', '24', Colors.green),
-              _statChip('Disponibles', '18', Colors.blue),
-              _statChip('En attente', '5', Colors.orange),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Skill matching
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.auto_awesome, color: Colors.cyan),
-              title: const Text('Matcher bénévoles → Événement'),
-              subtitle: const Text('Trouvez les bénévoles idéaux'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {},
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Volunteers list
-          const Text('Bénévoles actifs', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _volunteerTile('Jean-Pierre M.', 'Animation, Accueil', 'Plein temps', true),
-          _volunteerTile('Marie K.', 'Musique, Louange', 'Week-end', true),
-          _volunteerTile('David L.', 'Technique, Sound', 'Soir', true),
-          _volunteerTile('Sarah B.', 'Accueil, Decoration', 'Occasionnel', true),
-          _volunteerTile('Paul T.', 'Enseignement', 'Matin', false),
-        ],
-      ),
-    );
-  }
-
-  Widget _statChip(String label, String count, Color color) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            children: [
-              Text(count, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-              Text(label, style: const TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _volunteerTile(String name, String skills, String avail, bool active) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: active ? Colors.green.shade50 : Colors.grey.shade100,
-          child: Text(name[0], style: TextStyle(color: active ? Colors.green : Colors.grey)),
-        ),
-        title: Text(name),
-        subtitle: Text('$skills • $avail'),
-        trailing: Icon(Icons.chevron_right, color: active ? Colors.green : Colors.grey),
-      ),
+      appBar: AppBar(title: const Text('🤝 Bénévoles'), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : _items.isEmpty
+                  ? const Center(child: Text('Aucun bénévole enregistré.'))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _items.length,
+                        itemBuilder: (context, i) {
+                          final v = _items[i] as Map<String, dynamic>;
+                          final statut = v['statut']?.toString() ?? 'ACTIF';
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: CircleAvatar(backgroundColor: _statutColor(statut).withValues(alpha: .15), child: Icon(Icons.volunteer_activism, color: _statutColor(statut), size: 20)),
+                              title: Text('Bénévole #${(v['membreId'] ?? '').toString().substring(0, v['membreId']?.toString().length.clamp(0, 8) ?? 0)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                              subtitle: Text('${v['heuresMois'] ?? 0} h/mois · ${v['nbEvenements'] ?? 0} événements · ${v['disponibilite'] ?? '?'}'),
+                              trailing: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: _statutColor(statut).withValues(alpha: .12), borderRadius: BorderRadius.circular(10)), child: Text(formatLabel(statut), style: TextStyle(fontSize: 10, color: _statutColor(statut), fontWeight: FontWeight.bold))),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 }

@@ -1,102 +1,83 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
 
-/// P1 #47 — Comparaison d'églises (réseau)
-class ChurchComparisonScreen extends StatelessWidget {
-  const ChurchComparisonScreen({super.key});
+/// Comparaison d'églises — branché sur GET /api/v1/church-comparisons.
+class ChurchComparisonScreen extends StatefulWidget {
+  const ChurchComparisonScreen({super.key, this.apiService});
+  final ApiService? apiService;
+
+  @override
+  State<ChurchComparisonScreen> createState() => _ChurchComparisonScreenState();
+}
+
+class _ChurchComparisonScreenState extends State<ChurchComparisonScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final res = await _api.get('/church-comparisons');
+      final d = res.data;
+      setState(() { _items = d is List ? d : <dynamic>[]; _loading = false; });
+    } catch (_) {
+      setState(() { _error = 'Impossible de charger les comparaisons.'; _loading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('⚖️ Comparaison d\'Églises'),
-        backgroundColor: Colors.indigo.shade600,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Our church card
-          Card(
-            color: Colors.indigo.shade50,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Notre Église', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 8),
-                  _benchmarkBar('Présence', 0.78, 0.72, '78% vs 72%'),
-                  _benchmarkBar('Rétention', 0.85, 0.79, '85% vs 79%'),
-                  _benchmarkBar('Conversion', 0.12, 0.08, '12% vs 8%'),
-                  _benchmarkBar('Score spirituel', 0.71, 0.65, '71 vs 65'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Category filter
-          const Text('Églises du réseau', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              ChoiceChip(label: const Text('Toutes'), selected: true, onSelected: (_) {}),
-              ChoiceChip(label: const Text('Petite (<50)'), selected: false, onSelected: (_) {}),
-              ChoiceChip(label: const Text('Moyenne'), selected: false, onSelected: (_) {}),
-              ChoiceChip(label: const Text('Grande'), selected: false, onSelected: (_) {}),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _churchRow('Église Espoir', '85', '75%', '82%', '68'),
-          _churchRow('Église Paix', '120', '68%', '78%', '62'),
-          _churchRow('Église Grâce', '200', '82%', '90%', '75'),
-          _churchRow('Église Lumière', '45', '60%', '72%', '58'),
-        ],
-      ),
+      appBar: AppBar(title: const Text('⚖️ Comparaison'), backgroundColor: Colors.pinkAccent.shade400, foregroundColor: Colors.white),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
+                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                ]))
+              : _items.isEmpty
+                  ? const Center(child: Text('Aucune comparaison enregistrée.'))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _items.length,
+                        itemBuilder: (context, i) {
+                          final c = _items[i] as Map<String, dynamic>;
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(c['nomEglise']?.toString() ?? 'Église', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                Wrap(spacing: 8, runSpacing: 4, children: [
+                                  _chip('Effectif', '${c['effectif'] ?? 0}'),
+                                  _chip('Présence', '${((c['tauxPresence'] as num?) ?? 0).toStringAsFixed(0)}%'),
+                                  _chip('Conversion', '${((c['tauxConversion'] as num?) ?? 0).toStringAsFixed(1)}%'),
+                                  _chip('Rétention', '${((c['tauxRetention'] as num?) ?? 0).toStringAsFixed(0)}%'),
+                                  _chip('Score', '${((c['scoreSpirituelMoyen'] as num?) ?? 0).toStringAsFixed(0)}'),
+                                ]),
+                              ]),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 
-  Widget _benchmarkBar(String label, double ours, double avg, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Text(label, style: const TextStyle(fontSize: 13)), Text(text, style: const TextStyle(fontSize: 12, color: Colors.grey))],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: LinearProgressIndicator(value: ours, color: Colors.indigo, backgroundColor: Colors.grey.shade200),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: LinearProgressIndicator(value: avg, color: Colors.grey, backgroundColor: Colors.grey.shade200),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _churchRow(String name, String members, String presence, String retention, String score) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Expanded(flex: 2, child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold))),
-            Expanded(child: Text(members, textAlign: TextAlign.center)),
-            Expanded(child: Text(presence, textAlign: TextAlign.center)),
-            Expanded(child: Text(retention, textAlign: TextAlign.center)),
-            Expanded(child: Text(score, textAlign: TextAlign.center)),
-          ],
-        ),
-      ),
+  Widget _chip(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: Colors.pink.withValues(alpha: .08), borderRadius: BorderRadius.circular(8)),
+      child: Text('$label: $value', style: const TextStyle(fontSize: 11)),
     );
   }
 }

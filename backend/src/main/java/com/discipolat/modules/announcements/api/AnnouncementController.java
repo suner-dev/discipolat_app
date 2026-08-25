@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/announcements")
+@RequestMapping({"/api/announcements", "/api/v1/announcements"})
 public class AnnouncementController {
 
     private final AnnouncementService announcementService;
