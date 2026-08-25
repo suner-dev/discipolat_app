@@ -329,8 +329,8 @@ const RESPONSABLE_NAV: WorkspaceSection[] = [
     title: 'Effectifs & organisation',
     items: [
       { name: 'Départements', href: '/departments', icon: Building2, subtitle: 'Structure & hiérarchie' },
-      { name: 'Équipes', href: '/departments', icon: UsersRound, subtitle: 'Organisation & branches' },
-      { name: 'Postes', href: '/departments', icon: Briefcase, subtitle: 'Positions & compétences' },
+      { name: 'Équipes', href: '/departments?tab=teams', icon: UsersRound, subtitle: 'Organisation & branches' },
+      { name: 'Postes', href: '/departments?tab=positions', icon: Briefcase, subtitle: 'Positions & compétences' },
       { name: 'Membres', href: '/users', icon: UserCog, subtitle: 'Comptes & affectations' },
     ],
   },
@@ -339,7 +339,7 @@ const RESPONSABLE_NAV: WorkspaceSection[] = [
     items: [
       { name: 'Saisie des présences', href: '/dashboard/responsable', icon: ClipboardCheck, subtitle: 'Pointage hebdomadaire' },
       { name: 'Demandes & présences', href: '/members/requests', icon: MessageSquare, subtitle: 'Fiches & suggestions' },
-      { name: 'Tâches', href: '/departments', icon: ListTodo, subtitle: 'Suivi des assignments' },
+      { name: 'Tâches', href: '/departments?tab=tasks', icon: ListTodo, subtitle: 'Suivi des assignments' },
       { name: 'Événements', href: '/events', icon: Calendar, subtitle: 'Calendrier du département' },
     ],
   },

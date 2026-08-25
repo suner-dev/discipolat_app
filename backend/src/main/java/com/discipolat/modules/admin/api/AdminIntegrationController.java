@@ -79,7 +79,25 @@ public class AdminIntegrationController {
         if (key == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Unknown category: " + category));
         }
-        configs.put(key, body);
+        if (body == null || body.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Request body must not be empty"));
+        }
+        if (body.size() > 20) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Too many configuration fields (max 20)"));
+        }
+        Map<String, Object> sanitized = new java.util.LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : body.entrySet()) {
+            String k = entry.getKey();
+            Object v = entry.getValue();
+            if (k == null || k.isBlank() || k.length() > 100) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid key: " + k));
+            }
+            if (v instanceof String s && s.length() > 1000) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Value too long for key: " + k));
+            }
+            sanitized.put(k, v);
+        }
+        configs.put(key, sanitized);
         return ResponseEntity.ok(Map.of("success", true, "category", key));
     }
 

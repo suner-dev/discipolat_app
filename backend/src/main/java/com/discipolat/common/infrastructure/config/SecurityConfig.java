@@ -77,9 +77,11 @@ public class SecurityConfig {
                     .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR");
 
                 // Swagger: public in dev/docker, restricted to ADMIN/PASTEUR in prod/beta
-                ("dev".equals(environment) || "docker".equals(environment)
-                    ? auth.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                    : auth.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAnyRole("ADMIN", "PASTEUR"));
+                if ("dev".equals(environment) || "docker".equals(environment)) {
+                    auth.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
+                } else {
+                    auth.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAnyRole("ADMIN", "PASTEUR");
+                }
 
                 auth.anyRequest().authenticated();
             })

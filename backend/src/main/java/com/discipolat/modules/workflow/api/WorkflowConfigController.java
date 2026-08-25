@@ -3,6 +3,7 @@ package com.discipolat.modules.workflow.api;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -56,13 +57,16 @@ public class WorkflowConfigController {
     @PutMapping("/{key}")
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable String key,
-            @RequestBody Map<String, Object> update) {
+            @Valid @RequestBody WorkflowConfigUpdateRequest update) {
         UUID tenantId = TenantContext.getTenantId();
         List<Map<String, Object>> tenantConfigs = configs.computeIfAbsent(tenantId, k -> getDefaultConfigs());
 
         for (Map<String, Object> config : tenantConfigs) {
             if (key.equals(config.get("key"))) {
-                config.putAll(update);
+                if (update.label() != null) config.put("label", update.label());
+                if (update.description() != null) config.put("description", update.description());
+                if (update.enabled() != null) config.put("enabled", update.enabled());
+                if (update.rules() != null) config.put("rules", update.rules());
                 config.put("updatedAt", LocalDateTime.now().toString());
                 auditService.logSimple("WORKFLOW_UPDATED", "WORKFLOW", null);
                 return ResponseEntity.ok(config);

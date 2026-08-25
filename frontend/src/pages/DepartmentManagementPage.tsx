@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
@@ -40,9 +40,11 @@ type TabKey = (typeof ALL_TABS)[number]['key'];
 export default function DepartmentManagementPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { activeRole } = useAuth();
-  const [tab, setTab] = useState<TabKey>('members');
+  const initialTab = (searchParams.get('tab') as TabKey) || 'members';
+  const [tab, setTab] = useState<TabKey>(initialTab);
   const [search, setSearch] = useState('');
   const { moduleEnabled } = usePlatformConfig();
 
@@ -193,7 +195,7 @@ export default function DepartmentManagementPage() {
           return (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => { setTab(t.key); setSearchParams({ tab: t.key }); }}
               className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
                 tab === t.key
                   ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-glow'
