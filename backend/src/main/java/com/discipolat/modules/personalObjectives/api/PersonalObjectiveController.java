@@ -5,6 +5,7 @@ import com.discipolat.modules.personalObjectives.domain.PersonalObjective;
 import com.discipolat.modules.personalObjectives.domain.PersonalObjectiveService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,9 +19,18 @@ import java.util.UUID;
 public class PersonalObjectiveController {
 
     private final PersonalObjectiveService service;
+    private final SecurityUtils securityUtils;
 
-    public PersonalObjectiveController(PersonalObjectiveService service) {
+    public PersonalObjectiveController(PersonalObjectiveService service, SecurityUtils securityUtils) {
         this.service = service;
+        this.securityUtils = securityUtils;
+    }
+
+    private void verifyOwnership(PersonalObjective obj) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        if (!obj.getMembreId().equals(currentUserId) && !securityUtils.isSuperUser()) {
+            throw new AccessDeniedException("Vous n'avez pas accès à cet objectif personnel");
+        }
     }
 
     @GetMapping
@@ -31,9 +41,10 @@ public class PersonalObjectiveController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    // TODO: add ownership check — verify the objective belongs to the authenticated user
     public ResponseEntity<PersonalObjective> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(service.getById(id));
+        PersonalObjective obj = service.getById(id);
+        verifyOwnership(obj);
+        return ResponseEntity.ok(obj);
     }
 
     @PostMapping
@@ -51,12 +62,16 @@ public class PersonalObjectiveController {
     @PatchMapping("/{id}/progress")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PersonalObjective> progress(@PathVariable UUID id) {
+        PersonalObjective obj = service.getById(id);
+        verifyOwnership(obj);
         return ResponseEntity.ok(service.progress(id));
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PersonalObjective> updateStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+        PersonalObjective obj = service.getById(id);
+        verifyOwnership(obj);
         return ResponseEntity.ok(service.updateStatut(id, body.get("statut")));
     }
 

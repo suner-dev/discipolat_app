@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,9 +20,18 @@ import java.util.UUID;
 public class PrayerJournalController {
 
     private final PrayerJournalService service;
+    private final SecurityUtils securityUtils;
 
-    public PrayerJournalController(PrayerJournalService service) {
+    public PrayerJournalController(PrayerJournalService service, SecurityUtils securityUtils) {
         this.service = service;
+        this.securityUtils = securityUtils;
+    }
+
+    private void verifyOwnership(PrayerJournalEntry entry) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        if (!entry.getMembreId().equals(currentUserId) && !securityUtils.isSuperUser()) {
+            throw new AccessDeniedException("Vous n'avez pas accès à cette entrée de journal de prière");
+        }
     }
 
     @GetMapping
@@ -38,9 +48,10 @@ public class PrayerJournalController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    // TODO: add ownership check — verify the entry belongs to the authenticated user
     public ResponseEntity<PrayerJournalEntry> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(service.getById(id));
+        PrayerJournalEntry entry = service.getById(id);
+        verifyOwnership(entry);
+        return ResponseEntity.ok(entry);
     }
 
     @PostMapping
@@ -54,22 +65,25 @@ public class PrayerJournalController {
 
     @PatchMapping("/{id}/answered")
     @PreAuthorize("isAuthenticated()")
-    // TODO: add ownership check — verify the entry belongs to the authenticated user
     public ResponseEntity<PrayerJournalEntry> markAnswered(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+        PrayerJournalEntry entry = service.getById(id);
+        verifyOwnership(entry);
         return ResponseEntity.ok(service.markAnswered(id, body.get("réponse")));
     }
 
     @PatchMapping("/{id}/remembered")
     @PreAuthorize("isAuthenticated()")
-    // TODO: add ownership check — verify the entry belongs to the authenticated user
     public ResponseEntity<PrayerJournalEntry> markRemembered(@PathVariable UUID id) {
+        PrayerJournalEntry entry = service.getById(id);
+        verifyOwnership(entry);
         return ResponseEntity.ok(service.markRemembered(id));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    // TODO: add ownership check — verify the entry belongs to the authenticated user
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        PrayerJournalEntry entry = service.getById(id);
+        verifyOwnership(entry);
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
