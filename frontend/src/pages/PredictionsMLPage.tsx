@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useI18n } from '@/i18n';
-import { Brain, TrendingUp, TrendingDown, Minus, BarChart3, RefreshCw } from 'lucide-react';
+import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface Prediction { id: string; type: string; currentValue: number; predictedValue: number; growthRate: number; trend: string; confidence: string; narrative: string; periodMonths: number; }
 

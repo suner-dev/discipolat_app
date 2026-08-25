@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../../l10n/app_localizations.dart';
 
 /// P2 #73 — Auto-logout après inactivité (mobile)
 /// Wrapper qui détecte l'inactivité et redirige vers l'écran de connexion.
@@ -90,15 +91,15 @@ class _AutoLogoutWrapperState extends State<AutoLogoutWrapper> {
                       children: [
                         const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
                         const SizedBox(width: 10),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Session expire dans 2 minutes. Touchez pour continuer.',
-                            style: TextStyle(color: Colors.white, fontSize: 13),
+                            AppLocalizations.of(context).translate('sessionExpiringWarning'),
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
                           ),
                         ),
                         TextButton(
                           onPressed: _logout,
-                          child: const Text('Déconnexion', style: TextStyle(color: Colors.white)),
+                          child: Text(AppLocalizations.of(context).logout, style: const TextStyle(color: Colors.white)),
                         ),
                       ],
                     ),

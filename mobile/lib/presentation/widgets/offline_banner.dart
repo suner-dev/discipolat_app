@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../data/local/database.dart';
 import '../../data/local/offline_sync_manager.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Persistent banner shown when the device is offline.
 /// Displays pending items count and a sync button when back online.
@@ -40,17 +41,17 @@ class OfflineBanner extends ConsumerWidget {
               Expanded(
                 child: Text(
                   isOnline
-                      ? 'Synchronisation… ${syncManager.pendingCount} éléments en attente'
-                      : 'Hors ligne — ${syncManager.pendingCount} éléments en attente',
+                      ? AppLocalizations.of(context).translate('syncingCount').replaceAll('{count}', '${syncManager.pendingCount}')
+                      : AppLocalizations.of(context).translate('offlineCount').replaceAll('{count}', '${syncManager.pendingCount}'),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ),
               if (isOnline && syncManager.pendingCount > 0 && !syncManager.isSyncing)
                 TextButton(
                   onPressed: () => syncManager.syncPendingItems(),
-                  child: const Text(
-                    'Synchroniser',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  child: Text(
+                    AppLocalizations.of(context).syncNow,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               if (syncManager.isSyncing)

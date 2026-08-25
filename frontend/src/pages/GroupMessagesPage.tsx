@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useI18n } from '@/i18n';
-import { MessageCircle, Send, Smile, Image, Users } from 'lucide-react';
+import { MessageCircle, Send, Image, Users } from 'lucide-react';
 
 interface GroupMsg { id: string; groupId: string; groupName: string; senderName: string; content: string; createdAt: string; reactions: number; }
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Smile, Heart, MessageCircle } from 'lucide-react';
+import { Send, MessageCircle } from 'lucide-react';
 
 interface ChatMessage {
   id: string;

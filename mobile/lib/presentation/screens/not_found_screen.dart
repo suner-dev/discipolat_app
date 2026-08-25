@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/glass_theme.dart';
+import '../../l10n/app_localizations.dart';
 
 class NotFoundScreen extends StatelessWidget {
   final String? path;
   const NotFoundScreen({super.key, this.path});
 
-  static const _quickLinks = [
-    {'icon': Icons.dashboard_rounded, 'title': 'Accueil', 'route': '/dashboard'},
-    {'icon': Icons.favorite_rounded, 'title': 'Âmes', 'route': '/souls'},
-    {'icon': Icons.group_rounded, 'title': 'Familles', 'route': '/families'},
-    {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
-    {'icon': Icons.description_rounded, 'title': 'Rapports', 'route': '/reports/maker'},
-    {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
+  static List<Map<String, dynamic>> _quickLinks(BuildContext context) => [
+    {'icon': Icons.dashboard_rounded, 'title': AppLocalizations.of(context).translate('quickLinkHome'), 'route': '/dashboard'},
+    {'icon': Icons.favorite_rounded, 'title': AppLocalizations.of(context).translate('quickLinkSouls'), 'route': '/souls'},
+    {'icon': Icons.group_rounded, 'title': AppLocalizations.of(context).translate('quickLinkFamilies'), 'route': '/families'},
+    {'icon': Icons.event_rounded, 'title': AppLocalizations.of(context).translate('quickLinkEvents'), 'route': '/events'},
+    {'icon': Icons.description_rounded, 'title': AppLocalizations.of(context).translate('quickLinkReports'), 'route': '/reports/maker'},
+    {'icon': Icons.folder_rounded, 'title': AppLocalizations.of(context).translate('quickLinkDocuments'), 'route': '/documents'},
   ];
 
   @override
@@ -71,9 +72,9 @@ class NotFoundScreen extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // Title
-                  const Text(
-                    'Page introuvable',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context).translate('pageNotFound'),
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -83,8 +84,8 @@ class NotFoundScreen extends StatelessWidget {
 
                   Text(
                     path != null
-                        ? 'La page "$path" n\'existe pas.'
-                        : 'La page que vous cherchez n\'existe pas ou a été déplacée.',
+                        ? AppLocalizations.of(context).translate('pageNotFoundWithPath').replaceAll('{path}', path!)
+                        : AppLocalizations.of(context).translate('pageNotFoundGeneric'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -95,7 +96,7 @@ class NotFoundScreen extends StatelessWidget {
 
                   // Quick links
                   Text(
-                    'PAGES DISPONIBLES',
+                    AppLocalizations.of(context).translate('availablePages'),
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -109,7 +110,7 @@ class NotFoundScreen extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     alignment: WrapAlignment.center,
-                    children: _quickLinks.map((link) {
+                    children: _quickLinks(context).map((link) {
                       return GestureDetector(
                         onTap: () => context.go(link['route'] as String),
                         child: Container(
@@ -150,13 +151,13 @@ class NotFoundScreen extends StatelessWidget {
                       OutlinedButton.icon(
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.arrow_back, size: 16),
-                        label: const Text('Retour'),
+                        label: Text(AppLocalizations.of(context).back),
                       ),
                       const SizedBox(width: 12),
                       FilledButton.icon(
                         onPressed: () => context.go('/dashboard'),
                         icon: const Icon(Icons.home_rounded, size: 16),
-                        label: const Text('Accueil'),
+                        label: Text(AppLocalizations.of(context).translate('navHome')),
                       ),
                     ],
                   ),
@@ -172,7 +173,7 @@ class NotFoundScreen extends StatelessWidget {
                         Icon(Icons.church_rounded, color: Colors.white.withValues(alpha: 0.2), size: 14),
                         const SizedBox(width: 6),
                         Text(
-                          'Discipolat · Gestion du Discipolat',
+                          'Discipolat · ${AppLocalizations.of(context).translate('appTagline')}',
                           style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 10),
                         ),
                       ],

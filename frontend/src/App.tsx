@@ -482,7 +482,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/quest" element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
               <QuestPage />
             </ProtectedRoute>
           } />
@@ -902,9 +902,9 @@ export default function App() {
           <Route path="/engagement-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EngagementAnalyticsPage /></ProtectedRoute>} />
           <Route path="/scheduled-announcements" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ScheduledAnnouncementsPage /></ProtectedRoute>} />
           <Route path="/event-checklists" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EventChecklistsPage /></ProtectedRoute>} />
-          <Route path="/group-messages" element={<ProtectedRoute><GroupMessagesPage /></ProtectedRoute>} />
-          <Route path="/weekly-challenges" element={<ProtectedRoute><WeeklyChallengesPage /></ProtectedRoute>} />
-          <Route path="/discipleship-path" element={<ProtectedRoute><DiscipleshipPathPage /></ProtectedRoute>} />
+          <Route path="/group-messages" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><GroupMessagesPage /></ProtectedRoute>} />
+          <Route path="/weekly-challenges" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><WeeklyChallengesPage /></ProtectedRoute>} />
+          <Route path="/discipleship-path" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><DiscipleshipPathPage /></ProtectedRoute>} />
           <Route path="/ai-visit-notes" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}><AiVisitNotesPage /></ProtectedRoute>} />
           <Route path="/reverse-mentoring" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><ReverseMentoringPage /></ProtectedRoute>} />
           <Route path="/family-meetings" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}><FamilyMeetingPage /></ProtectedRoute>} />

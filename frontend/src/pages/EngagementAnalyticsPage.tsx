@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useI18n } from '@/i18n';
-import { BarChart3, TrendingUp, TrendingDown, Users, RefreshCw } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface Metric { name: string; category: string; value: number; change: number; unit: string; }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useI18n } from '@/i18n';
-import { Globe, Clock, DollarSign, Check, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { Globe, Clock, DollarSign, Check, Plus, Trash2 } from 'lucide-react';
 
 interface Currency { id: string; code: string; symbol: string; timezone: string; locale: string; exchangeRateToUsd: number; isPrimary: boolean; }
 const SUPPORTED_CURRENCIES = [

@@ -33,6 +33,9 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    @Value("${app.environment:dev}")
+    private String environment;
+
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
     private String[] allowedOrigins;
 
@@ -62,20 +65,24 @@ public class SecurityConfig {
                     );
                 })
             )
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
-                // Webhook opérateur Mobile Money : sécurisé par la référence unique
-                // de l'intention + (en production) signature HMAC opérateur / IP allowlist.
-                // Webhook endpoint moved behind authentication — webhook secret is now mandatory in production.
-                // .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
-                // Actuator: health public (for load balancer / Render healthcheck), details only when authenticated
-                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR")
-                // Swagger: restricted to ADMIN/PASTEUR for security (prevents API surface reconnaissance)
-                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAnyRole("ADMIN", "PASTEUR")
-                .anyRequest().authenticated()
-            )
+            .authorizeHttpRequests(auth -> {
+                auth.requestMatchers("/api/v1/auth/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                    // Webhook opérateur Mobile Money : sécurisé par la référence unique
+                    // de l'intention + (en production) signature HMAC opérateur / IP allowlist.
+                    // Webhook endpoint moved behind authentication — webhook secret is now mandatory in production.
+                    // .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
+                    // Actuator: health public (for load balancer / Render healthcheck), details only when authenticated
+                    .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                    .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR");
+
+                // Swagger: public in dev/docker, restricted to ADMIN/PASTEUR in prod/beta
+                ("dev".equals(environment) || "docker".equals(environment)
+                    ? auth.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                    : auth.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAnyRole("ADMIN", "PASTEUR"));
+
+                auth.anyRequest().authenticated();
+            })
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
             // Security headers
             .headers(headers -> headers
