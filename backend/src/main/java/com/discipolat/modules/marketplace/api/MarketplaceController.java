@@ -1,9 +1,11 @@
 package com.discipolat.modules.marketplace.api;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.marketplace.domain.MarketplaceListing;
 import com.discipolat.modules.marketplace.domain.MarketplaceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/marketplace")
+@PreAuthorize("isAuthenticated()")
 public class MarketplaceController {
 
     private final MarketplaceService service;
@@ -20,15 +23,14 @@ public class MarketplaceController {
     }
 
     @GetMapping
-    public ResponseEntity<List<MarketplaceListing>> list(@RequestParam Long tenantId) {
-        return ResponseEntity.ok(service.list(tenantId));
+    public ResponseEntity<List<MarketplaceListing>> list() {
+        return ResponseEntity.ok(service.list(TenantContext.getTenantId().getLeastSignificantBits()));
     }
 
     @GetMapping("/category/{category}")
     public ResponseEntity<List<MarketplaceListing>> listByCategory(
-            @RequestParam Long tenantId,
             @PathVariable String category) {
-        return ResponseEntity.ok(service.listByCategory(tenantId, category));
+        return ResponseEntity.ok(service.listByCategory(TenantContext.getTenantId().getLeastSignificantBits(), category));
     }
 
     @PostMapping
@@ -62,9 +64,8 @@ public class MarketplaceController {
 
     /** Installe un template : renvoie sa définition complète pour import dans l'église. */
     @PostMapping("/{id}/install")
-    public ResponseEntity<Map<String, Object>> install(@PathVariable Long id,
-                                                       @RequestParam Long tenantId) {
-        return ResponseEntity.ok(service.install(id, tenantId));
+    public ResponseEntity<Map<String, Object>> install(@PathVariable Long id) {
+        return ResponseEntity.ok(service.install(id, TenantContext.getTenantId().getLeastSignificantBits()));
     }
 }
 

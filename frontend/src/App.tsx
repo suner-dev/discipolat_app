@@ -630,17 +630,17 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/transfers" element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
               <TransfersPage />
             </ProtectedRoute>
           } />
           <Route path="/transfers/new" element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
               <TransferCreatePage />
             </ProtectedRoute>
           } />
           <Route path="/transfers/:id" element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
               <TransferDetailPage />
             </ProtectedRoute>
           } />
@@ -730,17 +730,17 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/tickets" element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
               <TicketsPage />
             </ProtectedRoute>
           } />
           <Route path="/onboarding-wizard" element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
               <OnboardingWizardPage />
             </ProtectedRoute>
           } />
           <Route path="/surveys" element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
               <SurveysPage />
             </ProtectedRoute>
           } />
@@ -784,7 +784,7 @@ export default function App() {
               <ApiDocsPage />
             </ProtectedRoute>
           } />
-          <Route path="/portal" element={<PublicPortalPage />} />
+          <Route path="/portal" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><PublicPortalPage /></ProtectedRoute>} />
           <Route path="/cercle-faiseurs" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
               <CercleFaiseursPage />
@@ -922,10 +922,8 @@ export default function App() {
           <Route path="/admin/usage-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AdminUsageAnalyticsPage /></ProtectedRoute>} />
           <Route path="/admin/backups" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AdminBackupsPage /></ProtectedRoute>} />
           <Route path="/follow-up-requests" element={<ProtectedRoute><FollowUpRequestsPage /></ProtectedRoute>} />
-          <Route path="/my-team" element={<ProtectedRoute><MyTeamFamilyPage /></ProtectedRoute>} />
-          <Route path="/notification-preferences" element={<ProtectedRoute><NotificationPreferencesPage /></ProtectedRoute>} />
           <Route path="/voice-assistant" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><VoiceAssistantPage /></ProtectedRoute>} />
-          <Route path="/forms" element={<ProtectedRoute><FormsPage /></ProtectedRoute>} />
+          <Route path="/forms" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><FormsPage /></ProtectedRoute>} />
           <Route path="/volunteers" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><VolunteersPage /></ProtectedRoute>} />
           <Route path="/dev-plans" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}><DevPlanPage /></ProtectedRoute>} />
           <Route path="/moderation" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ModerationPage /></ProtectedRoute>} />

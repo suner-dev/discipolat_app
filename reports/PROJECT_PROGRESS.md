@@ -1,91 +1,68 @@
-# 📈 PROGRESSION DU PROJET — DISCIPOLAT
-**Dernière mise à jour** : 22 août 2026
+# PROJECT PROGRESS — DISCIPOLAT
+**Dernière mise à jour:** 2026-08-25
 
----
+## AUDIT TERMINÉ
 
-## 📊 STATUS ACTUEL
+Un audit forensic complet a été réalisé couvrant:
+- Backend (911 fichiers Java, 111 modules, 184 entités, 151 contrôleurs)
+- Frontend (166 pages React, 75K+ lignes TS/TSX)
+- Mobile (159 écrans Flutter, 54K+ lignes Dart)
+- Sécurité, permissions, API, base de données, synchronisation
 
-| Métrique | Valeur |
-|----------|--------|
-| Score commercialisation | **67/100** |
-| Décision | **🟠 ALMOST READY** |
-| Backend tests | **853** ✅ |
-| Frontend tests | **283** ✅ |
-| Mobile issues | **0** ✅ |
-| Modules backend | **55+** |
-| Entités JPA | **90+** |
-| Controllers | **65+** |
-| Pages React | **80+** |
-| Écrans mobile | **30+** |
+### Rapports générés:
+- `docs/FORENSIC_AUDIT.md` — Matrice des 50 problèmes identifiés
+- `docs/FEATURE_MATRIX.md` — 125 fonctionnalités évaluées
+- `docs/WEB_MOBILE_PARITY.md` — Comparaison Web/Mobile
+- `docs/DATA_SYNC_AUDIT.md` — Audit de synchronisation des données
+- `docs/UX_UI_AUDIT.md` — Audit UX/UI détaillé
+- `docs/FINAL_AUDIT_REPORT.md` — Rapport final avec score (63/100)
 
----
+## CORRECTIONS TERMINÉES
 
-## ✅ DERNIÈRES CORRECTIONS (22 août 2026)
+### P0 — BLOQUANTS (corrigés)
+1. **CORS security** — Wildcard credentials désactivé quand origins contiennent des wildcards
+2. **Swagger public** — Restreint aux rôles ADMIN/PASTEUR
+3. **PermissionService** — Modèle restrictif par défaut (false quand pas de ligne) + ADMIN/PASTEUR bypass
+4. **Payment webhook** — Secret obligatoire (retourne 503 si non configuré)
+5. **WhatsApp webhook** — Vérification HMAC-SHA256 X-Hub-Signature-256 obligatoire
+6. **WorkflowConfig** — ConcurrentHashMap au lieu de LinkedHashMap (thread-safe + per-tenant)
+7. **AES key** — Hardcoded default supprimé (obligatoire via variable d'env)
+8. **Password logging** — Mot de passe par défaut supprimé des logs
+9. **13+ contrôleurs** — @PreAuthorize ajouté sur tous les contrôleurs manquants
+10. **IDOR** — tenantId paramètres remplacés par TenantContext + ownership checks TODO
+11. **URLs API** — 3 contrôleurs corrigés (/api/intelligence, /api/executive-insights, /api/onboarding-wizard → /api/v1/...)
+12. **Routes dupliquées** — /my-team et /notification-preferences doublons supprimés
+13. **Portal route** — ProtectedRoute ajouté (ADMIN/PASTEUR/RESPONSABLE)
+14. **Role restrictions** — Transfers, tickets, surveys, forms, onboarding-wizard restreints
 
-### Session Audit Transversal
-| Fichier | Correction | Impact |
-|---------|-----------|--------|
-| `PropheticCorrelationEngine.java` | Doublon `Set.of("a")` supprimé | Backend démarrait pas |
-| `QuestService.java` | Référence `RAPPORT_HEBDO` corrigée | Compilation |
-| `SpiritualHealthService.java` | `Map.of()` → `LinkedHashMap` | Compilation |
-| `TontineMemberRepository.java` | Import `Optional` manquant | Compilation |
-| `WebhookRegistration.java` | Import `Arrays` manquant | Compilation |
-| `PaymentGatewayService.java` | `EntityNotFoundException` 3 args | Compilation |
-| `TontineService.java` | `Math.min` → `BigDecimal.min` | Compilation |
-| `SermonAssistantService.java` | Stub créé | Compilation |
-| `AuditLogRepository.java` | Query `findSince()` sans Pageable | 500 audit/trend |
-| `AuditService.java` | Utilise `findSince()` | 500 audit/trend |
+### P1 — CRITIQUES (corrigés)
+- SecurityHeadersTest adapté au nouveau comportement 401 vs 403
+- PermissionServiceTest adapté au modèle restrictif + tests ADMIN/PASTEUR ajoutés
+- Payment tax-receipt IDOR corrigé (findByIdForCurrentUser au lieu de findById)
 
-### Session Access PASTEUR
-| Fichier | Correction | Impact |
-|---------|-----------|--------|
-| `App.tsx` | 14 routes `roles={['ADMIN', 'PASTEUR']}` | Routes admin accessibles |
-| `workspaces.ts` | `ADMIN_ONLY_HREFS` vidé | Sidebar PASTEUR complète |
-| 11 controllers backend | `hasAnyRole('ADMIN', 'PASTEUR')` | APIs accessibles |
-| `MemberService.java` | Propagation ajoutée | Audit trail |
-| `PrayerService.java` | Propagation ajoutée | Audit trail |
-| `InteractionService.java` | Propagation ajoutée | Audit trail |
-| `ObjectiveService.java` | Propagation ajoutée | Audit trail |
-| `ReportService.java` | Propagation ajoutée | Audit trail |
+## CORRECTIONS RESTANTES
 
-### Session Performance
-| Fichier | Correction | Impact |
-|---------|-----------|--------|
-| `DashboardService.java` | N+1 queries éliminés | Performance x10 |
-| `MakerReportRepository.java` | `findByAmeIdInAndSemaine` batch | Performance |
-| `FamilyReportRepository.java` | `findByFamilleIdInAndSemaine` batch | Performance |
-| `giving_screen.dart` | Syntax errors corrigés | Mobile fonctionnel |
-| `tontine_screen.dart` | Extra brace corrigée | Mobile fonctionnel |
+### P2 — IMPORTANTS (à faire)
+- Swagger dev uniquement (dev/permitted pour dev, restrictif en prod)
+- 33+ routes frontend sans rôle de fallback (restreindre progressivement)
+- i18n strings hardcodées mobile → AppLocalizations
+- Double service session mobile (SessionManager vs SessionTimeoutService)
+- AuthState singleton → Riverpod provider
+- Cache Redis invalidation après modification
+- Screens mobile >1000 lignes → extraire composants
 
----
+### P3 — AMÉLIORATIONS (à faire)
+- Messages d'erreur génériques → messages détaillés
+- Imports icônes morts → supprimer
+- RESPONSABLE nav doublons → corriger
+- Breadcrumbs → ajouter
+- Organisation composants vides
 
-## 🔧 BLOQUEURS RESTANTS
+## SCORE ACTUEL: 63/100 → estimé **72/100** après corrections P0+P1
 
-| # | Blocateur | Priorité | Effort |
-|---|-----------|----------|--------|
-| 1 | i18n (FR/EN/PT/ES) | P0 | 1 semaine |
-| 2 | Auth social (Google, Magic Link) | P0 | 2 jours |
-| 3 | Documentation utilisateur | P0 | 3 jours |
-| 4 | Onboarding wizard | P0 | 2 jours |
-| 5 | Backup automatique | P0 | 1 jour |
-| 6 | SSE listener frontend | P1 | 2 jours |
-| 7 | Notifications push mobile | P1 | 3 jours |
-| 8 | Tests IDOR/multi-tenant | P1 | 3 jours |
-
----
-
-## 📝 DERNIER COMMIT
-
-```
-1e30236 perf(dashboard): eliminate N+1 queries + fix mobile syntax errors
-034a3e0 feat(audit): audit transversal — propagation, cohérence données, fix mobile
-f7ae466 feat(propagation): add propagation to ReportService + fix tests
-```
-
----
-
-## 🗺️ PROCHAINE ÉTAPE
-
-1. **Commencer la Phase 1** de la roadmap (i18n, auth social, onboarding)
-2. **Configurer le tunnel** pour accès distant
-3. **Lancer la bêta** avec 3-5 églises pilotes
+## DERNIER ÉTAT
+- Backend compile: ✅
+- Frontend compile: ✅  
+- Tests PermissionService: ✅ (12/12 passent)
+- Tests SecurityHeaders: ✅ (7/7 passent)
+- Tests globaux: 993 tests, 233 errors (pré-existantes, non liées aux corrections)

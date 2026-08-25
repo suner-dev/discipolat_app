@@ -4,6 +4,7 @@ import com.discipolat.modules.moderation.domain.ContentModerationService;
 import com.discipolat.modules.moderation.domain.ModerationItem;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/moderation")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
 public class ModerationController {
 
     private final ContentModerationService moderationService;

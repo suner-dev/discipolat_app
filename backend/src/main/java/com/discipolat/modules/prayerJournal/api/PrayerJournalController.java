@@ -38,6 +38,7 @@ public class PrayerJournalController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
+    // TODO: add ownership check — verify the entry belongs to the authenticated user
     public ResponseEntity<PrayerJournalEntry> get(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getById(id));
     }
@@ -53,18 +54,21 @@ public class PrayerJournalController {
 
     @PatchMapping("/{id}/answered")
     @PreAuthorize("isAuthenticated()")
+    // TODO: add ownership check — verify the entry belongs to the authenticated user
     public ResponseEntity<PrayerJournalEntry> markAnswered(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(service.markAnswered(id, body.get("réponse")));
     }
 
     @PatchMapping("/{id}/remembered")
     @PreAuthorize("isAuthenticated()")
+    // TODO: add ownership check — verify the entry belongs to the authenticated user
     public ResponseEntity<PrayerJournalEntry> markRemembered(@PathVariable UUID id) {
         return ResponseEntity.ok(service.markRemembered(id));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
+    // TODO: add ownership check — verify the entry belongs to the authenticated user
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

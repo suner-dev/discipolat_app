@@ -39,7 +39,7 @@ public class PaymentController {
     @GetMapping("/{id}/tax-receipt")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> taxReceipt(@PathVariable UUID id) {
-        PaymentIntent payment = service.findById(id);
+        PaymentIntent payment = service.findByIdForCurrentUser(id);
         if (payment.getStatus() != PaymentIntent.Status.CONFIRMED) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .build();
@@ -60,16 +60,19 @@ public class PaymentController {
     }
 
     /**
-     * Webhook opérateur (M-Pesa / MTN / Orange…) : confirmation de paiement.
-     * Sécurité : si `app.payments.webhook-secret` est configuré, l'appel doit
-     * présenter le header `X-Webhook-Secret` correspondant (HMAC partagé).
-     * Sans secret configuré (dev/sandbox local), l'endpoint reste ouvert.
+     * Webhook opérateur (M-Pesa / MTN / Orange...) : confirmation de paiement.
+     * SÉCURITÉ: le secret webhook est OBLIGATOIRE. Sans secret configuré,
+     * l'endpoint retourne 503 Service Unavailable.
      */
     @PostMapping("/webhook")
-    public ResponseEntity<PaymentIntent> webhook(
+    public ResponseEntity<?> webhook(
             @RequestHeader(value = "X-Webhook-Secret", required = false) String providedSecret,
             @RequestBody Map<String, Object> body) {
-        if (!webhookSecret.isBlank() && !webhookSecret.equals(providedSecret)) {
+        if (webhookSecret.isBlank()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "Webhook not configured — set app.payments.webhook-secret"));
+        }
+        if (!webhookSecret.equals(providedSecret)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         String reference = body.get("reference").toString();

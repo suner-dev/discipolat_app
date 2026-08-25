@@ -95,7 +95,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         if (updatedCount > 0) {
-            log.info("✅ Initialized {} user accounts with default password: {}", updatedCount, DEFAULT_PASSWORD);
+            log.info("✅ Initialized {} user accounts with default password (demo only)", updatedCount);
         }
 
         // Admin — multi-role: ADMIN + PASTEUR
@@ -205,6 +205,6 @@ public class DataInitializer implements CommandLineRunner {
                 .estChefDeFamille(estChefDeFamille)
                 .build();
         userRepository.save(user);
-        log.info("✅ Created {} (roles={}) user: {} / {}", primaryRole, roles, email, DEFAULT_PASSWORD);
+        log.info("✅ Created {} (roles={}) user: {}", primaryRole, roles, email);
     }
 }

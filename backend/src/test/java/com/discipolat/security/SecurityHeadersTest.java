@@ -68,10 +68,10 @@ class SecurityHeadersTest {
     }
 
     @Test
-    @DisplayName("Le endpoint debug ne doit pas être exposé en production")
+    @DisplayName("Le endpoint debug ne doit pas être exposé sans authentification")
     void shouldNotExposeDebugEndpoints() throws Exception {
         mockMvc.perform(get("/actuator/env"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

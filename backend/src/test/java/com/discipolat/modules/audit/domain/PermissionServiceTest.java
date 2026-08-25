@@ -159,11 +159,25 @@ class PermissionServiceTest {
     }
 
     @Test
-    void hasPermission_WithUnknownRole_ShouldReturnTruePermissif() {
-        // Sémantique voulue : pas de ligne dans la matrice = permissif (rétrocompatibilité).
+    void hasPermission_WithUnknownRole_ShouldReturnFalseRestrictif() {
+        // Sémantique sécurisée : pas de ligne dans la matrice = refusé (restrictif par défaut).
         when(jdbcTemplate.queryForList(anyString(), anyString(), anyString())).thenReturn(List.of());
 
         boolean result = permissionService.hasPermission("UNKNOWN", "ANY_PERMISSION");
+
+        assertFalse(result);
+    }
+
+    @Test
+    void hasPermission_WithAdminRole_ShouldAlwaysReturnTrue() {
+        boolean result = permissionService.hasPermission("ADMIN", "ANY_PERMISSION");
+
+        assertTrue(result);
+    }
+
+    @Test
+    void hasPermission_WithPasteurRole_ShouldAlwaysReturnTrue() {
+        boolean result = permissionService.hasPermission("PASTEUR", "ANY_PERMISSION");
 
         assertTrue(result);
     }

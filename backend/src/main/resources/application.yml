@@ -87,7 +87,7 @@ app:
   encryption:
     # Clé AES-256 (base64, 32 octets) pour le chiffrement au repos des données sensibles.
     # Générer avec : openssl rand -base64 32
-    aes-key: ${ENCRYPTION_AES_KEY:EniEFhLt4UbrkhRDPXNjJ98Rn4dTiTTDu9QgLk6NW6Y=}
+    aes-key: ${ENCRYPTION_AES_KEY:}
   rate-limiting:
     # Redis connection URL for distributed rate limiting
     redis-url: ${REDIS_URL:redis://localhost:6379}

@@ -17,6 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/tickets")
+@PreAuthorize("isAuthenticated()")
 public class TicketController {
 
     private final TicketService ticketService;
@@ -26,6 +27,7 @@ public class TicketController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<PageResponse<Ticket>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -36,6 +38,8 @@ public class TicketController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    // TODO: add ownership check — verify the ticket belongs to the authenticated user or user has admin role
     public ResponseEntity<Ticket> get(@PathVariable UUID id) {
         return ResponseEntity.ok(ticketService.getById(id));
     }

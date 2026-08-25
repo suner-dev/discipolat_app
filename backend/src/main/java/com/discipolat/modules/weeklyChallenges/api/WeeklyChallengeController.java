@@ -4,6 +4,7 @@ import com.discipolat.modules.weeklyChallenges.domain.WeeklyChallenge;
 import com.discipolat.modules.weeklyChallenges.domain.WeeklyChallengeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/weekly-challenges")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
 public class WeeklyChallengeController {
 
     private final WeeklyChallengeService challengeService;

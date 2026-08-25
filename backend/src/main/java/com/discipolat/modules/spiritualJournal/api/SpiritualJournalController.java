@@ -4,6 +4,7 @@ import com.discipolat.modules.spiritualJournal.domain.SpiritualJournal;
 import com.discipolat.modules.spiritualJournal.domain.SpiritualJournalService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/spiritual-journals")
+@PreAuthorize("isAuthenticated()")
 public class SpiritualJournalController {
 
     private final SpiritualJournalService service;

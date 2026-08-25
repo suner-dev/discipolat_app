@@ -3,11 +3,13 @@ package com.discipolat.modules.executiveInsights.api;
 import com.discipolat.modules.executiveInsights.domain.ExecutiveInsight;
 import com.discipolat.modules.executiveInsights.domain.ExecutiveInsightsService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/executive-insights")
+@RequestMapping("/api/v1/executive-insights")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
 public class ExecutiveInsightsController {
 
     private final ExecutiveInsightsService service;

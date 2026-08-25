@@ -67,12 +67,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                 // Webhook opérateur Mobile Money : sécurisé par la référence unique
                 // de l'intention + (en production) signature HMAC opérateur / IP allowlist.
-                .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
+                // Webhook endpoint moved behind authentication — webhook secret is now mandatory in production.
+                // .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
                 // Actuator: health public (for load balancer / Render healthcheck), details only when authenticated
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR")
-                // Swagger: public for API consumers (read-only docs)
-                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                // Swagger: restricted to ADMIN/PASTEUR for security (prevents API surface reconnaissance)
+                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasAnyRole("ADMIN", "PASTEUR")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
@@ -95,17 +96,18 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Pattern origins : autorise les wildcards (ex. https://*.onrender.com) avec credentials.
         configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "X-Webhook-Secret", "X-Hub-Signature-256"));
         configuration.setExposedHeaders(List.of(
                 "Authorization",
                 "X-RateLimit-Remaining",
                 "Retry-After"
         ));
-        configuration.setAllowCredentials(true);
+        // Credentials allowed only for non-wildcard origins to prevent tunnel-based MITM attacks
+        boolean hasWildcard = Arrays.stream(allowedOrigins).anyMatch(o -> o.contains("*"));
+        configuration.setAllowCredentials(!hasWildcard);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

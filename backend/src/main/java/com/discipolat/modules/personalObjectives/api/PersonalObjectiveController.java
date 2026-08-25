@@ -31,6 +31,7 @@ public class PersonalObjectiveController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
+    // TODO: add ownership check — verify the objective belongs to the authenticated user
     public ResponseEntity<PersonalObjective> get(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getById(id));
     }

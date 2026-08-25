@@ -3,13 +3,15 @@ package com.discipolat.modules.intelligence.api;
 import com.discipolat.modules.intelligence.domain.IntelligenceCenterService;
 import com.discipolat.modules.intelligence.domain.IntelligenceKpi;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/intelligence")
+@RequestMapping("/api/v1/intelligence")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
 public class IntelligenceController {
 
     private final IntelligenceCenterService intelligenceService;

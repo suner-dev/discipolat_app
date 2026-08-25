@@ -4,6 +4,7 @@ import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.departmentKpi.domain.DepartmentKpi;
 import com.discipolat.modules.departmentKpi.domain.DepartmentKpiService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/department-kpis")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
 public class DepartmentKpiController {
 
     private final DepartmentKpiService service;
@@ -26,8 +28,8 @@ public class DepartmentKpiController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DepartmentKpi>> listByTenant(@RequestParam Long tenantId) {
-        return ResponseEntity.ok(service.listByTenant(tenantId));
+    public ResponseEntity<List<DepartmentKpi>> listByTenant() {
+        return ResponseEntity.ok(service.listByTenant(TenantContext.getTenantId().getLeastSignificantBits()));
     }
 
     @PostMapping

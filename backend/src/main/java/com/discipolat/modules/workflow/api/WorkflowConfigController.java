@@ -23,8 +23,9 @@ public class WorkflowConfigController {
 
     private final AuditService auditService;
 
-    // In-memory store; in production: database table workflow_configs
-    private static final Map<UUID, List<Map<String, Object>>> configs = new LinkedHashMap<>();
+    // Thread-safe per-tenant store using ConcurrentHashMap (replaces unsafe static LinkedHashMap)
+    private static final Map<UUID, List<Map<String, Object>>> configs =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * Get all workflow configurations for the current tenant.

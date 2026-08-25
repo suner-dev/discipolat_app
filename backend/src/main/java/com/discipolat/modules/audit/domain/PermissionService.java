@@ -110,14 +110,17 @@ public class PermissionService {
 
     /**
      * Vérifie si un rôle donné a une permission activée explicitement.
-     * Permissif par défaut : si aucune ligne n'existe, retourne true.
+     * RESTRICTIF par défaut : si aucune ligne n'existe, retourne false (sécurité).
+     * Les rôles ADMIN et PASTEUR conservent un accès complet via {@link #userHasPermission}.
      */
     public boolean hasPermission(String role, String permission) {
+        String r = role.toUpperCase();
+        if ("ADMIN".equals(r) || "PASTEUR".equals(r)) return true;
         List<Map<String, Object>> results = jdbcTemplate.queryForList(
                 "SELECT enabled FROM role_permissions WHERE role = ? AND permission = ?"
                         + andTenant(),
-                params(role.toUpperCase(), permission.toUpperCase()));
-        if (results.isEmpty()) return true; // pas de ligne = permissif (préservation du comportement existant)
+                params(r, permission.toUpperCase()));
+        if (results.isEmpty()) return false; // RESTRICTIF: pas de ligne = refusé
         return (boolean) results.getFirst().get("enabled");
     }
 
@@ -125,27 +128,42 @@ public class PermissionService {
      * Vérifie si un rôle a un niveau de permission (read/write/delete) donné.
      * Niveau "manage" = write OR delete.
      */
+    private static final Set<String> VALID_COLUMNS = Set.of("can_read", "can_write", "can_delete", "enabled");
+
     public boolean hasPermissionLevel(String role, String permission, String level) {
-        String col = switch (level.toUpperCase()) {
-            case "READ" -> "can_read";
-            case "WRITE" -> "can_write";
-            case "DELETE", "MANAGE" -> "can_delete";
-            default -> "enabled";
-        };
-        if ("MANAGE".equalsIgnoreCase(level)) {
+        String r = role.toUpperCase();
+        if ("ADMIN".equals(r) || "PASTEUR".equals(r)) return true;
+
+        String col;
+        boolean isManage = "MANAGE".equalsIgnoreCase(level);
+        if (isManage) {
+            col = "can_write";
+        } else {
+            String c = switch (level.toUpperCase()) {
+                case "READ" -> "can_read";
+                case "WRITE" -> "can_write";
+                case "DELETE" -> "can_delete";
+                default -> "enabled";
+            };
+            col = c;
+        }
+
+        if (!VALID_COLUMNS.contains(col)) return false;
+
+        if (isManage) {
             List<Map<String, Object>> results = jdbcTemplate.queryForList(
                     "SELECT can_write, can_delete FROM role_permissions WHERE role = ? AND permission = ?"
                             + andTenant(),
-                    params(role.toUpperCase(), permission.toUpperCase()));
-            if (results.isEmpty()) return true;
+                    params(r, permission.toUpperCase()));
+            if (results.isEmpty()) return false;
             Map<String, Object> row = results.getFirst();
             return (boolean) row.get("can_write") || (boolean) row.get("can_delete");
         }
         List<Map<String, Object>> results = jdbcTemplate.queryForList(
                 "SELECT " + col + " FROM role_permissions WHERE role = ? AND permission = ?"
                         + andTenant(),
-                params(role.toUpperCase(), permission.toUpperCase()));
-        if (results.isEmpty()) return true;
+                params(r, permission.toUpperCase()));
+        if (results.isEmpty()) return false;
         return (boolean) results.getFirst().get(col);
     }
 
@@ -157,7 +175,7 @@ public class PermissionService {
                 "SELECT scope FROM role_permissions WHERE role = ? AND permission = ?"
                         + andTenant(),
                 params(role.toUpperCase(), permission.toUpperCase()));
-        if (results.isEmpty()) return "GLOBAL";
+        if (results.isEmpty()) return "NONE";
         Object scope = results.getFirst().get("scope");
         return scope != null ? scope.toString() : "GLOBAL";
     }
@@ -290,7 +308,7 @@ public class PermissionService {
             anyExplicit = true;
             if ((boolean) rows.getFirst().get("enabled")) return true;
         }
-        // Si aucun rôle n'a de ligne explicite : permissif → true.
-        return !anyExplicit;
+        // Si aucun rôle n'a de ligne explicite : restrictif → false.
+        return false;
     }
 }

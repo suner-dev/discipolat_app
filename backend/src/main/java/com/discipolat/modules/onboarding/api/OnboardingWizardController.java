@@ -3,12 +3,14 @@ package com.discipolat.modules.onboarding.api;
 import com.discipolat.modules.onboarding.domain.OnboardingWizardService;
 import com.discipolat.modules.onboarding.domain.OnboardingWizardStep;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/onboarding-wizard")
+@RequestMapping("/api/v1/onboarding-wizard")
+@PreAuthorize("isAuthenticated()")
 public class OnboardingWizardController {
 
     private final OnboardingWizardService service;

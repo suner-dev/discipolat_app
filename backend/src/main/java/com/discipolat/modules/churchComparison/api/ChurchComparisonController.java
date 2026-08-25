@@ -4,6 +4,7 @@ import com.discipolat.modules.churchComparison.domain.ChurchComparison;
 import com.discipolat.modules.churchComparison.domain.ChurchComparisonService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/church-comparisons")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
 public class ChurchComparisonController {
 
     private final ChurchComparisonService service;
@@ -57,7 +59,6 @@ public class ChurchComparisonController {
 
     // P3 #107 — Benchmark amélioré avec clustering anonyme
     @GetMapping("/clusters")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
     public Map<String, Object> clusters(@RequestParam(required = false) UUID ourId) {
         return service.clusters(ourId);
     }
