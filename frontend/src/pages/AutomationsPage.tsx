@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
-import Toast from '@/components/shared/Toast';
+import toast from 'react-hot-toast';
 import { Zap, Plus, Play, Pause, Trash2, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface AutomationRule {
@@ -58,30 +58,30 @@ export default function AutomationsPage() {
 
   const loadRules = async () => {
     try { setLoading(true); const res = await api.get('/automations'); setRules(res.data.content || res.data || []); }
-    catch { setRules([]); } finally { setLoading(false); }
+    catch (e) { toast.error(getErrorMessage(e)); setRules([]); } finally { setLoading(false); }
   };
 
-  const loadStats = async () => { try { const res = await api.get('/automations/stats'); setStats(res.data); } catch {} };
+  const loadStats = async () => { try { const res = await api.get('/automations/stats'); setStats(res.data); } catch (e) { toast.error(getErrorMessage(e)); } };
 
   const createRule = async () => {
-    if (!newRule.titre.trim()) { Toast.warning('Titre requis'); return; }
+    if (!newRule.titre.trim()) { toast('Titre requis', { icon: '⚠️' }); return; }
     try {
       await api.post('/automations', newRule);
-      Toast.success('Automatisation créée !');
+      toast.success('Automatisation créée !');
       setShowCreate(false);
       setNewRule({ titre: '', description: '', triggerEvent: 'ABSENCE_SOUTENUE', triggerParams: '{"semaines": 3}', actionType: 'ENVOYER_MESSAGE', actionParams: '{"message": "Rappel pastoral"}' });
       loadRules(); loadStats();
-    } catch { Toast.error('Erreur'); }
+    } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const toggleRule = async (id: string) => {
-    try { await api.patch(`/automations/${id}/toggle`); Toast.success('Statut mis à jour'); loadRules(); loadStats(); }
-    catch { Toast.error('Erreur'); }
+    try { await api.patch(`/automations/${id}/toggle`); toast.success('Statut mis à jour'); loadRules(); loadStats(); }
+    catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const deleteRule = async (id: string) => {
-    try { await api.delete(`/automations/${id}`); Toast.success('Supprimée'); loadRules(); loadStats(); }
-    catch { Toast.error('Erreur'); }
+    try { await api.delete(`/automations/${id}`); toast.success('Supprimée'); loadRules(); loadStats(); }
+    catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   return (

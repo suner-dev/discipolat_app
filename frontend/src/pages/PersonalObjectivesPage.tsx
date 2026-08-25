@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
-import Toast from '@/components/shared/Toast';
+import toast from 'react-hot-toast';
 import { Target, Plus, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
 
 interface Objective {
@@ -38,20 +38,20 @@ export default function PersonalObjectivesPage() {
 
   const loadObjectives = async () => {
     try { setLoading(true); const res = await api.get('/personal-objectives'); setObjectives(res.data || []); }
-    catch { setObjectives([]); } finally { setLoading(false); }
+    catch (e) { toast.error(getErrorMessage(e)); setObjectives([]); } finally { setLoading(false); }
   };
 
-  const loadStats = async () => { try { const res = await api.get('/personal-objectives/stats'); setStats(res.data); } catch {} };
+  const loadStats = async () => { try { const res = await api.get('/personal-objectives/stats'); setStats(res.data); } catch (e) { toast.error(getErrorMessage(e)); } };
 
   const createObjective = async () => {
-    if (!newObj.titre.trim()) { Toast.warning('Titre requis'); return; }
-    try { await api.post('/personal-objectives', newObj); Toast.success('Objectif créé !'); setShowCreate(false); setNewObj({ titre: '', description: '', catégorie: 'PRIÈRE', objectifCible: 1 }); loadObjectives(); loadStats(); }
-    catch { Toast.error('Erreur'); }
+    if (!newObj.titre.trim()) { toast('Titre requis', { icon: '⚠️' }); return; }
+    try { await api.post('/personal-objectives', newObj); toast.success('Objectif créé !'); setShowCreate(false); setNewObj({ titre: '', description: '', catégorie: 'PRIÈRE', objectifCible: 1 }); loadObjectives(); loadStats(); }
+    catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const progress = async (id: string) => {
-    try { await api.patch(`/personal-objectives/${id}/progress`); Toast.success('Progression ! 🎯'); loadObjectives(); loadStats(); }
-    catch { Toast.error('Erreur'); }
+    try { await api.patch(`/personal-objectives/${id}/progress`); toast.success('Progression ! 🎯'); loadObjectives(); loadStats(); }
+    catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   return (

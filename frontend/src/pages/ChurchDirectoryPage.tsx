@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
-import Toast from '@/components/shared/Toast';
+import toast from 'react-hot-toast';
 import { BookUser, Search, Phone, Mail, Eye, EyeOff } from 'lucide-react';
 
 interface DirEntry {
@@ -33,25 +33,25 @@ export default function ChurchDirectoryPage() {
       setLoading(true);
       const res = await api.get('/directory');
       setEntries(res.data.content || res.data || []);
-    } catch { setEntries([]); }
+    } catch (e) { toast.error(getErrorMessage(e)); setEntries([]); }
     finally { setLoading(false); }
   };
 
   const loadMyEntry = async () => {
-    try { const res = await api.get('/directory/me'); setMyEntry(res.data); setEditData({ bio: res.data.bio || '', téléphone: res.data.téléphone || '', email: res.data.email || '', publicProfil: res.data.publicProfil }); } catch {}
+    try { const res = await api.get('/directory/me'); setMyEntry(res.data); setEditData({ bio: res.data.bio || '', téléphone: res.data.téléphone || '', email: res.data.email || '', publicProfil: res.data.publicProfil }); } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const updateMyEntry = async () => {
     try {
       await api.put('/directory/me', editData);
-      Toast.success('Profil mis à jour');
+      toast.success('Profil mis à jour');
       setEditing(false);
       loadMyEntry();
-    } catch { Toast.error('Erreur'); }
+    } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const togglePublic = async () => {
-    try { await api.patch('/directory/me/toggle'); Toast.success('Visibilité mise à jour'); loadMyEntry(); } catch {}
+    try { await api.patch('/directory/me/toggle');       toast.success('Visibilité mise à jour'); loadMyEntry(); } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const filtered = entries.filter(e =>

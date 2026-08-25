@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
-import Toast from '@/components/shared/Toast';
+import toast from 'react-hot-toast';
 import { Flame, Plus, Target, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
 
 interface Challenge {
@@ -41,31 +41,31 @@ export default function SpiritualChallengesPage() {
       setLoading(true);
       const res = await api.get('/spiritual-challenges');
       setChallenges(res.data.content || res.data || []);
-    } catch { setChallenges([]); }
+    } catch (e) { toast.error(getErrorMessage(e)); setChallenges([]); }
     finally { setLoading(false); }
   };
 
   const loadStats = async () => {
-    try { const res = await api.get('/spiritual-challenges/stats'); setStats(res.data); } catch {}
+    try { const res = await api.get('/spiritual-challenges/stats'); setStats(res.data); } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const createChallenge = async () => {
-    if (!newChallenge.titre.trim()) { Toast.warning('Entrez un titre'); return; }
+    if (!newChallenge.titre.trim()) { toast('Entrez un titre', { icon: '⚠️' }); return; }
     try {
       await api.post('/spiritual-challenges', newChallenge);
-      Toast.success('Défi créé !');
+      toast.success('Défi créé !');
       setShowCreate(false);
       setNewChallenge({ titre: '', description: '', type: 'AUTRE', objectifJours: 7 });
       loadChallenges(); loadStats();
-    } catch { Toast.error('Erreur'); }
+    } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const progress = async (id: string) => {
     try {
       await api.patch(`/spiritual-challenges/${id}/progress`);
-      Toast.success('Jour marqué ! Continuez 💪');
+      toast.success('Jour marqué ! Continuez 💪');
       loadChallenges(); loadStats();
-    } catch { Toast.error('Erreur'); }
+    } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   return (

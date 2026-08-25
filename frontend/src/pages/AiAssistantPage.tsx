@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import { Bot, Send, Loader2, Sparkles, User, RefreshCw, Trash2, Copy, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -96,7 +96,7 @@ export default function AiAssistantPage() {
   // Clear history
   const clearMutation = useMutation({
     mutationFn: async () => {
-      try { await api.delete('/ai/chat/history'); } catch { /* ok */ }
+      try { await api.delete('/ai/chat/history'); } catch (e) { toast.error(getErrorMessage(e)); }
     },
     onSuccess: () => {
       setMessages([]);

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
-import Toast from '@/components/shared/Toast';
+import toast from 'react-hot-toast';
 import { Calendar, Plus, Download, ExternalLink, Clock } from 'lucide-react';
 
 interface CalEvent {
@@ -31,19 +31,19 @@ export default function CalendarIntegrationPage() {
       setLoading(true);
       const res = await api.get('/calendar');
       setEvents(res.data || []);
-    } catch { setEvents([]); }
+    } catch (e) { toast.error(getErrorMessage(e)); setEvents([]); }
     finally { setLoading(false); }
   };
 
   const createEvent = async () => {
-    if (!newEvent.titre.trim()) { Toast.warning('Titre requis'); return; }
+    if (!newEvent.titre.trim()) { toast('Titre requis', { icon: '⚠️' }); return; }
     try {
       await api.post('/calendar', { ...newEvent, source: 'INTERNE' });
-      Toast.success('Événement ajouté au calendrier');
+      toast.success('Événement ajouté au calendrier');
       setShowCreate(false);
       setNewEvent({ titre: '', description: '', début: '', fin: '', lieu: '' });
       loadEvents();
-    } catch { Toast.error('Erreur'); }
+    } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const downloadICal = async (id: string) => {
@@ -53,8 +53,8 @@ export default function CalendarIntegrationPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'event.ics'; a.click();
-      Toast.success('Fichier iCal téléchargé');
-    } catch { Toast.error('Erreur'); }
+      toast.success('Fichier iCal téléchargé');
+    } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   return (

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
-import Toast from '@/components/shared/Toast';
+import toast from 'react-hot-toast';
 import { BarChart3, TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle2, Lightbulb } from 'lucide-react';
 
 interface KpiNarrative {
@@ -40,7 +40,7 @@ export default function KpiDrillDownPage() {
 
   const loadNarratives = async () => {
     try { setLoading(true); const res = await api.get('/kpi-narrative'); setNarratives(res.data || []); }
-    catch { setNarratives([]); } finally { setLoading(false); }
+    catch (e) { toast.error(getErrorMessage(e)); setNarratives([]); } finally { setLoading(false); }
   };
 
   const generateNarrative = async (typeKPI: string) => {
@@ -56,8 +56,8 @@ export default function KpiDrillDownPage() {
       });
       // Add to top of list
       setNarratives([res.data, ...narratives]);
-      Toast.success('Narration générée !');
-    } catch { Toast.error('Erreur'); }
+      toast.success('Narration générée !');
+    } catch (e) { toast.error(getErrorMessage(e)); }
     finally { setGenerating(false); }
   };
 

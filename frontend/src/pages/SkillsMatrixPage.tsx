@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
-import Toast from '@/components/shared/Toast';
+import toast from 'react-hot-toast';
 import { GraduationCap, Star, BarChart3 } from 'lucide-react';
 
 interface SkillEval {
@@ -38,18 +38,18 @@ export default function SkillsMatrixPage() {
       setLoading(true);
       const res = await api.get('/skills-matrix');
       setEvaluations(res.data || []);
-    } catch { setEvaluations([]); }
+    } catch (e) { toast.error(getErrorMessage(e)); setEvaluations([]); }
     finally { setLoading(false); }
   };
 
   const submitEvaluation = async () => {
-    if (!newEval.membreId.trim()) { Toast.warning('Entrez l\'ID du membre'); return; }
+    if (!newEval.membreId.trim()) { toast('Entrez l\'ID du membre', { icon: '⚠️' }); return; }
     try {
       await api.post('/skills-matrix', newEval);
-      Toast.success('Évaluation enregistrée');
+      toast.success('Évaluation enregistrée');
       setShowEvaluate(false);
       loadEvaluations();
-    } catch { Toast.error('Erreur'); }
+    } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   // Group by member
