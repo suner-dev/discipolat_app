@@ -123,6 +123,18 @@ Reprise : validation rejouée puis commit.
 - Frontend : `tsc -b` ✅ exit 0
 - Mobile : `flutter analyze` ✅ 0 erreur / 0 warning (65 infos seulement)
 
+### Régression tests (post-rewiring)
+- Backend : ✅ 994/994 (BUILD SUCCESS)
+- Frontend : ✅ 308/308 (41 fichiers)
+- Mobile : ❌→✅ **343/343** — 62 échecs initiaux sur les écrans rewirés (tests encore
+  écrits pour les données hardcodées) ; **15 fichiers de tests réécrits** avec le pattern
+  `_FakeApiService` injectable : admin_requests, ai_mentoring, ai_visit_notes,
+  analytics, church_comparison, event_checklist (+ toggle réel vérifié),
+  family_meeting, intelligence_center, kpi_narrative, personal_objectives,
+  predictions, reverse_mentoring, spiritual_challenges, succession, volunteers.
+  Chaque fichier couvre : app bar · données réelles du fake API · empty state · error state.
+  (Total 345 → 343 : regroupement d'assertions redondantes des anciens tests.)
+
 ### Reste à faire (prochaine session)
 1. Mobile i18n (strings hardcodées restantes)
 2. AuthState singleton → Riverpod provider
