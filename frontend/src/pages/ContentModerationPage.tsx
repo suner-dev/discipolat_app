@@ -1,3 +1,4 @@
+import { formatEnum } from '@/lib/labels';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useI18n } from '@/i18n';
@@ -97,7 +98,7 @@ export default function ContentModerationPage() {
                 <p className="text-white text-sm line-clamp-2">{item.content}</p>
                 <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                   <span>{item.source}</span>
-                  <span className={`px-2 py-0.5 rounded-full ${riskColor(item.riskLevel)}`}>{item.riskLevel}</span>
+                  <span className={`px-2 py-0.5 rounded-full ${riskColor(item.riskLevel)}`}>{formatEnum(item.riskLevel)}</span>
                   {item.aiConfidence != null && (
                     <span>Confiance: {(item.aiConfidence * 100).toFixed(0)}%</span>
                   )}

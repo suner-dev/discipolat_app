@@ -1,3 +1,4 @@
+import { formatEnum } from '@/lib/labels';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -66,7 +67,7 @@ export default function FollowUpRequestsPage() {
               <p className="text-[11px] text-gray-600 mt-1">{new Date(r.createdAt).toLocaleDateString('fr-FR')}{r.requesterName ? ` • ${r.requesterName}` : ''}{r.assignedToName ? ` • assignée à ${r.assignedToName}` : ''}</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_STYLE[r.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{r.status}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_STYLE[r.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{formatEnum(r.status)}</span>
               {tab === 'assigned' && r.status !== 'TERMINEE' && (
                 <button onClick={() => complete.mutate(r.id)} disabled={complete.isPending} className="flex items-center gap-1 text-green-400 hover:text-green-300 text-xs"><CheckCircle2 className="w-4 h-4" /> Marquer terminée</button>
               )}

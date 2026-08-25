@@ -1,3 +1,4 @@
+import { formatEnum } from '@/lib/labels';
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
 import api from '@/lib/api';
@@ -98,7 +99,7 @@ export default function TeamGanttPage() {
                         <span className="text-xs font-medium truncate">{a.rôle}</span>
                       </div>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatutColor(a.statut)}`}>{a.statut}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatutColor(a.statut)}`}>{formatEnum(a.statut)}</span>
                   </div>
                 ))}
               </div>
@@ -110,7 +111,7 @@ export default function TeamGanttPage() {
                 <div key={a.id} className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-gray-900 dark:text-white text-sm">{a.rôle}</h3>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatutColor(a.statut)}`}>{a.statut}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatutColor(a.statut)}`}>{formatEnum(a.statut)}</span>
                   </div>
                   <div className="text-xs text-gray-500 space-y-1">
                     <div>📅 {new Date(a.début).toLocaleDateString('fr-FR')} → {new Date(a.fin).toLocaleDateString('fr-FR')}</div>

@@ -1,3 +1,4 @@
+import { formatEnum } from '@/lib/labels';
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
 import api from '@/lib/api';
@@ -101,7 +102,7 @@ export default function BroadcastPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <StatusIcon className={`w-4 h-4 ${info.color.includes('green') ? 'text-green-500' : info.color.includes('blue') ? 'text-blue-500' : 'text-gray-400'}`} />
                         <h3 className="font-medium text-gray-900 dark:text-white text-sm">{msg.titre}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${info.color}`}>{msg.statut}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${info.color}`}>{formatEnum(msg.statut)}</span>
                       </div>
                       <p className="text-xs text-gray-500 line-clamp-2 mb-2">{msg.contenu}</p>
                       <div className="flex items-center gap-4 text-xs text-gray-400">

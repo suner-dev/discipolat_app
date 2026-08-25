@@ -139,9 +139,10 @@ export default function InventoryPage() {
         </select>
       </div>
 
-      {/* Items table */}
+            {/* Items table */}
       <div className="glass rounded-2xl border border-white/20 dark:border-white/[0.06] overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+          <table className="table w-full min-w-[560px]">
           <thead>
             <tr className="border-b border-gray-100 dark:border-white/[0.06]">
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Article</th>
@@ -176,8 +177,9 @@ export default function InventoryPage() {
                 </td>
               </tr>
             ))}
-          </tbody>
+                    </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

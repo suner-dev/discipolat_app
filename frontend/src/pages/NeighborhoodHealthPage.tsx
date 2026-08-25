@@ -1,3 +1,4 @@
+import { formatEnum } from '@/lib/labels';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { MapPin, HeartPulse, Users } from 'lucide-react';
@@ -32,7 +33,7 @@ export default function NeighborhoodHealthPage() {
             <div key={z.zone} className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10 hover:border-rose-500/30 transition">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-white font-semibold">{z.zone}</h3>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${st.badge}`}>{z.status}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${st.badge}`}>{formatEnum(z.status)}</span>
               </div>
               <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden mb-3">
                 <div className={`h-full rounded-full ${st.bar}`} style={{ width: `${z.healthScore}%` }} />

@@ -1,3 +1,4 @@
+import { formatEnum } from '@/lib/labels';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -95,7 +96,7 @@ export default function DataMigrationPage() {
               <div key={j.id} className="flex items-center justify-between bg-black/20 rounded-xl px-4 py-3 text-sm">
                 <div><span className="text-white font-medium">{j.targetType}</span><span className="text-gray-500 ml-2">{j.importedRows ?? 0}/{j.totalRows ?? 0} lignes</span></div>
                 <div className="flex items-center gap-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${badge(j.status)}`}>{j.status}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${badge(j.status)}`}>{formatEnum(j.status)}</span>
                   {['PENDING', 'RUNNING'].includes(j.status) && <button onClick={() => cancel.mutate(j.id)} aria-label="Annuler la migration" className="text-red-400 hover:text-red-300"><XCircle className="w-4 h-4" /></button>}
                   {['COMPLETED', 'TERMINE'].includes(j.status) && <CheckCircle className="w-4 h-4 text-green-400" />}
                 </div>

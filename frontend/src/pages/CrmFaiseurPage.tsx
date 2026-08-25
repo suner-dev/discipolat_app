@@ -1,3 +1,4 @@
+import { formatEnum } from '@/lib/labels';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -373,7 +374,7 @@ export default function CrmFaiseurPage() {
                   <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
                     <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center"><Calendar className="w-4 h-4 text-teal-500" /></div>
                     <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100">{v.ameNom || '—'}</p><p className="text-[9px] text-gray-400">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'} · {v.typeVisite}</p></div>
-                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${v.statut === 'PLANIFIEE' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'}`}>{v.statut}</span>
+                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${v.statut === 'PLANIFIEE' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'}`}>{formatEnum(v.statut)}</span>
                   </div>
                 ))}
               </div>
