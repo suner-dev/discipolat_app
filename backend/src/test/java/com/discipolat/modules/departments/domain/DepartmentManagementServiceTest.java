@@ -92,7 +92,7 @@ class DepartmentManagementServiceTest {
         // L'accès au département est toujours accordé par défaut (assertCanManage)
         lenient().when(departmentService.findById(deptId)).thenReturn(new Department());
         // Identité de l'acteur pour le journal d'activité
-        lenient().when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
         lenient().when(userRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
         // Département sans membres rattachés → constitution libre (règle tolérante)
         lenient().when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId)).thenReturn(List.of());
@@ -387,7 +387,7 @@ class DepartmentManagementServiceTest {
         when(soulRepository.findById(memberId)).thenReturn(Optional.of(soul));
         when(soulDepartmentRepository.existsBySoulIdAndDepartmentIdAndActifTrue(memberId, deptId)).thenReturn(false);
         when(securityUtils.getCurrentUserRole()).thenReturn("PASTEUR");
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
 
         Department department = new Department();
         department.setResponsableId(responsableId);
@@ -812,7 +812,7 @@ class DepartmentManagementServiceTest {
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
                 .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).build()));
         when(securityUtils.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         // Le faiseur accède à l'âme via son espace métier
         when(workspaceScope.canAccessSoul(soulId)).thenReturn(true);
         when(attendanceRepository.findByDepartmentIdAndEventIdAndSoulId(deptId, eventId, soulId))

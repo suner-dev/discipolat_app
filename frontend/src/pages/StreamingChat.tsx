@@ -9,7 +9,10 @@ interface ChatMessage {
   isSystem?: boolean;
 }
 
-const MOCK_MESSAGES: ChatMessage[] = [
+// DÉMO : le backend streaming (module `streaming`) n'expose aucun endpoint de chat.
+// Ce panneau de chat est donc une simulation locale, déconnectée de l'API.
+// À brancher sur une API de chat temps réel (ex: WebSocket/SSE) lorsqu'elle sera disponible.
+const DEMO_MESSAGES: ChatMessage[] = [
   { id: '1', author: 'Système', text: 'Le stream a commencé ! Bienvenue à tous 🙏', timestamp: '10:00', isSystem: true },
   { id: '2', author: 'Soeur Claire', text: 'Que Dieu soit loué !', timestamp: '10:01' },
   { id: '3', author: 'Frère Paul', text: 'Amen ! Présent depuis Douala 🇨🇲', timestamp: '10:02' },
@@ -18,8 +21,9 @@ const MOCK_MESSAGES: ChatMessage[] = [
 ];
 
 export default function StreamingChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
   const [newMsg, setNewMsg] = useState('');
+  // Démo : compteur de spectateurs simulé (aucune API temps réel).
   const [viewers, setViewers] = useState(47);
   const bottomRef = useRef<HTMLDivElement>(null);
 

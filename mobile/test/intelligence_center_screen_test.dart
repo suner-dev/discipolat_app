@@ -23,11 +23,21 @@ void main() {
 
     testWidgets('shows warnings', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const IntelligenceCenterScreen()));
+      await tester.scrollUntilVisible(
+        find.text('⚠️ Signes avant-coureurs'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('⚠️ Signes avant-coureurs'), findsOneWidget);
     });
 
     testWidgets('shows quick actions', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const IntelligenceCenterScreen()));
+      await tester.scrollUntilVisible(
+        find.text('🚀 Actions rapides'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('🚀 Actions rapides'), findsOneWidget);
     });
   });

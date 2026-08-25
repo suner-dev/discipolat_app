@@ -120,7 +120,7 @@ class DashboardServiceTest {
 
     @Test
     void getPasteurDashboard_ShouldReturnFullDashboard() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(
                 User.builder().id(userId).role(UserRole.PASTEUR).build()
         ));
@@ -150,7 +150,7 @@ class DashboardServiceTest {
 
     @Test
     void getResponsableDashboard_WithNoDepartment_ShouldReturnMessage() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(departmentRepository.findByResponsableId(userId)).thenReturn(List.of());
 
         var result = dashboardService.getResponsableDashboard(null);
@@ -161,7 +161,7 @@ class DashboardServiceTest {
 
     @Test
     void getChefFamilleDashboard_WithNoFamily_ShouldReturnMessage() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         User user = User.builder()
                 .id(userId)
                 .email("chef@test.com")
@@ -182,7 +182,7 @@ class DashboardServiceTest {
 
     @Test
     void getCrmFaiseurDashboard_ShouldReturnDisciplesData() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         User user = User.builder()
                 .id(userId)
                 .email("faiseur@test.com")
@@ -208,7 +208,7 @@ class DashboardServiceTest {
 
     @Test
     void getCurrentUserMetrics_ShouldReturnUserRole() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         User user = User.builder()
                 .id(userId)
                 .email("faiseur@test.com")

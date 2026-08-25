@@ -122,7 +122,7 @@ class DepartmentDossierServiceTest {
         lenient().when(settingsService.effectiveSettings(deptId)).thenReturn(
                 DepartmentSetting.builder().departmentId(deptId).build());
         lenient().when(departmentService.findById(deptId)).thenReturn(new Department());
-        lenient().when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
         lenient().when(userRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
         lenient().when(securityUtils.isSuperUser()).thenReturn(true);
     }

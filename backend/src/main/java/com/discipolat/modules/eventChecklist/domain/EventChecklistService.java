@@ -27,8 +27,14 @@ public class EventChecklistService {
         this.checklistRepo = checklistRepo;
     }
 
-    public List<EventChecklistItem> getByEvent(UUID eventId) {
+        public List<EventChecklistItem> getByEvent(UUID eventId) {
         return checklistRepo.findByTenantIdAndEventIdOrderByOrderIndexAsc(TenantContext.getCurrentTenantId(), eventId);
+    }
+
+    /** Liste tous les items du tenant groupés par événement (pour dashboard global) */
+    public List<EventChecklistItem> listAll() {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        return checklistRepo.findByTenantIdOrderByEventIdAscOrderIndexAsc(tenantId);
     }
 
     public List<EventChecklistItem> generateForEvent(UUID eventId, String eventType, LocalDateTime eventDate) {

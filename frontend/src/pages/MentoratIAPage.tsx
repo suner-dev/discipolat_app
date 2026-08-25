@@ -45,17 +45,21 @@ export default function MentoratIAPage() {
 
   const loadStats = async () => { try { const res = await api.get('/mentoring/stats'); setStats(res.data); } catch {} };
 
-  const generateSuggestions = async () => {
+    const generateSuggestions = async () => {
     try {
       setGenerating(true);
-      // Simulate with mock faiseur data (in production, this would come from the backend)
-      await api.post('/mentoring/generate', {
-        faiseurs: [
-          { id: '1', nom: 'Jean', disciples: 10, rapportsSoumis: 1, scoreMoyen: 35, formationsSuivies: 0, joursDepuisDernierContact: 18 },
-          { id: '2', nom: 'Marie', disciples: 6, rapportsSoumis: 4, scoreMoyen: 75, formationsSuivies: 3, joursDepuisDernierContact: 5 },
-          { id: '3', nom: 'Pierre', disciples: 8, rapportsSoumis: 2, scoreMoyen: 55, formationsSuivies: 1, joursDepuisDernierContact: 21 },
-        ],
-      });
+      // Load faiseurs dynamically (no mock payload) via workload endpoint
+      const wlRes = await api.get('/users/faiseur-workload');
+      const faiseurs = (wlRes.data as Array<Record<string, unknown>>).map((f) => ({
+        id: String(f.id ?? f.idUtilisateur ?? ''),
+        nom: String(f.nom ?? f.displayName ?? ''),
+        disciples: Number(f.disciples ?? f.nombreDisciplesSuivis ?? 0),
+        rapportsSoumis: Number(f.rapportsSoumis ?? 0),
+        scoreMoyen: Number(f.scoreMoyen ?? f.score ?? 0),
+        formationsSuivies: Number(f.formationsSuivies ?? 0),
+        joursDepuisDernierContact: Number(f.joursDepuisDernierContact ?? 0),
+      }));
+      await api.post('/mentoring/generate', { faiseurs });
       Toast.success('Suggestions générées !');
       loadSuggestions(); loadStats();
     } catch { Toast.error('Erreur lors de la génération'); }

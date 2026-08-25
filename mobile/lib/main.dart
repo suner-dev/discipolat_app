@@ -11,6 +11,7 @@ import 'data/services/providers.dart';
 import 'presentation/widgets/glass_theme.dart';
 import 'app.dart';
 import 'presentation/widgets/offline_banner.dart';
+import 'presentation/widgets/demo_data_overlay.dart';
 import 'data/services/push_notification_service.dart';
 import 'data/services/api_service.dart';
 import 'data/services/data_saver_service.dart';
@@ -117,11 +118,13 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
         Locale('en'),
         Locale('pt'),
       ],
-      builder: (context, child) {
+            builder: (context, child) {
         return Column(
           children: [
             const OfflineBanner(),
-            Expanded(child: child ?? const SizedBox.shrink()),
+            Expanded(
+              child: DemoDataOverlay(child: child ?? const SizedBox.shrink()),
+            ),
           ],
         );
       },

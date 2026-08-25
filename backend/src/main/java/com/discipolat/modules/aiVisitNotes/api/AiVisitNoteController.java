@@ -6,9 +6,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/ai-visit-notes")
+@PreAuthorize("isAuthenticated()")
 public class AiVisitNoteController {
 
     private final AiVisitNoteService service;

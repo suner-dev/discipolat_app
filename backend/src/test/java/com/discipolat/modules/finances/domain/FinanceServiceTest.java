@@ -52,7 +52,7 @@ class FinanceServiceTest {
 
     @Test
     void createTransaction_persistsAndAudits() {
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        SecurityTestHelper.loginAs(USER_ID);
         when(transactionRepository.save(any(FinanceTransaction.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
@@ -120,7 +120,7 @@ class FinanceServiceTest {
 
     @Test
     void upsertBudget_createsThenUpdatesSameCategory() {
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        SecurityTestHelper.loginAs(USER_ID);
         when(budgetRepository.findByDeletedFalseAndAnneeAndCategorie(2026, "LOGIQUE")).thenReturn(Optional.empty());
         when(budgetRepository.save(any(FinanceBudget.class))).thenAnswer(inv -> inv.getArgument(0));
 

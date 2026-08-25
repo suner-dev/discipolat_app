@@ -1,5 +1,7 @@
 package com.discipolat.common.infrastructure.propagation;
 
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,8 +33,8 @@ class EntityChangeSseControllerTest {
 
     @Test
     void subscribe_registersEmitter() {
-        when(securityUtils.getCurrentTenantId()).thenReturn(TENANT_ID);
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        TenantContext.setTenantId(TENANT_ID);
+        SecurityTestHelper.loginAs(USER_ID);
 
         SseEmitter emitter = controller.subscribe(null);
 
@@ -42,8 +44,8 @@ class EntityChangeSseControllerTest {
 
     @Test
     void subscribe_withEntityTypeFilter() {
-        when(securityUtils.getCurrentTenantId()).thenReturn(TENANT_ID);
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        TenantContext.setTenantId(TENANT_ID);
+        SecurityTestHelper.loginAs(USER_ID);
 
         SseEmitter emitter = controller.subscribe("SOUL,USER");
 

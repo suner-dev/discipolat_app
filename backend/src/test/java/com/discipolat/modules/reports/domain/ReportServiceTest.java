@@ -157,7 +157,7 @@ class ReportServiceTest {
     @Test
     void findMakerReportById_rapportHorsEspace_refuse() {
         when(workspaceScope.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(workspaceScope.canAccessFaiseur(rapportAutre.getFaiseurId())).thenReturn(false);
         when(workspaceScope.canAccessSoul(rapportAutre.getAmeId())).thenReturn(false);
         when(makerReportRepository.findById(rapportAutre.getId())).thenReturn(Optional.of(rapportAutre));
@@ -168,7 +168,7 @@ class ReportServiceTest {
     @Test
     void findMakerReportById_sonPropreRapport_autorise() {
         when(workspaceScope.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(faiseurId);
+        SecurityTestHelper.loginAs(faiseurId);
         when(makerReportRepository.findById(rapportMoi.getId())).thenReturn(Optional.of(rapportMoi));
 
         assertEquals(rapportMoi.getId(), reportService.findMakerReportById(rapportMoi.getId()).getId());
@@ -179,7 +179,7 @@ class ReportServiceTest {
         // Un chef peut lire un rapport d'une âme de SA famille même si le faiseur
         // n'est pas dans son espace (ex : faiseur parti de la famille).
         when(workspaceScope.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(workspaceScope.canAccessFaiseur(rapportMoi.getFaiseurId())).thenReturn(false);
         when(workspaceScope.canAccessSoul(rapportMoi.getAmeId())).thenReturn(true);
         when(makerReportRepository.findById(rapportMoi.getId())).thenReturn(Optional.of(rapportMoi));
@@ -191,7 +191,7 @@ class ReportServiceTest {
     void submitFamilyReport_chefFamilleIdUsurpe_refuse() {
         when(workspaceScope.isSuperUser()).thenReturn(false);
         when(workspaceScope.canAccessFamily(familleId)).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
 
         SubmitFamilyReportRequest request = new SubmitFamilyReportRequest(
                 familleId, UUID.randomUUID(), semaine, null, null, null, null, null, null, "Synthèse", null);
@@ -225,7 +225,7 @@ class ReportServiceTest {
     @Test
     void submitMakerReport_faiseurNonAutorise_refuse() {
         when(workspaceScope.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(workspaceScope.canAccessFaiseur(autreFaiseurId)).thenReturn(false);
 
         SubmitMakerReportRequest request = new SubmitMakerReportRequest(

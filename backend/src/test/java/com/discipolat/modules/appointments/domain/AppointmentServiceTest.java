@@ -1,5 +1,6 @@
 package com.discipolat.modules.appointments.domain;
 
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.appointments.api.AppointmentResponse;
 import com.discipolat.modules.appointments.api.CreateAppointmentRequest;
@@ -48,7 +49,7 @@ class AppointmentServiceTest {
     void create_shouldSaveAndNotifyRecepteur() {
         UUID demandeur = UUID.randomUUID();
         UUID recepteur = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(demandeur);
+        SecurityTestHelper.loginAs(demandeur);
         when(userRepository.existsById(recepteur)).thenReturn(true);
         when(appointmentRepository.save(any(Appointment.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -67,7 +68,7 @@ class AppointmentServiceTest {
     void updateStatus_confirm_shouldRequireRecepteur() {
         UUID demandeur = UUID.randomUUID();
         UUID recepteur = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(demandeur);
+        SecurityTestHelper.loginAs(demandeur);
         when(securityUtils.getCurrentUserRole()).thenReturn("MEMBRE");
 
         Appointment a = appointment(demandeur, recepteur, Appointment.Statut.EN_ATTENTE);
@@ -85,7 +86,7 @@ class AppointmentServiceTest {
     void updateStatus_confirm_asRecepteur_shouldNotifyDemandeur() {
         UUID demandeur = UUID.randomUUID();
         UUID recepteur = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(recepteur);
+        SecurityTestHelper.loginAs(recepteur);
         when(securityUtils.getCurrentUserRole()).thenReturn("PASTEUR");
 
         Appointment a = appointment(demandeur, recepteur, Appointment.Statut.EN_ATTENTE);

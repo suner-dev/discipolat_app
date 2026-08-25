@@ -1,5 +1,6 @@
 package com.discipolat.modules.badges.domain;
 
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.evangelism.domain.EvangelismStageHistoryRepository;
 import com.discipolat.modules.interactions.domain.InteractionRepository;
@@ -51,7 +52,7 @@ class BadgeServiceTest {
     @Test
     void evaluate_shouldEarnBadgeWhenThresholdReached() {
         UUID userId = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
 
         Badge visiteBadge = badge(Badge.Critere.VISITES, 1, Badge.Niveau.BRONZE);
         Badge inaccessibleBadge = badge(Badge.Critere.INTERACTIONS, 50, Badge.Niveau.OR);
@@ -78,7 +79,7 @@ class BadgeServiceTest {
     @Test
     void evaluate_shouldNotDuplicateAlreadyEarnedBadge() {
         UUID userId = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
 
         Badge badge = badge(Badge.Critere.VISITES, 1, Badge.Niveau.BRONZE);
         when(badgeRepository.findByActifTrueOrderBySeuilAsc()).thenReturn(List.of(badge));

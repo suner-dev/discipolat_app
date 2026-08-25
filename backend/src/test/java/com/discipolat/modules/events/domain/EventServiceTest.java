@@ -164,7 +164,7 @@ class EventServiceTest {
     @Test
     void delete_evenementOrganiseParSoi_autorise() {
         when(workspaceScope.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         // L'organisateur gère l'événement : visibilité famille OK (sa famille) + organisateur == user
         when(workspaceScope.canAccessFamily(familleId)).thenReturn(true);
         when(eventRepository.findById(evenementFamille.getId())).thenReturn(Optional.of(evenementFamille));
@@ -294,7 +294,7 @@ class EventServiceTest {
     void create_departementGere_autorise() {
         when(workspaceScope.isSuperUser()).thenReturn(false);
         when(workspaceScope.canAccessDepartment(departmentId)).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         User orgUser = User.builder().id(userId).firstName("Test").lastName("User")
                 .role(com.discipolat.common.domain.UserRole.MEMBRE)
                 .roles(java.util.Set.of(com.discipolat.common.domain.UserRole.MEMBRE))

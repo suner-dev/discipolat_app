@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * P21 — Préférences de notification par utilisateur.
@@ -20,6 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/notifications/preferences")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class NotificationPreferenceController {
 
     private final NotificationPreferenceRepository repository;

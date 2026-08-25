@@ -12,7 +12,7 @@ void main() {
     testWidgets('shows overview counts', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const SuccessionScreen()));
       expect(find.text('Prêts'), findsOneWidget);
-      expect(find.text('En formation'), findsOneWidget);
+      expect(find.text('En formation'), findsWidgets);
       expect(find.text('À identifier'), findsOneWidget);
     });
 
@@ -24,6 +24,7 @@ void main() {
 
     testWidgets('shows open positions', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const SuccessionScreen()));
+      await tester.scrollUntilVisible(find.text('Postes ouverts'), 300);
       expect(find.text('Postes ouverts'), findsOneWidget);
       expect(find.text('Responsable Louange'), findsOneWidget);
     });

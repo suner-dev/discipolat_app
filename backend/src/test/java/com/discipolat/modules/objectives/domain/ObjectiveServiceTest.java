@@ -2,6 +2,7 @@ package com.discipolat.modules.objectives.domain;
 
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evangelism.domain.EvangelismTrackRepository;
@@ -47,7 +48,7 @@ class ObjectiveServiceTest {
 
     @Test
     void create_shouldPersistObjective() {
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
 
         CreateObjectiveRequest request = new CreateObjectiveRequest(
                 UserRole.FAISEUR, ObjectiveType.VISITES, 6, Objective.Periode.MENSUEL);
@@ -84,7 +85,7 @@ class ObjectiveServiceTest {
     @Test
     void myProgress_shouldOnlyReturnObjectivesOfActiveRole() {
         when(securityUtils.getCurrentUserRole()).thenReturn("PASTEUR");
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
 
         Objective pasteurObj = Objective.builder()
                 .id(UUID.randomUUID())

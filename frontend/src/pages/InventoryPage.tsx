@@ -1,5 +1,10 @@
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useI18n } from '@/i18n';
+import api, { getErrorMessage } from '@/lib/api';
+import SkeletonLoader from '@/components/shared/SkeletonLoader';
+import EmptyState from '@/components/shared/EmptyState';
+import toast from 'react-hot-toast';
 import { Package, Plus, Search, Edit2, Trash2, AlertTriangle, BarChart3 } from 'lucide-react';
 
 interface InventoryItem {
@@ -7,32 +12,59 @@ interface InventoryItem {
   name: string;
   category: string;
   quantity: number;
-  minQuantity: number;
   unit: string;
   location: string;
   lastUpdated: string;
+  lowStock: boolean;
 }
 
-const MOCK_ITEMS: InventoryItem[] = [
-  { id: '1', name: 'Chaises pliantes', category: 'Mobilier', quantity: 200, minQuantity: 50, unit: 'unités', location: 'Salle principale', lastUpdated: '2026-08-20' },
-  { id: '2', name: 'Bibles', category: 'Literature', quantity: 45, minQuantity: 30, unit: 'exemplaires', location: 'Bibliothèque', lastUpdated: '2026-08-18' },
-  { id: '3', name: 'Microphones sans fil', category: 'Audio/Video', quantity: 8, minQuantity: 4, unit: 'unités', location: 'Réserve technique', lastUpdated: '2026-08-22' },
-  { id: '4', name: 'Projecteur HD', category: 'Audio/Video', quantity: 2, minQuantity: 1, unit: 'unités', location: 'Salle principale', lastUpdated: '2026-08-15' },
-  { id: '5', name: 'Nappes blanches', category: 'Événementiel', quantity: 15, minQuantity: 10, unit: 'unités', location: 'Réserve', lastUpdated: '2026-08-10' },
-];
+interface InventoryStats {
+  totalItems: number;
+  lowStockCount: number;
+  lowStockItems: InventoryItem[];
+}
+
 
 export default function InventoryPage() {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState<string>('all');
 
-  const categories = ['all', ...new Set(MOCK_ITEMS.map((i) => i.category))];
-  const filtered = MOCK_ITEMS.filter((i) =>
-    (catFilter === 'all' || i.category === catFilter) &&
-    i.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const { data: itemsPage, isLoading, error } = useQuery({
+    queryKey: ['inventory', { search, catFilter }],
+    queryFn: async () => {
+            const res = await api.get('/inventory', { params: { categorie: catFilter !== 'all' ? catFilter : undefined, q: search || undefined, page: 0, size: 50 } });
+      const page = res.data as { content?: Array<Record<string, unknown>> };
+      const content = page.content ?? [];
+      return content.map((i) => ({
+        id: String(i.id),
+        name: String(i.nom ?? ''),
+        category: String(i.categorie ?? ''),
+        quantity: Number(i.quantiteDisponible ?? i.quantite ?? 0),
+        unit: 'unités',
+        location: String(i.lieuStockage ?? ''),
+        lastUpdated: i.updatedAt as string | undefined,
+        lowStock: Number(i.quantiteDisponible ?? i.quantite ?? 1) <= 0 || String(i.statut) === 'EN_MAINTENANCE',
+      })) as InventoryItem[];
+    },
+    retry: false,
+  });
 
-  const lowStock = MOCK_ITEMS.filter((i) => i.quantity <= i.minQuantity);
+  const items = itemsPage ?? [];
+  const categories = ['all', ...new Set(items.map((i) => i.category))];
+  const filtered = items; /* search/filter already on server side */
+  const lowStock = items.filter((i) => i.lowStock);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { await api.delete(`/inventory/${id}`); },
+    onSuccess: () => { toast.success('Article supprimé'); queryClient.invalidateQueries({ queryKey: ['inventory'] }); },
+    onError: () => toast.error('Erreur suppression'),
+  });
+
+  if (isLoading) return <SkeletonLoader lines={6} variant="card" />;
+  if (error) return <div className="text-red-500 p-6">{getErrorMessage(error)}</div>;
+  if (!items || items.length === 0) return <EmptyState title="Aucun article" message="L'inventaire est vide pour le moment." />;
 
   return (
     <div className="space-y-6">
@@ -56,7 +88,7 @@ export default function InventoryPage() {
             <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
               <Package className="w-5 h-5 text-indigo-500" />
             </div>
-            <div><p className="text-2xl font-bold text-gray-900 dark:text-white">{MOCK_ITEMS.length}</p><p className="text-xs text-gray-500">Articles total</p></div>
+                        <div><p className="text-2xl font-bold text-gray-900 dark:text-white">{items.length}</p><p className="text-xs text-gray-500">Articles total</p></div>
           </div>
         </div>
         <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
@@ -64,7 +96,7 @@ export default function InventoryPage() {
             <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <BarChart3 className="w-5 h-5 text-green-500" />
             </div>
-            <div><p className="text-2xl font-bold text-gray-900 dark:text-white">{MOCK_ITEMS.length - lowStock.length}</p><p className="text-xs text-gray-500">En stock suffisant</p></div>
+                        <div><p className="text-2xl font-bold text-gray-900 dark:text-white">{items.length - lowStock.length}</p><p className="text-xs text-gray-500">En stock suffisant</p></div>
           </div>
         </div>
         <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
@@ -86,7 +118,7 @@ export default function InventoryPage() {
           <div className="mt-2 space-y-1">
             {lowStock.map((item) => (
               <p key={item.id} className="text-xs text-amber-600 dark:text-amber-400">
-                {item.name}: {item.quantity} {item.unit} (minimum: {item.minQuantity})
+                                {item.name}: {item.quantity} {item.unit} — rupture de stock
               </p>
             ))}
           </div>
@@ -127,7 +159,7 @@ export default function InventoryPage() {
                   <span className="px-2 py-1 rounded-lg text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">{item.category}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`text-sm font-medium ${item.quantity <= item.minQuantity ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
+                                    <span className={`text-sm font-medium ${item.lowStock ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
                     {item.quantity} {item.unit}
                   </span>
                 </td>
@@ -137,7 +169,7 @@ export default function InventoryPage() {
                     <button className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-gray-600 transition">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-red-500 transition">
+                                        <button onClick={() => deleteMutation.mutate(item.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-red-500 transition">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

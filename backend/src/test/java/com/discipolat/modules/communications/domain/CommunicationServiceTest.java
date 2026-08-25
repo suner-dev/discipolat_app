@@ -105,7 +105,7 @@ class CommunicationServiceTest {
         Communication invisible = Communication.builder().id(UUID.randomUUID())
                 .titre("Autre cible").contenu("…").cible(Communication.Cible.ROLE)
                 .roles(List.of("ADMIN")).build();
-        when(securityUtils.getCurrentUserId()).thenReturn(me);
+        SecurityTestHelper.loginAs(me);
         when(communicationRepository.findByDeletedFalseAndStatutOrderByDatePublicationDesc(Communication.Statut.PUBLIEE))
                 .thenReturn(List.of(visible, invisible));
         when(userRepository.findAll()).thenReturn(List.of(user(me, UserRole.MEMBRE), user(other, UserRole.ADMIN)));
@@ -119,7 +119,7 @@ class CommunicationServiceTest {
 
     @Test
     void create_setsTargetFieldsByCible() {
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        SecurityTestHelper.loginAs(USER_ID);
         when(communicationRepository.save(any(Communication.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CommunicationRequest request = new CommunicationRequest(

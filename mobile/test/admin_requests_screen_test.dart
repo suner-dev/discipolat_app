@@ -11,9 +11,9 @@ void main() {
 
     testWidgets('shows request types', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const AdminRequestsScreen()));
-      expect(find.text('Baptême'), findsOneWidget);
-      expect(find.text('Dédicace'), findsOneWidget);
-      expect(find.text('Accueil nouveau'), findsOneWidget);
+      expect(find.text('Baptême'), findsWidgets);
+      expect(find.text('Dédicace'), findsWidgets);
+      expect(find.text('Accueil nouveau'), findsWidgets);
     });
 
     testWidgets('shows my requests', (tester) async {

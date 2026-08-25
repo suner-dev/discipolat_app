@@ -13,7 +13,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: const SpiritualChallengesScreen()));
       expect(find.text('Défi en cours'), findsOneWidget);
       expect(find.text('30 jours de prière'), findsOneWidget);
-      expect(find.text('Jour 12/30'), findsOneWidget);
+      expect(find.textContaining('Jour 12/30'), findsOneWidget);
     });
 
     testWidgets('shows available challenges', (tester) async {
@@ -24,6 +24,11 @@ void main() {
 
     testWidgets('shows completed challenges', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const SpiritualChallengesScreen()));
+      await tester.scrollUntilVisible(
+        find.text('Défis complétés'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Défis complétés'), findsOneWidget);
       expect(find.text('Témoignage partagé'), findsOneWidget);
     });

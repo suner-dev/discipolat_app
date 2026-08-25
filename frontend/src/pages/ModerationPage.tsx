@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import api from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import {
   Shield, CheckCircle2, XCircle, AlertTriangle, Eye, Clock, RefreshCw,
   Loader2, Filter, Search, Ban, Check, ChevronDown, MessageSquare,
@@ -61,22 +61,16 @@ export default function ModerationPage() {
     },
   });
 
-  const approveMutation = useMutation({
-    mutationFn: async (id: string) => { await api.post(`/moderation/${id}/approve`); },
-    onSuccess: () => { toast.success('Contenu approuvé'); refetch(); setSelectedItem(null); },
-    onError: () => toast.error('Erreur lors de l\'approbation'),
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: async (id: string) => { await api.post(`/moderation/${id}/reject`); },
-    onSuccess: () => { toast.success('Contenu rejeté'); refetch(); setSelectedItem(null); },
-    onError: () => toast.error('Erreur lors du rejet'),
-  });
-
-  const escalateMutation = useMutation({
-    mutationFn: async (id: string) => { await api.post(`/moderation/${id}/escalate`); },
-    onSuccess: () => { toast.success('Escaladé au pasteur'); refetch(); setSelectedItem(null); },
-    onError: () => toast.error('Erreur lors de l\'escalade'),
+  const reviewMutation = useMutation({
+    mutationFn: async ({ id, decision }: { id: string; decision: 'APPROVED' | 'REJECTED' }) => {
+      await api.put(`/moderation/${id}/review`, { decision });
+    },
+    onSuccess: (_, { decision }) => {
+      toast.success(decision === 'APPROVED' ? 'Contenu approuvé' : 'Contenu rejeté');
+      refetch();
+      setSelectedItem(null);
+    },
+    onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
   const filtered = items.filter(item =>
@@ -93,7 +87,7 @@ export default function ModerationPage() {
             <Shield className="w-5 h-5 text-purple-500" />
             Modération de contenu
           </h1>
-          <p className="page-subtitle">Filtre IA • Approbation/rejet • Escalade au pasteur</p>
+          <p className="page-subtitle">Filtre IA • Approbation/rejet du contenu signalé</p>
         </div>
         <button onClick={() => refetch()} className="btn-ghost btn-sm">
           <RefreshCw className="w-4 h-4" /> Actualiser
@@ -170,17 +164,13 @@ export default function ModerationPage() {
               </div>
               {item.status === 'PENDING' && (
                 <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => approveMutation.mutate(item.id)}
+                  <button onClick={() => reviewMutation.mutate({ id: item.id, decision: 'APPROVED' })}
                     className="btn-icon text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20" title="Approuver">
                     <Check className="w-4 h-4" />
                   </button>
-                  <button onClick={() => rejectMutation.mutate(item.id)}
+                  <button onClick={() => reviewMutation.mutate({ id: item.id, decision: 'REJECTED' })}
                     className="btn-icon text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" title="Rejeter">
                     <XCircle className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => escalateMutation.mutate(item.id)}
-                    className="btn-icon text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20" title="Escalader">
-                    <AlertTriangle className="w-4 h-4" />
                   </button>
                 </div>
               )}
@@ -216,13 +206,10 @@ export default function ModerationPage() {
             </div>
             {selectedItem.status === 'PENDING' && (
               <div className="modal-footer">
-                <button onClick={() => rejectMutation.mutate(selectedItem.id)} className="btn-ghost btn-sm text-red-500">
+                <button onClick={() => reviewMutation.mutate({ id: selectedItem.id, decision: 'REJECTED' })} className="btn-ghost btn-sm text-red-500">
                   <Ban className="w-4 h-4" /> Rejeter
                 </button>
-                <button onClick={() => escalateMutation.mutate(selectedItem.id)} className="btn-ghost btn-sm text-purple-500">
-                  <AlertTriangle className="w-4 h-4" /> Escalader
-                </button>
-                <button onClick={() => approveMutation.mutate(selectedItem.id)} className="btn-primary btn-sm">
+                <button onClick={() => reviewMutation.mutate({ id: selectedItem.id, decision: 'APPROVED' })} className="btn-primary btn-sm">
                   <Check className="w-4 h-4" /> Approuver
                 </button>
               </div>

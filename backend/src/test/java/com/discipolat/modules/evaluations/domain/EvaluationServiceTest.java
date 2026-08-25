@@ -67,7 +67,7 @@ class EvaluationServiceTest {
 
     @Test
     void submitOrUpdate_createQuandAbsente() {
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(userRepository.findById(evalueId)).thenReturn(Optional.of(user(evalueId, UserRole.FAISEUR)));
         when(securityUtils.isSuperUser()).thenReturn(true);
         when(evaluationRepository.findByEvaluateurIdAndEvalueIdAndCategorie(any(), any(), any()))
@@ -89,7 +89,7 @@ class EvaluationServiceTest {
         Evaluation existing = Evaluation.builder().id(existingId).evalueId(evalueId)
                 .evaluateurId(currentUserId).categorie(CategorieEvaluation.FAISEUR)
                 .note(2).commentaire("Ancien avis").build();
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(userRepository.findById(evalueId)).thenReturn(Optional.of(user(evalueId, UserRole.FAISEUR)));
         when(securityUtils.isSuperUser()).thenReturn(true);
         when(evaluationRepository.findByEvaluateurIdAndEvalueIdAndCategorie(eq(currentUserId), eq(evalueId),
@@ -105,7 +105,7 @@ class EvaluationServiceTest {
 
     @Test
     void submitOrUpdate_categorieDeriveeDuRole() {
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(userRepository.findById(evalueId)).thenReturn(Optional.of(user(evalueId, UserRole.MEMBRE)));
         when(securityUtils.isSuperUser()).thenReturn(true);
         when(evaluationRepository.findByEvaluateurIdAndEvalueIdAndCategorie(any(), any(), any()))
@@ -119,14 +119,14 @@ class EvaluationServiceTest {
 
     @Test
     void autoEvaluationRefusee() {
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         assertThrows(BusinessRuleException.class,
                 () -> evaluationService.submitOrUpdate(currentUserId, CategorieEvaluation.FAISEUR, 4, null));
     }
 
     @Test
     void noteHorsBornesRefusee() {
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         assertThrows(BusinessRuleException.class,
                 () -> evaluationService.submitOrUpdate(evalueId, CategorieEvaluation.FAISEUR, 0, null));
         assertThrows(BusinessRuleException.class,
@@ -135,7 +135,7 @@ class EvaluationServiceTest {
 
     @Test
     void utilisateurInconnuRefuse() {
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(userRepository.findById(evalueId)).thenReturn(Optional.empty());
         assertThrows(EntityNotFoundException.class,
                 () -> evaluationService.submitOrUpdate(evalueId, CategorieEvaluation.FAISEUR, 4, null));
@@ -148,7 +148,7 @@ class EvaluationServiceTest {
         Soul soul = Soul.builder().id(soulId).nom("Disciple").userId(evalueId).faiseurId(UUID.randomUUID()).build();
         Department dept = Department.builder().id(deptId).nom("Jeunesse").responsableId(currentUserId).build();
 
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(userRepository.findById(evalueId)).thenReturn(Optional.of(user(evalueId, UserRole.MEMBRE)));
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
@@ -174,7 +174,7 @@ class EvaluationServiceTest {
     void nonAutoriseRefuse() {
         Soul soul = Soul.builder().id(UUID.randomUUID()).nom("Disciple")
                 .userId(evalueId).faiseurId(UUID.randomUUID()).build();
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(userRepository.findById(evalueId)).thenReturn(Optional.of(user(evalueId, UserRole.FAISEUR)));
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(false);
@@ -192,7 +192,7 @@ class EvaluationServiceTest {
         // « /evaluations/me » : voir SES propres stats (anonymisées) ne doit pas
         // déclencher la vérification d'auto-évaluation (régression 422).
         User me = user(currentUserId, UserRole.RESPONSABLE);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(userRepository.findById(currentUserId)).thenReturn(Optional.of(me));
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(evaluationRepository.findByEvalueIdAndCategorie(eq(currentUserId), any()))
@@ -210,7 +210,7 @@ class EvaluationServiceTest {
         UUID other = UUID.randomUUID();
         Soul soul = Soul.builder().id(UUID.randomUUID()).nom("Disciple")
                 .userId(other).faiseurId(UUID.randomUUID()).build();
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(userRepository.findById(other)).thenReturn(Optional.of(user(other, UserRole.FAISEUR)));
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(false);
@@ -228,7 +228,7 @@ class EvaluationServiceTest {
         Evaluation e = Evaluation.builder().id(UUID.randomUUID()).evalueId(evalueId)
                 .evaluateurId(currentUserId).categorie(CategorieEvaluation.FAISEUR)
                 .note(4).commentaire("Bien").createdAt(java.time.LocalDateTime.now()).build();
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(userRepository.findById(evalueId)).thenReturn(Optional.of(user(evalueId, UserRole.FAISEUR)));
         when(securityUtils.isSuperUser()).thenReturn(true);
         when(evaluationRepository.findByEvaluateurIdAndEvalueId(currentUserId, evalueId))

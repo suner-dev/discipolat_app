@@ -52,7 +52,7 @@ class SoulExitServiceTest {
     @Test
     void markAsExited_ShouldUpdateSoulStatusAndCreateExitRecord() {
         when(soulRepository.findById(ameId)).thenReturn(Optional.of(testSoul));
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(soulExitRepository.save(any(SoulExit.class))).thenAnswer(i -> i.getArgument(0));
 
         SoulExit result = soulExitService.markAsExited(ameId, "ABANDON", "Ne répond plus", true);

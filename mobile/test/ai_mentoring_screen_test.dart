@@ -18,8 +18,13 @@ void main() {
 
     testWidgets('shows chef de famille profiles', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const AiMentoringScreen()));
+      await tester.scrollUntilVisible(
+        find.text('Jean-Pierre M.'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Jean-Pierre M.'), findsOneWidget);
-      expect(find.text('Famille Grâce'), findsOneWidget);
+      expect(find.textContaining('Famille Grâce'), findsOneWidget);
     });
 
     testWidgets('shows recommended approaches', (tester) async {

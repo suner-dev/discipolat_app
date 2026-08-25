@@ -1,6 +1,7 @@
 package com.discipolat.modules.members.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.exception.UnauthorizedException;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.users.domain.User;
@@ -53,6 +54,7 @@ public class CompetenceMatchingService {
     public MemberCompetence updateCompetence(UUID id, MemberCompetence updated) {
         MemberCompetence existing = competenceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("MemberCompetence", id));
+        assertOwnerOrAdmin(existing.getUserId());
         existing.setCompetenceName(updated.getCompetenceName());
         existing.setCategory(updated.getCategory());
         existing.setLevel(updated.getLevel());
@@ -64,6 +66,7 @@ public class CompetenceMatchingService {
     public void deleteCompetence(UUID id) {
         MemberCompetence competence = competenceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("MemberCompetence", id));
+        assertOwnerOrAdmin(competence.getUserId());
         competenceRepository.delete(competence);
     }
 
@@ -155,5 +158,12 @@ public class CompetenceMatchingService {
                 .collect(Collectors.groupingBy(MemberCompetence::getCategory, Collectors.counting()));
         stats.put("byCategory", byCategory);
         return stats;
+    }
+
+    private void assertOwnerOrAdmin(UUID ownerUserId) {
+        if (!securityUtils.isSuperUser()
+                && !ownerUserId.equals(securityUtils.getCurrentUserId())) {
+            throw new UnauthorizedException("You can only modify your own competences");
+        }
     }
 }

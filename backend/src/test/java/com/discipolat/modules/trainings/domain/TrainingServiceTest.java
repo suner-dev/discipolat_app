@@ -1,5 +1,6 @@
 package com.discipolat.modules.trainings.domain;
 
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.trainings.api.CreateCourseRequest;
 import com.discipolat.modules.trainings.api.CreateModuleRequest;
@@ -89,7 +90,7 @@ class TrainingServiceTest {
         UUID userId = UUID.randomUUID();
         UUID courseId = UUID.randomUUID();
         UUID moduleId = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
 
         QuizQuestion q = question(1);
         lenient().when(quizRepository.findByModuleIdOrderByOrdreAsc(moduleId)).thenReturn(List.of(q));
@@ -171,7 +172,7 @@ class TrainingServiceTest {
         UUID userId = UUID.randomUUID();
         UUID courseId = UUID.randomUUID();
         UUID moduleId = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
 
         QuizQuestion q = question(1);
         lenient().when(quizRepository.findByModuleIdOrderByOrdreAsc(moduleId)).thenReturn(List.of(q));

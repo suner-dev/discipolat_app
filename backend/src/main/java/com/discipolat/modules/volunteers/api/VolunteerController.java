@@ -4,6 +4,7 @@ import com.discipolat.modules.volunteers.domain.Volunteer;
 import com.discipolat.modules.volunteers.domain.VolunteerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,16 +24,19 @@ public class VolunteerController {
     @GetMapping("/{id}")
     public Volunteer get(@PathVariable UUID id) { return service.get(id); }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     @PostMapping
     public ResponseEntity<Volunteer> create(@RequestBody Volunteer v) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(v));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     @PutMapping("/{id}")
     public Volunteer update(@PathVariable UUID id, @RequestBody Volunteer updates) {
         return service.update(id, updates);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);

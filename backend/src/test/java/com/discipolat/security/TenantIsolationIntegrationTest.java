@@ -38,7 +38,7 @@ class TenantIsolationIntegrationTest {
         mockMvc.perform(get("/api/v1/souls")
                         .header("Authorization", TOKEN_TENANT_A)
                         .header("X-Tenant-Id", "tenant-b-id"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -47,7 +47,7 @@ class TenantIsolationIntegrationTest {
         mockMvc.perform(get("/api/v1/reports")
                         .header("Authorization", TOKEN_TENANT_A)
                         .header("X-Tenant-Id", "tenant-b-id"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -56,7 +56,7 @@ class TenantIsolationIntegrationTest {
         mockMvc.perform(get("/api/v1/finances/transactions")
                         .header("Authorization", TOKEN_TENANT_A)
                         .header("X-Tenant-Id", "tenant-b-id"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -65,7 +65,7 @@ class TenantIsolationIntegrationTest {
         mockMvc.perform(get("/api/v1/events")
                         .header("Authorization", TOKEN_TENANT_A)
                         .header("X-Tenant-Id", "tenant-b-id"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -74,7 +74,7 @@ class TenantIsolationIntegrationTest {
         mockMvc.perform(get("/api/v1/families")
                         .header("Authorization", TOKEN_TENANT_A)
                         .header("X-Tenant-Id", "tenant-b-id"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -83,7 +83,7 @@ class TenantIsolationIntegrationTest {
         mockMvc.perform(get("/api/v1/messages")
                         .header("Authorization", TOKEN_TENANT_A)
                         .header("X-Tenant-Id", "tenant-b-id"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -92,7 +92,7 @@ class TenantIsolationIntegrationTest {
         mockMvc.perform(get("/api/v1/users")
                         .header("Authorization", TOKEN_TENANT_A)
                         .header("X-Tenant-Id", "tenant-b-id"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -101,7 +101,7 @@ class TenantIsolationIntegrationTest {
         mockMvc.perform(get("/api/v1/alerts")
                         .header("Authorization", TOKEN_TENANT_A)
                         .header("X-Tenant-Id", "tenant-b-id"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

@@ -21,28 +21,33 @@ public class CompetenceMatchingController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MemberCompetence> addCompetence(@RequestBody MemberCompetence competence) {
         return ResponseEntity.ok(service.addCompetence(competence));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MemberCompetence> updateCompetence(@PathVariable UUID id,
                                                               @RequestBody MemberCompetence competence) {
         return ResponseEntity.ok(service.updateCompetence(id, competence));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteCompetence(@PathVariable UUID id) {
         service.deleteCompetence(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/mine")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<MemberCompetence>> myCompetences() {
         return ResponseEntity.ok(service.getMyCompetences());
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<MemberCompetence>> userCompetences(@PathVariable UUID userId) {
         return ResponseEntity.ok(service.getUserCompetences(userId));
     }

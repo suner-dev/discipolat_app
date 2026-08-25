@@ -281,7 +281,7 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
                           Text('${souls.toInt()}', style: TextStyle(color: color, fontSize: 8)),
                         const SizedBox(height: 2),
                         Container(
-                          height: (pct * 120).clamp(4.0, 120.0),
+                          height: ((pct * 120) as num).clamp(4.0, 120.0).toDouble(),
                           decoration: BoxDecoration(
                             color: color.withAlpha(180),
                             borderRadius: BorderRadius.circular(2),

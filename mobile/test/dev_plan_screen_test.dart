@@ -29,6 +29,11 @@ void main() {
 
     testWidgets('shows auto-generate option', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const DevelopmentPlanScreen()));
+      await tester.scrollUntilVisible(
+        find.text('Générer des objectifs automatiquement'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Générer des objectifs automatiquement'), findsOneWidget);
     });
   });

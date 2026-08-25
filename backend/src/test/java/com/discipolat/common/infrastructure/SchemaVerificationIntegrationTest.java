@@ -262,11 +262,11 @@ class SchemaVerificationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Badges & modules: badges, module_completions, certificates, quiz_questions")
+        @DisplayName("Badges & modules: badges, module_completions, reward_certificates, quiz_questions")
         void badgesTables() {
             assertTableExists("badges");
             assertTableExists("module_completions");
-            assertTableExists("certificates");
+            assertTableExists("reward_certificates");
             assertTableExists("quiz_questions");
         }
 
@@ -969,7 +969,7 @@ class SchemaVerificationIntegrationTest {
             // (excluding jsonb tables tracked in POSTGRES_ONLY_TABLES)
             List<String> expectedEntities = List.of(
                     "alerts", "appointments", "audit_logs", "badges",
-                    "certificates", "church_settings", "communications",
+                    "reward_certificates", "church_settings", "communications",
                     "config_revisions", "conversation_messages", "conversations",
                     "course_enrollments", "course_modules", "courses",
                     "department_activity", "department_announcements",

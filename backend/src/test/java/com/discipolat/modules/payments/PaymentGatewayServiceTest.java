@@ -1,6 +1,8 @@
 package com.discipolat.modules.payments;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.finances.api.FinanceTransactionRequest;
 import com.discipolat.modules.finances.domain.FinanceService;
@@ -39,7 +41,7 @@ class PaymentGatewayServiceTest {
     @BeforeEach
     void setUp() {
         service = new PaymentGatewayService(repository, financeService, propagationPublisher, securityUtils);
-        lenient().when(securityUtils.getCurrentTenantId()).thenReturn(tenantId);
+        TenantContext.setTenantId(tenantId);
         lenient().when(repository.save(any(PaymentIntent.class))).thenAnswer(inv -> inv.getArgument(0));
         Map<String, Object> txResult = new java.util.LinkedHashMap<>();
         txResult.put("id", UUID.randomUUID());
@@ -49,7 +51,7 @@ class PaymentGatewayServiceTest {
 
     @Test
     void initiate_genereReferenceOperateurEtStatutPending() {
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
 
         PaymentIntent intent = service.initiate(PaymentIntent.builder()
                 .operator(PaymentIntent.Operator.ORANGE_MONEY)
@@ -133,7 +135,7 @@ class PaymentGatewayServiceTest {
                 .build();
         when(repository.findById(sien.getId())).thenReturn(Optional.of(sien));
         when(securityUtils.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(auteur);
+        SecurityTestHelper.loginAs(auteur);
 
         assertThat(service.findByIdForCurrentUser(sien.getId())).isSameAs(sien);
     }
@@ -149,7 +151,7 @@ class PaymentGatewayServiceTest {
                 .build();
         when(repository.findById(sien.getId())).thenReturn(Optional.of(sien));
         when(securityUtils.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(autre);
+        SecurityTestHelper.loginAs(autre);
 
         org.junit.jupiter.api.Assertions.assertThrows(
                 com.discipolat.common.domain.EntityNotFoundException.class,
@@ -181,7 +183,7 @@ class PaymentGatewayServiceTest {
                 .build();
         when(repository.findById(sien.getId())).thenReturn(Optional.of(sien));
         when(securityUtils.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(autre);
+        SecurityTestHelper.loginAs(autre);
 
         org.junit.jupiter.api.Assertions.assertThrows(
                 com.discipolat.common.domain.EntityNotFoundException.class,

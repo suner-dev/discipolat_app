@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/event-checklists")
+@PreAuthorize("isAuthenticated()")
 public class EventChecklistController {
 
     private final EventChecklistService checklistService;
@@ -31,6 +33,11 @@ public class EventChecklistController {
         String eventType = body.getOrDefault("eventType", "DEFAULT");
         LocalDateTime eventDate = body.containsKey("eventDate") ? LocalDateTime.parse(body.get("eventDate")) : LocalDateTime.now().plusDays(7);
         return ResponseEntity.status(HttpStatus.CREATED).body(checklistService.generateForEvent(eventId, eventType, eventDate));
+    }
+
+        @GetMapping
+    public ResponseEntity<?> listAll() {
+        return ResponseEntity.ok(checklistService.listAll());
     }
 
     @PostMapping

@@ -80,7 +80,7 @@ class ParallelFollowupServiceTest {
         UUID spoofedId = UUID.randomUUID();
         when(workspaceScopeService.isSuperUser()).thenReturn(false);
         when(workspaceScopeService.canAccessSoul(ameId)).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(repository.save(any(ParallelFollowup.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
@@ -113,7 +113,7 @@ class ParallelFollowupServiceTest {
                 .build();
         when(repository.findById(foreign.getId())).thenReturn(Optional.of(foreign));
         when(workspaceScopeService.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(workspaceScopeService.canAccessSoul(autreAmeId)).thenReturn(false);
 
         assertThrows(AccessDeniedException.class, () -> service.findById(foreign.getId()));
@@ -123,7 +123,7 @@ class ParallelFollowupServiceTest {
     void findById_Own_ShouldReturn() {
         when(repository.findById(followup.getId())).thenReturn(Optional.of(followup));
         when(workspaceScopeService.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
 
         ParallelFollowup result = service.findById(followup.getId());
 
@@ -152,7 +152,7 @@ class ParallelFollowupServiceTest {
         when(repository.findByStatut(StatutSuiviParallele.EN_COURS, pageable))
                 .thenReturn(new PageImpl<>(List.of(followup, foreign), pageable, 2));
         when(workspaceScopeService.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(workspaceScopeService.canAccessSoul(autreAmeId)).thenReturn(false);
 
         var result = service.findActive(pageable);

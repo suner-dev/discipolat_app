@@ -64,7 +64,7 @@ class DepartmentReportingServiceTest {
         dept.setId(deptId);
         dept.setNom("Audiovisuel");
         lenient().when(departmentService.findById(deptId)).thenReturn(dept);
-        lenient().when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
     }
 
     // ======================= DOCUMENTATION =======================

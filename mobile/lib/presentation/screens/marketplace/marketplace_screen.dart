@@ -1,7 +1,52 @@
 import 'package:flutter/material.dart';
+import '../../../data/services/api_service.dart';
 
-class MarketplaceScreen extends StatelessWidget {
-  const MarketplaceScreen({super.key});
+/// Marketplace — branché sur `GET /api/v1/marketplace`.
+class MarketplaceScreen extends StatefulWidget {
+  const MarketplaceScreen({super.key, this.apiService});
+
+  final ApiService? apiService;
+
+  @override
+  State<MarketplaceScreen> createState() => _MarketplaceScreenState();
+}
+
+class _MarketplaceScreenState extends State<MarketplaceScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _listings = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _isLoading = _listings.isEmpty;
+      _error = null;
+    });
+    try {
+      final res = await _api.get('/marketplace');
+      final data = res.data;
+      final list = data is List ? data : (data is Map && data['content'] != null ? data['content'] : []);
+      if (mounted) {
+        setState(() {
+          _listings = List<dynamic>.from(list);
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Impossible de charger le marketplace.';
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,44 +56,97 @@ class MarketplaceScreen extends StatelessWidget {
         backgroundColor: Colors.teal.shade600,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () {}),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Rechercher...',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Filter chips
-          Wrap(
-            spacing: 8,
-            children: [
-              _chip('Tout', true),
-              _chip('Offres', false),
-              _chip('Demandes', false),
-              _chip('Services', false),
-              _chip('Gratuit', false),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _listingCard('Clavier Yamaha PSR-E473', 'Frère Samuel', '45 000 FCFA', 'Musique', 'Offre'),
-          _listingCard('Cours de guitare gratuit', 'Soeur Marie', 'Gratuit', 'Formation', 'Service'),
-          _listingCard('Recherche babysitter', 'Sœur Priscilla', '', 'Services', 'Demande'),
-          _listingCard('Vestes d\'hiver', 'Diaconie', 'Gratuit', 'Vêtements', 'Gratuit'),
-          _listingCard('Bible NBS étudiant', 'Librairie Chrétiene', '8 000 FCFA', 'Livres', 'Offre'),
-        ],
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null && _listings.isEmpty
+              ? _errorView()
+              : RefreshIndicator(onRefresh: _load, child: _content()),
     );
+  }
+
+  Widget _errorView() {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 60),
+        const Icon(Icons.cloud_off, size: 56, color: Colors.grey),
+        const SizedBox(height: 12),
+        Center(child: Text(_error ?? 'Erreur', textAlign: TextAlign.center)),
+        const SizedBox(height: 16),
+        Center(
+          child: FilledButton.icon(
+            onPressed: _load,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Réessayer'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _content() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        TextField(
+          decoration: InputDecoration(
+            hintText: 'Rechercher...',
+            prefixIcon: const Icon(Icons.search, size: 20),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          children: ['Tout', 'Offres', 'Demandes', 'Services', 'Gratuit'].map((l) {
+            return _chip(l, l == 'Tout');
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+        if (_listings.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(
+              child: Text('Aucune annonce pour le moment.',
+                  style: TextStyle(color: Colors.grey)),
+            ),
+          )
+        else
+          ..._listings.map((l) {
+            final type = l['listingType']?.toString() ?? 'OFFER';
+                        return _listingCard(
+              l['title']?.toString() ?? 'Annonce',
+              l['sellerId']?.toString() ?? '',
+              _formatPrice((l['priceCents'] as num?)?.toInt()),
+              l['category']?.toString() ?? '',
+              _typeLabel(type),
+            );
+          }),
+      ],
+    );
+  }
+
+  String _typeLabel(String t) {
+    switch (t) {
+      case 'REQUEST':
+        return 'Demande';
+      case 'SERVICE':
+        return 'Service';
+      case 'FREE':
+        return 'Gratuit';
+      default:
+        return 'Offre';
+    }
+  }
+
+  String _formatPrice(int? cents) {
+    if (cents == null || cents == 0) return '';
+    final eur = cents / 100;
+    return '${eur.toStringAsFixed(eur % 1 == 0 ? 0 : 2)} €';
   }
 
   Widget _chip(String label, bool selected) {
@@ -63,11 +161,20 @@ class MarketplaceScreen extends StatelessWidget {
 
   Widget _listingCard(String title, String seller, String price, String category, String type) {
     Color typeColor;
-    if (type == 'Offre') typeColor = Colors.blue;
-    else if (type == 'Demande') typeColor = Colors.orange;
-    else if (type == 'Service') typeColor = Colors.green;
-    else typeColor = Colors.purple;
-
+    switch (type) {
+      case 'Demande':
+        typeColor = Colors.orange;
+        break;
+      case 'Service':
+        typeColor = Colors.green;
+        break;
+      case 'Gratuit':
+        typeColor = Colors.purple;
+        break;
+      default:
+        typeColor = Colors.blue;
+    }
+    final sellerLabel = seller.isEmpty ? 'Vendeur' : 'Vendeur #$seller';
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -101,7 +208,7 @@ class MarketplaceScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(seller, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(sellerLabel, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

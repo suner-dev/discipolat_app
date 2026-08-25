@@ -49,11 +49,11 @@ public class FamilyMeetingService {
         return meetingRepo.save(meeting);
     }
 
-    public List<FamilyMeeting> listByFamily(UUID familyId) {
+        public List<FamilyMeeting> listByFamily(UUID familyId) {
         return meetingRepo.findByTenantIdAndFamilyIdOrderByScheduledAtDesc(TenantContext.getCurrentTenantId(), familyId);
     }
 
-    public List<FamilyMeeting> listAll() {
+        public List<FamilyMeeting> listAll() {
         return meetingRepo.findByTenantIdOrderByScheduledAtDesc(TenantContext.getCurrentTenantId());
     }
 }

@@ -65,7 +65,6 @@ class FeedbackControllerTest {
 
     @BeforeEach
     void setUp() {
-        SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         sample = new FeedbackResponse(
                 UUID.randomUUID(), "BUG", "HAUTE", "Sujet de test", "Description",
                 "/dashboard", "Chrome", "Desktop", "Linux", "1.0.0", "NOUVEAU",
@@ -97,7 +96,7 @@ class FeedbackControllerTest {
     @Test
     @DisplayName("POST /feedback authentifié → 201 et délégation au service avec l'utilisateur courant")
     void create_authentifie_201() throws Exception {
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        SecurityTestHelper.loginAs(USER_ID);
         when(feedbackService.create(eq(USER_ID), any(CreateFeedbackRequest.class))).thenReturn(sample);
 
         mockMvc.perform(post("/api/v1/feedback")

@@ -1,21 +1,28 @@
 Fais# 📋 BACKLOG COMPLET — Fonctionnalités Non Implémentées & Partiellement Implémentées
 
-> **Date** : 22 août 2026
+> **Date** : 22 août 2026 — **⚠️ CORRIGÉ le 25 août 2026 après audit indépendant du code réel** (voir `docs/rapports/AUDIT_VERIFICATION_REEL.md`)
 > **Méthodologie** : Croisement de tous les fichiers `.md` du projet avec le code source réel (backend Java, frontend React, mobile Flutter).
-> **Règle** : Une fonctionnalité est considérée comme **implémentée** uniquement si elle possède un backend endpoint + une page/écran fonctionnel dans le code.
+> **Règle** : Une fonctionnalité est considérée comme **implémentée** uniquement si elle possède un backend endpoint + une page/écran fonctionnel **ET branché sur l'API** (pas de données mock).
 
 ---
 
-## 📊 RÉSUMÉ
+## 📊 RÉSUMÉ — ⚠️ VERSION CORRIGÉE (25 août 2026)
 
-| Catégorie | Nombre |
-|-----------|--------|
-| ✅ P0 — **IMPLÉMENTÉES** | **10/10** |
-| 🟠 P1 — **IMPLÉMENTÉES** | **51/51** |
-| 🟡 P2 — **IMPLÉMENTÉES** | **29/29** |
-| 🔵 P3 — **IMPLÉMENTÉES** | **17/17** |
-| **Total restant** | **0** |
-| ⚠️ Partiellement implémentées | **23** |
+> 🔴 **L'ancienne version de ce document affirmait « 107/107 livrées, 0 restant ». Cet état était FAUX.**
+> Un audit du code a révélé 15 pages frontend MOCK + 48 écrans mobiles statiques présentés comme « livrées Backend+Frontend+Mobile ».
+> **Correction appliquée le 25 août 2026 : les 15 pages MOCK ont été branchées sur leurs vraies APIs (build `tsc -b` + `vite build` validés), 10 écrans mobiles branchés, 3 contrôleurs backend sécurisés RBAC.**
+
+| Catégorie | Ancien claim | État réel vérifié (25 août) |
+|-----------|--------------|------------------------------|
+| P0 (#1–10) | « 10/10 » | ✅ 10/10 réellement implémentées (backend + web vérifiés) |
+| P1 (#11–61) | « 51/51 » | 🟢 Branchées web après correction ; mobile partiel |
+| P2 (#62–99 = **38 items**, pas 29) | « 29/29 » ❌ arithmétique erronée | 🟢 Web branché après correction |
+| P3 (#91–116 = **26 items**, pas 17) | « 17/17 » ❌ arithmétique erronée | 🟡 Web branché ; ~42 écrans mobiles encore statiques → étiquetés |
+| **Référence croisée** | — | `FEATURE_MATRIX.md` : 92 FULL / 20 PARTIAL / 12 BROKEN / 1 MISSING |
+
+### Compteurs corrigés
+- **P2 = #62–99 → 38 items** (l'ancien doc en comptait 29 en omettant #91–99 classés à tort dans la sous-section UX)
+- **P3 = #91–116 → 26 items** (l'ancien doc en comptait 17)
 
 ---
 
@@ -277,8 +284,8 @@ Fais# 📋 BACKLOG COMPLET — Fonctionnalités Non Implémentées & Partielleme
 
 # 🎯 TOP 10 — Actions immédiates recommandées
 
-> ✅ **TOUTES LES FONCTIONNALITÉS (P0+P1+P2+P3) SONT IMPLÉMENTÉES** (24 août 2026)
-> 107/107 fonctionnalités livrées — Backend + Frontend + Mobile
+> ⚠️ **CORRIGÉ (25 août 2026)** — L'ancienne mention « TOUTES LES FONCTIONNALITÉS SONT IMPLÉMENTÉES — 107/107 livrées » était **inexacte** : 15 pages web étaient des MOCK non branchés et ~48 écrans mobiles statiques. Voir `AUDIT_VERIFICATION_REEL.md`.
+> ✅ **Correction appliquée** : les pages web MOCK sont branchées sur les APIs réelles (`tsc -b` + `vite build` validés) ; le mobile restant est en cours d'alignement ; sécurité RBAC renforcée sur 3 contrôleurs.
 
 | # | Action | Statut | Impact |
 |---|--------|--------|--------|
@@ -295,8 +302,7 @@ Fais# 📋 BACKLOG COMPLET — Fonctionnalités Non Implémentées & Partielleme
 
 ---
 
-> **Total effort économisé (P0+P1+P2+P3)** : ~73 semaines ✅
-> **Total restant** : 0 fonctionnalités bloquantes
+> ⚠️ **« Total restant : 0 fonctionnalités bloquantes » → corrigé.** Restent : ~42 écrans mobiles statiques à brancher ou étiqueter « démo », l'audit RBAC fin sur 24 contrôleurs sans `@PreAuthorize` (voir `AUDIT_SECURITE_REEL.md`), et la validation smoke-test de chaque page nouvellement branchée.
 
 ---
 

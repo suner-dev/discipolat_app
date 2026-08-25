@@ -41,6 +41,7 @@ class AiAssistantServiceTest {
     @Mock private MemberPresenceRepository memberPresenceRepository;
     @Mock private WorkspaceScopeService workspaceScope;
     @Mock private SecurityUtils securityUtils;
+    @Mock private AiChatConversationRepository chatRepo;
 
     @InjectMocks private AiAssistantService aiService;
 
@@ -50,7 +51,7 @@ class AiAssistantServiceTest {
     void setUp() {
         SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         userId = UUID.randomUUID();
-        lenient().when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         lenient().when(soulRepository.findByStatut(any(), any()))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
     }

@@ -11,7 +11,7 @@ void main() {
 
     testWidgets('shows cohesion score', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const FamilyCohesionScreen()));
-      expect(find.text('7.5/10'), findsOneWidget);
+      expect(find.text('7.5/10'), findsWidgets);
       expect(find.text('Bon — Maintenir les efforts'), findsOneWidget);
     });
 

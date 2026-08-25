@@ -73,7 +73,7 @@ class TransferWorkflowServiceTest {
     void setUp() {
         SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         lenient().when(securityUtils.isSuperUser()).thenReturn(true);
-        lenient().when(securityUtils.getCurrentUserId()).thenReturn(demandeurId);
+        SecurityTestHelper.loginAs(demandeurId);
         lenient().when(securityUtils.getCurrentUserRole()).thenReturn("PASTEUR");
         lenient().when(requestRepository.save(any(TransferRequest.class)))
                 .thenAnswer(inv -> inv.getArgument(0));

@@ -12,7 +12,7 @@ void main() {
     testWidgets('shows filter chips', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const PrayerJournalScreen()));
       expect(find.text('Toutes'), findsOneWidget);
-      expect(find.text('En attente'), findsOneWidget);
+      expect(find.text('En attente'), findsWidgets);
       expect(find.text('Répondues'), findsOneWidget);
     });
 

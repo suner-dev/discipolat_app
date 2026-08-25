@@ -62,7 +62,7 @@ class TwoFactorServiceTest {
 
     @Test
     void enableTwoFactor_ShouldReturnSetupResponse() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
@@ -82,7 +82,7 @@ class TwoFactorServiceTest {
         testUser.setTwoFactorSecret("secret");
         testUser.setTwoFactorBackupCodes("1234,5678");
 
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 

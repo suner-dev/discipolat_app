@@ -1,6 +1,8 @@
 package com.discipolat.modules.aid;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.aid.domain.EmergencyAidRequest;
 import com.discipolat.modules.aid.domain.EmergencyAidRepository;
@@ -30,8 +32,8 @@ class EmergencyAidServiceTest {
     @BeforeEach
     void setUp() {
         service = new EmergencyAidService(repository, propagationPublisher, securityUtils);
-        lenient().when(securityUtils.getCurrentTenantId()).thenReturn(UUID.randomUUID());
-        lenient().when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        TenantContext.setTenantId(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
         lenient().when(repository.save(any(EmergencyAidRequest.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 

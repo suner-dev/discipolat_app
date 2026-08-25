@@ -109,7 +109,7 @@ class MemberPresenceSheetTest {
 
     @Test
     void getDepartmentPresenceSheet_ShouldListMembers() {
-        when(securityUtils.getCurrentUserId()).thenReturn(responsableId);
+        SecurityTestHelper.loginAs(responsableId);
         Soul s = soul();
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
                 .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).departmentId(deptId).dateAffectation(LocalDateTime.now()).actif(true).build()));
@@ -125,7 +125,7 @@ class MemberPresenceSheetTest {
 
     @Test
     void getDepartmentPresenceSheet_Unauthorized_ShouldThrow() {
-        when(securityUtils.getCurrentUserId()).thenReturn(responsableId);
+        SecurityTestHelper.loginAs(responsableId);
         UUID otherDept = UUID.randomUUID();
 
         assertThrows(org.springframework.security.access.AccessDeniedException.class,
@@ -134,7 +134,7 @@ class MemberPresenceSheetTest {
 
     @Test
     void submitDepartmentPresences_ShouldSavePresence() {
-        when(securityUtils.getCurrentUserId()).thenReturn(responsableId);
+        SecurityTestHelper.loginAs(responsableId);
         Soul s = soul();
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
                 .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).departmentId(deptId).dateAffectation(LocalDateTime.now()).actif(true).build()));
@@ -155,7 +155,7 @@ class MemberPresenceSheetTest {
 
     @Test
     void submitDepartmentPresences_MemberWithoutAccount_ShouldSaveBySoulId() {
-        when(securityUtils.getCurrentUserId()).thenReturn(responsableId);
+        SecurityTestHelper.loginAs(responsableId);
         // Âme sans compte utilisateur lié
         Soul s = Soul.builder()
                 .id(soulId)
@@ -182,7 +182,7 @@ class MemberPresenceSheetTest {
 
     @Test
     void submitDepartmentPresences_MemberNotInDept_ShouldThrow() {
-        when(securityUtils.getCurrentUserId()).thenReturn(responsableId);
+        SecurityTestHelper.loginAs(responsableId);
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId)).thenReturn(List.of());
 
         SubmitDepartmentPresenceRequest request = new SubmitDepartmentPresenceRequest(
@@ -195,7 +195,7 @@ class MemberPresenceSheetTest {
 
     @Test
     void getDepartmentPresenceSheet_WrongActiveRole_ShouldBeDenied() {
-        when(securityUtils.getCurrentUserId()).thenReturn(responsableId);
+        SecurityTestHelper.loginAs(responsableId);
         // L'utilisateur possède RESPONSABLE mais agit en tant qu'autre rôle → refusé
         when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(false);
 
@@ -205,7 +205,7 @@ class MemberPresenceSheetTest {
 
     @Test
     void getDepartmentPresenceSheet_UnknownUser_ShouldBeDenied() {
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
         // Utilisateur inconnu : aucun département administré → refusé directement,
         // sans fetch préalable (aucune fuite d'existence du compte)
         assertThrows(org.springframework.security.access.AccessDeniedException.class,
@@ -216,7 +216,7 @@ class MemberPresenceSheetTest {
     void getMyUpcomingEvents_ShouldReturnFamilyAndDepartmentEvents() {
         UUID familleId = UUID.randomUUID();
         UUID autreDept = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         Soul s = Soul.builder()
                 .id(soulId)
                 .nom("Test")
@@ -251,7 +251,7 @@ class MemberPresenceSheetTest {
 
     @Test
     void getMyUpcomingEvents_NoSoul_ShouldReturnEmpty() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(soulRepository.findAllByUserId(userId)).thenReturn(List.of());
 
         assertTrue(memberService.getMyUpcomingEvents().isEmpty());

@@ -1,20 +1,54 @@
 import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useI18n } from '@/i18n';
+import api, { getErrorMessage } from '@/lib/api';
+import SkeletonLoader from '@/components/shared/SkeletonLoader';
+import EmptyState from '@/components/shared/EmptyState';
+import toast from 'react-hot-toast';
 import { Megaphone, Clock, CheckCircle, Calendar, Plus, Trash2 } from 'lucide-react';
 
 interface Announcement { id: string; title: string; status: string; target: string; scheduledAt?: string; publishedAt?: string; expiresAt?: string; pinToTop: boolean; }
 
 export default function ScheduledAnnouncementsPage() {
-  const { t } = useI18n();
+    const { t } = useI18n();
   const [filter, setFilter] = useState<string>('all');
-  const MOCK: Announcement[] = [
-    { id: '1', title: 'Culte spécial de prière - Samedi 30 Août', status: 'PUBLISHED', target: 'ALL', publishedAt: '2026-08-20', pinToTop: true },
-    { id: '2', title: 'Réunion des responsables', status: 'SCHEDULED', target: 'DEPARTMENT', scheduledAt: '2026-08-25', pinToTop: false },
-    { id: '3', title: 'Rappel: Don mensuel', status: 'DRAFT', target: 'ALL', pinToTop: false },
-    { id: '4', title: 'Retraite spirituelle jeunesse', status: 'EXPIRED', target: 'FAMILY', expiresAt: '2026-08-15', pinToTop: false },
-  ];
-  const filtered = filter === 'all' ? MOCK : MOCK.filter(a => a.status === filter);
+
+  const { data: announcements = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['announcements'],
+    queryFn: async () => {
+      const res = await api.get('/announcements');
+      return (res.data as Array<Record<string, unknown>>).map((a) => ({
+        id: String(a.id), title: String(a.title ?? ''), status: String(a.status ?? 'DRAFT'),
+        target: String(a.target ?? 'ALL'), scheduledAt: a.scheduledAt as string | undefined,
+        publishedAt: a.publishedAt as string | undefined, expiresAt: a.expiresAt as string | undefined,
+        pinToTop: Boolean(a.pinToTop),
+      })) as Announcement[];
+    },
+    retry: false,
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: async (id: string) => { await api.post(`/announcements/${id}/publish`); },
+    onSuccess: () => { toast.success('Annonce publiée'); refetch(); },
+    onError: () => toast.error('Erreur publication'),
+  });
+  const cancelMutation = useMutation({
+    mutationFn: async (id: string) => { await api.post(`/announcements/${id}/cancel`); },
+    onSuccess: () => { toast.success('Annonce annulée'); refetch(); },
+    onError: () => toast.error('Erreur'),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { await api.delete(`/announcements/${id}`); },
+    onSuccess: () => { toast.success('Annonce supprimée'); refetch(); },
+    onError: () => toast.error('Erreur suppression'),
+  });
+
+  const filtered = filter === 'all' ? announcements : announcements.filter(a => a.status === filter);
   const statusColor = (s: string) => s === 'PUBLISHED' ? 'bg-green-500/20 text-green-400' : s === 'SCHEDULED' ? 'bg-blue-500/20 text-blue-400' : s === 'DRAFT' ? 'bg-gray-500/20 text-gray-400' : 'bg-red-500/20 text-red-400';
+
+  if (isLoading) return <SkeletonLoader lines={4} variant="card" />;
+  if (error) return <div className="text-red-500 p-6">{getErrorMessage(error)}</div>;
+  if (announcements.length === 0) return <EmptyState title="Aucune annonce" message="Aucune annonce programmée pour le moment." />
 
   return (
     <div className="space-y-6 p-6">
@@ -37,10 +71,10 @@ export default function ScheduledAnnouncementsPage() {
                 {a.publishedAt && <span>Publié: {a.publishedAt}</span>}
               </div>
             </div>
-            <div className="flex gap-2">
-              {a.status === 'DRAFT' && <button className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded-lg text-white text-xs">Publier</button>}
-              {a.status === 'SCHEDULED' && <button className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white text-xs">Annuler</button>}
-              <button className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
+                        <div className="flex gap-2">
+              {a.status === 'DRAFT' && <button onClick={() => publishMutation.mutate(a.id)} className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded-lg text-white text-xs">Publier</button>}
+              {a.status === 'SCHEDULED' && <button onClick={() => cancelMutation.mutate(a.id)} className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white text-xs">Annuler</button>}
+              <button onClick={() => deleteMutation.mutate(a.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
         ))}

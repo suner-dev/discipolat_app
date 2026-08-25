@@ -82,10 +82,16 @@ class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Nouvelle prière', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            const TextField(decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder())),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const TextField(decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder())),
+                  const SizedBox(height: 12),
+                  const TextField(maxLines: 3, decoration: InputDecoration(labelText: 'Détails de la prière', border: OutlineInputBorder())),
+                ]),
+              ),
+            ),
             const SizedBox(height: 12),
-            const TextField(maxLines: 3, decoration: InputDecoration(labelText: 'Détails de la prière', border: OutlineInputBorder())),
-            const Spacer(),
             SizedBox(width: double.infinity, child: ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple.shade600),
               onPressed: () => Navigator.pop(ctx),

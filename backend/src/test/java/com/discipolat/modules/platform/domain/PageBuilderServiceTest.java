@@ -98,7 +98,7 @@ class PageBuilderServiceTest {
     void create_persistsAuditsAndRecordsRevision() {
         CustomPage request = page("APERCU", "apercu-eglise", List.of(kpiBlock("SOULS_TOTAL")),
                 List.of("ADMIN"), false);
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        SecurityTestHelper.loginAs(USER_ID);
         when(pageRepository.existsByKey("APERCU")).thenReturn(false);
         when(pageRepository.existsBySlug("apercu-eglise")).thenReturn(false);
         CustomPage saved = page("APERCU", "apercu-eglise", request.getBlocks(), request.getRoles(), false);
@@ -547,7 +547,7 @@ class PageBuilderServiceTest {
                 List.of(Map.of("type", "FORMULAIRE",
                         "config", Map.of("title", "Contact", "type", "SUGGESTION", "cible", "PASTEUR"))),
                 List.of(), false);
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        SecurityTestHelper.loginAs(USER_ID);
         when(pageRepository.existsByKey("FORM")).thenReturn(false);
         when(pageRepository.existsBySlug("form")).thenReturn(false);
         when(pageRepository.save(any(CustomPage.class))).thenAnswer(inv -> inv.getArgument(0));

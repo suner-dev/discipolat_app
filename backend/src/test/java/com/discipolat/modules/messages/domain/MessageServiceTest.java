@@ -50,7 +50,7 @@ class MessageServiceTest {
 
     @Test
     void startConversation_WithOtherUser_CreatesOrReturnsConversation() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userA);
+        SecurityTestHelper.loginAs(userA);
         when(userRepository.findById(userB)).thenReturn(Optional.of(userWith(userB)));
         when(conversationRepository.findByUserAIdAndUserBId(userA, userB)).thenReturn(Optional.empty());
         when(conversationRepository.save(any(Conversation.class))).thenAnswer(inv -> {
@@ -69,14 +69,14 @@ class MessageServiceTest {
 
     @Test
     void startConversation_WithSelf_ThrowsBadRequest() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userA);
+        SecurityTestHelper.loginAs(userA);
 
         assertThrows(BadRequestException.class, () -> messageService.startConversation(userA));
     }
 
     @Test
     void startConversation_WithUnknownUser_ThrowsEntityNotFound() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userA);
+        SecurityTestHelper.loginAs(userA);
         when(userRepository.findById(userB)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> messageService.startConversation(userB));
@@ -84,7 +84,7 @@ class MessageServiceTest {
 
     @Test
     void listConversations_ReturnsOnlyMine() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userA);
+        SecurityTestHelper.loginAs(userA);
         Conversation conv = Conversation.builder()
                 .id(UUID.randomUUID())
                 .userAId(userA).userBId(userB)
@@ -106,7 +106,7 @@ class MessageServiceTest {
 
     @Test
     void getMessages_WhenNotParticipant_ThrowsAccessDenied() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userA);
+        SecurityTestHelper.loginAs(userA);
         UUID otherConv = UUID.randomUUID();
         Conversation conv = Conversation.builder()
                 .id(otherConv)
@@ -120,7 +120,7 @@ class MessageServiceTest {
 
     @Test
     void sendMessage_UpdatesLastMessage() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userA);
+        SecurityTestHelper.loginAs(userA);
         Conversation conv = Conversation.builder()
                 .id(UUID.randomUUID())
                 .userAId(userA).userBId(userB)

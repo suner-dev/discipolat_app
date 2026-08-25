@@ -4,6 +4,7 @@ import com.discipolat.modules.adminRequests.domain.AdminRequest;
 import com.discipolat.modules.adminRequests.domain.AdminRequestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,22 +19,27 @@ public class AdminRequestController {
     public AdminRequestController(AdminRequestService service) { this.service = service; }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public List<AdminRequest> list() { return service.listAll(); }
 
     @GetMapping("/by-member/{membreId}")
+    @PreAuthorize("isAuthenticated()")
     public List<AdminRequest> listByMember(@PathVariable UUID membreId) {
         return service.listByMember(membreId);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public AdminRequest get(@PathVariable UUID id) { return service.get(id); }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AdminRequest> create(@RequestBody AdminRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(req));
     }
 
     @PostMapping("/{id}/process")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public AdminRequest process(@PathVariable UUID id,
             @RequestParam AdminRequest.Statut decision,
             @RequestParam UUID traiteurId,
@@ -42,11 +48,13 @@ public class AdminRequestController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public Map<String, Object> stats() { return service.getStats(); }
 }

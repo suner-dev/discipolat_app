@@ -1,6 +1,8 @@
 package com.discipolat.modules.webhooks;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.webhooks.domain.ApiKey;
 import com.discipolat.modules.webhooks.domain.ApiKeyRepository;
@@ -40,8 +42,8 @@ class WebhookServiceTest {
     void setUp() {
         service = new WebhookService(webhookRepository, logRepository, apiKeyRepository,
                 propagationPublisher, securityUtils);
-        lenient().when(securityUtils.getCurrentTenantId()).thenReturn(tenantId);
-        lenient().when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        TenantContext.setTenantId(tenantId);
+        SecurityTestHelper.loginAs(UUID.randomUUID());
         lenient().when(logRepository.save(any(WebhookDeliveryLog.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
     }

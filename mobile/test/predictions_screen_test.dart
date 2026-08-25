@@ -25,7 +25,12 @@ void main() {
 
     testWidgets('shows confidence', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const PredictionsScreen()));
-      expect(find.text('78% de confiance'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.textContaining('78% de confiance'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.textContaining('78% de confiance'), findsOneWidget);
     });
   });
 }

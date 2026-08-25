@@ -137,7 +137,7 @@ class FamilyRiskServiceTest {
     void setNiveauRisque_ShouldPersistAndHistory() {
         when(familyRepository.findById(familyId)).thenReturn(Optional.of(family));
         when(familyRepository.save(any())).thenReturn(family);
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
 
         var result = riskService.setNiveauRisque(familyId, NiveauRisque.A_RISQUE, "Test");
 

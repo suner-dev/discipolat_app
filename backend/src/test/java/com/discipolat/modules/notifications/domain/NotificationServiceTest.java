@@ -61,7 +61,7 @@ class NotificationServiceTest {
     @Test
     void markAsRead_Owner_ShouldMarkRead() {
         when(notificationRepository.findById(notification.getId())).thenReturn(Optional.of(notification));
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
 
         service.markAsRead(notification.getId());
 
@@ -72,7 +72,7 @@ class NotificationServiceTest {
     @Test
     void markAsRead_NonOwner_NonSuperUser_ShouldThrowAccessDenied() {
         when(notificationRepository.findById(notification.getId())).thenReturn(Optional.of(notification));
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
         when(securityUtils.isSuperUser()).thenReturn(false);
 
         assertThrows(AccessDeniedException.class, () -> service.markAsRead(notification.getId()));
@@ -84,7 +84,7 @@ class NotificationServiceTest {
     @Test
     void markAsRead_NonOwner_SuperUser_ShouldMarkRead() {
         when(notificationRepository.findById(notification.getId())).thenReturn(Optional.of(notification));
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
         when(securityUtils.isSuperUser()).thenReturn(true);
 
         service.markAsRead(notification.getId());
@@ -104,7 +104,7 @@ class NotificationServiceTest {
     @Test
     void findAll_ShouldOnlyReturnCurrentUserNotifications() {
         var pageable = PageRequest.of(0, 20);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(notificationRepository.findByDestinataireIdOrderByCreatedAtDesc(currentUserId, pageable))
                 .thenReturn(new PageImpl<>(List.of(notification)));
 

@@ -1,5 +1,6 @@
 package com.discipolat.modules.souls.domain;
 
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
@@ -58,7 +59,7 @@ class WorkspaceScopeServiceTest {
 
     @Test
     void accessibleSoulIds_faiseurActif_seulementSesDisciples() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         stubActiveRole("FAISEUR");
         Soul s = Soul.builder().id(soulId).faiseurId(userId).build();
         when(soulRepository.findAllByFaiseurId(userId)).thenReturn(List.of(s));
@@ -68,7 +69,7 @@ class WorkspaceScopeServiceTest {
 
     @Test
     void accessibleSoulIds_chefActif_amesDeSaFamille() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         stubActiveRole("CHEF_DE_FAMILLE");
         User u = User.builder().id(userId).familleGereeId(familleId).build();
         when(userRepository.findById(userId)).thenReturn(Optional.of(u));
@@ -80,7 +81,7 @@ class WorkspaceScopeServiceTest {
 
     @Test
     void accessibleSoulIds_responsableActif_membresDeSesDepartements() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         stubActiveRole("RESPONSABLE");
         Department dept = Department.builder().id(deptId).nom("Chorale").build();
         when(departmentRepository.findByResponsableId(userId)).thenReturn(List.of(dept));
@@ -92,7 +93,7 @@ class WorkspaceScopeServiceTest {
 
     @Test
     void accessibleFamilyIds_chefActif_saFamilleGeree() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         stubActiveRole("CHEF_DE_FAMILLE");
         User u = User.builder().id(userId).familleGereeId(familleId).build();
         when(userRepository.findById(userId)).thenReturn(Optional.of(u));
@@ -102,7 +103,7 @@ class WorkspaceScopeServiceTest {
 
     @Test
     void accessibleFamilyIds_faiseurActif_famillesDeSesDisciples() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         stubActiveRole("FAISEUR");
         Soul s = Soul.builder().id(soulId).faiseurId(userId).familleId(familleId).build();
         when(soulRepository.findAllByFaiseurId(userId)).thenReturn(List.of(s));
@@ -112,7 +113,7 @@ class WorkspaceScopeServiceTest {
 
     @Test
     void accessibleFaiseurIds_faiseurActif_soiMeme() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         stubActiveRole("FAISEUR");
 
         assertEquals(Set.of(userId), service().accessibleFaiseurIds());
@@ -120,7 +121,7 @@ class WorkspaceScopeServiceTest {
 
     @Test
     void accessibleFaiseurIds_responsableActif_faiseursDesMembres() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         stubActiveRole("RESPONSABLE");
         Department dept = Department.builder().id(deptId).nom("Chorale").build();
         when(departmentRepository.findByResponsableId(userId)).thenReturn(List.of(dept));
@@ -137,7 +138,7 @@ class WorkspaceScopeServiceTest {
     void multiRoles_utiliseSeulementLeRoleActif() {
         // L'utilisateur possède FAISEUR et RESPONSABLE, mais l'espace courant est FAISEUR :
         // il ne voit que ses disciples, jamais les membres de ses départements.
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         stubActiveRole("FAISEUR");
         Soul s = Soul.builder().id(soulId).faiseurId(userId).build();
         when(soulRepository.findAllByFaiseurId(userId)).thenReturn(List.of(s));

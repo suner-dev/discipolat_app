@@ -1,7 +1,9 @@
 package com.discipolat.modules.tontine;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.tontine.domain.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,8 +42,8 @@ class TontineServiceTest {
     void setUp() {
         service = new TontineService(groupRepository, memberRepository, contributionRepository,
                 propagationPublisher, securityUtils, notificationService, entityManager);
-        lenient().when(securityUtils.getCurrentTenantId()).thenReturn(tenantId);
-        lenient().when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        TenantContext.setTenantId(tenantId);
+        SecurityTestHelper.loginAs(UUID.randomUUID());
         lenient().when(securityUtils.getCurrentUserRole()).thenReturn("ADMIN");
         lenient().when(groupRepository.save(any(TontineGroup.class))).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(memberRepository.save(any(TontineMember.class))).thenAnswer(inv -> inv.getArgument(0));

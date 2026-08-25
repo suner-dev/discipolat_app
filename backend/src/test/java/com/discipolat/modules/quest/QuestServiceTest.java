@@ -1,6 +1,8 @@
 package com.discipolat.modules.quest;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.quest.domain.QuestService;
 import com.discipolat.modules.quest.domain.XpLedger;
@@ -37,8 +39,8 @@ class QuestServiceTest {
     @BeforeEach
     void setUp() {
         service = new QuestService(repository, propagationPublisher, securityUtils);
-        lenient().when(securityUtils.getCurrentTenantId()).thenReturn(tenantId);
-        lenient().when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        TenantContext.setTenantId(tenantId);
+        SecurityTestHelper.loginAs(userId);
         lenient().when(repository.save(any(XpLedger.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 

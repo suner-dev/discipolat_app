@@ -102,7 +102,7 @@ class DepartmentServiceTest {
         when(departmentRepository.findById(ownDept.getId())).thenReturn(Optional.of(ownDept));
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(departmentRepository.findByResponsableId(currentUserId)).thenReturn(List.of(ownDept));
 
         Department result = service.findById(ownDept.getId());
@@ -115,7 +115,7 @@ class DepartmentServiceTest {
         when(departmentRepository.findById(foreignDept.getId())).thenReturn(Optional.of(foreignDept));
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(departmentRepository.findByResponsableId(currentUserId)).thenReturn(List.of(ownDept));
 
         assertThrows(AccessDeniedException.class, () -> service.findById(foreignDept.getId()));
@@ -126,7 +126,7 @@ class DepartmentServiceTest {
         var pageable = PageRequest.of(0, 20);
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(departmentRepository.findByResponsableId(currentUserId)).thenReturn(List.of(ownDept, foreignDept));
         when(departmentRepository.findAllByIdIn(List.of(ownDept.getId(), foreignDept.getId()), pageable))
                 .thenReturn(new PageImpl<>(List.of(ownDept, foreignDept), pageable, 2));
@@ -163,7 +163,7 @@ class DepartmentServiceTest {
     void getDepartmentKpi_NonSuperUser_ForeignDept_ShouldThrowAccessDenied() {
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityTestHelper.loginAs(currentUserId);
         when(departmentRepository.findById(foreignDept.getId())).thenReturn(Optional.of(foreignDept));
         when(departmentRepository.findByResponsableId(currentUserId)).thenReturn(List.of(ownDept));
 

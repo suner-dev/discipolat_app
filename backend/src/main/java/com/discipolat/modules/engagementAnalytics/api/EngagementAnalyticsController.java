@@ -5,9 +5,11 @@ import com.discipolat.modules.engagementAnalytics.domain.EngagementAnalyticsServ
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/engagement-analytics")
+@PreAuthorize("isAuthenticated()")
 public class EngagementAnalyticsController {
 
     private final EngagementAnalyticsService service;

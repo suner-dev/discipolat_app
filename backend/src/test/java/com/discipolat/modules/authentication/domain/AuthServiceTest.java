@@ -166,7 +166,7 @@ class AuthServiceTest {
 
     @Test
     void changePassword_WithCorrectCurrentPassword_ShouldSucceed() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
@@ -181,7 +181,7 @@ class AuthServiceTest {
 
     @Test
     void changePassword_WithWrongCurrentPassword_ShouldThrow() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
 
         assertThrows(BadCredentialsException.class, () ->

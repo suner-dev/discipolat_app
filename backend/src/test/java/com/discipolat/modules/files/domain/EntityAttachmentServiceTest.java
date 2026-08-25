@@ -44,7 +44,7 @@ class EntityAttachmentServiceTest {
 
     @Test
     void replace_remplaceCompletementLesPiecesJointes() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         when(fileEntityRepository.existsById(fichier1)).thenReturn(true);
         when(fileEntityRepository.existsById(fichier2)).thenReturn(true);
 

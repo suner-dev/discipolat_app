@@ -1,6 +1,8 @@
 package com.discipolat.modules.facerec;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.facerec.domain.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +38,7 @@ class FaceRecognitionServiceTest {
     @BeforeEach
     void setUp() {
         service = new FaceRecognitionService(repository, securityUtils);
-        lenient().when(securityUtils.getCurrentTenantId()).thenReturn(tenantId);
+        TenantContext.setTenantId(tenantId);
         lenient().when(repository.save(any(FaceTemplate.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -141,7 +143,7 @@ class FaceRecognitionServiceTest {
     @Test
     void userIdAbsentRepliSurUtilisateurCourant() throws IOException {
         UUID courant = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(courant);
+        SecurityTestHelper.loginAs(courant);
 
         FaceTemplate saved = service.enroll(null, null, "Auto-enrôlement", faceImage(14));
 

@@ -23,6 +23,11 @@ void main() {
 
     testWidgets('shows other narratives', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const KpiNarrativeScreen()));
+      await tester.scrollUntilVisible(
+        find.text('Autres récits'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Autres récits'), findsOneWidget);
       expect(find.text('Conversions'), findsOneWidget);
     });

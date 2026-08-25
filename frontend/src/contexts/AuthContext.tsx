@@ -146,6 +146,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast.success('Déconnexion réussie');
   }, []);
 
+  // Auto-logout when JWT expires
+  useEffect(() => {
+    let logoutTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const checkTokenExpiry = () => {
+      if (logoutTimer) clearTimeout(logoutTimer);        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+        try {
+          // JWT payload is base64url-encoded: convert to standard base64 before decoding
+          const base64 = (token.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(atob(base64));
+        const expiresAt = payload.exp * 1000;
+        const now = Date.now();
+        const timeUntilExpiry = expiresAt - now;
+
+        if (timeUntilExpiry <= 0) {
+          logout();
+          return;
+        }
+
+        // Warn 2 minutes before expiry (between 60s and 120s remaining)
+        if (timeUntilExpiry > 60000 && timeUntilExpiry < 120000) {
+          toast('Votre session expire bientôt. Reconnectez-vous.', { icon: '⚠️' });
+        }
+
+        // Auto-logout 30 seconds before expiry if no refresh happened
+        logoutTimer = setTimeout(() => {
+          const currentToken = localStorage.getItem('accessToken');
+          if (currentToken === token) {
+            logout();
+          }
+        }, Math.max(timeUntilExpiry - 30000, 0));
+      } catch {
+        // Token absent, malformé ou non-JWT : on ne déconnecte PAS ici.
+        // Un token invalide sera rejeté par l'API (401) qui gère la déconnexion.
+      }
+    };
+
+    checkTokenExpiry();
+    const interval = setInterval(checkTokenExpiry, 60000);
+
+    return () => {
+      clearInterval(interval);
+      if (logoutTimer) clearTimeout(logoutTimer);
+    };
+  }, [user, logout]);
+
   const updateUser = useCallback((updates: Partial<User>) => {
     setUser((prev) => {
       if (!prev) return prev;

@@ -38,7 +38,7 @@ class ConfigRevisionServiceTest {
     @Test
     void record_persistsRevisionWithAuthor() {
         UUID userId = UUID.randomUUID();
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
 
         service.record("PLATFORM_MODULE", "SOULS", "MODULE_ENABLED", Map.of("enabled", true));
 
@@ -52,7 +52,7 @@ class ConfigRevisionServiceTest {
 
     @Test
     void record_withoutAuthenticatedUser_keepsNullAuthor() {
-        when(securityUtils.getCurrentUserId()).thenThrow(new RuntimeException("no user"));
+        SecurityTestHelper.logout(); // no authenticated user in context
 
         service.record("PLATFORM_MENU", "souls", "MENU_DELETED", Map.of());
 

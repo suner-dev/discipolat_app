@@ -8,9 +8,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/predictions")
+@PreAuthorize("isAuthenticated()")
 public class PredictionController {
 
     private final PredictionService predictionService;

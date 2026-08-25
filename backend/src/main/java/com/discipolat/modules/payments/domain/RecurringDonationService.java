@@ -1,5 +1,7 @@
 package com.discipolat.modules.payments.domain;
 
+import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.exception.UnauthorizedException;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import org.slf4j.Logger;
@@ -62,7 +64,11 @@ public class RecurringDonationService {
     /** Annule un don récurrent. */
     public RecurringDonation cancel(UUID id) {
         RecurringDonation donation = repository.findById(id)
-                .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("RecurringDonation", id));
+                .orElseThrow(() -> new EntityNotFoundException("RecurringDonation", id));
+        if (!securityUtils.isSuperUser()
+                && !donation.getUserId().equals(securityUtils.getCurrentUserId())) {
+            throw new UnauthorizedException("You can only cancel your own recurring donations");
+        }
         donation.setActive(false);
         repository.save(donation);
         return donation;

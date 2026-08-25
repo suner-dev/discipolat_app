@@ -8,6 +8,7 @@ import java.util.UUID;
 
 @Repository
 public interface EventChecklistItemRepository extends JpaRepository<EventChecklistItem, UUID> {
-    List<EventChecklistItem> findByTenantIdAndEventIdOrderByOrderIndexAsc(UUID tenantId, UUID eventId);
+        List<EventChecklistItem> findByTenantIdAndEventIdOrderByOrderIndexAsc(UUID tenantId, UUID eventId);
+    List<EventChecklistItem> findByTenantIdOrderByEventIdAscOrderIndexAsc(UUID tenantId);
     long countByTenantIdAndEventIdAndStatus(UUID tenantId, UUID eventId, EventChecklistItem.Status status);
 }

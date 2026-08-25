@@ -110,13 +110,20 @@ class _SpiritualJournalScreenState extends State<SpiritualJournalScreen> {
         maxChildSize: 0.9,
         expand: false,
         builder: (ctx, controller) => Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text('Nouvelle entrée', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              Wrap(
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: controller,
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
                 spacing: 8,
                 children: ['🙏 Prière', '💡 Réflexion', '🎉 Remerciement', '🎵 Louange', '📖 Leçon']
                     .map((t) => ChoiceChip(label: Text(t), selected: false, onSelected: (_) {}))
@@ -126,7 +133,11 @@ class _SpiritualJournalScreenState extends State<SpiritualJournalScreen> {
               const TextField(maxLines: 1, decoration: InputDecoration(labelText: 'Titre', border: OutlineInputBorder())),
               const SizedBox(height: 12),
               const TextField(maxLines: 5, decoration: InputDecoration(labelText: 'Contenu', border: OutlineInputBorder())),
-              const Spacer(),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

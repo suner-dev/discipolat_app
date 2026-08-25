@@ -156,7 +156,7 @@ class SoulServiceTest {
     void findById_NonSuperUser_OutOfScope_ShouldThrowAccessDenied() {
         when(soulRepository.findById(testSoul.getId())).thenReturn(Optional.of(testSoul));
         when(securityUtils.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(UUID.randomUUID());
+        SecurityTestHelper.loginAs(UUID.randomUUID());
         when(securityUtils.hasActiveRole("FAISEUR")).thenReturn(false);
         when(securityUtils.hasActiveRole("CHEF_DE_FAMILLE")).thenReturn(false);
         when(securityUtils.hasActiveRole("RESPONSABLE")).thenReturn(false);
@@ -202,7 +202,7 @@ class SoulServiceTest {
     void findAll_WithoutFilters_FaiseurActif_ShouldScopeToOwnSouls() {
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("FAISEUR")).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(faiseurId);
+        SecurityTestHelper.loginAs(faiseurId);
         when(soulRepository.findAllByFaiseurId(faiseurId)).thenReturn(List.of(testSoul));
         when(soulRepository.findAllByIdIn(List.of(testSoul.getId()), PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(List.of(testSoul)));
@@ -218,7 +218,7 @@ class SoulServiceTest {
     void findAll_WithExplicitFaiseurId_NonSuperUser_ShouldNotExpandScope() {
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("FAISEUR")).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(faiseurId);
+        SecurityTestHelper.loginAs(faiseurId);
         when(soulRepository.findAllByFaiseurId(faiseurId)).thenReturn(List.of(testSoul));
         when(soulRepository.findAllById(any())).thenReturn(List.of(testSoul));
 
@@ -232,7 +232,7 @@ class SoulServiceTest {
     @Test
     void search_SansAcces_ShouldReturnEmpty() {
         when(securityUtils.isSuperUser()).thenReturn(false);
-        when(securityUtils.getCurrentUserId()).thenReturn(faiseurId);
+        SecurityTestHelper.loginAs(faiseurId);
         // Aucun rôle actif reconnu → aucune âme accessible
 
         Page<Soul> result = soulService.findAll(null, null, null, null, "Marie", PageRequest.of(0, 20));

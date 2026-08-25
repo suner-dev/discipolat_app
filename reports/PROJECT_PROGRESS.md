@@ -85,3 +85,37 @@ Rapports dans `docs/`:
 6. Double service session mobile → unifier
 7. AuthState singleton → Riverpod provider
 8. Screens mobile >1000 lignes → extraire composants
+
+---
+
+## SESSION — CORRECTION TESTS & STABILISATION (2026-08-25)
+
+### État final des suites de tests
+- Backend : ✅ 994/994 tests verts (BUILD SUCCESS) — était à 451 erreurs
+- Frontend : ✅ 308/308 tests verts + build OK
+- Mobile : ✅ 345/345 tests verts + flutter analyze 0 erreurs
+
+### Corrections réalisées cette session
+1. **Backend**
+   - Collision d'entités JPA (`admin.domain.IntegrationConfig` vs `integrations.domain.IntegrationConfig`) → renommée en `AdminIntegrationConfig` (+ repository, contrôleur, migration V99 inchangée)
+   - Bug systémique tests (40 fichiers, 110 occurrences) : stub Mockito sur méthodes **statiques** `SecurityUtils.getCurrentUserId()/getCurrentTenantId()` → remplacé par `SecurityTestHelper.loginAs()` / `TenantContext.setTenantId()`
+   - Clé RSA du profil test **corrompue** → régénérée (signature JWT réparée)
+   - Migration V100 créée : table `reward_certificates` manquante en prod (ddl-auto: none) — fonctionnalité Certificats réparée
+   - Extension JUnit auto-détectée `SecurityContextCleanupExtension` : purge SecurityContext/TenantContext après chaque test (fin de la pollution inter-tests)
+   - Test TenantIsolation (security/) corrigé : faux tokens → 401 attendu (comportement sécuritaire correct)
+2. **Frontend**
+   - Décodage JWT base64url corrigé dans AuthContext ; auto-logout uniquement sur expiration réelle (token malformé ≠ logout)
+3. **Mobile**
+   - Erreur de compilation `digital_twin_screen.dart` corrigée
+   - 3 bugs d'overflow RenderFlex corrigés (bottom-sheets spiritual_journal / prayer_journal / admin_requests) via Expanded+SingleChildScrollView
+   - 14 fichiers de tests obsolètes réécrits : écrans branchés API réelle testés avec `_FakeApiService` / provider Riverpod overridé ; scrolls ajoutés pour contenus sous le pli ; attentes alignées aux libellés réels
+
+### Reste à faire (prochaine session)
+1. Mobile i18n (strings hardcodées)
+2. Double service session mobile → unifier
+3. AuthState singleton → Riverpod provider
+4. Screens mobile >1000 lignes → extraire composants
+5. Second audit complet + FINAL_VALIDATION.md
+
+### Dernier état git
+- Commit : stabilisation tests backend/frontend/mobile (voir log)

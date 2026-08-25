@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/development-plans")
+@PreAuthorize("isAuthenticated()")
 public class DevelopmentPlanController {
 
     private final DevelopmentPlanService service;

@@ -42,7 +42,7 @@ class GeofencingControllerTest {
 
     @Test
     void checkIn_WithinGeofence_ReturnsCheckedIn() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         var request = new GeofenceCheckInRequest(48.8566, 2.3522, 10.0, "NORMAL");
 
         ResponseEntity<Map<String, Object>> response = controller.checkIn(request);
@@ -55,7 +55,7 @@ class GeofencingControllerTest {
 
     @Test
     void checkIn_IncludesTimestamp() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         var request = new GeofenceCheckInRequest(48.8566, 2.3522, 10.0, "NORMAL");
 
         Map<String, Object> body = controller.checkIn(request).getBody();
@@ -67,7 +67,7 @@ class GeofencingControllerTest {
 
     @Test
     void checkOut_ReturnsCheckedOut() {
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         var request = new GeofenceCheckInRequest(48.8566, 2.3522, 10.0, "NORMAL");
 
         ResponseEntity<Map<String, Object>> response = controller.checkOut(request);

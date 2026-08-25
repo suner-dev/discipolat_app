@@ -219,7 +219,7 @@ class UserServiceTest {
         UUID faiseurId = UUID.randomUUID();
         when(securityUtils.isSuperUser()).thenReturn(false);
         when(securityUtils.hasActiveRole("CHEF_DE_FAMILLE")).thenReturn(true);
-        when(securityUtils.getCurrentUserId()).thenReturn(userId);
+        SecurityTestHelper.loginAs(userId);
         User chef = userWithRole(UserRole.CHEF_DE_FAMILLE);
         chef.setId(userId);
         chef.setFamilleGereeId(familleId);

@@ -29,6 +29,11 @@ void main() {
 
     testWidgets('shows family sharing', (tester) async {
       await tester.pumpWidget(MaterialApp(home: const BibleReadingScreen()));
+      await tester.scrollUntilVisible(
+        find.text('Partagé avec ma famille'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Partagé avec ma famille'), findsOneWidget);
       expect(find.text('Jean-Pierre'), findsOneWidget);
     });

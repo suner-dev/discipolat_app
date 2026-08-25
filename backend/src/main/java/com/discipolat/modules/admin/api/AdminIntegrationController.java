@@ -1,5 +1,8 @@
 package com.discipolat.modules.admin.api;
 
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.admin.domain.AdminIntegrationConfig;
+import com.discipolat.modules.admin.domain.AdminIntegrationConfigRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +20,11 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/integrations")
@@ -28,40 +33,10 @@ public class AdminIntegrationController {
 
     private static final Set<String> VALID_CATEGORIES = Set.of("smtp", "storage", "jwt", "rate-limiting");
 
-    private final ConcurrentHashMap<String, Map<String, Object>> configs = new ConcurrentHashMap<>();
+    private final AdminIntegrationConfigRepository repository;
 
-    public AdminIntegrationController() {
-        configs.put("smtp", Map.of(
-                "host", "smtp.example.com",
-                "port", 587,
-                "username", "",
-                "password", "",
-                "fromAddress", "noreply@discipolat.com",
-                "fromName", "Discipolat",
-                "tls", true,
-                "enabled", false
-        ));
-        configs.put("storage", Map.of(
-                "provider", "MINIO",
-                "bucket", "discipolat-files",
-                "region", "eu-west-1",
-                "accessKey", "",
-                "secretKey", "",
-                "endpoint", "",
-                "enabled", false
-        ));
-        configs.put("jwt", Map.of(
-                "accessTokenTtlMinutes", 15,
-                "refreshTokenTtlDays", 7,
-                "algorithm", "RS256",
-                "enabled", true
-        ));
-        configs.put("rate-limiting", Map.of(
-                "enabled", true,
-                "requestsPerMinute", 60,
-                "burstSize", 10,
-                "blockDurationMinutes", 30
-        ));
+    public AdminIntegrationController(AdminIntegrationConfigRepository repository) {
+        this.repository = repository;
     }
 
     @GetMapping("/{category}")
@@ -70,7 +45,13 @@ public class AdminIntegrationController {
         if (key == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Unknown category: " + category));
         }
-        return ResponseEntity.ok(configs.getOrDefault(key, Map.of()));
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        Optional<AdminIntegrationConfig> opt = repository.findByTenantIdAndCategory(tenantId, key);
+        if (opt.isEmpty()) {
+            return ResponseEntity.ok(defaultConfig(key));
+        }
+        String json = opt.get().getConfigData();
+        return ResponseEntity.ok(jsonToMap(json));
     }
 
     @PutMapping("/{category}")
@@ -85,7 +66,7 @@ public class AdminIntegrationController {
         if (body.size() > 20) {
             return ResponseEntity.badRequest().body(Map.of("error", "Too many configuration fields (max 20)"));
         }
-        Map<String, Object> sanitized = new java.util.LinkedHashMap<>();
+        Map<String, Object> sanitized = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : body.entrySet()) {
             String k = entry.getKey();
             Object v = entry.getValue();
@@ -97,7 +78,18 @@ public class AdminIntegrationController {
             }
             sanitized.put(k, v);
         }
-        configs.put(key, sanitized);
+
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        AdminIntegrationConfig config = repository.findByTenantIdAndCategory(tenantId, key)
+                .orElseGet(() -> {
+                    AdminIntegrationConfig c = new AdminIntegrationConfig();
+                    c.setTenantId(tenantId);
+                    c.setCategory(key);
+                    return c;
+                });
+        config.setConfigData(mapToJson(sanitized));
+        repository.save(config);
+
         return ResponseEntity.ok(Map.of("success", true, "category", key));
     }
 
@@ -123,8 +115,14 @@ public class AdminIntegrationController {
         return null;
     }
 
+    private Map<String, Object> loadConfig(String key) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        Optional<AdminIntegrationConfig> opt = repository.findByTenantIdAndCategory(tenantId, key);
+        return opt.map(c -> jsonToMap(c.getConfigData())).orElse(null);
+    }
+
     private ResponseEntity<?> testSmtp() {
-        Map<String, Object> cfg = configs.get("smtp");
+        Map<String, Object> cfg = loadConfig("smtp");
         if (cfg == null || cfg.isEmpty()) {
             return ResponseEntity.ok(Map.of("success", false, "message", "No SMTP configuration found"));
         }
@@ -142,7 +140,7 @@ public class AdminIntegrationController {
     }
 
     private ResponseEntity<?> testStorage() {
-        Map<String, Object> cfg = configs.get("storage");
+        Map<String, Object> cfg = loadConfig("storage");
         if (cfg == null || cfg.isEmpty()) {
             return ResponseEntity.ok(Map.of("success", false, "message", "No storage configuration found"));
         }
@@ -168,7 +166,7 @@ public class AdminIntegrationController {
     }
 
     private ResponseEntity<?> testJwt() {
-        Map<String, Object> cfg = configs.get("jwt");
+        Map<String, Object> cfg = loadConfig("jwt");
         if (cfg == null || cfg.isEmpty()) {
             return ResponseEntity.ok(Map.of("success", false, "message", "No JWT configuration found"));
         }
@@ -222,7 +220,7 @@ public class AdminIntegrationController {
     }
 
     private ResponseEntity<?> testRateLimiting() {
-        Map<String, Object> cfg = configs.get("rate-limiting");
+        Map<String, Object> cfg = loadConfig("rate-limiting");
         if (cfg == null || cfg.isEmpty()) {
             cfg = Map.of("enabled", false, "requestsPerMinute", 0, "burstSize", 0, "blockDurationMinutes", 0);
         }
@@ -231,6 +229,79 @@ public class AdminIntegrationController {
                 "message", "Rate limiting is " + (Boolean.TRUE.equals(cfg.get("enabled")) ? "enabled" : "disabled"),
                 "config", cfg
         ));
+    }
+
+    private Map<String, Object> defaultConfig(String key) {
+        return switch (key) {
+            case "smtp" -> Map.of(
+                    "host", "smtp.example.com",
+                    "port", 587,
+                    "username", "",
+                    "password", "",
+                    "fromAddress", "noreply@discipolat.com",
+                    "fromName", "Discipolat",
+                    "tls", true,
+                    "enabled", false
+            );
+            case "storage" -> Map.of(
+                    "provider", "MINIO",
+                    "bucket", "discipolat-files",
+                    "region", "eu-west-1",
+                    "accessKey", "",
+                    "secretKey", "",
+                    "endpoint", "",
+                    "enabled", false
+            );
+            case "jwt" -> Map.of(
+                    "accessTokenTtlMinutes", 15,
+                    "refreshTokenTtlDays", 7,
+                    "algorithm", "RS256",
+                    "enabled", true
+            );
+            case "rate-limiting" -> Map.of(
+                    "enabled", true,
+                    "requestsPerMinute", 60,
+                    "burstSize", 10,
+                    "blockDurationMinutes", 30
+            );
+            default -> Map.of();
+        };
+    }
+
+    private String mapToJson(Map<String, Object> map) {
+        StringBuilder sb = new StringBuilder("{");
+        boolean first = true;
+        for (Map.Entry<String, Object> e : map.entrySet()) {
+            if (!first) sb.append(",");
+            first = false;
+            sb.append("\"").append(escapeJson(e.getKey())).append("\":");
+            appendJsonValue(sb, e.getValue());
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    private void appendJsonValue(StringBuilder sb, Object v) {
+        if (v == null) {
+            sb.append("null");
+        } else if (v instanceof Number || v instanceof Boolean) {
+            sb.append(v.toString());
+        } else {
+            sb.append("\"").append(escapeJson(v.toString())).append("\"");
+        }
+    }
+
+    private String escapeJson(String s) {
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> jsonToMap(String json) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Map.class);
+        } catch (Exception e) {
+            return Map.of();
+        }
     }
 
     private record TestResult(boolean success, String message) {}
