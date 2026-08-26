@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../tenant_config.dart';
 
 /// Streaming & Live — branché sur `GET /api/v1/streams`.
@@ -50,7 +51,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'Impossible de charger les streams.';
+          _error = AppLocalizations.of(context).streamingError;
         });
       }
     }
@@ -60,7 +61,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Streaming & Live'),
+        title: Text(AppLocalizations.of(context).streamingTitle),
         backgroundColor: Colors.purple.shade600,
         foregroundColor: Colors.white,
       ),
@@ -88,7 +89,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
           child: FilledButton.icon(
             onPressed: _load,
             icon: const Icon(Icons.refresh),
-            label: const Text('Réessayer'),
+            label: Text(AppLocalizations.of(context).retry),
           ),
         ),
       ],
@@ -121,8 +122,8 @@ class _StreamingScreenState extends State<StreamingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('EN DIRECT',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    Text(AppLocalizations.of(context).liveBadge,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     Text('${_live.first['title']} — ${_live.first['viewerCount'] ?? 0} spectateurs',
                         style: const TextStyle(color: Colors.white70, fontSize: 12)),
                   ],
@@ -134,27 +135,27 @@ class _StreamingScreenState extends State<StreamingScreen> {
           const SizedBox(height: 16),
         ],
         Row(children: [
-          _statCard(Icons.wifi, '${_live.length}', 'En direct', Colors.red),
+          _statCard(Icons.wifi, '${_live.length}', AppLocalizations.of(context).statLive, Colors.red),
           const SizedBox(width: 12),
-          _statCard(Icons.people, '$totalViewers', 'Spectateurs', Colors.blue),
+          _statCard(Icons.people, '$totalViewers', AppLocalizations.of(context).statViewers, Colors.blue),
           const SizedBox(width: 12),
-          _statCard(Icons.visibility, '${_streams.length}', 'Streams', Colors.green),
+          _statCard(Icons.visibility, '${_streams.length}', AppLocalizations.of(context).statStreams, Colors.green),
         ]),
         const SizedBox(height: 20),
-        const Text('Prochains streams',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(AppLocalizations.of(context).upcomingStreams,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         if (_streams.isEmpty)
-          const Text('Aucun stream planifié pour le moment.',
-              style: TextStyle(color: Colors.grey))
+          Text(AppLocalizations.of(context).streamsEmpty,
+              style: const TextStyle(color: Colors.grey))
         else
           ..._streams.map((s) {
             final ended = s['status'] == 'ENDED' || s['status'] == 'CANCELLED';
             final subtitle = s['scheduledAt'] != null
-                ? 'Planifié — ${_formatDate(s['scheduledAt'])}'
+                ? AppLocalizations.of(context).scheduledAt(_formatDate(s['scheduledAt']))
                 : (ended
-                    ? 'Terminé'
-                    : (s['description']?.toString() ?? 'Planifié'));
+                    ? AppLocalizations.of(context).endedLabel
+                    : (s['description']?.toString() ?? ''));
             return _streamCard(
                 s['title']?.toString() ?? 'Stream', subtitle,
                 ended ? Icons.check_circle : Icons.video_library,

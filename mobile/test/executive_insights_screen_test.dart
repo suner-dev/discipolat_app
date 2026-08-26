@@ -1,31 +1,67 @@
-import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:discipolat_mobile/presentation/screens/executive_insights/executive_insights_screen.dart';
+
+import 'package:discipolat_mobile/data/services/api_service.dart';
+import 'package:discipolat_mobile/presentation/screens/dashboard/executive_insights_screen.dart';
+
+import 'helpers/pump_localized.dart';
+
+class _FakeApiService extends ApiService {
+  _FakeApiService({this.fail = false, this.empty = false}) : super(baseUrl: 'http://fake');
+  final bool fail;
+  final bool empty;
+
+  @override
+  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+    if (fail) throw DioException(requestOptions: RequestOptions(path: path));
+    if (path == '/executive-insights') {
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        statusCode: 200,
+        data: empty
+            ? <dynamic>[]
+            : [
+                {
+                  'title': 'Baisse de présence des jeunes',
+                  'description': '-12% chez les 18-25 ans ce mois-ci.',
+                  'severity': 'WARNING',
+                  'metricValue': '-12%',
+                  'recommendedAction': 'Organiser un événement jeunes.',
+                },
+              ],
+      );
+    }
+    return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: []);
+  }
+}
 
 void main() {
-  group('ExecutiveInsightsScreen', () {
+  group('ExecutiveInsightsScreen (branché API)', () {
     testWidgets('renders app bar', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const ExecutiveInsightsScreen()));
-      expect(find.text('🧠 Insights Exécutifs'), findsOneWidget);
+      await pumpLocalized(tester, ExecutiveInsightsScreen(apiService: _FakeApiService()));
+      await tester.pumpAndSettle();
+      expect(find.text('Insights Exécutifs IA'), findsOneWidget);
     });
 
-    testWidgets('shows AI insight card', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const ExecutiveInsightsScreen()));
-      expect(find.text('Insight IA'), findsOneWidget);
-      expect(find.textContaining('présence a baissé'), findsOneWidget);
+    testWidgets('shows insights from API', (tester) async {
+      await pumpLocalized(tester, ExecutiveInsightsScreen(apiService: _FakeApiService()));
+      await tester.pumpAndSettle();
+      expect(find.text('Baisse de présence des jeunes'), findsOneWidget);
+      expect(find.textContaining('-12% chez les 18-25 ans'), findsOneWidget);
+      expect(find.textContaining('Organiser un événement jeunes.'), findsOneWidget);
     });
 
-    testWidgets('shows KPI cards', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const ExecutiveInsightsScreen()));
-      expect(find.text('KPIs Clés'), findsOneWidget);
-      expect(find.text('78%'), findsOneWidget);
-      expect(find.text('Présence'), findsOneWidget);
+    testWidgets('shows empty state', (tester) async {
+      await pumpLocalized(tester, ExecutiveInsightsScreen(apiService: _FakeApiService(empty: true)));
+      await tester.pumpAndSettle();
+      expect(find.text('Aucun insight actif.'), findsOneWidget);
     });
 
-    testWidgets('shows trends', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: const ExecutiveInsightsScreen()));
-      expect(find.text('Tendances'), findsOneWidget);
-      expect(find.textContaining('Croissance baptized'), findsOneWidget);
+    testWidgets('shows error state with retry', (tester) async {
+      await pumpLocalized(tester, ExecutiveInsightsScreen(apiService: _FakeApiService(fail: true)));
+      await tester.pumpAndSettle();
+      expect(find.text('Impossible de charger les insights.'), findsOneWidget);
+      expect(find.text('Réessayer'), findsOneWidget);
     });
   });
 }

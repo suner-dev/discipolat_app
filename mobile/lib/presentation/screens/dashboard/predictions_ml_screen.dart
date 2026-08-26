@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Prédictions ML — branché sur `GET /api/predictions` (hors /v1).
 class PredictionsMlScreen extends StatefulWidget {
@@ -44,7 +45,7 @@ class _PredictionsMlScreenState extends State<PredictionsMlScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'Impossible de charger les prédictions.';
+          _error = AppLocalizations.of(context).predictionsError;
         });
       }
     }
@@ -70,7 +71,7 @@ class _PredictionsMlScreenState extends State<PredictionsMlScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Prédictions ML'), backgroundColor: Colors.purple.shade600, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).predictionsMlTitle), backgroundColor: Colors.purple.shade600, foregroundColor: Colors.white),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _predictions.isEmpty
@@ -86,7 +87,7 @@ class _PredictionsMlScreenState extends State<PredictionsMlScreen> {
                       child: FilledButton.icon(
                         onPressed: _load,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Réessayer'),
+                        label: Text(AppLocalizations.of(context).retry),
                       ),
                     ),
                   ],
@@ -95,10 +96,10 @@ class _PredictionsMlScreenState extends State<PredictionsMlScreen> {
                   onRefresh: _load,
                   child: _predictions.isEmpty
                       ? ListView(
-                          children: const [
-                            SizedBox(height: 120),
-                            Icon(Icons.insights, size: 56, color: Colors.grey),
-                            Center(child: Padding(padding: EdgeInsets.all(8), child: Text('Aucune prédiction disponible.', style: TextStyle(color: Colors.grey)))),
+                          children: [
+                            const SizedBox(height: 120),
+                            const Icon(Icons.insights, size: 56, color: Colors.grey),
+                            Center(child: Padding(padding: const EdgeInsets.all(8), child: Text(AppLocalizations.of(context).predictionsMlEmpty, style: const TextStyle(color: Colors.grey)))),
                           ],
                         )
                       : GridView.builder(
@@ -128,7 +129,7 @@ class _PredictionsMlScreenState extends State<PredictionsMlScreen> {
                                     Text(_typeLabel(p['predictionType']?.toString() ?? ''), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                     const Spacer(),
                                     Text('${current.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                                    Text('Prédit: ${predicted.toStringAsFixed(0)}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                    Text(AppLocalizations.of(context).predictedValue(predicted), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                                     Text('${growth >= 0 ? '+' : ''}${growth.toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, color: isUp ? Colors.green : Colors.red)),
                                   ],
                                 ),

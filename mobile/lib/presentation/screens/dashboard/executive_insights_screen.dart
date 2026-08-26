@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Insights Exécutifs IA — branché sur `GET /api/v1/executive-insights`.
 class ExecutiveInsightsScreen extends StatefulWidget {
@@ -42,7 +43,7 @@ class _ExecutiveInsightsScreenState extends State<ExecutiveInsightsScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'Impossible de charger les insights.';
+          _error = AppLocalizations.of(context).executiveInsightsError;
         });
       }
     }
@@ -64,7 +65,7 @@ class _ExecutiveInsightsScreenState extends State<ExecutiveInsightsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Insights Exécutifs IA'), backgroundColor: Colors.indigo.shade600, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).executiveInsightsTitle), backgroundColor: Colors.indigo.shade600, foregroundColor: Colors.white),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _insights.isEmpty
@@ -80,7 +81,7 @@ class _ExecutiveInsightsScreenState extends State<ExecutiveInsightsScreen> {
                       child: FilledButton.icon(
                         onPressed: _load,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Réessayer'),
+                        label: Text(AppLocalizations.of(context).retry),
                       ),
                     ),
                   ],
@@ -89,10 +90,10 @@ class _ExecutiveInsightsScreenState extends State<ExecutiveInsightsScreen> {
                   onRefresh: _load,
                   child: _insights.isEmpty
                       ? ListView(
-                          children: const [
-                            SizedBox(height: 120),
-                            Icon(Icons.lightbulb_outline, size: 56, color: Colors.grey),
-                            Center(child: Padding(padding: EdgeInsets.all(8), child: Text('Aucun insight actif.', style: TextStyle(color: Colors.grey)))),
+                          children: [
+                            const SizedBox(height: 120),
+                            const Icon(Icons.lightbulb_outline, size: 56, color: Colors.grey),
+                            Center(child: Padding(padding: const EdgeInsets.all(8), child: Text(AppLocalizations.of(context).executiveInsightsEmpty, style: const TextStyle(color: Colors.grey)))),
                           ],
                         )
                       : ListView.builder(

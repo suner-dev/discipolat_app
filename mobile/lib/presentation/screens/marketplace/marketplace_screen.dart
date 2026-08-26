@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Marketplace — branché sur `GET /api/v1/marketplace`.
 class MarketplaceScreen extends StatefulWidget {
@@ -42,7 +43,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'Impossible de charger le marketplace.';
+          _error = AppLocalizations.of(context).marketplaceError;
         });
       }
     }
@@ -52,7 +53,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Marketplace'),
+        title: Text(AppLocalizations.of(context).marketplaceTitle),
         backgroundColor: Colors.teal.shade600,
         foregroundColor: Colors.white,
         actions: [
@@ -80,7 +81,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           child: FilledButton.icon(
             onPressed: _load,
             icon: const Icon(Icons.refresh),
-            label: const Text('Réessayer'),
+            label: Text(AppLocalizations.of(context).retry),
           ),
         ),
       ],
@@ -93,7 +94,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       children: [
         TextField(
           decoration: InputDecoration(
-            hintText: 'Rechercher...',
+            hintText: AppLocalizations.of(context).searchHint,
             prefixIcon: const Icon(Icons.search, size: 20),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -102,17 +103,23 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         const SizedBox(height: 16),
         Wrap(
           spacing: 8,
-          children: ['Tout', 'Offres', 'Demandes', 'Services', 'Gratuit'].map((l) {
-            return _chip(l, l == 'Tout');
+          children: [
+            AppLocalizations.of(context).filterAll,
+            AppLocalizations.of(context).filterOffers,
+            AppLocalizations.of(context).filterRequests,
+            AppLocalizations.of(context).filterServices,
+            AppLocalizations.of(context).filterFree,
+          ].map((l) {
+            return _chip(l, l == AppLocalizations.of(context).filterAll);
           }).toList(),
         ),
         const SizedBox(height: 16),
         if (_listings.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(24),
+          Padding(
+            padding: const EdgeInsets.all(24),
             child: Center(
-              child: Text('Aucune annonce pour le moment.',
-                  style: TextStyle(color: Colors.grey)),
+              child: Text(AppLocalizations.of(context).marketplaceEmpty,
+                  style: const TextStyle(color: Colors.grey)),
             ),
           )
         else
@@ -131,15 +138,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   }
 
   String _typeLabel(String t) {
+    final l = AppLocalizations.of(context);
     switch (t) {
       case 'REQUEST':
-        return 'Demande';
+        return l.filterRequests;
       case 'SERVICE':
-        return 'Service';
+        return l.filterServices;
       case 'FREE':
-        return 'Gratuit';
+        return l.filterFree;
       default:
-        return 'Offre';
+        return l.filterOffers;
     }
   }
 
@@ -174,7 +182,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       default:
         typeColor = Colors.blue;
     }
-    final sellerLabel = seller.isEmpty ? 'Vendeur' : 'Vendeur #$seller';
+    final l = AppLocalizations.of(context);
+    final sellerLabel = seller.isEmpty ? l.sellerLabel : l.sellerWithId(seller);
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -223,7 +232,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                   child: ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade600, foregroundColor: Colors.white),
-                    child: const Text('Contacter', style: TextStyle(fontSize: 12)),
+                    child: Text(AppLocalizations.of(context).contact, style: const TextStyle(fontSize: 12)),
                   ),
                 ),
               ],

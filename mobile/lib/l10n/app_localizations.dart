@@ -277,6 +277,82 @@ class AppLocalizations {
   String get adminRequestsEmpty => translate('adminRequestsEmpty');
   String get demoDataBanner => translate('demoDataBanner');
 
+  // ==================== MODULES CONNECTÉS — LOT 2 ====================
+  String get streamingTitle => translate('streamingTitle');
+  String get streamingError => translate('streamingError');
+  String get liveBadge => translate('liveBadge');
+  String get statLive => translate('statLive');
+  String get statViewers => translate('statViewers');
+  String get statStreams => translate('statStreams');
+  String get upcomingStreams => translate('upcomingStreams');
+  String get streamsEmpty => translate('streamsEmpty');
+  String scheduledAt(String date) => translate('scheduledAt').replaceAll('{date}', date);
+  String get endedLabel => translate('endedLabel');
+  String get inventoryTitle => translate('inventoryTitle');
+  String get inventoryError => translate('inventoryError');
+  String get inventoryEmpty => translate('inventoryEmpty');
+  String lowStockBanner(int count) => translate('lowStockBanner').replaceAll('{count}', '$count');
+  String get searchItemHint => translate('searchItemHint');
+  String unitsCount(int count) => translate('unitsCount').replaceAll('{count}', '$count');
+  String get lowStockTag => translate('lowStockTag');
+  String get marketplaceTitle => translate('marketplaceTitle');
+  String get marketplaceError => translate('marketplaceError');
+  String get marketplaceEmpty => translate('marketplaceEmpty');
+  String get searchHint => translate('searchHint');
+  String get filterAll => translate('filterAll');
+  String get filterOffers => translate('filterOffers');
+  String get filterRequests => translate('filterRequests');
+  String get filterServices => translate('filterServices');
+  String get filterFree => translate('filterFree');
+  String get contact => translate('contact');
+  String get sellerLabel => translate('sellerLabel');
+  String sellerWithId(String id) => translate('sellerWithId').replaceAll('{id}', id);
+  String get moderationTitle => translate('moderationTitle');
+  String get moderationError => translate('moderationError');
+  String get moderationEmpty => translate('moderationEmpty');
+  String get approve => translate('approve');
+  String get reject => translate('reject');
+  String reviewDone(String decision) => translate('reviewDone').replaceAll('{decision}', decision);
+  String get reviewError => translate('reviewError');
+  String get predictionsMlTitle => translate('predictionsMlTitle');
+  String get predictionsMlEmpty => translate('predictionsMlEmpty');
+  String predictedValue(num value) => translate('predictedValue').replaceAll('{value}', value.toStringAsFixed(0));
+  String get executiveInsightsTitle => translate('executiveInsightsTitle');
+  String get executiveInsightsError => translate('executiveInsightsError');
+  String get executiveInsightsEmpty => translate('executiveInsightsEmpty');
+  String get prayerJournalTitle => translate('prayerJournalTitle');
+  String get prayerJournalEmpty => translate('prayerJournalEmpty');
+  String get statTotal => translate('statTotal');
+  String get statOngoing => translate('statOngoing');
+  String get statAnswered => translate('statAnswered');
+  String get newPrayer => translate('newPrayer');
+  String get yourPrayer => translate('yourPrayer');
+  String get categoryLabel => translate('categoryLabel');
+  String get catPrayer => translate('catPrayer');
+  String get catPraise => translate('catPraise');
+  String get catIntercession => translate('catIntercession');
+  String get catGrace => translate('catGrace');
+  String get digitalTwinTitle => translate('digitalTwinTitle');
+  String get quickScenarios => translate('quickScenarios');
+  String get scenarioStagnation => translate('scenarioStagnation');
+  String get scenarioSoftGrowth => translate('scenarioSoftGrowth');
+  String get scenarioMakersAwakening => translate('scenarioMakersAwakening');
+  String get scenarioAwakeningRetention => translate('scenarioAwakeningRetention');
+  String get scenarioSpiritualAwakening => translate('scenarioSpiritualAwakening');
+  String get parameters => translate('parameters');
+  String get makerMultiplier => translate('makerMultiplier');
+  String get retentionGain => translate('retentionGain');
+  String get pipelineBoost => translate('pipelineBoost');
+  String get horizon => translate('horizon');
+  String get projectedStat => translate('projectedStat');
+  String get soulsUnit => translate('soulsUnit');
+  String get growthStat => translate('growthStat');
+  String get leadersNeeded => translate('leadersNeeded');
+  String get leadersSufficient => translate('leadersSufficient');
+  String leadersMissing(int gap) => translate('leadersMissing').replaceAll('{gap}', '$gap');
+  String get monthlyProjection => translate('monthlyProjection');
+  String monthLabel(int n) => translate('monthLabel').replaceAll('{n}', '$n');
+
   // ==================== FRENCH ====================
   static const Map<String, String> _french = {
     'appTitle': 'Discipolat',
@@ -501,6 +577,80 @@ class AppLocalizations {
     'adminRequestsError': 'Impossible de charger les demandes.',
     'adminRequestsEmpty': 'Aucune demande.',
     'demoDataBanner': 'Aperçu — données de démonstration, pas encore connectées à votre église.',
+    'streamingTitle': 'Streaming & Live',
+    'streamingError': 'Impossible de charger les streams.',
+    'liveBadge': 'EN DIRECT',
+    'statLive': 'En direct',
+    'statViewers': 'Spectateurs',
+    'statStreams': 'Streams',
+    'upcomingStreams': 'Prochains streams',
+    'streamsEmpty': 'Aucun stream planifié pour le moment.',
+    'scheduledAt': 'Planifié — {date}',
+    'endedLabel': 'Terminé',
+    'inventoryTitle': 'Inventaire',
+    'inventoryError': "Impossible de charger l'inventaire.",
+    'inventoryEmpty': 'Aucun article enregistré.',
+    'lowStockBanner': '{count} article(s) en stock bas',
+    'searchItemHint': 'Rechercher un article...',
+    'unitsCount': '{count} unités',
+    'lowStockTag': 'Stock bas',
+    'marketplaceTitle': 'Marketplace',
+    'marketplaceError': 'Impossible de charger le marketplace.',
+    'marketplaceEmpty': 'Aucune annonce pour le moment.',
+    'searchHint': 'Rechercher...',
+    'filterAll': 'Tout',
+    'filterOffers': 'Offres',
+    'filterRequests': 'Demandes',
+    'filterServices': 'Services',
+    'filterFree': 'Gratuit',
+    'contact': 'Contacter',
+    'sellerLabel': 'Vendeur',
+    'sellerWithId': 'Vendeur #{id}',
+    'moderationTitle': 'Modération IA',
+    'moderationError': 'Impossible de charger la file de modération.',
+    'moderationEmpty': 'Aucun contenu à modérer.',
+    'approve': 'Approuver',
+    'reject': 'Rejeter',
+    'reviewDone': 'Contenu {decision}',
+    'reviewError': 'Erreur lors de la modération',
+    'predictionsMlTitle': 'Prédictions ML',
+    'predictionsMlEmpty': 'Aucune prédiction disponible.',
+    'predictedValue': 'Prédit : {value}',
+    'executiveInsightsTitle': 'Insights Exécutifs IA',
+    'executiveInsightsError': 'Impossible de charger les insights.',
+    'executiveInsightsEmpty': 'Aucun insight actif.',
+    'prayerJournalTitle': 'Journal de Prière',
+    'prayerJournalEmpty': 'Commencez à écrire vos prières',
+    'statTotal': 'Total',
+    'statOngoing': 'En cours',
+    'statAnswered': 'Exaucées',
+    'newPrayer': 'Nouvelle prière',
+    'yourPrayer': 'Votre prière',
+    'categoryLabel': 'Catégorie',
+    'catPrayer': 'Prière',
+    'catPraise': 'Louange',
+    'catIntercession': 'Intercession',
+    'catGrace': 'Grâce',
+    'digitalTwinTitle': '🔮 Jumeau Numérique',
+    'quickScenarios': '⚡ Scénarios rapides',
+    'scenarioStagnation': 'Stagnation',
+    'scenarioSoftGrowth': 'Croissance douce',
+    'scenarioMakersAwakening': 'Réveil faiseurs',
+    'scenarioAwakeningRetention': 'Réveil + rétention',
+    'scenarioSpiritualAwakening': 'Réveil spirituel',
+    'parameters': '⚙️ Paramètres',
+    'makerMultiplier': 'Multiplicateur faiseurs',
+    'retentionGain': 'Gain rétention (%)',
+    'pipelineBoost': 'Boost pipeline',
+    'horizon': 'Horizon',
+    'projectedStat': 'Projeté',
+    'soulsUnit': 'âmes',
+    'growthStat': 'Croissance',
+    'leadersNeeded': 'Leaders nécessaires',
+    'leadersSufficient': 'suffisant',
+    'leadersMissing': '+{gap} manquants',
+    'monthlyProjection': '📈 Projection mois par mois',
+    'monthLabel': 'Mois {n}',
   };
 
   // ==================== ENGLISH ====================
@@ -727,6 +877,80 @@ class AppLocalizations {
     'adminRequestsError': 'Unable to load requests.',
     'adminRequestsEmpty': 'No request.',
     'demoDataBanner': 'Preview — demo data, not yet connected to your church.',
+    'streamingTitle': 'Streaming & Live',
+    'streamingError': 'Unable to load streams.',
+    'liveBadge': 'LIVE',
+    'statLive': 'Live',
+    'statViewers': 'Viewers',
+    'statStreams': 'Streams',
+    'upcomingStreams': 'Upcoming streams',
+    'streamsEmpty': 'No stream scheduled yet.',
+    'scheduledAt': 'Scheduled — {date}',
+    'endedLabel': 'Ended',
+    'inventoryTitle': 'Inventory',
+    'inventoryError': 'Unable to load inventory.',
+    'inventoryEmpty': 'No item registered.',
+    'lowStockBanner': '{count} low-stock item(s)',
+    'searchItemHint': 'Search an item...',
+    'unitsCount': '{count} units',
+    'lowStockTag': 'Low stock',
+    'marketplaceTitle': 'Marketplace',
+    'marketplaceError': 'Unable to load the marketplace.',
+    'marketplaceEmpty': 'No listing yet.',
+    'searchHint': 'Search...',
+    'filterAll': 'All',
+    'filterOffers': 'Offers',
+    'filterRequests': 'Requests',
+    'filterServices': 'Services',
+    'filterFree': 'Free',
+    'contact': 'Contact',
+    'sellerLabel': 'Seller',
+    'sellerWithId': 'Seller #{id}',
+    'moderationTitle': 'AI moderation',
+    'moderationError': 'Unable to load the moderation queue.',
+    'moderationEmpty': 'No content to moderate.',
+    'approve': 'Approve',
+    'reject': 'Reject',
+    'reviewDone': 'Content {decision}',
+    'reviewError': 'Error while moderating',
+    'predictionsMlTitle': 'ML predictions',
+    'predictionsMlEmpty': 'No prediction available.',
+    'predictedValue': 'Predicted: {value}',
+    'executiveInsightsTitle': 'AI executive insights',
+    'executiveInsightsError': 'Unable to load insights.',
+    'executiveInsightsEmpty': 'No active insight.',
+    'prayerJournalTitle': 'Prayer journal',
+    'prayerJournalEmpty': 'Start writing your prayers',
+    'statTotal': 'Total',
+    'statOngoing': 'Ongoing',
+    'statAnswered': 'Answered',
+    'newPrayer': 'New prayer',
+    'yourPrayer': 'Your prayer',
+    'categoryLabel': 'Category',
+    'catPrayer': 'Prayer',
+    'catPraise': 'Praise',
+    'catIntercession': 'Intercession',
+    'catGrace': 'Thanksgiving',
+    'digitalTwinTitle': '🔮 Digital Twin',
+    'quickScenarios': '⚡ Quick scenarios',
+    'scenarioStagnation': 'Stagnation',
+    'scenarioSoftGrowth': 'Soft growth',
+    'scenarioMakersAwakening': 'Makers awakening',
+    'scenarioAwakeningRetention': 'Awakening + retention',
+    'scenarioSpiritualAwakening': 'Spiritual awakening',
+    'parameters': '⚙️ Parameters',
+    'makerMultiplier': 'Maker multiplier',
+    'retentionGain': 'Retention gain (%)',
+    'pipelineBoost': 'Pipeline boost',
+    'horizon': 'Horizon',
+    'projectedStat': 'Projected',
+    'soulsUnit': 'souls',
+    'growthStat': 'Growth',
+    'leadersNeeded': 'Leaders needed',
+    'leadersSufficient': 'sufficient',
+    'leadersMissing': '+{gap} missing',
+    'monthlyProjection': '📈 Month-by-month projection',
+    'monthLabel': 'Month {n}',
   };
 
   // ==================== PORTUGUESE ====================
@@ -953,6 +1177,80 @@ class AppLocalizations {
     'adminRequestsError': 'Não foi possível carregar os pedidos.',
     'adminRequestsEmpty': 'Nenhum pedido.',
     'demoDataBanner': 'Pré-visualização — dados de demonstração, ainda não ligados à sua igreja.',
+    'streamingTitle': 'Streaming & Live',
+    'streamingError': 'Não foi possível carregar as transmissões.',
+    'liveBadge': 'EM DIRETO',
+    'statLive': 'Em direto',
+    'statViewers': 'Espectadores',
+    'statStreams': 'Streams',
+    'upcomingStreams': 'Próximas transmissões',
+    'streamsEmpty': 'Nenhuma transmissão programada.',
+    'scheduledAt': 'Programado — {date}',
+    'endedLabel': 'Terminado',
+    'inventoryTitle': 'Inventário',
+    'inventoryError': 'Não foi possível carregar o inventário.',
+    'inventoryEmpty': 'Nenhum artigo registado.',
+    'lowStockBanner': '{count} artigo(s) com stock baixo',
+    'searchItemHint': 'Pesquisar um artigo...',
+    'unitsCount': '{count} unidades',
+    'lowStockTag': 'Stock baixo',
+    'marketplaceTitle': 'Marketplace',
+    'marketplaceError': 'Não foi possível carregar o marketplace.',
+    'marketplaceEmpty': 'Nenhum anúncio por agora.',
+    'searchHint': 'Pesquisar...',
+    'filterAll': 'Tudo',
+    'filterOffers': 'Ofertas',
+    'filterRequests': 'Pedidos',
+    'filterServices': 'Serviços',
+    'filterFree': 'Grátis',
+    'contact': 'Contactar',
+    'sellerLabel': 'Vendedor',
+    'sellerWithId': 'Vendedor #{id}',
+    'moderationTitle': 'Moderação IA',
+    'moderationError': 'Não foi possível carregar a fila de moderação.',
+    'moderationEmpty': 'Nenhum conteúdo para moderar.',
+    'approve': 'Aprovar',
+    'reject': 'Rejeitar',
+    'reviewDone': 'Conteúdo {decision}',
+    'reviewError': 'Erro durante a moderação',
+    'predictionsMlTitle': 'Previsões ML',
+    'predictionsMlEmpty': 'Nenhuma previsão disponível.',
+    'predictedValue': 'Previsto: {value}',
+    'executiveInsightsTitle': 'Insights executivos IA',
+    'executiveInsightsError': 'Não foi possível carregar os insights.',
+    'executiveInsightsEmpty': 'Nenhum insight ativo.',
+    'prayerJournalTitle': 'Diário de oração',
+    'prayerJournalEmpty': 'Comece a escrever as suas orações',
+    'statTotal': 'Total',
+    'statOngoing': 'Em curso',
+    'statAnswered': 'Atendidas',
+    'newPrayer': 'Nova oração',
+    'yourPrayer': 'A sua oração',
+    'categoryLabel': 'Categoria',
+    'catPrayer': 'Oração',
+    'catPraise': 'Louvor',
+    'catIntercession': 'Intercessão',
+    'catGrace': 'Graças',
+    'digitalTwinTitle': '🔮 Gémeo Digital',
+    'quickScenarios': '⚡ Cenários rápidos',
+    'scenarioStagnation': 'Estagnação',
+    'scenarioSoftGrowth': 'Crescimento suave',
+    'scenarioMakersAwakening': 'Despertar dos faiseurs',
+    'scenarioAwakeningRetention': 'Despertar + retenção',
+    'scenarioSpiritualAwakening': 'Despertar espiritual',
+    'parameters': '⚙️ Parâmetros',
+    'makerMultiplier': 'Multiplicador faiseurs',
+    'retentionGain': 'Ganho de retenção (%)',
+    'pipelineBoost': 'Boost pipeline',
+    'horizon': 'Horizonte',
+    'projectedStat': 'Projetado',
+    'soulsUnit': 'almas',
+    'growthStat': 'Crescimento',
+    'leadersNeeded': 'Líderes necessários',
+    'leadersSufficient': 'suficiente',
+    'leadersMissing': '+{gap} em falta',
+    'monthlyProjection': '📈 Projeção mês a mês',
+    'monthLabel': 'Mês {n}',
   };
 }
 

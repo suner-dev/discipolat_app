@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// P17 — Jumeau Numérique de l'Église (mobile).
 /// Simulations what-if de croissance avec scénarios prédéfinis.
@@ -51,8 +51,8 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A1A),
       appBar: AppBar(
-        title: const Text('🔮 Jumeau Numérique',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context).digitalTwinTitle,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -90,12 +90,13 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
   }
 
   Widget _buildScenarioPresets() {
+    final l = AppLocalizations.of(context);
     final scenarios = [
-      ('Stagnation', 1.0, 0, 1.0, Colors.grey),
-      ('Croissance douce', 1.3, 5, 1.1, Colors.green),
-      ('Réveil faiseurs', 2.0, 0, 1.0, Colors.blue),
-      ('Réveil + rétention', 1.8, 15, 1.15, Colors.purple),
-      ('Réveil spirituel', 2.5, 20, 1.4, Colors.orange),
+      (l.scenarioStagnation, 1.0, 0, 1.0, Colors.grey),
+      (l.scenarioSoftGrowth, 1.3, 5, 1.1, Colors.green),
+      (l.scenarioMakersAwakening, 2.0, 0, 1.0, Colors.blue),
+      (l.scenarioAwakeningRetention, 1.8, 15, 1.15, Colors.purple),
+      (l.scenarioSpiritualAwakening, 2.5, 20, 1.4, Colors.orange),
     ];
 
     return Container(
@@ -107,8 +108,8 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('⚡ Scénarios rapides',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).quickScenarios,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -151,14 +152,14 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('⚙️ Paramètres', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).parameters, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
-          _sliderParam('Multiplicateur faiseurs', _faiseurMultiplier, 0.5, 5.0, (v) => _faiseurMultiplier = v),
-          _sliderParam('Gain rétention (%)', _retentionGain.toDouble(), 0, 80, (v) => _retentionGain = v.toInt()),
-          _sliderParam('Boost pipeline', _pipelineBoost, 0.5, 5.0, (v) => _pipelineBoost = v),
+          _sliderParam(AppLocalizations.of(context).makerMultiplier, _faiseurMultiplier, 0.5, 5.0, (v) => _faiseurMultiplier = v),
+          _sliderParam(AppLocalizations.of(context).retentionGain, _retentionGain.toDouble(), 0, 80, (v) => _retentionGain = v.toInt()),
+          _sliderParam(AppLocalizations.of(context).pipelineBoost, _pipelineBoost, 0.5, 5.0, (v) => _pipelineBoost = v),
           Row(
             children: [
-              const Text('Horizon', style: TextStyle(color: Colors.white70, fontSize: 13)),
+              Text(AppLocalizations.of(context).horizon, style: const TextStyle(color: Colors.white70, fontSize: 13)),
               const Spacer(),
               ...[6, 12, 24, 36].map((m) => Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -218,9 +219,9 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
 
     return Row(
       children: [
-        _statCard('Projeté', '$projected', 'âmes', Colors.cyanAccent),
-        _statCard('Croissance', '+$growth%', '', Colors.green),
-        _statCard('Leaders nécessaires', '$leaders', '(${gap > 0 ? '+$gap manquants' : 'suffisant'})',
+        _statCard(AppLocalizations.of(context).projectedStat, '$projected', AppLocalizations.of(context).soulsUnit, Colors.cyanAccent),
+        _statCard(AppLocalizations.of(context).growthStat, '+$growth%', '', Colors.green),
+        _statCard(AppLocalizations.of(context).leadersNeeded, '$leaders', gap > 0 ? AppLocalizations.of(context).leadersMissing(gap) : AppLocalizations.of(context).leadersSufficient,
             gap > 0 ? Colors.orange : Colors.green),
       ],
     );
@@ -260,8 +261,8 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('📈 Projection mois par mois',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).monthlyProjection,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           SizedBox(
             height: 150,
@@ -298,8 +299,8 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Mois 1', style: TextStyle(color: Colors.white.withAlpha(100), fontSize: 10)),
-              Text('Mois $_months', style: TextStyle(color: Colors.white.withAlpha(100), fontSize: 10)),
+              Text(AppLocalizations.of(context).monthLabel(1), style: TextStyle(color: Colors.white.withAlpha(100), fontSize: 10)),
+              Text(AppLocalizations.of(context).monthLabel(_months), style: TextStyle(color: Colors.white.withAlpha(100), fontSize: 10)),
             ],
           ),
         ],

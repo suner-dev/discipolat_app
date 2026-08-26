@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Inventaire — branché sur `GET /api/v1/inventory`.
 class InventoryScreen extends StatefulWidget {
@@ -44,7 +45,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'Impossible de charger l\'inventaire.';
+          _error = AppLocalizations.of(context).inventoryError;
         });
       }
     }
@@ -59,7 +60,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inventaire'),
+        title: Text(AppLocalizations.of(context).inventoryTitle),
         backgroundColor: Colors.indigo.shade600,
         foregroundColor: Colors.white,
       ),
@@ -89,7 +90,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           child: FilledButton.icon(
             onPressed: _load,
             icon: const Icon(Icons.refresh),
-            label: const Text('Réessayer'),
+            label: Text(AppLocalizations.of(context).retry),
           ),
         ),
       ],
@@ -114,7 +115,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 Icon(Icons.warning_amber, color: Colors.amber.shade600),
                 const SizedBox(width: 8),
                 Expanded(
-                    child: Text('$lowCount article(s) en stock bas',
+                    child: Text(AppLocalizations.of(context).lowStockBanner(lowCount),
                         style: const TextStyle(fontSize: 13))),
               ],
             ),
@@ -122,7 +123,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         const SizedBox(height: 16),
         TextField(
           decoration: InputDecoration(
-            hintText: 'Rechercher un article...',
+            hintText: AppLocalizations.of(context).searchItemHint,
             prefixIcon: const Icon(Icons.search, size: 20),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -130,11 +131,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ),
         const SizedBox(height: 16),
         if (_items.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(24),
+          Padding(
+            padding: const EdgeInsets.all(24),
             child: Center(
-              child: Text('Aucun article enregistré.',
-                  style: TextStyle(color: Colors.grey)),
+              child: Text(AppLocalizations.of(context).inventoryEmpty,
+                  style: const TextStyle(color: Colors.grey)),
             ),
           )
         else
@@ -145,7 +146,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             final qte = (i['quantite'] as num?)?.toInt() ?? 0;
             final isLow = _isLowStock(i);
             final color = _categoryColor(categorie);
-            return _itemCard(nom, categorie, '$qte unités', lieu, color, isLow);
+            return _itemCard(nom, categorie, AppLocalizations.of(context).unitsCount(qte), lieu, color, isLow);
           }),
       ],
     );
@@ -187,7 +188,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   color: isLow ? Colors.red : Colors.grey.shade700,
                 )),
             if (isLow)
-              const Text('Stock bas', style: TextStyle(fontSize: 10, color: Colors.red)),
+              Text(AppLocalizations.of(context).lowStockTag, style: const TextStyle(fontSize: 10, color: Colors.red)),
           ],
         ),
       ),

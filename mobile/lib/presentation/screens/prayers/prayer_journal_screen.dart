@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Prayer Journal screen - personal prayer tracking
 class PrayerJournalScreen extends StatefulWidget {
-  const PrayerJournalScreen({super.key});
+  const PrayerJournalScreen({super.key, this.apiService});
+  final ApiService? apiService;
 
   @override
   State<PrayerJournalScreen> createState() => _PrayerJournalScreenState();
 }
 
 class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
-  final _api = ApiService();
+  late final _api = widget.apiService ?? ApiService();
   List<dynamic> entries = [];
   bool loading = true;
   Map<String, dynamic> stats = {};
@@ -27,8 +29,12 @@ class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
         _api.get('/prayer-journal'),
         _api.get('/prayer-journal/stats'),
       ]);
+      final d0 = results[0].data;
+      final rawEntries = d0 is Map<String, dynamic>
+          ? (d0['content'] as List<dynamic>? ?? <dynamic>[])
+          : (d0 is List ? d0 : <dynamic>[]);
       setState(() {
-        entries = (results[0].data['content'] ?? results[0].data ?? []) as List;
+        entries = List<dynamic>.from(rawEntries);
         stats = results[1].data is Map ? results[1].data as Map<String, dynamic> : {};
         loading = false;
       });
@@ -41,7 +47,7 @@ class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Journal de Priere'),
+        title: Text(AppLocalizations.of(context).prayerJournalTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -52,7 +58,7 @@ class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : entries.isEmpty
-              ? const Center(child: Text('Commencez a ecrire vos prieres'))
+              ? Center(child: Text(AppLocalizations.of(context).prayerJournalEmpty))
               : Column(
                   children: [
                     // Stats cards
@@ -60,11 +66,11 @@ class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          _statCard('Total', '${stats['total'] ?? 0}', Colors.purple),
+                          _statCard(AppLocalizations.of(context).statTotal, '${stats['total'] ?? 0}', Colors.purple),
                           const SizedBox(width: 8),
-                          _statCard('En cours', '${stats['enCours'] ?? 0}', Colors.amber),
+                          _statCard(AppLocalizations.of(context).statOngoing, '${stats['enCours'] ?? 0}', Colors.amber),
                           const SizedBox(width: 8),
-                          _statCard('Exaucees', '${stats['exaucees'] ?? 0}', Colors.green),
+                          _statCard(AppLocalizations.of(context).statAnswered, '${stats['exaucees'] ?? 0}', Colors.green),
                         ],
                       ),
                     ),
@@ -131,28 +137,30 @@ class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
     String categorie = 'PRIERE';
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nouvelle priere'),
+      builder: (ctx) {
+        final l = AppLocalizations.of(context);
+        return AlertDialog(
+        title: Text(l.newPrayer),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: ctrl, decoration: const InputDecoration(labelText: 'Votre priere'), maxLines: 4),
+            TextField(controller: ctrl, decoration: InputDecoration(labelText: l.yourPrayer), maxLines: 4),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               value: categorie,
-              decoration: const InputDecoration(labelText: 'Categorie'),
-              items: const [
-                DropdownMenuItem(value: 'PRIERE', child: Text('Priere')),
-                DropdownMenuItem(value: 'LOUANGE', child: Text('Louange')),
-                DropdownMenuItem(value: 'INTERCESSION', child: Text('Intercession')),
-                DropdownMenuItem(value: 'GRACE', child: Text('Grace')),
+              decoration: InputDecoration(labelText: l.categoryLabel),
+              items: [
+                DropdownMenuItem(value: 'PRIERE', child: Text(l.catPrayer)),
+                DropdownMenuItem(value: 'LOUANGE', child: Text(l.catPraise)),
+                DropdownMenuItem(value: 'INTERCESSION', child: Text(l.catIntercession)),
+                DropdownMenuItem(value: 'GRACE', child: Text(l.catGrace)),
               ],
               onChanged: (v) { if (v != null) categorie = v; },
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
           FilledButton(
             onPressed: () async {
               if (ctrl.text.isNotEmpty) {
@@ -165,10 +173,11 @@ class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
                 _loadData();
               }
             },
-            child: const Text('Ajouter'),
+            child: Text(AppLocalizations.of(context).add),
           ),
         ],
-      ),
+        );
+      },
     );
   }
 }

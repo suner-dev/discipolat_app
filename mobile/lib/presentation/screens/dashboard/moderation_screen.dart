@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Modération IA — branché sur `GET /api/v1/moderation`.
 class ModerationScreen extends StatefulWidget {
@@ -42,7 +43,7 @@ class _ModerationScreenState extends State<ModerationScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'Impossible de charger la file de modération.';
+          _error = AppLocalizations.of(context).moderationError;
         });
       }
     }
@@ -51,12 +52,15 @@ class _ModerationScreenState extends State<ModerationScreen> {
   Future<void> _review(dynamic item, String decision) async {
     try {
       await _api.put('/moderation/${item['id']}/review', data: {'decision': decision});
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Contenu $decision')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).reviewDone(decision))));
+      }
       _load();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erreur lors de la modération')));
+            SnackBar(content: Text(AppLocalizations.of(context).reviewError)));
       }
     }
   }
@@ -77,7 +81,7 @@ class _ModerationScreenState extends State<ModerationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Modération IA'), backgroundColor: Colors.red.shade600, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).moderationTitle), backgroundColor: Colors.red.shade600, foregroundColor: Colors.white),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _items.isEmpty
@@ -93,7 +97,7 @@ class _ModerationScreenState extends State<ModerationScreen> {
                       child: FilledButton.icon(
                         onPressed: _load,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Réessayer'),
+                        label: Text(AppLocalizations.of(context).retry),
                       ),
                     ),
                   ],
@@ -102,10 +106,10 @@ class _ModerationScreenState extends State<ModerationScreen> {
                   onRefresh: _load,
                   child: _items.isEmpty
                       ? ListView(
-                          children: const [
-                            SizedBox(height: 120),
-                            Icon(Icons.inbox, size: 56, color: Colors.grey),
-                            Center(child: Padding(padding: EdgeInsets.all(8), child: Text('Aucun contenu à modérer.', style: TextStyle(color: Colors.grey)))),
+                          children: [
+                            const SizedBox(height: 120),
+                            const Icon(Icons.inbox, size: 56, color: Colors.grey),
+                            Center(child: Padding(padding: const EdgeInsets.all(8), child: Text(AppLocalizations.of(context).moderationEmpty, style: const TextStyle(color: Colors.grey)))),
                           ],
                         )
                       : ListView.builder(
@@ -140,8 +144,8 @@ class _ModerationScreenState extends State<ModerationScreen> {
                                       ),
                                       const Spacer(),
                                       if (status == 'PENDING') ...[
-                                        TextButton(onPressed: () => _review(item, 'APPROVED'), child: const Text('Approuver', style: TextStyle(color: Colors.green))),
-                                        TextButton(onPressed: () => _review(item, 'REJECTED'), child: const Text('Rejeter', style: TextStyle(color: Colors.red))),
+                                        TextButton(onPressed: () => _review(item, 'APPROVED'), child: Text(AppLocalizations.of(context).approve, style: const TextStyle(color: Colors.green))),
+                                        TextButton(onPressed: () => _review(item, 'REJECTED'), child: Text(AppLocalizations.of(context).reject, style: const TextStyle(color: Colors.red))),
                                       ],
                                     ]),
                                   ],
