@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Administration des paramètres de l'église (nom, logo, couleurs).
 class AdminSettingsScreen extends StatefulWidget {
@@ -61,13 +62,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Paramètres enregistrés'), backgroundColor: Colors.green),
+          SnackBar(content: Text(AppLocalizations.of(context).settingsSaved), backgroundColor: Colors.green),
         );
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec de l\'enregistrement'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context).saveFailed), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -79,7 +80,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Paramètres de l\'église'),
+        title: Text(AppLocalizations.of(context).churchSettings),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _load)],
       ),
       drawer: const AppDrawer(),
@@ -90,26 +91,26 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SectionTitle(title: 'Identité', icon: Icons.church),
+                  SectionTitle(title: AppLocalizations.of(context).identity, icon: Icons.church),
                   GlassCard(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        _field('Nom de l\'église', _nameCtrl, Icons.church),
+                        _field(AppLocalizations.of(context).churchName, _nameCtrl, Icons.church),
                         const SizedBox(height: 12),
-                        _field('Slogan', _sloganCtrl, Icons.format_quote),
+                        _field(AppLocalizations.of(context).slogan, _sloganCtrl, Icons.format_quote),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  SectionTitle(title: 'Couleurs', icon: Icons.palette),
+                  SectionTitle(title: AppLocalizations.of(context).colorsSection, icon: Icons.palette),
                   GlassCard(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        _field('Couleur principale', _primaryColorCtrl, Icons.circle, hint: '#6366f1'),
+                        _field(AppLocalizations.of(context).primaryColorLabel, _primaryColorCtrl, Icons.circle, hint: '#6366f1'),
                         const SizedBox(height: 12),
-                        _field('Couleur accent', _accentColorCtrl, Icons.circle, hint: '#f59e0b'),
+                        _field(AppLocalizations.of(context).accentColorLabel, _accentColorCtrl, Icons.circle, hint: '#f59e0b'),
                       ],
                     ),
                   ),
@@ -122,7 +123,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       icon: _isSaving
                           ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.save, size: 16),
-                      label: const Text('Enregistrer'),
+                      label: Text(AppLocalizations.of(context).save),
                       style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
                     ),
                   ),

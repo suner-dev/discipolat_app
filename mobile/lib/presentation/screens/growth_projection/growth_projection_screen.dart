@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// P1 #44 / P3 #103 — Projection de croissance IA + prophétie (données réelles).
 class GrowthProjectionScreen extends StatefulWidget {
@@ -57,11 +58,11 @@ class _GrowthProjectionScreenState extends State<GrowthProjectionScreen> {
         'moisProjection': int.tryParse(_moisCtrl.text) ?? 12,
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Simulation enregistrée ✅')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).simulationSaved)));
         _load();
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Échec de la simulation')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).simulationFailed)));
     }
   }
 
@@ -69,7 +70,7 @@ class _GrowthProjectionScreenState extends State<GrowthProjectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('📊 Projection de Croissance'),
+        title: Text(AppLocalizations.of(context).growthProjectionTitle),
         backgroundColor: Colors.teal.shade700,
         foregroundColor: Colors.white,
       ),
@@ -85,12 +86,12 @@ class _GrowthProjectionScreenState extends State<GrowthProjectionScreen> {
                       color: Colors.teal.shade50,
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Text('Prophétie de croissance (analyse réelle)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        child:                        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(AppLocalizations.of(context).growthProphecyTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                           const SizedBox(height: 8),
-                          Text('Croissance annuelle projetée : ${_prophecy?['croissanceAnnuellePct'] ?? '—'} %'),
-                          Text('Effectif dans 12 mois : ${_prophecy?['effectifProjete12Mois'] ?? '—'}'),
-                          Text('Nouveaux leaders nécessaires : ${_prophecy?['besoinsLeaders'] ?? '—'}'),
+                          Text(AppLocalizations.of(context).projectedAnnualGrowth('${_prophecy?['croissanceAnnuellePct'] ?? '—'}')),
+                          Text(AppLocalizations.of(context).headcountIn12Months('${_prophecy?['effectifProjete12Mois'] ?? '—'}')),
+                          Text(AppLocalizations.of(context).leadersNeededCount('${_prophecy?['besoinsLeaders'] ?? '—'}')),
                           if (_prophecy?['message'] != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 6),
@@ -100,14 +101,14 @@ class _GrowthProjectionScreenState extends State<GrowthProjectionScreen> {
                       ),
                     ),
                   const SizedBox(height: 16),
-                  const Text('Simulateur', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(AppLocalizations.of(context).simulator, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(children: [
-                        TextField(controller: _tauxCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Taux de croissance annuel (%)', border: OutlineInputBorder(), isDense: true)),
+                        TextField(controller: _tauxCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: AppLocalizations.of(context).annualGrowthRate, border: const OutlineInputBorder(), isDense: true)),
                         const SizedBox(height: 10),
-                        TextField(controller: _moisCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Horizon (mois)', border: OutlineInputBorder(), isDense: true)),
+                        TextField(controller: _moisCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: AppLocalizations.of(context).horizonMonths, border: const OutlineInputBorder(), isDense: true)),
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
@@ -115,7 +116,7 @@ class _GrowthProjectionScreenState extends State<GrowthProjectionScreen> {
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade700),
                             onPressed: _simulate,
                             icon: const Icon(Icons.play_arrow, color: Colors.white),
-                            label: const Text('Simuler', style: TextStyle(color: Colors.white)),
+                            label: Text(AppLocalizations.of(context).simulate, style: const TextStyle(color: Colors.white)),
                           ),
                         ),
                       ]),
@@ -123,7 +124,7 @@ class _GrowthProjectionScreenState extends State<GrowthProjectionScreen> {
                   ),
                   const SizedBox(height: 16),
                   if (_projections.isNotEmpty) ...[
-                    const Text('Projections enregistrées', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(AppLocalizations.of(context).savedProjections, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ..._projections.map((p) {
                       final proj = p as Map<String, dynamic>;
                       return Card(

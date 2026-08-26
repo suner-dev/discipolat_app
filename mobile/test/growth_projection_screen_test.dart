@@ -48,7 +48,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: GrowthProjectionScreen(apiService: _FakeApiService()),
       ));
-      expect(find.text('📊 Projection de Croissance'), findsOneWidget);
+      expect(find.text('📊 Projection de croissance'), findsOneWidget);
     });
 
     testWidgets('shows real prophecy data from API', (tester) async {

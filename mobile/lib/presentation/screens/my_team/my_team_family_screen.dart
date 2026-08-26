@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// P3 #115 — Mon équipe / ma famille : membres de la famille spirituelle + encouragements.
 class MyTeamFamilyScreen extends StatefulWidget {
@@ -45,13 +46,13 @@ class _MyTeamFamilyScreenState extends State<MyTeamFamilyScreen> {
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('Encourager ${member['prenom'] ?? ''} ${member['nom'] ?? ''}'.trim(), style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(ctx).encourageName('${member['prenom'] ?? ''} ${member['nom'] ?? ''}'.trim()), style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
-          TextField(controller: ctrl, maxLines: 3, decoration: const InputDecoration(hintText: 'Message d\'encouragement…', border: OutlineInputBorder())),
+          TextField(controller: ctrl, maxLines: 3, decoration: InputDecoration(hintText: AppLocalizations.of(ctx).writeEncouragementHint, border: const OutlineInputBorder())),
           const SizedBox(height: 12),
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Envoyer')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx).cancel)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(ctx).send)),
           ]),
         ]),
       ),
@@ -60,11 +61,11 @@ class _MyTeamFamilyScreenState extends State<MyTeamFamilyScreen> {
       try {
         await _api.post('/encouragements', data: {'toUserId': member['userId'], 'message': ctrl.text.trim(), 'kind': 'MESSAGE'});
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Encouragement envoyé 💛')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).encouragementSent)));
           _load();
         }
       } catch (_) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Échec de l\'envoi')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).sendError)));
       }
     }
   }
@@ -75,10 +76,13 @@ class _MyTeamFamilyScreenState extends State<MyTeamFamilyScreen> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('👨‍👩‍👧‍👦 Mon équipe / ma famille'),
+          title: Text(AppLocalizations.of(context).myTeamFamilyTitle),
           backgroundColor: Colors.blue.shade700,
           foregroundColor: Colors.white,
-          bottom: TabBar(tabs: [Tab(text: 'Membres (${_team.length})'), Tab(text: 'Encouragements reçus (${_received.length})')]),
+          bottom: TabBar(tabs: [
+            Tab(text: AppLocalizations.of(context).teamTabMembers(_team.length)),
+            Tab(text: AppLocalizations.of(context).teamTabReceived(_received.length)),
+          ]),
         ),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -88,7 +92,7 @@ class _MyTeamFamilyScreenState extends State<MyTeamFamilyScreen> {
   }
 
   Widget _buildTeam() {
-    if (_team.isEmpty) return const Center(child: Text('Vous n\'êtes rattaché à aucune famille spirituelle.'));
+    if (_team.isEmpty) return Center(child: Text(AppLocalizations.of(context).noSpiritualFamily));
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
@@ -102,9 +106,9 @@ class _MyTeamFamilyScreenState extends State<MyTeamFamilyScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               leading: CircleAvatar(child: Text(initials.toUpperCase())),
-              title: Text('${m['prenom'] ?? ''} ${m['nom'] ?? ''}'.trim() + ((m['estMoi'] == true) ? ' (moi)' : '')),
-              subtitle: Text('${m['etatSpirituel'] ?? ''} • 💛 ${m['encouragementsRecus'] ?? 0} encouragements', style: const TextStyle(fontSize: 12)),
-              trailing: IconButton(icon: const Icon(Icons.favorite_border, color: Colors.pink), tooltip: 'Envoyer un encouragement', onPressed: () => _sendEncouragement(m)),
+              title: Text('${m['prenom'] ?? ''} ${m['nom'] ?? ''}'.trim() + ((m['estMoi'] == true) ? ' ${AppLocalizations.of(context).meLabel}' : '')),
+              subtitle: Text('${m['etatSpirituel'] ?? ''} • 💛 ${AppLocalizations.of(context).encouragementsBadge((m['encouragementsRecus'] as num?)?.toInt() ?? 0)}', style: const TextStyle(fontSize: 12)),
+              trailing: IconButton(icon: const Icon(Icons.favorite_border, color: Colors.pink), tooltip: AppLocalizations.of(context).sendEncouragementTooltip, onPressed: () => _sendEncouragement(m)),
             ),
           );
         },
@@ -113,7 +117,7 @@ class _MyTeamFamilyScreenState extends State<MyTeamFamilyScreen> {
   }
 
   Widget _buildReceived() {
-    if (_received.isEmpty) return const Center(child: Text('Aucun encouragement reçu pour le moment.'));
+    if (_received.isEmpty) return Center(child: Text(AppLocalizations.of(context).noEncouragementsYet));
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(

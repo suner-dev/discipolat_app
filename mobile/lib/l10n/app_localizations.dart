@@ -62,6 +62,47 @@ class AppLocalizations {
   String get filter => translate('filter');
   String get refresh => translate('refresh');
   String get retry => translate('retry');
+  // ── Lot H2 : admin_settings / admin_tenants / growth_projection / my_team_family ──
+  String get churchSettings => translate('churchSettings');
+  String get identity => translate('identity');
+  String get slogan => translate('slogan');
+  String get colorsSection => translate('colorsSection');
+  String get primaryColorLabel => translate('primaryColorLabel');
+  String get accentColorLabel => translate('accentColorLabel');
+  String get settingsSaved => translate('settingsSaved');
+  String get tenantsTitle => translate('tenantsTitle');
+  String get noTenants => translate('noTenants');
+  String get statusSuspended => translate('statusSuspended');
+  String get statusActive => translate('statusActive');
+  String get growthProjectionTitle => translate('growthProjectionTitle');
+
+  String get growthProphecyTitle => translate('growthProphecyTitle');
+  String projectedAnnualGrowth(String value) =>
+      translate('projectedAnnualGrowth').replaceAll('{value}', value);
+  String headcountIn12Months(String value) =>
+      translate('headcountIn12Months').replaceAll('{value}', value);
+  String leadersNeededCount(String value) =>
+      translate('leadersNeededCount').replaceAll('{value}', value);
+  String get simulator => translate('simulator');
+  String get annualGrowthRate => translate('annualGrowthRate');
+  String get horizonMonths => translate('horizonMonths');
+  String get simulate => translate('simulate');
+  String get simulationSaved => translate('simulationSaved');
+  String get simulationFailed => translate('simulationFailed');
+  String get savedProjections => translate('savedProjections');
+  String get myTeamFamilyTitle => translate('myTeamFamilyTitle');
+  String teamTabMembers(int count) =>
+      translate('teamTabMembers').replaceAll('{count}', '$count');
+  String teamTabReceived(int count) =>
+      translate('teamTabReceived').replaceAll('{count}', '$count');
+  String encourageName(String name) =>
+      translate('encourageName').replaceAll('{name}', name);
+  String get noSpiritualFamily => translate('noSpiritualFamily');
+  String get meLabel => translate('meLabel');
+  String encouragementsBadge(int count) =>
+      translate('encouragementsBadge').replaceAll('{count}', '$count');
+  String get sendEncouragementTooltip => translate('sendEncouragementTooltip');
+  String get noEncouragementsYet => translate('noEncouragementsYet');
 
   // ==================== LOT H1 — écrans historiques ====================
   String get newField => translate('newField');
@@ -73,7 +114,6 @@ class AppLocalizations {
   String get deleteQuestion => translate('deleteQuestion');
   String get transferWorkflowTitle => translate('transferWorkflowTitle');
   String get noConfiguration => translate('noConfiguration');
-  String get statusActive => translate('statusActive');
   String get statusInactive => translate('statusInactive');
   String stepsCount(int count) => translate('stepsCount').replaceAll('{count}', '$count');
   String get initiatorRoles => translate('initiatorRoles');
@@ -581,7 +621,7 @@ class AppLocalizations {
     'viewReport': 'Voir le rapport',
     'exportPdf': 'Exporter en PDF',
     'weekReport': 'Rapport hebdomadaire',
-    'difficultes': 'Difficultés',
+    'difficulties': 'Difficultés',
     'notes': 'Notes',
     'outings': 'Sorties',
     'maintained': 'Maintenus',
@@ -789,6 +829,7 @@ class AppLocalizations {
     'soulsUnit': 'âmes',
     'growthStat': 'Croissance',
     'leadersNeeded': 'Leaders nécessaires',
+    'leadersNeededCount': 'Nouveaux leaders nécessaires : {value}',
     'leadersSufficient': 'suffisant',
     'leadersMissing': '+{gap} manquants',
     'monthlyProjection': '📈 Projection mois par mois',
@@ -928,6 +969,37 @@ class AppLocalizations {
     'entriesExported': '{count} entrées exportées',
     'clearLogQuestion': 'Effacer le journal d\u2019audit ?',
     'clearAction': 'Effacer',
+    // ── Lot H2 : admin_settings / admin_tenants / growth_projection / my_team_family ──
+    'churchSettings': 'Paramètres de l\'église',
+    'identity': 'Identité',
+    'slogan': 'Slogan',
+    'colorsSection': 'Couleurs',
+    'primaryColorLabel': 'Couleur principale',
+    'accentColorLabel': 'Couleur accent',
+    'settingsSaved': '✅ Paramètres enregistrés',
+    'tenantsTitle': 'Églises (tenants)',
+    'noTenants': 'Aucune église configurée',
+    'statusSuspended': 'Suspendu',
+    'growthProjectionTitle': '📊 Projection de croissance',
+    'growthProphecyTitle': 'Prophétie de croissance (analyse réelle)',
+    'projectedAnnualGrowth': 'Croissance annuelle projetée : {value} %',
+    'headcountIn12Months': 'Effectif dans 12 mois : {value}',
+    'simulator': 'Simulateur',
+    'annualGrowthRate': 'Taux de croissance annuel (%)',
+    'horizonMonths': 'Horizon (mois)',
+    'simulate': 'Simuler',
+    'simulationSaved': 'Simulation enregistrée ✅',
+    'simulationFailed': 'Échec de la simulation',
+    'savedProjections': 'Projections enregistrées',
+    'myTeamFamilyTitle': '👨‍👩‍👧‍👦 Mon équipe / ma famille',
+    'teamTabMembers': 'Membres ({count})',
+    'teamTabReceived': 'Encouragements reçus ({count})',
+    'encourageName': 'Encourager {name}',
+    'noSpiritualFamily': 'Vous n\'êtes rattaché à aucune famille spirituelle.',
+    'meLabel': '(moi)',
+    'encouragementsBadge': '{count} encouragements',
+    'sendEncouragementTooltip': 'Envoyer un encouragement',
+    'noEncouragementsYet': 'Aucun encouragement reçu pour le moment.',
   };
 
   // ==================== ENGLISH ====================
@@ -1363,6 +1435,37 @@ class AppLocalizations {
     'entriesExported': '{count} entries exported',
     'clearLogQuestion': 'Clear the audit log?',
     'clearAction': 'Clear',
+    'churchSettings': 'Church settings',
+    'identity': 'Identity',
+    'slogan': 'Slogan',
+    'colorsSection': 'Colors',
+    'primaryColorLabel': 'Primary color',
+    'accentColorLabel': 'Accent color',
+    'settingsSaved': '✅ Settings saved',
+    'tenantsTitle': 'Churches (tenants)',
+    'noTenants': 'No churches configured',
+    'statusSuspended': 'Suspended',
+    'growthProjectionTitle': '📊 Growth projection',
+    'growthProphecyTitle': 'Growth prophecy (real analysis)',
+    'projectedAnnualGrowth': 'Projected annual growth: {value} %',
+    'headcountIn12Months': 'Headcount in 12 months: {value}',
+    'leadersNeededCount': 'New leaders needed: {value}',
+    'simulator': 'Simulator',
+    'annualGrowthRate': 'Annual growth rate (%)',
+    'horizonMonths': 'Horizon (months)',
+    'simulate': 'Simulate',
+    'simulationSaved': 'Simulation saved ✅',
+    'simulationFailed': 'Simulation failed',
+    'savedProjections': 'Saved projections',
+    'myTeamFamilyTitle': '👨‍👩‍👧‍👦 My team / my family',
+    'teamTabMembers': 'Members ({count})',
+    'teamTabReceived': 'Encouragements received ({count})',
+    'encourageName': 'Encourage {name}',
+    'noSpiritualFamily': 'You are not attached to any spiritual family.',
+    'meLabel': '(me)',
+    'encouragementsBadge': '{count} encouragements',
+    'sendEncouragementTooltip': 'Send an encouragement',
+    'noEncouragementsYet': 'No encouragements received yet.',
   };
 
   // ==================== PORTUGUESE ====================
@@ -1756,6 +1859,7 @@ class AppLocalizations {
     'requestType': 'Tipo',
     'recipient': 'Destinatário',
     'subjectOptional': 'Assunto (opcional)',
+    'messageHint': 'Mensagem...',
     'attachments': 'Anexos',
     'sendFailed': 'Erro ao enviar',
     'noSentRequests': 'Nenhum pedido enviado',
@@ -1797,6 +1901,37 @@ class AppLocalizations {
     'entriesExported': '{count} entradas exportadas',
     'clearLogQuestion': 'Limpar o registo de auditoria?',
     'clearAction': 'Limpar',
+    'churchSettings': 'Configurações da igreja',
+    'identity': 'Identidade',
+    'slogan': 'Slogan',
+    'colorsSection': 'Cores',
+    'primaryColorLabel': 'Cor principal',
+    'accentColorLabel': 'Cor de destaque',
+    'settingsSaved': '✅ Configurações guardadas',
+    'tenantsTitle': 'Igrejas (tenants)',
+    'noTenants': 'Nenhuma igreja configurada',
+    'statusSuspended': 'Suspenso',
+    'growthProjectionTitle': '📊 Projeção de crescimento',
+    'growthProphecyTitle': 'Profecia de crescimento (análise real)',
+    'projectedAnnualGrowth': 'Crescimento anual projetado: {value} %',
+    'headcountIn12Months': 'Efetivo em 12 meses: {value}',
+    'leadersNeededCount': 'Novos líderes necessários: {value}',
+    'simulator': 'Simulador',
+    'annualGrowthRate': 'Taxa de crescimento anual (%)',
+    'horizonMonths': 'Horizonte (meses)',
+    'simulate': 'Simular',
+    'simulationSaved': 'Simulação guardada ✅',
+    'simulationFailed': 'Falha na simulação',
+    'savedProjections': 'Projeções guardadas',
+    'myTeamFamilyTitle': '👨‍👩‍👧‍👦 Minha equipa / minha família',
+    'teamTabMembers': 'Membros ({count})',
+    'teamTabReceived': 'Encorajamentos recebidos ({count})',
+    'encourageName': 'Encorajar {name}',
+    'noSpiritualFamily': 'Não está ligado a nenhuma família espiritual.',
+    'meLabel': '(eu)',
+    'encouragementsBadge': '{count} encorajamentos',
+    'sendEncouragementTooltip': 'Enviar um encorajamento',
+    'noEncouragementsYet': 'Nenhum encorajamento recebido ainda.',
   };
 }
 
