@@ -430,29 +430,102 @@ class AppLocalizations {
   String get statusArchive => translate('statusArchive');
   String get statusRequestedInfo => translate('statusRequestedInfo');
 
-  // ==================== NAVIGATION ====================
+  // ── Lot H7 : navigation + profil ──
   String get navDashboard => translate('navDashboard');
+  String get navSearch => translate('navSearch');
+  String get navMap => translate('navMap');
   String get navSouls => translate('navSouls');
   String get navFamilies => translate('navFamilies');
+  String get navCrmFaiseur => translate('navCrmFaiseur');
+  String get navChefDashboard => translate('navChefDashboard');
+  String get navRespDashboard => translate('navRespDashboard');
   String get navDepartments => translate('navDepartments');
   String get navReports => translate('navReports');
+  String get navMakerReport => translate('navMakerReport');
+  String get navFamilyReport => translate('navFamilyReport');
   String get navPrayers => translate('navPrayers');
+  String get navGraceActions => translate('navGraceActions');
   String get navEvents => translate('navEvents');
-  String get navAlerts => translate('navAlerts');
-  String get navMessages => translate('navMessages');
-  String get navNotifications => translate('navNotifications');
-  String get navProfile => translate('navProfile');
-  String get navSettings => translate('navSettings');
-  String get navUsers => translate('navUsers');
-  String get navBadges => translate('navBadges');
   String get navEvangelism => translate('navEvangelism');
+  String get navObjectives => translate('navObjectives');
+  String get navVisits => translate('navVisits');
+  String get navParallelFollowups => translate('navParallelFollowups');
+  String get navTransfers => translate('navTransfers');
+  String get navTransferWorkflow => translate('navTransferWorkflow');
+  String get navEvaluations => translate('navEvaluations');
   String get navDiscipline => translate('navDiscipline');
-  String get navPresence => translate('navPresence');
+  String get navAlerts => translate('navAlerts');
+  String get navRequests => translate('navRequests');
+  String get navDocuments => translate('navDocuments');
+  String get navAppointments => translate('navAppointments');
+  String get navMessaging => translate('navMessaging');
+  String get navBadges => translate('navBadges');
+  String get navQuest => translate('navQuest');
+  String get navTithesOfferings => translate('navTithesOfferings');
+  String get navTontines => translate('navTontines');
+  String get navVoiceReports => translate('navVoiceReports');
+  String get navVoiceAssistant => translate('navVoiceAssistant');
+  String get navFaceCheckin => translate('navFaceCheckin');
   String get navTrainings => translate('navTrainings');
   String get navFinances => translate('navFinances');
   String get navCommunications => translate('navCommunications');
-  String get navMap => translate('navMap');
-  String get navSearch => translate('navSearch');
+  String get navInventory => translate('navInventory');
+  String get navNotifications => translate('navNotifications');
+  String get navProfile => translate('navProfile');
+  String get navShepherdsPilot => translate('navShepherdsPilot');
+  String get navModules => translate('navModules');
+  String get navMenus => translate('navMenus');
+  String get navCustomPages => translate('navCustomPages');
+  String get navChurchSettings => translate('navChurchSettings');
+  String get navCustomFields => translate('navCustomFields');
+  String get navDictionaries => translate('navDictionaries');
+  String get navIntegrations => translate('navIntegrations');
+  String get navChurches => translate('navChurches');
+  String get navSecurity => translate('navSecurity');
+  String get navUsers => translate('navUsers');
+  String get navPermissions => translate('navPermissions');
+  String get navAudit => translate('navAudit');
+  String get navCompliance => translate('navCompliance');
+  String get navWhatsApp => translate('navWhatsApp');
+  String get navModeration => translate('navModeration');
+  String get navDataMigration => translate('navDataMigration');
+  String get navUsageAnalytics => translate('navUsageAnalytics');
+  String get navEncouragements => translate('navEncouragements');
+  String get navChurchBenchmark => translate('navChurchBenchmark');
+  String get navSabbath => translate('navSabbath');
+  String get navRewards => translate('navRewards');
+  String get navWeeklyChallenges => translate('navWeeklyChallenges');
+  String get navGrowthProjection => translate('navGrowthProjection');
+  String get navLoadPrediction => translate('navLoadPrediction');
+  String get navNeighborhoodHealth => translate('navNeighborhoodHealth');
+  String get navFollowUpRequests => translate('navFollowUpRequests');
+  String get navDiscipleshipPath => translate('navDiscipleshipPath');
+  String get navAdminSection => translate('navAdminSection');
+  String get navChangeRole => translate('navChangeRole');
+  String get navActiveLabel => translate('navActiveLabel');
+  String get roleSwitchFailed => translate('roleSwitchFailed');
+  String get feedbackTitle => translate('feedbackTitle');
+  String get feedbackSubtitle => translate('feedbackSubtitle');
+  String get profileTitle => translate('profileTitle');
+  String get profileScore => translate('profileScore');
+  String get profilePresence => translate('profilePresence');
+  String get profileProgression => translate('profileProgression');
+  String get profilePersonalInfo => translate('profilePersonalInfo');
+  String get profileSpiritualInfo => translate('profileSpiritualInfo');
+  String get profileQuickActions => translate('profileQuickActions');
+  String get profileLogout => translate('profileLogout');
+  String get profileRole => translate('profileRole');
+  String get profilePhone => translate('profilePhone');
+  String get profileEmail => translate('profileEmail');
+  String get profileRegisteredOn => translate('profileRegisteredOn');
+  String get profileSpiritualScore => translate('profileSpiritualScore');
+  String get profileFamily => translate('profileFamily');
+  String get profileDepartment => translate('profileDepartment');
+
+  // ==================== NAVIGATION ====================
+  String get navMessages => translate('navMessages');
+  String get navSettings => translate('navSettings');
+  String get navPresence => translate('navPresence');
   String get navAdmin => translate('navAdmin');
 
   // ==================== DASHBOARD ====================
@@ -832,8 +905,8 @@ class AppLocalizations {
     'navPresence': 'Présences',
     'navTrainings': 'Formations',
     'navFinances': 'Finances',
-    'navCommunications': 'Communications',
-    'navMap': 'Carte',
+    'navCommunications': 'Annonces',
+    'navMap': 'Cartographie',
     'navSearch': 'Recherche',
     'navAdmin': 'Administration',
     'dashboardTitle': 'Tableau de bord',
@@ -1369,6 +1442,85 @@ class AppLocalizations {
     'directoryError': 'Erreur lors du chargement de l\'annuaire',
     'unknownFamily': 'Famille inconnue',
     'unknownRole': 'Rôle inconnu',
+
+    // ── H7 nav+profile (re-add) ──
+    'feedbackSubtitle': 'Bug, suggestion, problème…',
+    'feedbackTitle': 'Un retour ?',
+    'navActiveLabel': 'ACTIF',
+    'navAdminSection': 'ADMINISTRATION',
+    'navAppointments': 'Rendez-vous',
+    'navAudit': 'Audit',
+    'navChangeRole': 'Changer de rôle',
+    'navChefDashboard': 'Dashboard Chef',
+    'navChurchBenchmark': 'Benchmark églises',
+    'navChurchSettings': 'Paramètres église',
+    'navChurches': 'Églises (tenants)',
+    'navCompliance': 'Compliance RGPD',
+    'navCrmFaiseur': 'CRM Faiseur',
+    'navCustomFields': 'Champs personnalisés',
+    'navCustomPages': 'Pages personnalisées',
+    'navDataMigration': 'Migration données',
+    'navDictionaries': 'Dictionnaires',
+    'navDiscipleshipPath': 'Parcours spirituel',
+    'navDocuments': 'Documents',
+    'navEncouragements': 'Encouragements',
+    'navEvaluations': 'Évaluations',
+    'navFaceCheckin': 'Pointage facial',
+    'navFamilyReport': 'Rapport famille',
+    'navFollowUpRequests': 'Demandes suivi',
+    'navGraceActions': 'Actions de grâce',
+    'navGrowthProjection': 'Croissance',
+    'navIntegrations': 'Intégrations',
+    'navInventory': 'Inventaire',
+    'navLoadPrediction': 'Prédiction charge',
+    'navMakerReport': 'Rapport faiseur',
+    'navMenus': 'Menus plateforme',
+    'navMessaging': 'Messagerie',
+    'navModeration': 'Modération',
+    'navModules': 'Modules plateforme',
+    'navNeighborhoodHealth': 'Santé quartiers',
+    'navObjectives': 'Objectifs',
+    'navParallelFollowups': 'Suivis parallèles',
+    'navPermissions': 'Permissions',
+    'navQuest': 'Quest (XP)',
+    'navRequests': 'Demandes',
+    'navRespDashboard': 'Dashboard Responsable',
+    'navRewards': 'Récompenses',
+    'navSabbath': 'Sabbath Dashboard',
+    'navSecurity': 'Sécurité',
+    'navShepherdsPilot': 'Pilotage Pasteur',
+    'navTithesOfferings': 'Dîmes & offrandes',
+    'navTontines': 'Tontines',
+    'navTransferWorkflow': 'Workflow transfert',
+    'navTransfers': 'Transferts',
+    'navUsageAnalytics': 'Analytics usage',
+    'navVisits': 'Visites',
+    'navVoiceAssistant': 'PasteurBot Vocal',
+    'navVoiceReports': 'Rapports vocaux',
+    'navWeeklyChallenges': 'Défis hebdo',
+    'navWhatsApp': 'WhatsApp Rappels',
+    'profileDepartment': 'Département',
+    'profileEmail': 'Email',
+    'profileFamily': 'Famille',
+    'profileLogout': 'Déconnexion',
+    'profilePersonalInfo': 'Informations personnelles',
+    'profilePhone': 'Téléphone',
+    'profilePresence': 'Présence',
+    'profileProgression': 'Progression',
+    'profileQuickActions': 'Actions rapides',
+    'profileRegisteredOn': 'Inscrit le',
+    'profileRole': 'Rôle',
+    'profileScore': 'Score',
+    'profileSpiritualInfo': 'Informations spirituelles',
+    'profileSpiritualScore': 'Score spirituel',
+    'profileTitle': 'Profil',
+    'rejectAction': 'Cancelar',
+    'roleSwitchFailed': 'Échec du changement de rôle',
+    'sendError': 'Erro ao enviar',
+
+    // ── H7 nav+profile (re-add) ──
+
+    // ── H7 nav+profile (re-add) ──
 
     // ── Lot H6 : dashboards + transferts ──
     'dashGrowth': 'Croissance',

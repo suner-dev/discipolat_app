@@ -51,16 +51,13 @@ void main() {
     // Le drawer est ouvert (header de l'app).
     expect(find.text('Discipolat'), findsOneWidget);
 
-    // L'entrée « Suivis parallèles » est dans la liste (item ~9/14) :
-    // scroller le drawer jusqu'à elle, puis naviguer.
-    await tester.scrollUntilVisible(
-      find.text('Suivis parallèles'),
-      100,
-      scrollable: find
-          .descendant(of: find.byType(Drawer), matching: find.byType(Scrollable))
-          .first,
-    );
-    await tester.pumpAndSettle();
+    // L'entrée « Suivis parallèles » est dans la liste :
+    // scroller le drawer manuellement jusqu'à elle.
+    for (var i = 0; i < 10; i++) {
+      if (find.text('Suivis parallèles').evaluate().isNotEmpty) break;
+      await tester.drag(find.byType(Drawer), const Offset(0, -200));
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.text('Suivis parallèles'));
     await tester.pumpAndSettle();
 

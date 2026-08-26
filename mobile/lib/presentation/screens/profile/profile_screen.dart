@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/secure_screen.dart';
@@ -61,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       auditAction: AuditActions.viewProfiles,
       child: Scaffold(
       appBar: AppBar(
-        title: const Text('Profil'),
+        title: Text(AppLocalizations.of(context).profileTitle),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
@@ -89,11 +90,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Stats cards
                     Row(
                       children: [
-                        _statCard(Icons.star, 'Score', '${_dashboard?['scoreSpirituel'] ?? '—'}', Colors.amber),
+                        _statCard(Icons.star, AppLocalizations.of(context).profileScore, '${_dashboard?['scoreSpirituel'] ?? '—'}', Colors.amber),
                         const SizedBox(width: 8),
-                        _statCard(Icons.check_circle, 'Présence', '${_dashboard?['tauxPresence'] ?? '—'}', Colors.green),
+                        _statCard(Icons.check_circle, AppLocalizations.of(context).profilePresence, '${_dashboard?['tauxPresence'] ?? '—'}', Colors.green),
                         const SizedBox(width: 8),
-                        _statCard(Icons.trending_up, 'Progression', '${_dashboard?['progression'] ?? '—'}', Colors.blue),
+                        _statCard(Icons.trending_up, AppLocalizations.of(context).profileProgression, '${_dashboard?['progression'] ?? '—'}', Colors.blue),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -104,15 +105,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Informations personnelles', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
+                          Text(AppLocalizations.of(context).profilePersonalInfo, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 12),
-                          _profileRow(Icons.person_outline, 'Rôle', role),
+                          _profileRow(Icons.person_outline, AppLocalizations.of(context).profileRole, role),
                           const GlassDivider(),
-                          _profileRow(Icons.phone_outlined, 'Téléphone', phone),
+                          _profileRow(Icons.phone_outlined, AppLocalizations.of(context).profilePhone, phone),
                           const GlassDivider(),
-                          _profileRow(Icons.email_outlined, 'Email', email),
+                          _profileRow(Icons.email_outlined, AppLocalizations.of(context).profileEmail, email),
                           const GlassDivider(),
-                          _profileRow(Icons.calendar_today, 'Inscrit le', _userInfo?['createdAt']?.toString().substring(0, 10) ?? '—'),
+                          _profileRow(Icons.calendar_today, AppLocalizations.of(context).profileRegisteredOn, _userInfo?['createdAt']?.toString().substring(0, 10) ?? '—'),
                         ],
                       ),
                     ),
@@ -124,13 +125,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Informations spirituelles', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
+                          Text(AppLocalizations.of(context).profileSpiritualInfo, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 12),
-                          _profileRow(Icons.auto_awesome, 'Score spirituel', '${_dashboard?['scoreSpirituel'] ?? '—'}/100'),
+                          _profileRow(Icons.auto_awesome, AppLocalizations.of(context).profileSpiritualScore, '${_dashboard?['scoreSpirituel'] ?? '—'}/100'),
                           const GlassDivider(),
-                          _profileRow(Icons.family_restroom, 'Famille', _dashboard?['famille'] ?? '—'),
+                          _profileRow(Icons.family_restroom, AppLocalizations.of(context).profileFamily, _dashboard?['famille'] ?? '—'),
                           const GlassDivider(),
-                          _profileRow(Icons.business, 'Département', _dashboard?['departement'] ?? '—'),
+                          _profileRow(Icons.business, AppLocalizations.of(context).profileDepartment, _dashboard?['departement'] ?? '—'),
                         ],
                       ),
                     ),
@@ -142,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Actions rapides', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
+                          Text(AppLocalizations.of(context).profileQuickActions, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 12),
                           _actionRow(Icons.security, 'Sécurité et confidentialité', () => context.go('/security-settings')),
                         ],
@@ -156,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: OutlinedButton.icon(
                         onPressed: _logout,
                         icon: const Icon(Icons.logout, color: Colors.red),
-                        label: const Text('Déconnexion', style: TextStyle(color: Colors.red)),
+                        label: Text(AppLocalizations.of(context).profileLogout, style: const TextStyle(color: Colors.red)),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
                           padding: const EdgeInsets.symmetric(vertical: 14),

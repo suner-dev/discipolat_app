@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app.dart';
 import '../../data/services/api_service.dart';
+import '../../l10n/app_localizations.dart';
 import 'beta_badge.dart';
 import 'feedback_sheet.dart';
 import 'glass_theme.dart';
@@ -187,6 +188,84 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];
 
+  /// Traduit le titre d'un élément de navigation via sa route.
+  static String navTitle(String route, AppLocalizations l10n) {
+    switch (route) {
+      case '/dashboard': return l10n.navDashboard;
+      case '/dashboard/pasteur': return l10n.navShepherdsPilot;
+      case '/search': return l10n.navSearch;
+      case '/map': return l10n.navMap;
+      case '/souls': return l10n.navSouls;
+      case '/families': return l10n.navFamilies;
+      case '/crm-faiseur': return l10n.navCrmFaiseur;
+      case '/dashboard/chef-famille': return l10n.navChefDashboard;
+      case '/dashboard/responsable': return l10n.navRespDashboard;
+      case '/departments': return l10n.navDepartments;
+      case '/reports': return l10n.navReports;
+      case '/reports/maker': return l10n.navMakerReport;
+      case '/reports/family': return l10n.navFamilyReport;
+      case '/prayers': return l10n.navPrayers;
+      case '/prayers/actions-de-grace': return l10n.navGraceActions;
+      case '/events': return l10n.navEvents;
+      case '/evangelism': return l10n.navEvangelism;
+      case '/objectives': return l10n.navObjectives;
+      case '/visits': return l10n.navVisits;
+      case '/parallel-followups': return l10n.navParallelFollowups;
+      case '/transfers': return l10n.navTransfers;
+      case '/admin/transfers': return l10n.navTransferWorkflow;
+      case '/evaluations': return l10n.navEvaluations;
+      case '/discipline': return l10n.navDiscipline;
+      case '/alerts': return l10n.navAlerts;
+      case '/members/requests': return l10n.navRequests;
+      case '/documents': return l10n.navDocuments;
+      case '/appointments': return l10n.navAppointments;
+      case '/messages': return l10n.navMessaging;
+      case '/badges': return l10n.navBadges;
+      case '/quest': return l10n.navQuest;
+      case '/giving': return l10n.navTithesOfferings;
+      case '/tontines': return l10n.navTontines;
+      case '/voice-reports': return l10n.navVoiceReports;
+      case '/voice-assistant': return l10n.navVoiceAssistant;
+      case '/face-checkin': return l10n.navFaceCheckin;
+      case '/trainings': return l10n.navTrainings;
+      case '/finances': return l10n.navFinances;
+      case '/communications': return l10n.navCommunications;
+      case '/inventory': return l10n.navInventory;
+      case '/notifications': return l10n.navNotifications;
+      case '/profile': return l10n.navProfile;
+      case '/admin/modules': return l10n.navModules;
+      case '/admin/menus': return l10n.navMenus;
+      case '/admin/pages': return l10n.navCustomPages;
+      case '/admin/settings': return l10n.navChurchSettings;
+      case '/admin/custom-fields': return l10n.navCustomFields;
+      case '/admin/dictionaries': return l10n.navDictionaries;
+      case '/admin/integrations': return l10n.navIntegrations;
+      case '/admin/tenants': return l10n.navChurches;
+      case '/security-settings': return l10n.navSecurity;
+      case '/users': return l10n.navUsers;
+      case '/permissions': return l10n.navPermissions;
+      case '/audit': return l10n.navAudit;
+      case '/compliance': return l10n.navCompliance;
+      case '/whatsapp-reminders': return l10n.navWhatsApp;
+      case '/moderation': return l10n.navModeration;
+      case '/data-migration': return l10n.navDataMigration;
+      case '/usage-analytics': return l10n.navUsageAnalytics;
+      case '/encouragements': return l10n.navEncouragements;
+      case '/church-comparison': return l10n.navChurchBenchmark;
+      case '/sabbath-dashboard': return l10n.navSabbath;
+      case '/rewards': return l10n.navRewards;
+      case '/weekly-challenges': return l10n.navWeeklyChallenges;
+      case '/growth-projection': return l10n.navGrowthProjection;
+      case '/load-prediction': return l10n.navLoadPrediction;
+      case '/neighborhood-health': return l10n.navNeighborhoodHealth;
+      case '/follow-up-requests': return l10n.navFollowUpRequests;
+      case '/discipleship-path': return l10n.navDiscipleshipPath;
+      case '/dashboard/membre': return l10n.navDashboard;
+      case '/dashboard/membre/activities': return l10n.navDashboard;
+      default: return route;
+    }
+  }
+
   /// Retourne les éléments de navigation de l'espace métier du rôle donné.
   static List<Map<String, Object>> _navForRole(String role) {
     switch (role) {
@@ -252,7 +331,7 @@ class _AppDrawerState extends State<AppDrawer> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec du changement de rôle')),
+          SnackBar(content: Text(AppLocalizations.of(context).roleSwitchFailed)),
         );
       }
     }
@@ -355,7 +434,7 @@ class _AppDrawerState extends State<AppDrawer> {
                         children: [
                           Icon(Icons.swap_horiz, color: Colors.white.withValues(alpha: 0.4), size: 16),
                           const SizedBox(width: 6),
-                          Text('Changer de rôle', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                          Text(AppLocalizations.of(context).navChangeRole, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
                           Icon(_showRoleMenu ? Icons.expand_less : Icons.expand_more, color: Colors.white.withValues(alpha: 0.4), size: 16),
                         ],
                       ),
@@ -394,7 +473,7 @@ class _AppDrawerState extends State<AppDrawer> {
                                       color: _roleColor(role).withValues(alpha: 0.2),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Text('ACTIF', style: TextStyle(color: _roleColor(role), fontSize: 8, fontWeight: FontWeight.bold)),
+                                    child: Text(AppLocalizations.of(context).navActiveLabel, style: TextStyle(color: _roleColor(role), fontSize: 8, fontWeight: FontWeight.bold)),
                                   ),
                               ],
                             ),
@@ -425,10 +504,10 @@ class _AppDrawerState extends State<AppDrawer> {
                 ),
                 child: const Icon(Icons.feedback_outlined, color: Color(0xFFF59E0B), size: 20),
               ),
-              title: const Text('Un retour ?',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
+              title: Text(AppLocalizations.of(context).feedbackTitle,
+                style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
               ),
-              subtitle: Text('Bug, suggestion, problème…',
+              subtitle: Text(AppLocalizations.of(context).feedbackSubtitle,
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11),
               ),
               onTap: () {
@@ -453,23 +532,25 @@ class _AppDrawerState extends State<AppDrawer> {
 
     // Main nav items
     for (final item in mainItems) {
-      widgets.add(_navItem(context, item['icon'] as IconData, item['title'] as String, item['route'] as String));
+      final l10n = AppLocalizations.of(context);
+      widgets.add(_navItem(context, item['icon'] as IconData, navTitle(item['route'] as String, l10n), item['route'] as String));
     }
 
     // Admin section header (only if admin items exist and role is ADMIN)
     if (adminItems.isNotEmpty && activeRole == 'ADMIN') {
-      widgets.add(const Padding(
-        padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+      widgets.add(Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
         child: Row(
           children: [
-            Icon(Icons.admin_panel_settings_rounded, size: 14, color: Colors.white38),
-            SizedBox(width: 8),
-            Text('ADMINISTRATION', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+            const Icon(Icons.admin_panel_settings_rounded, size: 14, color: Colors.white38),
+            const SizedBox(width: 8),
+            Text(AppLocalizations.of(context).navAdminSection, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
           ],
         ),
       ));
       for (final item in adminItems) {
-        widgets.add(_navItem(context, item['icon'] as IconData, item['title'] as String, item['route'] as String));
+        final l10n = AppLocalizations.of(context);
+      widgets.add(_navItem(context, item['icon'] as IconData, navTitle(item['route'] as String, l10n), item['route'] as String));
       }
     }
 

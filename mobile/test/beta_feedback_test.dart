@@ -161,14 +161,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // L'entrée existe et la feuille s'ouvre au tap.
-      await tester.scrollUntilVisible(
-        find.text('Un retour ?'),
-        100,
-        scrollable: find
-            .descendant(of: find.byType(Drawer), matching: find.byType(Scrollable))
-            .first,
-      );
-      await tester.pumpAndSettle();
+      for (var i = 0; i < 10; i++) {
+        if (find.text('Un retour ?').evaluate().isNotEmpty) break;
+        await tester.drag(find.byType(Drawer), const Offset(0, -200));
+        await tester.pumpAndSettle();
+      }
       await tester.tap(find.text('Un retour ?'));
       await tester.pumpAndSettle();
 
