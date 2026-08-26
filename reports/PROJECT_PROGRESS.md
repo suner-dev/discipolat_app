@@ -204,3 +204,33 @@ Reprise : validation rejouée puis commit.
 
 ### Dernier état git
 - Commit : stabilisation tests backend/frontend/mobile (voir log)
+
+---
+
+# SESSION 26/08 — SECOND AUDIT + FINAL_VALIDATION
+
+## Dernière tâche terminée
+- Nettoyage des 14 warnings `flutter analyze` dans lib/ + commit `adaa9ec` (inclut refreshToken social/magic-link côté backend/frontend)
+- **Second audit complet** : comparaison audit initial vs état actuel, ajoutée en fin de `docs/FINAL_AUDIT_REPORT.md`
+- **Création de `docs/FINAL_VALIDATION.md`** (fonctionnalité → test → résultat → preuve)
+
+## État validé (26/08)
+- Backend : compile ✅ · tests **994/994** ✅
+- Frontend : `tsc -b` ✅ · tests **308/308** ✅
+- Mobile : analyze **0 erreur/0 warning** ✅ · tests **342/342** ✅
+- Score global révisé : **63/100 → 76/100** — décision 🟠 PRÊT AVEC RÉSERVES
+
+## Problèmes corrigés cette session
+- SocialAuthController : access+refresh tokens pour Google OAuth et magic-link (avant : déconnexion à expiration sans refresh possible)
+- DEFAULT_PASSWORD retiré des logs DataInitializer
+- 14 warnings mobiles (imports/variables mortes) + fix type digital_twin
+
+## Problèmes restants / prochaine action exacte
+1. **Brancher les 16 écrans encore étiquetés démo** (`kDemoDataRoutes`) — 14 ont déjà un endpoint backend prêt :
+   - `/broadcast` → `/api/v1/broadcast`, `/forms` → `/api/v1/forms`, `/dev-plans` → `/api/v1/development-plans`, `/church-directory` → `/api/v1/directory`, `/family-cohesion` → `/api/v1/family-cohesion`, `/family-resources` → `/api/v1/family-resources`, `/maker-tracking` → `/api/v1/maker-tracking`, `/sermon-translations` → `/api/v1/sermons/translations`, `/skill-matching` → `/api/v1/skill-matching`, `/skills-matrix` → `/api/v1/skills`, `/spiritual-journal` → `/api/v1/spiritual-journals`, `/group-messages` → `/api/v1/group-messages`, `/scheduled-announcements` → `/api/v1/announcements`, `/discipleship-path` → `/api/v1/discipleship-paths`
+   - Pattern à suivre : `ApiService` injectable + i18n AppLocalizations + tests `_FakeApiService` (data/empty/error) comme les 17 écrans déjà rewirés
+2. `bible-reading` et `community` : créer module backend ou remapper sur directory/members/families
+3. i18n des ~140 écrans mobiles historiques
+
+## Dernier commit
+- `adaa9ec` fix(auth): émettre refreshToken pour social/magic-link + nettoyage warnings mobile
