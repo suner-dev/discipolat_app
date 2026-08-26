@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Centre d'intelligence — branché sur GET /api/v1/intelligence (KPIs réels).
 class IntelligenceCenterScreen extends StatefulWidget {
@@ -29,7 +30,8 @@ class _IntelligenceCenterScreenState extends State<IntelligenceCenterScreen> {
         _loading = false;
       });
     } catch (_) {
-      setState(() { _error = 'Impossible de charger les KPIs. Le centre doit être initialisé côté admin.'; _loading = false; });
+      if (!mounted) return;
+      setState(() { _error = AppLocalizations.of(context).intelligenceCenterError; _loading = false; });
     }
   }
 
@@ -39,13 +41,13 @@ class _IntelligenceCenterScreenState extends State<IntelligenceCenterScreen> {
   Widget build(BuildContext context) {
     final alerts = _kpis.where((k) => k is Map && k['isAlert'] == true).toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('🏛️ Centre d\'intelligence'), backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).intelligenceCenterTitle), backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
-                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                  ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context).retry)),
                 ]))
               : RefreshIndicator(
                   onRefresh: _load,
@@ -53,7 +55,7 @@ class _IntelligenceCenterScreenState extends State<IntelligenceCenterScreen> {
                     padding: const EdgeInsets.all(16),
                     children: [
                       if (alerts.isNotEmpty) ...[
-                        Card(color: Colors.amber.shade50, child: ListTile(leading: const Icon(Icons.warning_amber, color: Colors.amber), title: Text('${alerts.length} alerte(s) active(s)', style: const TextStyle(fontWeight: FontWeight.bold)))),
+                        Card(color: Colors.amber.shade50, child: ListTile(leading: const Icon(Icons.warning_amber, color: Colors.amber), title: Text(AppLocalizations.of(context).intelligenceCenterAlerts(alerts.length), style: const TextStyle(fontWeight: FontWeight.bold)))),
                         const SizedBox(height: 12),
                       ],
                       ..._kpis.map((k) {

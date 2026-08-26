@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/spiritual_challenges/spiritual_challenges_screen.dart';
+
+import 'helpers/pump_localized.dart';
 
 class _FakeApiService extends ApiService {
   _FakeApiService({this.fail = false, this.empty = false}) : super(baseUrl: 'http://fake');
@@ -36,13 +37,13 @@ class _FakeApiService extends ApiService {
 void main() {
   group('SpiritualChallengesScreen', () {
     testWidgets('renders app bar', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: SpiritualChallengesScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, SpiritualChallengesScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('🔥 Défis spirituels'), findsOneWidget);
     });
 
     testWidgets('shows challenge with progress from API', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: SpiritualChallengesScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, SpiritualChallengesScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('Jeûne de 7 jours'), findsOneWidget);
       expect(find.text('Jeûne partiel avec prière matinale.'), findsOneWidget);
@@ -50,13 +51,13 @@ void main() {
     });
 
     testWidgets('shows empty state', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: SpiritualChallengesScreen(apiService: _FakeApiService(empty: true))));
+      await pumpLocalized(tester, SpiritualChallengesScreen(apiService: _FakeApiService(empty: true)));
       await tester.pumpAndSettle();
       expect(find.text('Aucun défi en cours.'), findsOneWidget);
     });
 
     testWidgets('shows error state with retry', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: SpiritualChallengesScreen(apiService: _FakeApiService(fail: true))));
+      await pumpLocalized(tester, SpiritualChallengesScreen(apiService: _FakeApiService(fail: true)));
       await tester.pumpAndSettle();
       expect(find.text('Impossible de charger les défis spirituels.'), findsOneWidget);
       expect(find.text('Réessayer'), findsOneWidget);

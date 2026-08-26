@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/succession/succession_screen.dart';
+
+import 'helpers/pump_localized.dart';
 
 class _FakeApiService extends ApiService {
   _FakeApiService({this.fail = false, this.empty = false}) : super(baseUrl: 'http://fake');
@@ -36,13 +37,13 @@ class _FakeApiService extends ApiService {
 void main() {
   group('SuccessionScreen', () {
     testWidgets('renders app bar', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: SuccessionScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, SuccessionScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('👑 Succession'), findsOneWidget);
     });
 
     testWidgets('shows succession plan from API with readable readiness', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: SuccessionScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, SuccessionScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('Responsable louange'), findsOneWidget);
       expect(find.text('Candidat #cand1234'), findsOneWidget);
@@ -51,13 +52,13 @@ void main() {
     });
 
     testWidgets('shows empty state', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: SuccessionScreen(apiService: _FakeApiService(empty: true))));
+      await pumpLocalized(tester, SuccessionScreen(apiService: _FakeApiService(empty: true)));
       await tester.pumpAndSettle();
       expect(find.text('Aucun plan de succession.'), findsOneWidget);
     });
 
     testWidgets('shows error state with retry', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: SuccessionScreen(apiService: _FakeApiService(fail: true))));
+      await pumpLocalized(tester, SuccessionScreen(apiService: _FakeApiService(fail: true)));
       await tester.pumpAndSettle();
       expect(find.text('Impossible de charger les plans de succession.'), findsOneWidget);
       expect(find.text('Réessayer'), findsOneWidget);

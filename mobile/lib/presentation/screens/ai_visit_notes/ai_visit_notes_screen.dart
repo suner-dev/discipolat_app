@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Notes IA de visites — branché sur GET /api/v1/ai-visit-notes.
 class AiVisitNotesScreen extends StatefulWidget {
@@ -30,7 +31,8 @@ class _AiVisitNotesScreenState extends State<AiVisitNotesScreen> {
         _loading = false;
       });
     } catch (_) {
-      setState(() { _error = 'Impossible de charger les notes IA.'; _loading = false; });
+      if (!mounted) return;
+      setState(() { _error = AppLocalizations.of(context).aiVisitNotesError; _loading = false; });
     }
   }
 
@@ -64,16 +66,16 @@ class _AiVisitNotesScreenState extends State<AiVisitNotesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('📝 Notes IA visites'), backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).aiVisitNotesTitle), backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
-                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                  ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context).retry)),
                 ]))
               : _items.isEmpty
-                  ? const Center(child: Text('Aucune note de visite analysée.'))
+                  ? Center(child: Text(AppLocalizations.of(context).aiVisitNotesEmpty))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(

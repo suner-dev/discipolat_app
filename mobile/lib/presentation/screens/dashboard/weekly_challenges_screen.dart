@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Défis hebdomadaires — branché sur GET /api/v1/weekly-challenges.
 class WeeklyChallengesScreen extends StatefulWidget {
@@ -32,7 +33,8 @@ class _WeeklyChallengesScreenState extends State<WeeklyChallengesScreen> {
         _loading = false;
       });
     } catch (e) {
-      setState(() { _error = 'Impossible de charger les défis.'; _loading = false; });
+      if (!mounted) return;
+      setState(() { _error = AppLocalizations.of(context).weeklyChallengesError; _loading = false; });
     }
   }
 
@@ -47,16 +49,16 @@ class _WeeklyChallengesScreenState extends State<WeeklyChallengesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('🏆 Défis hebdomadaires'), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).weeklyChallengesTitle), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
-                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                  ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context).retry)),
                 ]))
               : _items.isEmpty
-                  ? const Center(child: Text('Aucun défi actif pour le moment.'))
+                  ? Center(child: Text(AppLocalizations.of(context).weeklyChallengesEmpty))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(

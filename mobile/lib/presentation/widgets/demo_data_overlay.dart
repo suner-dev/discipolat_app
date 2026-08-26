@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 // ignore: implementation_imports
 import '../../app.dart' show appRouter;
+import '../../l10n/app_localizations.dart';
 
 /// Routes dont l'écran est encore alimenté par des DONNÉES DE DÉMONSTRATION
 /// (aucun appel API). Ces écrans doivent être branchés avant la release.
@@ -73,8 +74,8 @@ class DemoDataOverlay extends StatelessWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'Aperçu — données de démonstration, pas encore connectées à votre église.',
-                                                        style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.95)),
+                            AppLocalizations.of(context).demoDataBanner,
+                            style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.95)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

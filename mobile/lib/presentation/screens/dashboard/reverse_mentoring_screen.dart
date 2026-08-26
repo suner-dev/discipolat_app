@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/format.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Mentorat inversé — branché sur GET /api/v1/reverse-mentoring.
 class ReverseMentoringScreen extends StatefulWidget {
@@ -30,7 +31,8 @@ class _ReverseMentoringScreenState extends State<ReverseMentoringScreen> {
         _loading = false;
       });
     } catch (_) {
-      setState(() { _error = 'Impossible de charger les demandes.'; _loading = false; });
+      if (!mounted) return;
+      setState(() { _error = AppLocalizations.of(context).reverseMentoringError; _loading = false; });
     }
   }
 
@@ -46,16 +48,16 @@ class _ReverseMentoringScreenState extends State<ReverseMentoringScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('🔄 Mentorat inversé'), backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).reverseMentoringTitle), backgroundColor: Colors.indigo, foregroundColor: Colors.white),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
-                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                  ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context).retry)),
                 ]))
               : _items.isEmpty
-                  ? const Center(child: Text('Aucune demande de mentorat inversé.'))
+                  ? Center(child: Text(AppLocalizations.of(context).reverseMentoringEmpty))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(

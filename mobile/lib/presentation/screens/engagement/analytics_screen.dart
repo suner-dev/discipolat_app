@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Analytics d'engagement — branché sur GET /api/v1/engagement-analytics.
 class EngagementAnalyticsScreen extends StatefulWidget {
@@ -29,23 +30,24 @@ class _EngagementAnalyticsScreenState extends State<EngagementAnalyticsScreen> {
         _loading = false;
       });
     } catch (_) {
-      setState(() { _error = 'Impossible de charger les métriques.'; _loading = false; });
+      if (!mounted) return;
+      setState(() { _error = AppLocalizations.of(context).engagementAnalyticsError; _loading = false; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('📈 Engagement'), backgroundColor: Colors.deepOrange, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).engagementAnalyticsTitle), backgroundColor: Colors.deepOrange, foregroundColor: Colors.white),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
-                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                  ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context).retry)),
                 ]))
               : _items.isEmpty
-                  ? const Center(child: Text('Aucune métrique enregistrée.'))
+                  ? Center(child: Text(AppLocalizations.of(context).engagementAnalyticsEmpty))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: GridView.builder(

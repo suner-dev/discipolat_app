@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/admin_requests/admin_requests_screen.dart';
+
+import 'helpers/pump_localized.dart';
 
 class _FakeApiService extends ApiService {
   _FakeApiService({this.fail = false, this.empty = false}) : super(baseUrl: 'http://fake');
@@ -32,13 +33,13 @@ class _FakeApiService extends ApiService {
 void main() {
   group('AdminRequestsScreen', () {
     testWidgets('renders app bar with title', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: AdminRequestsScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, AdminRequestsScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('📋 Demandes admin'), findsOneWidget);
     });
 
     testWidgets('shows requests from API', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: AdminRequestsScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, AdminRequestsScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('Certificat de membre'), findsOneWidget);
       expect(find.text('Pour dossier bancaire'), findsOneWidget);
@@ -47,13 +48,13 @@ void main() {
     });
 
     testWidgets('shows empty state', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: AdminRequestsScreen(apiService: _FakeApiService(empty: true))));
+      await pumpLocalized(tester, AdminRequestsScreen(apiService: _FakeApiService(empty: true)));
       await tester.pumpAndSettle();
       expect(find.text('Aucune demande.'), findsOneWidget);
     });
 
     testWidgets('shows error state with retry', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: AdminRequestsScreen(apiService: _FakeApiService(fail: true))));
+      await pumpLocalized(tester, AdminRequestsScreen(apiService: _FakeApiService(fail: true)));
       await tester.pumpAndSettle();
       expect(find.text('Impossible de charger les demandes.'), findsOneWidget);
       expect(find.text('Réessayer'), findsOneWidget);

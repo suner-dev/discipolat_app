@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app.dart' show AuthState;
 import '../../data/services/screenshot_protection_service.dart';
 import '../../data/services/audit_log_service.dart';
 
@@ -45,9 +46,10 @@ class _SecureScreenState extends State<SecureScreen>
     }
 
     if (widget.logAccess) {
+      final auth = AuthState();
       AuditLogger.sensitiveAction(
-        'current_user',
-        'current_org',
+        auth.userId ?? 'anonymous',
+        auth.orgId ?? 'unknown_org',
         widget.auditAction ?? 'VIEW_SCREEN',
         'screen',
         widget.screenName,
@@ -81,9 +83,10 @@ mixin AuditLoggingMixin<T extends StatefulWidget> on State<T> {
 
   void _logScreenAccess() {
     if (auditAction != null) {
+      final auth = AuthState();
       AuditLogger.sensitiveAction(
-        'current_user',
-        'current_org',
+        auth.userId ?? 'anonymous',
+        auth.orgId ?? 'unknown_org',
         auditAction!,
         'screen',
         auditScreenName,
@@ -91,10 +94,11 @@ mixin AuditLoggingMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  void logAction(String action, {String? resource, String? resourceId}) {
+    void logAction(String action, {String? resource, String? resourceId}) {
+    final auth = AuthState();
     AuditLogger.sensitiveAction(
-      'current_user',
-      'current_org',
+      auth.userId ?? 'anonymous',
+      auth.orgId ?? 'unknown_org',
       action,
       resource ?? 'screen',
       resourceId ?? auditScreenName,

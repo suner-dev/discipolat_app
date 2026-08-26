@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Prédictions IA — branché sur GET /api/v1/predictions.
 class PredictionsScreen extends StatefulWidget {
@@ -29,7 +30,8 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
         _loading = false;
       });
     } catch (_) {
-      setState(() { _error = 'Impossible de charger les prédictions.'; _loading = false; });
+      if (!mounted) return;
+      setState(() { _error = AppLocalizations.of(context).predictionsError; _loading = false; });
     }
   }
 
@@ -44,16 +46,16 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('🔮 Prédictions IA'), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).predictionsTitle), backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
-                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                  ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context).retry)),
                 ]))
               : _items.isEmpty
-                  ? const Center(child: Text('Aucune prédiction générée.'))
+                  ? Center(child: Text(AppLocalizations.of(context).predictionsEmpty))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(

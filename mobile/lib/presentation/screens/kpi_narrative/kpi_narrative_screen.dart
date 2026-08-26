@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Narration IA des KPIs — branché sur GET /api/v1/kpi-narrative.
 class KpiNarrativeScreen extends StatefulWidget {
@@ -26,7 +27,8 @@ class _KpiNarrativeScreenState extends State<KpiNarrativeScreen> {
       final d = res.data;
       setState(() { _items = d is List ? d : <dynamic>[]; _loading = false; });
     } catch (_) {
-      setState(() { _error = 'Impossible de charger les narrations KPI.'; _loading = false; });
+      if (!mounted) return;
+      setState(() { _error = AppLocalizations.of(context).kpiNarrativeError; _loading = false; });
     }
   }
 
@@ -35,16 +37,16 @@ class _KpiNarrativeScreenState extends State<KpiNarrativeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('📖 Narration des KPIs'), backgroundColor: Colors.cyan.shade700, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).kpiNarrativeTitle), backgroundColor: Colors.cyan.shade700, foregroundColor: Colors.white),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
-                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                  ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context).retry)),
                 ]))
               : _items.isEmpty
-                  ? const Center(child: Text('Aucune narration générée. Utilisez « Générer » côté web.'))
+                  ? Center(child: Text(AppLocalizations.of(context).kpiNarrativeEmpty))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Checklists événementielles — branché sur GET /api/v1/event-checklists.
 class EventChecklistScreen extends StatefulWidget {
@@ -26,13 +27,14 @@ class _EventChecklistScreenState extends State<EventChecklistScreen> {
       final d = res.data;
       setState(() { _items = d is List ? d : <dynamic>[]; _loading = false; });
     } catch (_) {
-      setState(() { _error = 'Impossible de charger les checklists.'; _loading = false; });
+      if (!mounted) return;
+      setState(() { _error = AppLocalizations.of(context).eventChecklistError; _loading = false; });
     }
   }
 
   Future<void> _toggle(String id) async {
     try {
-      await _api.post('/event-checklists/' + id + '/toggle');
+      await _api.post('/event-checklists/$id/toggle');
       await _load();
     } catch (_) {}
   }
@@ -41,24 +43,24 @@ class _EventChecklistScreenState extends State<EventChecklistScreen> {
   Widget build(BuildContext context) {
     final completed = _items.where((x) => x is Map && x['status'] == 'COMPLETED').length;
     return Scaffold(
-      appBar: AppBar(title: const Text('✅ Checklists'), backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).eventChecklistTitle), backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
-                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                  ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context).retry)),
                 ]))
               : RefreshIndicator(
                   onRefresh: _load,
                   child: Column(children: [
                     Padding(
                       padding: const EdgeInsets.all(12),
-                      child: Text(completed.toString() + ' / ' + _items.length.toString() + ' tâches terminées', style: const TextStyle(fontSize: 12)),
+                      child: Text(AppLocalizations.of(context).eventChecklistProgress(completed, _items.length), style: const TextStyle(fontSize: 12)),
                     ),
                     Expanded(
                       child: _items.isEmpty
-                          ? const Center(child: Text('Aucune tâche de checklist.'))
+                          ? Center(child: Text(AppLocalizations.of(context).eventChecklistEmpty))
                           : ListView.builder(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               itemCount: _items.length,

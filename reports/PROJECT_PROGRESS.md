@@ -135,8 +135,23 @@ Reprise : validation rejouée puis commit.
   Chaque fichier couvre : app bar · données réelles du fake API · empty state · error state.
   (Total 345 → 343 : regroupement d'assertions redondantes des anciens tests.)
 
+### Session 3 — Mobile i18n des écrans rewirés (2026-08-25)
+- **53 nouvelles clés** AppLocalizations × FR/EN/PT (titres, erreurs, empty states,
+  compteur checklist paramétré, bannière démo) + accesseurs typés.
+- **18 fichiers d'écrans migrés** vers AppLocalizations (17 écrans, reverse_mentoring
+  en double) : titre AppBar, message d'erreur (avec garde `mounted`), empty state,
+  bouton Réessayer → clé `retry` existante.
+- `demo_data_overlay.dart` : bandeau localisé.
+- Nouveau helper de test `test/helpers/pump_localized.dart` (MaterialApp + delegates
+  Global* + locale FR) ; les 15 fichiers de tests adaptés.
+- Validation : flutter test **343/343** ✅ · analyze : 0 warning/error nouveaux
+  (14 warnings préexistants dans lib/, hors périmètre).
+- Périmètre restant i18n : écrans branchés lors des sessions antérieures
+  (streaming, inventory, marketplace, moderation, predictions_ml, executive_insights…)
+  et le reste des ~160 écrans.
+
 ### Reste à faire (prochaine session)
-1. Mobile i18n (strings hardcodées restantes)
+1. Mobile i18n : étendre aux autres écrans (streaming, inventory, marketplace, …)
 2. AuthState singleton → Riverpod provider
 3. Screens mobile >1000 lignes → extraire composants
 4. Les routes encore dans `kDemoDataRoutes` (~18 écrans nécessitant un paramètre

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/format.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Plan de succession — branché sur GET /api/v1/succession.
 class SuccessionScreen extends StatefulWidget {
@@ -27,7 +28,8 @@ class _SuccessionScreenState extends State<SuccessionScreen> {
       final d = res.data;
       setState(() { _items = d is List ? d : <dynamic>[]; _loading = false; });
     } catch (_) {
-      setState(() { _error = 'Impossible de charger les plans de succession.'; _loading = false; });
+      if (!mounted) return;
+      setState(() { _error = AppLocalizations.of(context).successionError; _loading = false; });
     }
   }
 
@@ -42,16 +44,16 @@ class _SuccessionScreenState extends State<SuccessionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('👑 Succession'), backgroundColor: Colors.brown, foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).successionTitle), backgroundColor: Colors.brown, foregroundColor: Colors.white),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)),
-                  ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                  ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context).retry)),
                 ]))
               : _items.isEmpty
-                  ? const Center(child: Text('Aucun plan de succession.'))
+                  ? Center(child: Text(AppLocalizations.of(context).successionEmpty))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(

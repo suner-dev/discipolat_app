@@ -220,6 +220,63 @@ class AppLocalizations {
   String get qrScanSuccess => translate('qrScanSuccess');
   String get qrScanError => translate('qrScanError');
 
+  // ==================== MODULES CONNECTÉS (écrans branchés API) ====================
+  String get weeklyChallengesTitle => translate('weeklyChallengesTitle');
+  String get weeklyChallengesError => translate('weeklyChallengesError');
+  String get weeklyChallengesEmpty => translate('weeklyChallengesEmpty');
+  String get reverseMentoringTitle => translate('reverseMentoringTitle');
+  String get reverseMentoringError => translate('reverseMentoringError');
+  String get reverseMentoringEmpty => translate('reverseMentoringEmpty');
+  String get volunteersTitle => translate('volunteersTitle');
+  String get volunteersError => translate('volunteersError');
+  String get volunteersEmpty => translate('volunteersEmpty');
+  String get aiVisitNotesTitle => translate('aiVisitNotesTitle');
+  String get aiVisitNotesError => translate('aiVisitNotesError');
+  String get aiVisitNotesEmpty => translate('aiVisitNotesEmpty');
+  String get engagementAnalyticsTitle => translate('engagementAnalyticsTitle');
+  String get engagementAnalyticsError => translate('engagementAnalyticsError');
+  String get engagementAnalyticsEmpty => translate('engagementAnalyticsEmpty');
+  String get intelligenceCenterTitle => translate('intelligenceCenterTitle');
+  String get intelligenceCenterError => translate('intelligenceCenterError');
+  String intelligenceCenterAlerts(int count) =>
+      translate('intelligenceCenterAlerts').replaceAll('{count}', '$count');
+  String get predictionsTitle => translate('predictionsTitle');
+  String get predictionsError => translate('predictionsError');
+  String get predictionsEmpty => translate('predictionsEmpty');
+  String get successionTitle => translate('successionTitle');
+  String get successionError => translate('successionError');
+  String get successionEmpty => translate('successionEmpty');
+  String get spiritualChallengesTitle => translate('spiritualChallengesTitle');
+  String get spiritualChallengesError => translate('spiritualChallengesError');
+  String get spiritualChallengesEmpty => translate('spiritualChallengesEmpty');
+  String get personalObjectivesTitle => translate('personalObjectivesTitle');
+  String get personalObjectivesError => translate('personalObjectivesError');
+  String get personalObjectivesEmpty => translate('personalObjectivesEmpty');
+  String get kpiNarrativeTitle => translate('kpiNarrativeTitle');
+  String get kpiNarrativeError => translate('kpiNarrativeError');
+  String get kpiNarrativeEmpty => translate('kpiNarrativeEmpty');
+  String get rewardsTitle => translate('rewardsTitle');
+  String get rewardsError => translate('rewardsError');
+  String get rewardsEmpty => translate('rewardsEmpty');
+  String get aiMentoringTitle => translate('aiMentoringTitle');
+  String get aiMentoringError => translate('aiMentoringError');
+  String get aiMentoringEmpty => translate('aiMentoringEmpty');
+  String get familyMeetingTitle => translate('familyMeetingTitle');
+  String get familyMeetingError => translate('familyMeetingError');
+  String get familyMeetingEmpty => translate('familyMeetingEmpty');
+  String get eventChecklistTitle => translate('eventChecklistTitle');
+  String get eventChecklistError => translate('eventChecklistError');
+  String get eventChecklistEmpty => translate('eventChecklistEmpty');
+  String eventChecklistProgress(int done, int total) => translate('eventChecklistProgress')
+      .replaceAll('{done}', '$done').replaceAll('{total}', '$total');
+  String get churchComparisonTitle => translate('churchComparisonTitle');
+  String get churchComparisonError => translate('churchComparisonError');
+  String get churchComparisonEmpty => translate('churchComparisonEmpty');
+  String get adminRequestsTitle => translate('adminRequestsTitle');
+  String get adminRequestsError => translate('adminRequestsError');
+  String get adminRequestsEmpty => translate('adminRequestsEmpty');
+  String get demoDataBanner => translate('demoDataBanner');
+
   // ==================== FRENCH ====================
   static const Map<String, String> _french = {
     'appTitle': 'Discipolat',
@@ -391,6 +448,59 @@ class AppLocalizations {
     'quickLinkReports': 'Rapports',
     'quickLinkDocuments': 'Documents',
     'appTagline': 'Gestion du Discipolat',
+    'weeklyChallengesTitle': '🏆 Défis hebdomadaires',
+    'weeklyChallengesError': 'Impossible de charger les défis.',
+    'weeklyChallengesEmpty': 'Aucun défi actif pour le moment.',
+    'reverseMentoringTitle': '🔄 Mentorat inversé',
+    'reverseMentoringError': 'Impossible de charger les demandes.',
+    'reverseMentoringEmpty': 'Aucune demande de mentorat inversé.',
+    'volunteersTitle': '🤝 Bénévoles',
+    'volunteersError': 'Impossible de charger les bénévoles.',
+    'volunteersEmpty': 'Aucun bénévole enregistré.',
+    'aiVisitNotesTitle': '📝 Notes IA visites',
+    'aiVisitNotesError': 'Impossible de charger les notes IA.',
+    'aiVisitNotesEmpty': 'Aucune note de visite analysée.',
+    'engagementAnalyticsTitle': '📈 Engagement',
+    'engagementAnalyticsError': 'Impossible de charger les métriques.',
+    'engagementAnalyticsEmpty': 'Aucune métrique enregistrée.',
+    'intelligenceCenterTitle': "🏛️ Centre d'intelligence",
+    'intelligenceCenterError': 'Impossible de charger les KPIs. Le centre doit être initialisé côté admin.',
+    'intelligenceCenterAlerts': '{count} alerte(s) active(s)',
+    'predictionsTitle': '🔮 Prédictions IA',
+    'predictionsError': 'Impossible de charger les prédictions.',
+    'predictionsEmpty': 'Aucune prédiction générée.',
+    'successionTitle': '👑 Succession',
+    'successionError': 'Impossible de charger les plans de succession.',
+    'successionEmpty': 'Aucun plan de succession.',
+    'spiritualChallengesTitle': '🔥 Défis spirituels',
+    'spiritualChallengesError': 'Impossible de charger les défis spirituels.',
+    'spiritualChallengesEmpty': 'Aucun défi en cours.',
+    'personalObjectivesTitle': '🎯 Objectifs personnels',
+    'personalObjectivesError': 'Impossible de charger vos objectifs.',
+    'personalObjectivesEmpty': 'Aucun objectif défini.',
+    'kpiNarrativeTitle': '📖 Narration des KPIs',
+    'kpiNarrativeError': 'Impossible de charger les narrations KPI.',
+    'kpiNarrativeEmpty': 'Aucune narration générée. Utilisez « Générer » côté web.',
+    'rewardsTitle': '🏅 Mes récompenses',
+    'rewardsError': 'Impossible de charger vos récompenses.',
+    'rewardsEmpty': 'Aucun certificat pour le moment. Continuez vos efforts !',
+    'aiMentoringTitle': '🧠 Mentorat IA',
+    'aiMentoringError': 'Impossible de charger les suggestions.',
+    'aiMentoringEmpty': 'Aucune suggestion. Générez-en depuis le web.',
+    'familyMeetingTitle': '👨‍👩‍👧 Réunions famille',
+    'familyMeetingError': 'Impossible de charger les réunions.',
+    'familyMeetingEmpty': 'Aucune réunion programmée.',
+    'eventChecklistTitle': '✅ Checklists',
+    'eventChecklistError': 'Impossible de charger les checklists.',
+    'eventChecklistEmpty': 'Aucune tâche de checklist.',
+    'eventChecklistProgress': '{done} / {total} tâches terminées',
+    'churchComparisonTitle': '⚖️ Comparaison',
+    'churchComparisonError': 'Impossible de charger les comparaisons.',
+    'churchComparisonEmpty': 'Aucune comparaison enregistrée.',
+    'adminRequestsTitle': '📋 Demandes admin',
+    'adminRequestsError': 'Impossible de charger les demandes.',
+    'adminRequestsEmpty': 'Aucune demande.',
+    'demoDataBanner': 'Aperçu — données de démonstration, pas encore connectées à votre église.',
   };
 
   // ==================== ENGLISH ====================
@@ -564,6 +674,59 @@ class AppLocalizations {
     'quickLinkReports': 'Reports',
     'quickLinkDocuments': 'Documents',
     'appTagline': 'Discipleship Management',
+    'weeklyChallengesTitle': '🏆 Weekly challenges',
+    'weeklyChallengesError': 'Unable to load challenges.',
+    'weeklyChallengesEmpty': 'No active challenge right now.',
+    'reverseMentoringTitle': '🔄 Reverse mentoring',
+    'reverseMentoringError': 'Unable to load requests.',
+    'reverseMentoringEmpty': 'No reverse mentoring request.',
+    'volunteersTitle': '🤝 Volunteers',
+    'volunteersError': 'Unable to load volunteers.',
+    'volunteersEmpty': 'No volunteer registered.',
+    'aiVisitNotesTitle': '📝 AI visit notes',
+    'aiVisitNotesError': 'Unable to load AI notes.',
+    'aiVisitNotesEmpty': 'No analysed visit note yet.',
+    'engagementAnalyticsTitle': '📈 Engagement',
+    'engagementAnalyticsError': 'Unable to load metrics.',
+    'engagementAnalyticsEmpty': 'No metric recorded yet.',
+    'intelligenceCenterTitle': "🏛️ Intelligence center",
+    'intelligenceCenterError': 'Unable to load KPIs. The center must be initialised by an admin.',
+    'intelligenceCenterAlerts': '{count} active alert(s)',
+    'predictionsTitle': '🔮 AI predictions',
+    'predictionsError': 'Unable to load predictions.',
+    'predictionsEmpty': 'No prediction generated yet.',
+    'successionTitle': '👑 Succession',
+    'successionError': 'Unable to load succession plans.',
+    'successionEmpty': 'No succession plan.',
+    'spiritualChallengesTitle': '🔥 Spiritual challenges',
+    'spiritualChallengesError': 'Unable to load spiritual challenges.',
+    'spiritualChallengesEmpty': 'No ongoing challenge.',
+    'personalObjectivesTitle': '🎯 Personal objectives',
+    'personalObjectivesError': 'Unable to load your objectives.',
+    'personalObjectivesEmpty': 'No objective defined.',
+    'kpiNarrativeTitle': '📖 KPI narrative',
+    'kpiNarrativeError': 'Unable to load KPI narratives.',
+    'kpiNarrativeEmpty': 'No narrative generated yet. Use "Generate" on the web app.',
+    'rewardsTitle': '🏅 My rewards',
+    'rewardsError': 'Unable to load your rewards.',
+    'rewardsEmpty': 'No certificate yet. Keep up the effort!',
+    'aiMentoringTitle': '🧠 AI mentoring',
+    'aiMentoringError': 'Unable to load suggestions.',
+    'aiMentoringEmpty': 'No suggestion. Generate some from the web app.',
+    'familyMeetingTitle': '👨‍👩‍👧 Family meetings',
+    'familyMeetingError': 'Unable to load meetings.',
+    'familyMeetingEmpty': 'No meeting scheduled.',
+    'eventChecklistTitle': '✅ Checklists',
+    'eventChecklistError': 'Unable to load checklists.',
+    'eventChecklistEmpty': 'No checklist task.',
+    'eventChecklistProgress': '{done} / {total} tasks completed',
+    'churchComparisonTitle': '⚖️ Comparison',
+    'churchComparisonError': 'Unable to load comparisons.',
+    'churchComparisonEmpty': 'No comparison recorded.',
+    'adminRequestsTitle': '📋 Admin requests',
+    'adminRequestsError': 'Unable to load requests.',
+    'adminRequestsEmpty': 'No request.',
+    'demoDataBanner': 'Preview — demo data, not yet connected to your church.',
   };
 
   // ==================== PORTUGUESE ====================
@@ -737,6 +900,59 @@ class AppLocalizations {
     'quickLinkReports': 'Relatórios',
     'quickLinkDocuments': 'Documentos',
     'appTagline': 'Gestão do Discipolado',
+    'weeklyChallengesTitle': '🏆 Desafios semanais',
+    'weeklyChallengesError': 'Não foi possível carregar os desafios.',
+    'weeklyChallengesEmpty': 'Nenhum desafio ativo no momento.',
+    'reverseMentoringTitle': '🔄 Mentoria invertida',
+    'reverseMentoringError': 'Não foi possível carregar os pedidos.',
+    'reverseMentoringEmpty': 'Nenhum pedido de mentoria invertida.',
+    'volunteersTitle': '🤝 Voluntários',
+    'volunteersError': 'Não foi possível carregar os voluntários.',
+    'volunteersEmpty': 'Nenhum voluntário registado.',
+    'aiVisitNotesTitle': '📝 Notas IA de visitas',
+    'aiVisitNotesError': 'Não foi possível carregar as notas IA.',
+    'aiVisitNotesEmpty': 'Nenhuma nota de visita analisada.',
+    'engagementAnalyticsTitle': '📈 Envolvimento',
+    'engagementAnalyticsError': 'Não foi possível carregar as métricas.',
+    'engagementAnalyticsEmpty': 'Nenhuma métrica registada.',
+    'intelligenceCenterTitle': '🏛️ Centro de inteligência',
+    'intelligenceCenterError': 'Não foi possível carregar os KPIs. O centro deve ser inicializado pelo admin.',
+    'intelligenceCenterAlerts': '{count} alerta(s) ativo(s)',
+    'predictionsTitle': '🔮 Previsões IA',
+    'predictionsError': 'Não foi possível carregar as previsões.',
+    'predictionsEmpty': 'Nenhuma previsão gerada.',
+    'successionTitle': '👑 Sucessão',
+    'successionError': 'Não foi possível carregar os planos de sucessão.',
+    'successionEmpty': 'Nenhum plano de sucessão.',
+    'spiritualChallengesTitle': '🔥 Desafios espirituais',
+    'spiritualChallengesError': 'Não foi possível carregar os desafios espirituais.',
+    'spiritualChallengesEmpty': 'Nenhum desafio em curso.',
+    'personalObjectivesTitle': '🎯 Objetivos pessoais',
+    'personalObjectivesError': 'Não foi possível carregar os seus objetivos.',
+    'personalObjectivesEmpty': 'Nenhum objetivo definido.',
+    'kpiNarrativeTitle': '📖 Narração dos KPIs',
+    'kpiNarrativeError': 'Não foi possível carregar as narrações KPI.',
+    'kpiNarrativeEmpty': 'Nenhuma narração gerada. Use « Gerar » na aplicação web.',
+    'rewardsTitle': '🏅 As minhas recompensas',
+    'rewardsError': 'Não foi possível carregar as suas recompensas.',
+    'rewardsEmpty': 'Ainda sem certificado. Continue os seus esforços!',
+    'aiMentoringTitle': '🧠 Mentoria IA',
+    'aiMentoringError': 'Não foi possível carregar as sugestões.',
+    'aiMentoringEmpty': 'Nenhuma sugestão. Gere-as a partir da aplicação web.',
+    'familyMeetingTitle': '👨‍👩‍👧 Reuniões de família',
+    'familyMeetingError': 'Não foi possível carregar as reuniões.',
+    'familyMeetingEmpty': 'Nenhuma reunião programada.',
+    'eventChecklistTitle': '✅ Checklists',
+    'eventChecklistError': 'Não foi possível carregar as checklists.',
+    'eventChecklistEmpty': 'Nenhuma tarefa de checklist.',
+    'eventChecklistProgress': '{done} / {total} tarefas concluídas',
+    'churchComparisonTitle': '⚖️ Comparação',
+    'churchComparisonError': 'Não foi possível carregar as comparações.',
+    'churchComparisonEmpty': 'Nenhuma comparação registada.',
+    'adminRequestsTitle': '📋 Pedidos administrativos',
+    'adminRequestsError': 'Não foi possível carregar os pedidos.',
+    'adminRequestsEmpty': 'Nenhum pedido.',
+    'demoDataBanner': 'Pré-visualização — dados de demonstração, ainda não ligados à sua igreja.',
   };
 }
 

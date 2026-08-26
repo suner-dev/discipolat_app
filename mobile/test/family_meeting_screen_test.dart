@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/family_meeting/family_meeting_screen.dart';
+
+import 'helpers/pump_localized.dart';
 
 class _FakeApiService extends ApiService {
   _FakeApiService({this.fail = false, this.empty = false}) : super(baseUrl: 'http://fake');
@@ -36,13 +37,13 @@ class _FakeApiService extends ApiService {
 void main() {
   group('FamilyMeetingScreen', () {
     testWidgets('renders app bar', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: FamilyMeetingScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, FamilyMeetingScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('👨‍👩‍👧 Réunions famille'), findsOneWidget);
     });
 
     testWidgets('shows meeting from API with readable status label', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: FamilyMeetingScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, FamilyMeetingScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('Famille #fam12345'), findsOneWidget);
       expect(find.text('Point mensuel et prière pour les enfants.'), findsOneWidget);
@@ -51,13 +52,13 @@ void main() {
     });
 
     testWidgets('shows empty state', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: FamilyMeetingScreen(apiService: _FakeApiService(empty: true))));
+      await pumpLocalized(tester, FamilyMeetingScreen(apiService: _FakeApiService(empty: true)));
       await tester.pumpAndSettle();
       expect(find.text('Aucune réunion programmée.'), findsOneWidget);
     });
 
     testWidgets('shows error state with retry', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: FamilyMeetingScreen(apiService: _FakeApiService(fail: true))));
+      await pumpLocalized(tester, FamilyMeetingScreen(apiService: _FakeApiService(fail: true)));
       await tester.pumpAndSettle();
       expect(find.text('Impossible de charger les réunions.'), findsOneWidget);
       expect(find.text('Réessayer'), findsOneWidget);

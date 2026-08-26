@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/mentoring/ai_mentoring_screen.dart';
+
+import 'helpers/pump_localized.dart';
 
 class _FakeApiService extends ApiService {
   _FakeApiService({this.fail = false, this.empty = false}) : super(baseUrl: 'http://fake');
@@ -32,13 +33,13 @@ class _FakeApiService extends ApiService {
 void main() {
   group('AiMentoringScreen', () {
     testWidgets('renders app bar', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: AiMentoringScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, AiMentoringScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('🧠 Mentorat IA'), findsOneWidget);
     });
 
     testWidgets('shows AI suggestions from API', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: AiMentoringScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, AiMentoringScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('Accompagner Jean sur sa assiduité'), findsOneWidget);
       expect(find.text('3 absences consécutives détectées.'), findsOneWidget);
@@ -48,13 +49,13 @@ void main() {
     });
 
     testWidgets('shows empty state', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: AiMentoringScreen(apiService: _FakeApiService(empty: true))));
+      await pumpLocalized(tester, AiMentoringScreen(apiService: _FakeApiService(empty: true)));
       await tester.pumpAndSettle();
       expect(find.text('Aucune suggestion. Générez-en depuis le web.'), findsOneWidget);
     });
 
     testWidgets('shows error state with retry', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: AiMentoringScreen(apiService: _FakeApiService(fail: true))));
+      await pumpLocalized(tester, AiMentoringScreen(apiService: _FakeApiService(fail: true)));
       await tester.pumpAndSettle();
       expect(find.text('Impossible de charger les suggestions.'), findsOneWidget);
       expect(find.text('Réessayer'), findsOneWidget);

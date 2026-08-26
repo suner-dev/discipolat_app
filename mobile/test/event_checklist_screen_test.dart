@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/event_checklist/event_checklist_screen.dart';
+
+import 'helpers/pump_localized.dart';
 
 class _FakeApiService extends ApiService {
   _FakeApiService({this.fail = false}) : super(baseUrl: 'http://fake');
@@ -40,14 +41,14 @@ class _FakeApiService extends ApiService {
 void main() {
   group('EventChecklistScreen', () {
     testWidgets('renders app bar', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: EventChecklistScreen(apiService: _FakeApiService())));
+      await pumpLocalized(tester, EventChecklistScreen(apiService: _FakeApiService()));
       await tester.pumpAndSettle();
       expect(find.text('✅ Checklists'), findsOneWidget);
     });
 
     testWidgets('shows tasks and progress counter from API', (tester) async {
       final api = _FakeApiService();
-      await tester.pumpWidget(MaterialApp(home: EventChecklistScreen(apiService: api)));
+      await pumpLocalized(tester, EventChecklistScreen(apiService: api));
       await tester.pumpAndSettle();
       expect(find.text('1 / 2 tâches terminées'), findsOneWidget);
       expect(find.text('Réserver la salle'), findsOneWidget);
@@ -57,7 +58,7 @@ void main() {
 
     testWidgets('toggling a task calls the real endpoint then reloads', (tester) async {
       final api = _FakeApiService();
-      await tester.pumpWidget(MaterialApp(home: EventChecklistScreen(apiService: api)));
+      await pumpLocalized(tester, EventChecklistScreen(apiService: api));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Préparer le son'));
@@ -69,7 +70,7 @@ void main() {
     });
 
     testWidgets('shows error state with retry', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: EventChecklistScreen(apiService: _FakeApiService(fail: true))));
+      await pumpLocalized(tester, EventChecklistScreen(apiService: _FakeApiService(fail: true)));
       await tester.pumpAndSettle();
       expect(find.text('Impossible de charger les checklists.'), findsOneWidget);
       expect(find.text('Réessayer'), findsOneWidget);
