@@ -9,16 +9,10 @@ import '../../l10n/app_localizations.dart';
 /// Référence : docs/rapports/AUDIT_VERIFICATION_REEL.md §4bis.
 const Set<String> kDemoDataRoutes = <String>{
   '/bible-reading',
-  '/broadcast',
-  '/community',
   '/discipleship-path',
-  '/group-messages',
-  '/scheduled-announcements',
   '/dev-plans',
-  '/church-directory',
   '/family-cohesion',
   '/family-resources',
-  '/forms',
   '/maker-tracking',
   '/sermon-translations',
   '/skill-matching',

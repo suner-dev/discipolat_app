@@ -273,6 +273,45 @@ class AppLocalizations {
   String get statusPending => translate('statusPending');
   String get statusFailed => translate('statusFailed');
   String get statusCancelled => translate('statusCancelled');
+  // ── Lot H5 : broadcast / forms / church-directory ──
+  String get broadcastTitle => translate('broadcastTitle');
+  String get newBroadcast => translate('newBroadcast');
+  String get sent => translate('sent');
+  String get readRate => translate('readRate');
+  String get recentBroadcasts => translate('recentBroadcasts');
+  String get targeting => translate('targeting');
+  String get allMembers => translate('allMembers');
+  String get byDepartment => translate('byDepartment');
+  String get byFamily => translate('byFamily');
+  String get byRole => translate('byRole');
+  String get broadcastEmpty => translate('broadcastEmpty');
+  String get broadcastError => translate('broadcastError');
+  String get readLabel => translate('readLabel');
+  String get formsTitle => translate('formsTitle');
+  String get createForm => translate('createForm');
+  String get createFormSubtitle => translate('createFormSubtitle');
+  String get publishedForms => translate('publishedForms');
+  String get fieldText => translate('fieldText');
+  String get fieldChoice => translate('fieldChoice');
+  String get fieldDate => translate('fieldDate');
+  String get fieldFile => translate('fieldFile');
+  String get fieldSignature => translate('fieldSignature');
+  String get fieldNote => translate('fieldNote');
+  String get formTitleLabel => translate('formTitleLabel');
+  String get addFieldHint => translate('addFieldHint');
+  String get formSaved => translate('formSaved');
+  String responsesCount(int count) =>
+      translate('responsesCount').replaceAll('{count}', '$count');
+  String get formsEmpty => translate('formsEmpty');
+  String get formsError => translate('formsError');
+  String get churchDirectoryTitle => translate('churchDirectoryTitle');
+  String get searchMember => translate('searchMember');
+  String get publicProfile => translate('publicProfile');
+  String get privateProfile => translate('privateProfile');
+  String get directoryEmpty => translate('directoryEmpty');
+  String get directoryError => translate('directoryError');
+  String get unknownFamily => translate('unknownFamily');
+  String get unknownRole => translate('unknownRole');
 
   // ==================== NAVIGATION ====================
   String get navDashboard => translate('navDashboard');
@@ -583,7 +622,6 @@ class AppLocalizations {
   String rowsCount(int count) => translate('rowsCount').replaceAll('{count}', '$count');
   String get surveysTitle => translate('surveysTitle');
   String get surveysEmpty => translate('surveysEmpty');
-  String responsesCount(int count) => translate('responsesCount').replaceAll('{count}', '$count');
   String get encouragementsTitle => translate('encouragementsTitle');
   String tabReceived(int count) => translate('tabReceived').replaceAll('{count}', '$count');
   String tabSent(int count) => translate('tabSent').replaceAll('{count}', '$count');
@@ -1177,6 +1215,43 @@ class AppLocalizations {
     'statusPending': 'En attente',
     'statusFailed': 'Échoué',
     'statusCancelled': 'Annulé',
+    // ── Lot H5 : broadcast / forms / church-directory ──
+    'broadcastTitle': 'Diffusion / Broadcast',
+    'newBroadcast': 'Nouvelle diffusion',
+    'sent': 'Envoyées',
+    'readRate': 'Lues',
+    'recentBroadcasts': 'Diffusions récentes',
+    'targeting': 'Ciblage',
+    'allMembers': 'Tous les membres',
+    'byDepartment': 'Par département',
+    'byFamily': 'Par famille',
+    'byRole': 'Par rôle',
+    'broadcastEmpty': 'Aucune diffusion',
+    'broadcastError': 'Erreur lors du chargement des diffusions',
+    'readLabel': 'lu',
+    'formsTitle': 'Formulaires',
+    'createForm': 'Créer un formulaire',
+    'createFormSubtitle': 'Drag & drop avec conditions logiques',
+    'publishedForms': 'Formulaires publiés',
+    'fieldText': 'Texte',
+    'fieldChoice': 'Choix multiple',
+    'fieldDate': 'Date',
+    'fieldFile': 'Fichier',
+    'fieldSignature': 'Signature',
+    'fieldNote': 'Note',
+    'formTitleLabel': 'Titre du formulaire',
+    'addFieldHint': 'Appuyez sur un type de champ pour l\'ajouter',
+    'formSaved': 'Formulaire sauvegardé !',
+    'formsEmpty': 'Aucun formulaire publié',
+    'formsError': 'Erreur lors du chargement des formulaires',
+    'churchDirectoryTitle': 'Annuaire de l\'Église',
+    'searchMember': 'Rechercher un membre...',
+    'publicProfile': 'Profil public',
+    'privateProfile': 'Profil privé',
+    'directoryEmpty': 'Aucun membre dans l\'annuaire',
+    'directoryError': 'Erreur lors du chargement de l\'annuaire',
+    'unknownFamily': 'Famille inconnue',
+    'unknownRole': 'Rôle inconnu',
   };
 
   // ==================== ENGLISH ====================
@@ -1725,6 +1800,42 @@ class AppLocalizations {
     'statusPending': 'Pending',
     'statusFailed': 'Failed',
     'statusCancelled': 'Cancelled',
+    'broadcastTitle': 'Broadcast',
+    'newBroadcast': 'New broadcast',
+    'sent': 'Sent',
+    'readRate': 'Read',
+    'recentBroadcasts': 'Recent broadcasts',
+    'targeting': 'Targeting',
+    'allMembers': 'All members',
+    'byDepartment': 'By department',
+    'byFamily': 'By family',
+    'byRole': 'By role',
+    'broadcastEmpty': 'No broadcasts',
+    'broadcastError': 'Error loading broadcasts',
+    'readLabel': 'read',
+    'formsTitle': 'Forms',
+    'createForm': 'Create a form',
+    'createFormSubtitle': 'Drag & drop with logic conditions',
+    'publishedForms': 'Published forms',
+    'fieldText': 'Text',
+    'fieldChoice': 'Multiple choice',
+    'fieldDate': 'Date',
+    'fieldFile': 'File',
+    'fieldSignature': 'Signature',
+    'fieldNote': 'Note',
+    'formTitleLabel': 'Form title',
+    'addFieldHint': 'Tap a field type to add it',
+    'formSaved': 'Form saved!',
+    'formsEmpty': 'No published forms',
+    'formsError': 'Error loading forms',
+    'churchDirectoryTitle': 'Church Directory',
+    'searchMember': 'Search a member...',
+    'publicProfile': 'Public profile',
+    'privateProfile': 'Private profile',
+    'directoryEmpty': 'No members in the directory',
+    'directoryError': 'Error loading directory',
+    'unknownFamily': 'Unknown family',
+    'unknownRole': 'Unknown role',
   };
 
   // ==================== PORTUGUESE ====================
@@ -2273,6 +2384,42 @@ class AppLocalizations {
     'statusPending': 'Pendente',
     'statusFailed': 'Falhado',
     'statusCancelled': 'Cancelado',
+    'broadcastTitle': 'Difusão / Broadcast',
+    'newBroadcast': 'Nova difusão',
+    'sent': 'Enviadas',
+    'readRate': 'Lidas',
+    'recentBroadcasts': 'Difusões recentes',
+    'targeting': 'Segmentação',
+    'allMembers': 'Todos os membros',
+    'byDepartment': 'Por departamento',
+    'byFamily': 'Por família',
+    'byRole': 'Por cargo',
+    'broadcastEmpty': 'Nenhuma difusão',
+    'broadcastError': 'Erro ao carregar difusões',
+    'readLabel': 'lido',
+    'formsTitle': 'Formulários',
+    'createForm': 'Criar formulário',
+    'createFormSubtitle': 'Drag & drop com condições lógicas',
+    'publishedForms': 'Formulários publicados',
+    'fieldText': 'Texto',
+    'fieldChoice': 'Escolha múltipla',
+    'fieldDate': 'Data',
+    'fieldFile': 'Ficheiro',
+    'fieldSignature': 'Assinatura',
+    'fieldNote': 'Nota',
+    'formTitleLabel': 'Título do formulário',
+    'addFieldHint': 'Toque num tipo de campo para adicionar',
+    'formSaved': 'Formulário guardado!',
+    'formsEmpty': 'Nenhum formulário publicado',
+    'formsError': 'Erro ao carregar formulários',
+    'churchDirectoryTitle': 'Anúncio da Igreja',
+    'searchMember': 'Pesquisar membro...',
+    'publicProfile': 'Perfil público',
+    'privateProfile': 'Perfil privado',
+    'directoryEmpty': 'Nenhum membro no anúncio',
+    'directoryError': 'Erro ao carregar anúncio',
+    'unknownFamily': 'Família desconhecida',
+    'unknownRole': 'Cargo desconhecido',
   };
 }
 
