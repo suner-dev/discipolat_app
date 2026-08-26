@@ -73,7 +73,6 @@ import 'presentation/screens/platform/admin_integrations_screen.dart';
 import 'presentation/screens/platform/admin_tenants_screen.dart';
 import 'presentation/screens/admin/benchmark_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
-import 'presentation/screens/workflows/workflows_config_screen.dart';
 import 'presentation/screens/souls/soul_qr_screen.dart';
 import 'presentation/screens/departments/qr_scanner_screen.dart';
 import 'presentation/screens/departments/geofencing_screen.dart';
@@ -801,11 +800,6 @@ final appRouter = GoRouter(
       path: '/inventory',
       name: 'inventory',
       builder: (context, state) => const InventoryScreen(),
-    ),
-    GoRoute(
-      path: '/workflows',
-      name: 'workflows',
-      builder: (context, state) => const WorkflowsConfigScreen(),
     ),
     GoRoute(
       path: '/discipline',
