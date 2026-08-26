@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/attachment_picker_field.dart';
@@ -74,11 +75,11 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
       _fichierIds.clear();
       _loadData();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demande envoyée')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).requestSent)));
         Navigator.pop(context);
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de l\'envoi')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).sendError)));
     }
   }
 
@@ -102,13 +103,13 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            const Text('Nouvelle demande', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context).newRequest, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _dropdown('Type', _selectedType, ['SUGGESTION', 'RENDEZ_VOUS', 'SIGNALEMENT'], (v) => setState(() => _selectedType = v!))),
+                Expanded(child: _dropdown(AppLocalizations.of(context).requestType, _selectedType, ['SUGGESTION', 'RENDEZ_VOUS', 'SIGNALEMENT'], (v) => setState(() => _selectedType = v!))),
                 const SizedBox(width: 8),
-                Expanded(child: _dropdown('Destinataire', _selectedCible, ['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'], (v) => setState(() => _selectedCible = v!))),
+                Expanded(child: _dropdown(AppLocalizations.of(context).recipient, _selectedCible, ['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'], (v) => setState(() => _selectedCible = v!))),
               ],
             ),
             const SizedBox(height: 12),
@@ -116,7 +117,7 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
               controller: _objetCtrl,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Objet (optionnel)',
+                hintText: AppLocalizations.of(context).subjectOptional,
                 hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.06),
@@ -129,7 +130,7 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
               maxLines: 3,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Message...',
+                hintText: AppLocalizations.of(context).messageHint,
                 hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.06),
@@ -137,7 +138,7 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
               ),
             ),
             const SizedBox(height: 12),
-            Text('Pièces jointes', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+            Text(AppLocalizations.of(context).attachments, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
             const SizedBox(height: 6),
             AttachmentPickerField(
               apiService: _apiService,
@@ -150,7 +151,7 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
               child: ElevatedButton(
                 onPressed: _submitRequest,
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                child: const Text('Envoyer', style: TextStyle(fontWeight: FontWeight.w600)),
+                child: Text(AppLocalizations.of(context).send, style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
             ],
@@ -206,13 +207,13 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Demandes'),
+        title: Text(AppLocalizations.of(context).memberRequestsTitle),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'Mes demandes'),
-            Tab(text: 'Reçues'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context).tabMyRequests),
+            Tab(text: AppLocalizations.of(context).tabInbox),
           ],
         ),
       ),
@@ -245,7 +246,7 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
           children: [
             Icon(Icons.mail_outline, size: 48, color: Colors.white.withValues(alpha: 0.3)),
             const SizedBox(height: 12),
-            Text(isOutbox ? 'Aucune demande envoyée' : 'Aucune demande reçue', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+            Text(isOutbox ? AppLocalizations.of(context).noSentRequests : AppLocalizations.of(context).noReceivedRequests, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
           ],
         ),
       );
@@ -291,7 +292,7 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
               ),
               if (!isOutbox && auteurNom.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                Text('De: $auteurNom', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+                Text(AppLocalizations.of(context).fromLabel(auteurNom), style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
               ],
               const SizedBox(height: 6),
               Text(message, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13), maxLines: 3, overflow: TextOverflow.ellipsis),
@@ -307,7 +308,7 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
                       child: OutlinedButton(
                         onPressed: () => _updateStatus(r['id'], 'REJETE'),
                         style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: BorderSide(color: Colors.red.withValues(alpha: 0.3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                        child: const Text('Rejeter', style: TextStyle(fontSize: 12)),
+                        child: Text(AppLocalizations.of(context).rejectAction, style: const TextStyle(fontSize: 12)),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -315,7 +316,7 @@ class _MemberRequestsScreenState extends State<MemberRequestsScreen> with Single
                       child: ElevatedButton(
                         onPressed: () => _updateStatus(r['id'], 'RESOLU'),
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                        child: const Text('Résoudre', style: TextStyle(fontSize: 12)),
+                        child: Text(AppLocalizations.of(context).resolve, style: const TextStyle(fontSize: 12)),
                       ),
                     ),
                   ],

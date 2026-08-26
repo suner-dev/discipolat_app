@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../../../data/services/biometric_auth_service.dart';
 import '../../../data/services/session_timeout_service.dart';
@@ -100,34 +101,35 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
     final newPinController = TextEditingController();
     final confirmPinController = TextEditingController();
 
+    final l10n = AppLocalizations.of(context);
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E2A4A),
-        title: const Text('Changer le code PIN', style: TextStyle(color: Colors.white)),
+        title: Text(l10n.changePinTitle, style: const TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: currentPinController, obscureText: true, maxLength: 6,
-              decoration: InputDecoration(hintText: 'Code PIN actuel', hintStyle: TextStyle(color: Colors.white70)),
+              decoration: InputDecoration(hintText: l10n.currentPin, hintStyle: TextStyle(color: Colors.white70)),
               style: TextStyle(color: Colors.white),
             ),
             TextField(
               controller: newPinController, obscureText: true, maxLength: 6,
-              decoration: InputDecoration(hintText: 'Nouveau code PIN', hintStyle: TextStyle(color: Colors.white70)),
+              decoration: InputDecoration(hintText: l10n.newPin, hintStyle: TextStyle(color: Colors.white70)),
               style: TextStyle(color: Colors.white),
             ),
             TextField(
               controller: confirmPinController, obscureText: true, maxLength: 6,
-              decoration: InputDecoration(hintText: 'Confirmer', hintStyle: TextStyle(color: Colors.white70)),
+              decoration: InputDecoration(hintText: l10n.confirm, hintStyle: TextStyle(color: Colors.white70)),
               style: TextStyle(color: Colors.white),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Enregistrer')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.save)),
         ],
       ),
     );
@@ -136,9 +138,9 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
       final storedPin = await _biometricService.getPinCode();
       if (currentPinController.text == storedPin) {
         await _biometricService.savePinCode(newPinController.text);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Code PIN mis a jour')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).pinUpdated)));
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Code PIN incorrect')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).pinIncorrect)));
       }
     }
   }
@@ -149,11 +151,13 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
       return Scaffold(backgroundColor: Color(0xFF030712), body: Center(child: CircularProgressIndicator()));
     }
 
+    final l10n = AppLocalizations.of(context);
+    String timeoutLabel(int minutes) => minutes == 0 ? l10n.never : l10n.minutesCount(minutes);
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('Securite et confidentialite'),
+        title: Text(AppLocalizations.of(context).securityTitle),
         centerTitle: true,
       ),
       body: Container(
@@ -168,12 +172,12 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
           child: ListView(
             padding: EdgeInsets.all(16),
             children: [
-              _buildSectionHeader('Authentification', Icons.lock_outline),
+              _buildSectionHeader(l10n.authSection, Icons.lock_outline),
               GlassCard(
                 margin: EdgeInsets.only(bottom: 8),
                 child: SwitchListTile(
-                  title: Text('Authentification biometrique'),
-                  subtitle: Text('Empreintes ou Face ID'),
+                  title: Text(l10n.biometricAuth),
+                  subtitle: Text(l10n.biometricSubtitle),
                   secondary: Icon(Icons.fingerprint, color: AppColors.primary),
                   value: _biometricEnabled,
                   onChanged: _toggleBiometric,
@@ -183,24 +187,24 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
                 margin: EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   leading: Icon(Icons.pin, color: AppColors.primary),
-                  title: Text('Code PIN'),
-                  subtitle: Text('Configurer un code PIN de secours'),
+                  title: Text(l10n.pinCode),
+                  subtitle: Text(l10n.pinSubtitle),
                   trailing: Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
                   onTap: _changePinCode,
                 ),
               ),
               SizedBox(height: 16),
-              _buildSectionHeader('Session', Icons.timer_outlined),
+              _buildSectionHeader(l10n.sessionSection, Icons.timer_outlined),
               GlassCard(
                 margin: EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   leading: Icon(Icons.logout, color: AppColors.primary),
-                  title: Text('Expiration de session'),
-                  subtitle: Text('Deconnexion apres ${_timeoutMinutes == 0 ? "jamais" : "$_timeoutMinutes min"} d inactivite'),
+                  title: Text(l10n.sessionExpiry),
+                  subtitle: Text(l10n.sessionExpirySubtitle(_timeoutMinutes == 0 ? l10n.never.toLowerCase() : '${_timeoutMinutes} min')),
                   trailing: DropdownButton<int>(
                     value: _timeoutMinutes,
                     dropdownColor: Color(0xFF111827),
-                    items: SessionTimeoutConfig.options.map((opt) => DropdownMenuItem(value: opt.minutes, child: Text(opt.label, style: TextStyle(color: Colors.white70)))).toList(),
+                    items: SessionTimeoutConfig.options.map((opt) => DropdownMenuItem(value: opt.minutes, child: Text(timeoutLabel(opt.minutes), style: TextStyle(color: Colors.white70)))).toList(),
                     onChanged: _updateTimeout,
                   ),
                 ),
@@ -208,37 +212,37 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
               GlassCard(
                 margin: EdgeInsets.only(bottom: 8),
                 child: SwitchListTile(
-                  title: Text("Protection d'ecran"),
-                  subtitle: Text('Empecher les captures d ecran'),
+                  title: Text(l10n.screenProtection),
+                  subtitle: Text(l10n.screenProtectionSubtitle),
                   secondary: Icon(Icons.screenshot_monitor, color: AppColors.primary),
                   value: _screenshotProtection,
                   onChanged: _toggleScreenshotProtection,
                                 ),
               ),
               SizedBox(height: 16),
-              _buildSectionHeader('Audit et activite', Icons.history),
+              _buildSectionHeader(l10n.auditSection, Icons.history),
               GlassCard(
                 margin: EdgeInsets.only(bottom: 8),
                 child: Column(
                   children: [
                     ListTile(
                       leading: Icon(Icons.description, color: AppColors.primary),
-                      title: Text('Journal d audit ($_logCount entrees)'),
-                      subtitle: Text('Consulter les actions enregistrees'),
+                      title: Text(l10n.auditLogEntries(_logCount)),
+                      subtitle: Text(l10n.viewAuditSubtitle),
                       trailing: Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
                       onTap: _viewAuditLogs,
                     ),
                     ListTile(
                       leading: Icon(Icons.share, color: AppColors.primary),
-                      title: Text('Exporter le journal'),
-                      subtitle: Text('CSV ou JSON pour archivage'),
+                      title: Text(l10n.exportLog),
+                      subtitle: Text(l10n.exportSubtitle),
                       trailing: Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
                       onTap: _exportAuditLogs,
                     ),
                     ListTile(
                       leading: Icon(Icons.delete_sweep, color: Colors.red),
-                      title: Text('Effacer le journal'),
-                      subtitle: Text('Supprimer toutes les entrees (RGPD)'),
+                      title: Text(l10n.clearLog),
+                      subtitle: Text(l10n.clearSubtitle),
                       trailing: Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
                       onTap: _clearAuditLogs,
                     ),
@@ -246,15 +250,15 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
                 ),
               ),
               SizedBox(height: 16),
-              _buildSectionHeader('Informations du compte', Icons.account_circle),
+              _buildSectionHeader(l10n.accountSection, Icons.account_circle),
               GlassCard(
                 margin: EdgeInsets.only(bottom: 8),
                 child: Column(
                   children: [
-                    _buildInfoRow('Utilisateur', AuthState().userId ?? 'N/A'),
-                    _buildInfoRow('Organisation', AuthState().orgId ?? 'N/A'),
-                    _buildInfoRow('Role actif', AuthState().activeRole),
-                    _buildInfoRow('Roles', AuthState().roles.join(', ')),
+                    _buildInfoRow(l10n.userLabel, AuthState().userId ?? 'N/A'),
+                    _buildInfoRow(l10n.orgLabel, AuthState().orgId ?? 'N/A'),
+                    _buildInfoRow(l10n.activeRoleLabel, AuthState().activeRole),
+                    _buildInfoRow(l10n.rolesLabel, AuthState().roles.join(', ')),
                   ],
                 ),
               ),
@@ -294,6 +298,7 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
   Future<void> _viewAuditLogs() async {
     final logs = await _auditService.getLogs();
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -304,11 +309,11 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
           padding: EdgeInsets.all(16),
           child: Column(
             children: [
-              Text('Journal d audit', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(l10n.auditLogEntries(_logCount), style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               SizedBox(height: 12),
               Expanded(
                 child: logs.isEmpty
-                    ? Center(child: Text('Aucune entree', style: TextStyle(color: Colors.white70)))
+                    ? Center(child: Text(l10n.noEntries, style: TextStyle(color: Colors.white70)))
                     : ListView.builder(
                         itemCount: logs.length,
                         itemBuilder: (context, index) {
@@ -321,7 +326,7 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
                         },
                       ),
               ),
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Fermer')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.close)),
             ],
           ),
         ),
@@ -332,27 +337,29 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
   Future<void> _exportAuditLogs() async {
     await _auditService.exportLogsCsv();
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Color(0xFF1E2A4A),
-        title: Text('Journal exporte', style: TextStyle(color: Colors.white)),
-        content: Text('$_logCount entrees exportees', style: TextStyle(color: Colors.white70)),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: Text('OK'))],
+        title: Text(l10n.logExported, style: TextStyle(color: Colors.white)),
+        content: Text(l10n.entriesExported(_logCount), style: TextStyle(color: Colors.white70)),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
       ),
     );
   }
 
   Future<void> _clearAuditLogs() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Color(0xFF1E2A4A),
-        title: Text('Confirmer', style: TextStyle(color: Colors.white)),
-        content: Text('Effacer le journal d audit ?', style: TextStyle(color: Colors.white70)),
+        title: Text(l10n.confirm, style: TextStyle(color: Colors.white)),
+        content: Text(l10n.clearLogQuestion, style: TextStyle(color: Colors.white70)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Effacer', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.clearAction, style: TextStyle(color: Colors.red))),
         ],
       ),
     );

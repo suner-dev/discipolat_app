@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
@@ -32,18 +33,19 @@ class _AdminCustomFieldsScreenState extends State<AdminCustomFieldsScreen> {
     final nameCtrl = TextEditingController();
     final entityCtrl = TextEditingController(text: 'SOUL');
     final typeCtrl = TextEditingController(text: 'TEXT');
+    final l10n = AppLocalizations.of(context);
     await showDialog(context: context, builder: (ctx) => AlertDialog(
       backgroundColor: AppColors.cardDark,
-      title: const Text('Nouveau champ', style: TextStyle(color: Colors.white)),
+      title: Text(l10n.newField, style: const TextStyle(color: Colors.white)),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(controller: nameCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nom du champ')),
+        TextField(controller: nameCtrl, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: l10n.fieldNameLabel)),
         const SizedBox(height: 8),
-        TextField(controller: entityCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Entité (SOUL, USER, DEPARTMENT…)')),
+        TextField(controller: entityCtrl, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: l10n.fieldEntityLabel)),
         const SizedBox(height: 8),
-        TextField(controller: typeCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Type (TEXT, NUMBER, DATE, SELECT, BOOLEAN)')),
+        TextField(controller: typeCtrl, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: l10n.fieldTypeLabel)),
       ]),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
         FilledButton(onPressed: () async {
           if (nameCtrl.text.trim().isEmpty) return;
           try {
@@ -53,7 +55,7 @@ class _AdminCustomFieldsScreenState extends State<AdminCustomFieldsScreen> {
             if (ctx.mounted) Navigator.pop(ctx);
             _load();
           } catch (_) {}
-        }, child: const Text('Créer')),
+        }, child: Text(l10n.create)),
       ],
     ));
   }
@@ -61,14 +63,14 @@ class _AdminCustomFieldsScreenState extends State<AdminCustomFieldsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Champs personnalisés'), actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _load)]),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).customFields), actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _load)]),
       drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton(onPressed: _create, child: const Icon(Icons.add)),
       body: _isLoading ? const ShimmerLoading(itemCount: 5) : _fields.isEmpty
           ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(Icons.text_fields, color: Colors.white.withValues(alpha: 0.15), size: 48),
               const SizedBox(height: 12),
-              Text('Aucun champ personnalisé', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+              Text(AppLocalizations.of(context).noCustomFields, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
             ]))
           : ListView.builder(padding: const EdgeInsets.all(12), itemCount: _fields.length, itemBuilder: (_, i) {
               final f = _fields[i] as Map<String, dynamic>;
@@ -82,8 +84,8 @@ class _AdminCustomFieldsScreenState extends State<AdminCustomFieldsScreen> {
                 ])),
                 IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.withValues(alpha: 0.6), size: 18), onPressed: () async {
                   final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(backgroundColor: AppColors.cardDark,
-                    title: const Text('Supprimer ?', style: TextStyle(color: Colors.white)),
-                    actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Non')), TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Oui'))]));
+                    title: Text(AppLocalizations.of(context).deleteQuestion, style: const TextStyle(color: Colors.white)),
+                    actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text(AppLocalizations.of(context).no)), TextButton(onPressed: () => Navigator.pop(c, true), child: Text(AppLocalizations.of(context).yes))]));
                   if (ok == true) { try { await _apiService.delete('/custom-fields/${f['id']}'); _load(); } catch (_) {} }
                 }),
               ]));

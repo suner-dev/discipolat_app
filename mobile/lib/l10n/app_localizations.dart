@@ -8,7 +8,10 @@ class AppLocalizations {
   AppLocalizations(this.locale);
 
   static AppLocalizations of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+    // Tolérant : retombe sur une instance FR si aucun delegate n'est installé
+    // (ex.: tests widget qui pompent l'écran sans MaterialApp localisé).
+    return Localizations.of<AppLocalizations>(context, AppLocalizations) ??
+        AppLocalizations(const Locale('fr'));
   }
 
   static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
@@ -59,6 +62,81 @@ class AppLocalizations {
   String get filter => translate('filter');
   String get refresh => translate('refresh');
   String get retry => translate('retry');
+
+  // ==================== LOT H1 — écrans historiques ====================
+  String get newField => translate('newField');
+  String get fieldNameLabel => translate('fieldNameLabel');
+  String get fieldEntityLabel => translate('fieldEntityLabel');
+  String get fieldTypeLabel => translate('fieldTypeLabel');
+  String get create => translate('create');
+  String get noCustomFields => translate('noCustomFields');
+  String get deleteQuestion => translate('deleteQuestion');
+  String get transferWorkflowTitle => translate('transferWorkflowTitle');
+  String get noConfiguration => translate('noConfiguration');
+  String get statusActive => translate('statusActive');
+  String get statusInactive => translate('statusInactive');
+  String stepsCount(int count) => translate('stepsCount').replaceAll('{count}', '$count');
+  String get initiatorRoles => translate('initiatorRoles');
+  String get validationMode => translate('validationMode');
+  String get requiredValidations => translate('requiredValidations');
+  String get delayHours => translate('delayHours');
+  String get circuitSteps => translate('circuitSteps');
+  String stepLabel(int index, String label) => translate('stepLabel')
+      .replaceAll('{index}', '$index').replaceAll('{label}', label);
+  String get configSaved => translate('configSaved');
+  String get saveFailed => translate('saveFailed');
+  String get deleteConfigQuestion => translate('deleteConfigQuestion');
+  String get deleteBlockedByRequests => translate('deleteBlockedByRequests');
+  String get memberRequestsTitle => translate('memberRequestsTitle');
+  String get tabMyRequests => translate('tabMyRequests');
+  String get tabInbox => translate('tabInbox');
+  String get newRequest => translate('newRequest');
+  String get requestType => translate('requestType');
+  String get recipient => translate('recipient');
+  String get subjectOptional => translate('subjectOptional');
+  String get messageHint => translate('messageHint');
+  String get attachments => translate('attachments');
+  String get sendError => translate('sendFailed');
+  String get noSentRequests => translate('noSentRequests');
+  String get noReceivedRequests => translate('noReceivedRequests');
+  String fromLabel(String name) => translate('fromLabel').replaceAll('{name}', name);
+  String get rejectAction => translate('reject');
+  String get resolve => translate('resolve');
+  String get securityTitle => translate('securityTitle');
+  String get authSection => translate('authSection');
+  String get biometricAuth => translate('biometricAuth');
+  String get biometricSubtitle => translate('biometricSubtitle');
+  String get pinCode => translate('pinCode');
+  String get pinSubtitle => translate('pinSubtitle');
+  String get changePinTitle => translate('changePinTitle');
+  String get currentPin => translate('currentPin');
+  String get newPin => translate('newPin');
+  String get pinUpdated => translate('pinUpdated');
+  String get pinIncorrect => translate('pinIncorrect');
+  String get sessionSection => translate('sessionSection');
+  String get sessionExpiry => translate('sessionExpiry');
+  String sessionExpirySubtitle(String value) => translate('sessionExpirySubtitle').replaceAll('{value}', value);
+  String get never => translate('never');
+  String minutesCount(int count) => translate('minutesCount').replaceAll('{count}', '$count');
+  String get screenProtection => translate('screenProtection');
+  String get screenProtectionSubtitle => translate('screenProtectionSubtitle');
+  String get auditSection => translate('auditSection');
+  String auditLogEntries(int count) => translate('auditLogEntries').replaceAll('{count}', '$count');
+  String get viewAuditSubtitle => translate('viewAuditSubtitle');
+  String get exportLog => translate('exportLog');
+  String get exportSubtitle => translate('exportSubtitle');
+  String get clearLog => translate('clearLog');
+  String get clearSubtitle => translate('clearSubtitle');
+  String get accountSection => translate('accountSection');
+  String get userLabel => translate('userLabel');
+  String get orgLabel => translate('orgLabel');
+  String get activeRoleLabel => translate('activeRoleLabel');
+  String get rolesLabel => translate('rolesLabel');
+  String get noEntries => translate('noEntries');
+  String get logExported => translate('logExported');
+  String entriesExported(int count) => translate('entriesExported').replaceAll('{count}', '$count');
+  String get clearLogQuestion => translate('clearLogQuestion');
+  String get clearAction => translate('clearAction');
   String get offline => translate('offline');
 
   // ==================== NAVIGATION ====================
@@ -777,6 +855,79 @@ class AppLocalizations {
     'activeMakers': 'Faiseurs actifs',
     'familiesAtRisk': 'Familles à risque',
     'twelveAxes': 'Les 12 axes de maturité',
+    // ---- Lot H1 : écrans historiques (admin custom-fields, workflow transferts) ----
+    'newField': 'Nouveau champ',
+    'fieldNameLabel': 'Nom du champ',
+    'fieldEntityLabel': 'Entité (SOUL, USER, DEPARTMENT…)',
+    'fieldTypeLabel': 'Type (TEXT, NUMBER, DATE, SELECT, BOOLEAN)',
+    'create': 'Créer',
+    'noCustomFields': 'Aucun champ personnalisé',
+    'deleteQuestion': 'Supprimer ?',
+    'transferWorkflowTitle': 'Workflow de transfert',
+    'noConfiguration': 'Aucune configuration',
+    'statusActive': 'Actif',
+    'statusInactive': 'Inactif',
+    'stepsCount': '{count} étape(s)',
+    'initiatorRoles': 'Rôles initiateurs',
+    'validationMode': 'Mode de validation',
+    'requiredValidations': 'Validations requises',
+    'delayHours': 'Délai (heures)',
+    'circuitSteps': 'Étapes du circuit',
+    'stepLabel': 'Étape {index} — {label}',
+    'configSaved': 'Configuration enregistrée',
+    'saveFailed': 'Erreur lors de l\u2019enregistrement',
+    'deleteConfigQuestion': 'Supprimer cette configuration ?',
+    'deleteBlockedByRequests': 'Suppression impossible : des demandes utilisent cette configuration',
+    // ---- Lot H1b : demandes membres + sécurité ----
+    'memberRequestsTitle': 'Demandes',
+    'tabMyRequests': 'Mes demandes',
+    'tabInbox': 'Reçues',
+    'newRequest': 'Nouvelle demande',
+    'requestType': 'Type',
+    'recipient': 'Destinataire',
+    'subjectOptional': 'Objet (optionnel)',
+    'messageHint': 'Message...',
+    'attachments': 'Pièces jointes',
+    'sendFailed': 'Erreur lors de l\u2019envoi',
+    'noSentRequests': 'Aucune demande envoyée',
+    'noReceivedRequests': 'Aucune demande reçue',
+    'fromLabel': 'De : {name}',
+    'resolve': 'Résoudre',
+    'securityTitle': 'Sécurité et confidentialité',
+    'authSection': 'Authentification',
+    'biometricAuth': 'Authentification biométrique',
+    'biometricSubtitle': 'Empreintes ou Face ID',
+    'pinCode': 'Code PIN',
+    'pinSubtitle': 'Configurer un code PIN de secours',
+    'changePinTitle': 'Changer le code PIN',
+    'currentPin': 'Code PIN actuel',
+    'newPin': 'Nouveau code PIN',
+    'pinUpdated': 'Code PIN mis à jour',
+    'pinIncorrect': 'Code PIN incorrect',
+    'sessionSection': 'Session',
+    'sessionExpiry': 'Expiration de session',
+    'sessionExpirySubtitle': 'Déconnexion après {value} d\u2019inactivité',
+    'never': 'Jamais',
+    'minutesCount': '{count} minutes',
+    'screenProtection': 'Protection d\u2019écran',
+    'screenProtectionSubtitle': 'Empêcher les captures d\u2019écran',
+    'auditSection': 'Audit et activité',
+    'auditLogEntries': 'Journal d\u2019audit ({count} entrées)',
+    'viewAuditSubtitle': 'Consulter les actions enregistrées',
+    'exportLog': 'Exporter le journal',
+    'exportSubtitle': 'CSV ou JSON pour archivage',
+    'clearLog': 'Effacer le journal',
+    'clearSubtitle': 'Supprimer toutes les entrées (RGPD)',
+    'accountSection': 'Informations du compte',
+    'userLabel': 'Utilisateur',
+    'orgLabel': 'Organisation',
+    'activeRoleLabel': 'Rôle actif',
+    'rolesLabel': 'Rôles',
+    'noEntries': 'Aucune entrée',
+    'logExported': 'Journal exporté',
+    'entriesExported': '{count} entrées exportées',
+    'clearLogQuestion': 'Effacer le journal d\u2019audit ?',
+    'clearAction': 'Effacer',
   };
 
   // ==================== ENGLISH ====================
@@ -1139,6 +1290,79 @@ class AppLocalizations {
     'activeMakers': 'Active makers',
     'familiesAtRisk': 'Families at risk',
     'twelveAxes': 'The 12 maturity axes',
+    // ---- Batch H1: historic screens (admin custom fields, transfer workflows) ----
+    'newField': 'New field',
+    'fieldNameLabel': 'Field name',
+    'fieldEntityLabel': 'Entity (SOUL, USER, DEPARTMENT…)',
+    'fieldTypeLabel': 'Type (TEXT, NUMBER, DATE, SELECT, BOOLEAN)',
+    'create': 'Create',
+    'noCustomFields': 'No custom fields',
+    'deleteQuestion': 'Delete?',
+    'transferWorkflowTitle': 'Transfer workflow',
+    'noConfiguration': 'No configuration',
+    'statusActive': 'Active',
+    'statusInactive': 'Inactive',
+    'stepsCount': '{count} step(s)',
+    'initiatorRoles': 'Initiator roles',
+    'validationMode': 'Validation mode',
+    'requiredValidations': 'Required validations',
+    'delayHours': 'Delay (hours)',
+    'circuitSteps': 'Circuit steps',
+    'stepLabel': 'Step {index} — {label}',
+    'configSaved': 'Configuration saved',
+    'saveFailed': 'Error while saving',
+    'deleteConfigQuestion': 'Delete this configuration?',
+    'deleteBlockedByRequests': 'Cannot delete: requests use this configuration',
+    // ---- Batch H1b: member requests + security ----
+    'memberRequestsTitle': 'Requests',
+    'tabMyRequests': 'My requests',
+    'tabInbox': 'Received',
+    'newRequest': 'New request',
+    'requestType': 'Type',
+    'recipient': 'Recipient',
+    'subjectOptional': 'Subject (optional)',
+    'messageHint': 'Message...',
+    'attachments': 'Attachments',
+    'sendFailed': 'Error while sending',
+    'noSentRequests': 'No sent requests',
+    'noReceivedRequests': 'No received requests',
+    'fromLabel': 'From: {name}',
+    'resolve': 'Resolve',
+    'securityTitle': 'Security & privacy',
+    'authSection': 'Authentication',
+    'biometricAuth': 'Biometric authentication',
+    'biometricSubtitle': 'Fingerprints or Face ID',
+    'pinCode': 'PIN code',
+    'pinSubtitle': 'Set up a backup PIN code',
+    'changePinTitle': 'Change PIN code',
+    'currentPin': 'Current PIN code',
+    'newPin': 'New PIN code',
+    'pinUpdated': 'PIN code updated',
+    'pinIncorrect': 'Incorrect PIN code',
+    'sessionSection': 'Session',
+    'sessionExpiry': 'Session expiry',
+    'sessionExpirySubtitle': 'Sign out after {value} of inactivity',
+    'never': 'Never',
+    'minutesCount': '{count} minutes',
+    'screenProtection': 'Screen protection',
+    'screenProtectionSubtitle': 'Prevent screenshots',
+    'auditSection': 'Audit & activity',
+    'auditLogEntries': 'Audit log ({count} entries)',
+    'viewAuditSubtitle': 'Review recorded actions',
+    'exportLog': 'Export log',
+    'exportSubtitle': 'CSV or JSON for archiving',
+    'clearLog': 'Clear log',
+    'clearSubtitle': 'Delete all entries (GDPR)',
+    'accountSection': 'Account information',
+    'userLabel': 'User',
+    'orgLabel': 'Organization',
+    'activeRoleLabel': 'Active role',
+    'rolesLabel': 'Roles',
+    'noEntries': 'No entries',
+    'logExported': 'Log exported',
+    'entriesExported': '{count} entries exported',
+    'clearLogQuestion': 'Clear the audit log?',
+    'clearAction': 'Clear',
   };
 
   // ==================== PORTUGUESE ====================
@@ -1501,6 +1725,78 @@ class AppLocalizations {
     'activeMakers': 'Faiseurs ativos',
     'familiesAtRisk': 'Famílias em risco',
     'twelveAxes': 'Os 12 eixos de maturidade',
+    // ---- Lote H1: ecrãs históricos (campos personalizados, fluxos de transferência) ----
+    'newField': 'Novo campo',
+    'fieldNameLabel': 'Nome do campo',
+    'fieldEntityLabel': 'Entidade (SOUL, USER, DEPARTMENT…)',
+    'fieldTypeLabel': 'Tipo (TEXT, NUMBER, DATE, SELECT, BOOLEAN)',
+    'create': 'Criar',
+    'noCustomFields': 'Nenhum campo personalizado',
+    'deleteQuestion': 'Eliminar?',
+    'transferWorkflowTitle': 'Fluxo de transferência',
+    'noConfiguration': 'Nenhuma configuração',
+    'statusActive': 'Ativo',
+    'statusInactive': 'Inativo',
+    'stepsCount': '{count} etapa(s)',
+    'initiatorRoles': 'Papéis iniciadores',
+    'validationMode': 'Modo de validação',
+    'requiredValidations': 'Validações exigidas',
+    'delayHours': 'Prazo (horas)',
+    'circuitSteps': 'Etapas do circuito',
+    'stepLabel': 'Etapa {index} — {label}',
+    'configSaved': 'Configuração guardada',
+    'saveFailed': 'Erro ao guardar',
+    'deleteConfigQuestion': 'Eliminar esta configuração?',
+    'deleteBlockedByRequests': 'Eliminação impossível: pedidos usam esta configuração',
+    // ---- Lote H1b: pedidos de membros + segurança ----
+    'memberRequestsTitle': 'Pedidos',
+    'tabMyRequests': 'Meus pedidos',
+    'tabInbox': 'Recebidos',
+    'newRequest': 'Novo pedido',
+    'requestType': 'Tipo',
+    'recipient': 'Destinatário',
+    'subjectOptional': 'Assunto (opcional)',
+    'attachments': 'Anexos',
+    'sendFailed': 'Erro ao enviar',
+    'noSentRequests': 'Nenhum pedido enviado',
+    'noReceivedRequests': 'Nenhum pedido recebido',
+    'fromLabel': 'De: {name}',
+    'resolve': 'Resolver',
+    'securityTitle': 'Segurança e privacidade',
+    'authSection': 'Autenticação',
+    'biometricAuth': 'Autenticação biométrica',
+    'biometricSubtitle': 'Impressões digitais ou Face ID',
+    'pinCode': 'Código PIN',
+    'pinSubtitle': 'Configurar um código PIN de reserva',
+    'changePinTitle': 'Alterar código PIN',
+    'currentPin': 'Código PIN atual',
+    'newPin': 'Novo código PIN',
+    'pinUpdated': 'Código PIN atualizado',
+    'pinIncorrect': 'Código PIN incorreto',
+    'sessionSection': 'Sessão',
+    'sessionExpiry': 'Expiração da sessão',
+    'sessionExpirySubtitle': 'Desconexão após {value} de inatividade',
+    'never': 'Nunca',
+    'minutesCount': '{count} minutos',
+    'screenProtection': 'Proteção de ecrã',
+    'screenProtectionSubtitle': 'Impedir capturas de ecrã',
+    'auditSection': 'Auditoria e atividade',
+    'auditLogEntries': 'Registo de auditoria ({count} entradas)',
+    'viewAuditSubtitle': 'Consultar ações registadas',
+    'exportLog': 'Exportar o registo',
+    'exportSubtitle': 'CSV ou JSON para arquivo',
+    'clearLog': 'Limpar o registo',
+    'clearSubtitle': 'Eliminar todas as entradas (RGPD)',
+    'accountSection': 'Informações da conta',
+    'userLabel': 'Utilizador',
+    'orgLabel': 'Organização',
+    'activeRoleLabel': 'Papel ativo',
+    'rolesLabel': 'Papéis',
+    'noEntries': 'Nenhuma entrada',
+    'logExported': 'Registo exportado',
+    'entriesExported': '{count} entradas exportadas',
+    'clearLogQuestion': 'Limpar o registo de auditoria?',
+    'clearAction': 'Limpar',
   };
 }
 
