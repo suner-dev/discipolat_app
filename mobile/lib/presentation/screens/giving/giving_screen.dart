@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/secure_screen.dart';
 
 /// Dîmes & Offrandes 2.0 — don par Mobile Money avec suivi du statut.
@@ -87,7 +88,7 @@ class _GivingScreenState extends State<GivingScreen> {
       final id = res.data['id'] as String?;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Paiement initié — référence $ref'),
+            content: Text(AppLocalizations.of(context).paymentInitiated(ref ?? '')),
             backgroundColor: const Color(0xFF2E7D32)));
       }
       _amountCtrl.clear();
@@ -109,9 +110,9 @@ class _GivingScreenState extends State<GivingScreen> {
                 attempts > 10) {
               t.cancel();
               if (mounted && status == 'CONFIRMED') {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content:
-                        Text('Paiement confirmé — merci pour votre don !'),
+                        Text(AppLocalizations.of(context).paymentConfirmed),
                     backgroundColor: Color(0xFF2E7D32)));
               }
               if (mounted) setState(() => _pendingRef = null);
@@ -125,8 +126,8 @@ class _GivingScreenState extends State<GivingScreen> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Échec de l\'initiation du paiement'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context).paymentFailed),
             backgroundColor: Color(0xFFC62828)));
       }
     } finally {
@@ -140,7 +141,7 @@ class _GivingScreenState extends State<GivingScreen> {
       screenName: 'GivingScreen',
       auditAction: AuditActions.viewPayments,
       child: Scaffold(
-      appBar: AppBar(title: const Text('Dîmes & Offrandes')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).tithesAndOfferings)),
       drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: _loadMine,
@@ -153,8 +154,8 @@ class _GivingScreenState extends State<GivingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('Donner maintenant',
-                        style: TextStyle(
+                    Text(AppLocalizations.of(context).giveNow,
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w600)),
@@ -163,8 +164,8 @@ class _GivingScreenState extends State<GivingScreen> {
                       controller: _amountCtrl,
                       keyboardType: TextInputType.number,
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Montant (XOF)',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).amountXOF,
                         labelStyle: TextStyle(color: Colors.white54),
                         prefixIcon: Icon(Icons.payments_rounded,
                             color: Colors.white54),
@@ -172,7 +173,7 @@ class _GivingScreenState extends State<GivingScreen> {
                       validator: (v) => (v == null ||
                               num.tryParse(v) == null ||
                               num.parse(v) <= 0)
-                          ? 'Montant invalide'
+                          ? AppLocalizations.of(context).invalidAmount
                           : null,
                     ),
                     const SizedBox(height: 10),
@@ -180,8 +181,8 @@ class _GivingScreenState extends State<GivingScreen> {
                       initialValue: _operator,
                       dropdownColor: const Color(0xFF1E293B),
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Opérateur',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).operatorLabel,
                         labelStyle: TextStyle(color: Colors.white54),
                         prefixIcon: Icon(Icons.smartphone_rounded,
                             color: Colors.white54),
@@ -198,8 +199,8 @@ class _GivingScreenState extends State<GivingScreen> {
                       initialValue: _purpose,
                       dropdownColor: const Color(0xFF1E293B),
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Destination',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).destinationLabel,
                         labelStyle: TextStyle(color: Colors.white54),
                         prefixIcon: Icon(Icons.church_rounded,
                             color: Colors.white54),
@@ -216,8 +217,8 @@ class _GivingScreenState extends State<GivingScreen> {
                       controller: _phoneCtrl,
                       keyboardType: TextInputType.phone,
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Téléphone Mobile Money (optionnel)',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).mobilePhoneOptional,
                         labelStyle: TextStyle(color: Colors.white54),
                         prefixIcon: Icon(Icons.phone_rounded,
                             color: Colors.white54),
@@ -234,7 +235,7 @@ class _GivingScreenState extends State<GivingScreen> {
                                   strokeWidth: 2))
                           : const Icon(
                               Icons.volunteer_activism_rounded),
-                      label: const Text('Donner maintenant'),
+                      label: Text(AppLocalizations.of(context).giveNow),
                     ),
                     if (_pendingRef != null)
                       Padding(
@@ -249,8 +250,8 @@ class _GivingScreenState extends State<GivingScreen> {
                                     strokeWidth: 2)),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
-                                'En attente de confirmation ($_pendingRef)…',
+                              child:                  Text(
+                                AppLocalizations.of(context).waitingConfirmation(_pendingRef!),
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                     color: Color(0xFFFFB300),
@@ -275,21 +276,21 @@ class _GivingScreenState extends State<GivingScreen> {
 
   List<Widget> _buildHistory() {
     if (_isLoading) {
-      return const [
-        Center(
+      return [
+        const Center(
             child: Padding(
                 padding: EdgeInsets.all(20),
                 child: CircularProgressIndicator())),
       ];
     }
     if (_mine.isEmpty) {
-      return const [
+      return [
         GlassCard(
           child: Padding(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             child: Center(
               child: Text(
-                  'Aucun don enregistré pour le moment.\nQue le Seigneur bénisse votre générosité !',
+                  AppLocalizations.of(context).noDonationsYet,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white54)),
             ),
@@ -306,10 +307,10 @@ class _GivingScreenState extends State<GivingScreen> {
         _ => const Color(0xFFE53935),
       };
       final label = switch (status) {
-        'CONFIRMED' => 'Confirmé',
-        'PENDING' => 'En attente',
-        'FAILED' => 'Échoué',
-        'CANCELLED' => 'Annulé',
+        'CONFIRMED' => AppLocalizations.of(context).statusConfirmed,
+        'PENDING' => AppLocalizations.of(context).statusPending,
+        'FAILED' => AppLocalizations.of(context).statusFailed,
+        'CANCELLED' => AppLocalizations.of(context).statusCancelled,
         _ => status,
       };
       return Padding(

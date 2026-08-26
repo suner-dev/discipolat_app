@@ -229,6 +229,50 @@ class AppLocalizations {
   String retreatLabel(String label) => translate('retreatLabel').replaceAll('{label}', label);
   String get globalView => translate('globalView');
   String sinceDate(String date) => translate('sinceDate').replaceAll('{date}', date);
+  // ── Lot H4 : badges / giving ──
+  String gamificationTitle(int count) =>
+      translate('gamificationTitle').replaceAll('{count}', '$count');
+  String get tabMyBadges => translate('tabMyBadges');
+  String get tabLeaderboard => translate('tabLeaderboard');
+  String get checkMyBadges => translate('checkMyBadges');
+  String get progressionLabel => translate('progressionLabel');
+  String percentCompleted(int pct) =>
+      translate('percentCompleted').replaceAll('{pct}', '$pct');
+  String badgesEarned(int count) =>
+      translate('badgesEarned').replaceAll('{count}', '$count');
+  String get scoresPerCriteria => translate('scoresPerCriteria');
+  String earnedBadges(int count) =>
+      translate('earnedBadges').replaceAll('{count}', '$count');
+  String get toUnlock => translate('toUnlock');
+  String get noLeaderboard => translate('noLeaderboard');
+  String get badgesUnit => translate('badgesUnit');
+  String newBadgesEarned(int count) =>
+      translate('newBadgesEarned').replaceAll('{count}', '$count');
+  String get noNewBadges => translate('noNewBadges');
+  String get checkBadgesError => translate('checkBadgesError');
+  String get criteriaVisits => translate('criteriaVisits');
+  String get criteriaInteractions => translate('criteriaInteractions');
+  String get criteriaEvangelism => translate('criteriaEvangelism');
+  String get criteriaAttendance => translate('criteriaAttendance');
+  String get criteriaLoyalty => translate('criteriaLoyalty');
+  String get tithesAndOfferings => translate('tithesAndOfferings');
+  String get giveNow => translate('giveNow');
+  String get amountXOF => translate('amountXOF');
+  String get invalidAmount => translate('invalidAmount');
+  String get operatorLabel => translate('operatorLabel');
+  String get destinationLabel => translate('destinationLabel');
+  String get mobilePhoneOptional => translate('mobilePhoneOptional');
+  String paymentInitiated(String ref) =>
+      translate('paymentInitiated').replaceAll('{ref}', ref);
+  String get paymentFailed => translate('paymentFailed');
+  String get paymentConfirmed => translate('paymentConfirmed');
+  String waitingConfirmation(String ref) =>
+      translate('waitingConfirmation').replaceAll('{ref}', ref);
+  String get noDonationsYet => translate('noDonationsYet');
+  String get statusConfirmed => translate('statusConfirmed');
+  String get statusPending => translate('statusPending');
+  String get statusFailed => translate('statusFailed');
+  String get statusCancelled => translate('statusCancelled');
 
   // ==================== NAVIGATION ====================
   String get navDashboard => translate('navDashboard');
@@ -1096,6 +1140,43 @@ class AppLocalizations {
     'retreatLabel': '← Reculer {label}',
     'globalView': 'Vue globale',
     'sinceDate': 'Depuis {date}',
+    // ── Lot H4 : badges / giving ──
+    'gamificationTitle': 'Gamification · {count} badges',
+    'tabMyBadges': 'Mes badges',
+    'tabLeaderboard': 'Classement',
+    'checkMyBadges': 'Vérifier mes badges',
+    'progressionLabel': 'Progression',
+    'percentCompleted': '{pct}% complété',
+    'badgesEarned': '{count} badge(s) gagné(s)',
+    'scoresPerCriteria': 'Scores par critère',
+    'earnedBadges': 'Badges gagnés ({count})',
+    'toUnlock': 'À débloquer',
+    'noLeaderboard': 'Aucun classement disponible',
+    'badgesUnit': 'badge(s)',
+    'newBadgesEarned': '🎉 {count} nouveau(x) badge(s) gagné(s) !',
+    'noNewBadges': 'Aucun nouveau badge pour le moment',
+    'checkBadgesError': 'Erreur lors de la vérification',
+    'criteriaVisits': 'Visites',
+    'criteriaInteractions': 'Interactions',
+    'criteriaEvangelism': 'Évangélisation',
+    'criteriaAttendance': 'Présence',
+    'criteriaLoyalty': 'Fidélité',
+    'tithesAndOfferings': 'Dîmes & Offrandes',
+    'giveNow': 'Donner maintenant',
+    'amountXOF': 'Montant (XOF)',
+    'invalidAmount': 'Montant invalide',
+    'operatorLabel': 'Opérateur',
+    'destinationLabel': 'Destination',
+    'mobilePhoneOptional': 'Téléphone Mobile Money (optionnel)',
+    'paymentInitiated': 'Paiement initié — référence {ref}',
+    'paymentFailed': 'Échec de l\'initiation du paiement',
+    'paymentConfirmed': 'Paiement confirmé — merci pour votre don !',
+    'waitingConfirmation': 'En attente de confirmation ({ref})…',
+    'noDonationsYet': 'Aucun don enregistré pour le moment.\nQue le Seigneur bénisse votre générosité !',
+    'statusConfirmed': 'Confirmé',
+    'statusPending': 'En attente',
+    'statusFailed': 'Échoué',
+    'statusCancelled': 'Annulé',
   };
 
   // ==================== ENGLISH ====================
@@ -1608,6 +1689,42 @@ class AppLocalizations {
     'retreatLabel': '← Retreat {label}',
     'globalView': 'Global view',
     'sinceDate': 'Since {date}',
+    'gamificationTitle': 'Gamification · {count} badges',
+    'tabMyBadges': 'My badges',
+    'tabLeaderboard': 'Leaderboard',
+    'checkMyBadges': 'Check my badges',
+    'progressionLabel': 'Progression',
+    'percentCompleted': '{pct}% completed',
+    'badgesEarned': '{count} badge(s) earned',
+    'scoresPerCriteria': 'Scores per criteria',
+    'earnedBadges': 'Earned badges ({count})',
+    'toUnlock': 'To unlock',
+    'noLeaderboard': 'No leaderboard available',
+    'badgesUnit': 'badge(s)',
+    'newBadgesEarned': '🎉 {count} new badge(s) earned!',
+    'noNewBadges': 'No new badges for now',
+    'checkBadgesError': 'Error while checking badges',
+    'criteriaVisits': 'Visits',
+    'criteriaInteractions': 'Interactions',
+    'criteriaEvangelism': 'Evangelism',
+    'criteriaAttendance': 'Attendance',
+    'criteriaLoyalty': 'Loyalty',
+    'tithesAndOfferings': 'Tithes & offerings',
+    'giveNow': 'Give now',
+    'amountXOF': 'Amount (XOF)',
+    'invalidAmount': 'Invalid amount',
+    'operatorLabel': 'Operator',
+    'destinationLabel': 'Destination',
+    'mobilePhoneOptional': 'Mobile Money phone (optional)',
+    'paymentInitiated': 'Payment initiated — reference {ref}',
+    'paymentFailed': 'Payment initiation failed',
+    'paymentConfirmed': 'Payment confirmed — thank you for your donation!',
+    'waitingConfirmation': 'Waiting for confirmation ({ref})…',
+    'noDonationsYet': 'No donations recorded yet.\nMay the Lord bless your generosity!',
+    'statusConfirmed': 'Confirmed',
+    'statusPending': 'Pending',
+    'statusFailed': 'Failed',
+    'statusCancelled': 'Cancelled',
   };
 
   // ==================== PORTUGUESE ====================
@@ -2120,6 +2237,42 @@ class AppLocalizations {
     'retreatLabel': '← Retroceder {label}',
     'globalView': 'Vista global',
     'sinceDate': 'Desde {date}',
+    'gamificationTitle': 'Gamificação · {count} badges',
+    'tabMyBadges': 'As minhas badges',
+    'tabLeaderboard': 'Classificação',
+    'checkMyBadges': 'Verificar badges',
+    'progressionLabel': 'Progressão',
+    'percentCompleted': '{pct}% concluído',
+    'badgesEarned': '{count} badge(s) ganha(s)',
+    'scoresPerCriteria': 'Pontuações por critério',
+    'earnedBadges': 'Badges ganhas ({count})',
+    'toUnlock': 'Por desbloquear',
+    'noLeaderboard': 'Sem classificação disponível',
+    'badgesUnit': 'badge(s)',
+    'newBadgesEarned': '🎉 {count} nova(s) badge(s) ganha(s)!',
+    'noNewBadges': 'Nenhuma badge nova por agora',
+    'checkBadgesError': 'Erro ao verificar badges',
+    'criteriaVisits': 'Visitas',
+    'criteriaInteractions': 'Interações',
+    'criteriaEvangelism': 'Evangelismo',
+    'criteriaAttendance': 'Presença',
+    'criteriaLoyalty': 'Fidelidade',
+    'tithesAndOfferings': 'Dízimos e ofertas',
+    'giveNow': 'Dar agora',
+    'amountXOF': 'Montante (XOF)',
+    'invalidAmount': 'Montante inválido',
+    'operatorLabel': 'Operador',
+    'destinationLabel': 'Destino',
+    'mobilePhoneOptional': 'Telemóvel Mobile Money (opcional)',
+    'paymentInitiated': 'Pagamento iniciado — referência {ref}',
+    'paymentFailed': 'Falha ao iniciar pagamento',
+    'paymentConfirmed': 'Pagamento confirmado — obrigado pela sua generosidade!',
+    'waitingConfirmation': 'Aguardar confirmação ({ref})…',
+    'noDonationsYet': 'Nenhuma doação registada ainda.\nQue o Senhor abençoe a sua generosidade!',
+    'statusConfirmed': 'Confirmado',
+    'statusPending': 'Pendente',
+    'statusFailed': 'Falhado',
+    'statusCancelled': 'Cancelado',
   };
 }
 

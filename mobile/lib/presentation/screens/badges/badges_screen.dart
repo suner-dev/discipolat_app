@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Écran de gamification : badges, scores, progression, classement.
 class BadgesScreen extends StatefulWidget {
@@ -61,8 +62,8 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(newBadges.isNotEmpty
-                ? '🎉 ${newBadges.length} nouveau${newBadges.length > 1 ? 'x' : ''} badge${newBadges.length > 1 ? 's' : ''} gagné${newBadges.length > 1 ? 's' : ''} !'
-                : 'Aucun nouveau badge pour le moment'),
+                ? AppLocalizations.of(context).newBadgesEarned(newBadges.length)
+                : AppLocalizations.of(context).noNewBadges),
             backgroundColor: newBadges.isNotEmpty ? Colors.green : Colors.grey.shade700,
           ),
         );
@@ -71,7 +72,7 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la vérification'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context).checkBadgesError), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -89,13 +90,13 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Gamification · $totalBadges badges'),
+        title: Text(AppLocalizations.of(context).gamificationTitle(totalBadges)),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'Mes badges'),
-            Tab(text: 'Classement'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context).tabMyBadges),
+            Tab(text: AppLocalizations.of(context).tabLeaderboard),
           ],
         ),
       ),
@@ -105,7 +106,7 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
         icon: _isEvaluating
             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
             : const Icon(Icons.stars, size: 16),
-        label: const Text('Vérifier mes badges'),
+        label: Text(AppLocalizations.of(context).checkMyBadges),
         backgroundColor: AppColors.primary,
       ),
       body: _isLoading
@@ -146,18 +147,18 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
                 ])),
                 const SizedBox(width: 16),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Progression', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
-                  Text('${total > 0 ? (totalBadges / total * 100).round() : 0}% complété',
+                  Text(AppLocalizations.of(context).progressionLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+                  Text(AppLocalizations.of(context).percentCompleted(total > 0 ? (totalBadges / total * 100).round() : 0),
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                   const SizedBox(height: 4),
-                  Text('${earned.length} badge${earned.length > 1 ? 's' : ''} gagné${earned.length > 1 ? 's' : ''}',
+                  Text(AppLocalizations.of(context).badgesEarned(earned.length),
                       style: const TextStyle(color: Colors.amber, fontSize: 13, fontWeight: FontWeight.w600)),
                 ])),
               ]),
               const SizedBox(height: 12),
               // Score breakdown
               if (scores.isNotEmpty) ...[
-                Text('Scores par critère', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11, fontWeight: FontWeight.w600)),
+                Text(AppLocalizations.of(context).scoresPerCriteria, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 ...scores.entries.map((e) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
@@ -181,7 +182,7 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
             Row(children: [
               const Icon(Icons.emoji_events, color: Colors.amber, size: 18),
               const SizedBox(width: 8),
-              Text('Badges gagnés (${earned.length})', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+              Text(AppLocalizations.of(context).earnedBadges(earned.length), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
             ]),
             const SizedBox(height: 8),
             ...earned.map((b) => _badgeCard(b, earned: true)),
@@ -192,7 +193,7 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
           Row(children: [
             Icon(Icons.lock_outline, color: Colors.white.withValues(alpha: 0.4), size: 18),
             const SizedBox(width: 8),
-            Text('À débloquer', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontWeight: FontWeight.w700, fontSize: 14)),
+            Text(AppLocalizations.of(context).toUnlock, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontWeight: FontWeight.w700, fontSize: 14)),
           ]),
           const SizedBox(height: 8),
           ...badges.where((b) => b['gagne'] != true).map((b) => _badgeCard(b, earned: false)),
@@ -257,7 +258,7 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
       return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(Icons.leaderboard, color: Colors.white.withValues(alpha: 0.15), size: 48),
         const SizedBox(height: 12),
-        Text('Aucun classement disponible', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+        Text(AppLocalizations.of(context).noLeaderboard, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
       ]));
     }
 
@@ -285,7 +286,7 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
             // Name
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(nom, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-              Text('$badges badge${badges > 1 ? 's' : ''}', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+              Text('$badges ${AppLocalizations.of(context).badgesUnit}', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
             ])),
             // Score
             Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -309,12 +310,13 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
   }
 
   String _criteriaLabel(String key) {
+    final l10n = AppLocalizations.of(context);
     switch (key) {
-      case 'VISITES': return 'Visites';
-      case 'INTERACTIONS': return 'Interactions';
-      case 'EVANGELISATION': return 'Évangélisation';
-      case 'PRESENCE': return 'Présence';
-      case 'FIDELITE': return 'Fidélité';
+      case 'VISITES': return l10n.criteriaVisits;
+      case 'INTERACTIONS': return l10n.criteriaInteractions;
+      case 'EVANGELISATION': return l10n.criteriaEvangelism;
+      case 'PRESENCE': return l10n.criteriaAttendance;
+      case 'FIDELITE': return l10n.criteriaLoyalty;
       default: return key;
     }
   }
