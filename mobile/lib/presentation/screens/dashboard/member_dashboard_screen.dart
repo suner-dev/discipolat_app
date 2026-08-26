@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
@@ -97,7 +98,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mon espace'),
+        title: Text(AppLocalizations.of(context).dashMySpace),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
@@ -174,7 +175,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                         childAspectRatio: 1.5,
                         children: [
                           GlassStatCard(
-                            label: 'Présences',
+                            label: AppLocalizations.of(context).dashPresenceLabel,
                             value: '$presencesCount/$totalPresences',
                             icon: Icons.check_circle,
                             gradientStart: Colors.green,
@@ -182,7 +183,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                             onTap: () => context.go('/profile'),
                           ),
                           GlassStatCard(
-                            label: 'Progression',
+                            label: AppLocalizations.of(context).dashMyProgression,
                             value: '${_progression?['niveauActuel'] ?? soul['niveauCroissance'] ?? '—'}',
                             icon: Icons.trending_up,
                             gradientStart: Colors.purple,
@@ -190,14 +191,14 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                             onTap: () => context.go('/profile'),
                           ),
                           GlassStatCard(
-                            label: 'Statut',
+                            label: AppLocalizations.of(context).dashDiscipline,
                             value: (soul['statut'] ?? 'MEMBRE').toString().replaceAll('_', ' '),
                             icon: Icons.emoji_people,
                             gradientStart: Colors.blue,
                             gradientEnd: Colors.cyan,
                           ),
                           GlassStatCard(
-                            label: 'Événements',
+                            label: AppLocalizations.of(context).dashUpcomingEvents,
                             value: '${_events.length}',
                             icon: Icons.event,
                             gradientStart: Colors.orange,
@@ -210,7 +211,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
 
                       // ==================== MA FAMILLE ====================
                       if (famille.isNotEmpty) ...[
-                        SectionTitle(title: 'Ma famille', icon: Icons.home),
+                        SectionTitle(title: AppLocalizations.of(context).dashMyFamily, icon: Icons.home),
                         GlassCard(
                           padding: const EdgeInsets.all(16),
                           child: Row(
@@ -229,7 +230,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(famille['nom'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                                    Text('Chef : ${famille['chefNom'] ?? '—'}', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                                    Text(AppLocalizations.of(context).dashChefLabel(famille['chefNom'] ?? '—'), style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                                   ],
                                 ),
                               ),
@@ -241,7 +242,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
 
                       // ==================== MON FAISEUR ====================
                       if (faiseur.isNotEmpty) ...[
-                        SectionTitle(title: 'Mon faiseur', icon: Icons.person),
+                        SectionTitle(title: AppLocalizations.of(context).dashMyMaker, icon: Icons.person),
                         GlassCard(
                           padding: const EdgeInsets.all(16),
                           child: Row(
@@ -253,7 +254,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(faiseur['nom'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                    const Text('Accompagnateur', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                                    Text(AppLocalizations.of(context).dashCompanion, style: TextStyle(color: Colors.white38, fontSize: 11)),
                                   ],
                                 ),
                               ),
@@ -265,7 +266,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
 
                       // ==================== MES DÉPARTEMENTS ====================
                       if (departements.isNotEmpty) ...[
-                        SectionTitle(title: 'Mes départements', icon: Icons.business),
+                        SectionTitle(title: AppLocalizations.of(context).dashMyDepartments, icon: Icons.business),
                         ...departements.map((d) {
                           final dept = d as Map<String, dynamic>;
                           return GlassCard(
@@ -285,7 +286,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(dept['nom'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                                      Text('Responsable : ${dept['responsableNom'] ?? '—'}',
+                                      Text(AppLocalizations.of(context).dashRespLabel(dept['responsableNom'] ?? '—'),
                                           style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
                                     ],
                                   ),
@@ -299,15 +300,15 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
 
                       // ==================== PROGRESSION SPIRITUELLE ====================
                       if (_progression != null) ...[
-                        SectionTitle(title: 'Ma progression', icon: Icons.trending_up),
+                        SectionTitle(title: AppLocalizations.of(context).dashMyProgression, icon: Icons.trending_up),
                         GlassCard(
                           padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _progressionRow('Niveau actuel', '${_progression!['niveauActuel'] ?? soul['niveauCroissance'] ?? 1}', Colors.purple),
+                              _progressionRow(AppLocalizations.of(context).dashCurrentLevel, '${_progression!['niveauActuel'] ?? soul['niveauCroissance'] ?? 1}', Colors.purple),
                               const SizedBox(height: 8),
-                              _progressionRow('Présences cette semaine', '${_progression!['presencesSemaine'] ?? presencesCount}', Colors.green),
+                              _progressionRow(AppLocalizations.of(context).dashPresenceThisWeek, '${_progression!['presencesSemaine'] ?? presencesCount}', Colors.green),
                               const SizedBox(height: 8),
                               _progressionRow('Activités', '${_progression!['activites'] ?? 0}', Colors.blue),
                               if (_progression!['prochaineEtape'] != null) ...[
@@ -323,7 +324,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                                       Icon(Icons.flag, color: AppColors.primaryLight, size: 16),
                                       const SizedBox(width: 8),
                                       Expanded(
-                                        child: Text('Prochaine étape : ${_progression!['prochaineEtape']}',
+                                        child: Text(AppLocalizations.of(context).dashNextStep(_progression!['prochaineEtape']?.toString() ?? ''),
                                             style: TextStyle(color: AppColors.primaryLight, fontSize: 12, fontWeight: FontWeight.w600)),
                                       ),
                                     ],
@@ -338,7 +339,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
 
                       // ==================== NOTES DU FAISEUR ====================
                       if (_notes.isNotEmpty) ...[
-                        SectionTitle(title: 'Notes de mon faiseur', icon: Icons.sticky_note_2),
+                        SectionTitle(title: AppLocalizations.of(context).dashMakerNotes, icon: Icons.sticky_note_2),
                         ..._notes.take(3).map((n) {
                           final note = n as Map<String, dynamic>;
                           return GlassCard(
@@ -367,7 +368,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
 
                       // ==================== DERNIÈRES PRÉSENCES ====================
                       if (_presences.isNotEmpty) ...[
-                        SectionTitle(title: 'Mes présences récentes', icon: Icons.check_circle),
+                        SectionTitle(title: AppLocalizations.of(context).dashRecentPresences, icon: Icons.check_circle),
                         ..._presences.take(5).map((p) {
                           final pres = p as Map<String, dynamic>;
                           final isPresent = pres['present'] == true;
@@ -387,7 +388,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                                       style: const TextStyle(color: Colors.white, fontSize: 13)),
                                 ),
                                 Text(
-                                  isPresent ? 'Présent' : 'Absent',
+                                  isPresent ? AppLocalizations.of(context).dashPresentShort : AppLocalizations.of(context).dashAbsentShort,
                                   style: TextStyle(color: isPresent ? Colors.green : Colors.red, fontWeight: FontWeight.w600, fontSize: 12),
                                 ),
                               ],
@@ -399,7 +400,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
 
                       // ==================== ÉVÉNEMENTS À VENIR ====================
                       if (_events.isNotEmpty) ...[
-                        SectionTitle(title: 'Événements à venir', icon: Icons.event),
+                        SectionTitle(title: AppLocalizations.of(context).dashUpcomingEvents, icon: Icons.event),
                         ..._events.take(4).map((ev) {
                           final event = ev as Map<String, dynamic>;
                           return GlassCard(
@@ -433,7 +434,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                       ],
 
                       // ==================== ACTIONS RAPIDES ====================
-                      SectionTitle(title: 'Actions rapides', icon: Icons.flash_on),
+                      SectionTitle(title: AppLocalizations.of(context).dashQuickActions, icon: Icons.flash_on),
                       GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -442,14 +443,14 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen>
                         mainAxisSpacing: 8,
                         childAspectRatio: 0.9,
                         children: [
-                          _quickAction(Icons.person, 'Profil', () => context.go('/profile')),
-                          _quickAction(Icons.check_circle, 'Présences', () => context.go('/profile')),
-                          _quickAction(Icons.event, 'Événements', () => context.go('/events')),
-                          _quickAction(Icons.book, 'Prières', () => context.go('/prayers')),
-                          _quickAction(Icons.mail, 'Demandes', () => context.go('/members/requests')),
-                          _quickAction(Icons.school, 'Formations', () => context.go('/trainings')),
-                          _quickAction(Icons.emoji_events, 'Badges', () => context.go('/badges')),
-                          _quickAction(Icons.calendar_today, 'RDV', () => context.go('/appointments')),
+                          _quickAction(Icons.person, AppLocalizations.of(context).dashReport, () => context.go('/profile')),
+                          _quickAction(Icons.check_circle, AppLocalizations.of(context).dashPresenceLabel, () => context.go('/profile')),
+                          _quickAction(Icons.event, AppLocalizations.of(context).dashUpcomingEvents, () => context.go('/events')),
+                          _quickAction(Icons.book, AppLocalizations.of(context).dashRecentPrayers, () => context.go('/prayers')),
+                          _quickAction(Icons.mail, AppLocalizations.of(context).transferCreateTitle, () => context.go('/members/requests')),
+                          _quickAction(Icons.school, AppLocalizations.of(context).dashDiscipline, () => context.go('/trainings')),
+                          _quickAction(Icons.emoji_events, AppLocalizations.of(context).dashDiscipline, () => context.go('/badges')),
+                          _quickAction(Icons.calendar_today, AppLocalizations.of(context).dashReport, () => context.go('/appointments')),
                         ],
                       ),
                       const SizedBox(height: 80),

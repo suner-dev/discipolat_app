@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
@@ -58,7 +59,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pilotage Pasteur'),
+        title: Text(AppLocalizations.of(context).dashShepherdsPilot),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData)],
       ),
       drawer: const AppDrawer(),
@@ -75,7 +76,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Growth header
-                      SectionTitle(title: 'Croissance', icon: Icons.trending_up),
+                      SectionTitle(title: AppLocalizations.of(context).dashGrowth, icon: Icons.trending_up),
                       const SizedBox(height: 8),
                       GridView.builder(
                         shrinkWrap: true,
@@ -88,14 +89,14 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                           // Chaque KPI ouvre la liste Âmes déjà filtrée (filtres
                           // portés par l'URL, lus par SoulsListScreen).
                           final items = [
-                            {'label': 'Âmes', 'value': '${croissance['totalAmes'] ?? 0}', 'icon': Icons.favorite, 'color': Colors.red, 'route': '/souls'},
-                            {'label': 'Convertis', 'value': '${croissance['nouveauxConvertis'] ?? 0}', 'icon': Icons.people, 'color': Colors.green, 'route': '/souls?typeDisciple=NOUVEAU_CONVERTI'},
-                            {'label': 'Arrivants', 'value': '${croissance['nouveauxArrivants'] ?? 0}', 'icon': Icons.person_add, 'color': Colors.blue, 'route': '/souls?typeDisciple=NOUVEL_ARRIVANT'},
-                            {'label': 'Actifs', 'value': '${croissance['actifs'] ?? 0}', 'icon': Icons.check_circle, 'color': Colors.teal, 'route': '/souls?statut=ACTIF'},
-                            {'label': 'Intégration', 'value': '${croissance['enIntegration'] ?? 0}', 'icon': Icons.hourglass_top, 'color': Colors.amber, 'route': '/souls?statut=EN_INTEGRATION'},
-                            {'label': 'Veille', 'value': '${croissance['enVeille'] ?? 0}', 'icon': Icons.bedtime, 'color': Colors.orange, 'route': '/souls?statut=EN_VEILLE'},
-                            {'label': 'Décrochés', 'value': '${croissance['decroches'] ?? 0}', 'icon': Icons.cancel, 'color': Colors.red, 'route': '/souls?statut=DECROCHE'},
-                            {'label': 'Conversion', 'value': '${croissance['tauxConversion'] ?? 0}%', 'icon': Icons.trending_up, 'color': Colors.purple, 'route': '/reports'},
+                            {'label': AppLocalizations.of(context).dashSouls, 'value': '${croissance['totalAmes'] ?? 0}', 'icon': Icons.favorite, 'color': Colors.red, 'route': '/souls'},
+                            {'label': AppLocalizations.of(context).dashConverti, 'value': '${croissance['nouveauxConvertis'] ?? 0}', 'icon': Icons.people, 'color': Colors.green, 'route': '/souls?typeDisciple=NOUVEAU_CONVERTI'},
+                            {'label': AppLocalizations.of(context).dashArrivant, 'value': '${croissance['nouveauxArrivants'] ?? 0}', 'icon': Icons.person_add, 'color': Colors.blue, 'route': '/souls?typeDisciple=NOUVEL_ARRIVANT'},
+                            {'label': AppLocalizations.of(context).dashActiveLabel, 'value': '${croissance['actifs'] ?? 0}', 'icon': Icons.check_circle, 'color': Colors.teal, 'route': '/souls?statut=ACTIF'},
+                            {'label': AppLocalizations.of(context).dashPresenceLabel, 'value': '${croissance['enIntegration'] ?? 0}', 'icon': Icons.hourglass_top, 'color': Colors.amber, 'route': '/souls?statut=EN_INTEGRATION'},
+                            {'label': AppLocalizations.of(context).dashDroppedLabel, 'value': '${croissance['enVeille'] ?? 0}', 'icon': Icons.bedtime, 'color': Colors.orange, 'route': '/souls?statut=EN_VEILLE'},
+                            {'label': AppLocalizations.of(context).dashDroppedLabel, 'value': '${croissance['decroches'] ?? 0}', 'icon': Icons.cancel, 'color': Colors.red, 'route': '/souls?statut=DECROCHE'},
+                            {'label': AppLocalizations.of(context).dashCompletion, 'value': '${croissance['tauxConversion'] ?? 0}%', 'icon': Icons.trending_up, 'color': Colors.purple, 'route': '/reports'},
                           ];
                           final item = items[i];
                           return GlassStatCard(
@@ -111,13 +112,13 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                       const SizedBox(height: 16),
 
                       // Presence + Reports
-                      SectionTitle(title: 'Présences & Rapports', icon: Icons.bar_chart),
+                      SectionTitle(title: AppLocalizations.of(context).dashPresenceAndReports, icon: Icons.bar_chart),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
                             child: GlassStatCard(
-                              label: 'Présence globale',
+                              label: AppLocalizations.of(context).dashGlobalPresence,
                               value: '${presences['tauxGlobal'] ?? 0}%',
                               icon: Icons.trending_up,
                               gradientStart: Colors.green,
@@ -128,7 +129,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                           const SizedBox(width: 10),
                           Expanded(
                             child: GlassStatCard(
-                              label: 'Rapports soumis',
+                              label: AppLocalizations.of(context).dashReportsSubmitted,
                               value: '${rapports['soumis'] ?? 0}',
                               icon: Icons.description,
                               gradientStart: Colors.blue,
@@ -139,7 +140,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                           const SizedBox(width: 10),
                           Expanded(
                             child: GlassStatCard(
-                              label: 'Complétion',
+                              label: AppLocalizations.of(context).dashCompletion,
                               value: '${rapports['tauxCompletion'] ?? 0}%',
                               icon: Icons.pie_chart,
                               gradientStart: Colors.teal,
@@ -179,7 +180,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '$alertesActives alerte${alertesActives > 1 ? 's' : ''} active${alertesActives > 1 ? 's' : ''}',
+                                      '$alertesActives ${AppLocalizations.of(context).dashActiveAlerts}',
                                       style: TextStyle(
                                         color: alertesActives > 0 ? Colors.red : Colors.green,
                                         fontWeight: FontWeight.bold,
@@ -187,7 +188,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
                                       ),
                                     ),
                                     Text(
-                                      alertesActives > 0 ? 'Attention requise' : 'Tout est sous contrôle',
+                                      alertesActives > 0 ? AppLocalizations.of(context).attentionRequired : AppLocalizations.of(context).allUnderControl,
                                       style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
                                     ),
                                   ],
@@ -201,7 +202,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
 
                       // Departments list
                       if (departements.isNotEmpty) ...[
-                        SectionTitle(title: 'Départements', icon: Icons.business),
+                        SectionTitle(title: AppLocalizations.of(context).dashDepartments, icon: Icons.business),
                         const SizedBox(height: 8),
                         SizedBox(
                           height: 120,
@@ -247,7 +248,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
 
                       // Familles summary
                       if (familles.isNotEmpty) ...[
-                        SectionTitle(title: 'Familles', icon: Icons.home_work_outlined),
+                        SectionTitle(title: AppLocalizations.of(context).dashFamilies, icon: Icons.home_work_outlined),
                         const SizedBox(height: 8),
                         SizedBox(
                           height: 110,
@@ -304,7 +305,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
 
                       // Faiseurs summary
                       if (faiseurs.isNotEmpty) ...[
-                        SectionTitle(title: 'Faiseurs', icon: Icons.group_work_outlined),
+                        SectionTitle(title: AppLocalizations.of(context).dashMakers, icon: Icons.group_work_outlined),
                         const SizedBox(height: 8),
                         SizedBox(
                           height: 110,
@@ -355,7 +356,7 @@ class _PasteurDashboardScreenState extends State<PasteurDashboardScreen> with Si
 
                       // Families at risk
                       if (famillesRisque.isNotEmpty) ...[
-                        SectionTitle(title: 'Familles à risque', icon: Icons.warning),
+                        SectionTitle(title: AppLocalizations.of(context).dashRiskFamilies, icon: Icons.warning),
                         const SizedBox(height: 8),
                         ...famillesRisque.take(5).map((fr) {
                           final f = fr as Map<String, dynamic>;

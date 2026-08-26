@@ -313,6 +313,123 @@ class AppLocalizations {
   String get unknownFamily => translate('unknownFamily');
   String get unknownRole => translate('unknownRole');
 
+  // ── Lot H6 : dashboards + transferts ──
+  String get dashGrowth => translate('dashGrowth');
+  String get dashPresenceAndReports => translate('dashPresenceAndReports');
+  String get dashGlobalPresence => translate('dashGlobalPresence');
+  String get dashReportsSubmitted => translate('dashReportsSubmitted');
+  String get dashCompletion => translate('dashCompletion');
+  String get dashActiveAlerts => translate('dashActiveAlerts');
+  String get attentionRequired => translate('attentionRequired');
+  String get allUnderControl => translate('allUnderControl');
+  String get dashDepartments => translate('dashDepartments');
+  String get dashFamilies => translate('dashFamilies');
+  String get dashMakers => translate('dashMakers');
+  String get dashRiskFamilies => translate('dashRiskFamilies');
+  String get dashShepherdsPilot => translate('dashShepherdsPilot');
+  String get dashMyFamily => translate('dashMyFamily');
+  String get dashMyMaker => translate('dashMyMaker');
+  String get dashMyDepartments => translate('dashMyDepartments');
+  String get dashMyProgression => translate('dashMyProgression');
+  String get dashMakerNotes => translate('dashMakerNotes');
+  String get dashRecentPresences => translate('dashRecentPresences');
+  String get dashUpcomingEvents => translate('dashUpcomingEvents');
+  String get dashQuickActions => translate('dashQuickActions');
+  String dashMakersCount(int count) => translate('dashMakersCount').replaceAll('{count}', '$count');
+  String get dashMakerWorkload => translate('dashMakerWorkload');
+  String get dashDisciplesSplit => translate('dashDisciplesSplit');
+  String get dashActiveAlertsTitle => translate('dashActiveAlertsTitle');
+  String get dashUpcomingVisits => translate('dashUpcomingVisits');
+  String get dashRecentPrayers => translate('dashRecentPrayers');
+  String get dashMySpace => translate('dashMySpace');
+  String get dashCurrentLevel => translate('dashCurrentLevel');
+  String get dashPresenceThisWeek => translate('dashPresenceThisWeek');
+  String dashNextStep(String value) => translate('dashNextStep').replaceAll('{value}', value);
+  String get dashCompanion => translate('dashCompanion');
+  String dashChefLabel(String name) => translate('dashChefLabel').replaceAll('{name}', name);
+  String dashRespLabel(String name) => translate('dashRespLabel').replaceAll('{name}', name);
+  String get dashDeptToAdmin => translate('dashDeptToAdmin');
+  String get dashOverview => translate('dashOverview');
+  String get dashMyDepartment => translate('dashMyDepartment');
+  String get dashDeptManagement => translate('dashDeptManagement');
+  String get dashOverdueTasks => translate('dashOverdueTasks');
+  String get dashBirthdays => translate('dashBirthdays');
+  String get dashFollowUp => translate('dashFollowUp');
+  String get dashDiscipline => translate('dashDiscipline');
+  String get dashTransferRequests => translate('dashTransferRequests');
+  String get dashEventsAndPosts => translate('dashEventsAndPosts');
+  String get dashDeptManagementTitle => translate('dashDeptManagementTitle');
+  String get dashQRCheckin => translate('dashQRCheckin');
+  String get dashReport => translate('dashReport');
+  String get dashPresenceLabel => translate('dashPresenceLabel');
+  String get dashActiveLabel => translate('dashActiveLabel');
+  String get dashNewLabel => translate('dashNewLabel');
+  String get dashPresentLabel => translate('dashPresentLabel');
+  String get dashAbsentLabel => translate('dashAbsentLabel');
+  String get dashDroppedLabel => translate('dashDroppedLabel');
+  String get dashTransferLabel => translate('dashTransferLabel');
+  String get dashTeamsLabel => translate('dashTeamsLabel');
+  String get dashPresentShort => translate('dashPresentShort');
+  String get dashAbsentShort => translate('dashAbsentShort');
+  String get dashSurcharge => translate('dashSurcharge');
+  String get dashLightLoad => translate('dashLightLoad');
+  String get dashNormalLoad => translate('dashNormalLoad');
+  String get dashSouls => translate('dashSouls');
+  String get dashConverti => translate('dashConverti');
+  String get dashArrivant => translate('dashArrivant');
+  String get transferCreateTitle => translate('transferCreateTitle');
+  String get transferDetailTitle => translate('transferDetailTitle');
+  String get transferType => translate('transferType');
+  String get transferDeptConcerned => translate('transferDeptConcerned');
+  String get transferDeptDestination => translate('transferDeptDestination');
+  String get transferDeptRetrait => translate('transferDeptRetrait');
+  String get transferFamilyConcerned => translate('transferFamilyConcerned');
+  String get transferFamilyDestination => translate('transferFamilyDestination');
+  String get transferMemberAdd => translate('transferMemberAdd');
+  String get transferMemberRemove => translate('transferMemberRemove');
+  String get transferMakerToTransfer => translate('transferMakerToTransfer');
+  String get transferDiscipleToTransfer => translate('transferDiscipleToTransfer');
+  String get transferJustification => translate('transferJustification');
+  String get transferComments => translate('transferComments');
+  String get transferSubmitCreate => translate('transferSubmitCreate');
+  String get transferSaveDraft => translate('transferSaveDraft');
+  String get transferDraftSaved => translate('transferDraftSaved');
+  String get transferSubmitted => translate('transferSubmitted');
+  String get transferIncomplete => translate('transferIncomplete');
+  String get transferCreateError => translate('transferCreateError');
+  String get transferChoose => translate('transferChoose');
+  String get transferCurrentAffectation => translate('transferCurrentAffectation');
+  String get transferCircuit => translate('transferCircuit');
+  String get transferApprove => translate('transferApprove');
+  String get transferReject => translate('transferReject');
+  String get transferModify => translate('transferModify');
+  String get transferAskInfo => translate('transferAskInfo');
+  String get transferExecute => translate('transferExecute');
+  String get transferArchive => translate('transferArchive');
+  String get transferHistory => translate('transferHistory');
+  String get transferDecisions => translate('transferDecisions');
+  String get transferStep => translate('transferStep');
+  String get transferInfo => translate('transferInfo');
+  String get transferJustificationLabel => translate('transferJustificationLabel');
+  String get transferMotivation => translate('transferMotivation');
+  String get transferMotivationOptional => translate('transferMotivationOptional');
+  String get transferCommentsLabel => translate('transferCommentsLabel');
+  String get transferConfirm => translate('transferConfirm');
+  String get transferCorrection => translate('transferCorrection');
+  String get transferCancelQuestion => translate('transferCancelQuestion');
+  String get transferCancelExplanation => translate('transferCancelExplanation');
+  String get transferNoDocument => translate('transferNoDocument');
+  String get transferNoAttachment => translate('transferNoAttachment');
+  String get transferCreateDoc => translate('transferCreateDoc');
+  String get transferNoEvent => translate('transferNoEvent');
+  String get transferOperationError => translate('transferOperationError');
+  String get statusDraft => translate('statusDraft');
+  String get statusPendingValidation => translate('statusPendingValidation');
+  String get statusApproval => translate('statusApproval');
+  String get statusExecuted => translate('statusExecuted');
+  String get statusArchive => translate('statusArchive');
+  String get statusRequestedInfo => translate('statusRequestedInfo');
+
   // ==================== NAVIGATION ====================
   String get navDashboard => translate('navDashboard');
   String get navSouls => translate('navSouls');
@@ -1252,6 +1369,123 @@ class AppLocalizations {
     'directoryError': 'Erreur lors du chargement de l\'annuaire',
     'unknownFamily': 'Famille inconnue',
     'unknownRole': 'Rôle inconnu',
+
+    // ── Lot H6 : dashboards + transferts ──
+    'dashGrowth': 'Croissance',
+    'dashPresenceAndReports': 'Présences & Rapports',
+    'dashGlobalPresence': 'Présence globale',
+    'dashReportsSubmitted': 'Rapports soumis',
+    'dashCompletion': 'Complétion',
+    'dashActiveAlerts': 'alerte(s) active(s)',
+    'attentionRequired': 'Attention requise',
+    'allUnderControl': 'Tout est sous contrôle',
+    'dashDepartments': 'Départements',
+    'dashFamilies': 'Familles',
+    'dashMakers': 'Faiseurs',
+    'dashRiskFamilies': 'Familles à risque',
+    'dashShepherdsPilot': 'Pilotage Pasteur',
+    'dashMyFamily': 'Ma famille',
+    'dashMyMaker': 'Mon faiseur',
+    'dashMyDepartments': 'Mes départements',
+    'dashMyProgression': 'Ma progression',
+    'dashMakerNotes': 'Notes de mon faiseur',
+    'dashRecentPresences': 'Mes présences récentes',
+    'dashUpcomingEvents': 'Événements à venir',
+    'dashQuickActions': 'Actions rapides',
+    'dashMakersCount': 'Faiseurs ({count})',
+    'dashMakerWorkload': 'Charge de travail des Faiseurs',
+    'dashDisciplesSplit': 'Répartition des disciples',
+    'dashActiveAlertsTitle': 'Alertes actives',
+    'dashUpcomingVisits': 'Visites à venir',
+    'dashRecentPrayers': 'Prières récentes',
+    'dashMySpace': 'Mon espace',
+    'dashCurrentLevel': 'Niveau actuel',
+    'dashPresenceThisWeek': 'Présences cette semaine',
+    'dashNextStep': 'Prochaine étape : {value}',
+    'dashCompanion': 'Accompagnateur',
+    'dashChefLabel': 'Chef : {name}',
+    'dashRespLabel': 'Responsable : {name}',
+    'dashDeptToAdmin': 'Département à administrer',
+    'dashOverview': 'Vue d\'ensemble',
+    'dashMyDepartment': 'Mon département',
+    'dashDeptManagement': 'Gestion du département',
+    'dashOverdueTasks': 'Tâches en retard',
+    'dashBirthdays': 'Anniversaires du mois',
+    'dashFollowUp': 'À suivre cette semaine',
+    'dashDiscipline': 'Évaluations',
+    'dashTransferRequests': 'Des membres souhaitent changer de famille',
+    'dashEventsAndPosts': 'Équipes & Postes',
+    'dashDeptManagementTitle': 'Gestion',
+    'dashQRCheckin': 'QR Check-in',
+    'dashReport': 'Rapport',
+    'dashPresenceLabel': 'Présence',
+    'dashActiveLabel': 'Actifs',
+    'dashNewLabel': 'Nouveaux',
+    'dashPresentLabel': 'Présents',
+    'dashAbsentLabel': 'Absents',
+    'dashDroppedLabel': 'Décrochés',
+    'dashTransferLabel': 'Transferts',
+    'dashTeamsLabel': 'Équipes',
+    'dashPresentShort': 'Présent',
+    'dashAbsentShort': 'Absent',
+    'dashSurcharge': 'Surchargé',
+    'dashLightLoad': 'Léger',
+    'dashNormalLoad': 'Normal',
+    'dashSouls': 'âmes',
+    'dashConverti': 'Converti',
+    'dashArrivant': 'Arrivant',
+    'transferCreateTitle': 'Créer une demande de transfert',
+    'transferDetailTitle': 'Demande de transfert',
+    'transferType': 'Type de transfert',
+    'transferDeptConcerned': 'Département concerné',
+    'transferDeptDestination': 'Département de destination',
+    'transferDeptRetrait': 'Département de retrait',
+    'transferFamilyConcerned': 'Famille concernée',
+    'transferFamilyDestination': 'Famille de destination',
+    'transferMemberAdd': 'Membre (âme) à ajouter',
+    'transferMemberRemove': 'Membre (âme) à retirer',
+    'transferMakerToTransfer': 'Faiseur à transférer',
+    'transferDiscipleToTransfer': 'Disciple (âme) à transférer',
+    'transferJustification': 'Justification détaillée *',
+    'transferComments': 'Commentaires (optionnel)',
+    'transferSubmitCreate': 'Créer et soumettre',
+    'transferSaveDraft': 'Enregistrer le brouillon',
+    'transferDraftSaved': 'Brouillon enregistré',
+    'transferSubmitted': 'Demande soumise au circuit de validation',
+    'transferIncomplete': 'Formulaire incomplet',
+    'transferCreateError': 'Erreur lors de la création',
+    'transferChoose': 'Choisir',
+    'transferCurrentAffectation': 'Affectation actuelle',
+    'transferCircuit': 'Circuit de validation',
+    'transferApprove': 'Approuver',
+    'transferReject': 'Annuler',
+    'transferModify': 'Modifier',
+    'transferAskInfo': 'Demander des informations',
+    'transferExecute': 'Exécuter',
+    'transferArchive': 'Archiver',
+    'transferHistory': 'Historique',
+    'transferDecisions': 'Décisions',
+    'transferStep': 'Étape',
+    'transferInfo': 'Infos',
+    'transferJustificationLabel': 'Justification',
+    'transferMotivation': 'Motivation *',
+    'transferMotivationOptional': 'Motivation (optionnelle)',
+    'transferCommentsLabel': 'Commentaires :',
+    'transferConfirm': 'Confirmer',
+    'transferCorrection': 'Correction',
+    'transferCancelQuestion': 'Annuler la demande ?',
+    'transferCancelExplanation': 'La demande sera renvoyée au demandeur.',
+    'transferNoDocument': 'Aucun document dans le module Documents.',
+    'transferNoAttachment': 'Aucune pièce jointe.',
+    'transferCreateDoc': 'Créer un document',
+    'transferNoEvent': 'Aucun événement',
+    'transferOperationError': 'Erreur lors de l\'opération',
+    'statusDraft': 'Brouillon',
+    'statusPendingValidation': 'En attente de validation',
+    'statusApproval': 'Approbation',
+    'statusExecuted': 'Exécuté',
+    'statusArchive': 'Archivé',
+    'statusRequestedInfo': 'Demande d\'informations',
   };
 
   // ==================== ENGLISH ====================
@@ -1836,6 +2070,123 @@ class AppLocalizations {
     'directoryError': 'Error loading directory',
     'unknownFamily': 'Unknown family',
     'unknownRole': 'Unknown role',
+
+    // ── Lot H6 : dashboards + transfers ──
+    'dashGrowth': 'Growth',
+    'dashPresenceAndReports': 'Presences & Reports',
+    'dashGlobalPresence': 'Global attendance',
+    'dashReportsSubmitted': 'Reports submitted',
+    'dashCompletion': 'Completion',
+    'dashActiveAlerts': 'active alert(s)',
+    'attentionRequired': 'Attention required',
+    'allUnderControl': 'All under control',
+    'dashDepartments': 'Departments',
+    'dashFamilies': 'Families',
+    'dashMakers': 'Makers',
+    'dashRiskFamilies': 'Families at risk',
+    'dashShepherdsPilot': 'Shepherd\'s Dashboard',
+    'dashMyFamily': 'My family',
+    'dashMyMaker': 'My maker',
+    'dashMyDepartments': 'My departments',
+    'dashMyProgression': 'My progression',
+    'dashMakerNotes': 'Maker notes',
+    'dashRecentPresences': 'My recent presences',
+    'dashUpcomingEvents': 'Upcoming events',
+    'dashQuickActions': 'Quick actions',
+    'dashMakersCount': 'Makers ({count})',
+    'dashMakerWorkload': 'Maker workload',
+    'dashDisciplesSplit': 'Disciple breakdown',
+    'dashActiveAlertsTitle': 'Active alerts',
+    'dashUpcomingVisits': 'Upcoming visits',
+    'dashRecentPrayers': 'Recent prayers',
+    'dashMySpace': 'My space',
+    'dashCurrentLevel': 'Current level',
+    'dashPresenceThisWeek': 'Presences this week',
+    'dashNextStep': 'Next step: {value}',
+    'dashCompanion': 'Companion',
+    'dashChefLabel': 'Head: {name}',
+    'dashRespLabel': 'Manager: {name}',
+    'dashDeptToAdmin': 'Department to manage',
+    'dashOverview': 'Overview',
+    'dashMyDepartment': 'My department',
+    'dashDeptManagement': 'Department management',
+    'dashOverdueTasks': 'Overdue tasks',
+    'dashBirthdays': 'Birthdays this month',
+    'dashFollowUp': 'Follow-up this week',
+    'dashDiscipline': 'Evaluations',
+    'dashTransferRequests': 'Members wish to change family',
+    'dashEventsAndPosts': 'Teams & Positions',
+    'dashDeptManagementTitle': 'Management',
+    'dashQRCheckin': 'QR Check-in',
+    'dashReport': 'Report',
+    'dashPresenceLabel': 'Attendance',
+    'dashActiveLabel': 'Active',
+    'dashNewLabel': 'New',
+    'dashPresentLabel': 'Present',
+    'dashAbsentLabel': 'Absent',
+    'dashDroppedLabel': 'Dropped',
+    'dashTransferLabel': 'Transfers',
+    'dashTeamsLabel': 'Teams',
+    'dashPresentShort': 'Present',
+    'dashAbsentShort': 'Absent',
+    'dashSurcharge': 'Overloaded',
+    'dashLightLoad': 'Light',
+    'dashNormalLoad': 'Normal',
+    'dashSouls': 'souls',
+    'dashConverti': 'Converted',
+    'dashArrivant': 'Newcomer',
+    'transferCreateTitle': 'Create transfer request',
+    'transferDetailTitle': 'Transfer request',
+    'transferType': 'Transfer type',
+    'transferDeptConcerned': 'Department concerned',
+    'transferDeptDestination': 'Destination department',
+    'transferDeptRetrait': 'Withdrawal department',
+    'transferFamilyConcerned': 'Family concerned',
+    'transferFamilyDestination': 'Destination family',
+    'transferMemberAdd': 'Member to add',
+    'transferMemberRemove': 'Member to remove',
+    'transferMakerToTransfer': 'Maker to transfer',
+    'transferDiscipleToTransfer': 'Disciple to transfer',
+    'transferJustification': 'Detailed justification *',
+    'transferComments': 'Comments (optional)',
+    'transferSubmitCreate': 'Create and submit',
+    'transferSaveDraft': 'Save draft',
+    'transferDraftSaved': 'Draft saved',
+    'transferSubmitted': 'Request submitted to validation circuit',
+    'transferIncomplete': 'Incomplete form',
+    'transferCreateError': 'Error creating request',
+    'transferChoose': 'Choose',
+    'transferCurrentAffectation': 'Current assignment',
+    'transferCircuit': 'Validation circuit',
+    'transferApprove': 'Approve',
+    'transferReject': 'Cancel',
+    'transferModify': 'Edit',
+    'transferAskInfo': 'Request information',
+    'transferExecute': 'Execute',
+    'transferArchive': 'Archive',
+    'transferHistory': 'History',
+    'transferDecisions': 'Decisions',
+    'transferStep': 'Step',
+    'transferInfo': 'Info',
+    'transferJustificationLabel': 'Justification',
+    'transferMotivation': 'Motivation *',
+    'transferMotivationOptional': 'Motivation (optional)',
+    'transferCommentsLabel': 'Comments:',
+    'transferConfirm': 'Confirm',
+    'transferCorrection': 'Correction',
+    'transferCancelQuestion': 'Cancel the request?',
+    'transferCancelExplanation': 'The request will be sent back to the requester.',
+    'transferNoDocument': 'No documents in the Documents module.',
+    'transferNoAttachment': 'No attachments.',
+    'transferCreateDoc': 'Create a document',
+    'transferNoEvent': 'No events',
+    'transferOperationError': 'Operation failed',
+    'statusDraft': 'Draft',
+    'statusPendingValidation': 'Pending validation',
+    'statusApproval': 'Approval',
+    'statusExecuted': 'Executed',
+    'statusArchive': 'Archived',
+    'statusRequestedInfo': 'Information requested',
   };
 
   // ==================== PORTUGUESE ====================
@@ -2420,6 +2771,123 @@ class AppLocalizations {
     'directoryError': 'Erro ao carregar anúncio',
     'unknownFamily': 'Família desconhecida',
     'unknownRole': 'Cargo desconhecido',
+
+    // ── Lot H6 : dashboards + transferências ──
+    'dashGrowth': 'Crescimento',
+    'dashPresenceAndReports': 'Presenças e Relatórios',
+    'dashGlobalPresence': 'Presença global',
+    'dashReportsSubmitted': 'Relatórios submetidos',
+    'dashCompletion': 'Conclusão',
+    'dashActiveAlerts': 'alerta(s) ativo(s)',
+    'attentionRequired': 'Atenção necessária',
+    'allUnderControl': 'Tudo sob controlo',
+    'dashDepartments': 'Departamentos',
+    'dashFamilies': 'Famílias',
+    'dashMakers': 'Fazedores',
+    'dashRiskFamilies': 'Famílias em risco',
+    'dashShepherdsPilot': 'Painel do Pastor',
+    'dashMyFamily': 'Minha família',
+    'dashMyMaker': 'Meu fazedor',
+    'dashMyDepartments': 'Meus departamentos',
+    'dashMyProgression': 'Minha progressão',
+    'dashMakerNotes': 'Notas do fazedor',
+    'dashRecentPresences': 'Minhas presenças recentes',
+    'dashUpcomingEvents': 'Eventos próximos',
+    'dashQuickActions': 'Ações rápidas',
+    'dashMakersCount': 'Fazedores ({count})',
+    'dashMakerWorkload': 'Carga de trabalho dos Fazedores',
+    'dashDisciplesSplit': 'Distribuição dos discípulos',
+    'dashActiveAlertsTitle': 'Alertas ativos',
+    'dashUpcomingVisits': 'Visitas próximas',
+    'dashRecentPrayers': 'Orações recentes',
+    'dashMySpace': 'Meu espaço',
+    'dashCurrentLevel': 'Nível atual',
+    'dashPresenceThisWeek': 'Presenças esta semana',
+    'dashNextStep': 'Próximo passo: {value}',
+    'dashCompanion': 'Companheiro',
+    'dashChefLabel': 'Chefe: {name}',
+    'dashRespLabel': 'Responsável: {name}',
+    'dashDeptToAdmin': 'Departamento a administrar',
+    'dashOverview': 'Visão geral',
+    'dashMyDepartment': 'Meu departamento',
+    'dashDeptManagement': 'Gestão do departamento',
+    'dashOverdueTasks': 'Tarefas atrasadas',
+    'dashBirthdays': 'Aniversários do mês',
+    'dashFollowUp': 'Acompanhamento esta semana',
+    'dashDiscipline': 'Avaliações',
+    'dashTransferRequests': 'Membros desejam mudar de família',
+    'dashEventsAndPosts': 'Equipes e Cargos',
+    'dashDeptManagementTitle': 'Gestão',
+    'dashQRCheckin': 'QR Check-in',
+    'dashReport': 'Relatório',
+    'dashPresenceLabel': 'Presença',
+    'dashActiveLabel': 'Ativos',
+    'dashNewLabel': 'Novos',
+    'dashPresentLabel': 'Presentes',
+    'dashAbsentLabel': 'Ausentes',
+    'dashDroppedLabel': 'Desistentes',
+    'dashTransferLabel': 'Transferências',
+    'dashTeamsLabel': 'Equipes',
+    'dashPresentShort': 'Presente',
+    'dashAbsentShort': 'Ausente',
+    'dashSurcharge': 'Sobrecarregado',
+    'dashLightLoad': 'Leve',
+    'dashNormalLoad': 'Normal',
+    'dashSouls': 'almas',
+    'dashConverti': 'Convertido',
+    'dashArrivant': 'Recém-chegado',
+    'transferCreateTitle': 'Criar pedido de transferência',
+    'transferDetailTitle': 'Pedido de transferência',
+    'transferType': 'Tipo de transferência',
+    'transferDeptConcerned': 'Departamento concernido',
+    'transferDeptDestination': 'Departamento de destino',
+    'transferDeptRetrait': 'Departamento de retirada',
+    'transferFamilyConcerned': 'Família concernida',
+    'transferFamilyDestination': 'Família de destino',
+    'transferMemberAdd': 'Membro a adicionar',
+    'transferMemberRemove': 'Membro a retirar',
+    'transferMakerToTransfer': 'Fazedor a transferir',
+    'transferDiscipleToTransfer': 'Discípulo a transferir',
+    'transferJustification': 'Justificação detalhada *',
+    'transferComments': 'Comentários (opcional)',
+    'transferSubmitCreate': 'Criar e submeter',
+    'transferSaveDraft': 'Guardar rascunho',
+    'transferDraftSaved': 'Rascunho guardado',
+    'transferSubmitted': 'Pedido submetido ao circuito de validação',
+    'transferIncomplete': 'Formulário incompleto',
+    'transferCreateError': 'Erro ao criar pedido',
+    'transferChoose': 'Escolher',
+    'transferCurrentAffectation': 'Atribuição atual',
+    'transferCircuit': 'Circuito de validação',
+    'transferApprove': 'Aprovar',
+    'transferReject': 'Cancelar',
+    'transferModify': 'Editar',
+    'transferAskInfo': 'Pedir informações',
+    'transferExecute': 'Executar',
+    'transferArchive': 'Arquivar',
+    'transferHistory': 'Histórico',
+    'transferDecisions': 'Decisões',
+    'transferStep': 'Passo',
+    'transferInfo': 'Info',
+    'transferJustificationLabel': 'Justificação',
+    'transferMotivation': 'Motivação *',
+    'transferMotivationOptional': 'Motivação (opcional)',
+    'transferCommentsLabel': 'Comentários:',
+    'transferConfirm': 'Confirmar',
+    'transferCorrection': 'Correção',
+    'transferCancelQuestion': 'Cancelar o pedido?',
+    'transferCancelExplanation': 'O pedido será devolvido ao requerente.',
+    'transferNoDocument': 'Sem documentos no módulo Documentos.',
+    'transferNoAttachment': 'Sem anexos.',
+    'transferCreateDoc': 'Criar documento',
+    'transferNoEvent': 'Sem eventos',
+    'transferOperationError': 'Erro na operação',
+    'statusDraft': 'Rascunho',
+    'statusPendingValidation': 'Aguarda validação',
+    'statusApproval': 'Aprovação',
+    'statusExecuted': 'Executado',
+    'statusArchive': 'Arquivado',
+    'statusRequestedInfo': 'Informação solicitada',
   };
 }
 

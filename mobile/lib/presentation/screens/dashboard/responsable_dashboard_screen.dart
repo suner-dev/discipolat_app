@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 
@@ -76,7 +77,7 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Espace Responsable'),
+        title: Text(AppLocalizations.of(context).dashShepherdsPilot),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: () => _loadData(deptId: _selectedDeptId)),
         ],
@@ -96,7 +97,7 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                     children: [
                       // Sélecteur de département (multi-départements)
                       if (departements.length > 1) ...[
-                        SectionTitle(title: 'Département à administrer', icon: Icons.swap_horiz),
+                        SectionTitle(title: AppLocalizations.of(context).dashDeptToAdmin, icon: Icons.swap_horiz),
                         DropdownButton<String>(
                           value: _selectedDeptId,
                           dropdownColor: AppColors.cardDark,
@@ -116,7 +117,7 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                       ],
 
                       // ==================== STATISTIQUES GLOBALES ====================
-                      SectionTitle(title: 'Vue d\'ensemble', icon: Icons.dashboard),
+                      SectionTitle(title: AppLocalizations.of(context).dashOverview, icon: Icons.dashboard),
                       const SizedBox(height: 8),
                       GridView.builder(
                         shrinkWrap: true,
@@ -127,15 +128,15 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                         itemCount: 9,
                         itemBuilder: (_, i) {
                           final items = [
-                            {'label': 'Membres', 'value': '${stats['totalMembres'] ?? 0}', 'icon': Icons.people, 'color': Colors.blue},
-                            {'label': 'Actifs', 'value': '${stats['totalActifs'] ?? 0}', 'icon': Icons.check_circle, 'color': Colors.green},
-                            {'label': 'Nouveaux', 'value': '${stats['nouveauxMembres'] ?? 0}', 'icon': Icons.person_add, 'color': Colors.teal},
-                            {'label': 'Présence', 'value': '${stats['tauxPresence'] ?? 0}%', 'icon': Icons.trending_up, 'color': Colors.purple},
-                            {'label': 'Rapports', 'value': '${stats['rapportsSoumis'] ?? 0}/${stats['rapportsAttendus'] ?? 0}', 'icon': Icons.description, 'color': Colors.amber},
-                            {'label': 'Taux', 'value': '${stats['tauxCompletion'] ?? 0}%', 'icon': Icons.pie_chart, 'color': Colors.cyan},
-                            {'label': 'Équipes', 'value': '${stats['equipesActives'] ?? 0}', 'icon': Icons.account_tree, 'color': Colors.orange},
-                            {'label': 'Tâches retard', 'value': '${stats['tachesEnRetard'] ?? 0}', 'icon': Icons.alarm, 'color': Colors.red},
-                            {'label': 'Transferts', 'value': '${stats['transfertsEnAttente'] ?? 0}', 'icon': Icons.swap_horiz, 'color': Colors.indigo},
+                            {'label': AppLocalizations.of(context).dashPresenceLabel, 'value': '${stats['totalMembres'] ?? 0}', 'icon': Icons.people, 'color': Colors.blue},
+                            {'label': AppLocalizations.of(context).dashActiveLabel, 'value': '${stats['totalActifs'] ?? 0}', 'icon': Icons.check_circle, 'color': Colors.green},
+                            {'label': AppLocalizations.of(context).dashNewLabel, 'value': '${stats['nouveauxMembres'] ?? 0}', 'icon': Icons.person_add, 'color': Colors.teal},
+                            {'label': AppLocalizations.of(context).dashPresenceLabel, 'value': '${stats['tauxPresence'] ?? 0}%', 'icon': Icons.trending_up, 'color': Colors.purple},
+                            {'label': AppLocalizations.of(context).dashReport, 'value': '${stats['rapportsSoumis'] ?? 0}/${stats['rapportsAttendus'] ?? 0}', 'icon': Icons.description, 'color': Colors.amber},
+                            {'label': AppLocalizations.of(context).dashCompletion, 'value': '${stats['tauxCompletion'] ?? 0}%', 'icon': Icons.pie_chart, 'color': Colors.cyan},
+                            {'label': AppLocalizations.of(context).dashTeamsLabel, 'value': '${stats['equipesActives'] ?? 0}', 'icon': Icons.account_tree, 'color': Colors.orange},
+                            {'label': AppLocalizations.of(context).dashOverdueTasks, 'value': '${stats['tachesEnRetard'] ?? 0}', 'icon': Icons.alarm, 'color': Colors.red},
+                            {'label': AppLocalizations.of(context).dashTransferLabel, 'value': '${stats['transfertsEnAttente'] ?? 0}', 'icon': Icons.swap_horiz, 'color': Colors.indigo},
                           ];
                           final item = items[i];
                           return GlassStatCard(
@@ -177,20 +178,20 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 children: [
-                                  _statChip('Membres', '${dept['totalMembres'] ?? 0}', Colors.blue),
-                                  _statChip('Nouveaux', '${dept['nouveauxMembres'] ?? 0}', Colors.teal),
-                                  _statChip('Actifs', '${dept['actifs'] ?? 0}', Colors.green),
-                                  _statChip('Décrochés', '${dept['decroches'] ?? 0}', Colors.red),
+                                  _statChip(AppLocalizations.of(context).dashPresenceLabel, '${dept['totalMembres'] ?? 0}', Colors.blue),
+                                  _statChip(AppLocalizations.of(context).dashNewLabel, '${dept['nouveauxMembres'] ?? 0}', Colors.teal),
+                                  _statChip(AppLocalizations.of(context).dashActiveLabel, '${dept['actifs'] ?? 0}', Colors.green),
+                                  _statChip(AppLocalizations.of(context).dashDroppedLabel, '${dept['decroches'] ?? 0}', Colors.red),
                                 ],
                               ),
                               const SizedBox(height: 16),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 children: [
-                                  _statChip('Présents', '${dept['presents'] ?? 0}', Colors.green),
-                                  _statChip('Absents', '${dept['absents'] ?? 0}', Colors.orange),
-                                  _statChip('Présence', '${dept['tauxPresence'] ?? 0}%', Colors.amber),
-                                  _statChip('Rapports', '${dept['rapportsSoumis'] ?? 0}', Colors.purple),
+                                  _statChip(AppLocalizations.of(context).dashPresentLabel, '${dept['presents'] ?? 0}', Colors.green),
+                                  _statChip(AppLocalizations.of(context).dashAbsentLabel, '${dept['absents'] ?? 0}', Colors.orange),
+                                  _statChip(AppLocalizations.of(context).dashPresenceLabel, '${dept['tauxPresence'] ?? 0}%', Colors.amber),
+                                  _statChip(AppLocalizations.of(context).dashReport, '${dept['rapportsSoumis'] ?? 0}', Colors.purple),
                                 ],
                               ),
                               const SizedBox(height: 16),
@@ -199,7 +200,7 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                                   Expanded(
                                     child: FilledButton.icon(
                                       icon: const Icon(Icons.account_tree, size: 18),
-                                      label: const Text('Gestion du département'),
+                                      label: Text(AppLocalizations.of(context).dashDeptManagement),
                                       onPressed: () => context.go('/departments/$_selectedDeptId/manage'),
                                     ),
                                   ),

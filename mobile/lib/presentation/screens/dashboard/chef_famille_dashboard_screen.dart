@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
@@ -122,7 +123,7 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(famille['nom'] ?? 'Ma famille'),
+        title: Text(famille['nom'] ?? AppLocalizations.of(context).dashMyFamily),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData)],
       ),
       drawer: const AppDrawer(),
@@ -188,16 +189,16 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                       const SizedBox(height: 16),
 
                       // ==================== RÉPARTITION DES DISCIPLES ====================
-                      SectionTitle(title: 'Répartition des disciples', icon: Icons.pie_chart),
+                      SectionTitle(title: AppLocalizations.of(context).dashDisciplesSplit, icon: Icons.pie_chart),
                       GlassCard(
                         padding: const EdgeInsets.all(16),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _statusPill('Actifs', byStatut['ACTIF'] ?? 0, Colors.green),
-                            _statusPill('Intégration', byStatut['EN_INTEGRATION'] ?? 0, Colors.amber),
-                            _statusPill('Veille', byStatut['EN_VEILLE'] ?? 0, Colors.blue),
-                            _statusPill('Décrochés', byStatut['DECROCHE'] ?? 0, Colors.red),
+                            _statusPill(AppLocalizations.of(context).dashActiveLabel, byStatut['ACTIF'] ?? 0, Colors.green),
+                            _statusPill(AppLocalizations.of(context).dashPresenceLabel, byStatut['EN_INTEGRATION'] ?? 0, Colors.amber),
+                            _statusPill(AppLocalizations.of(context).dashTransferLabel, byStatut['EN_VEILLE'] ?? 0, Colors.blue),
+                            _statusPill(AppLocalizations.of(context).dashDroppedLabel, byStatut['DECROCHE'] ?? 0, Colors.red),
                           ],
                         ),
                       ),
@@ -206,7 +207,7 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                       // ==================== ALERTES ACTIVES ====================
                       if (activeAlerts.isNotEmpty) ...[
                         SectionTitle(
-                          title: 'Alertes actives',
+                          title: AppLocalizations.of(context).dashActiveAlertsTitle,
                           icon: Icons.warning_amber,
                           trailing: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -247,7 +248,7 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
 
                       // ==================== VISITES À VENIR ====================
                       if (_upcomingVisits.isNotEmpty) ...[
-                        SectionTitle(title: 'Visites à venir', icon: Icons.map_outlined),
+                        SectionTitle(title: AppLocalizations.of(context).dashUpcomingVisits, icon: Icons.map_outlined),
                         ..._upcomingVisits.take(4).map((v) {
                           final visit = v as Map<String, dynamic>;
                           return GlassCard(
@@ -281,7 +282,7 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
 
                       // ==================== CHARGE DE TRAVAIL DES FAISEURS ====================
                       if (_workload.isNotEmpty) ...[
-                        SectionTitle(title: 'Charge de travail des Faiseurs', icon: Icons.bar_chart),
+                        SectionTitle(title: AppLocalizations.of(context).dashMakerWorkload, icon: Icons.bar_chart),
                         ..._workload.take(6).map((w) {
                           final charge = (w['charge'] as String?) ?? '';
                           final chargeColor = charge == 'SURCHARGÉ'
@@ -308,7 +309,7 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      charge == 'SURCHARGÉ' ? 'Surchargé' : charge == 'LEGER' ? 'Léger' : 'Normal',
+                                      charge == 'SURCHARGÉ' ? AppLocalizations.of(context).dashSurcharge : charge == 'LEGER' ? AppLocalizations.of(context).dashLightLoad : AppLocalizations.of(context).dashNormalLoad,
                                       style: TextStyle(color: chargeColor, fontSize: 9, fontWeight: FontWeight.w600),
                                     ),
                                   ),
@@ -330,7 +331,7 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
 
                       // ==================== FAISEURS & DISCIPLES ====================
                       if (faiseurs.isNotEmpty) ...[
-                        SectionTitle(title: 'Faiseurs (${faiseurs.length})', icon: Icons.account_tree),
+                        SectionTitle(title: AppLocalizations.of(context).dashMakersCount(faiseurs.length), icon: Icons.account_tree),
                         const SizedBox(height: 8),
                         ...faiseurs.map((f) {
                           final faiseur = f as Map<String, dynamic>;
@@ -389,7 +390,7 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
 
                       // ==================== PRIÈRES ====================
                       if (_prayers.isNotEmpty) ...[
-                        SectionTitle(title: 'Prières récentes', icon: Icons.book),
+                        SectionTitle(title: AppLocalizations.of(context).dashRecentPrayers, icon: Icons.book),
                         ..._prayers.take(3).map((p) {
                           final prayer = p as Map<String, dynamic>;
                           return GlassCard(
@@ -424,7 +425,7 @@ class _ChefFamilleDashboardScreenState extends State<ChefFamilleDashboardScreen>
 
                       // ==================== ÉVÉNEMENTS À VENIR ====================
                       if (_events.isNotEmpty) ...[
-                        SectionTitle(title: 'Événements à venir', icon: Icons.event),
+                        SectionTitle(title: AppLocalizations.of(context).dashUpcomingEvents, icon: Icons.event),
                         ..._events.take(4).map((ev) {
                           final event = ev as Map<String, dynamic>;
                           return GlassCard(
