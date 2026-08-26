@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Statistiques du département — données réelles : effectif, présence,
 /// tâches, discipline, équipes, postes, charge de travail.
@@ -53,7 +54,7 @@ class _DepartmentStatsScreenState extends State<DepartmentStatsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Statistiques du département'),
+        title: Text(AppLocalizations.of(context).departmentStats),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
@@ -69,41 +70,41 @@ class _DepartmentStatsScreenState extends State<DepartmentStatsScreen> {
                   // KPI row
                   Row(
                     children: [
-                      _statMini('Membres', '${e['total'] ?? 0}', Colors.amber),
+                      _statMini(AppLocalizations.of(context).kpiMembers, '${e['total'] ?? 0}', Colors.amber),
                       const SizedBox(width: 8),
-                      _statMini('Actifs', '${e['actifs'] ?? 0}', Colors.green),
+                      _statMini(AppLocalizations.of(context).kpiActive, '${e['actifs'] ?? 0}', Colors.green),
                       const SizedBox(width: 8),
-                      _statMini('Nouveaux', '${e['nouveaux30j'] ?? 0}', Colors.blue),
+                      _statMini(AppLocalizations.of(context).kpiNew, '${e['nouveaux30j'] ?? 0}', Colors.blue),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      _statMini('Présence', '${presence['taux'] ?? 0}%', Colors.purple),
+                      _statMini(AppLocalizations.of(context).kpiPresence, '${presence['taux'] ?? 0}%', Colors.purple),
                       const SizedBox(width: 8),
-                      _statMini('Tâches retard', '${taches['enRetard'] ?? 0}', Colors.red),
+                      _statMini(AppLocalizations.of(context).kpiOverdueTasks, '${taches['enRetard'] ?? 0}', Colors.red),
                       const SizedBox(width: 8),
-                      _statMini('Équipes', '${equipes['actives'] ?? 0}', Colors.orange),
+                      _statMini(AppLocalizations.of(context).kpiTeams, '${equipes['actives'] ?? 0}', Colors.orange),
                     ],
                   ),
                   const SizedBox(height: 12),
 
                   // Effectif
                   _section(
-                    title: 'Répartition des membres',
+                    title: AppLocalizations.of(context).memberBreakdown,
                     child: Column(
                       children: [
-                        _bar('Actifs', e['actifs'] ?? 0, e['total'] ?? 0, Colors.green),
-                        _bar('En intégration', e['enIntegration'] ?? 0, e['total'] ?? 0, Colors.blue),
-                        _bar('En veille', e['enVeille'] ?? 0, e['total'] ?? 0, Colors.amber),
-                        _bar('Décrochés', e['decroches'] ?? 0, e['total'] ?? 0, Colors.red),
+                        _bar(AppLocalizations.of(context).kpiActive, e['actifs'] ?? 0, e['total'] ?? 0, Colors.green),
+                        _bar(AppLocalizations.of(context).integrating, e['enIntegration'] ?? 0, e['total'] ?? 0, Colors.blue),
+                        _bar(AppLocalizations.of(context).standby, e['enVeille'] ?? 0, e['total'] ?? 0, Colors.amber),
+                        _bar(AppLocalizations.of(context).droppedOut, e['decroches'] ?? 0, e['total'] ?? 0, Colors.red),
                       ],
                     ),
                   ),
 
                   // Évolution effectif (12 mois)
                   _section(
-                    title: 'Évolution de l\'effectif (12 mois)',
+                    title: AppLocalizations.of(context).headcountEvolution,
                     child: Column(
                       children: (stats['evolutionEffectif'] as List<dynamic>? ?? [])
                           .map((m) => _evolutionRow(m as Map<String, dynamic>))
@@ -113,18 +114,18 @@ class _DepartmentStatsScreenState extends State<DepartmentStatsScreen> {
 
                   // Présence
                   _section(
-                    title: 'Présence',
+                    title: AppLocalizations.of(context).attendanceSection,
                     child: Column(
                       children: [
-                        _bar('Présents', presence['presents'] ?? 0, presence['total'] ?? 0, Colors.green),
-                        _bar('Absents', presence['absents'] ?? 0, presence['total'] ?? 0, Colors.red),
+                        _bar(AppLocalizations.of(context).present, presence['presents'] ?? 0, presence['total'] ?? 0, Colors.green),
+                        _bar(AppLocalizations.of(context).absent, presence['absents'] ?? 0, presence['total'] ?? 0, Colors.red),
                       ],
                     ),
                   ),
 
                   // Tâches par statut
                   _section(
-                    title: 'Tâches par statut',
+                    title: AppLocalizations.of(context).tasksByStatus,
                     child: Column(
                       children: (taches['parStatut'] as Map<String, dynamic>? ?? {})
                           .entries
@@ -140,9 +141,9 @@ class _DepartmentStatsScreenState extends State<DepartmentStatsScreen> {
 
                   // Discipline
                   _section(
-                    title: 'Discipline par catégorie',
+                    title: AppLocalizations.of(context).disciplinaryCategory,
                     child: discipline.isEmpty
-                        ? _empty('Aucun événement disciplinaire')
+                        ? _empty(AppLocalizations.of(context).noDisciplinary)
                         : Column(
                             children: discipline.entries
                                 .map((entry) => _bar(
@@ -157,9 +158,9 @@ class _DepartmentStatsScreenState extends State<DepartmentStatsScreen> {
 
                   // Charge de travail
                   _section(
-                    title: 'Charge de travail par membre',
+                    title: AppLocalizations.of(context).workloadPerMember,
                     child: charge.isEmpty
-                        ? _empty('Aucune tâche ouverte assignée')
+                        ? _empty(AppLocalizations.of(context).noAssignedTasks)
                         : Column(
                             children: charge.map((c) {
                               final m = c as Map<String, dynamic>;
@@ -175,13 +176,13 @@ class _DepartmentStatsScreenState extends State<DepartmentStatsScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '${m['tachesOuvertes']} tâches',
+                                      '${m['tachesOuvertes']} ${AppLocalizations.of(context).tasksUnit}',
                                       style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
                                     if ((m['enRetard'] ?? 0) > 0)
                                       Padding(
                                         padding: const EdgeInsets.only(left: 8),
-                                        child: StatusBadge(label: '${m['enRetard']} retard', color: Colors.red),
+                                        child:                                      StatusBadge(label: '${m['enRetard']} ${AppLocalizations.of(context).retardUnit}', color: Colors.red),
                                       ),
                                   ],
                                 ),
@@ -192,11 +193,11 @@ class _DepartmentStatsScreenState extends State<DepartmentStatsScreen> {
 
                   // Organisation
                   _section(
-                    title: 'Organisation',
+                    title: AppLocalizations.of(context).organizationSection,
                     child: Column(
                       children: [
-                        _bar('Affectations actives', affectations['actives'] ?? 0, affectations['actives'] ?? 0, Colors.blue),
-                        _bar('Postes actifs', stats['postesActifs'] ?? 0, stats['postesActifs'] ?? 0, Colors.orange),
+                        _bar(AppLocalizations.of(context).activeAssignments, affectations['actives'] ?? 0, affectations['actives'] ?? 0, Colors.blue),
+                        _bar(AppLocalizations.of(context).activePositions, stats['postesActifs'] ?? 0, stats['postesActifs'] ?? 0, Colors.orange),
                       ],
                     ),
                   ),

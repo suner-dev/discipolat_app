@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Timeline des activités du membre : présences, événements, prières, formations, notes.
 class MemberActivitiesScreen extends StatefulWidget {
@@ -37,8 +38,8 @@ class _MemberActivitiesScreenState extends State<MemberActivitiesScreen> {
           final date = pres['semaine']?.toString() ?? '';
           items.add(_ActivityItem(
             type: 'presence',
-            title: pres['present'] == true ? 'Présence confirmée' : 'Absence enregistrée',
-            subtitle: 'Semaine du $date${pres['notes'] != null ? ' · ${pres['notes']}' : ''}',
+            title: pres['present'] == true ? AppLocalizations.of(context).presenceConfirmed : AppLocalizations.of(context).absenceRecorded,
+            subtitle: '${AppLocalizations.of(context).weekOf} $date${pres['notes'] != null ? ' · ${pres['notes']}' : ''}',
             date: date,
             icon: pres['present'] == true ? Icons.check_circle : Icons.cancel,
             color: pres['present'] == true ? Colors.green : Colors.red,
@@ -71,7 +72,7 @@ class _MemberActivitiesScreenState extends State<MemberActivitiesScreen> {
           final note = n as Map<String, dynamic>;
           items.add(_ActivityItem(
             type: 'note',
-            title: 'Note du faiseur',
+            title: AppLocalizations.of(context).makerNote,
             subtitle: note['contenu']?.toString() ?? '',
             date: note['createdAt']?.toString() ?? '',
             icon: Icons.sticky_note_2,
@@ -87,8 +88,8 @@ class _MemberActivitiesScreenState extends State<MemberActivitiesScreen> {
         if (prog != null) {
           items.add(_ActivityItem(
             type: 'progression',
-            title: 'Niveau spirituel : ${prog['niveauActuel'] ?? '—'}',
-            subtitle: 'Progression globale',
+            title: AppLocalizations.of(context).spiritualLevel(prog['niveauActuel']?.toString() ?? '—'),
+            subtitle: AppLocalizations.of(context).progressOverview,
             date: '',
             icon: Icons.trending_up,
             color: Colors.purple,
@@ -119,7 +120,7 @@ class _MemberActivitiesScreenState extends State<MemberActivitiesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mes activités'),
+        title: Text(AppLocalizations.of(context).myActivities),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
@@ -138,15 +139,15 @@ class _MemberActivitiesScreenState extends State<MemberActivitiesScreen> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          _chip('Toutes', 'all', Icons.list, Colors.white),
+                          _chip(AppLocalizations.of(context).filterAll, 'all', Icons.list, Colors.white),
                           const SizedBox(width: 6),
-                          _chip('Présences', 'presence', Icons.check_circle, Colors.green),
+                          _chip(AppLocalizations.of(context).filterPresences, 'presence', Icons.check_circle, Colors.green),
                           const SizedBox(width: 6),
-                          _chip('Événements', 'event', Icons.event, Colors.blue),
+                          _chip(AppLocalizations.of(context).filterEvents, 'event', Icons.event, Colors.blue),
                           const SizedBox(width: 6),
-                          _chip('Notes', 'note', Icons.sticky_note_2, Colors.amber),
+                          _chip(AppLocalizations.of(context).filterNotes, 'note', Icons.sticky_note_2, Colors.amber),
                           const SizedBox(width: 6),
-                          _chip('Progression', 'progression', Icons.trending_up, Colors.purple),
+                          _chip(AppLocalizations.of(context).filterProgression, 'progression', Icons.trending_up, Colors.purple),
                         ],
                       ),
                     ),
@@ -161,7 +162,7 @@ class _MemberActivitiesScreenState extends State<MemberActivitiesScreen> {
                               children: [
                                 Icon(Icons.timeline, color: Colors.white.withValues(alpha: 0.2), size: 48),
                                 const SizedBox(height: 12),
-                                Text('Aucune activité',
+                                Text(AppLocalizations.of(context).noActivities,
                                     style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                               ],
                             ),

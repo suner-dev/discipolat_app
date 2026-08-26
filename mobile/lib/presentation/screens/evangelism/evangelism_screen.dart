@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Pipeline d'évangélisation avec vue Kanban.
 /// Les âmes progressent de NOUVELLE_AME → LEADER en 11 étapes.
@@ -96,7 +97,7 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Évangélisation · ${_tracks.length} âmes'),
+        title: Text(AppLocalizations.of(context).evangelizationTitle(_tracks.length)),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
@@ -125,10 +126,10 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
               Row(children: [
                 Icon(Icons.leak_remove, color: AppColors.primaryLight, size: 20),
                 const SizedBox(width: 8),
-                const Text('Funnel de conversion', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+                Text(AppLocalizations.of(context).funnelOfConversion, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
               ]),
               const SizedBox(height: 4),
-              Text('Cliquez sur une étape pour voir les âmes', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+              Text(AppLocalizations.of(context).clickStageToSeeSouls, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
             ]),
           ),
           const SizedBox(height: 12),
@@ -195,7 +196,7 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
             const SizedBox(width: 10),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(_etapeLabels[etape] ?? etape, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
-              Text('${tracks.length} âme${tracks.length > 1 ? 's' : ''}', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+              Text(AppLocalizations.of(context).soulsAtStage(tracks.length), style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
             ])),
             IconButton(icon: Icon(Icons.arrow_back, color: Colors.white.withValues(alpha: 0.5)), onPressed: () => setState(() => _selectedColumn = -1)),
           ]),
@@ -205,7 +206,7 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 12),
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: InputDecoration(
-                hintText: 'Rechercher…', hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                hintText: AppLocalizations.of(context).searchHint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                 isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
@@ -219,7 +220,7 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
           ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(Icons.south_east, color: Colors.white.withValues(alpha: 0.15), size: 48),
               const SizedBox(height: 12),
-              Text('Aucune âme à cette étape', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+              Text(AppLocalizations.of(context).noSoulsAtStage, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
             ]))
           : ListView.builder(
               padding: const EdgeInsets.all(12),
@@ -248,11 +249,11 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
       background: Container(alignment: Alignment.centerLeft, padding: const EdgeInsets.only(left: 20),
         margin: const EdgeInsets.only(bottom: 8), decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
         child: Row(children: [const Icon(Icons.arrow_forward, color: Colors.green), const SizedBox(width: 8),
-          Text('Avancer → ${nextLabel ?? ""}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600))])),
+          Text(AppLocalizations.of(context).advanceTo(nextLabel ?? ''), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600))])),
       secondaryBackground: Container(alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20),
         margin: const EdgeInsets.only(bottom: 8), decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
         child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-          Text('← Reculer $prevLabel', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+          Text(AppLocalizations.of(context).retreatLabel(prevLabel ?? ''), style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
           const SizedBox(width: 8), const Icon(Icons.arrow_back, color: Colors.orange)])),
       child: GlassCard(
         margin: const EdgeInsets.only(bottom: 8),
@@ -269,7 +270,7 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(soulNom, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
             if (dateEtape.isNotEmpty)
-              Text('Depuis $dateEtape', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10)),
+              Text(AppLocalizations.of(context).sinceDate(dateEtape), style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10)),
           ])),
           // Advance/Retreat buttons
           if (nextLabel != null)
@@ -289,7 +290,7 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.06)))),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: SafeArea(child: Row(children: [
-        _navButton('Vue globale', Icons.leak_remove, -1),
+        _navButton(AppLocalizations.of(context).globalView, Icons.leak_remove, -1),
         const SizedBox(width: 4),
         for (int i = 0; i < _etapes.length; i++)
           Expanded(child: _navButton('${i + 1}', Icons.circle, i, small: true)),

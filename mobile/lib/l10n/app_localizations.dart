@@ -179,6 +179,57 @@ class AppLocalizations {
   String get clearAction => translate('clearAction');
   String get offline => translate('offline');
 
+  // ── Lot H3 : member_activities / department_stats / evangelism ──
+  String get myActivities => translate('myActivities');
+  String get filterAll => translate('filterAll');
+  String get filterPresences => translate('filterPresences');
+  String get filterEvents => translate('filterEvents');
+  String get filterNotes => translate('filterNotes');
+  String get filterProgression => translate('filterProgression');
+  String get noActivities => translate('noActivities');
+  String get presenceConfirmed => translate('presenceConfirmed');
+  String get absenceRecorded => translate('absenceRecorded');
+  String get weekOf => translate('weekOf');
+  String get makerNote => translate('makerNote');
+  String spiritualLevel(String value) => translate('spiritualLevel').replaceAll('{value}', value);
+  String get progressOverview => translate('progressOverview');
+  String get departmentStats => translate('departmentStats');
+  String get kpiMembers => translate('kpiMembers');
+  String get kpiActive => translate('kpiActive');
+  String get kpiNew => translate('kpiNew');
+  String get kpiPresence => translate('kpiPresence');
+  String get kpiOverdueTasks => translate('kpiOverdueTasks');
+  String get kpiTeams => translate('kpiTeams');
+  String get memberBreakdown => translate('memberBreakdown');
+  String get integrating => translate('integrating');
+  String get standby => translate('standby');
+  String get droppedOut => translate('droppedOut');
+  String get headcountEvolution => translate('headcountEvolution');
+  String get attendanceSection => translate('attendanceSection');
+  String get present => translate('present');
+  String get absent => translate('absent');
+  String get tasksByStatus => translate('tasksByStatus');
+  String get disciplinaryCategory => translate('disciplinaryCategory');
+  String get noDisciplinary => translate('noDisciplinary');
+  String get workloadPerMember => translate('workloadPerMember');
+  String get noAssignedTasks => translate('noAssignedTasks');
+  String get tasksUnit => translate('tasksUnit');
+  String get retardUnit => translate('retardUnit');
+  String get organizationSection => translate('organizationSection');
+  String get activeAssignments => translate('activeAssignments');
+  String get activePositions => translate('activePositions');
+  String evangelizationTitle(int count) =>
+      translate('evangelizationTitle').replaceAll('{count}', '$count');
+  String get funnelOfConversion => translate('funnelOfConversion');
+  String get clickStageToSeeSouls => translate('clickStageToSeeSouls');
+  String soulsAtStage(int count) => translate('soulsAtStage').replaceAll('{count}', '$count');
+  String get searchHint => translate('searchHint');
+  String get noSoulsAtStage => translate('noSoulsAtStage');
+  String advanceTo(String label) => translate('advanceTo').replaceAll('{label}', label);
+  String retreatLabel(String label) => translate('retreatLabel').replaceAll('{label}', label);
+  String get globalView => translate('globalView');
+  String sinceDate(String date) => translate('sinceDate').replaceAll('{date}', date);
+
   // ==================== NAVIGATION ====================
   String get navDashboard => translate('navDashboard');
   String get navSouls => translate('navSouls');
@@ -416,8 +467,6 @@ class AppLocalizations {
   String get marketplaceTitle => translate('marketplaceTitle');
   String get marketplaceError => translate('marketplaceError');
   String get marketplaceEmpty => translate('marketplaceEmpty');
-  String get searchHint => translate('searchHint');
-  String get filterAll => translate('filterAll');
   String get filterOffers => translate('filterOffers');
   String get filterRequests => translate('filterRequests');
   String get filterServices => translate('filterServices');
@@ -1000,6 +1049,53 @@ class AppLocalizations {
     'encouragementsBadge': '{count} encouragements',
     'sendEncouragementTooltip': 'Envoyer un encouragement',
     'noEncouragementsYet': 'Aucun encouragement reçu pour le moment.',
+    // ── Lot H3 : member_activities / department_stats / evangelism ──
+    'myActivities': 'Mes activités',
+    'filterPresences': 'Présences',
+    'filterEvents': 'Événements',
+    'filterNotes': 'Notes',
+    'filterProgression': 'Progression',
+    'noActivities': 'Aucune activité',
+    'presenceConfirmed': 'Présence confirmée',
+    'absenceRecorded': 'Absence enregistrée',
+    'weekOf': 'Semaine du',
+    'makerNote': 'Note du faiseur',
+    'spiritualLevel': 'Niveau spirituel : {value}',
+    'progressOverview': 'Progression globale',
+    'departmentStats': 'Statistiques du département',
+    'kpiMembers': 'Membres',
+    'kpiActive': 'Actifs',
+    'kpiNew': 'Nouveaux',
+    'kpiPresence': 'Présence',
+    'kpiOverdueTasks': 'Tâches retard',
+    'kpiTeams': 'Équipes',
+    'memberBreakdown': 'Répartition des membres',
+    'integrating': 'En intégration',
+    'standby': 'En veille',
+    'droppedOut': 'Décrochés',
+    'headcountEvolution': 'Évolution de l\'effectif (12 mois)',
+    'attendanceSection': 'Présence',
+    'present': 'Présents',
+    'absent': 'Absents',
+    'tasksByStatus': 'Tâches par statut',
+    'disciplinaryCategory': 'Discipline par catégorie',
+    'noDisciplinary': 'Aucun événement disciplinaire',
+    'workloadPerMember': 'Charge de travail par membre',
+    'noAssignedTasks': 'Aucune tâche ouverte assignée',
+    'tasksUnit': 'tâches',
+    'retardUnit': 'retard',
+    'organizationSection': 'Organisation',
+    'activeAssignments': 'Affectations actives',
+    'activePositions': 'Postes actifs',
+    'evangelizationTitle': 'Évangélisation · {count} âmes',
+    'funnelOfConversion': 'Funnel de conversion',
+    'clickStageToSeeSouls': 'Cliquez sur une étape pour voir les âmes',
+    'soulsAtStage': '{count} âme(s)',
+    'noSoulsAtStage': 'Aucune âme à cette étape',
+    'advanceTo': 'Avancer → {label}',
+    'retreatLabel': '← Reculer {label}',
+    'globalView': 'Vue globale',
+    'sinceDate': 'Depuis {date}',
   };
 
   // ==================== ENGLISH ====================
@@ -1466,6 +1562,52 @@ class AppLocalizations {
     'encouragementsBadge': '{count} encouragements',
     'sendEncouragementTooltip': 'Send an encouragement',
     'noEncouragementsYet': 'No encouragements received yet.',
+    'myActivities': 'My activities',
+    'filterPresences': 'Presences',
+    'filterEvents': 'Events',
+    'filterNotes': 'Notes',
+    'filterProgression': 'Progression',
+    'noActivities': 'No activities',
+    'presenceConfirmed': 'Presence confirmed',
+    'absenceRecorded': 'Absence recorded',
+    'weekOf': 'Week of',
+    'makerNote': 'Maker note',
+    'spiritualLevel': 'Spiritual level: {value}',
+    'progressOverview': 'Global progression',
+    'departmentStats': 'Department statistics',
+    'kpiMembers': 'Members',
+    'kpiActive': 'Active',
+    'kpiNew': 'New',
+    'kpiPresence': 'Attendance',
+    'kpiOverdueTasks': 'Overdue tasks',
+    'kpiTeams': 'Teams',
+    'memberBreakdown': 'Member breakdown',
+    'integrating': 'Onboarding',
+    'standby': 'On standby',
+    'droppedOut': 'Dropped out',
+    'headcountEvolution': 'Headcount evolution (12 months)',
+    'attendanceSection': 'Attendance',
+    'present': 'Present',
+    'absent': 'Absent',
+    'tasksByStatus': 'Tasks by status',
+    'disciplinaryCategory': 'Discipline by category',
+    'noDisciplinary': 'No disciplinary events',
+    'workloadPerMember': 'Workload per member',
+    'noAssignedTasks': 'No assigned open tasks',
+    'tasksUnit': 'tasks',
+    'retardUnit': 'overdue',
+    'organizationSection': 'Organization',
+    'activeAssignments': 'Active assignments',
+    'activePositions': 'Active positions',
+    'evangelizationTitle': 'Evangelism · {count} souls',
+    'funnelOfConversion': 'Conversion funnel',
+    'clickStageToSeeSouls': 'Click a stage to see the souls',
+    'soulsAtStage': '{count} soul(s)',
+    'noSoulsAtStage': 'No souls at this stage',
+    'advanceTo': 'Advance → {label}',
+    'retreatLabel': '← Retreat {label}',
+    'globalView': 'Global view',
+    'sinceDate': 'Since {date}',
   };
 
   // ==================== PORTUGUESE ====================
@@ -1932,6 +2074,52 @@ class AppLocalizations {
     'encouragementsBadge': '{count} encorajamentos',
     'sendEncouragementTooltip': 'Enviar um encorajamento',
     'noEncouragementsYet': 'Nenhum encorajamento recebido ainda.',
+    'myActivities': 'Minhas atividades',
+    'filterPresences': 'Presenças',
+    'filterEvents': 'Eventos',
+    'filterNotes': 'Notas',
+    'filterProgression': 'Progressão',
+    'noActivities': 'Nenhuma atividade',
+    'presenceConfirmed': 'Presença confirmada',
+    'absenceRecorded': 'Ausência registrada',
+    'weekOf': 'Semana de',
+    'makerNote': 'Nota do fazedor',
+    'spiritualLevel': 'Nível espiritual: {value}',
+    'progressOverview': 'Progressão global',
+    'departmentStats': 'Estatísticas do departamento',
+    'kpiMembers': 'Membros',
+    'kpiActive': 'Ativos',
+    'kpiNew': 'Novos',
+    'kpiPresence': 'Presença',
+    'kpiOverdueTasks': 'Tarefas atrasadas',
+    'kpiTeams': 'Equipes',
+    'memberBreakdown': 'Distribuição dos membros',
+    'integrating': 'Em integração',
+    'standby': 'Em standby',
+    'droppedOut': 'Desistentes',
+    'headcountEvolution': 'Evolução do efetivo (12 meses)',
+    'attendanceSection': 'Presença',
+    'present': 'Presentes',
+    'absent': 'Ausentes',
+    'tasksByStatus': 'Tarefas por estado',
+    'disciplinaryCategory': 'Disciplina por categoria',
+    'noDisciplinary': 'Nenhum evento disciplinar',
+    'workloadPerMember': 'Carga de trabalho por membro',
+    'noAssignedTasks': 'Nenhuma tarefa aberta atribuída',
+    'tasksUnit': 'tarefas',
+    'retardUnit': 'atrasadas',
+    'organizationSection': 'Organização',
+    'activeAssignments': 'Atribuições ativas',
+    'activePositions': 'Cargos ativos',
+    'evangelizationTitle': 'Evangelismo · {count} almas',
+    'funnelOfConversion': 'Funil de conversão',
+    'clickStageToSeeSouls': 'Clique numa etapa para ver as almas',
+    'soulsAtStage': '{count} alma(s)',
+    'noSoulsAtStage': 'Nenhuma alma nesta etapa',
+    'advanceTo': 'Avançar → {label}',
+    'retreatLabel': '← Retroceder {label}',
+    'globalView': 'Vista global',
+    'sinceDate': 'Desde {date}',
   };
 }
 
