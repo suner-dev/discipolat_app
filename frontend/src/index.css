@@ -658,6 +658,53 @@
 }
 
 /* ============================================
+   Premium Landing Page Enhancements
+   ============================================ */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+/* Premium glass card with gradient border on hover */
+.glass-card-premium {
+  @apply relative rounded-2xl overflow-hidden transition-all duration-300;
+}
+
+.glass-card-premium::before {
+  content: '';
+  @apply absolute inset-0 rounded-2xl p-px;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.3), transparent, rgba(245, 158, 11, 0.3));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glass-card-premium:hover::before {
+  opacity: 1;
+}
+
+/* Enhanced button ripple effect */
+.btn-ripple {
+  @apply relative overflow-hidden;
+}
+
+.btn-ripple::before {
+  content: '';
+  @apply absolute inset-0 rounded-xl;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.2), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-ripple:active::before {
+  opacity: 1;
+}
+
+/* ============================================
    Spinner
    ============================================ */
 
