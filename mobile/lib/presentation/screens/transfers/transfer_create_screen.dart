@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/document_create_dialog.dart';
 import '../../widgets/glass_theme.dart';
+import '../../../l10n/app_localizations.dart';
 import 'transfer_labels.dart';
 
 /// Méta par type de transfert : entité « personne concernée » et entité « cible ».
@@ -151,13 +152,13 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                     }
                   },
                   icon: const Icon(Icons.add, size: 18, color: Colors.greenAccent),
-                  label: const Text('Créer un document', style: TextStyle(color: Colors.greenAccent)),
+                  label: Text(AppLocalizations.of(context).transferCreateDoc, style: const TextStyle(color: Colors.greenAccent)),
                 ),
                 const Divider(height: 16),
                 Expanded(
                   child: _files.isEmpty
                       ? Center(
-                          child: Text('Aucun document dans le module Documents.',
+                          child: Text(AppLocalizations.of(context).transferNoDocument,
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
                         )
                       : ListView(
@@ -211,8 +212,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
   }
 
   Future<void> _create() async {
-    if (_type.isEmpty || _personneId.isEmpty || _targetId.isEmpty || _justificationCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Formulaire incomplet')));
+    if (_type.isEmpty || _personneId.isEmpty || _targetId.isEmpty || _justificationCtrl.text.trim().isEmpty) {                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).transferIncomplete)));
       return;
     }
     setState(() => _saving = true);
@@ -234,13 +234,13 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_soumettreDirectement ? 'Demande soumise au circuit de validation' : 'Brouillon enregistré'),
+        content: Text(_soumettreDirectement ? AppLocalizations.of(context).transferSubmitted : AppLocalizations.of(context).transferDraftSaved),
       ));
       Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de la création')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).transferCreateError)));
       }
     }
   }
@@ -251,14 +251,14 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
     final availableTypes = _configs.where((c) => c['actif'] == true && c['canInitier'] == true).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nouvelle demande')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).transferCreateTitle)),
       body: _loadingConfigs
           ? const ShimmerLoading(itemCount: 3)
           : ListView(padding: const EdgeInsets.all(16), children: [
               GlassCard(
                 padding: const EdgeInsets.all(16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Type de transfert *', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                  Text(AppLocalizations.of(context).transferType, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     initialValue: _type.isEmpty ? null : _type,
@@ -271,7 +271,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                   ),
                   if (meta != null) ...[
                     const SizedBox(height: 6),
-                    Text('Circuit : ${_circuit()}',
+                    Text('${AppLocalizations.of(context).transferCircuit} : ${_circuit()}',
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10)),
                   ],
                 ]),
@@ -299,15 +299,15 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                       onChanged: (v) => setState(() => _targetId = v ?? ''),
                     ),
                     const SizedBox(height: 12),
-                    Text('Justification détaillée *', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                    Text(AppLocalizations.of(context).transferJustification, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                     const SizedBox(height: 6),
                     TextField(
                       controller: _justificationCtrl,
                       maxLines: 3,
-                      decoration: const InputDecoration(hintText: 'Motifs pastoraux, organisationnels...'),
+                      decoration: InputDecoration(hintText: AppLocalizations.of(context).transferJustificationHint),
                     ),
                     const SizedBox(height: 12),
-                    Text('Priorité', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                    Text(AppLocalizations.of(context).transferPriority, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _priorite,
@@ -317,7 +317,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: _commentairesCtrl,
-                      decoration: const InputDecoration(labelText: 'Commentaires (optionnel)'),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context).transferComments),
                     ),
                     const SizedBox(height: 12),
                     // Pièces jointes
@@ -325,7 +325,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                       Icon(Icons.attach_file, size: 16, color: Colors.white.withValues(alpha: 0.5)),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Pièces jointes',
+                        child: Text(AppLocalizations.of(context).transferAttachments,
                             style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                       ),
                       if (_fichierIds.isNotEmpty)
@@ -342,7 +342,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                         // Toujours actif : le dialogue permet de créer un document
                         // même si le module Fichiers est vide.
                         onPressed: _pickFiles,
-                        child: const Text('Choisir'),
+                        child: Text(AppLocalizations.of(context).transferChoose),
                       ),
                     ]),
                     if (_fichierIds.isNotEmpty) ...[
@@ -368,7 +368,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                     CheckboxListTile(
                       value: _soumettreDirectement,
                       onChanged: (v) => setState(() => _soumettreDirectement = v ?? true),
-                      title: Text('Soumettre immédiatement au circuit de validation',
+                      title: Text(AppLocalizations.of(context).transferSubmitted,
                           style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
                       contentPadding: EdgeInsets.zero,
                       controlAffinity: ListTileControlAffinity.leading,
@@ -380,7 +380,7 @@ class _TransferCreateScreenState extends State<TransferCreateScreen> {
                   onPressed: _saving ? null : _create,
                   child: _saving
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(_soumettreDirectement ? 'Créer et soumettre' : 'Enregistrer le brouillon'),
+                      : Text(_soumettreDirectement ? AppLocalizations.of(context).transferSubmitCreate : AppLocalizations.of(context).transferSaveDraft),
                 ),
               ],
             ]),

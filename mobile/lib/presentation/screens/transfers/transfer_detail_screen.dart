@@ -3,6 +3,7 @@ import '../../../app.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/document_create_dialog.dart';
 import '../../widgets/glass_theme.dart';
+import '../../../l10n/app_localizations.dart';
 import 'transfer_labels.dart';
 
 class TransferDetailScreen extends StatefulWidget {
@@ -48,11 +49,11 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
     try {
       await _apiService.post('/transfers/${widget.transferId}/$action', data: body ?? {});
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opération effectuée')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).transferConfirm)));
       _load();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de l\u2019opération')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).transferOperationError)));
       }
     }
   }
@@ -61,10 +62,10 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Annuler la demande ?'),
+        title: Text(AppLocalizations.of(context).transferCancelQuestion),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Non')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Oui')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).no)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).yes)),
         ],
       ),
     );
@@ -74,7 +75,7 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Demande de transfert')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).transferDetailTitle)),
       body: _isLoading || _data == null
           ? const ShimmerLoading(itemCount: 4)
           : RefreshIndicator(
@@ -114,12 +115,12 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
           StatusBadge(label: transferStatusLabel(statut), color: color),
         ]),
         const SizedBox(height: 12),
-        _info('Personne concernée', t['personneNom'] ?? '—'),
-        _info('Priorité', kPrioriteLabels[t['priorite']] ?? '—'),
-        if (ancienne != null) _info('Affectation actuelle', ancienne),
-        _info('Nouvelle affectation', nouvelle ?? '—'),
+        _info(AppLocalizations.of(context).transferPerson, t['personneNom'] ?? '—'),
+        _info(AppLocalizations.of(context).transferPriority, kPrioriteLabels[t['priorite']] ?? '—'),
+        if (ancienne != null) _info(AppLocalizations.of(context).transferCurrentAffectation, ancienne),
+        _info(AppLocalizations.of(context).transferDeptDestination, nouvelle ?? '—'),
         const SizedBox(height: 8),
-        Text('Justification', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+        Text(AppLocalizations.of(context).transferJustificationLabel, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
         const SizedBox(height: 2),
         Text(t['justification'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13)),
         if (t['commentaires'] != null) ...[
@@ -136,32 +137,32 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
             if (peutSoumettre)
               FilledButton(
                 onPressed: () => _action('submit'),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.send, size: 16), SizedBox(width: 6), Text('Soumettre')]),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.send, size: 16), const SizedBox(width: 6), Text(AppLocalizations.of(context).transferSubmit)]),
               ),
             if (peutAnnuler)
               OutlinedButton(
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4))),
                 onPressed: _confirmCancel,
-                child: const Text('Annuler'),
+                child: Text(AppLocalizations.of(context).transferCancel),
               ),
             if (peutValider) ...[
               FilledButton(
                 style: FilledButton.styleFrom(backgroundColor: Colors.green.shade600),
                 onPressed: () => _openDecisionDialog('APPROBATION'),
-                child: const Text('Approuver'),
+                child: Text(AppLocalizations.of(context).transferApprove),
               ),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4))),
                 onPressed: () => _openDecisionDialog('REFUS'),
-                child: const Text('Refuser'),
+                child: Text(AppLocalizations.of(context).transferReject),
               ),
               OutlinedButton(
                 onPressed: () => _openDecisionDialog('DEMANDE_INFORMATIONS'),
-                child: const Text('Infos'),
+                child: Text(AppLocalizations.of(context).transferInfo),
               ),
               OutlinedButton(
                 onPressed: () => _openDecisionDialog('RENVOI_CORRECTION'),
-                child: const Text('Correction'),
+                child: Text(AppLocalizations.of(context).transferCorrection),
               ),
             ],
           ]),
@@ -185,22 +186,22 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
               controller: controller,
               maxLines: 3,
               decoration: InputDecoration(
-                labelText: motivRequired ? 'Motivation *' : 'Motivation (optionnelle)',
+                labelText: motivRequired ? AppLocalizations.of(context).transferMotivation : AppLocalizations.of(context).transferMotivationOptional,
                 hintText: decision == 'REFUS' ? 'Raisons du refus...' : 'Observations...',
               ),
             ),
             const SizedBox(height: 12),
             Text(
               decision == 'APPROBATION'
-                  ? 'La demande avancera dans le circuit de validation.'
+                  ? AppLocalizations.of(context).transferApprovalExplanation
                   : decision == 'REFUS'
-                      ? 'La demande sera définitivement refusée et notifiée.'
-                      : 'La demande sera renvoyée au demandeur.',
+                      ? AppLocalizations.of(context).transferRejectionExplanation
+                      : AppLocalizations.of(context).transferCancelExplanation,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
             ),
           ]),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).transferCancel)),
             FilledButton(
               onPressed: () {
                 if (motivRequired && controller.text.trim().isEmpty) {
@@ -209,7 +210,7 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
                 }
                 Navigator.pop(ctx, true);
               },
-              child: const Text('Confirmer'),
+              child: Text(AppLocalizations.of(context).transferConfirmBtn),
             ),
           ],
         ),
@@ -246,17 +247,17 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
         Row(children: [
           Icon(Icons.attach_file, color: Colors.white.withValues(alpha: 0.5), size: 18),
           const SizedBox(width: 8),
-          Expanded(child: Text('Pièces jointes (${pieces.length})',
+          Expanded(child: Text(AppLocalizations.of(context).transferAttachmentsCount(pieces.length),
               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
           if (peutModifier)
             TextButton(
               onPressed: () => _editPieces(pieces),
-              child: const Text('Modifier'),
+              child: Text(AppLocalizations.of(context).transferModify),
             ),
         ]),
         const SizedBox(height: 8),
         if (pieces.isEmpty)
-          Text('Aucune pièce jointe.',
+          Text(AppLocalizations.of(context).transferNoAttachment,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12))
         else
           ...pieces.map((p) {
@@ -305,13 +306,13 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
                     }
                   },
                   icon: const Icon(Icons.add, size: 18, color: Colors.greenAccent),
-                  label: const Text('Créer un document', style: TextStyle(color: Colors.greenAccent)),
+                  label: Text(AppLocalizations.of(context).transferCreateDoc, style: const TextStyle(color: Colors.greenAccent)),
                 ),
                 const Divider(height: 16),
                 Expanded(
                   child: _files.isEmpty
                       ? Center(
-                          child: Text('Aucun document dans le module Documents.',
+                          child: Text(AppLocalizations.of(context).transferNoDocument,
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
                         )
                       : ListView(
@@ -343,10 +344,10 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).transferCancel)),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Valider (${selection.length})', style: const TextStyle(color: Colors.white)),
+              child: Text(AppLocalizations.of(context).transferValidateCount(selection.length), style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -359,10 +360,10 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
           'fichierIds': selection.toList(),
         });
         if (!mounted) return;
-        _showMessage('Pièces jointes mises à jour');
+        _showMessage(AppLocalizations.of(context).transferAttachmentsUpdated);
         _load();
       } catch (_) {
-        if (mounted) _showMessage('Erreur lors de la mise à jour des pièces jointes');
+        if (mounted)        _showMessage(AppLocalizations.of(context).transferAttachmentsError);
       }
     }
   }
@@ -391,11 +392,11 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
         Row(children: [
           Icon(Icons.verified_user, color: AppColors.primaryLight, size: 18),
           const SizedBox(width: 8),
-          const Text('Circuit de validation', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).transferCircuit, style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
         ]),
         const SizedBox(height: 12),
         if (etapes.isEmpty)
-          Text('Aucune validation requise — exécution automatique dès la soumission.',
+          Text(AppLocalizations.of(context).transferAutoExecution,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12))
         else
           ...List.generate(etapes.length, (i) {
@@ -414,7 +415,7 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
                 ),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(s['label'] ?? 'Étape', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                  Text(s['label'] ?? AppLocalizations.of(context).transferStep, style: const TextStyle(color: Colors.white, fontSize: 13)),
                   Text((s['rolesValidateurs'] as List).join(' / '), style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
                 ])),
               ]),
@@ -424,7 +425,7 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
           const SizedBox(height: 8),
           const Divider(),
           const SizedBox(height: 4),
-          Text('Décisions', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+          Text(AppLocalizations.of(context).transferDecisions, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
           const SizedBox(height: 6),
           ...decisions.map((d) {
             final m = d as Map<String, dynamic>;
@@ -454,11 +455,11 @@ class _TransferDetailScreenState extends State<TransferDetailScreen> {
         Row(children: [
           Icon(Icons.history, color: Colors.lightBlueAccent, size: 18),
           const SizedBox(width: 8),
-          const Text('Historique', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).transferHistory, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
         ]),
         const SizedBox(height: 12),
         if (_history.isEmpty)
-          Text('Aucun événement', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12))
+          Text(AppLocalizations.of(context).transferNoEvent, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12))
         else
           ...List.generate(_history.length, (i) {
             final h = _history[i] as Map<String, dynamic>;

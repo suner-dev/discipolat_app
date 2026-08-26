@@ -423,6 +423,20 @@ class AppLocalizations {
   String get transferCreateDoc => translate('transferCreateDoc');
   String get transferNoEvent => translate('transferNoEvent');
   String get transferOperationError => translate('transferOperationError');
+  String get transferAttachments => translate('transferAttachments');
+  String get transferJustificationHint => translate('transferJustificationHint');
+  String get transferPriority => translate('transferPriority');
+  String get transferPerson => translate('transferPerson');
+  String get transferSubmit => translate('transferSubmit');
+  String get transferCancel => translate('transferCancel');
+  String get transferConfirmBtn => translate('transferConfirmBtn');
+  String get transferApprovalExplanation => translate('transferApprovalExplanation');
+  String get transferRejectionExplanation => translate('transferRejectionExplanation');
+  String get transferAutoExecution => translate('transferAutoExecution');
+  String transferAttachmentsCount(int count) => translate('transferAttachmentsCount').replaceAll('{count}', count.toString());
+  String transferValidateCount(int count) => translate('transferValidateCount').replaceAll('{count}', count.toString());
+  String get transferAttachmentsUpdated => translate('transferAttachmentsUpdated');
+  String get transferAttachmentsError => translate('transferAttachmentsError');
   String get statusDraft => translate('statusDraft');
   String get statusPendingValidation => translate('statusPendingValidation');
   String get statusApproval => translate('statusApproval');
@@ -1632,6 +1646,20 @@ class AppLocalizations {
     'transferCreateDoc': 'Créer un document',
     'transferNoEvent': 'Aucun événement',
     'transferOperationError': 'Erreur lors de l\'opération',
+    'transferAttachments': 'Pièces jointes',
+    'transferJustificationHint': 'Motifs pastoraux, organisationnels...',
+    'transferPriority': 'Priorité',
+    'transferPerson': 'Personne',
+    'transferSubmit': 'Soumettre',
+    'transferCancel': 'Annuler',
+    'transferConfirmBtn': 'Confirmer',
+    'transferApprovalExplanation': 'La demande avancera dans le circuit de validation.',
+    'transferRejectionExplanation': 'La demande sera définitivement refusée et notifiée.',
+    'transferAutoExecution': 'Aucune validation requise — exécution automatique dès la soumission.',
+    'transferAttachmentsCount': 'Pièces jointes ({count})',
+    'transferValidateCount': 'Valider ({count})',
+    'transferAttachmentsUpdated': 'Pièces jointes mises à jour',
+    'transferAttachmentsError': 'Erreur lors de la mise à jour des pièces jointes',
     'statusDraft': 'Brouillon',
     'statusPendingValidation': 'En attente de validation',
     'statusApproval': 'Approbation',
@@ -2333,6 +2361,20 @@ class AppLocalizations {
     'transferCreateDoc': 'Create a document',
     'transferNoEvent': 'No events',
     'transferOperationError': 'Operation failed',
+    'transferAttachments': 'Attachments',
+    'transferJustificationHint': 'Pastoral, organizational reasons...',
+    'transferPriority': 'Priority',
+    'transferPerson': 'Person',
+    'transferSubmit': 'Submit',
+    'transferCancel': 'Cancel',
+    'transferConfirmBtn': 'Confirm',
+    'transferApprovalExplanation': 'The request will proceed in the validation circuit.',
+    'transferRejectionExplanation': 'The request will be permanently rejected and notified.',
+    'transferAutoExecution': 'No validation required — automatic execution upon submission.',
+    'transferAttachmentsCount': 'Attachments ({count})',
+    'transferValidateCount': 'Validate ({count})',
+    'transferAttachmentsUpdated': 'Attachments updated',
+    'transferAttachmentsError': 'Error updating attachments',
     'statusDraft': 'Draft',
     'statusPendingValidation': 'Pending validation',
     'statusApproval': 'Approval',
@@ -3034,6 +3076,20 @@ class AppLocalizations {
     'transferCreateDoc': 'Criar documento',
     'transferNoEvent': 'Sem eventos',
     'transferOperationError': 'Erro na operação',
+    'transferAttachments': 'Peças anexas',
+    'transferJustificationHint': 'Motivos pastorais, organizacionais...',
+    'transferPriority': 'Prioridade',
+    'transferPerson': 'Pessoa',
+    'transferSubmit': 'Submeter',
+    'transferCancel': 'Cancelar',
+    'transferConfirmBtn': 'Confirmar',
+    'transferApprovalExplanation': 'O pedido avançará no circuito de validação.',
+    'transferRejectionExplanation': 'O pedido será definitivamente recusado e notificado.',
+    'transferAutoExecution': 'Nenhuma validação necessária — execução automática ao submeter.',
+    'transferAttachmentsCount': 'Peças anexas ({count})',
+    'transferValidateCount': 'Validar ({count})',
+    'transferAttachmentsUpdated': 'Peças anexas atualizadas',
+    'transferAttachmentsError': 'Erro ao atualizar peças anexas',
     'statusDraft': 'Rascunho',
     'statusPendingValidation': 'Aguarda validação',
     'statusApproval': 'Aprovação',
