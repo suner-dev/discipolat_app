@@ -423,7 +423,7 @@ export default function LoginPage() {
               callback: async (response) => {
                 try {
                   const res = await api.post('/auth/google', { credential: response.credential });
-                  loginWithSocialToken(res.data.token, res.data.user);
+                  loginWithSocialToken(res.data.token, res.data.user, res.data.refreshToken);
                   navigate('/dashboard', { replace: true });
                 } catch {
                   setError(t('auth.googleUnavailable'));

@@ -347,7 +347,6 @@ class _EnhancedConversationScreenState extends State<EnhancedConversationScreen>
     final replyTo = m['replyToContent']?.toString();
     final replySender = m['replyToSenderName']?.toString();
     final reactions = m['reactionCounts'] as Map<String, dynamic>?;
-    final userReaction = m['userReaction']?.toString();
     final msgId = m['id']?.toString() ?? '';
 
     return Align(

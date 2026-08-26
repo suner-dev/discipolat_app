@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../app.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 

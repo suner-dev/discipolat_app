@@ -93,10 +93,19 @@ public class SocialAuthController {
                 log.info("New user created via Google OAuth: {}", email);
             }
 
-            // Générer le token JWT
-            String token = jwtTokenProvider.generateToken(user);
+            // Générer les tokens JWT (access + refresh) — même mécanique que le login classique
+            // afin que les utilisateurs social auth puissent rafraîchir leur session.
+            String accessToken = jwtTokenProvider.generateAccessToken(
+                    user.getId(), user.getEmail(), user.getRole().name(),
+                    java.util.Set.of(user.getRole().name()),
+                    user.isEstChefDeFamille(), user.getTenantId());
+            String refreshToken = jwtTokenProvider.generateRefreshToken(
+                    user.getId(), user.getEmail(), user.getRole().name(),
+                    java.util.Set.of(user.getRole().name()),
+                    user.getTenantId());
             return ResponseEntity.ok(Map.of(
-                    "token", token,
+                    "token", accessToken,
+                    "refreshToken", refreshToken,
                     "user", Map.of(
                             "id", user.getId().toString(),
                             "email", user.getEmail(),
@@ -149,9 +158,17 @@ public class SocialAuthController {
     public ResponseEntity<Map<String, Object>> verifyMagicLink(@RequestParam String token) {
         try {
             User user = authService.verifyMagicLink(token);
-            String jwt = jwtTokenProvider.generateToken(user);
+            String accessToken = jwtTokenProvider.generateAccessToken(
+                    user.getId(), user.getEmail(), user.getRole().name(),
+                    java.util.Set.of(user.getRole().name()),
+                    user.isEstChefDeFamille(), user.getTenantId());
+            String refreshToken = jwtTokenProvider.generateRefreshToken(
+                    user.getId(), user.getEmail(), user.getRole().name(),
+                    java.util.Set.of(user.getRole().name()),
+                    user.getTenantId());
             return ResponseEntity.ok(Map.of(
-                    "token", jwt,
+                    "token", accessToken,
+                    "refreshToken", refreshToken,
                     "user", Map.of(
                             "id", user.getId().toString(),
                             "email", user.getEmail(),

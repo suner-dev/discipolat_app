@@ -36,7 +36,7 @@ export default function MagicLinkVerifyPage() {
           firstName: d.user.firstName,
           lastName: d.user.lastName,
           role: d.user.role,
-        });
+        }, d.refreshToken);
         setState('success');
         setTimeout(() => navigate('/dashboard', { replace: true }), 900);
       } catch (e) {

@@ -214,7 +214,6 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
     final projected = _result?['projectedTotal'] ?? 0;
     final growth = _result?['growthPercent'] ?? 0;
     final leaders = _result?['neededLeaders'] ?? 0;
-    final currentLeaders = _result?['currentLeaders'] ?? 0;
     final gap = _result?['leaderGap'] ?? 0;
 
     return Row(
@@ -270,7 +269,7 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: projection.map((p) {
                 final souls = (p['souls'] as num).toDouble();
-                final pct = maxVal > 0 ? souls / maxVal : 0;
+                final pct = maxVal > 0 ? souls / maxVal : 0.0;
                 final color = souls >= base ? Colors.green : Colors.red;
                 return Expanded(
                   child: Padding(
@@ -282,7 +281,7 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
                           Text('${souls.toInt()}', style: TextStyle(color: color, fontSize: 8)),
                         const SizedBox(height: 2),
                         Container(
-                          height: ((pct * 120) as num).clamp(4.0, 120.0).toDouble(),
+                          height: (pct * 120).clamp(4.0, 120.0),
                           decoration: BoxDecoration(
                             color: color.withAlpha(180),
                             borderRadius: BorderRadius.circular(2),

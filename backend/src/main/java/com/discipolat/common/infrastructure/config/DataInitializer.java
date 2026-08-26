@@ -172,7 +172,7 @@ public class DataInitializer implements CommandLineRunner {
                     .situationFamiliale("CELIBATAIRE")
                     .build();
             soul = soulRepository.save(soul);
-            log.info("✅ Created member soul for {} / {}", membre.getEmail(), DEFAULT_PASSWORD);
+            log.info("✅ Created member soul for {}", membre.getEmail());
         }
 
         final Soul memberSoul = soul;

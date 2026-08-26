@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
 
 /// P3 #109 — Analytics d'usage mobile

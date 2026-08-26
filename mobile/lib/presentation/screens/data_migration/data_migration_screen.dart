@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../app.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 
@@ -16,7 +15,6 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
   final ApiService _api = ApiService();
   List<dynamic> _migrations = [];
   bool _isLoading = true;
-  bool _isAnalyzing = false;
   String? _selectedFile;
   Map<String, dynamic>? _analysisResult;
 
@@ -40,19 +38,16 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
   }
 
   Future<void> _analyzeFile() async {
-    setState(() => _isAnalyzing = true);
     try {
       final res = await _api.post('/data-migration/analyze', data: {
         'fileName': _selectedFile ?? 'import.csv',
         'fileType': 'CSV',
       });
+      if (!mounted) return;
       setState(() {
         _analysisResult = res.data as Map<String, dynamic>?;
-        _isAnalyzing = false;
       });
-    } catch (_) {
-      if (mounted) setState(() => _isAnalyzing = false);
-    }
+    } catch (_) {}
   }
 
   Future<void> _executeMigration(String id) async {
