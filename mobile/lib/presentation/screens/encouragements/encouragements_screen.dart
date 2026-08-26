@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../app.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 
 /// P3 — Encouragements (envoyer/recevoir des mots d'encouragement)
@@ -56,13 +57,13 @@ class _EncouragementsScreenState extends State<EncouragementsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Encouragements'),
+        title: Text(AppLocalizations.of(context).encouragementsTitle),
         bottom: TabBar(
           controller: _tabCtrl,
           tabs: [
-            Tab(text: 'Reçus (${_received.length})'),
-            Tab(text: 'Envoyés (${_sent.length})'),
-            Tab(text: 'Mon équipe (${_team.length})'),
+            Tab(text: AppLocalizations.of(context).tabReceived(_received.length)),
+            Tab(text: AppLocalizations.of(context).tabSent(_sent.length)),
+            Tab(text: AppLocalizations.of(context).tabTeam(_team.length)),
           ],
         ),
       ),
@@ -93,7 +94,7 @@ class _EncouragementsScreenState extends State<EncouragementsScreen>
             Icon(isReceived ? Icons.inbox : Icons.send, size: 48,
                 color: Colors.white.withValues(alpha: 0.2)),
             const SizedBox(height: 12),
-            Text(isReceived ? 'Aucun encouragement reçu' : 'Aucun encouragement envoyé',
+            Text(isReceived ? AppLocalizations.of(context).emptyReceivedEnc : AppLocalizations.of(context).emptySentEnc,
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
           ],
         ),
@@ -165,7 +166,7 @@ class _EncouragementsScreenState extends State<EncouragementsScreen>
           children: [
             Icon(Icons.group, size: 48, color: Colors.white.withValues(alpha: 0.2)),
             const SizedBox(height: 12),
-            Text('Aucun membre dans votre équipe',
+            Text(AppLocalizations.of(context).emptyTeam,
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
           ],
         ),
@@ -195,7 +196,7 @@ class _EncouragementsScreenState extends State<EncouragementsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                      Text('${member['role'] ?? ''} • ${member['encouragementsReceived'] ?? 0} encouragements reçus',
+                      Text('${member['role'] ?? ''} • ${AppLocalizations.of(context).encouragementsReceived((member['encouragementsReceived'] as num?)?.toInt() ?? 0)}',
                           style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
                     ],
                   ),
@@ -229,19 +230,19 @@ class _EncouragementsScreenState extends State<EncouragementsScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Envoyer un encouragement',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(AppLocalizations.of(context).composeEncouragement,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 12),
               // Type chips
               Wrap(
                 spacing: 8,
                 children: [
-                  {'value': 'PRAYER', 'label': '🙏 Prière'},
-                  {'value': 'PRAISE', 'label': '⭐ Louange'},
-                  {'value': 'THANKS', 'label': '❤️ Merci'},
-                  {'value': 'SUPPORT', 'label': '💪 Soutien'},
-                  {'value': 'WELCOME', 'label': '👋 Bienvenue'},
-                  {'value': 'SCRIPTURE', 'label': '📖 Verset'},
+                  {'value': 'PRAYER', 'label': AppLocalizations.of(context).encTypePrayer},
+                  {'value': 'PRAISE', 'label': AppLocalizations.of(context).encTypePraise},
+                  {'value': 'THANKS', 'label': AppLocalizations.of(context).encTypeThanks},
+                  {'value': 'SUPPORT', 'label': AppLocalizations.of(context).encTypeSupport},
+                  {'value': 'WELCOME', 'label': AppLocalizations.of(context).encTypeWelcome},
+                  {'value': 'SCRIPTURE', 'label': AppLocalizations.of(context).encTypeScripture},
                 ].map((t) => ChoiceChip(
                   label: Text(t['label']!, style: const TextStyle(fontSize: 12)),
                   selected: type == t['value'],
@@ -252,9 +253,9 @@ class _EncouragementsScreenState extends State<EncouragementsScreen>
               TextField(
                 controller: msgCtrl,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Écrivez votre encouragement...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context).writeEncouragementHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -271,13 +272,13 @@ class _EncouragementsScreenState extends State<EncouragementsScreen>
                       });
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Encouragement envoyé 🙏')),
+                        SnackBar(content: Text(AppLocalizations.of(context).encouragementSent)),
                       );
                       _loadAll();
                     } catch (_) {}
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.pink),
-                  child: const Text('Envoyer', style: TextStyle(color: Colors.white)),
+                  child: Text(AppLocalizations.of(context).send, style: const TextStyle(color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 16),

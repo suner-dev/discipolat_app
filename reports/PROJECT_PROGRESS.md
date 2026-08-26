@@ -150,8 +150,20 @@ Reprise : validation rejouée puis commit.
   (streaming, inventory, marketplace, moderation, predictions_ml, executive_insights…)
   et le reste des ~160 écrans.
 
+### Session 4 — i18n lot 3 (P3) + fix frontend TS (2026-08-25)
+- **Frontend** : correction de 2 erreurs TS bloquantes (`loginWithSocialToken` —
+  signature interface ≠ implémentation, 3e paramètre refreshToken manquant).
+- **Mobile i18n lot 3** : ~60 clés × FR/EN/PT + migration des 6 écrans P3 branchés
+  API : data_migration, surveys, encouragements, follow_up_requests,
+  neighborhood_health, sabbath_dashboard (clés paramétrées pour onglets/compteurs).
+- Validation : flutter test **342/342** ✅ · vitest **308/308** ✅ · tsc -b ✅ ·
+  flutter analyze 0 erreur.
+- État i18n mobile : tous les écrans branchés API sont localisés ; restent les
+  ~16 écrans encore étiquetés démo dans kDemoDataRoutes.
+
 ### Reste à faire (prochaine session)
-1. Mobile i18n : étendre aux autres écrans (streaming, inventory, marketplace, …)
+1. Brancher ou retirer les ~16 écrans démo de kDemoDataRoutes (bible-reading,
+   broadcast, community, discipleship-path, group-messages, scheduled-announcements…)
 2. AuthState singleton → Riverpod provider
 3. Screens mobile >1000 lignes → extraire composants
 4. Les routes encore dans `kDemoDataRoutes` (~18 écrans nécessitant un paramètre

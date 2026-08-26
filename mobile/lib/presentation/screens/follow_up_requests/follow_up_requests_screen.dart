@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// P3 #112 — Demandes de suivi : demander un faiseur ou un accompagnement spirituel.
 class FollowUpRequestsScreen extends StatefulWidget {
@@ -18,10 +19,10 @@ class _FollowUpRequestsScreenState extends State<FollowUpRequestsScreen> with Si
   List<dynamic> _assigned = [];
   bool _loading = true;
 
-  static const Map<String, String> _types = {
-    'FAISEUR': 'Demander un faiseur',
-    'ACCOMPAGNEMENT_SPIRITUEL': 'Accompagnement spirituel',
-    'CONSEIL_PASTORAL': 'Conseil pastoral',
+  Map<String, String> _types(AppLocalizations l) => {
+    'FAISEUR': l.fuTypeMaker,
+    'ACCOMPAGNEMENT_SPIRITUEL': l.fuTypeSpiritual,
+    'CONSEIL_PASTORAL': l.fuTypePastoral,
   };
 
   @override
@@ -46,31 +47,36 @@ class _FollowUpRequestsScreenState extends State<FollowUpRequestsScreen> with Si
     final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
+      builder: (ctx) {
+        final l = AppLocalizations.of(context);
+        return Padding(
         padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Nouvelle demande de suivi', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(l.newFollowUpRequest, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(initialValue: type, items: _types.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(), onChanged: (v) => type = v ?? 'FAISEUR'),
+          DropdownButtonFormField<String>(initialValue: type, items: _types(l).entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(), onChanged: (v) => type = v ?? 'FAISEUR'),
           const SizedBox(height: 12),
-          TextField(controller: ctrl, maxLines: 3, decoration: const InputDecoration(hintText: 'Décrivez votre besoin…', border: OutlineInputBorder())),
+          TextField(controller: ctrl, maxLines: 3, decoration: InputDecoration(hintText: l.describeNeed, border: const OutlineInputBorder())),
           const SizedBox(height: 12),
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Envoyer')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l.send)),
           ]),
         ]),
-      ),
+        );
+      },
     );
     if (ok == true) {
       try {
         await _api.post('/follow-up-requests', data: {'type': type, 'message': ctrl.text.trim()});
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demande envoyée ✅')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).requestSent)));
           _load();
         }
       } catch (_) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Échec de l\'envoi')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).requestFailed)));
+        }
       }
     }
   }
@@ -99,16 +105,16 @@ class _FollowUpRequestsScreenState extends State<FollowUpRequestsScreen> with Si
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🤝 Demandes de suivi'),
+        title: Text(AppLocalizations.of(context).followUpTitle),
         backgroundColor: Colors.pink.shade700,
         foregroundColor: Colors.white,
-        bottom: TabBar(controller: _tab, indicatorColor: Colors.white, tabs: [Tab(text: 'Mes demandes (${_mine.length})'), Tab(text: 'Assignées à moi (${_assigned.length})')]),
+        bottom: TabBar(controller: _tab, indicatorColor: Colors.white, tabs: [Tab(text: AppLocalizations.of(context).myRequests(_mine.length)), Tab(text: AppLocalizations.of(context).assignedToMe(_assigned.length))]),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.pink.shade700,
         onPressed: _createRequest,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Demander', style: TextStyle(color: Colors.white)),
+        label: Text(AppLocalizations.of(context).askAction, style: const TextStyle(color: Colors.white)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -125,7 +131,7 @@ class _FollowUpRequestsScreenState extends State<FollowUpRequestsScreen> with Si
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text(mine ? 'Aucune demande. Appuyez sur « Demander » pour commencer.' : 'Aucune demande vous est assignée.'),
+                child: Text(mine ? AppLocalizations.of(context).emptyMyRequests : AppLocalizations.of(context).emptyAssignedRequests),
               ),
             ),
           ],
@@ -144,13 +150,13 @@ class _FollowUpRequestsScreenState extends State<FollowUpRequestsScreen> with Si
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               leading: Icon(Icons.handshake_outlined, color: _statusColor(status)),
-              title: Text(_types[r['type']] ?? r['type']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              title: Text(_types(AppLocalizations.of(context))[r['type']] ?? r['type']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 if (r['message'] != null && r['message'].toString().isNotEmpty) Text(r['message'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
                 Text('${r['createdAt']?.toString().split('T').first ?? ''} • $status${r['assignedToName'] != null ? ' • ${r['assignedToName']}' : ''}', style: const TextStyle(fontSize: 11)),
               ]),
               isThreeLine: true,
-              trailing: (!mine && status != 'TERMINEE') ? IconButton(icon: const Icon(Icons.check_circle_outline, color: Colors.green), tooltip: 'Marquer terminée', onPressed: () => _complete(r)) : null,
+              trailing: (!mine && status != 'TERMINEE') ? IconButton(icon: const Icon(Icons.check_circle_outline, color: Colors.green), tooltip: AppLocalizations.of(context).markComplete, onPressed: () => _complete(r)) : null,
             ),
           );
         },

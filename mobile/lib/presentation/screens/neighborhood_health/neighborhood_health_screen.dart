@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// P3 #104 — Analyse de santé spirituelle par quartier (heatmap + zones faibles).
 class NeighborhoodHealthScreen extends StatefulWidget {
@@ -47,7 +48,7 @@ class _NeighborhoodHealthScreenState extends State<NeighborhoodHealthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('💗 Santé par quartier'),
+        title: Text(AppLocalizations.of(context).neighborhoodHealthTitle),
         backgroundColor: Colors.pink.shade700,
         foregroundColor: Colors.white,
       ),
@@ -56,7 +57,7 @@ class _NeighborhoodHealthScreenState extends State<NeighborhoodHealthScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: _zones.isEmpty
-                  ? ListView(children: const [Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Aucune zone définie. Renseignez le champ « zone » des âmes.')))])
+                  ? ListView(children: [Padding(padding: const EdgeInsets.all(32), child: Center(child: Text(AppLocalizations.of(context).neighborhoodEmpty)))])
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: _zones.length,
@@ -79,9 +80,9 @@ class _NeighborhoodHealthScreenState extends State<NeighborhoodHealthScreen> {
                               LinearProgressIndicator(value: score / 100, color: color, backgroundColor: Colors.grey.shade200),
                               const SizedBox(height: 6),
                               Wrap(spacing: 12, children: [
-                                Text('${z['total']} âmes', style: const TextStyle(fontSize: 12)),
-                                Text('Score : $score/100', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                Text('${z['contactsRecents']} contacts récents', style: const TextStyle(fontSize: 12)),
+                                Text(AppLocalizations.of(context).soulsInZone((z['total'] as num?)?.toInt() ?? 0), style: const TextStyle(fontSize: 12)),
+                                Text(AppLocalizations.of(context).scoreLabel(score), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                Text(AppLocalizations.of(context).recentContacts((z['contactsRecents'] as num?)?.toInt() ?? 0), style: const TextStyle(fontSize: 12)),
                               ]),
                               if (z['actionRecommandee'] != null)
                                 Padding(

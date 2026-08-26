@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../app.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 
 /// P3 — Assistant de migration de données (import Excel/CSV)
@@ -58,13 +59,13 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
     try {
       await _api.post('/data-migration/$id/execute');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Migration lancée ✅')),
+        SnackBar(content: Text(AppLocalizations.of(context).migrationLaunched)),
       );
       _loadMigrations();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la migration')),
+          SnackBar(content: Text(AppLocalizations.of(context).migrationError)),
         );
       }
     }
@@ -73,7 +74,7 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Migration de données')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).dataMigrationTitle)),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -91,14 +92,14 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
                           children: [
                             Icon(Icons.upload_file, color: AppColors.primaryLight, size: 20),
                             const SizedBox(width: 8),
-                            const Text('Importer des données',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text(AppLocalizations.of(context).importData,
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                           ],
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          'Importez vos membres depuis Excel ou CSV. L\'assistant mapping détecte automatiquement les colonnes.',
-                          style: TextStyle(color: Colors.white54, fontSize: 13),
+                        Text(
+                          AppLocalizations.of(context).importDataHint,
+                          style: const TextStyle(color: Colors.white54, fontSize: 13),
                         ),
                         const SizedBox(height: 16),
                         // File picker placeholder
@@ -119,7 +120,7 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
                               children: [
                                 Icon(Icons.cloud_upload, color: AppColors.primaryLight, size: 24),
                                 const SizedBox(width: 8),
-                                Text(_selectedFile ?? 'Sélectionner un fichier',
+                                Text(_selectedFile ?? AppLocalizations.of(context).selectFile,
                                     style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
                               ],
                             ),
@@ -143,21 +144,21 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
                             children: [
                               const Icon(Icons.auto_awesome, color: Colors.green, size: 18),
                               const SizedBox(width: 8),
-                              const Text('Analyse IA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              Text(AppLocalizations.of(context).aiAnalysis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           const SizedBox(height: 12),
-                          _analysisRow('Fichier détecté', '${_analysisResult!['fileName'] ?? 'N/A'}'),
-                          _analysisRow('Lignes détectées', '${_analysisResult!['totalRows'] ?? 0}'),
-                          _analysisRow('Colonnes mappées', '${_analysisResult!['mappedColumns'] ?? 0}/${_analysisResult!['totalColumns'] ?? 0}'),
-                          _analysisRow('Confiance mapping', '${_analysisResult!['confidence'] ?? 0}%'),
+                          _analysisRow(AppLocalizations.of(context).detectedFile, '${_analysisResult!['fileName'] ?? 'N/A'}'),
+                          _analysisRow(AppLocalizations.of(context).detectedRows, '${_analysisResult!['totalRows'] ?? 0}'),
+                          _analysisRow(AppLocalizations.of(context).mappedColumns, '${_analysisResult!['mappedColumns'] ?? 0}/${_analysisResult!['totalColumns'] ?? 0}'),
+                          _analysisRow(AppLocalizations.of(context).mappingConfidence, '${_analysisResult!['confidence'] ?? 0}%'),
                           const SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
                               onPressed: () => _executeMigration(_analysisResult!['migrationId'] ?? ''),
                               icon: const Icon(Icons.play_arrow, size: 18),
-                              label: const Text('Lancer la migration'),
+                              label: Text(AppLocalizations.of(context).launchMigration),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
@@ -172,8 +173,8 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
                   const SizedBox(height: 16),
 
                   // ── Previous Migrations ──
-                  const Text('Migrations précédentes',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(AppLocalizations.of(context).previousMigrations,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(height: 8),
 
                   if (_migrations.isEmpty)
@@ -183,7 +184,7 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
                         children: [
                           Icon(Icons.history, color: Colors.white.withValues(alpha: 0.2), size: 40),
                           const SizedBox(height: 8),
-                          Text('Aucune migration effectuée',
+                          Text(AppLocalizations.of(context).noMigrations,
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                         ],
                       ),
@@ -208,7 +209,7 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
                               children: [
                                 Text(m['fileName'] ?? 'Migration',
                                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                                Text('${m['totalRows'] ?? 0} lignes • ${m['status'] ?? 'UNKNOWN'}',
+                                Text('${AppLocalizations.of(context).rowsCount((m['totalRows'] as num?)?.toInt() ?? 0)} • ${m['status'] ?? 'UNKNOWN'}',
                                     style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
                               ],
                             ),
@@ -216,7 +217,7 @@ class _DataMigrationScreenState extends State<DataMigrationScreen> {
                           if (m['status'] == 'COMPLETED')
                             TextButton(
                               onPressed: () => _executeMigration(m['id'].toString()),
-                              child: const Text('Relancer', style: TextStyle(fontSize: 12)),
+                              child: Text(AppLocalizations.of(context).rerun, style: const TextStyle(fontSize: 12)),
                             ),
                         ],
                       ),

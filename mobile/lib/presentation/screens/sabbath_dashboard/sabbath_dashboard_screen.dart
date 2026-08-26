@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// P3 #106 — Tableau de bord sabbatique : état spirituel sur 12 axes de maturité.
 class SabbathDashboardScreen extends StatefulWidget {
@@ -47,7 +48,7 @@ class _SabbathDashboardScreenState extends State<SabbathDashboardScreen> {
     final axes = (_data?['axes'] as List<dynamic>?) ?? [];
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🕊️ Tableau sabbatique'),
+        title: Text(AppLocalizations.of(context).sabbathTitle),
         backgroundColor: Colors.deepPurple.shade700,
         foregroundColor: Colors.white,
       ),
@@ -63,7 +64,7 @@ class _SabbathDashboardScreenState extends State<SabbathDashboardScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text('Maturité spirituelle globale', style: TextStyle(fontSize: 12)),
+                        Text(AppLocalizations.of(context).globalMaturity, style: const TextStyle(fontSize: 12)),
                         Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                           Text('${_data?['maturiteGlobale'] ?? '—'}', style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold)),
                           const Padding(padding: EdgeInsets.only(bottom: 8), child: Text('/100')),
@@ -80,13 +81,13 @@ class _SabbathDashboardScreenState extends State<SabbathDashboardScreen> {
                     spacing: 16,
                     runSpacing: 8,
                     children: [
-                      _kpi('Âmes actives', '${_data?['amesActives'] ?? '—'}'),
-                      _kpi('Faiseurs actifs', '${_data?['faiseursActifs'] ?? '—'}'),
-                      _kpi('Familles à risque', '${_data?['famillesARisque'] ?? '—'}'),
+                      _kpi(AppLocalizations.of(context).activeSouls, '${_data?['amesActives'] ?? '—'}'),
+                      _kpi(AppLocalizations.of(context).activeMakers, '${_data?['faiseursActifs'] ?? '—'}'),
+                      _kpi(AppLocalizations.of(context).familiesAtRisk, '${_data?['famillesARisque'] ?? '—'}'),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text('Les 12 axes de maturité', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(AppLocalizations.of(context).twelveAxes, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ...axes.map((a) {
                     final axis = a as Map<String, dynamic>;
                     final score = (axis['score'] as num?)?.toInt() ?? 0;

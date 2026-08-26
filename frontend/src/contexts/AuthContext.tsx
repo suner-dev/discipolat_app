@@ -12,7 +12,7 @@ interface AuthContextType {
   loginWithSocialToken: (token: string, socialUser: {
     id: string; email: string; firstName?: string; lastName?: string; role: string;
     photoUrl?: string;
-  }) => User;
+  }, refreshToken?: string) => User;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   hasRole: (...roles: string[]) => boolean;
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithSocialToken = useCallback((token: string, socialUser: {
     id: string; email: string; firstName?: string; lastName?: string; role: string;
     photoUrl?: string;
-  }): User => {
+  }, refreshToken?: string): User => {
     const role = (socialUser.role as UserRole) || 'MEMBRE';
     const userData: User = {
       id: socialUser.id,
@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       situationFamiliale: '',
     };
     localStorage.setItem('accessToken', token);
-    localStorage.setItem('refreshToken', '');
+    localStorage.setItem('refreshToken', refreshToken ?? '');
     localStorage.setItem('user', JSON.stringify(userData));
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(userData);

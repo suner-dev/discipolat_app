@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 class SurveysScreen extends StatefulWidget {
   const SurveysScreen({super.key});
@@ -34,7 +35,7 @@ class _SurveysScreenState extends State<SurveysScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sondages'),
+        title: Text(AppLocalizations.of(context).surveysTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -45,7 +46,7 @@ class _SurveysScreenState extends State<SurveysScreen> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : surveys.isEmpty
-              ? const Center(child: Text('Aucun sondage'))
+              ? Center(child: Text(AppLocalizations.of(context).surveysEmpty))
               : ListView.builder(
                   itemCount: surveys.length,
                   itemBuilder: (context, index) {
@@ -55,7 +56,7 @@ class _SurveysScreenState extends State<SurveysScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.poll, color: Colors.indigo),
                         title: Text(survey['titre'] ?? ''),
-                        subtitle: Text('${survey['totalReponses'] ?? 0} réponses'),
+                        subtitle: Text(AppLocalizations.of(context).responsesCount((survey['totalReponses'] as num?)?.toInt() ?? 0)),
                         trailing: Chip(
                           label: Text(survey['statut'] ?? '', style: const TextStyle(fontSize: 10)),
                           backgroundColor: survey['statut'] == 'ACTIF' ? Colors.green.shade100 : Colors.grey.shade100,

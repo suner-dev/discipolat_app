@@ -353,6 +353,70 @@ class AppLocalizations {
   String get monthlyProjection => translate('monthlyProjection');
   String monthLabel(int n) => translate('monthLabel').replaceAll('{n}', '$n');
 
+  // ==================== MODULES CONNECTÉS — LOT 3 (P3) ====================
+  String get dataMigrationTitle => translate('dataMigrationTitle');
+  String get importData => translate('importData');
+  String get importDataHint => translate('importDataHint');
+  String get selectFile => translate('selectFile');
+  String get aiAnalysis => translate('aiAnalysis');
+  String get detectedFile => translate('detectedFile');
+  String get detectedRows => translate('detectedRows');
+  String get mappedColumns => translate('mappedColumns');
+  String get mappingConfidence => translate('mappingConfidence');
+  String get launchMigration => translate('launchMigration');
+  String get previousMigrations => translate('previousMigrations');
+  String get noMigrations => translate('noMigrations');
+  String get rerun => translate('rerun');
+  String get migrationLaunched => translate('migrationLaunched');
+  String get migrationError => translate('migrationError');
+  String rowsCount(int count) => translate('rowsCount').replaceAll('{count}', '$count');
+  String get surveysTitle => translate('surveysTitle');
+  String get surveysEmpty => translate('surveysEmpty');
+  String responsesCount(int count) => translate('responsesCount').replaceAll('{count}', '$count');
+  String get encouragementsTitle => translate('encouragementsTitle');
+  String tabReceived(int count) => translate('tabReceived').replaceAll('{count}', '$count');
+  String tabSent(int count) => translate('tabSent').replaceAll('{count}', '$count');
+  String tabTeam(int count) => translate('tabTeam').replaceAll('{count}', '$count');
+  String get emptyReceivedEnc => translate('emptyReceivedEnc');
+  String get emptySentEnc => translate('emptySentEnc');
+  String get emptyTeam => translate('emptyTeam');
+  String get composeEncouragement => translate('composeEncouragement');
+  String get encTypePrayer => translate('encTypePrayer');
+  String get encTypePraise => translate('encTypePraise');
+  String get encTypeThanks => translate('encTypeThanks');
+  String get encTypeSupport => translate('encTypeSupport');
+  String get encTypeWelcome => translate('encTypeWelcome');
+  String get encTypeScripture => translate('encTypeScripture');
+  String get writeEncouragementHint => translate('writeEncouragementHint');
+  String get encouragementSent => translate('encouragementSent');
+  String get send => translate('send');
+  String encouragementsReceived(int count) => translate('encouragementsReceived').replaceAll('{count}', '$count');
+  String get followUpTitle => translate('followUpTitle');
+  String get fuTypeMaker => translate('fuTypeMaker');
+  String get fuTypeSpiritual => translate('fuTypeSpiritual');
+  String get fuTypePastoral => translate('fuTypePastoral');
+  String get newFollowUpRequest => translate('newFollowUpRequest');
+  String get describeNeed => translate('describeNeed');
+  String get requestSent => translate('requestSent');
+  String get requestFailed => translate('requestFailed');
+  String myRequests(int count) => translate('myRequests').replaceAll('{count}', '$count');
+  String assignedToMe(int count) => translate('assignedToMe').replaceAll('{count}', '$count');
+  String get emptyMyRequests => translate('emptyMyRequests');
+  String get emptyAssignedRequests => translate('emptyAssignedRequests');
+  String get markComplete => translate('markComplete');
+  String get askAction => translate('askAction');
+  String get neighborhoodHealthTitle => translate('neighborhoodHealthTitle');
+  String get neighborhoodEmpty => translate('neighborhoodEmpty');
+  String soulsInZone(int count) => translate('soulsInZone').replaceAll('{count}', '$count');
+  String scoreLabel(int score) => translate('scoreLabel').replaceAll('{score}', '$score');
+  String recentContacts(int count) => translate('recentContacts').replaceAll('{count}', '$count');
+  String get sabbathTitle => translate('sabbathTitle');
+  String get globalMaturity => translate('globalMaturity');
+  String get activeSouls => translate('activeSouls');
+  String get activeMakers => translate('activeMakers');
+  String get familiesAtRisk => translate('familiesAtRisk');
+  String get twelveAxes => translate('twelveAxes');
+
   // ==================== FRENCH ====================
   static const Map<String, String> _french = {
     'appTitle': 'Discipolat',
@@ -651,6 +715,68 @@ class AppLocalizations {
     'leadersMissing': '+{gap} manquants',
     'monthlyProjection': '📈 Projection mois par mois',
     'monthLabel': 'Mois {n}',
+    'dataMigrationTitle': 'Migration de données',
+    'importData': 'Importer des données',
+    'importDataHint': "Importez vos membres depuis Excel ou CSV. L'assistant mapping détecte automatiquement les colonnes.",
+    'selectFile': 'Sélectionner un fichier',
+    'aiAnalysis': 'Analyse IA',
+    'detectedFile': 'Fichier détecté',
+    'detectedRows': 'Lignes détectées',
+    'mappedColumns': 'Colonnes mappées',
+    'mappingConfidence': 'Confiance mapping',
+    'launchMigration': 'Lancer la migration',
+    'previousMigrations': 'Migrations précédentes',
+    'noMigrations': 'Aucune migration effectuée',
+    'rerun': 'Relancer',
+    'migrationLaunched': 'Migration lancée ✅',
+    'migrationError': 'Erreur lors de la migration',
+    'rowsCount': '{count} lignes',
+    'surveysTitle': 'Sondages',
+    'surveysEmpty': 'Aucun sondage',
+    'responsesCount': '{count} réponses',
+    'encouragementsTitle': 'Encouragements',
+    'tabReceived': 'Reçus ({count})',
+    'tabSent': 'Envoyés ({count})',
+    'tabTeam': 'Mon équipe ({count})',
+    'emptyReceivedEnc': 'Aucun encouragement reçu',
+    'emptySentEnc': 'Aucun encouragement envoyé',
+    'emptyTeam': 'Aucun membre dans votre équipe',
+    'composeEncouragement': 'Envoyer un encouragement',
+    'encTypePrayer': '🙏 Prière',
+    'encTypePraise': '⭐ Louange',
+    'encTypeThanks': '❤️ Merci',
+    'encTypeSupport': '💪 Soutien',
+    'encTypeWelcome': '👋 Bienvenue',
+    'encTypeScripture': '📖 Verset',
+    'writeEncouragementHint': 'Écrivez votre encouragement...',
+    'encouragementSent': 'Encouragement envoyé 🙏',
+    'send': 'Envoyer',
+    'encouragementsReceived': '{count} encouragements reçus',
+    'followUpTitle': '🤝 Demandes de suivi',
+    'fuTypeMaker': 'Demander un faiseur',
+    'fuTypeSpiritual': 'Accompagnement spirituel',
+    'fuTypePastoral': 'Conseil pastoral',
+    'newFollowUpRequest': 'Nouvelle demande de suivi',
+    'describeNeed': 'Décrivez votre besoin…',
+    'requestSent': 'Demande envoyée ✅',
+    'requestFailed': "Échec de l'envoi",
+    'myRequests': 'Mes demandes ({count})',
+    'assignedToMe': 'Assignées à moi ({count})',
+    'emptyMyRequests': 'Aucune demande. Appuyez sur « Demander » pour commencer.',
+    'emptyAssignedRequests': 'Aucune demande ne vous est assignée.',
+    'markComplete': 'Marquer terminée',
+    'askAction': 'Demander',
+    'neighborhoodHealthTitle': '💗 Santé par quartier',
+    'neighborhoodEmpty': 'Aucune zone définie. Renseignez le champ « zone » des âmes.',
+    'soulsInZone': '{count} âmes',
+    'scoreLabel': 'Score : {score}/100',
+    'recentContacts': '{count} contacts récents',
+    'sabbathTitle': '🕊️ Tableau sabbatique',
+    'globalMaturity': 'Maturité spirituelle globale',
+    'activeSouls': 'Âmes actives',
+    'activeMakers': 'Faiseurs actifs',
+    'familiesAtRisk': 'Familles à risque',
+    'twelveAxes': 'Les 12 axes de maturité',
   };
 
   // ==================== ENGLISH ====================
@@ -951,6 +1077,68 @@ class AppLocalizations {
     'leadersMissing': '+{gap} missing',
     'monthlyProjection': '📈 Month-by-month projection',
     'monthLabel': 'Month {n}',
+    'dataMigrationTitle': 'Data migration',
+    'importData': 'Import data',
+    'importDataHint': 'Import your members from Excel or CSV. The mapping assistant detects columns automatically.',
+    'selectFile': 'Select a file',
+    'aiAnalysis': 'AI analysis',
+    'detectedFile': 'Detected file',
+    'detectedRows': 'Detected rows',
+    'mappedColumns': 'Mapped columns',
+    'mappingConfidence': 'Mapping confidence',
+    'launchMigration': 'Run migration',
+    'previousMigrations': 'Previous migrations',
+    'noMigrations': 'No migration performed yet',
+    'rerun': 'Re-run',
+    'migrationLaunched': 'Migration started ✅',
+    'migrationError': 'Migration error',
+    'rowsCount': '{count} rows',
+    'surveysTitle': 'Surveys',
+    'surveysEmpty': 'No survey',
+    'responsesCount': '{count} responses',
+    'encouragementsTitle': 'Encouragements',
+    'tabReceived': 'Received ({count})',
+    'tabSent': 'Sent ({count})',
+    'tabTeam': 'My team ({count})',
+    'emptyReceivedEnc': 'No encouragement received',
+    'emptySentEnc': 'No encouragement sent',
+    'emptyTeam': 'No member in your team',
+    'composeEncouragement': 'Send an encouragement',
+    'encTypePrayer': '🙏 Prayer',
+    'encTypePraise': '⭐ Praise',
+    'encTypeThanks': '❤️ Thanks',
+    'encTypeSupport': '💪 Support',
+    'encTypeWelcome': '👋 Welcome',
+    'encTypeScripture': '📖 Scripture',
+    'writeEncouragementHint': 'Write your encouragement...',
+    'encouragementSent': 'Encouragement sent 🙏',
+    'send': 'Send',
+    'encouragementsReceived': '{count} encouragements received',
+    'followUpTitle': '🤝 Follow-up requests',
+    'fuTypeMaker': 'Request a maker',
+    'fuTypeSpiritual': 'Spiritual accompaniment',
+    'fuTypePastoral': 'Pastoral counsel',
+    'newFollowUpRequest': 'New follow-up request',
+    'describeNeed': 'Describe your need…',
+    'requestSent': 'Request sent ✅',
+    'requestFailed': 'Failed to send',
+    'myRequests': 'My requests ({count})',
+    'assignedToMe': 'Assigned to me ({count})',
+    'emptyMyRequests': 'No request yet. Tap "Request" to start.',
+    'emptyAssignedRequests': 'No request assigned to you.',
+    'markComplete': 'Mark as completed',
+    'askAction': 'Request',
+    'neighborhoodHealthTitle': '💗 Neighborhood health',
+    'neighborhoodEmpty': 'No zone defined. Fill in the "zone" field of the souls.',
+    'soulsInZone': '{count} souls',
+    'scoreLabel': 'Score: {score}/100',
+    'recentContacts': '{count} recent contacts',
+    'sabbathTitle': '🕊️ Sabbath dashboard',
+    'globalMaturity': 'Global spiritual maturity',
+    'activeSouls': 'Active souls',
+    'activeMakers': 'Active makers',
+    'familiesAtRisk': 'Families at risk',
+    'twelveAxes': 'The 12 maturity axes',
   };
 
   // ==================== PORTUGUESE ====================
@@ -1251,6 +1439,68 @@ class AppLocalizations {
     'leadersMissing': '+{gap} em falta',
     'monthlyProjection': '📈 Projeção mês a mês',
     'monthLabel': 'Mês {n}',
+    'dataMigrationTitle': 'Migração de dados',
+    'importData': 'Importar dados',
+    'importDataHint': 'Importe os seus membros a partir de Excel ou CSV. O assistente de mapeamento deteta as colunas automaticamente.',
+    'selectFile': 'Selecionar um ficheiro',
+    'aiAnalysis': 'Análise IA',
+    'detectedFile': 'Ficheiro detetado',
+    'detectedRows': 'Linhas detetadas',
+    'mappedColumns': 'Colunas mapeadas',
+    'mappingConfidence': 'Confiança do mapeamento',
+    'launchMigration': 'Iniciar migração',
+    'previousMigrations': 'Migrações anteriores',
+    'noMigrations': 'Nenhuma migração efetuada',
+    'rerun': 'Reiniciar',
+    'migrationLaunched': 'Migração iniciada ✅',
+    'migrationError': 'Erro durante a migração',
+    'rowsCount': '{count} linhas',
+    'surveysTitle': 'Inquéritos',
+    'surveysEmpty': 'Nenhum inquérito',
+    'responsesCount': '{count} respostas',
+    'encouragementsTitle': 'Encorajamentos',
+    'tabReceived': 'Recebidos ({count})',
+    'tabSent': 'Enviados ({count})',
+    'tabTeam': 'A minha equipa ({count})',
+    'emptyReceivedEnc': 'Nenhum encorajamento recebido',
+    'emptySentEnc': 'Nenhum encorajamento enviado',
+    'emptyTeam': 'Nenhum membro na sua equipa',
+    'composeEncouragement': 'Enviar um encorajamento',
+    'encTypePrayer': '🙏 Oração',
+    'encTypePraise': '⭐ Louvor',
+    'encTypeThanks': '❤️ Obrigado',
+    'encTypeSupport': '💪 Apoio',
+    'encTypeWelcome': '👋 Boas-vindas',
+    'encTypeScripture': '📖 Versículo',
+    'writeEncouragementHint': 'Escreva o seu encorajamento...',
+    'encouragementSent': 'Encorajamento enviado 🙏',
+    'send': 'Enviar',
+    'encouragementsReceived': '{count} encorajamentos recebidos',
+    'followUpTitle': '🤝 Pedidos de acompanhamento',
+    'fuTypeMaker': 'Pedir um faiseur',
+    'fuTypeSpiritual': 'Acompanhamento espiritual',
+    'fuTypePastoral': 'Aconselhamento pastoral',
+    'newFollowUpRequest': 'Novo pedido de acompanhamento',
+    'describeNeed': 'Descreva a sua necessidade…',
+    'requestSent': 'Pedido enviado ✅',
+    'requestFailed': 'Falha no envio',
+    'myRequests': 'Os meus pedidos ({count})',
+    'assignedToMe': 'Atribuídos a mim ({count})',
+    'emptyMyRequests': 'Nenhum pedido. Toque em « Pedir » para começar.',
+    'emptyAssignedRequests': 'Nenhum pedido lhe está atribuído.',
+    'markComplete': 'Marcar como concluído',
+    'askAction': 'Pedir',
+    'neighborhoodHealthTitle': '💗 Saúde por bairro',
+    'neighborhoodEmpty': 'Nenhuma zona definida. Preencha o campo « zona » das almas.',
+    'soulsInZone': '{count} almas',
+    'scoreLabel': 'Pontuação: {score}/100',
+    'recentContacts': '{count} contactos recentes',
+    'sabbathTitle': '🕊️ Painel sabático',
+    'globalMaturity': 'Maturidade espiritual global',
+    'activeSouls': 'Almas ativas',
+    'activeMakers': 'Faiseurs ativos',
+    'familiesAtRisk': 'Famílias em risco',
+    'twelveAxes': 'Os 12 eixos de maturidade',
   };
 }
 
