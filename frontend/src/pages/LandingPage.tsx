@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Church,
@@ -45,8 +45,11 @@ import {
   ClipboardList,
   UsersRound,
   ArrowUpRight,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
+import { useCountUp } from '@/hooks/useCountUp';
 import { useSettings } from '@/contexts/SettingsContext';
 import BetaBadge from '@/components/beta/BetaBadge';
 import Reveal from '@/components/shared/Reveal';
@@ -79,7 +82,7 @@ const PROBLEMS = [
   },
   {
     icon: MessageCircle,
-    title: 'Communicationfragmentée',
+    title: 'Communication fragmentée',
     desc: 'Les messages se perdent entre WhatsApp, SMS, appels et réunions. Rien n\'est centralisé.',
   },
   {
@@ -175,7 +178,7 @@ const BEFORE_AFTER = {
     'Automatisation intelligente',
     'Rapports consolidés en temps réel',
     'Visibilité globale instantanée',
-    'Alertes automatiques proactive',
+    'Alertes automatiques proactives',
     'Historique sécurisé et traçable',
   ],
 };
@@ -209,25 +212,24 @@ export default function LandingPage() {
   const { darkMode, toggleTheme } = useTheme();
   const { branding } = useSettings();
   const [activeRole, setActiveRole] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
-
-  const tagline = branding.slogan || branding.description || 'Gestion du Discipolat';
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-700">
       {/* ── Sticky Navbar ── */}
       <header className="fixed top-0 inset-x-0 z-50 glass-strong border-b border-white/10 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-18">
+          <div className="flex items-center justify-between h-16 sm:h-[72px]">
             <div className="flex items-center gap-3 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 flex items-center justify-center shadow-glow transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
                 {branding.logoUrl ? (
-                  <img src={branding.logoUrl} alt="" className="w-4.5 h-4.5 object-contain" />
+                  <img src={branding.logoUrl} alt="" className="w-[18px] h-[18px] object-contain" />
                 ) : (
-                  <Church className="w-4.5 h-4.5 text-white" />
+                  <Church className="w-[18px] h-[18px] text-white" />
                 )}
               </div>
               <span className="text-base font-bold text-gray-900 dark:text-white font-display hidden sm:inline">{branding.platformName}</span>
@@ -254,9 +256,32 @@ export default function LandingPage() {
                 {darkMode ? <Sun className="w-[16px] h-[16px]" /> : <Moon className="w-[16px] h-[16px]" />}
               </button>
               <Link to="/login" className="btn-glow btn-sm hidden sm:inline-flex">Connexion</Link>
+              <button onClick={() => setMobileMenuOpen((v) => !v)} className="lg:hidden p-2 rounded-xl glass-strong text-gray-500 dark:text-gray-300 hover:scale-110 active:scale-95 transition-all duration-300" aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}>
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
           </div>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-white/10 dark:border-white/5 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl animate-slide-down">
+            <div className="max-w-7xl mx-auto px-4 py-4 space-y-1">
+              {[
+                { label: 'Fonctionnalités', id: 'features' },
+                { label: 'Écosystème', id: 'ecosystem' },
+                { label: 'Modules', id: 'modules' },
+                { label: 'Rôles', id: 'roles' },
+                { label: 'Comment ça marche', id: 'how-it-works' },
+                { label: 'Sécurité', id: 'security' },
+              ].map((item) => (
+                <button key={item.id} onClick={() => { scrollTo(item.id); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-500/[0.06] transition-all duration-200 active:scale-[0.98]">
+                  {item.label}
+                </button>
+              ))}
+              <Link to="/login" className="block btn-glow btn-sm text-center mt-3" onClick={() => setMobileMenuOpen(false)}>Connexion</Link>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="relative z-10">
@@ -264,7 +289,7 @@ export default function LandingPage() {
         <HeroSection onNavigate={scrollTo} />
 
         {/* ── Section 02: Le Problème ── */}
-        <section id="problem" className="relative py-24 sm:py-32">
+        <section id="problem" className="relative py-24 sm:py-32 scroll-mt-20">
           <div className="absolute inset-0 bg-gray-900 dark:bg-gray-950" />
           <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950" />
           <div className="absolute -top-32 -right-32 w-[400px] h-[400px] rounded-full bg-red-500/[0.04] blur-[100px]" />
@@ -305,7 +330,7 @@ export default function LandingPage() {
         {/* ── Section 03: La Solution ── */}
         <section id="solution" className="py-24 sm:py-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <Reveal>
                 <div>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-600 dark:text-primary-400 text-xs font-medium mb-4">
@@ -416,14 +441,14 @@ export default function LandingPage() {
                 { icon: Shield, title: 'Sécurité & audit', desc: 'Espaces isolés par rôle, journal d\'audit immuable, confidentialité totale de chaque donnée.', gradient: 'from-violet-500 to-purple-500' },
               ].map((f, i) => (
                 <Reveal key={f.title} delay={i * 70}>
-                  <div className="group glass-card-interactive p-7 h-full transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                  <div className="group glass-card-interactive p-7 h-full transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer" onClick={() => scrollTo('modules')}>
                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${f.gradient} text-white flex items-center justify-center shadow-lg mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6`}>
                       <f.icon className="w-6 h-6" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{f.title}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{f.desc}</p>
-                    <div className="mt-5 flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-[-6px] group-hover:translate-x-0">
-                      En savoir plus <ChevronRight className="w-3.5 h-3.5" />
+                    <div className="mt-5 flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-x-[-6px] sm:group-hover:translate-x-0">
+                      Découvrir <ChevronRight className="w-3.5 h-3.5" />
                     </div>
                   </div>
                 </Reveal>
@@ -605,7 +630,7 @@ export default function LandingPage() {
                 <Reveal key={s.label} delay={i * 80}>
                   <div className="glass-card p-6 sm:p-8 text-center group hover:-translate-y-1 transition-all duration-300">
                     <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white font-mono mb-2">
-                      <StaticCountUp end={s.value} suffix={s.suffix} />
+                      <CountUpValue end={s.value} suffix={s.suffix} />
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{s.label}</p>
                   </div>
@@ -651,7 +676,7 @@ export default function LandingPage() {
         {/* ── Section 11: Personnalisation ── */}
         <section id="customization" className="py-24 sm:py-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <Reveal>
                 <div>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-600 dark:text-gold-400 text-xs font-medium mb-4">
@@ -728,14 +753,14 @@ export default function LandingPage() {
                 <div className="absolute -bottom-24 -left-16 w-72 h-72 rounded-full bg-gold-500/[0.05] blur-3xl" />
 
                 <div className="relative">
-                  <div className="flex items-center justify-center gap-6 mb-8">
+                  <div className="flex items-center justify-center gap-4 sm:gap-6 mb-8">
                     <div className="w-14 h-14 rounded-2xl bg-primary-500/10 flex items-center justify-center animate-float">
                       <Smartphone className="w-7 h-7 text-primary-600 dark:text-primary-400" />
                     </div>
-                    <div className="w-18 h-14 rounded-2xl bg-primary-500/10 flex items-center justify-center animate-float" style={{ animationDelay: '0.5s' }}>
+                    <div className="w-[72px] h-14 rounded-2xl bg-primary-500/10 flex items-center justify-center animate-float" style={{ animationDelay: '0.5s' }}>
                       <Tablet className="w-7 h-7 text-primary-600 dark:text-primary-400" />
                     </div>
-                    <div className="w-22 h-14 rounded-2xl bg-primary-500/10 flex items-center justify-center animate-float" style={{ animationDelay: '1s' }}>
+                    <div className="w-[88px] h-14 rounded-2xl bg-primary-500/10 flex items-center justify-center animate-float" style={{ animationDelay: '1s' }}>
                       <Monitor className="w-7 h-7 text-primary-600 dark:text-primary-400" />
                     </div>
                   </div>
@@ -834,33 +859,7 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
-function StaticCountUp({ end, suffix = '' }: { end: number; suffix?: string }) {
-  const [value, setValue] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) { setValue(end); return; }
-    if (typeof IntersectionObserver === 'undefined') { setValue(end); return; }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          observer.disconnect();
-          const start = performance.now();
-          const tick = (now: number) => {
-            const progress = Math.min((now - start) / 1800, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            setValue(Math.round(eased * end));
-            if (progress < 1) requestAnimationFrame(tick);
-          };
-          requestAnimationFrame(tick);
-        }
-      },
-      { threshold: 0.3 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [end]);
-
+function CountUpValue({ end, suffix = '' }: { end: number; suffix?: string }) {
+  const { value, ref } = useCountUp(end);
   return <span ref={ref}>{value}{suffix}</span>;
 }
