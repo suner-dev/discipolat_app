@@ -5,6 +5,7 @@ import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from '@/pages/LandingPage';
 import AuthLayout from '@/layouts/AuthLayout';
 import LoginPage from '@/pages/LoginPage';
+import DemoModal from '@/components/landing/DemoModal';
 
 vi.mock('@/lib/api', () => ({
   default: {
@@ -39,6 +40,7 @@ describe('LandingPage — page accueil', () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.classList.remove('dark');
+    vi.spyOn(window, 'open').mockImplementation(() => null);
   });
 
   it('rend la marque et le titre du hero', () => {
@@ -92,6 +94,56 @@ describe('LandingPage — page accueil', () => {
 
     expect(document.documentElement.classList.contains('dark')).toBe(false);
     expect(localStorage.getItem('darkMode')).toBe('false');
+  });
+
+  it('la modale démo s\'ouvre, valide les champs et affiche la confirmation', async () => {
+    const user = userEvent.setup();
+    render(
+      <BrowserRouter>
+        <LandingPage />
+      </BrowserRouter>
+    );
+
+    // Ouvre la démo depuis le CTA du hero.
+    await user.click(screen.getAllByRole('button', { name: /demander une démonstration/i })[0]);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Envoi sans remplir → message d'erreur.
+    await user.click(screen.getByRole('button', { name: /envoyer la demande/i }));
+    expect(screen.getByText(/remplir votre nom, votre email et le nom/i)).toBeInTheDocument();
+
+    // Remplissage + envoi → succès.
+    await user.type(screen.getByLabelText(/votre nom/i), 'Jean Dupont');
+    await user.type(screen.getByLabelText(/email professionnel/i), 'jean@eglise.org');
+    await user.type(screen.getByLabelText(/nom de l’église/i), 'Église Locale');
+    await user.click(screen.getByRole('button', { name: /envoyer la demande/i }));
+
+    expect(await screen.findByText(/demande envoyée/i)).toBeInTheDocument();
+  });
+
+  it('l’explorateur de rôles change le contenu selon le rôle sélectionné', async () => {
+    const user = userEvent.setup();
+    render(
+      <BrowserRouter>
+        <LandingPage />
+      </BrowserRouter>
+    );
+
+    // Rôle par défaut : Pasteur.
+    expect(screen.getByText(/vue complète de toute l’église/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /membre/i }));
+    expect(screen.getByText(/espace personnel\. activités, prières, événements/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /faiseur/i }));
+    expect(screen.getByText(/accompagnement personnalisé de chaque disciple/i)).toBeInTheDocument();
+  });
+
+  it('la modale démo standalone fonctionne en isolation', async () => {
+    const { container } = render(
+      <DemoModal open onClose={() => {}} />
+    );
+    expect(container.querySelector('[role="dialog"]')).toBeInTheDocument();
   });
 });
 
