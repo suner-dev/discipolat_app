@@ -34,7 +34,7 @@ void main() {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: BibleReadingScreen(apiService: _FakeApiService())));
       await tester.pumpAndSettle();
-      expect(find.text('📖 Plan de Lecture Biblique'), findsOneWidget);
+      expect(find.text('Plan de Lecture Biblique'), findsOneWidget);
     });
     testWidgets('shows today reading', (tester) async {
       await tester.pumpWidget(MaterialApp(home: BibleReadingScreen(apiService: _FakeApiService())));

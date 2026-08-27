@@ -22,7 +22,7 @@ void main() {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: FamilyResourcesScreen(apiService: _FakeApiService())));
       await tester.pumpAndSettle();
-      expect(find.text('📚 Ressources Familiales'), findsOneWidget);
+      expect(find.text('Ressources Familiales'), findsOneWidget);
     });
     testWidgets('shows resources', (tester) async {
       await tester.pumpWidget(MaterialApp(home: FamilyResourcesScreen(apiService: _FakeApiService())));

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:discipolat_mobile/app.dart';
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/dashboard/discipleship_path_screen.dart';
 
@@ -19,6 +20,16 @@ class _FakeApiService extends ApiService {
 }
 
 void main() {
+  setUp(() {
+    AuthState().setAuthenticated(true, userData: {
+      'userId': 'test-user-1',
+      'email': 'test@test.com',
+      'roles': ['MEMBRE'],
+      'activeRole': 'MEMBRE',
+    });
+  });
+  tearDown(() => AuthState().logout());
+
   group('DiscipleshipPathScreen', () {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: DiscipleshipPathScreen(apiService: _FakeApiService())));

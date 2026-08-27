@@ -22,7 +22,7 @@ void main() {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: SermonTranslationScreen(apiService: _FakeApiService())));
       await tester.pumpAndSettle();
-      expect(find.text('🌍 Traduction des sermons'), findsOneWidget);
+      expect(find.text('Traduction des sermons'), findsOneWidget);
     });
     testWidgets('shows translations', (tester) async {
       await tester.pumpWidget(MaterialApp(home: SermonTranslationScreen(apiService: _FakeApiService())));

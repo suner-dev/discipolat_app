@@ -25,7 +25,7 @@ void main() {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: SkillsMatrixScreen(apiService: _FakeApiService())));
       await tester.pumpAndSettle();
-      expect(find.text('🧩 Matrice de Compétences'), findsOneWidget);
+      expect(find.text('Matrice de Compétences'), findsOneWidget);
     });
     testWidgets('shows skills', (tester) async {
       await tester.pumpWidget(MaterialApp(home: SkillsMatrixScreen(apiService: _FakeApiService())));

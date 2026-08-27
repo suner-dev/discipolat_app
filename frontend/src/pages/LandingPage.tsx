@@ -328,7 +328,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 03: La Solution ── */}
-        <section id="solution" className="py-24 sm:py-32">
+        <section id="solution" className="py-24 sm:py-32 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <Reveal>
@@ -364,7 +364,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 04: Écosystème ── */}
-        <section id="ecosystem" className="relative py-24 sm:py-32 overflow-hidden">
+        <section id="ecosystem" className="relative py-24 sm:py-32 overflow-hidden scroll-mt-20">
           <div className="absolute inset-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm" />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Reveal>
@@ -415,7 +415,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 05: Fonctionnalités ── */}
-        <section id="features" className="py-24 sm:py-32">
+        <section id="features" className="py-24 sm:py-32 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Reveal>
               <div className="text-center mb-16">
@@ -458,7 +458,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 06: Une seule plateforme (Modules) ── */}
-        <section id="modules" className="py-24 sm:py-32 bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-900/50 dark:to-gray-950">
+        <section id="modules" className="py-24 sm:py-32 bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-900/50 dark:to-gray-950 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Reveal>
               <div className="text-center mb-16">
@@ -491,7 +491,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 07: Espaces Rôles ── */}
-        <section id="roles" className="py-24 sm:py-32">
+        <section id="roles" className="py-24 sm:py-32 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Reveal>
               <div className="text-center mb-16">
@@ -641,7 +641,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 10: Comment ça marche ── */}
-        <section id="how-it-works" className="py-24 sm:py-32 bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-900/50 dark:to-gray-950">
+        <section id="how-it-works" className="py-24 sm:py-32 bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-900/50 dark:to-gray-950 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Reveal>
               <div className="text-center mb-16">
@@ -674,7 +674,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 11: Personnalisation ── */}
-        <section id="customization" className="py-24 sm:py-32">
+        <section id="customization" className="py-24 sm:py-32 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <Reveal>
@@ -712,7 +712,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Section 12: Sécurité ── */}
-        <section id="security" className="py-24 sm:py-32 bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-900/50 dark:to-gray-950">
+        <section id="security" className="py-24 sm:py-32 bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-900/50 dark:to-gray-950 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Reveal>
               <div className="text-center mb-16">

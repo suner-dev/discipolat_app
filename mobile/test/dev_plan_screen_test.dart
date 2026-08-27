@@ -23,7 +23,7 @@ void main() {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: DevelopmentPlanScreen(apiService: _FakeApiService())));
       await tester.pumpAndSettle();
-      expect(find.text('📈 Mon Plan de Développement'), findsOneWidget);
+      expect(find.text('Mon Plan de Développement'), findsOneWidget);
     });
     testWidgets('shows active objectives', (tester) async {
       await tester.pumpWidget(MaterialApp(home: DevelopmentPlanScreen(apiService: _FakeApiService())));

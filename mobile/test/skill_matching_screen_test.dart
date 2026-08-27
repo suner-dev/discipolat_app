@@ -22,7 +22,7 @@ void main() {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: SkillMatchingScreen(apiService: _FakeApiService())));
       await tester.pumpAndSettle();
-      expect(find.text('🧩 Matching Compétences'), findsOneWidget);
+      expect(find.text('Matching Compétences'), findsOneWidget);
     });
     testWidgets('shows matches', (tester) async {
       await tester.pumpWidget(MaterialApp(home: SkillMatchingScreen(apiService: _FakeApiService())));

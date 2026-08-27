@@ -25,7 +25,7 @@ void main() {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: FamilyCohesionScreen(apiService: _FakeApiService())));
       await tester.pumpAndSettle();
-      expect(find.text('💞 Cohésion Familiale'), findsOneWidget);
+      expect(find.text('Cohésion Familiale'), findsOneWidget);
     });
     testWidgets('shows families', (tester) async {
       await tester.pumpWidget(MaterialApp(home: FamilyCohesionScreen(apiService: _FakeApiService())));

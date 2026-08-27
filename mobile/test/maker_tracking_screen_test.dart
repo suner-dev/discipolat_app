@@ -23,7 +23,7 @@ void main() {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: MakerTrackingScreen(apiService: _FakeApiService())));
       await tester.pumpAndSettle();
-      expect(find.text('🌱 Mon Parcours de Faiseur'), findsOneWidget);
+      expect(find.text('Mon Parcours de Faiseur'), findsOneWidget);
     });
     testWidgets('shows points', (tester) async {
       await tester.pumpWidget(MaterialApp(home: MakerTrackingScreen(apiService: _FakeApiService())));

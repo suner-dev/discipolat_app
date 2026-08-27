@@ -50,14 +50,16 @@ class _DiscipleshipPathScreenState extends State<DiscipleshipPathScreen> {
       final userId = AuthState().userId;
       final res = await _api.get('/api/v1/discipleship-paths/member/$userId');
       if (mounted) {
-        final data = res.data;
-        if (data is List) {
-          _stages = data;
-        } else if (data is Map<String, dynamic>) {
-          _stages = data['stages'] as List<dynamic>? ?? [];
-          _currentStage = data['currentStage'] as int? ?? 0;
-        }
-        _isLoading = false;
+        setState(() {
+          final data = res.data;
+          if (data is List) {
+            _stages = data;
+          } else if (data is Map<String, dynamic>) {
+            _stages = data['stages'] as List<dynamic>? ?? [];
+            _currentStage = data['currentStage'] as int? ?? 0;
+          }
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _isLoading = false; });

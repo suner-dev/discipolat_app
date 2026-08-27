@@ -25,7 +25,7 @@ void main() {
     testWidgets('renders app bar', (tester) async {
       await tester.pumpWidget(MaterialApp(home: SpiritualJournalScreen(apiService: _FakeApiService())));
       await tester.pumpAndSettle();
-      expect(find.text('📓 Journal Spirituel'), findsOneWidget);
+      expect(find.text('Journal Spirituel'), findsOneWidget);
     });
     testWidgets('shows entries', (tester) async {
       await tester.pumpWidget(MaterialApp(home: SpiritualJournalScreen(apiService: _FakeApiService())));
