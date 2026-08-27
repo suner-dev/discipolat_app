@@ -482,7 +482,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/quest" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
               <QuestPage />
             </ProtectedRoute>
           } />
@@ -630,17 +630,17 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/transfers" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
               <TransfersPage />
             </ProtectedRoute>
           } />
           <Route path="/transfers/new" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
               <TransferCreatePage />
             </ProtectedRoute>
           } />
           <Route path="/transfers/:id" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
               <TransferDetailPage />
             </ProtectedRoute>
           } />
@@ -730,7 +730,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/tickets" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
               <TicketsPage />
             </ProtectedRoute>
           } />
@@ -740,7 +740,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/surveys" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
               <SurveysPage />
             </ProtectedRoute>
           } />
@@ -750,7 +750,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/skills-matrix" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}>
               <SkillsMatrixPage />
             </ProtectedRoute>
           } />
@@ -765,7 +765,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/team-gantt" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}>
               <TeamGanttPage />
             </ProtectedRoute>
           } />
@@ -871,7 +871,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/pastoral-visits" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
               <PastoralVisitsPage />
             </ProtectedRoute>
           } />

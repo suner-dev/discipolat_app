@@ -45,8 +45,15 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/departments/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/users': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/skills-matrix': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/team-gantt': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/skills-matrix': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  '/team-gantt': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  '/transfers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/transfers/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/transfers/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/surveys': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/tickets': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/quest': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/pastoral-visits': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
 
   // Rapports & suivi
   '/reports/maker': ['ADMIN', 'PASTEUR', 'FAISEUR'],
