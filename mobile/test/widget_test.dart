@@ -32,7 +32,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Bienvenue sur Discipolat'), findsOneWidget);
-    expect(find.text('Suivant'), findsOneWidget);
+    expect(find.text('Welcome to Discipolat'), findsOneWidget);
+    expect(find.text('Next'), findsOneWidget);
   });
 }
