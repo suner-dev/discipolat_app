@@ -5,6 +5,7 @@ import '../../../data/services/data_saver_service.dart';
 import '../../../data/services/orientation_service.dart';
 import '../../../data/services/screenshot_protection_service.dart';
 import '../../../data/services/audit_log_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Unified security & settings screen for mobile.
 /// Combines: session timeout, biometric auth, data saver, orientation.
@@ -57,7 +58,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sécurité & Paramètres'),
+        title: Text(AppLocalizations.of(context).secTitle),
         backgroundColor: Colors.indigo.shade600,
         foregroundColor: Colors.white,
       ),
@@ -65,7 +66,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
         padding: const EdgeInsets.all(16),
         children: [
           // ── Session Timeout ──
-          _sectionHeader(Icons.timer_outlined, 'Session & Inactivité'),
+          _sectionHeader(Icons.timer_outlined, AppLocalizations.of(context).secSessionSection),
           Card(
             margin: const EdgeInsets.only(bottom: 16),
             child: Padding(
@@ -81,7 +82,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Déconnexion automatique', style: TextStyle(fontWeight: FontWeight.w600)),
+                            Text(AppLocalizations.of(context).secAutoLogout, style: TextStyle(fontWeight: FontWeight.w600)),
                             Text(
                               'Après ${_sessionTimeout.timeoutMinutes} minutes d\'inactivité',
                               style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -107,7 +108,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text('Durée de la session :', style: TextStyle(fontSize: 13)),
+                  Text(AppLocalizations.of(context).secSessionDuration, style: TextStyle(fontSize: 13)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -130,7 +131,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
           ),
 
           // ── Biometric Auth ──
-          _sectionHeader(Icons.fingerprint, 'Authentification Biométrique'),
+          _sectionHeader(Icons.fingerprint, AppLocalizations.of(context).secBiometricSection),
           Card(
             margin: const EdgeInsets.only(bottom: 16),
             child: SwitchListTile(
@@ -138,7 +139,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
               subtitle: Text(
                 _biometricAvailable
                     ? _biometric.getAvailableTypesText()
-                    : 'Non disponible sur cet appareil',
+                    : AppLocalizations.of(context).secBiometricUnavailable,
                 style: const TextStyle(fontSize: 12),
               ),
               value: _biometric.isEnabled,
@@ -148,7 +149,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                         final success = await _biometric.enable();
                         if (!success && mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Échec de l\'activation biométrique')),
+                            SnackBar(content: Text(AppLocalizations.of(context).secBiometricError)),
                           );
                         }
                       } else {
@@ -165,7 +166,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
           ),
 
           // ── Data Saver ──
-          _sectionHeader(Icons.data_saver_on, 'Économiseur de données'),
+          _sectionHeader(Icons.data_saver_on, AppLocalizations.of(context).secDataSaverSection),
           Card(
             margin: const EdgeInsets.only(bottom: 16),
             child: Padding(
@@ -185,7 +186,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Mode économiseur', style: TextStyle(fontWeight: FontWeight.w600)),
+                            Text(AppLocalizations.of(context).secDataSaverMode, style: TextStyle(fontWeight: FontWeight.w600)),
                             Text(
                               'Réseau : ${_dataSaver.connectivityLabel}',
                               style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -206,9 +207,8 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                   // Auto mode toggle
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Mode automatique', style: TextStyle(fontSize: 13)),
-                    subtitle: const Text(
-                      'Active automatiquement sur données mobiles',
+                    title: Text(AppLocalizations.of(context).secAutoMode, style: TextStyle(fontSize: 13)),
+                    subtitle: Text(AppLocalizations.of(context).secAutoModeDesc,
                       style: TextStyle(fontSize: 11),
                     ),
                     value: _dataSaver.isAutoMode,
@@ -218,16 +218,16 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                     },
                   ),
                   const Divider(),
-                  _dataSaverInfo('Chargement images', _dataSaver.shouldLoadImages ? 'Activé' : 'Désactivé'),
-                  _dataSaverInfo('Stratégie cache', _dataSaver.useCacheFirst ? 'Cache d\'abord' : 'Toujours le réseau'),
-                  _dataSaverInfo('Intervalle refresh', '${_dataSaver.pollingIntervalSeconds}s'),
+                  _dataSaverInfo(AppLocalizations.of(context).secImgLoading, _dataSaver.shouldLoadImages ? 'Activé' : 'Désactivé'),
+                  _dataSaverInfo(AppLocalizations.of(context).secCacheStrategy, _dataSaver.useCacheFirst ? 'Cache d\'abord' : 'Toujours le réseau'),
+                  _dataSaverInfo(AppLocalizations.of(context).secRefreshInterval, '${_dataSaver.pollingIntervalSeconds}s'),
                 ],
               ),
             ),
           ),
 
           // ── Orientation ──
-          _sectionHeader(Icons.screen_rotation, 'Orientation de l\'écran'),
+          _sectionHeader(Icons.screen_rotation, AppLocalizations.of(context).secOrientationSection),
           Card(
             margin: const EdgeInsets.only(bottom: 16),
             child: Padding(
@@ -286,13 +286,12 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
           ),
 
           // ── Screenshot Protection ──
-          _sectionHeader(Icons.shield, 'Protection contre les captures d\'écran'),
+          _sectionHeader(Icons.shield, AppLocalizations.of(context).secScreenshotSection),
           Card(
             margin: const EdgeInsets.only(bottom: 16),
             child: SwitchListTile(
-              title: const Text('Protection anti-capture d\'écran'),
-              subtitle: const Text(
-                'Empêche les captures d\'écran sur les écrans sensibles (finances, prières, admin)',
+              title: Text(AppLocalizations.of(context).secScreenshotToggle),
+              subtitle: Text(AppLocalizations.of(context).secScreenshotDesc,
                 style: TextStyle(fontSize: 12),
               ),
               value: _screenshotProtection,
@@ -311,7 +310,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
           ),
 
           // ── Audit Logging ──
-          _sectionHeader(Icons.history, 'Journal d\'audit mobile'),
+          _sectionHeader(Icons.history, AppLocalizations.of(context).secAuditSection),
           Card(
             margin: const EdgeInsets.only(bottom: 16),
             child: Padding(
@@ -327,7 +326,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Événements enregistrés', style: TextStyle(fontWeight: FontWeight.w600)),
+                            Text(AppLocalizations.of(context).secAuditEvents, style: TextStyle(fontWeight: FontWeight.w600)),
                             Text(
                               '$_auditLogCount événements dans le journal',
                               style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -348,7 +347,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                               showDialog(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
-                                  title: const Text('Journal d\'audit'),
+                                  title: Text(AppLocalizations.of(context).secAuditLogTitle),
                                   content: SizedBox(
                                     width: double.maxFinite,
                                     height: 400,
@@ -390,7 +389,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                                           SnackBar(content: Text('Journal exporté (${csv.length} caractères)')),
                                         );
                                       },
-                                      child: const Text('Exporter CSV'),
+                                      child: Text(AppLocalizations.of(context).secAuditExportCsv),
                                     ),
                                     TextButton(
                                       onPressed: () async {
@@ -398,7 +397,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                                         setState(() => _auditLogCount = 0);
                                         Navigator.pop(ctx);
                                       },
-                                      child: const Text('Effacer', style: TextStyle(color: Colors.red)),
+                                      child: Text(AppLocalizations.of(context).secAuditClear, style: TextStyle(color: Colors.red)),
                                     ),
                                   ],
                                 ),
@@ -406,7 +405,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                             }
                           },
                           icon: const Icon(Icons.visibility, size: 18),
-                          label: const Text('Voir le journal'),
+                          label: Text(AppLocalizations.of(context).secAuditViewLog),
                         ),
                       ),
                     ],
@@ -429,7 +428,7 @@ class _MobileSecuritySettingsScreenState extends State<MobileSecuritySettingsScr
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Ces paramètres sont sauvegardés localement et persistés entre les sessions.',
+                    AppLocalizations.of(context).secInfoPersisted,
                     style: TextStyle(fontSize: 12, color: Colors.blue.shade700),
                   ),
                 ),

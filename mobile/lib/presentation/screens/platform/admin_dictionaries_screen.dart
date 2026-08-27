@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Administration des dictionnaires (statuts, catégories, types).
 class AdminDictionariesScreen extends StatefulWidget {
@@ -31,13 +32,13 @@ class _AdminDictionariesScreenState extends State<AdminDictionariesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dictionnaires'), actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _load)]),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).dictTitle), actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _load)]),
       drawer: const AppDrawer(),
       body: _isLoading ? const ShimmerLoading(itemCount: 5) : _dictionaries.isEmpty
           ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(Icons.book, color: Colors.white.withValues(alpha: 0.15), size: 48),
               const SizedBox(height: 12),
-              Text('Aucun dictionnaire', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+              Text(AppLocalizations.of(context).dictEmpty, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
             ]))
           : ListView.builder(padding: const EdgeInsets.all(12), itemCount: _dictionaries.length, itemBuilder: (_, i) {
               final d = _dictionaries[i] as Map<String, dynamic>;

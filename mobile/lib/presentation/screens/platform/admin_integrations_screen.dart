@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Administration des intégrations externes (SMTP, stockage, JWT, rate-limiting).
 class AdminIntegrationsScreen extends StatefulWidget {
@@ -53,7 +54,7 @@ class _AdminIntegrationsScreenState extends State<AdminIntegrationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Intégrations'), actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadAll)]),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).integTitle), actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadAll)]),
       drawer: const AppDrawer(),
       body: _isLoading ? const ShimmerLoading(itemCount: 4) : RefreshIndicator(
         onRefresh: _loadAll,
@@ -80,7 +81,7 @@ class _AdminIntegrationsScreenState extends State<AdminIntegrationsScreen> {
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(_categoryLabels[key] ?? key, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-          Text(enabled ? 'Activé' : 'Désactivé', style: TextStyle(color: enabled ? Colors.green : Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+          Text(enabled ? AppLocalizations.of(context).integEnabled : AppLocalizations.of(context).integDisabled, style: TextStyle(color: enabled ? Colors.green : Colors.white.withValues(alpha: 0.4), fontSize: 11)),
         ])),
         Switch(value: enabled, activeThumbColor: Colors.green, onChanged: (v) async {
           config['enabled'] = v;
@@ -103,7 +104,7 @@ class _AdminIntegrationsScreenState extends State<AdminIntegrationsScreen> {
         child: OutlinedButton.icon(
           onPressed: _isTesting ? null : () => _testConnection(key),
           icon: _isTesting ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.wifi_find, size: 14),
-          label: const Text('Tester la connexion', style: TextStyle(fontSize: 11)),
+          label: Text(AppLocalizations.of(context).integTestConn, style: TextStyle(fontSize: 11)),
           style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
         ),
       ),

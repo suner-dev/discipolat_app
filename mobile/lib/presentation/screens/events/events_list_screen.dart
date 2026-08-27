@@ -4,6 +4,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/attachment_picker_field.dart';
 import '../../widgets/attachment_chips.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 class EventsListScreen extends StatefulWidget {
   const EventsListScreen({super.key});
@@ -89,7 +90,7 @@ class _EventsListScreenState extends State<EventsListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Événements'),
+        title: Text(AppLocalizations.of(context).evtTitle),
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: _showCreateSheet),
         ],
@@ -105,11 +106,11 @@ class _EventsListScreenState extends State<EventsListScreen> {
                   // Stats
                   Row(
                     children: [
-                      _statMini('Total', '${_events.length}', Colors.blue),
+                      _statMini(AppLocalizations.of(context).evtStatTotal, '${_events.length}', Colors.blue),
                       const SizedBox(width: 8),
-                      _statMini('À venir', '$upcoming', Colors.green),
+                      _statMini(AppLocalizations.of(context).evtStatUpcoming, '$upcoming', Colors.green),
                       const SizedBox(width: 8),
-                      _statMini('Terminés', '$termine', Colors.grey),
+                      _statMini(AppLocalizations.of(context).evtStatDone, '$termine', Colors.grey),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -119,7 +120,7 @@ class _EventsListScreenState extends State<EventsListScreen> {
                     child: Row(
                       children: ['TOUS', 'PLANIFIE', 'EN_COURS', 'TERMINE'].map((f) {
                         final isActive = _filter == f;
-                        final label = f == 'TOUS' ? 'Tous' : f == 'PLANIFIE' ? 'À venir' : f == 'EN_COURS' ? 'En cours' : 'Terminés';
+                        final label = f == 'TOUS' ? AppLocalizations.of(context).evtFilterAll : f == 'PLANIFIE' ? AppLocalizations.of(context).evtFilterUpcoming : f == 'EN_COURS' ? AppLocalizations.of(context).evtFilterOngoing : AppLocalizations.of(context).evtStatDone;
                         return Padding(
                           padding: const EdgeInsets.only(right: 6),
                           child: ChoiceChip(
@@ -143,7 +144,7 @@ class _EventsListScreenState extends State<EventsListScreen> {
                         children: [
                           Icon(Icons.event_outlined, size: 48, color: Colors.white.withValues(alpha: 0.3)),
                           const SizedBox(height: 12),
-                          Text('Aucun événement', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                          Text(AppLocalizations.of(context).evtEmpty, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                         ],
                       ),
                     )
@@ -219,7 +220,7 @@ class _EventsListScreenState extends State<EventsListScreen> {
                                 children: [
                                   Icon(Icons.people, size: 12, color: Colors.white.withValues(alpha: 0.4)),
                                   const SizedBox(width: 3),
-                                  Text('$nbInscrits/$limitePlaces inscrits', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+                                  Text(AppLocalizations.of(context).evtInscrits(nbInscrits, limitePlaces), style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
                                 ],
                               ),
                             ],
@@ -307,7 +308,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
   Future<void> _create() async {
     if (_titreCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Le titre est requis')),
+        SnackBar(content: Text(AppLocalizations.of(context).evtTitleRequired)),
       );
       return;
     }
@@ -323,14 +324,14 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Événement créé')),
+          SnackBar(content: Text(AppLocalizations.of(context).evtCreated)),
         );
         widget.onDone();
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la création')),
+          SnackBar(content: Text(AppLocalizations.of(context).evtCreateError)),
         );
       }
     } finally {
@@ -364,8 +365,8 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Nouvel événement',
+              Text(
+                AppLocalizations.of(context).evtNew,
                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),

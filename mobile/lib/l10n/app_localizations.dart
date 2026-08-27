@@ -520,6 +520,100 @@ class AppLocalizations {
   String get deptMgmtSearchHintDetail => translate('deptMgmtSearchHintDetail');
   String get deptMgmtNoTeam => translate('deptMgmtNoTeam');
   String get deptMgmtUnassigned => translate('deptMgmtUnassigned');
+  // ── Lot H10 : security + dicts + integrations + events + discipline ──
+  String get secTitle => translate('secTitle');
+  String get secSessionSection => translate('secSessionSection');
+  String get secAutoLogout => translate('secAutoLogout');
+  String secAfterInactivity(int min) => translate('secAfterInactivity').replaceAll('{min}', '$min');
+  String get secSessionDuration => translate('secSessionDuration');
+  String get secBiometricSection => translate('secBiometricSection');
+  String get secBiometricLogin => translate('secBiometricLogin');
+  String get secBiometricUnavailable => translate('secBiometricUnavailable');
+  String get secBiometricError => translate('secBiometricError');
+  String get secDataSaverSection => translate('secDataSaverSection');
+  String get secDataSaverMode => translate('secDataSaverMode');
+  String secNetworkLabel(String label) => translate('secNetworkLabel').replaceAll('{label}', label);
+  String get secAutoMode => translate('secAutoMode');
+  String get secAutoModeDesc => translate('secAutoModeDesc');
+  String get secImgLoading => translate('secImgLoading');
+  String get secCacheStrategy => translate('secCacheStrategy');
+  String get secRefreshInterval => translate('secRefreshInterval');
+  String get secOrientationSection => translate('secOrientationSection');
+  String get secScreenshotSection => translate('secScreenshotSection');
+  String get secScreenshotToggle => translate('secScreenshotToggle');
+  String get secScreenshotDesc => translate('secScreenshotDesc');
+  String get secAuditSection => translate('secAuditSection');
+  String get secAuditEvents => translate('secAuditEvents');
+  String secAuditCount(int count) => translate('secAuditCount').replaceAll('{count}', '$count');
+  String get secAuditLogTitle => translate('secAuditLogTitle');
+  String get secAuditClose => translate('secAuditClose');
+  String get secAuditExportCsv => translate('secAuditExportCsv');
+  String secAuditExported(int count) => translate('secAuditExported').replaceAll('{count}', '$count');
+  String get secAuditClear => translate('secAuditClear');
+  String get secAuditViewLog => translate('secAuditViewLog');
+  String get secInfoPersisted => translate('secInfoPersisted');
+  String get dictTitle => translate('dictTitle');
+  String get dictEmpty => translate('dictEmpty');
+  String dictEntriesCount(int count) => translate('dictEntriesCount').replaceAll('{count}', '$count');
+  String get integTitle => translate('integTitle');
+  String get integSmtp => translate('integSmtp');
+  String get integStorage => translate('integStorage');
+  String get integJwt => translate('integJwt');
+  String get integRateLimiting => translate('integRateLimiting');
+  String get integEnabled => translate('integEnabled');
+  String get integDisabled => translate('integDisabled');
+  String get integTestConn => translate('integTestConn');
+  String get integTestResultOk => translate('integTestResultOk');
+  String integTestResultFail(String msg) => translate('integTestResultFail').replaceAll('{msg}', msg);
+  String get evtTitle => translate('evtTitle');
+  String get evtStatTotal => translate('evtStatTotal');
+  String get evtStatUpcoming => translate('evtStatUpcoming');
+  String get evtStatDone => translate('evtStatDone');
+  String get evtFilterAll => translate('evtFilterAll');
+  String get evtFilterUpcoming => translate('evtFilterUpcoming');
+  String get evtFilterOngoing => translate('evtFilterOngoing');
+  String get evtEmpty => translate('evtEmpty');
+  String get evtNew => translate('evtNew');
+  String get evtTitleRequired => translate('evtTitleRequired');
+  String get evtCreated => translate('evtCreated');
+  String get evtCreateError => translate('evtCreateError');
+  String evtInscrits(int count, int total) => translate('evtInscrits').replaceAll('{count}', '$count').replaceAll('{total}', '$total');
+  String get discTitle => translate('discTitle');
+  String get discStatTotal => translate('discStatTotal');
+  String get discStatOngoing => translate('discStatOngoing');
+  String get discStatResolved => translate('discStatResolved');
+  String get discFilterAll => translate('discFilterAll');
+  String get discFilterOngoing => translate('discFilterOngoing');
+  String get discFilterResolved => translate('discFilterResolved');
+  String get discCatAll => translate('discCatAll');
+  String get discSearchHint => translate('discSearchHint');
+  String get discResolveTitle => translate('discResolveTitle');
+  String discResolveConfirm(String title) => translate('discResolveConfirm').replaceAll('{title}', title);
+  String get discResolveAction => translate('discResolveAction');
+  String get discResolveSuccess => translate('discResolveSuccess');
+  String get discResolveError => translate('discResolveError');
+  String get discDeleteTitle => translate('discDeleteTitle');
+  String discDeleteConfirm(String title) => translate('discDeleteConfirm').replaceAll('{title}', title);
+  String get discDeleteAction => translate('discDeleteAction');
+  String get discDeleteSuccess => translate('discDeleteSuccess');
+  String get discDeleteError => translate('discDeleteError');
+  String get discCreateTitle => translate('discCreateTitle');
+  String get discMemberLabel => translate('discMemberLabel');
+  String get discSelectMember => translate('discSelectMember');
+  String get discCatLabel => translate('discCatLabel');
+  String get discTypeLabel => translate('discTypeLabel');
+  String get discTitleLabel => translate('discTitleLabel');
+  String get discDescLabel => translate('discDescLabel');
+  String get discGravityLabel => translate('discGravityLabel');
+  String get discDateLabel => translate('discDateLabel');
+  String get discCreateError => translate('discCreateError');
+  String get discCreateSuccess => translate('discCreateSuccess');
+  String get discCreateValidation => translate('discCreateValidation');
+  String get discResolved => translate('discResolved');
+  String get discNewEvent => translate('discNewEvent');
+  String discEmptySearch(String query) => translate('discEmptySearch').replaceAll('{query}', query);
+  String get discEmpty => translate('discEmpty');
+  String get discClearSearch => translate('discClearSearch');
   String get bibleReadingTitle => translate('bibleReadingTitle');
   String get myProgress => translate('myProgress');
   String get days => translate('days');
@@ -2114,6 +2208,99 @@ class AppLocalizations {
     'deptMgmtSearchHintDetail': 'Essayez un nom, un poste, une équipe, une tâche ou un événement.',
     'deptMgmtNoTeam': 'Sans équipe',
     'deptMgmtUnassigned': 'Non assignée',
+    'secTitle': 'Sécurité & Paramètres',
+    'secSessionSection': 'Session & Inactivité',
+    'secAutoLogout': 'Déconnexion automatique',
+    'secAfterInactivity': 'Après {min} minutes d\'inactivité',
+    'secSessionDuration': 'Durée de la session :',
+    'secBiometricSection': 'Authentification Biométrique',
+    'secBiometricLogin': 'Connexion par biométrie',
+    'secBiometricUnavailable': 'Non disponible sur cet appareil',
+    'secBiometricError': 'Échec de l\'activation biométrique',
+    'secDataSaverSection': 'Économiseur de données',
+    'secDataSaverMode': 'Mode économiseur',
+    'secNetworkLabel': 'Réseau : {label}',
+    'secAutoMode': 'Mode automatique',
+    'secAutoModeDesc': 'Active automatiquement sur données mobiles',
+    'secImgLoading': 'Chargement images',
+    'secCacheStrategy': 'Stratégie cache',
+    'secRefreshInterval': 'Intervalle refresh',
+    'secOrientationSection': 'Orientation de l\'écran',
+    'secScreenshotSection': 'Protection contre les captures d\'écran',
+    'secScreenshotToggle': 'Protection anti-capture d\'écran',
+    'secScreenshotDesc': 'Empêche les captures d\'écran sur les écrans sensibles',
+    'secAuditSection': 'Journal d\'audit mobile',
+    'secAuditEvents': 'Événements enregistrés',
+    'secAuditCount': '{count} événements dans le journal',
+    'secAuditLogTitle': 'Journal d\'audit',
+    'secAuditClose': 'Fermer',
+    'secAuditExportCsv': 'Exporter CSV',
+    'secAuditExported': 'Journal exporté ({count} caractères)',
+    'secAuditClear': 'Effacer',
+    'secAuditViewLog': 'Voir le journal',
+    'secInfoPersisted': 'Ces paramètres sont sauvegardés localement et persistés entre les sessions.',
+    'dictTitle': 'Dictionnaires',
+    'dictEmpty': 'Aucun dictionnaire',
+    'dictEntriesCount': '{count} entrée(s)',
+    'integTitle': 'Intégrations',
+    'integSmtp': 'SMTP / Email',
+    'integStorage': 'Stockage / MinIO',
+    'integJwt': 'JWT / Auth',
+    'integRateLimiting': 'Rate Limiting',
+    'integEnabled': 'Activé',
+    'integDisabled': 'Désactivé',
+    'integTestConn': 'Tester la connexion',
+    'integTestResultOk': 'Connexion réussie',
+    'integTestResultFail': 'Erreur: {msg}',
+    'evtTitle': 'Événements',
+    'evtStatTotal': 'Total',
+    'evtStatUpcoming': 'À venir',
+    'evtStatDone': 'Terminés',
+    'evtFilterAll': 'Tous',
+    'evtFilterUpcoming': 'À venir',
+    'evtFilterOngoing': 'En cours',
+    'evtEmpty': 'Aucun événement',
+    'evtNew': 'Nouvel événement',
+    'evtTitleRequired': 'Le titre est requis',
+    'evtCreated': 'Événement créé',
+    'evtCreateError': 'Erreur lors de la création',
+    'evtInscrits': '{count}/{total} inscrits',
+    'discTitle': 'Discipline',
+    'discStatTotal': 'Total',
+    'discStatOngoing': 'En cours',
+    'discStatResolved': 'Résolus',
+    'discFilterAll': 'Tous',
+    'discFilterOngoing': 'En cours',
+    'discFilterResolved': 'Résolus',
+    'discCatAll': 'Toutes',
+    'discSearchHint': 'Rechercher par nom, titre…',
+    'discResolveTitle': 'Résoudre cet événement ?',
+    'discResolveConfirm': 'Marquer "{title}" comme résolu ?',
+    'discResolveAction': 'Résoudre',
+    'discResolveSuccess': '✅ Événement résolu',
+    'discResolveError': 'Échec de la résolution',
+    'discDeleteTitle': 'Supprimer cet événement ?',
+    'discDeleteConfirm': 'Supprimer définitivement "{title}" ?',
+    'discDeleteAction': 'Supprimer',
+    'discDeleteSuccess': 'Événement supprimé',
+    'discDeleteError': 'Échec de la suppression',
+    'discCreateTitle': 'Nouvel événement disciplinaire',
+    'discMemberLabel': 'Membre *',
+    'discSelectMember': 'Sélectionner un membre',
+    'discCatLabel': 'Catégorie *',
+    'discTypeLabel': 'Type *',
+    'discTitleLabel': 'Titre *',
+    'discDescLabel': 'Description',
+    'discGravityLabel': 'Gravité',
+    'discDateLabel': 'Date',
+    'discCreateError': 'Échec de la création',
+    'discCreateSuccess': '✅ Événement disciplinaire enregistré',
+    'discCreateValidation': 'Sélectionnez un membre et saisissez un titre',
+    'discResolved': 'Résolu',
+    'discNewEvent': 'Nouvel événement',
+    'discEmptySearch': 'Aucun résultat pour "{query}"',
+    'discEmpty': 'Aucun événement disciplinaire',
+    'discClearSearch': 'Effacer la recherche',
   };
 
   // ==================== ENGLISH ====================
@@ -3051,6 +3238,99 @@ class AppLocalizations {
     'deptMgmtSearchHintDetail': 'Try a name, position, team, task, or event.',
     'deptMgmtNoTeam': 'No team',
     'deptMgmtUnassigned': 'Unassigned',
+    'secTitle': 'Security & Settings',
+    'secSessionSection': 'Session & Inactivity',
+    'secAutoLogout': 'Auto logout',
+    'secAfterInactivity': 'After {min} min of inactivity',
+    'secSessionDuration': 'Session duration:',
+    'secBiometricSection': 'Biometric Authentication',
+    'secBiometricLogin': 'Biometric login',
+    'secBiometricUnavailable': 'Not available on this device',
+    'secBiometricError': 'Biometric activation failed',
+    'secDataSaverSection': 'Data Saver',
+    'secDataSaverMode': 'Saver mode',
+    'secNetworkLabel': 'Network: {label}',
+    'secAutoMode': 'Auto mode',
+    'secAutoModeDesc': 'Auto-activates on mobile data',
+    'secImgLoading': 'Image loading',
+    'secCacheStrategy': 'Cache strategy',
+    'secRefreshInterval': 'Refresh interval',
+    'secOrientationSection': 'Screen orientation',
+    'secScreenshotSection': 'Screenshot protection',
+    'secScreenshotToggle': 'Screenshot protection',
+    'secScreenshotDesc': 'Prevents screenshots on sensitive screens',
+    'secAuditSection': 'Mobile audit log',
+    'secAuditEvents': 'Recorded events',
+    'secAuditCount': '{count} events in log',
+    'secAuditLogTitle': 'Audit log',
+    'secAuditClose': 'Close',
+    'secAuditExportCsv': 'Export CSV',
+    'secAuditExported': 'Log exported ({count} chars)',
+    'secAuditClear': 'Clear',
+    'secAuditViewLog': 'View log',
+    'secInfoPersisted': 'Settings are saved locally and persist between sessions.',
+    'dictTitle': 'Dictionaries',
+    'dictEmpty': 'No dictionaries',
+    'dictEntriesCount': '{count} entry/entries',
+    'integTitle': 'Integrations',
+    'integSmtp': 'SMTP / Email',
+    'integStorage': 'Storage / MinIO',
+    'integJwt': 'JWT / Auth',
+    'integRateLimiting': 'Rate Limiting',
+    'integEnabled': 'Enabled',
+    'integDisabled': 'Disabled',
+    'integTestConn': 'Test connection',
+    'integTestResultOk': 'Connection successful',
+    'integTestResultFail': 'Error: {msg}',
+    'evtTitle': 'Events',
+    'evtStatTotal': 'Total',
+    'evtStatUpcoming': 'Upcoming',
+    'evtStatDone': 'Completed',
+    'evtFilterAll': 'All',
+    'evtFilterUpcoming': 'Upcoming',
+    'evtFilterOngoing': 'In progress',
+    'evtEmpty': 'No events',
+    'evtNew': 'New event',
+    'evtTitleRequired': 'Title is required',
+    'evtCreated': 'Event created',
+    'evtCreateError': 'Creation error',
+    'evtInscrits': '{count}/{total} registered',
+    'discTitle': 'Discipline',
+    'discStatTotal': 'Total',
+    'discStatOngoing': 'In progress',
+    'discStatResolved': 'Resolved',
+    'discFilterAll': 'All',
+    'discFilterOngoing': 'In progress',
+    'discFilterResolved': 'Resolved',
+    'discCatAll': 'All',
+    'discSearchHint': 'Search by name, title…',
+    'discResolveTitle': 'Resolve this event?',
+    'discResolveConfirm': 'Mark "{title}" as resolved?',
+    'discResolveAction': 'Resolve',
+    'discResolveSuccess': 'Event resolved',
+    'discResolveError': 'Resolution failed',
+    'discDeleteTitle': 'Delete this event?',
+    'discDeleteConfirm': 'Permanently delete "{title}"?',
+    'discDeleteAction': 'Delete',
+    'discDeleteSuccess': 'Event deleted',
+    'discDeleteError': 'Deletion failed',
+    'discCreateTitle': 'New disciplinary event',
+    'discMemberLabel': 'Member *',
+    'discSelectMember': 'Select a member',
+    'discCatLabel': 'Category *',
+    'discTypeLabel': 'Type *',
+    'discTitleLabel': 'Title *',
+    'discDescLabel': 'Description',
+    'discGravityLabel': 'Severity',
+    'discDateLabel': 'Date',
+    'discCreateError': 'Creation failed',
+    'discCreateSuccess': 'Disciplinary event recorded',
+    'discCreateValidation': 'Select a member and enter a title',
+    'discResolved': 'Resolved',
+    'discNewEvent': 'New event',
+    'discEmptySearch': 'No results for "{query}"',
+    'discEmpty': 'No disciplinary events',
+    'discClearSearch': 'Clear search',
   };
 
   // ==================== PORTUGUESE ====================
@@ -3988,6 +4268,99 @@ class AppLocalizations {
     'deptMgmtSearchHintDetail': 'Tente um nome, posto, equipe, tarefa ou evento.',
     'deptMgmtNoTeam': 'Sem equipe',
     'deptMgmtUnassigned': 'Não atribuída',
+    'secTitle': 'Segurança & Configurações',
+    'secSessionSection': 'Sessão & Inatividade',
+    'secAutoLogout': 'Desconexão automática',
+    'secAfterInactivity': 'Após {min} min de inatividade',
+    'secSessionDuration': 'Duração da sessão:',
+    'secBiometricSection': 'Autenticação Biométrica',
+    'secBiometricLogin': 'Login por biometria',
+    'secBiometricUnavailable': 'Não disponível neste dispositivo',
+    'secBiometricError': 'Falha na ativação biométrica',
+    'secDataSaverSection': 'Economizador de dados',
+    'secDataSaverMode': 'Modo economizador',
+    'secNetworkLabel': 'Rede: {label}',
+    'secAutoMode': 'Modo automático',
+    'secAutoModeDesc': 'Ativa automaticamente em dados móveis',
+    'secImgLoading': 'Carregamento de imagens',
+    'secCacheStrategy': 'Estratégia de cache',
+    'secRefreshInterval': 'Intervalo de atualização',
+    'secOrientationSection': 'Orientação da tela',
+    'secScreenshotSection': 'Proteção contra capturas de tela',
+    'secScreenshotToggle': 'Proteção anti-captura de tela',
+    'secScreenshotDesc': 'Impede capturas de tela em ecrãs sensíveis',
+    'secAuditSection': 'Registo de auditoria móvel',
+    'secAuditEvents': 'Eventos registados',
+    'secAuditCount': '{count} eventos no registo',
+    'secAuditLogTitle': 'Registo de auditoria',
+    'secAuditClose': 'Fechar',
+    'secAuditExportCsv': 'Exportar CSV',
+    'secAuditExported': 'Registo exportado ({count} caracteres)',
+    'secAuditClear': 'Limpar',
+    'secAuditViewLog': 'Ver registo',
+    'secInfoPersisted': 'As configurações são guardadas localmente e persistem entre sessões.',
+    'dictTitle': 'Dicionários',
+    'dictEmpty': 'Nenhum dicionário',
+    'dictEntriesCount': '{count} entrada(s)',
+    'integTitle': 'Integrações',
+    'integSmtp': 'SMTP / Email',
+    'integStorage': 'Armazenamento / MinIO',
+    'integJwt': 'JWT / Auth',
+    'integRateLimiting': 'Rate Limiting',
+    'integEnabled': 'Ativado',
+    'integDisabled': 'Desativado',
+    'integTestConn': 'Testar conexão',
+    'integTestResultOk': 'Conexão bem-sucedida',
+    'integTestResultFail': 'Erro: {msg}',
+    'evtTitle': 'Eventos',
+    'evtStatTotal': 'Total',
+    'evtStatUpcoming': 'Próximos',
+    'evtStatDone': 'Concluídos',
+    'evtFilterAll': 'Todos',
+    'evtFilterUpcoming': 'Próximos',
+    'evtFilterOngoing': 'Em andamento',
+    'evtEmpty': 'Nenhum evento',
+    'evtNew': 'Novo evento',
+    'evtTitleRequired': 'O título é obrigatório',
+    'evtCreated': 'Evento criado',
+    'evtCreateError': 'Erro ao criar',
+    'evtInscrits': '{count}/{total} inscritos',
+    'discTitle': 'Disciplina',
+    'discStatTotal': 'Total',
+    'discStatOngoing': 'Em andamento',
+    'discStatResolved': 'Resolvidos',
+    'discFilterAll': 'Todos',
+    'discFilterOngoing': 'Em andamento',
+    'discFilterResolved': 'Resolvidos',
+    'discCatAll': 'Todas',
+    'discSearchHint': 'Pesquisar por nome, título…',
+    'discResolveTitle': 'Resolver este evento?',
+    'discResolveConfirm': 'Marcar "{title}" como resolvido?',
+    'discResolveAction': 'Resolver',
+    'discResolveSuccess': 'Evento resolvido',
+    'discResolveError': 'Falha na resolução',
+    'discDeleteTitle': 'Eliminar este evento?',
+    'discDeleteConfirm': 'Eliminar permanentemente "{title}"?',
+    'discDeleteAction': 'Eliminar',
+    'discDeleteSuccess': 'Evento eliminado',
+    'discDeleteError': 'Falha na eliminação',
+    'discCreateTitle': 'Novo evento disciplinar',
+    'discMemberLabel': 'Membro *',
+    'discSelectMember': 'Selecionar um membro',
+    'discCatLabel': 'Categoria *',
+    'discTypeLabel': 'Tipo *',
+    'discTitleLabel': 'Título *',
+    'discDescLabel': 'Descrição',
+    'discGravityLabel': 'Gravidade',
+    'discDateLabel': 'Data',
+    'discCreateError': 'Falha ao criar',
+    'discCreateSuccess': 'Evento disciplinar registado',
+    'discCreateValidation': 'Selecione um membro e insira um título',
+    'discResolved': 'Resolvido',
+    'discNewEvent': 'Novo evento',
+    'discEmptySearch': 'Nenhum resultado para "{query}"',
+    'discEmpty': 'Nenhum evento disciplinar',
+    'discClearSearch': 'Limpar pesquisa',
   };
 }
 

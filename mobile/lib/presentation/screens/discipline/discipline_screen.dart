@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Écrans de discipline pour le Responsable.
 /// - Liste des événements disciplinaires (par catégorie, statut, recherche)
@@ -135,7 +136,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.cardDark,
-        title: const Text('Résoudre cet événement ?', style: TextStyle(color: Colors.white)),
+        title: Text(AppLocalizations.of(context).discResolveTitle, style: TextStyle(color: Colors.white)),
         content: Text(
           'Marquer "${event.titre}" comme résolu ?',
           style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
@@ -145,7 +146,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Résoudre'),
+            child: Text(AppLocalizations.of(context).discResolveAction),
           ),
         ],
       ),
@@ -157,14 +158,14 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
       HapticFeedback.lightImpact();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Événement résolu'), backgroundColor: Colors.green),
+          SnackBar(content: Text(AppLocalizations.of(context).discResolveSuccess), backgroundColor: Colors.green),
         );
         _loadData();
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec de la résolution'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context).discResolveError), backgroundColor: Colors.red),
         );
       }
     }
@@ -175,7 +176,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.cardDark,
-        title: const Text('Supprimer cet événement ?', style: TextStyle(color: Colors.white)),
+        title: Text(AppLocalizations.of(context).discDeleteTitle, style: TextStyle(color: Colors.white)),
         content: Text(
           'Supprimer définitivement "${event.titre}" ?',
           style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
@@ -185,7 +186,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Supprimer'),
+            child: Text(AppLocalizations.of(context).discDeleteAction),
           ),
         ],
       ),
@@ -197,14 +198,14 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
       HapticFeedback.lightImpact();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Événement supprimé'), backgroundColor: Colors.orange),
+          SnackBar(content: Text(AppLocalizations.of(context).discDeleteSuccess), backgroundColor: Colors.orange),
         );
         _loadData();
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec de la suppression'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context).discDeleteError), backgroundColor: Colors.red),
         );
       }
     }
@@ -213,7 +214,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
   Future<void> _createEvent() async {
     if (_formSoulId == null || _formTitreCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sélectionnez un membre et saisissez un titre')),
+        SnackBar(content: Text(AppLocalizations.of(context).discCreateValidation)),
       );
       return;
     }
@@ -231,7 +232,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
       HapticFeedback.mediumImpact();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Événement disciplinaire enregistré'), backgroundColor: Colors.green),
+          SnackBar(content: Text(AppLocalizations.of(context).discCreateSuccess), backgroundColor: Colors.green),
         );
         setState(() {
           _showCreateForm = false;
@@ -244,7 +245,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec de la création'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context).discCreateError), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -281,11 +282,11 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                       // Stats
                       Row(
                         children: [
-                          _statChip('Total', '${_events.length}', Colors.blue),
+                          _statChip(AppLocalizations.of(context).discStatTotal, '${_events.length}', Colors.blue),
                           const SizedBox(width: 6),
-                          _statChip('En cours', '$enCours', Colors.amber),
+                          _statChip(AppLocalizations.of(context).discStatOngoing, '$enCours', Colors.amber),
                           const SizedBox(width: 6),
-                          _statChip('Résolus', '$resolus', Colors.green),
+                          _statChip(AppLocalizations.of(context).discStatResolved, '$resolus', Colors.green),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -293,11 +294,11 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                       // Statut filter
                       Row(
                         children: [
-                          _statusChip('Tous', 'all', Colors.blue),
+                          _statusChip(AppLocalizations.of(context).discFilterAll, 'all', Colors.blue),
                           const SizedBox(width: 6),
-                          _statusChip('En cours', 'EN_COURS', Colors.amber),
+                          _statusChip(AppLocalizations.of(context).discFilterOngoing, 'EN_COURS', Colors.amber),
                           const SizedBox(width: 6),
-                          _statusChip('Résolus', 'RESOLU', Colors.green),
+                          _statusChip(AppLocalizations.of(context).discFilterResolved, 'RESOLU', Colors.green),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -307,7 +308,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            _catChip('Toutes', 'all'),
+                            _catChip(AppLocalizations.of(context).discCatAll, 'all'),
                             for (final cat in _categorieLabels.entries) ...[
                               const SizedBox(width: 6),
                               _catChip(cat.value, cat.key),
@@ -328,7 +329,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                       style: const TextStyle(color: Colors.white, fontSize: 13),
                       onChanged: (v) => setState(() => _searchQuery = v),
                       decoration: InputDecoration(
-                        hintText: 'Rechercher par nom, titre…',
+                        hintText: AppLocalizations.of(context).discSearchHint,
                         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                         prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4), size: 18),
                         suffixIcon: _searchQuery.isNotEmpty
@@ -375,7 +376,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => setState(() => _showCreateForm = !_showCreateForm),
         icon: Icon(_showCreateForm ? Icons.close : Icons.add),
-        label: Text(_showCreateForm ? 'Annuler' : 'Nouvel événement'),
+        label: Text(_showCreateForm ? AppLocalizations.of(context).cancel : AppLocalizations.of(context).discNewEvent),
         backgroundColor: _showCreateForm ? Colors.red : AppColors.primary,
       ),
 
@@ -411,19 +412,19 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            const Text('Nouvel événement disciplinaire',
+            Text(AppLocalizations.of(context).discCreateTitle,
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
             const SizedBox(height: 12),
 
             // Membre picker
-            _label('Membre *'),
+            _label(AppLocalizations.of(context).discMemberLabel),
             DropdownButton<String>(
               value: _formSoulId,
               dropdownColor: AppColors.cardDark,
               isExpanded: true,
               underline: const SizedBox(),
               style: const TextStyle(color: Colors.white, fontSize: 13),
-              hint: Text('Sélectionner un membre', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+              hint: Text(AppLocalizations.of(context).discSelectMember, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
               items: _souls.cast<Map<String, dynamic>>().map((s) {
                 return DropdownMenuItem<String>(
                   value: s['id']?.toString(),
@@ -441,7 +442,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label('Catégorie *'),
+                      _label(AppLocalizations.of(context).discCatLabel),
                       DropdownButton<String>(
                         value: _formCategorie,
                         dropdownColor: AppColors.cardDark,
@@ -461,7 +462,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label('Type *'),
+                      _label(AppLocalizations.of(context).discTypeLabel),
                       DropdownButton<String>(
                         value: _formType,
                         dropdownColor: AppColors.cardDark,
@@ -481,7 +482,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
             const SizedBox(height: 10),
 
             // Titre
-            _label('Titre *'),
+            _label(AppLocalizations.of(context).discTitleLabel),
             TextField(
               controller: _formTitreCtrl,
               style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -490,7 +491,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
             const SizedBox(height: 10),
 
             // Description
-            _label('Description'),
+            _label(AppLocalizations.of(context).discDescLabel),
             TextField(
               controller: _formDescCtrl,
               style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -506,7 +507,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label('Gravité'),
+                      _label(AppLocalizations.of(context).discGravityLabel),
                       DropdownButton<String>(
                         value: _formGravite,
                         dropdownColor: AppColors.cardDark,
@@ -526,7 +527,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _label('Date'),
+                      _label(AppLocalizations.of(context).discDateLabel),
                       GestureDetector(
                         onTap: () async {
                           final picked = await showDatePicker(
@@ -656,7 +657,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
             runSpacing: 4,
             children: [
               StatusBadge(
-                label: ev.resolu ? 'Résolu' : 'En cours',
+                label: ev.resolu ? AppLocalizations.of(context).discResolved : AppLocalizations.of(context).discStatOngoing,
                 color: ev.resolu ? Colors.green : Colors.amber,
               ),
               StatusBadge(label: _categorieLabels[ev.categorie] ?? ev.categorie, color: Colors.lightBlue),
@@ -693,13 +694,13 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                 _actionButton(
                   icon: Icons.check_circle_outline,
                   color: Colors.green,
-                  tooltip: 'Résoudre',
+                  tooltip: AppLocalizations.of(context).discResolveAction,
                   onTap: () => _resolveEvent(ev),
                 ),
               _actionButton(
                 icon: Icons.delete_outline,
                 color: Colors.red,
-                tooltip: 'Supprimer',
+                tooltip: AppLocalizations.of(context).discDeleteAction,
                 onTap: () => _deleteEvent(ev),
               ),
             ],
@@ -729,7 +730,7 @@ class _DisciplineScreenState extends State<DisciplineScreen> {
                 _searchCtrl.clear();
                 setState(() => _searchQuery = '');
               },
-              child: const Text('Effacer la recherche'),
+              child: Text(AppLocalizations.of(context).discClearSearch),
             ),
           ],
         ],
