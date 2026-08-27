@@ -447,6 +447,79 @@ class AppLocalizations {
   String get transferListSubmitError => translate('transferListSubmitError');
   String get transferListCancelSuccess => translate('transferListCancelSuccess');
   String get transferListConfigDefault => translate('transferListConfigDefault');
+  // ── Lot H9 : department_management ──
+  String get deptMgmtTitle => translate('deptMgmtTitle');
+  String get deptMgmtTooltipStats => translate('deptMgmtTooltipStats');
+  String get deptMgmtTooltipTools => translate('deptMgmtTooltipTools');
+  String get deptMgmtSearchHint => translate('deptMgmtSearchHint');
+  String get deptMgmtKpiTeams => translate('deptMgmtKpiTeams');
+  String get deptMgmtKpiPositions => translate('deptMgmtKpiPositions');
+  String get deptMgmtKpiAssigned => translate('deptMgmtKpiAssigned');
+  String get deptMgmtTabMembers => translate('deptMgmtTabMembers');
+  String get deptMgmtTabOrg => translate('deptMgmtTabOrg');
+  String get deptMgmtTabTasks => translate('deptMgmtTabTasks');
+  String get deptMgmtTabAssignments => translate('deptMgmtTabAssignments');
+  String get deptMgmtTabEvents => translate('deptMgmtTabEvents');
+  String get deptMgmtTabActivity => translate('deptMgmtTabActivity');
+  String deptMgmtMembersTitle(int count) => translate('deptMgmtMembersTitle').replaceAll('{count}', '$count');
+  String get deptMgmtMembersEmpty => translate('deptMgmtMembersEmpty');
+  String deptMgmtFamilyLabel(String name) => translate('deptMgmtFamilyLabel').replaceAll('{name}', name);
+  String deptMgmtMakerLabel(String name) => translate('deptMgmtMakerLabel').replaceAll('{name}', name);
+  String get deptMgmtOrgTitle => translate('deptMgmtOrgTitle');
+  String get deptMgmtOrgEmpty => translate('deptMgmtOrgEmpty');
+  String get deptMgmtTeamPermanent => translate('deptMgmtTeamPermanent');
+  String get deptMgmtTeamTemporary => translate('deptMgmtTeamTemporary');
+  String get deptMgmtSubDepartment => translate('deptMgmtSubDepartment');
+  String deptMgmtMembersCount(int count) => translate('deptMgmtMembersCount').replaceAll('{count}', '$count');
+  String deptMgmtEventLabel(String title) => translate('deptMgmtEventLabel').replaceAll('{title}', title);
+  String get deptMgmtNewTeam => translate('deptMgmtNewTeam');
+  String get deptMgmtTeamNameLabel => translate('deptMgmtTeamNameLabel');
+  String get deptMgmtParentTeam => translate('deptMgmtParentTeam');
+  String get deptMgmtNoParent => translate('deptMgmtNoParent');
+  String get deptMgmtLinkedEvent => translate('deptMgmtLinkedEvent');
+  String get deptMgmtLoadingEvents => translate('deptMgmtLoadingEvents');
+  String get deptMgmtNoEvent => translate('deptMgmtNoEvent');
+  String get deptMgmtDateStart => translate('deptMgmtDateStart');
+  String get deptMgmtDateEnd => translate('deptMgmtDateEnd');
+  String get deptMgmtObjective => translate('deptMgmtObjective');
+  String get deptMgmtTeamCreateError => translate('deptMgmtTeamCreateError');
+  String get deptMgmtTasksTitle => translate('deptMgmtTasksTitle');
+  String get deptMgmtStatInProgress => translate('deptMgmtStatInProgress');
+  String get deptMgmtStatTodo => translate('deptMgmtStatTodo');
+  String get deptMgmtStatOverdue => translate('deptMgmtStatOverdue');
+  String get deptMgmtStatDone => translate('deptMgmtStatDone');
+  String get deptMgmtTaskEmpty => translate('deptMgmtTaskEmpty');
+  String get deptMgmtTaskLoadError => translate('deptMgmtTaskLoadError');
+  String get deptMgmtNewTask => translate('deptMgmtNewTask');
+  String get deptMgmtAssignedTo => translate('deptMgmtAssignedTo');
+  String get deptMgmtNoAssignee => translate('deptMgmtNoAssignee');
+  String get deptMgmtPriority => translate('deptMgmtPriority');
+  String get deptMgmtPriorityLow => translate('deptMgmtPriorityLow');
+  String get deptMgmtPriorityMedium => translate('deptMgmtPriorityMedium');
+  String get deptMgmtPriorityHigh => translate('deptMgmtPriorityHigh');
+  String get deptMgmtDeadline => translate('deptMgmtDeadline');
+  String get deptMgmtTaskCreateError => translate('deptMgmtTaskCreateError');
+  String get deptMgmtAssignmentsTitle => translate('deptMgmtAssignmentsTitle');
+  String get deptMgmtAssignmentsEmpty => translate('deptMgmtAssignmentsEmpty');
+  String get deptMgmtAssignMember => translate('deptMgmtAssignMember');
+  String get deptMgmtRoleChef => translate('deptMgmtRoleChef');
+  String get deptMgmtRoleAdjunct => translate('deptMgmtRoleAdjunct');
+  String get deptMgmtAssignBtn => translate('deptMgmtAssignBtn');
+  String get deptMgmtAssignError => translate('deptMgmtAssignError');
+  String get deptMgmtEndAssignment => translate('deptMgmtEndAssignment');
+  String get deptMgmtEventsTitle => translate('deptMgmtEventsTitle');
+  String deptMgmtEventsUpcoming(int count) => translate('deptMgmtEventsUpcoming').replaceAll('{count}', '$count');
+  String deptMgmtEventsPast(int count) => translate('deptMgmtEventsPast').replaceAll('{count}', '$count');
+  String get deptMgmtEventsEmpty => translate('deptMgmtEventsEmpty');
+  String get deptMgmtNewEvent => translate('deptMgmtNewEvent');
+  String get deptMgmtTitleRequired => translate('deptMgmtTitleRequired');
+  String get deptMgmtEventCreateError => translate('deptMgmtEventCreateError');
+  String get deptMgmtActivityEmpty => translate('deptMgmtActivityEmpty');
+  String deptMgmtSearchResults(int count, String query) => translate('deptMgmtSearchResults').replaceAll('{count}', '$count').replaceAll('{query}', query);
+  String deptMgmtSearchNoResults(String query) => translate('deptMgmtSearchNoResults').replaceAll('{query}', query);
+  String get deptMgmtSearchHintDetail => translate('deptMgmtSearchHintDetail');
+  String get deptMgmtNoTeam => translate('deptMgmtNoTeam');
+  String get deptMgmtUnassigned => translate('deptMgmtUnassigned');
   String get bibleReadingTitle => translate('bibleReadingTitle');
   String get myProgress => translate('myProgress');
   String get days => translate('days');
@@ -1969,6 +2042,78 @@ class AppLocalizations {
     'onboardingNotificationsDesc': 'Recevez des alertes personnalisées selon votre rôle.',
     'onboardingSecurityTitle': 'Sécurité renforcée',
     'onboardingSecurityDesc': 'Authentification biométrique, session sécurisée et protection des données.',
+    'deptMgmtTitle': 'Gestion du département',
+    'deptMgmtTooltipStats': 'Statistiques',
+    'deptMgmtTooltipTools': 'Rapports · Checklists · Inventaire',
+    'deptMgmtSearchHint': 'Recherche rapide : membre, équipe, tâche…',
+    'deptMgmtKpiTeams': 'Équipes',
+    'deptMgmtKpiPositions': 'Postes',
+    'deptMgmtKpiAssigned': 'Affectés',
+    'deptMgmtTabMembers': 'Membres',
+    'deptMgmtTabOrg': 'Organisation',
+    'deptMgmtTabTasks': 'Tâches',
+    'deptMgmtTabAssignments': 'Affectations',
+    'deptMgmtTabEvents': 'Événements',
+    'deptMgmtTabActivity': 'Activité',
+    'deptMgmtMembersTitle': 'Membres du département ({count})',
+    'deptMgmtMembersEmpty': 'Aucun membre dans ce département',
+    'deptMgmtFamilyLabel': 'Famille : {name}',
+    'deptMgmtMakerLabel': 'Faiseur : {name}',
+    'deptMgmtOrgTitle': 'Organigramme',
+    'deptMgmtOrgEmpty': 'Aucune équipe — créez votre premier sous-département',
+    'deptMgmtTeamPermanent': 'Équipe permanente',
+    'deptMgmtTeamTemporary': 'Temporaire',
+    'deptMgmtSubDepartment': 'Sous-département',
+    'deptMgmtMembersCount': '{count} membres',
+    'deptMgmtEventLabel': 'Événement : {title}',
+    'deptMgmtNewTeam': 'Nouvelle équipe',
+    'deptMgmtTeamNameLabel': 'Nom de l\'équipe',
+    'deptMgmtParentTeam': 'Équipe parente',
+    'deptMgmtNoParent': '— Aucune (racine) —',
+    'deptMgmtLinkedEvent': 'Événement lié (optionnel)',
+    'deptMgmtLoadingEvents': 'Chargement des événements…',
+    'deptMgmtNoEvent': '— Aucun événement —',
+    'deptMgmtDateStart': 'Date début (AAAA-MM-JJ)',
+    'deptMgmtDateEnd': 'Date fin (AAAA-MM-JJ)',
+    'deptMgmtObjective': 'Objectif (optionnel)',
+    'deptMgmtTeamCreateError': 'Échec de la création de l\'équipe',
+    'deptMgmtTasksTitle': 'Tâches du département',
+    'deptMgmtStatInProgress': 'En cours',
+    'deptMgmtStatTodo': 'À faire',
+    'deptMgmtStatOverdue': 'En retard',
+    'deptMgmtStatDone': 'Terminées',
+    'deptMgmtTaskEmpty': 'Aucune tâche',
+    'deptMgmtTaskLoadError': 'Erreur de chargement',
+    'deptMgmtNewTask': 'Nouvelle tâche',
+    'deptMgmtAssignedTo': 'Assignée à',
+    'deptMgmtNoAssignee': '— Non assignée —',
+    'deptMgmtPriority': 'Priorité',
+    'deptMgmtPriorityLow': 'Basse',
+    'deptMgmtPriorityMedium': 'Moyenne',
+    'deptMgmtPriorityHigh': 'Haute',
+    'deptMgmtDeadline': 'Échéance (AAAA-MM-JJ, optionnel)',
+    'deptMgmtTaskCreateError': 'Échec de la création de la tâche',
+    'deptMgmtAssignmentsTitle': 'Affectations actives',
+    'deptMgmtAssignmentsEmpty': 'Aucune affectation active',
+    'deptMgmtAssignMember': 'Affecter un membre',
+    'deptMgmtRoleChef': 'Chef',
+    'deptMgmtRoleAdjunct': 'Adjoint',
+    'deptMgmtAssignBtn': 'Affecter',
+    'deptMgmtAssignError': 'Échec de l\'affectation',
+    'deptMgmtEndAssignment': 'Mettre fin',
+    'deptMgmtEventsTitle': 'Événements du département',
+    'deptMgmtEventsUpcoming': 'À venir ({count})',
+    'deptMgmtEventsPast': 'Passés ({count})',
+    'deptMgmtEventsEmpty': 'Aucun événement planifié. Créez le premier événement de votre département.',
+    'deptMgmtNewEvent': 'Nouvel événement du département',
+    'deptMgmtTitleRequired': 'Le titre est requis',
+    'deptMgmtEventCreateError': 'Échec de la création de l\'événement',
+    'deptMgmtActivityEmpty': 'Aucune activité pour l\'instant',
+    'deptMgmtSearchResults': '{count} résultat(s) pour « {query} »',
+    'deptMgmtSearchNoResults': 'Aucun résultat pour « {query} »',
+    'deptMgmtSearchHintDetail': 'Essayez un nom, un poste, une équipe, une tâche ou un événement.',
+    'deptMgmtNoTeam': 'Sans équipe',
+    'deptMgmtUnassigned': 'Non assignée',
   };
 
   // ==================== ENGLISH ====================
@@ -2834,6 +2979,78 @@ class AppLocalizations {
     'onboardingNotificationsDesc': 'Receive personalized alerts based on your role.',
     'onboardingSecurityTitle': 'Enhanced security',
     'onboardingSecurityDesc': 'Biometric authentication, secure session and data protection.',
+    'deptMgmtTitle': 'Department management',
+    'deptMgmtTooltipStats': 'Statistics',
+    'deptMgmtTooltipTools': 'Reports · Checklists · Inventory',
+    'deptMgmtSearchHint': 'Quick search: member, team, task…',
+    'deptMgmtKpiTeams': 'Teams',
+    'deptMgmtKpiPositions': 'Positions',
+    'deptMgmtKpiAssigned': 'Assigned',
+    'deptMgmtTabMembers': 'Members',
+    'deptMgmtTabOrg': 'Organization',
+    'deptMgmtTabTasks': 'Tasks',
+    'deptMgmtTabAssignments': 'Assignments',
+    'deptMgmtTabEvents': 'Events',
+    'deptMgmtTabActivity': 'Activity',
+    'deptMgmtMembersTitle': 'Department members ({count})',
+    'deptMgmtMembersEmpty': 'No members in this department',
+    'deptMgmtFamilyLabel': 'Family: {name}',
+    'deptMgmtMakerLabel': 'Maker: {name}',
+    'deptMgmtOrgTitle': 'Org chart',
+    'deptMgmtOrgEmpty': 'No teams — create your first sub-department',
+    'deptMgmtTeamPermanent': 'Permanent team',
+    'deptMgmtTeamTemporary': 'Temporary',
+    'deptMgmtSubDepartment': 'Sub-department',
+    'deptMgmtMembersCount': '{count} members',
+    'deptMgmtEventLabel': 'Event: {title}',
+    'deptMgmtNewTeam': 'New team',
+    'deptMgmtTeamNameLabel': 'Team name',
+    'deptMgmtParentTeam': 'Parent team',
+    'deptMgmtNoParent': '— None (root) —',
+    'deptMgmtLinkedEvent': 'Linked event (optional)',
+    'deptMgmtLoadingEvents': 'Loading events…',
+    'deptMgmtNoEvent': '— No event —',
+    'deptMgmtDateStart': 'Start date (YYYY-MM-DD)',
+    'deptMgmtDateEnd': 'End date (YYYY-MM-DD)',
+    'deptMgmtObjective': 'Objective (optional)',
+    'deptMgmtTeamCreateError': 'Team creation failed',
+    'deptMgmtTasksTitle': 'Department tasks',
+    'deptMgmtStatInProgress': 'In progress',
+    'deptMgmtStatTodo': 'To do',
+    'deptMgmtStatOverdue': 'Overdue',
+    'deptMgmtStatDone': 'Completed',
+    'deptMgmtTaskEmpty': 'No tasks',
+    'deptMgmtTaskLoadError': 'Loading error',
+    'deptMgmtNewTask': 'New task',
+    'deptMgmtAssignedTo': 'Assigned to',
+    'deptMgmtNoAssignee': '— Unassigned —',
+    'deptMgmtPriority': 'Priority',
+    'deptMgmtPriorityLow': 'Low',
+    'deptMgmtPriorityMedium': 'Medium',
+    'deptMgmtPriorityHigh': 'High',
+    'deptMgmtDeadline': 'Deadline (YYYY-MM-DD, optional)',
+    'deptMgmtTaskCreateError': 'Task creation failed',
+    'deptMgmtAssignmentsTitle': 'Active assignments',
+    'deptMgmtAssignmentsEmpty': 'No active assignments',
+    'deptMgmtAssignMember': 'Assign a member',
+    'deptMgmtRoleChef': 'Leader',
+    'deptMgmtRoleAdjunct': 'Deputy',
+    'deptMgmtAssignBtn': 'Assign',
+    'deptMgmtAssignError': 'Assignment failed',
+    'deptMgmtEndAssignment': 'End',
+    'deptMgmtEventsTitle': 'Department events',
+    'deptMgmtEventsUpcoming': 'Upcoming ({count})',
+    'deptMgmtEventsPast': 'Past ({count})',
+    'deptMgmtEventsEmpty': 'No events planned. Create the first event for your department.',
+    'deptMgmtNewEvent': 'New department event',
+    'deptMgmtTitleRequired': 'Title is required',
+    'deptMgmtEventCreateError': 'Event creation failed',
+    'deptMgmtActivityEmpty': 'No activity yet',
+    'deptMgmtSearchResults': '{count} result(s) for "{query}"',
+    'deptMgmtSearchNoResults': 'No results for "{query}"',
+    'deptMgmtSearchHintDetail': 'Try a name, position, team, task, or event.',
+    'deptMgmtNoTeam': 'No team',
+    'deptMgmtUnassigned': 'Unassigned',
   };
 
   // ==================== PORTUGUESE ====================
@@ -3699,6 +3916,78 @@ class AppLocalizations {
     'onboardingNotificationsDesc': 'Receba alertas personalizados de acordo com o seu papel.',
     'onboardingSecurityTitle': 'Segurança reforçada',
     'onboardingSecurityDesc': 'Autenticação biométrica, sessão segura e proteção de dados.',
+    'deptMgmtTitle': 'Gestão do departamento',
+    'deptMgmtTooltipStats': 'Estatísticas',
+    'deptMgmtTooltipTools': 'Relatórios · Checklists · Inventário',
+    'deptMgmtSearchHint': 'Pesquisa rápida: membro, equipe, tarefa…',
+    'deptMgmtKpiTeams': 'Equipes',
+    'deptMgmtKpiPositions': 'Postos',
+    'deptMgmtKpiAssigned': 'Atribuídos',
+    'deptMgmtTabMembers': 'Membros',
+    'deptMgmtTabOrg': 'Organização',
+    'deptMgmtTabTasks': 'Tarefas',
+    'deptMgmtTabAssignments': 'Atribuições',
+    'deptMgmtTabEvents': 'Eventos',
+    'deptMgmtTabActivity': 'Atividade',
+    'deptMgmtMembersTitle': 'Membros do departamento ({count})',
+    'deptMgmtMembersEmpty': 'Nenhum membro neste departamento',
+    'deptMgmtFamilyLabel': 'Família: {name}',
+    'deptMgmtMakerLabel': 'Fazedor: {name}',
+    'deptMgmtOrgTitle': 'Organograma',
+    'deptMgmtOrgEmpty': 'Nenhuma equipe — crie seu primeiro sub-departamento',
+    'deptMgmtTeamPermanent': 'Equipe permanente',
+    'deptMgmtTeamTemporary': 'Temporária',
+    'deptMgmtSubDepartment': 'Sub-departamento',
+    'deptMgmtMembersCount': '{count} membros',
+    'deptMgmtEventLabel': 'Evento: {title}',
+    'deptMgmtNewTeam': 'Nova equipe',
+    'deptMgmtTeamNameLabel': 'Nome da equipe',
+    'deptMgmtParentTeam': 'Equipe principal',
+    'deptMgmtNoParent': '— Nenhuma (raiz) —',
+    'deptMgmtLinkedEvent': 'Evento vinculado (opcional)',
+    'deptMgmtLoadingEvents': 'Carregando eventos…',
+    'deptMgmtNoEvent': '— Nenhum evento —',
+    'deptMgmtDateStart': 'Data início (AAAA-MM-DD)',
+    'deptMgmtDateEnd': 'Data fim (AAAA-MM-DD)',
+    'deptMgmtObjective': 'Objetivo (opcional)',
+    'deptMgmtTeamCreateError': 'Falha ao criar equipe',
+    'deptMgmtTasksTitle': 'Tarefas do departamento',
+    'deptMgmtStatInProgress': 'Em andamento',
+    'deptMgmtStatTodo': 'A fazer',
+    'deptMgmtStatOverdue': 'Atrasadas',
+    'deptMgmtStatDone': 'Concluídas',
+    'deptMgmtTaskEmpty': 'Nenhuma tarefa',
+    'deptMgmtTaskLoadError': 'Erro ao carregar',
+    'deptMgmtNewTask': 'Nova tarefa',
+    'deptMgmtAssignedTo': 'Atribuída a',
+    'deptMgmtNoAssignee': '— Não atribuída —',
+    'deptMgmtPriority': 'Prioridade',
+    'deptMgmtPriorityLow': 'Baixa',
+    'deptMgmtPriorityMedium': 'Média',
+    'deptMgmtPriorityHigh': 'Alta',
+    'deptMgmtDeadline': 'Prazo (AAAA-MM-DD, opcional)',
+    'deptMgmtTaskCreateError': 'Falha ao criar tarefa',
+    'deptMgmtAssignmentsTitle': 'Atribuições ativas',
+    'deptMgmtAssignmentsEmpty': 'Nenhuma atribuição ativa',
+    'deptMgmtAssignMember': 'Atribuir um membro',
+    'deptMgmtRoleChef': 'Líder',
+    'deptMgmtRoleAdjunct': 'Adjunto',
+    'deptMgmtAssignBtn': 'Atribuir',
+    'deptMgmtAssignError': 'Falha na atribuição',
+    'deptMgmtEndAssignment': 'Encerrar',
+    'deptMgmtEventsTitle': 'Eventos do departamento',
+    'deptMgmtEventsUpcoming': 'Próximos ({count})',
+    'deptMgmtEventsPast': 'Passados ({count})',
+    'deptMgmtEventsEmpty': 'Nenhum evento planejado. Crie o primeiro evento do seu departamento.',
+    'deptMgmtNewEvent': 'Novo evento do departamento',
+    'deptMgmtTitleRequired': 'O título é obrigatório',
+    'deptMgmtEventCreateError': 'Falha ao criar evento',
+    'deptMgmtActivityEmpty': 'Nenhuma atividade ainda',
+    'deptMgmtSearchResults': '{count} resultado(s) para "{query}"',
+    'deptMgmtSearchNoResults': 'Nenhum resultado para "{query}"',
+    'deptMgmtSearchHintDetail': 'Tente um nome, posto, equipe, tarefa ou evento.',
+    'deptMgmtNoTeam': 'Sem equipe',
+    'deptMgmtUnassigned': 'Não atribuída',
   };
 }
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Department Management System — écran mobile de gestion du département :
 /// Organisation (sous-départements/équipes récursifs), Tâches (charge de
@@ -110,16 +111,16 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion du département'),
+        title: Text(AppLocalizations.of(context).deptMgmtTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.bar_chart),
-            tooltip: 'Statistiques',
+            tooltip: AppLocalizations.of(context).deptMgmtTooltipStats,
             onPressed: () => context.go('/departments/${widget.departmentId}/stats'),
           ),
           IconButton(
             icon: const Icon(Icons.inventory_2),
-            tooltip: 'Rapports · Checklists · Inventaire',
+            tooltip: AppLocalizations.of(context).deptMgmtTooltipTools,
             onPressed: () => context.go('/departments/${widget.departmentId}/tools'),
           ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _reload),
@@ -142,7 +143,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                         _searchDebounce = Timer(const Duration(milliseconds: 400), () => _runSearch(v));
                       },
                       decoration: InputDecoration(
-                        hintText: 'Recherche rapide : membre, équipe, tâche…',
+                        hintText: AppLocalizations.of(context).deptMgmtSearchHint,
                         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13),
                         prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4)),
                         isDense: true,
@@ -182,7 +183,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                                 children: [
                                   Text('${org['equipesActives'] ?? 0}',
                                       style: const TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold)),
-                                  Text('Équipes', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+                                  Text(AppLocalizations.of(context).deptMgmtKpiTeams, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
                                 ],
                               ),
                             ),
@@ -195,7 +196,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                                 children: [
                                   Text('${org['postesActifs'] ?? 0}',
                                       style: const TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
-                                  Text('Postes', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+                                  Text(AppLocalizations.of(context).deptMgmtKpiPositions, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
                                 ],
                               ),
                             ),
@@ -208,7 +209,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                                 children: [
                                   Text('${org['membresAffectes'] ?? 0}',
                                       style: const TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
-                                  Text('Affectés', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+                                  Text(AppLocalizations.of(context).deptMgmtKpiAssigned, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
                                 ],
                               ),
                             ),
@@ -221,13 +222,13 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                       tabAlignment: TabAlignment.start,
                       labelColor: Colors.white,
                       indicatorColor: AppColors.accent,
-                      tabs: const [
-                        Tab(icon: Icon(Icons.group, size: 20), text: 'Membres'),
-                        Tab(icon: Icon(Icons.account_tree, size: 20), text: 'Organisation'),
-                        Tab(icon: Icon(Icons.checklist, size: 20), text: 'Tâches'),
-                        Tab(icon: Icon(Icons.group_add, size: 20), text: 'Affectations'),
-                        Tab(icon: Icon(Icons.event, size: 20), text: 'Événements'),
-                        Tab(icon: Icon(Icons.history, size: 20), text: 'Activité'),
+                      tabs: [
+                        Tab(icon: Icon(Icons.group, size: 20), text: AppLocalizations.of(context).deptMgmtTabMembers),
+                        Tab(icon: Icon(Icons.account_tree, size: 20), text: AppLocalizations.of(context).deptMgmtTabOrg),
+                        Tab(icon: Icon(Icons.checklist, size: 20), text: AppLocalizations.of(context).deptMgmtTabTasks),
+                        Tab(icon: Icon(Icons.group_add, size: 20), text: AppLocalizations.of(context).deptMgmtTabAssignments),
+                        Tab(icon: Icon(Icons.event, size: 20), text: AppLocalizations.of(context).deptMgmtTabEvents),
+                        Tab(icon: Icon(Icons.history, size: 20), text: AppLocalizations.of(context).deptMgmtTabActivity),
                       ],
                     ),
                     Expanded(
@@ -293,7 +294,7 @@ class _SearchResultsPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  total > 0 ? '$total résultat(s) pour « $query »' : 'Aucun résultat pour « $query »',
+                  total > 0 ? AppLocalizations.of(context).deptMgmtSearchResults(total, query) : AppLocalizations.of(context).deptMgmtSearchNoResults(query),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
                 ),
               ),
@@ -306,7 +307,7 @@ class _SearchResultsPanel extends StatelessWidget {
           if (total == 0)
             GlassCard(
               padding: const EdgeInsets.all(24),
-              child: Text('Essayez un nom, un poste, une équipe, une tâche ou un événement.',
+              child: Text(AppLocalizations.of(context).deptMgmtSearchHintDetail,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
             )
@@ -376,13 +377,13 @@ class _MembersTab extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         children: [
           SectionTitle(
-            title: 'Membres du département (${list.length})',
+            title: AppLocalizations.of(context).deptMgmtMembersTitle(list.length),
             icon: Icons.group,
           ),
           if (list.isEmpty)
             GlassCard(
               padding: const EdgeInsets.all(24),
-              child: Text('Aucun membre dans ce département',
+              child: Text(AppLocalizations.of(context).deptMgmtMembersEmpty,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
             )
@@ -406,12 +407,12 @@ class _MembersTab extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14)),
                             if (m['familleNom'] != null)
-                              Text('Famille : ${m['familleNom']}',
+                              Text(AppLocalizations.of(context).deptMgmtFamilyLabel(m['familleNom'] ?? ''),
                                   style: TextStyle(
                                       color: Colors.white.withValues(alpha: 0.5),
                                       fontSize: 11)),
                             if (m['faiseurNom'] != null)
-                              Text('Faiseur : ${m['faiseurNom']}',
+                              Text(AppLocalizations.of(context).deptMgmtMakerLabel(m['faiseurNom'] ?? ''),
                                   style: TextStyle(
                                       color: Colors.white.withValues(alpha: 0.4),
                                       fontSize: 11)),
@@ -460,7 +461,7 @@ class _OrganisationTab extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         children: [
           SectionTitle(
-            title: 'Organigramme',
+            title: AppLocalizations.of(context).deptMgmtOrgTitle,
             icon: Icons.account_tree,
             trailing: IconButton(
               icon: const Icon(Icons.add_circle, color: Colors.amber),
@@ -474,7 +475,7 @@ class _OrganisationTab extends StatelessWidget {
                 children: [
                   Icon(Icons.account_tree, size: 40, color: Colors.white.withValues(alpha: 0.3)),
                   const SizedBox(height: 8),
-                  Text('Aucune équipe — créez votre premier sous-département',
+                  Text(AppLocalizations.of(context).deptMgmtOrgEmpty,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                 ],
               ),
@@ -489,9 +490,9 @@ class _OrganisationTab extends StatelessWidget {
   Widget _teamNode(BuildContext context, Map<String, dynamic> team, List<Map<String, dynamic>> teams, int depth) {
     final type = team['type'] ?? 'EQUIPE_PERMANENTE';
     final typeLabel = switch (type) {
-      'SOUS_DEPARTEMENT' => 'Sous-département',
-      'EQUIPE_TEMPORAIRE' => 'Temporaire',
-      _ => 'Équipe permanente',
+      'SOUS_DEPARTEMENT' => AppLocalizations.of(context).deptMgmtSubDepartment,
+      'EQUIPE_TEMPORAIRE' => AppLocalizations.of(context).deptMgmtTeamTemporary,
+      _ => AppLocalizations.of(context).deptMgmtTeamPermanent,
     };
     final typeColor = switch (type) {
       'SOUS_DEPARTEMENT' => Colors.lightBlue,
@@ -516,7 +517,7 @@ class _OrganisationTab extends StatelessWidget {
                   children: [
                     StatusBadge(label: typeLabel, color: typeColor),
                     const SizedBox(width: 6),
-                    Text('${team['nbMembres'] ?? 0} membres',
+                    Text(AppLocalizations.of(context).deptMgmtMembersCount(team['nbMembres'] ?? 0),
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
                   ],
                 ),
@@ -527,7 +528,7 @@ class _OrganisationTab extends StatelessWidget {
                       Icon(Icons.event, size: 12, color: Colors.orange.withValues(alpha: 0.8)),
                       const SizedBox(width: 4),
                       Expanded(
-                        child: Text('Événement : ${team['eventTitre']}',
+                        child: Text(AppLocalizations.of(context).deptMgmtEventLabel(team['eventTitre'] ?? ''),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -581,7 +582,7 @@ class _OrganisationTab extends StatelessWidget {
 
           return AlertDialog(
             backgroundColor: AppColors.cardDark,
-            title: const Text('Nouvelle équipe', style: TextStyle(color: Colors.white)),
+            title: Text(AppLocalizations.of(context).deptMgmtNewTeam, style: const TextStyle(color: Colors.white)),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -589,17 +590,17 @@ class _OrganisationTab extends StatelessWidget {
                   TextField(
                     controller: nomCtrl,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: "Nom de l'équipe"),
+                    decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtTeamNameLabel),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: type,
                     dropdownColor: AppColors.cardDark,
                     style: const TextStyle(color: Colors.white),
-                    items: const [
-                      DropdownMenuItem(value: 'SOUS_DEPARTEMENT', child: Text('Sous-département', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'EQUIPE_PERMANENTE', child: Text('Équipe permanente', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'EQUIPE_TEMPORAIRE', child: Text('Équipe temporaire', style: TextStyle(color: Colors.white))),
+                    items: [
+                      DropdownMenuItem(value: 'SOUS_DEPARTEMENT', child: Text(AppLocalizations.of(context).deptMgmtSubDepartment, style: TextStyle(color: Colors.white))),
+                      DropdownMenuItem(value: 'EQUIPE_PERMANENTE', child: Text(AppLocalizations.of(context).deptMgmtTeamPermanent, style: TextStyle(color: Colors.white))),
+                      DropdownMenuItem(value: 'EQUIPE_TEMPORAIRE', child: Text(AppLocalizations.of(context).deptMgmtTeamTemporary, style: TextStyle(color: Colors.white))),
                     ],
                     onChanged: (v) {
                       setState(() => type = v ?? type);
@@ -614,14 +615,14 @@ class _OrganisationTab extends StatelessWidget {
                       dropdownColor: AppColors.cardDark,
                       style: const TextStyle(color: Colors.white),
                       items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text('— Aucune (racine) —', style: TextStyle(color: Colors.white))),
+                        DropdownMenuItem<String?>(value: null, child: Text(AppLocalizations.of(context).deptMgmtNoParent, style: TextStyle(color: Colors.white))),
                         ...teams.map((t) => DropdownMenuItem<String?>(
                               value: t['id'] as String?,
                               child: Text('${t['nom']}', style: const TextStyle(color: Colors.white)),
                             )),
                       ],
                       onChanged: (v) => setState(() => parentId = v),
-                      decoration: const InputDecoration(labelText: 'Équipe parente'),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtParentTeam),
                     ),
                   ],
                   if (type == 'EQUIPE_TEMPORAIRE') ...[
@@ -631,7 +632,7 @@ class _OrganisationTab extends StatelessWidget {
                       dropdownColor: AppColors.cardDark,
                       style: const TextStyle(color: Colors.white),
                       items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text('— Aucun événement —', style: TextStyle(color: Colors.white))),
+                        DropdownMenuItem<String?>(value: null, child: Text(AppLocalizations.of(context).deptMgmtNoEvent, style: TextStyle(color: Colors.white))),
                         ...deptEvents.map((e) => DropdownMenuItem<String?>(
                               value: e['id'] as String?,
                               child: Text(e['titre'] as String? ?? '',
@@ -655,34 +656,34 @@ class _OrganisationTab extends StatelessWidget {
                         });
                       },
                       decoration: InputDecoration(
-                        labelText: 'Événement lié (optionnel)',
-                        helperText: eventsLoading ? 'Chargement des événements…' : null,
+                        labelText: AppLocalizations.of(context).deptMgmtLinkedEvent,
+                        helperText: eventsLoading ? AppLocalizations.of(context).deptMgmtLoadingEvents : null,
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: dateDebutCtrl,
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Date début (AAAA-MM-JJ)'),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtDateStart),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: dateFinCtrl,
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Date fin (AAAA-MM-JJ)'),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtDateEnd),
                     ),
                   ],
                   const SizedBox(height: 12),
                   TextField(
                     style: const TextStyle(color: Colors.white),
                     onChanged: (v) => objectif = v,
-                    decoration: const InputDecoration(labelText: 'Objectif (optionnel)'),
+                    decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtObjective),
                   ),
                 ],
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(context).cancel)),
               FilledButton(
                 onPressed: () async {
                   final api = ApiService();
@@ -701,11 +702,12 @@ class _OrganisationTab extends StatelessWidget {
                   } catch (_) {
                     if (ctx.mounted) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Échec de la création de l\'équipe')));
+                          SnackBar(content: Text(AppLocalizations.of(context).deptMgmtTeamCreateError)),
+                      );
                     }
                   }
                 },
-                child: const Text('Créer'),
+                child: Text(AppLocalizations.of(context).create),
               ),
             ],
           );
@@ -737,18 +739,18 @@ class _TasksTab extends StatelessWidget {
         children: [
           Row(
             children: [
-              _statChip('En cours', '${stats['enCours'] ?? 0}', Colors.blue),
+              _statChip(AppLocalizations.of(context).deptMgmtStatInProgress, '${stats['enCours'] ?? 0}', Colors.blue),
               const SizedBox(width: 8),
-              _statChip('À faire', '${stats['aFaire'] ?? 0}', Colors.white70),
+              _statChip(AppLocalizations.of(context).deptMgmtStatTodo, '${stats['aFaire'] ?? 0}', Colors.white70),
               const SizedBox(width: 8),
-              _statChip('En retard', '${stats['enRetard'] ?? 0}', Colors.red),
+              _statChip(AppLocalizations.of(context).deptMgmtStatOverdue, '${stats['enRetard'] ?? 0}', Colors.red),
               const SizedBox(width: 8),
-              _statChip('Terminées', '${(stats['terminees'] ?? 0) + (stats['validees'] ?? 0)}', Colors.green),
+              _statChip(AppLocalizations.of(context).deptMgmtStatDone, '${(stats['terminees'] ?? 0) + (stats['validees'] ?? 0)}', Colors.green),
             ],
           ),
           const SizedBox(height: 8),
           SectionTitle(
-            title: 'Tâches du département',
+            title: AppLocalizations.of(context).deptMgmtTasksTitle,
             icon: Icons.checklist,
             trailing: IconButton(
               icon: const Icon(Icons.add_circle, color: Colors.amber),
@@ -762,7 +764,7 @@ class _TasksTab extends StatelessWidget {
                 return const ShimmerLoading(itemCount: 3);
               }
               if (snapshot.hasError) {
-                return Text('Erreur de chargement', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)));
+                return Text(AppLocalizations.of(context).deptMgmtTaskLoadError, style: TextStyle(color: Colors.white.withValues(alpha: 0.5)));
               }
               final tasks = (snapshot.data?.data as List<dynamic>? ?? [])
                   .map((t) => t as Map<String, dynamic>)
@@ -770,7 +772,7 @@ class _TasksTab extends StatelessWidget {
               if (tasks.isEmpty) {
                 return GlassCard(
                   padding: const EdgeInsets.all(24),
-                  child: Text('Aucune tâche', textAlign: TextAlign.center,
+                  child: Text(AppLocalizations.of(context).deptMgmtTaskEmpty, textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                 );
               }
@@ -837,7 +839,7 @@ class _TasksTab extends StatelessWidget {
             children: [
               Icon(Icons.person_outline, size: 13, color: Colors.white.withValues(alpha: 0.4)),
               const SizedBox(width: 4),
-              Text('${t['assigneeNom'] ?? 'Non assignée'}',
+              Text('${t['assigneeNom'] ?? ''}',
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
               if (t['echeance'] != null) ...[
                 const SizedBox(width: 10),
@@ -863,7 +865,7 @@ class _TasksTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
           backgroundColor: AppColors.cardDark,
-          title: const Text('Nouvelle tâche', style: TextStyle(color: Colors.white)),
+          title: Text(AppLocalizations.of(context).deptMgmtNewTask, style: const TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -878,38 +880,38 @@ class _TasksTab extends StatelessWidget {
                 dropdownColor: AppColors.cardDark,
                 style: const TextStyle(color: Colors.white),
                 items: [
-                  const DropdownMenuItem<String?>(value: null, child: Text('— Non assignée —', style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem<String?>(value: null, child: Text(AppLocalizations.of(context).deptMgmtNoAssignee, style: TextStyle(color: Colors.white))),
                   ...members.map((m) => DropdownMenuItem<String?>(
                         value: (m as Map)['id'] as String?,
                         child: Text('${m['nom'] ?? ''}', style: const TextStyle(color: Colors.white)),
                       )),
                 ],
                 onChanged: (v) => setState(() => assignedTo = v),
-                decoration: const InputDecoration(labelText: 'Assignée à'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtAssignedTo),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: priorite,
                 dropdownColor: AppColors.cardDark,
                 style: const TextStyle(color: Colors.white),
-                items: const [
-                  DropdownMenuItem(value: 'BASSE', child: Text('Basse', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'MOYENNE', child: Text('Moyenne', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'HAUTE', child: Text('Haute', style: TextStyle(color: Colors.white))),
+                items: [
+                  DropdownMenuItem(value: 'BASSE', child: Text(AppLocalizations.of(context).deptMgmtPriorityLow, style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(value: 'MOYENNE', child: Text(AppLocalizations.of(context).deptMgmtPriorityMedium, style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(value: 'HAUTE', child: Text(AppLocalizations.of(context).deptMgmtPriorityHigh, style: TextStyle(color: Colors.white))),
                 ],
                 onChanged: (v) => setState(() => priorite = v ?? priorite),
-                decoration: const InputDecoration(labelText: 'Priorité'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtPriority),
               ),
               const SizedBox(height: 12),
               TextField(
                 style: const TextStyle(color: Colors.white),
                 onChanged: (v) => echeance = v,
-                decoration: const InputDecoration(labelText: 'Échéance (AAAA-MM-JJ, optionnel)'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtDeadline),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(context).cancel)),
             FilledButton(
               onPressed: () async {
                 final api = ApiService();
@@ -925,11 +927,12 @@ class _TasksTab extends StatelessWidget {
                 } catch (_) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                        const SnackBar(content: Text('Échec de la création de la tâche')));
+                        SnackBar(content: Text(AppLocalizations.of(context).deptMgmtTaskCreateError)),
+                    );
                   }
                 }
               },
-              child: const Text('Créer'),
+              child: Text(AppLocalizations.of(context).create),
             ),
           ],
         ),
@@ -966,7 +969,7 @@ class _AssignmentsTab extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         children: [
           SectionTitle(
-            title: 'Affectations actives',
+            title: AppLocalizations.of(context).deptMgmtAssignmentsTitle,
             icon: Icons.group_add,
             trailing: IconButton(
               icon: const Icon(Icons.add_circle, color: Colors.amber),
@@ -976,7 +979,7 @@ class _AssignmentsTab extends StatelessWidget {
           if (assignments.isEmpty)
             GlassCard(
               padding: const EdgeInsets.all(24),
-              child: Text('Aucune affectation active', textAlign: TextAlign.center,
+              child: Text(AppLocalizations.of(context).deptMgmtAssignmentsEmpty, textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
             )
           else
@@ -994,7 +997,7 @@ class _AssignmentsTab extends StatelessWidget {
                             Text('${a['memberNom'] ?? ''}',
                                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
                             Text(
-                              '${a['teamNom'] ?? 'Sans équipe'}${a['positionNom'] != null ? ' · ${a['positionNom']}' : ''} · ${a['role'] ?? 'MEMBRE'}',
+                              '${a['teamNom'] ?? AppLocalizations.of(context).deptMgmtNoTeam}${a['positionNom'] != null ? ' · ${a['positionNom']}' : ''} · ${a['role'] ?? 'MEMBRE'}',
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
                             ),
                           ],
@@ -1002,7 +1005,7 @@ class _AssignmentsTab extends StatelessWidget {
                       ),
                       IconButton(
                         icon: Icon(Icons.close, color: Colors.red.withValues(alpha: 0.7), size: 18),
-                        tooltip: 'Mettre fin',
+                        tooltip: AppLocalizations.of(context).deptMgmtEndAssignment,
                         onPressed: () async {
                           final api = ApiService();
                           try {
@@ -1030,7 +1033,7 @@ class _AssignmentsTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
           backgroundColor: AppColors.cardDark,
-          title: const Text('Affecter un membre', style: TextStyle(color: Colors.white)),
+          title: Text(AppLocalizations.of(context).deptMgmtAssignMember, style: const TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1045,7 +1048,7 @@ class _AssignmentsTab extends StatelessWidget {
                       )),
                 ],
                 onChanged: (v) => setState(() => memberId = v),
-                decoration: const InputDecoration(labelText: 'Membre'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtTabMembers),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
@@ -1061,25 +1064,25 @@ class _AssignmentsTab extends StatelessWidget {
                           )),
                 ],
                 onChanged: (v) => setState(() => teamId = v),
-                decoration: const InputDecoration(labelText: 'Équipe'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtKpiTeams),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: role,
                 dropdownColor: AppColors.cardDark,
                 style: const TextStyle(color: Colors.white),
-                items: const [
-                  DropdownMenuItem(value: 'CHEF', child: Text('Chef', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'ADJOINT', child: Text('Adjoint', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'MEMBRE', child: Text('Membre', style: TextStyle(color: Colors.white))),
+                items: [
+                  DropdownMenuItem(value: 'CHEF', child: Text(AppLocalizations.of(context).deptMgmtRoleChef, style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(value: 'ADJOINT', child: Text(AppLocalizations.of(context).deptMgmtRoleAdjunct, style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(value: 'MEMBRE', child: Text(AppLocalizations.of(context).deptMgmtTabMembers, style: TextStyle(color: Colors.white))),
                 ],
                 onChanged: (v) => setState(() => role = v ?? role),
-                decoration: const InputDecoration(labelText: 'Rôle'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).status),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(context).cancel)),
             FilledButton(
               onPressed: () async {
                 if (memberId == null || teamId == null) return;
@@ -1095,11 +1098,12 @@ class _AssignmentsTab extends StatelessWidget {
                 } catch (_) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                        const SnackBar(content: Text('Échec de l\'affectation')));
+                        SnackBar(content: Text(AppLocalizations.of(context).deptMgmtAssignError)),
+                    );
                   }
                 }
               },
-              child: const Text('Affecter'),
+              child: Text(AppLocalizations.of(context).deptMgmtAssignBtn),
             ),
           ],
         ),
@@ -1155,14 +1159,14 @@ class _EventsTab extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             children: [
               SectionTitle(
-                title: 'Événements du département',
+                title: AppLocalizations.of(context).deptMgmtEventsTitle,
                 icon: Icons.event,
                 trailing: IconButton(
                   icon: const Icon(Icons.add_circle, color: Colors.amber),
                   onPressed: () => _showCreateEvent(context),
                 ),
               ),
-              Text('À venir (${upcoming.length})',
+              Text(AppLocalizations.of(context).deptMgmtEventsUpcoming(upcoming.length),
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,
@@ -1171,7 +1175,7 @@ class _EventsTab extends StatelessWidget {
               if (upcoming.isEmpty)
                 GlassCard(
                   padding: const EdgeInsets.all(20),
-                  child: Text('Aucun événement planifié. Créez le premier événement de votre département.',
+                  child: Text(AppLocalizations.of(context).deptMgmtEventsEmpty,
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                 )
@@ -1179,7 +1183,7 @@ class _EventsTab extends StatelessWidget {
                 ...upcoming.map((e) => _eventCard(context, e)),
               if (past.isNotEmpty) ...[
                 const SizedBox(height: 14),
-                Text('Passés (${past.length})',
+                Text(AppLocalizations.of(context).deptMgmtEventsPast(past.length),
                     style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
@@ -1282,7 +1286,7 @@ class _EventsTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
           backgroundColor: AppColors.cardDark,
-          title: const Text('Nouvel événement du département', style: TextStyle(color: Colors.white)),
+          title: Text(AppLocalizations.of(context).deptMgmtNewEvent, style: const TextStyle(color: Colors.white)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1314,7 +1318,7 @@ class _EventsTab extends StatelessWidget {
                     dateDebut.toString().substring(0, 16).replaceAll('T', ' '),
                     style: const TextStyle(color: Colors.white),
                   ),
-                  trailing: const Text('Modifier', style: TextStyle(color: Colors.amber)),
+                  trailing: Text(AppLocalizations.of(context).edit, style: const TextStyle(color: Colors.amber)),
                   onTap: () async {
                     await pickDate();
                     if (ctx.mounted) setState(() {});
@@ -1323,26 +1327,26 @@ class _EventsTab extends StatelessWidget {
                 TextField(
                   controller: lieuCtrl,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Lieu (optionnel)'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context).deptMgmtLinkedEvent),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: descCtrl,
                   style: const TextStyle(color: Colors.white),
                   maxLines: 2,
-                  decoration: const InputDecoration(labelText: 'Description (optionnelle)'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context).description),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(context).cancel)),
             FilledButton(
               onPressed: () async {
                 if (titreCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(content: Text('Le titre est requis')));
-                  return;
+                      SnackBar(content: Text(AppLocalizations.of(context).deptMgmtTitleRequired)),
+                  );
                 }
                 final api = apiService;
                 try {
@@ -1359,11 +1363,12 @@ class _EventsTab extends StatelessWidget {
                 } catch (_) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                        const SnackBar(content: Text('Échec de la création de l\'événement')));
+                        SnackBar(content: Text(AppLocalizations.of(context).deptMgmtEventCreateError)),
+                    );
                   }
                 }
               },
-              child: const Text('Créer'),
+              child: Text(AppLocalizations.of(context).create),
             ),
           ],
         ),
@@ -1385,7 +1390,7 @@ class _ActivityTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (activity.isEmpty) {
       return Center(
-        child: Text('Aucune activité pour l\'instant',
+        child: Text(AppLocalizations.of(context).deptMgmtActivityEmpty,
             style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
       );
     }
