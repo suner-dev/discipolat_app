@@ -437,6 +437,16 @@ class AppLocalizations {
   String transferValidateCount(int count) => translate('transferValidateCount').replaceAll('{count}', count.toString());
   String get transferAttachmentsUpdated => translate('transferAttachmentsUpdated');
   String get transferAttachmentsError => translate('transferAttachmentsError');
+  String get transferListTitle => translate('transferListTitle');
+  String get transferListNewRequest => translate('transferListNewRequest');
+  String get transferListStatusFilter => translate('transferListStatusFilter');
+  String get transferListTypeFilter => translate('transferListTypeFilter');
+  String get transferListEmpty => translate('transferListEmpty');
+  String transferListPersonLabel(String name) => translate('transferListPersonLabel').replaceAll('{name}', name);
+  String transferListValidations(int approved, int total) => translate('transferListValidations').replaceAll('{approved}', '$approved').replaceAll('{total}', '$total');
+  String get transferListSubmitError => translate('transferListSubmitError');
+  String get transferListCancelSuccess => translate('transferListCancelSuccess');
+  String get transferListConfigDefault => translate('transferListConfigDefault');
   String get bibleReadingTitle => translate('bibleReadingTitle');
   String get myProgress => translate('myProgress');
   String get days => translate('days');
@@ -1803,6 +1813,16 @@ class AppLocalizations {
     'transferValidateCount': 'Valider ({count})',
     'transferAttachmentsUpdated': 'Pièces jointes mises à jour',
     'transferAttachmentsError': 'Erreur lors de la mise à jour des pièces jointes',
+    'transferListTitle': 'Transferts',
+    'transferListNewRequest': 'Demande',
+    'transferListStatusFilter': 'Statut',
+    'transferListTypeFilter': 'Type',
+    'transferListEmpty': 'Aucune demande de transfert',
+    'transferListPersonLabel': 'Personne : {name}',
+    'transferListValidations': '{approved}/{total} validations',
+    'transferListSubmitError': 'Erreur lors de la soumission',
+    'transferListCancelSuccess': 'Demande annulée',
+    'transferListConfigDefault': 'Configuration',
     'statusDraft': 'Brouillon',
     'statusPendingValidation': 'En attente de validation',
     'statusApproval': 'Approbation',
@@ -2658,6 +2678,16 @@ class AppLocalizations {
     'transferValidateCount': 'Validate ({count})',
     'transferAttachmentsUpdated': 'Attachments updated',
     'transferAttachmentsError': 'Error updating attachments',
+    'transferListTitle': 'Transfers',
+    'transferListNewRequest': 'Request',
+    'transferListStatusFilter': 'Status',
+    'transferListTypeFilter': 'Type',
+    'transferListEmpty': 'No transfer request',
+    'transferListPersonLabel': 'Person: {name}',
+    'transferListValidations': '{approved}/{total} validations',
+    'transferListSubmitError': 'Submission error',
+    'transferListCancelSuccess': 'Request cancelled',
+    'transferListConfigDefault': 'Configuration',
     'statusDraft': 'Draft',
     'statusPendingValidation': 'Pending validation',
     'statusApproval': 'Approval',
@@ -3513,6 +3543,16 @@ class AppLocalizations {
     'transferValidateCount': 'Validar ({count})',
     'transferAttachmentsUpdated': 'Peças anexas atualizadas',
     'transferAttachmentsError': 'Erro ao atualizar peças anexas',
+    'transferListTitle': 'Transferências',
+    'transferListNewRequest': 'Pedido',
+    'transferListStatusFilter': 'Estado',
+    'transferListTypeFilter': 'Tipo',
+    'transferListEmpty': 'Nenhum pedido de transferência',
+    'transferListPersonLabel': 'Pessoa: {name}',
+    'transferListValidations': '{approved}/{total} validações',
+    'transferListSubmitError': 'Erro ao submeter',
+    'transferListCancelSuccess': 'Pedido cancelado',
+    'transferListConfigDefault': 'Configuração',
     'statusDraft': 'Rascunho',
     'statusPendingValidation': 'Aguarda validação',
     'statusApproval': 'Aprovação',

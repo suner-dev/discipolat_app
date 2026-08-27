@@ -150,7 +150,7 @@ class _TransferAdminScreenState extends State<TransferAdminScreen> {
               controller: scrollController,
               padding: const EdgeInsets.all(20),
               children: [
-                Text(config['label'] ?? 'Configuration', style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                Text(config['label'] ?? l10n.transferListConfigDefault, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 _sectionTitle(l10n.initiatorRoles),
                 Wrap(spacing: 6, runSpacing: 6, children: [

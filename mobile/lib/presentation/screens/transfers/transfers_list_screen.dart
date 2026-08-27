@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import 'transfer_labels.dart';
@@ -40,37 +41,40 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
   }
 
   Future<void> _submit(String id) async {
+    final l10n = AppLocalizations.of(context);
     try {
       await _apiService.post('/transfers/$id/submit');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demande soumise au circuit de validation')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.transferSubmitted)));
       _loadTransfers();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de la soumission')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.transferListSubmitError)));
       }
     }
   }
 
   Future<void> _cancel(String id) async {
+    final l10n = AppLocalizations.of(context);
     try {
       await _apiService.post('/transfers/$id/cancel');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demande annulée')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.transferListCancelSuccess)));
       _loadTransfers();
     } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Transferts')),
+      appBar: AppBar(title: Text(l10n.transferListTitle)),
       drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/transfers/new'),
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Demande', style: TextStyle(color: Colors.white)),
+        label: Text(l10n.transferListNewRequest, style: const TextStyle(color: Colors.white)),
       ),
       body: Column(children: [
         // Filtres
@@ -81,7 +85,7 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
               child: DropdownButtonFormField<String>(
                 initialValue: _statut.isEmpty ? null : _statut,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Statut', isDense: true),
+                decoration: InputDecoration(labelText: l10n.transferListStatusFilter, isDense: true),
                 items: [for (final e in kTransferStatusLabels.entries) DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis))],
                 onChanged: (v) { setState(() => _statut = v ?? ''); _loadTransfers(); },
               ),
@@ -91,7 +95,7 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
               child: DropdownButtonFormField<String>(
                 initialValue: _type.isEmpty ? null : _type,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Type', isDense: true),
+                decoration: InputDecoration(labelText: l10n.transferListTypeFilter, isDense: true),
                 items: [for (final e in kTransferTypeLabels.entries) DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis))],
                 onChanged: (v) { setState(() => _type = v ?? ''); _loadTransfers(); },
               ),
@@ -104,13 +108,13 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
               : RefreshIndicator(
                   onRefresh: _loadTransfers,
                   child: _transfers.isEmpty
-                      ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: const [
+                      ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
                           Padding(
-                            padding: EdgeInsets.only(top: 120),
+                            padding: const EdgeInsets.only(top: 120),
                             child: Column(children: [
-                              Icon(Icons.swap_horiz, size: 56, color: Colors.white24),
-                              SizedBox(height: 12),
-                              Text('Aucune demande de transfert', style: TextStyle(color: Colors.white54)),
+                              const Icon(Icons.swap_horiz, size: 56, color: Colors.white24),
+                              const SizedBox(height: 12),
+                              Text(l10n.transferListEmpty, style: const TextStyle(color: Colors.white54)),
                             ]),
                           ),
                         ])
@@ -143,7 +147,7 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
                                   StatusBadge(label: transferStatusLabel(statut), color: color),
                                 ]),
                                 const SizedBox(height: 8),
-                                Text('Personne : ${t['personneNom'] ?? '—'}', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
+                                Text(l10n.transferListPersonLabel(t['personneNom'] ?? '—'), style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
                                 const SizedBox(height: 4),
                                 Row(children: [
                                   if (ancienne != null) ...[
@@ -166,7 +170,7 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text('$approbations/$totalEtapes validations', style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10)),
+                                  Text(l10n.transferListValidations(approbations, totalEtapes), style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10)),
                                 ],
                                 if (peutSoumettre || peutAnnuler) ...[
                                   const SizedBox(height: 8),
@@ -175,7 +179,7 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
                                       Expanded(child: FilledButton(
                                         style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
                                         onPressed: () => _submit(t['id'] as String),
-                                        child: const Text('Soumettre', style: TextStyle(fontSize: 13)),
+                                        child: Text(l10n.transferSubmit, style: const TextStyle(fontSize: 13)),
                                       )),
                                     if (peutAnnuler) ...[
                                       const SizedBox(width: 8),
@@ -186,7 +190,7 @@ class _TransfersListScreenState extends State<TransfersListScreen> {
                                           side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4)),
                                         ),
                                         onPressed: () => _cancel(t['id'] as String),
-                                        child: const Text('Annuler', style: TextStyle(fontSize: 13)),
+                                        child: Text(l10n.transferCancel, style: const TextStyle(fontSize: 13)),
                                       )),
                                     ],
                                   ]),
