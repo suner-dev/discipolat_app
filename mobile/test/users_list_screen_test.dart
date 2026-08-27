@@ -126,7 +126,7 @@ void main() {
     final api = fakeWith(users: {'content': []});
     await pumpScreen(tester, api);
 
-    expect(find.text('Aucun utilisateur'), findsOneWidget);
+    expect(find.text('Aucun utilisateur trouvé'), findsOneWidget);
   });
 
   testWidgets('ouvre le formulaire de création via le bouton +', (tester) async {

@@ -4,6 +4,7 @@ import '../../../data/services/api_service.dart';
 import '../../../app.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
+import '../../../l10n/app_localizations.dart';
 
 
 class UsersListScreen extends StatefulWidget {
@@ -30,6 +31,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
   final _createLastNameCtrl = TextEditingController();
   String _createRole = 'FAISEUR';
   bool _isProcessing = false;
+
+  AppLocalizations get l10n => AppLocalizations.of(context)!;
 
   static const _roleLabels = {
     'ADMIN': 'Administrateur',
@@ -99,8 +102,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
       _createRole = 'FAISEUR';
       setState(() => _showCreate = false);
       _loadData();
-      if (mounted) _showSnack('Compte créé avec succès');
-    } catch (_) { if (mounted) _showSnack('Erreur lors de la création'); }
+      if (mounted) _showSnack(l10n.usersListAccountCreated);
+    } catch (_) { if (mounted) _showSnack(l10n.usersListCreateError); }
     finally { if (mounted) setState(() => _isProcessing = false); }
   }
 
@@ -129,7 +132,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Utilisateurs'),
+        title: Text(l10n.usersListTitle),
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: () => setState(() => _showCreate = !_showCreate)),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
@@ -154,7 +157,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                         child: Column(children: [
                           Icon(Icons.people_outline, size: 48, color: Colors.white.withValues(alpha: 0.15)),
                           const SizedBox(height: 12),
-                          Text('Aucun utilisateur',
+                          Text(l10n.usersListEmpty,
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 16)),
                         ]),
                       )
@@ -177,19 +180,19 @@ class _UsersListScreenState extends State<UsersListScreen> {
         Row(children: [
           Icon(Icons.person_add, color: AppColors.primary, size: 18),
           const SizedBox(width: 8),
-          const Text('Nouvel utilisateur', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(l10n.usersListNewUser, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
         ]),
         const SizedBox(height: 16),
-        TextField(controller: _createFirstNameCtrl, decoration: const InputDecoration(labelText: 'Prénom', hintText: 'Jean')),
+        TextField(controller: _createFirstNameCtrl, decoration: InputDecoration(labelText: l10n.usersListFirstName, hintText: 'Jean')),
         const SizedBox(height: 10),
-        TextField(controller: _createLastNameCtrl, decoration: const InputDecoration(labelText: 'Nom', hintText: 'Dupont')),
+        TextField(controller: _createLastNameCtrl, decoration: InputDecoration(labelText: l10n.usersListLastName, hintText: 'Dupont')),
         const SizedBox(height: 10),
         TextField(controller: _createEmailCtrl, keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: 'Email', hintText: 'jean@email.com')),
+            decoration: InputDecoration(labelText: l10n.usersListEmail, hintText: 'jean@email.com')),
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
           initialValue: _createRole, dropdownColor: const Color(0xFF111827),
-          decoration: const InputDecoration(labelText: 'Rôle'),
+          decoration: InputDecoration(labelText: l10n.usersListRole),
           items: ['FAISEUR', 'RESPONSABLE', 'PASTEUR', 'ADMIN'].map((r) =>
             DropdownMenuItem(value: r, child: Text(_roleLabels[r] ?? r)),
           ).toList(),
@@ -197,14 +200,14 @@ class _UsersListScreenState extends State<UsersListScreen> {
         ),
         const SizedBox(height: 16),
         Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-          TextButton(onPressed: () => setState(() => _showCreate = false), child: const Text('Annuler')),
+          TextButton(onPressed: () => setState(() => _showCreate = false), child: Text(l10n.usersListAnnuler)),
           const SizedBox(width: 8),
           FilledButton.icon(
             onPressed: _createUser,
             icon: _isProcessing
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.person_add, size: 16),
-            label: const Text('Créer'),
+            label: Text(l10n.usersListCreateBtn),
           ),
         ]),
       ]),
@@ -254,7 +257,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    charge == 'SURCHARGÉ' ? 'Surchargé' : charge == 'LEGER' ? 'Léger' : 'Normal',
+                    charge == 'SURCHARGÉ' ? l10n.usersListSurcharged : charge == 'LEGER' ? l10n.usersListLight : l10n.usersListNormal,
                     style: TextStyle(color: chargeColor, fontSize: 9, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -318,20 +321,20 @@ class _UsersListScreenState extends State<UsersListScreen> {
           Row(children: [
             _badge(color, _roleLabels[role] ?? role),
             const SizedBox(width: 6),
-            _badge(isActive ? Colors.green : Colors.grey, isActive ? 'Actif' : 'Inactif'),
+            _badge(isActive ? Colors.green : Colors.grey, isActive ? l10n.usersListActiveLabel : l10n.usersListInactiveLabel),
             if (u['estChefDeFamille'] == true) ...[
               const SizedBox(width: 6),
-              _badge(const Color(0xFFD4AF37), 'Chef'),
+              _badge(const Color(0xFFD4AF37), l10n.usersListChefBadge),
             ],
             if (_evalBadge(u['id']) != null) ...[
               const SizedBox(width: 6),
               _evalBadge(u['id'])!,
             ],
             const Spacer(),
-            _actionBtn(Icons.person, () => context.go('/users/${u['id']}'), AppColors.primary, tooltip: 'Fiche complète'),
+            _actionBtn(Icons.person, () => context.go('/users/${u['id']}'), AppColors.primary, tooltip: l10n.usersListActionProfile),
             if (role == 'FAISEUR') ...[
               const SizedBox(width: 4),
-              _actionBtn(Icons.history, () => _showActionModal(u, 'history'), const Color(0xFFA855F7), tooltip: 'Historique'),
+              _actionBtn(Icons.history, () => _showActionModal(u, 'history'), const Color(0xFFA855F7), tooltip: l10n.usersListActionHistory),
             ],
           ]),
           if (role == 'FAISEUR' || role == 'RESPONSABLE' || role == 'PASTEUR')
@@ -436,6 +439,7 @@ class _ActionModal extends StatefulWidget {
 }
 
 class _ActionModalState extends State<_ActionModal> {
+  AppLocalizations get l10n => AppLocalizations.of(context)!;
   bool _isProcessing = false;
   String _demoteRole = 'FAISEUR';
   String _transferFamilleId = '';
@@ -486,12 +490,12 @@ class _ActionModalState extends State<_ActionModal> {
       widget.onDone();
       if (mounted && widget.action == 'transfer') {
         final message = statutDemande == 'EXECUTE'
-            ? 'Faiseur transféré'
-            : 'Demande de transfert soumise pour validation';
+            ? l10n.usersListTransferExecuted
+            : l10n.usersListTransferPending;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.usersListError)));
     } finally { if (mounted) setState(() => _isProcessing = false); }
   }
 
@@ -533,11 +537,11 @@ class _ActionModalState extends State<_ActionModal> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  widget.action == 'promote' ? 'Promouvoir en Faiseur'
-                      : widget.action == 'demote' ? 'Rétrograder'
-                      : widget.action == 'transfer' ? 'Transférer le Faiseur'
-                      : widget.action == 'history' ? 'Historique'
-                      : 'Suppression définitive',
+                  widget.action == 'promote' ? l10n.usersListPromoteFaiseur
+                      : widget.action == 'demote' ? l10n.usersListDemoteTitle
+                      : widget.action == 'transfer' ? l10n.usersListTransferTitle
+                      : widget.action == 'history' ? l10n.usersListHistoryTitle
+                      : l10n.usersListDeleteTitle,
                   style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ]),
@@ -552,15 +556,15 @@ class _ActionModalState extends State<_ActionModal> {
               else
                 Text(
                   widget.action == 'promote'
-                      ? 'Promouvoir $name au rôle de Faiseur de disciples ?'
-                      : 'Supprimer définitivement $name ? Cette action est irréversible (RGPD).',
+                      ? l10n.usersListPromoteConfirm.replaceAll('{name}', name)
+                      : l10n.usersListDeleteConfirmHard.replaceAll('{name}', name),
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
                 ),
 
               if (widget.action != 'history') ...[
                 const SizedBox(height: 16),
                 Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+                  TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.usersListAnnuler)),
                   const SizedBox(width: 8),
                   FilledButton.icon(
                     onPressed: _execute,
@@ -568,10 +572,10 @@ class _ActionModalState extends State<_ActionModal> {
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : Icon(widget.action == 'hardDelete' ? Icons.delete_forever : Icons.check, size: 16),
                     label: Text(
-                      widget.action == 'promote' ? 'Promouvoir'
-                          : widget.action == 'demote' ? 'Rétrograder'
-                          : widget.action == 'transfer' ? 'Transférer'
-                          : 'Supprimer',
+                      widget.action == 'promote' ? l10n.usersListPromoteBtn
+                          : widget.action == 'demote' ? l10n.usersListDemoteBtn
+                          : widget.action == 'transfer' ? l10n.usersListTransferBtn
+                          : l10n.usersListDeleteBtn,
                     ),
                     style: FilledButton.styleFrom(
                       backgroundColor: widget.action == 'hardDelete' ? Colors.red : AppColors.primary,
@@ -583,7 +587,7 @@ class _ActionModalState extends State<_ActionModal> {
                 Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Fermer'),
+                    child: Text(l10n.usersListHistoryClose),
                   ),
                 ]),
               ],
@@ -654,7 +658,7 @@ class _ActionModalState extends State<_ActionModal> {
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Rôle', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
+                  Text(l10n.usersListHistoryRole, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
                   const SizedBox(height: 2),
                   Text(widget.roleLabels[h['role']] ?? h['role']?.toString() ?? '—',
                       style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
@@ -673,7 +677,7 @@ class _ActionModalState extends State<_ActionModal> {
                 ]),
               ),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text('Membre depuis', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
+                Text(l10n.usersListHistorySince, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
                 const SizedBox(height: 2),
                 Text(_formatDate(h['dateCreation']),
                     style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
@@ -687,7 +691,7 @@ class _ActionModalState extends State<_ActionModal> {
             const Icon(Icons.favorite, color: Colors.greenAccent, size: 15),
             const SizedBox(width: 6),
             Expanded(
-              child: Text('Âmes actuellement suivies',
+              child: Text(l10n.usersListHistoryCurrentSouls,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600)),
             ),
             Container(
@@ -704,7 +708,7 @@ class _ActionModalState extends State<_ActionModal> {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(12)),
               child: Center(
-                child: Text('Aucune âme suivie actuellement',
+                child: Text(l10n.usersListHistoryNoSouls,
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 12)),
               ),
             )
@@ -753,7 +757,7 @@ class _ActionModalState extends State<_ActionModal> {
               const Icon(Icons.person_remove, color: Colors.redAccent, size: 15),
               const SizedBox(width: 6),
               Expanded(
-                child: Text('Sorties de suivi',
+                child: Text(l10n.usersListHistoryExit,
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600)),
               ),
               Container(
@@ -778,7 +782,7 @@ class _ActionModalState extends State<_ActionModal> {
                   const Icon(Icons.person_remove, color: Colors.redAccent, size: 14),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(ex['motif']?.toString() ?? 'Sortie du suivi', maxLines: 1, overflow: TextOverflow.ellipsis,
+                    child: Text(ex['motif']?.toString() ?? l10n.userDetailExitReason, maxLines: 1, overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
                   ),
                   Text(_formatDate(ex['dateSortie']),
@@ -800,7 +804,7 @@ class _ActionModalState extends State<_ActionModal> {
       DropdownButtonFormField<String>(
         initialValue: _transferFamilleId.isEmpty ? null : _transferFamilleId,
         dropdownColor: const Color(0xFF111827),
-        decoration: const InputDecoration(hintText: 'Sélectionner une famille...'),
+        decoration: InputDecoration(hintText: l10n.usersListTransferHint),
         items: _families.map((f) =>
           DropdownMenuItem(value: f['id'] as String, child: Text(f['nom'] as String? ?? '')),
         ).toList(),
@@ -809,7 +813,7 @@ class _ActionModalState extends State<_ActionModal> {
       const SizedBox(height: 8),
       CheckboxListTile(
         contentPadding: EdgeInsets.zero,
-        title: Text('Transférer également les âmes suivies',
+        title: Text(l10n.usersListTransferSouls,
             style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
         value: _transferAmes,
         onChanged: (v) => setState(() => _transferAmes = v ?? false),
@@ -821,7 +825,7 @@ class _ActionModalState extends State<_ActionModal> {
 
   Widget _buildDemoteContent(String name) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Rétrograder $name vers :',
+      Text('${l10n.usersListDemoteConfirm.replaceAll('{name}', name)}',
           style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
       const SizedBox(height: 8),
       DropdownButtonFormField<String>(

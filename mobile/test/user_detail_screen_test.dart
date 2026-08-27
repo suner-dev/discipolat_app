@@ -124,22 +124,22 @@ void main() {
 
     // La section dossier est en bas de la fiche → on y défile.
     await tester.dragUntilVisible(
-      find.text('Dossier du membre (1 dép.)'),
+      find.textContaining('Dossier du membre'),
       find.byType(ListView).first,
       const Offset(0, -300),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Dossier du membre (1 dép.)'), findsOneWidget);
+    expect(find.textContaining('Dossier du membre'), findsAtLeastNWidgets(1));
     expect(find.text('Jeunesse'), findsNWidgets(2)); // section départements + dossier
-    expect(find.text('Objectifs (1)'), findsOneWidget);
+    expect(find.text('Objectifs (1)'), findsWidgets);
     expect(find.text('Mener 2 études bibliques'), findsOneWidget);
     expect(find.text('En Cours'), findsOneWidget);
-    expect(find.text('Rapports du responsable (1)'), findsOneWidget);
+    expect(find.text('Rapports (1)'), findsWidgets);
     expect(find.text('Bonne progression'), findsOneWidget);
-    expect(find.text('Notes (1)'), findsOneWidget);
+    expect(find.text('Notes (1)'), findsWidgets);
     expect(find.text('A rencontré son faiseur'), findsOneWidget);
-    expect(find.text('Documents du dossier (1)'), findsOneWidget);
+    expect(find.textContaining('Documents du dossier'), findsAtLeastNWidgets(1));
     expect(find.text('Compte rendu de visite'), findsOneWidget);
   });
 

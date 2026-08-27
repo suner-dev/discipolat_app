@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/open_url.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Fiche utilisateur complète (mobile) : identité, âme liée, âmes suivies si
 /// faiseur, départements + membres si responsable, famille gérée si chef de
@@ -26,6 +27,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   int _note = 0;
   int _hoverNote = 0;
   final TextEditingController _commentCtrl = TextEditingController();
+
+  AppLocalizations get l10n => AppLocalizations.of(context)!;
 
   static const _roleLabels = {
     'ADMIN': 'Administrateur',
@@ -104,13 +107,13 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_hasMyEval ? 'Évaluation modifiée' : 'Évaluation enregistrée')),
+          SnackBar(content: Text(_hasMyEval ? l10n.userDetailEvalModified : l10n.userDetailEvalSaved)),
         );
         await _load();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de l\'enregistrement')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.userDetailEvalError)));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -141,7 +144,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fiche utilisateur'),
+        title: Text(l10n.userDetailAppTitle),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
@@ -168,7 +171,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           child: Column(children: [
             Icon(Icons.person_off, size: 48, color: Colors.white.withValues(alpha: 0.15)),
             const SizedBox(height: 12),
-            Text('Fiche indisponible', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+            Text(l10n.userDetailUnavailable, style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
           ]),
         ),
       ];
@@ -248,14 +251,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         Row(children: [
           Icon(Icons.person_outline, color: AppColors.primary, size: 16),
           const SizedBox(width: 6),
-          Text('Fiche âme liée au compte', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(l10n.userDetailLinkedAme, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w600)),
         ]),
         const SizedBox(height: 10),
-        _infoRow('Nom', ame['nomComplet']?.toString() ?? '—'),
-        _infoRow('Statut', _statutLabel(ame['statut']?.toString()), color: _statutColor(ame['statut']?.toString())),
-        _infoRow('Type', (ame['typeDisciple']?.toString() ?? '—').replaceAll('_', ' ')),
-        _infoRow('Famille', ame['familleNom']?.toString() ?? 'Sans famille'),
-        if (ame['faiseurNom'] != null) _infoRow('Faiseur', ame['faiseurNom'].toString()),
+        _infoRow(l10n.userDetailName, ame['nomComplet']?.toString() ?? '—'),
+        _infoRow(l10n.userDetailStatus, _statutLabel(ame['statut']?.toString()), color: _statutColor(ame['statut']?.toString())),
+        _infoRow(l10n.userDetailType, (ame['typeDisciple']?.toString() ?? '—').replaceAll('_', ' ')),
+        _infoRow(l10n.userDetailFamily, ame['familleNom']?.toString() ?? 'Sans famille'),
+        if (ame['faiseurNom'] != null) _infoRow(l10n.userDetailFaiseur, ame['faiseurNom'].toString()),
       ]),
     );
   }
@@ -283,12 +286,12 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           const Icon(Icons.star, color: Colors.amber, size: 16),
           const SizedBox(width: 6),
           Expanded(
-            child: Text('Évaluation', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w600)),
+            child: Text(l10n.userDetailEvaluation, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w600)),
           ),
           if (_hasMyEval)
-            StatusBadge(label: 'Vous avez évalué', color: Colors.green)
+            StatusBadge(label: l10n.userDetailEvaluated, color: Colors.green)
           else
-            StatusBadge(label: 'Pas encore évalué', color: Colors.white38),
+            StatusBadge(label: l10n.userDetailNotEvaluated, color: Colors.white38),
         ]),
         const SizedBox(height: 12),
         // Étoiles interactives
@@ -314,8 +317,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           controller: _commentCtrl,
           maxLines: 2,
           minLines: 1,
-          decoration: const InputDecoration(
-            hintText: 'Appréciation (optionnel)…',
+          decoration: InputDecoration(
+            hintText: l10n.userDetailEvalHint,
           ),
         ),
         const SizedBox(height: 10),
@@ -325,7 +328,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             icon: _isSaving
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.send, size: 16),
-            label: Text(_hasMyEval ? 'Modifier l\'évaluation' : 'Donner l\'évaluation'),
+            label: Text(_hasMyEval ? l10n.userDetailEvalEdit : l10n.userDetailEvalCreate),
           ),
         ]),
         // Statistiques reçues
@@ -333,7 +336,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           const SizedBox(height: 12),
           Divider(color: Colors.white.withValues(alpha: 0.06)),
           const SizedBox(height: 8),
-          Text('Évaluations reçues (anonymes)', style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11)),
+          Text(l10n.userDetailEvalReceived, style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11)),
           const SizedBox(height: 6),
           Wrap(spacing: 6, runSpacing: 6, children: evaluations.entries.map((e) {
             final cat = e.key;
@@ -366,7 +369,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       if (ames.isEmpty)
         GlassCard(
           padding: const EdgeInsets.all(20),
-          child: Center(child: Text('Aucune âme suivie', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13))),
+          child: Center(child: Text(l10n.userDetailNoFollowedSouls, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13))),
         )
       else
         ...ames.map((raw) {
@@ -403,7 +406,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       Row(children: [
         const Icon(Icons.person_remove, color: Colors.redAccent, size: 16),
         const SizedBox(width: 6),
-        Expanded(child: Text('Sorties de suivi (${sorties.length})', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
+        Expanded(child: Text('${l10n.userDetailExits} (${sorties.length})', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
       ]),
       const SizedBox(height: 8),
       ...sorties.map((raw) {
@@ -419,7 +422,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           child: Row(children: [
             const Icon(Icons.person_remove, color: Colors.redAccent, size: 14),
             const SizedBox(width: 8),
-            Expanded(child: Text(ex['motif']?.toString() ?? 'Sortie du suivi', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12))),
+            Expanded(child: Text(ex['motif']?.toString() ?? l10n.userDetailExitReason, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12))),
             Text(_formatDate(ex['dateSortie']), style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10)),
           ]),
         );
@@ -433,7 +436,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       Row(children: [
         const Icon(Icons.apartment, color: Colors.amber, size: 16),
         const SizedBox(width: 6),
-        Expanded(child: Text('Départements dirigés (${depts.length})', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
+        Expanded(child: Text('${l10n.userDetailDeptsManaged} (${depts.length})', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
       ]),
       const SizedBox(height: 8),
       ...depts.map((raw) {
@@ -453,7 +456,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             ]),
             const SizedBox(height: 8),
             if (membres.isEmpty)
-              Text('Aucun membre', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12))
+              Text(l10n.userDetailNoMembers, style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12))
             else
               ...membres.map((raw) {
                 final m = raw as Map<String, dynamic>;
@@ -473,7 +476,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(m['nomComplet']?.toString() ?? '—', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
                         if (m['faiseurNom'] != null)
-                          Text('Suivi par ${m['faiseurNom']}', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 9)),
+                          Text(l10n.userDetailFollowedBy.replaceAll('{name}', m['faiseurNom']?.toString() ?? ''), style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 9)),
                       ]),
                     ),
                     StatusBadge(label: _statutLabel(statut), color: _statutColor(statut)),
@@ -517,7 +520,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         Icon(Icons.folder_shared, color: AppColors.primary, size: 16),
         const SizedBox(width: 6),
         Expanded(
-          child: Text('Dossier du membre (${dossier.length} dép.)',
+          child: Text(l10n.userDetailDossier.replaceAll('{count}', dossier.length.toString()),
               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
         ),
       ]),
@@ -548,13 +551,13 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
               const Icon(Icons.flag, color: Colors.greenAccent, size: 14),
               const SizedBox(width: 5),
               Expanded(
-                child: Text('Objectifs (${objectifs.length})',
+                child: Text('${l10n.userDetailObjectives} (${objectifs.length})',
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600)),
               ),
             ]),
             const SizedBox(height: 6),
             if (objectifs.isEmpty)
-              Text('Aucun objectif défini',
+              Text(l10n.userDetailNoObjectives,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12))
             else
               ...objectifs.map((rawO) {
@@ -616,13 +619,13 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
               const Icon(Icons.description, color: Colors.lightBlueAccent, size: 14),
               const SizedBox(width: 5),
               Expanded(
-                child: Text('Rapports du responsable (${rapports.length})',
+                child: Text('${l10n.userDetailReports} (${rapports.length})',
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600)),
               ),
             ]),
             const SizedBox(height: 6),
             if (rapports.isEmpty)
-              Text('Aucun rapport du responsable',
+              Text(l10n.userDetailNoReports,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12))
             else
               ...rapports.map((rawR) {
@@ -657,7 +660,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 const Icon(Icons.sticky_note_2, color: Colors.amber, size: 14),
                 const SizedBox(width: 5),
                 Expanded(
-                  child: Text('Notes (${notes.length})',
+                  child: Text('${l10n.userDetailNotes} (${notes.length})',
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
               ]),
@@ -728,7 +731,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         const Icon(Icons.home, color: Color(0xFFF59E0B), size: 16),
         const SizedBox(width: 6),
         Expanded(
-          child: Text('Famille gérée : ${famille['nom'] ?? '—'} (${membres.length})',
+          child: Text('${l10n.userDetailManagedFamily} : ${famille['nom'] ?? '—'} (${membres.length})',
               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
         ),
       ]),
@@ -736,7 +739,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       GlassCard(
         padding: const EdgeInsets.all(12),
         child: membres.isEmpty
-            ? Text('Aucun membre', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12))
+            ? Text(l10n.userDetailNoMembers, style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12))
             : Column(children: membres.map((raw) {
                 final m = raw as Map<String, dynamic>;
                 final statut = (m['statut'] as String?) ?? '';
