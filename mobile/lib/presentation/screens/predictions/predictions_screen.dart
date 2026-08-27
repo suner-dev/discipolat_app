@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Prédictions IA — branché sur GET /api/v1/predictions.
 class PredictionsScreen extends StatefulWidget {

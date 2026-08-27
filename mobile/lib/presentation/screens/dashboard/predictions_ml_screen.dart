@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Prédictions ML — branché sur `GET /api/predictions` (hors /v1).
 class PredictionsMlScreen extends StatefulWidget {

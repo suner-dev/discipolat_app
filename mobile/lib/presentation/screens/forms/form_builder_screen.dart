@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// FormBuilderScreen — simplified drag & drop form builder.
 class FormBuilderScreen extends StatefulWidget {

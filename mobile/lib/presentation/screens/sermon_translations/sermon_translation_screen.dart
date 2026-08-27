@@ -1,94 +1,134 @@
 import 'package:flutter/material.dart';
+import '../../widgets/glass_theme.dart';
+import '../../../data/services/api_service.dart';
+import '../../../../l10n/app_localizations.dart';
 
-/// P1 #22 — Traduction en direct des sermons: Whisper → LLM → sous-titres
-class SermonTranslationScreen extends StatelessWidget {
-  const SermonTranslationScreen({super.key});
+/// P1 #22 — Traduction en direct des sermons — branché sur API réelle.
+class SermonTranslationScreen extends StatefulWidget {
+  const SermonTranslationScreen({super.key, this.apiService});
+  
+  final ApiService? apiService;
+
+  @override
+  State<SermonTranslationScreen> createState() => _SermonTranslationScreenState();
+}
+
+class _SermonTranslationScreenState extends State<SermonTranslationScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _translations = [];
+  Map<String, dynamic>? _activeTranslation;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      final res = await _api.get('/api/v1/sermons/translations');
+      if (mounted) {
+        final data = res.data;
+        final list = (data is Map && data['content'] is List)
+            ? data['content'] as List<dynamic>
+            : (data is List ? data : []);
+        setState(() {
+          _translations = list;
+          _activeTranslation = list.where((t) =>
+              (t as Map<String, dynamic>)['statut'] == 'EN_COURS').firstOrNull as Map<String, dynamic>?;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final completedTranslations = _translations.where((t) =>
+        (t as Map<String, dynamic>)['statut'] == 'TERMINE').toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🌍 Traduction des sermons'),
+        title: Text(l10n.sermonTranslationTitle),
         backgroundColor: Colors.indigo.shade600,
         foregroundColor: Colors.white,
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _load)],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Active translation card
-          Card(
-            color: Colors.indigo.shade50,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+      body: _isLoading
+          ? const ShimmerLoading(itemCount: 4)
+          : _error != null
+              ? _buildError(l10n)
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
                     children: [
-                      const Icon(Icons.circle, color: Colors.red, size: 12),
-                      const SizedBox(width: 8),
-                      const Text('Traduction en cours', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const Spacer(),
-                      const CircularProgressIndicator(strokeWidth: 2),
+                      // Active translation
+                      if (_activeTranslation != null) ...[
+                        GlassCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Row(children: [
+                              const Icon(Icons.circle, color: Colors.red, size: 12),
+                              const SizedBox(width: 8),
+                              Text(l10n.translationInProgress, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              const Spacer(),
+                              const CircularProgressIndicator(strokeWidth: 2),
+                            ]),
+                            const SizedBox(height: 12),
+                            Text(_activeTranslation!['langues']?.toString() ?? '',
+                                style: TextStyle(color: Colors.grey)),
+                            const SizedBox(height: 8),
+                            LinearProgressIndicator(value: ((_activeTranslation!['progression'] ?? 65) as num).toDouble() / 100.0),
+                            const SizedBox(height: 4),
+                            Text('${_activeTranslation!['progression'] ?? 65}%'),
+                          ]),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      // Completed translations
+                      Text(l10n.recentTranslations, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      if (completedTranslations.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Center(child: Text(l10n.noTranslations, style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
+                        )
+                      else
+                        ...completedTranslations.map((t) {
+                          final tr = t as Map<String, dynamic>;
+                          return Card(child: ListTile(
+                            leading: const Icon(Icons.translate),
+                            title: Text(tr['titre'] ?? tr['sermon'] ?? ''),
+                            subtitle: Text(tr['langues']?.toString() ?? ''),
+                            trailing: Chip(
+                              label: Text(tr['statut'] ?? '', style: const TextStyle(fontSize: 12)),
+                              backgroundColor: Colors.green.shade50,
+                            ),
+                          ));
+                        }),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  const Text('Français → Anglais, Espagnol, Swahili', style: TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 8),
-                  const LinearProgressIndicator(value: 0.65),
-                  const SizedBox(height: 4),
-                  const Text('65% — Transcription terminée, traduction en cours...'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Available languages
-          const Text('Langues disponibles', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _langChip('🇬🇧 Anglais', true),
-              _langChip('🇪🇸 Espagnol', true),
-              _langChip('🇵🇹 Portugais', false),
-              _langChip('🇰🇪 Swahili', true),
-              _langChip('🇸🇦 Arabe', false),
-              _langChip('🇨🇳 Chinois', false),
-            ],
-          ),
-          const SizedBox(height: 24),
-          // Previous translations
-          const Text('Traductions récentes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          _translationCard('Culte du 24 août 2025', '5 langues', 'Terminée'),
-          _translationCard('Culte du 17 août 2025', '3 langues', 'Terminée'),
-          _translationCard('Culte du 10 août 2025', '4 langues', 'Terminée'),
-        ],
-      ),
+                ),
     );
   }
 
-  Widget _langChip(String label, bool active) {
-    return Chip(
-      avatar: Icon(active ? Icons.check_circle : Icons.add_circle_outline, size: 18),
-      label: Text(label),
-      backgroundColor: active ? Colors.green.shade50 : Colors.grey.shade100,
-    );
-  }
-
-  Widget _translationCard(String title, String langs, String status) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.translate),
-        title: Text(title),
-        subtitle: Text(langs),
-        trailing: Chip(
-          label: Text(status, style: const TextStyle(fontSize: 12)),
-          backgroundColor: Colors.green.shade50,
-        ),
-      ),
-    );
+  Widget _buildError(AppLocalizations l10n) {
+    return Center(child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.error_outline, color: Colors.white.withValues(alpha: 0.3), size: 48),
+        const SizedBox(height: 12),
+        Text(l10n.error, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+        const SizedBox(height: 12),
+        FilledButton.icon(onPressed: _load, icon: const Icon(Icons.refresh, size: 16), label: Text(l10n.retry)),
+      ],
+    ));
   }
 }

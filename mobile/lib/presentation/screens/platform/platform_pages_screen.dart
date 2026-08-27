@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 
@@ -23,6 +24,8 @@ class _PlatformPagesScreenState extends State<PlatformPagesScreen> {
   List<Map<String, dynamic>> _pages = [];
   bool _isLoading = true;
 
+  AppLocalizations get l10n => AppLocalizations.of(context);
+
   @override
   void initState() { super.initState(); _load(); }
 
@@ -45,7 +48,7 @@ class _PlatformPagesScreenState extends State<PlatformPagesScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la publication')),
+          SnackBar(content: Text(l10n.platformPagesSaveError)),
         );
       }
     }
@@ -63,7 +66,7 @@ class _PlatformPagesScreenState extends State<PlatformPagesScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible de supprimer cette page')),
+          SnackBar(content: Text(l10n.platformPagesDeleteError)),
         );
       }
     }
@@ -74,10 +77,10 @@ class _PlatformPagesScreenState extends State<PlatformPagesScreen> {
       context: context,
       builder: (c) => AlertDialog(
         title: Text('Supprimer la page « ${page['title']} » ?'),
-        content: const Text('Cette action est irréversible.'),
+        content: Text(l10n.irreversibleAction),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Non')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Oui')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l10n.no)),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: Text(l10n.yes)),
         ],
       ),
     );
@@ -88,22 +91,22 @@ class _PlatformPagesScreenState extends State<PlatformPagesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Pages personnalisées')),
+      return Scaffold(
+      appBar: AppBar(title: Text(l10n.platformPagesTitle)),
       body: _isLoading
           ? const ShimmerLoading(itemCount: 4)
           : RefreshIndicator(
               onRefresh: _load,
               child: _pages.isEmpty
-                  ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: const [
-                      Padding(
+                  ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
+                      const Padding(
                         padding: EdgeInsets.only(top: 120),
                         child: Column(children: [
                           Icon(Icons.dashboard_customize_rounded, size: 56, color: Colors.white24),
                           SizedBox(height: 12),
-                          Text('Aucune page personnalisée', style: TextStyle(color: Colors.white54)),
                         ]),
                       ),
+                      Text(l10n.platformPagesEmpty, style: const TextStyle(color: Colors.white54)),
                     ])
                   : ListView(
                       padding: const EdgeInsets.all(16),
@@ -114,7 +117,7 @@ class _PlatformPagesScreenState extends State<PlatformPagesScreen> {
                             Row(children: [
                               Icon(Icons.dashboard_customize_rounded, color: AppColors.primary, size: 20),
                               const SizedBox(width: 8),
-                              const Text('Page Builder',
+                              Text(l10n.platformPagesSubtitle,
                                   style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                             ]),
                             const SizedBox(height: 4),

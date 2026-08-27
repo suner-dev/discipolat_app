@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// P1 #28 — Broadcast ciblé avec accusé de lecture — branché sur API réelle.
 class BroadcastScreen extends StatefulWidget {

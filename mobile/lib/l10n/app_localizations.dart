@@ -447,6 +447,149 @@ class AppLocalizations {
   String get transferListSubmitError => translate('transferListSubmitError');
   String get transferListCancelSuccess => translate('transferListCancelSuccess');
   String get transferListConfigDefault => translate('transferListConfigDefault');
+  String get platformMenusTitle => translate('platformMenusTitle');
+  String get platformMenusSubtitle => translate('platformMenusSubtitle');
+  String get platformMenusAdd => translate('platformMenusAdd');
+  String get platformMenusEdit => translate('platformMenusEdit');
+  String get platformMenusDelete => translate('platformMenusDelete');
+  String get platformMenusName => translate('platformMenusName');
+  String get platformMenusNameHint => translate('platformMenusNameHint');
+  String get platformMenusRoute => translate('platformMenusRoute');
+  String get platformMenusRouteHint => translate('platformMenusRouteHint');
+  String get platformMenusIcon => translate('platformMenusIcon');
+  String get platformMenusIconHint => translate('platformMenusIconHint');
+  String get platformMenusOrder => translate('platformMenusOrder');
+  String get platformMenusVisible => translate('platformMenusVisible');
+  String get platformMenusRoles => translate('platformMenusRoles');
+  String get platformMenusRequired => translate('platformMenusRequired');
+  String get platformMenusDeleteConfirm => translate('platformMenusDeleteConfirm');
+  String get platformMenusDeleteError => translate('platformMenusDeleteError');
+  String get platformMenusSaveError => translate('platformMenusSaveError');
+  String get platformMenusSaveSuccess => translate('platformMenusSaveSuccess');
+  String get platformMenusEmpty => translate('platformMenusEmpty');
+  String get platformMenusSearch => translate('platformMenusSearch');
+  String get platformMenusActive => translate('platformMenusActive');
+  String get platformMenusInactive => translate('platformMenusInactive');
+  String get platformMenusRoot => translate('platformMenusRoot');
+  String get platformMenusChildren => translate('platformMenusChildren');
+  String get platformMenusParent => translate('platformMenusParent');
+  String get platformMenusNoParent => translate('platformMenusNoParent');
+  String get platformMenusLinksCount => translate('platformMenusLinksCount');
+  String get platformModulesTitle => translate('platformModulesTitle');
+  String get platformModulesSubtitle => translate('platformModulesSubtitle');
+  String get platformModulesAdd => translate('platformModulesAdd');
+  String get platformModulesEdit => translate('platformModulesEdit');
+  String get platformModulesDelete => translate('platformModulesDelete');
+  String get platformModulesName => translate('platformModulesName');
+  String get platformModulesNameHint => translate('platformModulesNameHint');
+  String get platformModulesCode => translate('platformModulesCode');
+  String get platformModulesCodeHint => translate('platformModulesCodeHint');
+  String get platformModulesDescription => translate('platformModulesDescription');
+  String get platformModulesDescriptionHint => translate('platformModulesDescriptionHint');
+  String get platformModulesEnabled => translate('platformModulesEnabled');
+  String get platformModulesVersion => translate('platformModulesVersion');
+  String get platformModulesRequired => translate('platformModulesRequired');
+  String get platformModulesDeleteConfirm => translate('platformModulesDeleteConfirm');
+  String get platformModulesDeleteError => translate('platformModulesDeleteError');
+  String get platformModulesSaveError => translate('platformModulesSaveError');
+  String get platformModulesSaveSuccess => translate('platformModulesSaveSuccess');
+  String get platformModulesEmpty => translate('platformModulesEmpty');
+  String get platformModulesSearch => translate('platformModulesSearch');
+  String get platformModulesActive => translate('platformModulesActive');
+  String get platformModulesInactive => translate('platformModulesInactive');
+  String get platformModulesPageCount => translate('platformModulesPageCount');
+  String get platformModulesMenuCount => translate('platformModulesMenuCount');
+  String get platformPagesTitle => translate('platformPagesTitle');
+  String get platformPagesSubtitle => translate('platformPagesSubtitle');
+  String get platformPagesAdd => translate('platformPagesAdd');
+  String get platformPagesEdit => translate('platformPagesEdit');
+  String get platformPagesDelete => translate('platformPagesDelete');
+  String get platformPagesName => translate('platformPagesName');
+  String get platformPagesNameHint => translate('platformPagesNameHint');
+  String get platformPagesPath => translate('platformPagesPath');
+  String get platformPagesPathHint => translate('platformPagesPathHint');
+  String get platformPagesModule => translate('platformPagesModule');
+  String get platformPagesRequired => translate('platformPagesRequired');
+  String get platformPagesDeleteConfirm => translate('platformPagesDeleteConfirm');
+  String get platformPagesDeleteError => translate('platformPagesDeleteError');
+  String get platformPagesSaveError => translate('platformPagesSaveError');
+  String get platformPagesSaveSuccess => translate('platformPagesSaveSuccess');
+  String get platformPagesEmpty => translate('platformPagesEmpty');
+  String get platformPagesSearch => translate('platformPagesSearch');
+  String get usersListTitle => translate('usersListTitle');
+  String get usersListSubtitle => translate('usersListSubtitle');
+  String get usersListAdd => translate('usersListAdd');
+  String get usersListEdit => translate('usersListEdit');
+  String get usersListDelete => translate('usersListDelete');
+  String get usersListSearch => translate('usersListSearch');
+  String get usersListName => translate('usersListName');
+  String get usersListEmail => translate('usersListEmail');
+  String get usersListRole => translate('usersListRole');
+  String get usersListStatus => translate('usersListStatus');
+  String get usersListChurch => translate('usersListChurch');
+  String get usersListActive => translate('usersListActive');
+  String get usersListInactive => translate('usersListInactive');
+  String get usersListPending => translate('usersListPending');
+  String get usersListSuspended => translate('usersListSuspended');
+  String get usersListDeleteConfirm => translate('usersListDeleteConfirm');
+  String get usersListDeleteError => translate('usersListDeleteError');
+  String get usersListSaveError => translate('usersListSaveError');
+  String get usersListSaveSuccess => translate('usersListSaveSuccess');
+  String get usersListEmpty => translate('usersListEmpty');
+  String get usersListRoleFilter => translate('usersListRoleFilter');
+  String get usersListStatusFilter => translate('usersListStatusFilter');
+  String get usersListChurchFilter => translate('usersListChurchFilter');
+  String get usersListLastLogin => translate('usersListLastLogin');
+  String get usersListCreatedAt => translate('usersListCreatedAt');
+  String get usersListActions => translate('usersListActions');
+  String get usersListTotalCount => translate('usersListTotalCount');
+  String get usersListView => translate('usersListView');
+  String get usersListDisable => translate('usersListDisable');
+  String get usersListEnable => translate('usersListEnable');
+  String get usersListResetPassword => translate('usersListResetPassword');
+  String get usersListPasswordResetSent => translate('usersListPasswordResetSent');
+  String get userDetailTitle => translate('userDetailTitle');
+  String get userDetailEdit => translate('userDetailEdit');
+  String get userDetailDelete => translate('userDetailDelete');
+  String get userDetailEmail => translate('userDetailEmail');
+  String get userDetailPhone => translate('userDetailPhone');
+  String get userDetailRole => translate('userDetailRole');
+  String get userDetailChurch => translate('userDetailChurch');
+  String get userDetailDepartment => translate('userDetailDepartment');
+  String get userDetailFamily => translate('userDetailFamily');
+  String get userDetailStatus => translate('userDetailStatus');
+  String get userDetailLastLogin => translate('userDetailLastLogin');
+  String get userDetailCreatedAt => translate('userDetailCreatedAt');
+  String get userDetailUpdatedAt => translate('userDetailUpdatedAt');
+  String get userDetailBio => translate('userDetailBio');
+  String get userDetailAddress => translate('userDetailAddress');
+  String get userDetailAvatar => translate('userDetailAvatar');
+  String get userDetailGroups => translate('userDetailGroups');
+  String get userDetailEvents => translate('userDetailEvents');
+  String get userDetailTasks => translate('userDetailTasks');
+  String get userDetailActivities => translate('userDetailActivities');
+  String get userDetailNoGroups => translate('userDetailNoGroups');
+  String get userDetailNoEvents => translate('userDetailNoEvents');
+  String get userDetailNoTasks => translate('userDetailNoTasks');
+  String get userDetailDeleteConfirm => translate('userDetailDeleteConfirm');
+  String get userDetailDeleteError => translate('userDetailDeleteError');
+  String get userDetailSaveError => translate('userDetailSaveError');
+  String get userDetailSaveSuccess => translate('userDetailSaveSuccess');
+  String get userDetailChangePhoto => translate('userDetailChangePhoto');
+  String get userDetailRemovePhoto => translate('userDetailRemovePhoto');
+  String get userDetailPersonalInfo => translate('userDetailPersonalInfo');
+  String get userDetailAccountInfo => translate('userDetailAccountInfo');
+  String get userDetailActivityHistory => translate('userDetailActivityHistory');
+  String get userDetailPermissions => translate('userDetailPermissions');
+  String get userDetailAssignedRoles => translate('userDetailAssignedRoles');
+  String get userDetailNoRoles => translate('userDetailNoRoles');
+  String get userDetailAddRole => translate('userDetailAddRole');
+  String get userDetailRemoveRole => translate('userDetailRemoveRole');
+  String get userDetailRoleRemoved => translate('userDetailRoleRemoved');
+  String get userDetailRoleAdded => translate('userDetailRoleAdded');
+  String get userDetailRoleError => translate('userDetailRoleError');
+  String get userDetailMemberSince => translate('userDetailMemberSince');
+
   // ── Lot H9 : department_management ──
   String get deptMgmtTitle => translate('deptMgmtTitle');
   String get deptMgmtTooltipStats => translate('deptMgmtTooltipStats');
@@ -614,6 +757,89 @@ class AppLocalizations {
   String discEmptySearch(String query) => translate('discEmptySearch').replaceAll('{query}', query);
   String get discEmpty => translate('discEmpty');
   String get discClearSearch => translate('discClearSearch');
+  String get irreversibleAction => translate('irreversibleAction');
+  String get usersListCreateError => translate('usersListCreateError');
+  String get usersListAccountCreated => translate('usersListAccountCreated');
+  String get usersListSurcharged => translate('usersListSurcharged');
+  String get usersListLight => translate('usersListLight');
+  String get usersListNormal => translate('usersListNormal');
+  String get usersListSouls => translate('usersListSouls');
+  String get usersListWorkloadDept => translate('usersListWorkloadDept');
+  String get usersListWorkloadAll => translate('usersListWorkloadAll');
+  String get usersListNewUser => translate('usersListNewUser');
+  String get usersListFirstName => translate('usersListFirstName');
+  String get usersListLastName => translate('usersListLastName');
+  String get usersListCreateBtn => translate('usersListCreateBtn');
+  String get usersListRoleAdmin => translate('usersListRoleAdmin');
+  String get usersListRolePasteur => translate('usersListRolePasteur');
+  String get usersListRoleResponsable => translate('usersListRoleResponsable');
+  String get usersListRoleChefFamille => translate('usersListRoleChefFamille');
+  String get usersListRoleFaiseur => translate('usersListRoleFaiseur');
+  String get usersListRoleMembre => translate('usersListRoleMembre');
+  String get usersListActiveLabel => translate('usersListActiveLabel');
+  String get usersListInactiveLabel => translate('usersListInactiveLabel');
+  String get usersListChefBadge => translate('usersListChefBadge');
+  String get usersListActionProfile => translate('usersListActionProfile');
+  String get usersListActionHistory => translate('usersListActionHistory');
+  String get usersListPromoteFaiseur => translate('usersListPromoteFaiseur');
+  String get usersListPromoteConfirm => translate('usersListPromoteConfirm');
+  String get usersListPromoteBtn => translate('usersListPromoteBtn');
+  String get usersListDemoteTitle => translate('usersListDemoteTitle');
+  String get usersListDemoteConfirm => translate('usersListDemoteConfirm');
+  String get usersListDemoteBtn => translate('usersListDemoteBtn');
+  String get usersListTransferTitle => translate('usersListTransferTitle');
+  String get usersListTransferConfirm => translate('usersListTransferConfirm');
+  String get usersListTransferHint => translate('usersListTransferHint');
+  String get usersListTransferSouls => translate('usersListTransferSouls');
+  String get usersListTransferBtn => translate('usersListTransferBtn');
+  String get usersListTransferExecuted => translate('usersListTransferExecuted');
+  String get usersListTransferPending => translate('usersListTransferPending');
+  String get usersListDeleteTitle => translate('usersListDeleteTitle');
+  String get usersListDeleteConfirmHard => translate('usersListDeleteConfirmHard');
+  String get usersListDeleteBtn => translate('usersListDeleteBtn');
+  String get usersListHistoryTitle => translate('usersListHistoryTitle');
+  String get usersListHistoryRole => translate('usersListHistoryRole');
+  String get usersListHistorySince => translate('usersListHistorySince');
+  String get usersListHistoryCurrentSouls => translate('usersListHistoryCurrentSouls');
+  String get usersListHistoryNoSouls => translate('usersListHistoryNoSouls');
+  String get usersListHistoryExit => translate('usersListHistoryExit');
+  String get usersListHistoryClose => translate('usersListHistoryClose');
+  String get usersListError => translate('usersListError');
+  String get usersListAnnuler => translate('usersListAnnuler');
+  String get userDetailAppTitle => translate('userDetailAppTitle');
+  String get userDetailUnavailable => translate('userDetailUnavailable');
+  String get userDetailLinkedAme => translate('userDetailLinkedAme');
+  String get userDetailName => translate('userDetailName');
+  String get userDetailType => translate('userDetailType');
+  String get userDetailFaiseur => translate('userDetailFaiseur');
+  String get userDetailEvaluation => translate('userDetailEvaluation');
+  String get userDetailEvaluated => translate('userDetailEvaluated');
+  String get userDetailNotEvaluated => translate('userDetailNotEvaluated');
+  String get userDetailEvalHint => translate('userDetailEvalHint');
+  String get userDetailEvalEdit => translate('userDetailEvalEdit');
+  String get userDetailEvalCreate => translate('userDetailEvalCreate');
+  String get userDetailEvalReceived => translate('userDetailEvalReceived');
+  String get userDetailEvalSaved => translate('userDetailEvalSaved');
+  String get userDetailEvalModified => translate('userDetailEvalModified');
+  String get userDetailEvalError => translate('userDetailEvalError');
+  String get userDetailFollowedSouls => translate('userDetailFollowedSouls');
+  String get userDetailNoFollowedSouls => translate('userDetailNoFollowedSouls');
+  String get userDetailFamilyLabel => translate('userDetailFamilyLabel');
+  String get userDetailExits => translate('userDetailExits');
+  String get userDetailExitReason => translate('userDetailExitReason');
+  String get userDetailDeptsManaged => translate('userDetailDeptsManaged');
+  String get userDetailNoMembers => translate('userDetailNoMembers');
+  String get userDetailMembersCount => translate('userDetailMembersCount');
+  String get userDetailFollowedBy => translate('userDetailFollowedBy');
+  String get userDetailManagedFamily => translate('userDetailManagedFamily');
+  String get userDetailDossier => translate('userDetailDossier');
+  String get userDetailObjectives => translate('userDetailObjectives');
+  String get userDetailNoObjectives => translate('userDetailNoObjectives');
+  String get userDetailReports => translate('userDetailReports');
+  String get userDetailNoReports => translate('userDetailNoReports');
+  String get userDetailNotes => translate('userDetailNotes');
+  String get userDetailNoNotes => translate('userDetailNoNotes');
+
   String get bibleReadingTitle => translate('bibleReadingTitle');
   String get myProgress => translate('myProgress');
   String get days => translate('days');
@@ -2300,6 +2526,230 @@ class AppLocalizations {
     'discNewEvent': 'Nouvel événement',
     'discEmptySearch': 'Aucun résultat pour "{query}"',
     'discEmpty': 'Aucun événement disciplinaire',
+    'platformMenusTitle': 'Menus',
+    'platformMenusSubtitle': 'Configuration des menus de navigation',
+    'platformMenusAdd': 'Ajouter un menu',
+    'platformMenusEdit': 'Modifier le menu',
+    'platformMenusDelete': 'Supprimer',
+    'platformMenusName': 'Nom du menu',
+    'platformMenusNameHint': 'Ex: Menu principal',
+    'platformMenusRoute': 'Route',
+    'platformMenusRouteHint': 'Ex: /dashboard',
+    'platformMenusIcon': 'Icône',
+    'platformMenusIconHint': 'Ex: Icons.dashboard',
+    'platformMenusOrder': 'Ordre',
+    'platformMenusVisible': 'Visible',
+    'platformMenusRoles': 'Rôles autorisés',
+    'platformMenusRequired': 'Le nom du menu est requis',
+    'platformMenusDeleteConfirm': 'Supprimer ce menu ?',
+    'platformMenusDeleteError': 'Erreur lors de la suppression',
+    'platformMenusSaveError': 'Erreur lors de la sauvegarde',
+    'platformMenusSaveSuccess': 'Menu sauvegardé',
+    'platformMenusEmpty': 'Aucun menu configuré',
+    'platformMenusSearch': 'Rechercher un menu…',
+    'platformMenusActive': 'Actif',
+    'platformMenusInactive': 'Inactif',
+    'platformMenusRoot': 'Menu racine',
+    'platformMenusChildren': 'Sous-menus',
+    'platformMenusParent': 'Menu parent',
+    'platformMenusNoParent': 'Aucun (racine)',
+    'platformMenusLinksCount': '{count} liens',
+    'platformModulesTitle': 'Modules',
+    'platformModulesSubtitle': 'Gestion des modules de la plateforme',
+    'platformModulesAdd': 'Ajouter un module',
+    'platformModulesEdit': 'Modifier',
+    'platformModulesDelete': 'Supprimer',
+    'platformModulesName': 'Nom du module',
+    'platformModulesNameHint': 'Ex: Gestion des membres',
+    'platformModulesCode': 'Code',
+    'platformModulesCodeHint': 'Ex: member_management',
+    'platformModulesDescription': 'Description',
+    'platformModulesDescriptionHint': 'Description du module…',
+    'platformModulesEnabled': 'Activé',
+    'platformModulesVersion': 'Version',
+    'platformModulesRequired': 'Le nom est requis',
+    'platformModulesDeleteConfirm': 'Supprimer ce module ?',
+    'platformModulesDeleteError': 'Erreur lors de la suppression',
+    'platformModulesSaveError': 'Erreur lors de la sauvegarde',
+    'platformModulesSaveSuccess': 'Module sauvegardé',
+    'platformModulesEmpty': 'Aucun module configuré',
+    'platformModulesSearch': 'Rechercher un module…',
+    'platformModulesActive': 'Actif',
+    'platformModulesInactive': 'Inactif',
+    'platformModulesPageCount': '{count} pages',
+    'platformModulesMenuCount': '{count} menus',
+    'platformPagesTitle': 'Pages',
+    'platformPagesSubtitle': 'Configuration des pages',
+    'platformPagesAdd': 'Ajouter une page',
+    'platformPagesEdit': 'Modifier',
+    'platformPagesDelete': 'Supprimer',
+    'platformPagesName': 'Nom',
+    'platformPagesNameHint': 'Ex: Tableau de bord',
+    'platformPagesPath': 'Chemin',
+    'platformPagesPathHint': 'Ex: /dashboard',
+    'platformPagesModule': 'Module',
+    'platformPagesRequired': 'Le nom est requis',
+    'platformPagesDeleteConfirm': 'Supprimer cette page ?',
+    'platformPagesDeleteError': 'Erreur lors de la suppression',
+    'platformPagesSaveError': 'Erreur lors de la sauvegarde',
+    'platformPagesSaveSuccess': 'Page sauvegardée',
+    'platformPagesEmpty': 'Aucune page configurée',
+    'platformPagesSearch': 'Rechercher une page…',
+    'usersListTitle': 'Utilisateurs',
+    'usersListSubtitle': 'Gestion des comptes utilisateurs',
+    'usersListAdd': 'Ajouter un utilisateur',
+    'usersListEdit': 'Modifier',
+    'usersListDelete': 'Supprimer',
+    'usersListSearch': 'Rechercher un utilisateur…',
+    'usersListName': 'Nom',
+    'usersListEmail': 'Email',
+    'usersListRole': 'Rôle',
+    'usersListStatus': 'Statut',
+    'usersListChurch': 'Église',
+    'usersListActive': 'Actif',
+    'usersListInactive': 'Inactif',
+    'usersListPending': 'En attente',
+    'usersListSuspended': 'Suspendu',
+    'usersListDeleteConfirm': 'Supprimer cet utilisateur ?',
+    'usersListDeleteError': 'Erreur lors de la suppression',
+    'usersListSaveError': 'Erreur lors de la sauvegarde',
+    'usersListSaveSuccess': 'Utilisateur sauvegardé',
+    'usersListEmpty': 'Aucun utilisateur trouvé',
+    'usersListRoleFilter': 'Filtrer par rôle',
+    'usersListStatusFilter': 'Filtrer par statut',
+    'usersListChurchFilter': 'Filtrer par église',
+    'usersListLastLogin': 'Dernière connexion',
+    'usersListCreatedAt': 'Créé le',
+    'usersListActions': 'Actions',
+    'usersListTotalCount': '{count} utilisateurs',
+    'usersListView': 'Voir',
+    'usersListDisable': 'Désactiver',
+    'usersListEnable': 'Activer',
+    'usersListResetPassword': 'Réinitialiser le mot de passe',
+    'usersListPasswordResetSent': 'Email de réinitialisation envoyé',
+    'userDetailTitle': 'Détail utilisateur',
+    'userDetailEdit': 'Modifier',
+    'userDetailDelete': 'Supprimer',
+    'userDetailEmail': 'Email',
+    'userDetailPhone': 'Téléphone',
+    'userDetailRole': 'Rôle',
+    'userDetailChurch': 'Église',
+    'userDetailDepartment': 'Département',
+    'userDetailFamily': 'Famille',
+    'userDetailStatus': 'Statut',
+    'userDetailLastLogin': 'Dernière connexion',
+    'userDetailCreatedAt': 'Créé le',
+    'userDetailUpdatedAt': 'Modifié le',
+    'userDetailBio': 'Biographie',
+    'userDetailAddress': 'Adresse',
+    'userDetailAvatar': 'Photo de profil',
+    'userDetailGroups': 'Groupes',
+    'userDetailEvents': 'Événements',
+    'userDetailTasks': 'Tâches',
+    'userDetailActivities': 'Activités récentes',
+    'userDetailNoGroups': 'Aucun groupe',
+    'userDetailNoEvents': 'Aucun événement',
+    'userDetailNoTasks': 'Aucune tâche',
+    'userDetailDeleteConfirm': 'Supprimer cet utilisateur ?',
+    'userDetailDeleteError': 'Erreur lors de la suppression',
+    'userDetailSaveError': 'Erreur lors de la sauvegarde',
+    'userDetailSaveSuccess': 'Utilisateur sauvegardé',
+    'userDetailChangePhoto': 'Changer la photo',
+    'userDetailRemovePhoto': 'Supprimer la photo',
+    'userDetailPersonalInfo': 'Informations personnelles',
+    'userDetailAccountInfo': 'Informations du compte',
+    'userDetailActivityHistory': 'Historique d\'activité',
+    'userDetailPermissions': 'Permissions',
+    'userDetailAssignedRoles': 'Rôles assignés',
+    'userDetailNoRoles': 'Aucun rôle assigné',
+    'userDetailAddRole': 'Ajouter un rôle',
+    'userDetailRemoveRole': 'Retirer le rôle',
+    'userDetailRoleRemoved': 'Rôle retiré',
+    'userDetailRoleAdded': 'Rôle ajouté',
+    'userDetailRoleError': 'Erreur lors de la modification du rôle',
+    'userDetailMemberSince': 'Membre depuis',
+    'irreversibleAction': 'Cette action est irréversible',
+    'usersListCreateError': 'Erreur lors de la création',
+    'usersListAccountCreated': 'Compte créé avec succès',
+    'usersListSurcharged': 'Surchargé',
+    'usersListLight': 'Léger',
+    'usersListNormal': 'Normal',
+    'usersListSouls': 'âmes',
+    'usersListWorkloadDept': 'Charge de travail de mon département',
+    'usersListWorkloadAll': 'Charge de travail des Faiseurs',
+    'usersListNewUser': 'Nouvel utilisateur',
+    'usersListFirstName': 'Prénom',
+    'usersListLastName': 'Nom',
+    'usersListCreateBtn': 'Créer',
+    'usersListRoleAdmin': 'Administrateur',
+    'usersListRolePasteur': 'Pasteur',
+    'usersListRoleResponsable': 'Responsable',
+    'usersListRoleChefFamille': 'Chef de famille',
+    'usersListRoleFaiseur': 'Faiseur',
+    'usersListRoleMembre': 'Membre',
+    'usersListActiveLabel': 'Actif',
+    'usersListInactiveLabel': 'Inactif',
+    'usersListChefBadge': 'Chef',
+    'usersListActionProfile': 'Fiche complète',
+    'usersListActionHistory': 'Historique',
+    'usersListPromoteFaiseur': 'Promouvoir en Faiseur',
+    'usersListPromoteConfirm': 'Promouvoir {name} au rôle de Faiseur de disciples ?',
+    'usersListPromoteBtn': 'Promouvoir',
+    'usersListDemoteTitle': 'Rétrograder',
+    'usersListDemoteConfirm': 'Rétrograder {name} vers :',
+    'usersListDemoteBtn': 'Rétrograder',
+    'usersListTransferTitle': 'Transférer le Faiseur',
+    'usersListTransferConfirm': 'Transférer {name} vers :',
+    'usersListTransferHint': 'Sélectionner une famille...',
+    'usersListTransferSouls': 'Transférer également les âmes suivies',
+    'usersListTransferBtn': 'Transférer',
+    'usersListTransferExecuted': 'Faiseur transféré',
+    'usersListTransferPending': 'Demande de transfert soumise pour validation',
+    'usersListDeleteTitle': 'Suppression définitive',
+    'usersListDeleteConfirmHard': 'Supprimer définitivement {name} ? Cette action est irréversible (RGPD).',
+    'usersListDeleteBtn': 'Supprimer',
+    'usersListHistoryTitle': 'Historique',
+    'usersListHistoryRole': 'Rôle',
+    'usersListHistorySince': 'Membre depuis',
+    'usersListHistoryCurrentSouls': 'Âmes actuellement suivies',
+    'usersListHistoryNoSouls': 'Aucune âme suivie actuellement',
+    'usersListHistoryExit': 'Sorties de suivi',
+    'usersListHistoryClose': 'Fermer',
+    'usersListError': 'Erreur',
+    'usersListAnnuler': 'Annuler',
+    'userDetailAppTitle': 'Fiche utilisateur',
+    'userDetailUnavailable': 'Fiche indisponible',
+    'userDetailLinkedAme': 'Fiche âme liée au compte',
+    'userDetailName': 'Nom',
+    'userDetailType': 'Type',
+    'userDetailFaiseur': 'Faiseur',
+    'userDetailEvaluation': 'Évaluation',
+    'userDetailEvaluated': 'Vous avez évalué',
+    'userDetailNotEvaluated': 'Pas encore évalué',
+    'userDetailEvalHint': 'Appréciation (optionnel)…',
+    'userDetailEvalEdit': 'Modifier l\'évaluation',
+    'userDetailEvalCreate': 'Donner l\'évaluation',
+    'userDetailEvalReceived': 'Évaluations reçues (anonymes)',
+    'userDetailEvalSaved': 'Évaluation enregistrée',
+    'userDetailEvalModified': 'Évaluation modifiée',
+    'userDetailEvalError': 'Erreur lors de l\'enregistrement',
+    'userDetailFollowedSouls': 'Âmes suivies',
+    'userDetailNoFollowedSouls': 'Aucune âme suivie',
+    'userDetailFamilyLabel': 'Famille {name}',
+    'userDetailExits': 'Sorties de suivi',
+    'userDetailExitReason': 'Sortie du suivi',
+    'userDetailDeptsManaged': 'Départements dirigés',
+    'userDetailNoMembers': 'Aucun membre',
+    'userDetailMembersCount': '{count} membres',
+    'userDetailFollowedBy': 'Suivi par {name}',
+    'userDetailManagedFamily': 'Famille gérée',
+    'userDetailDossier': 'Dossier du membre ({count} dép.)',
+    'userDetailObjectives': 'Objectifs',
+    'userDetailNoObjectives': 'Aucun objectif défini',
+    'userDetailReports': 'Rapports',
+    'userDetailNoReports': 'Aucun rapport',
+    'userDetailNotes': 'Notes',
+    'userDetailNoNotes': 'Aucune note',
     'discClearSearch': 'Effacer la recherche',
   };
 
@@ -3330,6 +3780,230 @@ class AppLocalizations {
     'discNewEvent': 'New event',
     'discEmptySearch': 'No results for "{query}"',
     'discEmpty': 'No disciplinary events',
+    'platformMenusTitle': 'Menus',
+    'platformMenusSubtitle': 'Navigation menu configuration',
+    'platformMenusAdd': 'Add menu',
+    'platformMenusEdit': 'Edit menu',
+    'platformMenusDelete': 'Delete',
+    'platformMenusName': 'Menu name',
+    'platformMenusNameHint': 'Ex: Main menu',
+    'platformMenusRoute': 'Route',
+    'platformMenusRouteHint': 'Ex: /dashboard',
+    'platformMenusIcon': 'Icon',
+    'platformMenusIconHint': 'Ex: Icons.dashboard',
+    'platformMenusOrder': 'Order',
+    'platformMenusVisible': 'Visible',
+    'platformMenusRoles': 'Authorized roles',
+    'platformMenusRequired': 'Menu name is required',
+    'platformMenusDeleteConfirm': 'Delete this menu?',
+    'platformMenusDeleteError': 'Delete error',
+    'platformMenusSaveError': 'Save error',
+    'platformMenusSaveSuccess': 'Menu saved',
+    'platformMenusEmpty': 'No menus configured',
+    'platformMenusSearch': 'Search menus…',
+    'platformMenusActive': 'Active',
+    'platformMenusInactive': 'Inactive',
+    'platformMenusRoot': 'Root menu',
+    'platformMenusChildren': 'Submenus',
+    'platformMenusParent': 'Parent menu',
+    'platformMenusNoParent': 'None (root)',
+    'platformMenusLinksCount': '{count} links',
+    'platformModulesTitle': 'Modules',
+    'platformModulesSubtitle': 'Platform module management',
+    'platformModulesAdd': 'Add module',
+    'platformModulesEdit': 'Edit',
+    'platformModulesDelete': 'Delete',
+    'platformModulesName': 'Module name',
+    'platformModulesNameHint': 'Ex: Member management',
+    'platformModulesCode': 'Code',
+    'platformModulesCodeHint': 'Ex: member_management',
+    'platformModulesDescription': 'Description',
+    'platformModulesDescriptionHint': 'Module description…',
+    'platformModulesEnabled': 'Enabled',
+    'platformModulesVersion': 'Version',
+    'platformModulesRequired': 'Name is required',
+    'platformModulesDeleteConfirm': 'Delete this module?',
+    'platformModulesDeleteError': 'Delete error',
+    'platformModulesSaveError': 'Save error',
+    'platformModulesSaveSuccess': 'Module saved',
+    'platformModulesEmpty': 'No modules configured',
+    'platformModulesSearch': 'Search modules…',
+    'platformModulesActive': 'Active',
+    'platformModulesInactive': 'Inactive',
+    'platformModulesPageCount': '{count} pages',
+    'platformModulesMenuCount': '{count} menus',
+    'platformPagesTitle': 'Pages',
+    'platformPagesSubtitle': 'Page configuration',
+    'platformPagesAdd': 'Add page',
+    'platformPagesEdit': 'Edit',
+    'platformPagesDelete': 'Delete',
+    'platformPagesName': 'Name',
+    'platformPagesNameHint': 'Ex: Dashboard',
+    'platformPagesPath': 'Path',
+    'platformPagesPathHint': 'Ex: /dashboard',
+    'platformPagesModule': 'Module',
+    'platformPagesRequired': 'Name is required',
+    'platformPagesDeleteConfirm': 'Delete this page?',
+    'platformPagesDeleteError': 'Delete error',
+    'platformPagesSaveError': 'Save error',
+    'platformPagesSaveSuccess': 'Page saved',
+    'platformPagesEmpty': 'No pages configured',
+    'platformPagesSearch': 'Search pages…',
+    'usersListTitle': 'Users',
+    'usersListSubtitle': 'User account management',
+    'usersListAdd': 'Add user',
+    'usersListEdit': 'Edit',
+    'usersListDelete': 'Delete',
+    'usersListSearch': 'Search users…',
+    'usersListName': 'Name',
+    'usersListEmail': 'Email',
+    'usersListRole': 'Role',
+    'usersListStatus': 'Status',
+    'usersListChurch': 'Church',
+    'usersListActive': 'Active',
+    'usersListInactive': 'Inactive',
+    'usersListPending': 'Pending',
+    'usersListSuspended': 'Suspended',
+    'usersListDeleteConfirm': 'Delete this user?',
+    'usersListDeleteError': 'Delete error',
+    'usersListSaveError': 'Save error',
+    'usersListSaveSuccess': 'User saved',
+    'usersListEmpty': 'No users found',
+    'usersListRoleFilter': 'Filter by role',
+    'usersListStatusFilter': 'Filter by status',
+    'usersListChurchFilter': 'Filter by church',
+    'usersListLastLogin': 'Last login',
+    'usersListCreatedAt': 'Created',
+    'usersListActions': 'Actions',
+    'usersListTotalCount': '{count} users',
+    'usersListView': 'View',
+    'usersListDisable': 'Disable',
+    'usersListEnable': 'Enable',
+    'usersListResetPassword': 'Reset password',
+    'usersListPasswordResetSent': 'Reset email sent',
+    'userDetailTitle': 'User detail',
+    'userDetailEdit': 'Edit',
+    'userDetailDelete': 'Delete',
+    'userDetailEmail': 'Email',
+    'userDetailPhone': 'Phone',
+    'userDetailRole': 'Role',
+    'userDetailChurch': 'Church',
+    'userDetailDepartment': 'Department',
+    'userDetailFamily': 'Family',
+    'userDetailStatus': 'Status',
+    'userDetailLastLogin': 'Last login',
+    'userDetailCreatedAt': 'Created',
+    'userDetailUpdatedAt': 'Updated',
+    'userDetailBio': 'Bio',
+    'userDetailAddress': 'Address',
+    'userDetailAvatar': 'Profile photo',
+    'userDetailGroups': 'Groups',
+    'userDetailEvents': 'Events',
+    'userDetailTasks': 'Tasks',
+    'userDetailActivities': 'Recent activities',
+    'userDetailNoGroups': 'No groups',
+    'userDetailNoEvents': 'No events',
+    'userDetailNoTasks': 'No tasks',
+    'userDetailDeleteConfirm': 'Delete this user?',
+    'userDetailDeleteError': 'Delete error',
+    'userDetailSaveError': 'Save error',
+    'userDetailSaveSuccess': 'User saved',
+    'userDetailChangePhoto': 'Change photo',
+    'userDetailRemovePhoto': 'Remove photo',
+    'userDetailPersonalInfo': 'Personal information',
+    'userDetailAccountInfo': 'Account information',
+    'userDetailActivityHistory': 'Activity history',
+    'userDetailPermissions': 'Permissions',
+    'userDetailAssignedRoles': 'Assigned roles',
+    'userDetailNoRoles': 'No roles assigned',
+    'userDetailAddRole': 'Add role',
+    'userDetailRemoveRole': 'Remove role',
+    'userDetailRoleRemoved': 'Role removed',
+    'userDetailRoleAdded': 'Role added',
+    'userDetailRoleError': 'Role modification error',
+    'userDetailMemberSince': 'Member since',
+    'irreversibleAction': 'This action is irreversible',
+    'usersListCreateError': 'Creation error',
+    'usersListAccountCreated': 'Account created successfully',
+    'usersListSurcharged': 'Overloaded',
+    'usersListLight': 'Light',
+    'usersListNormal': 'Normal',
+    'usersListSouls': 'souls',
+    'usersListWorkloadDept': 'My department workload',
+    'usersListWorkloadAll': 'Makers workload',
+    'usersListNewUser': 'New user',
+    'usersListFirstName': 'First name',
+    'usersListLastName': 'Last name',
+    'usersListCreateBtn': 'Create',
+    'usersListRoleAdmin': 'Administrator',
+    'usersListRolePasteur': 'Pastor',
+    'usersListRoleResponsable': 'Manager',
+    'usersListRoleChefFamille': 'Family head',
+    'usersListRoleFaiseur': 'Maker',
+    'usersListRoleMembre': 'Member',
+    'usersListActiveLabel': 'Active',
+    'usersListInactiveLabel': 'Inactive',
+    'usersListChefBadge': 'Head',
+    'usersListActionProfile': 'Full profile',
+    'usersListActionHistory': 'History',
+    'usersListPromoteFaiseur': 'Promote to Maker',
+    'usersListPromoteConfirm': 'Promote {name} to Maker of disciples?',
+    'usersListPromoteBtn': 'Promote',
+    'usersListDemoteTitle': 'Demote',
+    'usersListDemoteConfirm': 'Demote {name} to:',
+    'usersListDemoteBtn': 'Demote',
+    'usersListTransferTitle': 'Transfer Maker',
+    'usersListTransferConfirm': 'Transfer {name} to:',
+    'usersListTransferHint': 'Select a family...',
+    'usersListTransferSouls': 'Also transfer followed souls',
+    'usersListTransferBtn': 'Transfer',
+    'usersListTransferExecuted': 'Maker transferred',
+    'usersListTransferPending': 'Transfer request submitted for validation',
+    'usersListDeleteTitle': 'Permanent deletion',
+    'usersListDeleteConfirmHard': 'Permanently delete {name}? This action is irreversible (GDPR).',
+    'usersListDeleteBtn': 'Delete',
+    'usersListHistoryTitle': 'History',
+    'usersListHistoryRole': 'Role',
+    'usersListHistorySince': 'Member since',
+    'usersListHistoryCurrentSouls': 'Currently followed souls',
+    'usersListHistoryNoSouls': 'No souls currently followed',
+    'usersListHistoryExit': 'Tracking exits',
+    'usersListHistoryClose': 'Close',
+    'usersListError': 'Error',
+    'usersListAnnuler': 'Cancel',
+    'userDetailAppTitle': 'User profile',
+    'userDetailUnavailable': 'Profile unavailable',
+    'userDetailLinkedAme': 'Soul linked to account',
+    'userDetailName': 'Name',
+    'userDetailType': 'Type',
+    'userDetailFaiseur': 'Maker',
+    'userDetailEvaluation': 'Evaluation',
+    'userDetailEvaluated': 'You have evaluated',
+    'userDetailNotEvaluated': 'Not yet evaluated',
+    'userDetailEvalHint': 'Assessment (optional)…',
+    'userDetailEvalEdit': 'Edit evaluation',
+    'userDetailEvalCreate': 'Give evaluation',
+    'userDetailEvalReceived': 'Received evaluations (anonymous)',
+    'userDetailEvalSaved': 'Evaluation saved',
+    'userDetailEvalModified': 'Evaluation modified',
+    'userDetailEvalError': 'Evaluation error',
+    'userDetailFollowedSouls': 'Followed souls',
+    'userDetailNoFollowedSouls': 'No followed souls',
+    'userDetailFamilyLabel': 'Family {name}',
+    'userDetailExits': 'Tracking exits',
+    'userDetailExitReason': 'Tracking exit',
+    'userDetailDeptsManaged': 'Managed departments',
+    'userDetailNoMembers': 'No members',
+    'userDetailMembersCount': '{count} members',
+    'userDetailFollowedBy': 'Followed by {name}',
+    'userDetailManagedFamily': 'Managed family',
+    'userDetailDossier': 'Member file ({count} dept.)',
+    'userDetailObjectives': 'Objectives',
+    'userDetailNoObjectives': 'No objectives defined',
+    'userDetailReports': 'Reports',
+    'userDetailNoReports': 'No reports',
+    'userDetailNotes': 'Notes',
+    'userDetailNoNotes': 'No notes',
     'discClearSearch': 'Clear search',
   };
 
@@ -4360,6 +5034,230 @@ class AppLocalizations {
     'discNewEvent': 'Novo evento',
     'discEmptySearch': 'Nenhum resultado para "{query}"',
     'discEmpty': 'Nenhum evento disciplinar',
+    'platformMenusTitle': 'Menus',
+    'platformMenusSubtitle': 'Configuração de menus de navegação',
+    'platformMenusAdd': 'Adicionar menu',
+    'platformMenusEdit': 'Editar menu',
+    'platformMenusDelete': 'Excluir',
+    'platformMenusName': 'Nome do menu',
+    'platformMenusNameHint': 'Ex: Menu principal',
+    'platformMenusRoute': 'Rota',
+    'platformMenusRouteHint': 'Ex: /dashboard',
+    'platformMenusIcon': 'Ícone',
+    'platformMenusIconHint': 'Ex: Icons.dashboard',
+    'platformMenusOrder': 'Ordem',
+    'platformMenusVisible': 'Visível',
+    'platformMenusRoles': 'Funções autorizadas',
+    'platformMenusRequired': 'O nome do menu é obrigatório',
+    'platformMenusDeleteConfirm': 'Excluir este menu?',
+    'platformMenusDeleteError': 'Erro ao excluir',
+    'platformMenusSaveError': 'Erro ao salvar',
+    'platformMenusSaveSuccess': 'Menu salvo',
+    'platformMenusEmpty': 'Nenhum menu configurado',
+    'platformMenusSearch': 'Pesquisar menus…',
+    'platformMenusActive': 'Ativo',
+    'platformMenusInactive': 'Inativo',
+    'platformMenusRoot': 'Menu raiz',
+    'platformMenusChildren': 'Submenus',
+    'platformMenusParent': 'Menu pai',
+    'platformMenusNoParent': 'Nenhum (raiz)',
+    'platformMenusLinksCount': '{count} links',
+    'platformModulesTitle': 'Módulos',
+    'platformModulesSubtitle': 'Gerenciamento de módulos da plataforma',
+    'platformModulesAdd': 'Adicionar módulo',
+    'platformModulesEdit': 'Editar',
+    'platformModulesDelete': 'Excluir',
+    'platformModulesName': 'Nome do módulo',
+    'platformModulesNameHint': 'Ex: Gestão de membros',
+    'platformModulesCode': 'Código',
+    'platformModulesCodeHint': 'Ex: member_management',
+    'platformModulesDescription': 'Descrição',
+    'platformModulesDescriptionHint': 'Descrição do módulo…',
+    'platformModulesEnabled': 'Ativado',
+    'platformModulesVersion': 'Versão',
+    'platformModulesRequired': 'O nome é obrigatório',
+    'platformModulesDeleteConfirm': 'Excluir este módulo?',
+    'platformModulesDeleteError': 'Erro ao excluir',
+    'platformModulesSaveError': 'Erro ao salvar',
+    'platformModulesSaveSuccess': 'Módulo salvo',
+    'platformModulesEmpty': 'Nenhum módulo configurado',
+    'platformModulesSearch': 'Pesquisar módulos…',
+    'platformModulesActive': 'Ativo',
+    'platformModulesInactive': 'Inativo',
+    'platformModulesPageCount': '{count} páginas',
+    'platformModulesMenuCount': '{count} menus',
+    'platformPagesTitle': 'Páginas',
+    'platformPagesSubtitle': 'Configuração de páginas',
+    'platformPagesAdd': 'Adicionar página',
+    'platformPagesEdit': 'Editar',
+    'platformPagesDelete': 'Excluir',
+    'platformPagesName': 'Nome',
+    'platformPagesNameHint': 'Ex: Painel de controle',
+    'platformPagesPath': 'Caminho',
+    'platformPagesPathHint': 'Ex: /dashboard',
+    'platformPagesModule': 'Módulo',
+    'platformPagesRequired': 'O nome é obrigatório',
+    'platformPagesDeleteConfirm': 'Excluir esta página?',
+    'platformPagesDeleteError': 'Erro ao excluir',
+    'platformPagesSaveError': 'Erro ao salvar',
+    'platformPagesSaveSuccess': 'Página salva',
+    'platformPagesEmpty': 'Nenhuma página configurada',
+    'platformPagesSearch': 'Pesquisar páginas…',
+    'usersListTitle': 'Usuários',
+    'usersListSubtitle': 'Gerenciamento de contas de usuários',
+    'usersListAdd': 'Adicionar usuário',
+    'usersListEdit': 'Editar',
+    'usersListDelete': 'Excluir',
+    'usersListSearch': 'Pesquisar usuários…',
+    'usersListName': 'Nome',
+    'usersListEmail': 'Email',
+    'usersListRole': 'Função',
+    'usersListStatus': 'Status',
+    'usersListChurch': 'Igreja',
+    'usersListActive': 'Ativo',
+    'usersListInactive': 'Inativo',
+    'usersListPending': 'Pendente',
+    'usersListSuspended': 'Suspenso',
+    'usersListDeleteConfirm': 'Excluir este usuário?',
+    'usersListDeleteError': 'Erro ao excluir',
+    'usersListSaveError': 'Erro ao salvar',
+    'usersListSaveSuccess': 'Usuário salvo',
+    'usersListEmpty': 'Nenhum usuário encontrado',
+    'usersListRoleFilter': 'Filtrar por função',
+    'usersListStatusFilter': 'Filtrar por status',
+    'usersListChurchFilter': 'Filtrar por igreja',
+    'usersListLastLogin': 'Último login',
+    'usersListCreatedAt': 'Criado em',
+    'usersListActions': 'Ações',
+    'usersListTotalCount': '{count} usuários',
+    'usersListView': 'Ver',
+    'usersListDisable': 'Desativar',
+    'usersListEnable': 'Ativar',
+    'usersListResetPassword': 'Redefinir senha',
+    'usersListPasswordResetSent': 'Email de redefinição enviado',
+    'userDetailTitle': 'Detalhes do usuário',
+    'userDetailEdit': 'Editar',
+    'userDetailDelete': 'Excluir',
+    'userDetailEmail': 'Email',
+    'userDetailPhone': 'Telefone',
+    'userDetailRole': 'Função',
+    'userDetailChurch': 'Igreja',
+    'userDetailDepartment': 'Departamento',
+    'userDetailFamily': 'Família',
+    'userDetailStatus': 'Status',
+    'userDetailLastLogin': 'Último login',
+    'userDetailCreatedAt': 'Criado em',
+    'userDetailUpdatedAt': 'Atualizado em',
+    'userDetailBio': 'Biografia',
+    'userDetailAddress': 'Endereço',
+    'userDetailAvatar': 'Foto de perfil',
+    'userDetailGroups': 'Grupos',
+    'userDetailEvents': 'Eventos',
+    'userDetailTasks': 'Tarefas',
+    'userDetailActivities': 'Atividades recentes',
+    'userDetailNoGroups': 'Nenhum grupo',
+    'userDetailNoEvents': 'Nenhum evento',
+    'userDetailNoTasks': 'Nenhuma tarefa',
+    'userDetailDeleteConfirm': 'Excluir este usuário?',
+    'userDetailDeleteError': 'Erro ao excluir',
+    'userDetailSaveError': 'Erro ao salvar',
+    'userDetailSaveSuccess': 'Usuário salvo',
+    'userDetailChangePhoto': 'Alterar foto',
+    'userDetailRemovePhoto': 'Remover foto',
+    'userDetailPersonalInfo': 'Informações pessoais',
+    'userDetailAccountInfo': 'Informações da conta',
+    'userDetailActivityHistory': 'Histórico de atividades',
+    'userDetailPermissions': 'Permissões',
+    'userDetailAssignedRoles': 'Funções atribuídas',
+    'userDetailNoRoles': 'Nenhuma função atribuída',
+    'userDetailAddRole': 'Adicionar função',
+    'userDetailRemoveRole': 'Remover função',
+    'userDetailRoleRemoved': 'Função removida',
+    'userDetailRoleAdded': 'Função adicionada',
+    'userDetailRoleError': 'Erro ao modificar função',
+    'userDetailMemberSince': 'Membro desde',
+    'irreversibleAction': 'Esta ação é irreversível',
+    'usersListCreateError': 'Erro ao criar',
+    'usersListAccountCreated': 'Conta criada com sucesso',
+    'usersListSurcharged': 'Sobrecarregado',
+    'usersListLight': 'Leve',
+    'usersListNormal': 'Normal',
+    'usersListSouls': 'almas',
+    'usersListWorkloadDept': 'Carga de trabalho do meu departamento',
+    'usersListWorkloadAll': 'Carga de trabalho dos Fazedores',
+    'usersListNewUser': 'Novo usuário',
+    'usersListFirstName': 'Nome',
+    'usersListLastName': 'Sobrenome',
+    'usersListCreateBtn': 'Criar',
+    'usersListRoleAdmin': 'Administrador',
+    'usersListRolePasteur': 'Pastor',
+    'usersListRoleResponsable': 'Responsável',
+    'usersListRoleChefFamille': 'Chefe de família',
+    'usersListRoleFaiseur': 'Fazedor',
+    'usersListRoleMembre': 'Membro',
+    'usersListActiveLabel': 'Ativo',
+    'usersListInactiveLabel': 'Inativo',
+    'usersListChefBadge': 'Chefe',
+    'usersListActionProfile': 'Perfil completo',
+    'usersListActionHistory': 'Histórico',
+    'usersListPromoteFaiseur': 'Promover a Fazedor',
+    'usersListPromoteConfirm': 'Promover {name} a Fazedor de discípulos?',
+    'usersListPromoteBtn': 'Promover',
+    'usersListDemoteTitle': 'Rebaixar',
+    'usersListDemoteConfirm': 'Rebaixar {name} para:',
+    'usersListDemoteBtn': 'Rebaixar',
+    'usersListTransferTitle': 'Transferir Fazedor',
+    'usersListTransferConfirm': 'Transferir {name} para:',
+    'usersListTransferHint': 'Selecionar uma família...',
+    'usersListTransferSouls': 'Também transferir almas acompanhadas',
+    'usersListTransferBtn': 'Transferir',
+    'usersListTransferExecuted': 'Fazedor transferido',
+    'usersListTransferPending': 'Pedido de transferência submetido para validação',
+    'usersListDeleteTitle': 'Exclusão permanente',
+    'usersListDeleteConfirmHard': 'Excluir permanentemente {name}? Esta ação é irreversível (LGPD).',
+    'usersListDeleteBtn': 'Excluir',
+    'usersListHistoryTitle': 'Histórico',
+    'usersListHistoryRole': 'Função',
+    'usersListHistorySince': 'Membro desde',
+    'usersListHistoryCurrentSouls': 'Almas acompanhadas atualmente',
+    'usersListHistoryNoSouls': 'Nenhuma alma acompanhada',
+    'usersListHistoryExit': 'Saídas de acompanhamento',
+    'usersListHistoryClose': 'Fechar',
+    'usersListError': 'Erro',
+    'usersListAnnuler': 'Cancelar',
+    'userDetailAppTitle': 'Perfil do usuário',
+    'userDetailUnavailable': 'Perfil indisponível',
+    'userDetailLinkedAme': 'Alma vinculada à conta',
+    'userDetailName': 'Nome',
+    'userDetailType': 'Tipo',
+    'userDetailFaiseur': 'Fazedor',
+    'userDetailEvaluation': 'Avaliação',
+    'userDetailEvaluated': 'Você avaliou',
+    'userDetailNotEvaluated': 'Ainda não avaliado',
+    'userDetailEvalHint': 'Avaliação (opcional)…',
+    'userDetailEvalEdit': 'Editar avaliação',
+    'userDetailEvalCreate': 'Dar avaliação',
+    'userDetailEvalReceived': 'Avaliações recebidas (anônimas)',
+    'userDetailEvalSaved': 'Avaliação salva',
+    'userDetailEvalModified': 'Avaliação modificada',
+    'userDetailEvalError': 'Erro ao salvar avaliação',
+    'userDetailFollowedSouls': 'Almas acompanhadas',
+    'userDetailNoFollowedSouls': 'Nenhuma alma acompanhada',
+    'userDetailFamilyLabel': 'Família {name}',
+    'userDetailExits': 'Saídas de acompanhamento',
+    'userDetailExitReason': 'Saída do acompanhamento',
+    'userDetailDeptsManaged': 'Departamentos gerenciados',
+    'userDetailNoMembers': 'Nenhum membro',
+    'userDetailMembersCount': '{count} membros',
+    'userDetailFollowedBy': 'Acompanhado por {name}',
+    'userDetailManagedFamily': 'Família gerenciada',
+    'userDetailDossier': 'Arquivo do membro ({count} dept.)',
+    'userDetailObjectives': 'Objetivos',
+    'userDetailNoObjectives': 'Nenhum objetivo definido',
+    'userDetailReports': 'Relatórios',
+    'userDetailNoReports': 'Nenhum relatório',
+    'userDetailNotes': 'Notas',
+    'userDetailNoNotes': 'Nenhuma nota',
     'discClearSearch': 'Limpar pesquisa',
   };
 }

@@ -4,7 +4,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/attachment_picker_field.dart';
 import '../../widgets/attachment_chips.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class EventsListScreen extends StatefulWidget {
   const EventsListScreen({super.key});

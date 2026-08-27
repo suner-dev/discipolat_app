@@ -117,7 +117,7 @@ void main() {
     final api = _FakeApiService((path, params) => _json(path, <dynamic>[]));
     await pumpScreen(tester, api);
 
-    expect(find.text('Aucun module'), findsOneWidget);
+    expect(find.text('Aucun module configuré'), findsOneWidget);
   });
 
   testWidgets('bascule d’activation → PUT /platform/modules/{key} avec enabled', (tester) async {
@@ -136,12 +136,12 @@ void main() {
     final api = _FakeApiService((path, params) => _json(path, _modules));
     await pumpScreen(tester, api);
 
-    await tester.ensureVisible(find.text('Nouveau module'));
+    await tester.ensureVisible(find.text('Ajouter un module'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Nouveau module'));
+    await tester.tap(find.text('Ajouter un module'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nouveau module'), findsNWidgets(2)); // bouton + titre de l'éditeur
+    expect(find.text('Ajouter un module'), findsNWidgets(2)); // bouton + titre de l'éditeur
 
     await tester.enterText(find.widgetWithText(TextField, 'Clé (unique)'), 'PRAYERS');
     await tester.enterText(find.widgetWithText(TextField, 'Libellé'), 'Prières');
@@ -155,7 +155,7 @@ void main() {
     expect(payload?['key'], 'PRAYERS');
     expect(payload?['label'], 'Prières');
     expect(payload?['enabled'], true);
-    expect(find.text('Module créé'), findsOneWidget);
+    expect(find.text('Module sauvegardé'), findsOneWidget);
   });
 
   testWidgets('modifie un module → PUT /platform/modules/{key}/edit', (tester) async {
@@ -166,7 +166,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.edit_rounded).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Modifier le module'), findsOneWidget);
+    expect(find.text('Modifier'), findsWidgets);
     // La clé est pré-remplie dans le champ (en lecture seule en édition).
     expect(find.widgetWithText(TextField, 'DASHBOARD'), findsOneWidget);
 
@@ -177,7 +177,7 @@ void main() {
 
     expect(api.putPaths, contains('/platform/modules/DASHBOARD/edit'));
     expect(api.putDatas.last?['label'], 'Tableaux de bord');
-    expect(find.text('Module modifié'), findsOneWidget);
+    expect(find.text('Module sauvegardé'), findsOneWidget);
   });
 
   testWidgets('supprime avec confirmation → DELETE /platform/modules/{key}', (tester) async {

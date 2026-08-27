@@ -88,7 +88,7 @@ void main() {
     final api = _FakeApiService((path, params) => _json(path, _pages));
     await pumpScreen(tester, api);
 
-    expect(find.text('Pages personnalisées'), findsOneWidget);
+    expect(find.text('Pages'), findsOneWidget);
     expect(find.text('Vue d’ensemble de l’église'), findsOneWidget);
     expect(find.text('/pages/apercu-eglise'), findsOneWidget);
     expect(find.text('Publiée · v2'), findsOneWidget);
@@ -102,7 +102,7 @@ void main() {
     final api = _FakeApiService((path, params) => _json(path, <dynamic>[]));
     await pumpScreen(tester, api);
 
-    expect(find.text('Aucune page personnalisée'), findsOneWidget);
+    expect(find.text('Aucune page configurée'), findsOneWidget);
   });
 
   testWidgets('bascule de publication → POST /pages/{id}/publish', (tester) async {

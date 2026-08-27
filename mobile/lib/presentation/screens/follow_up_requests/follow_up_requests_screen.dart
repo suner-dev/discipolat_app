@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// P3 #112 — Demandes de suivi : demander un faiseur ou un accompagnement spirituel.
 class FollowUpRequestsScreen extends StatefulWidget {

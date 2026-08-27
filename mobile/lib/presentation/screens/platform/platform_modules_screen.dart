@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import 'platform_icons.dart';
@@ -23,6 +24,8 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
   List<Map<String, dynamic>> _modules = [];
   bool _isLoading = true;
 
+  AppLocalizations get l10n => AppLocalizations.of(context);
+
   @override
   void initState() { super.initState(); _load(); }
 
@@ -45,7 +48,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la mise à jour')),
+          SnackBar(content: Text(l10n.platformModulesSaveError)),
         );
       }
     }
@@ -57,10 +60,10 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
       context: context,
       builder: (c) => AlertDialog(
         title: Text('Supprimer le module « ${module['label']} » ?'),
-        content: const Text('Cette action est irréversible.'),
+        content: Text(l10n.irreversibleAction),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Non')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Oui')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l10n.no)),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: Text(l10n.yes)),
         ],
       ),
     );
@@ -81,7 +84,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible de supprimer ce module')),
+          SnackBar(content: Text(l10n.platformModulesDeleteError)),
         );
       }
     }
@@ -112,7 +115,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
               controller: scrollController,
               padding: const EdgeInsets.all(20),
               children: [
-                Text(isEdit ? 'Modifier le module' : 'Nouveau module',
+                Text(isEdit ? l10n.platformModulesEdit : l10n.platformModulesAdd,
                     style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 TextField(
@@ -179,7 +182,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
                     final label = labelCtrl.text.trim();
                     if (key.isEmpty || label.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Clé et libellé sont obligatoires')),
+                        SnackBar(content: Text(l10n.platformModulesRequired)),
                       );
                       return;
                     }
@@ -198,7 +201,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
                       }
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(isEdit ? 'Module modifié' : 'Module créé')),
+                          SnackBar(content: Text(l10n.platformModulesSaveSuccess)),
                         );
                       }
                       _load();
@@ -210,7 +213,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
                       }
                     }
                   },
-                  child: const Text('Enregistrer'),
+                  child: Text(l10n.save),
                 ),
                 const SizedBox(height: 8),
                 if (isEdit)
@@ -244,7 +247,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Regroupement par section, tri par ordre à l'intérieur de chaque section.
+      // Regroupement par section, tri par ordre à l'intérieur de chaque section.
     final sections = <String, List<Map<String, dynamic>>>{};
     for (final m in _modules) {
       final s = m['section'] as String? ?? 'Général';
@@ -254,21 +257,21 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
     final sectionNames = sections.keys.toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Modules')),
+      appBar: AppBar(title: Text(l10n.platformModulesTitle)),
       body: _isLoading
           ? const ShimmerLoading(itemCount: 4)
           : RefreshIndicator(
               onRefresh: _load,
               child: _modules.isEmpty
-                  ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: const [
-                      Padding(
+                  ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
+                      const Padding(
                         padding: EdgeInsets.only(top: 120),
                         child: Column(children: [
                           Icon(Icons.inventory_2_outlined, size: 56, color: Colors.white24),
                           SizedBox(height: 12),
-                          Text('Aucun module', style: TextStyle(color: Colors.white54)),
                         ]),
                       ),
+                      Text(l10n.platformModulesEmpty, style: const TextStyle(color: Colors.white54)),
                     ])
                   : ListView(
                       padding: const EdgeInsets.all(16),
@@ -279,7 +282,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
                             Row(children: [
                               Icon(Icons.inventory_2_rounded, color: AppColors.primary, size: 20),
                               const SizedBox(width: 8),
-                              const Text('Modules de la plateforme',
+                              Text(l10n.platformModulesSubtitle,
                                   style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                             ]),
                             const SizedBox(height: 4),
@@ -308,7 +311,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
                         FilledButton.icon(
                           onPressed: () => _openEditor(),
                           icon: const Icon(Icons.add),
-                          label: const Text('Nouveau module'),
+                          label: Text(l10n.platformModulesAdd),
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -370,7 +373,7 @@ class _PlatformModulesScreenState extends State<PlatformModulesScreen> {
         ]),
         const SizedBox(height: 8),
         Row(children: [
-          StatusBadge(label: enabled ? 'Actif' : 'Inactif', color: enabled ? Colors.green : Colors.blueGrey),
+          StatusBadge(label: enabled ? l10n.platformModulesActive : l10n.platformModulesInactive, color: enabled ? Colors.green : Colors.blueGrey),
           const Spacer(),
           IconButton(
             visualDensity: VisualDensity.compact,

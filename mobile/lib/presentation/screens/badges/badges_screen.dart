@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Écran de gamification : badges, scores, progression, classement.
 class BadgesScreen extends StatefulWidget {

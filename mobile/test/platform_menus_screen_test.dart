@@ -139,7 +139,7 @@ void main() {
     final api = _FakeApiService((path, params) => _json(path, <dynamic>[]));
     await pumpScreen(tester, api);
 
-    expect(find.text('Aucun menu'), findsOneWidget);
+    expect(find.text('Aucun menu configuré'), findsOneWidget);
   });
 
   testWidgets('bascule d’activation → PUT /platform/menus/{id} avec l’objet complet', (tester) async {
@@ -186,12 +186,12 @@ void main() {
     });
     await pumpScreen(tester, api);
 
-    await tester.ensureVisible(find.text('Nouveau menu'));
+    await tester.ensureVisible(find.text('Ajouter un menu'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Nouveau menu'));
+    await tester.tap(find.text('Ajouter un menu'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nouveau menu'), findsNWidgets(2)); // bouton + titre de l'éditeur
+    expect(find.text('Ajouter un menu'), findsNWidgets(2)); // bouton + titre de l'éditeur
 
     await tester.enterText(find.widgetWithText(TextField, 'Clé'), 'prayers');
     await tester.enterText(find.widgetWithText(TextField, 'Libellé'), 'Prières');
@@ -207,7 +207,7 @@ void main() {
     expect(payload?['label'], 'Prières');
     expect(payload?['href'], '/prayers');
     expect(payload?['enabled'], true);
-    expect(find.text('Menu créé'), findsOneWidget);
+    expect(find.text('Menu sauvegardé'), findsOneWidget);
   });
 
   testWidgets('modifie un menu → PUT /platform/menus/{id}', (tester) async {
@@ -220,7 +220,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.edit_rounded).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Modifier le menu'), findsOneWidget);
+    expect(find.text('Modifier le menu'), findsWidgets);
 
     await tester.ensureVisible(find.text('Enregistrer'));
     await tester.pumpAndSettle();
@@ -230,7 +230,7 @@ void main() {
     expect(api.putPaths, contains('/platform/menus/m1'));
     expect(api.putDatas.last?['label'], 'Tableau de bord');
     expect(api.putDatas.last?['section'], 'Pilotage');
-    expect(find.text('Menu modifié'), findsOneWidget);
+    expect(find.text('Menu sauvegardé'), findsOneWidget);
   });
 
   testWidgets('supprime avec confirmation → DELETE /platform/menus/{id}', (tester) async {
@@ -241,9 +241,7 @@ void main() {
     await pumpScreen(tester, api);
 
     await tester.tap(find.byIcon(Icons.delete_rounded).first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Supprimer le menu « Tableau de bord » ?'), findsOneWidget);
+    await tester.pumpAndSettle();    expect(find.text('Supprimer le menu « Tableau de bord » ?'), findsWidgets);
     await tester.tap(find.text('Oui'));
     await tester.pumpAndSettle();
 

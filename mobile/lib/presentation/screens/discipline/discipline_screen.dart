@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Écrans de discipline pour le Responsable.
 /// - Liste des événements disciplinaires (par catégorie, statut, recherche)

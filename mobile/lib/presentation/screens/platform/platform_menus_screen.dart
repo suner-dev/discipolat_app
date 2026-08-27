@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import 'platform_icons.dart';
@@ -25,6 +26,8 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
   List<Map<String, dynamic>> _menus = [];
   List<Map<String, dynamic>> _modules = [];
   bool _isLoading = true;
+
+  AppLocalizations get l10n => AppLocalizations.of(context);
 
   @override
   void initState() { super.initState(); _load(); }
@@ -54,7 +57,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la mise à jour')),
+          SnackBar(content: Text(l10n.platformMenusSaveError)),
         );
       }
     }
@@ -72,7 +75,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible de supprimer ce menu')),
+          SnackBar(content: Text(l10n.platformMenusDeleteError)),
         );
       }
     }
@@ -92,7 +95,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur de réordonnancement')),
+          SnackBar(content: Text(l10n.platformMenusSaveError)),
         );
       }
     }
@@ -130,7 +133,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
               controller: scrollController,
               padding: const EdgeInsets.all(20),
               children: [
-                Text(isEdit ? 'Modifier le menu' : 'Nouveau menu',
+                Text(isEdit ? l10n.platformMenusEdit : l10n.platformMenusAdd,
                     style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 TextField(
@@ -223,7 +226,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
                     final href = hrefCtrl.text.trim();
                     if (key.isEmpty || label.isEmpty || href.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Clé, libellé et URL sont obligatoires')),
+                        SnackBar(content: Text(l10n.platformMenusRequired)),
                       );
                       return;
                     }
@@ -242,19 +245,19 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
                       }
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(isEdit ? 'Menu modifié' : 'Menu créé')),
+                          SnackBar(content: Text(isEdit ? l10n.platformMenusSaveSuccess : l10n.platformMenusSaveSuccess)),
                         );
                       }
                       _load();
                     } catch (_) {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Erreur lors de l\u2019enregistrement')),
+                          SnackBar(content: Text(l10n.platformMenusSaveError)),
                         );
                       }
                     }
                   },
-                  child: const Text('Enregistrer'),
+                  child: Text(l10n.save),
                 ),
                 const SizedBox(height: 8),
                 if (isEdit)
@@ -266,8 +269,8 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
                         builder: (c) => AlertDialog(
                           title: Text('Supprimer le menu « ${menu['label']} » ?'),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Non')),
-                            TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Oui')),
+                            TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l10n.no)),
+                            TextButton(onPressed: () => Navigator.pop(c, true), child: Text(l10n.yes)),
                           ],
                         ),
                       );
@@ -288,7 +291,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sections = <String, List<Map<String, dynamic>>>{};
+      final sections = <String, List<Map<String, dynamic>>>{};
     for (final m in _menus) {
       final s = m['section'] as String? ?? 'Général';
       sections.putIfAbsent(s, () => []).add(m);
@@ -297,19 +300,19 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
     final sectionNames = sections.keys.toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Menus')),
+      appBar: AppBar(title: Text(l10n.platformMenusTitle)),
       body: _isLoading
           ? const ShimmerLoading(itemCount: 4)
           : RefreshIndicator(
               onRefresh: _load,
               child: _menus.isEmpty
-                  ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: const [
+                  ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
                       Padding(
-                        padding: EdgeInsets.only(top: 120),
+                        padding: const EdgeInsets.only(top: 120),
                         child: Column(children: [
-                          Icon(Icons.menu_rounded, size: 56, color: Colors.white24),
-                          SizedBox(height: 12),
-                          Text('Aucun menu', style: TextStyle(color: Colors.white54)),
+                          const Icon(Icons.menu_rounded, size: 56, color: Colors.white24),
+                          const SizedBox(height: 12),
+                          Text(l10n.platformMenusEmpty, style: const TextStyle(color: Colors.white54)),
                         ]),
                       ),
                     ])
@@ -322,7 +325,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
                             Row(children: [
                               Icon(Icons.menu_rounded, color: AppColors.primary, size: 20),
                               const SizedBox(width: 8),
-                              const Text('Menus de navigation',
+                              Text(l10n.platformMenusSubtitle,
                                   style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                             ]),
                             const SizedBox(height: 4),
@@ -350,7 +353,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
                         FilledButton.icon(
                           onPressed: () => _openEditor(),
                           icon: const Icon(Icons.add),
-                          label: const Text('Nouveau menu'),
+                          label: Text(l10n.platformMenusAdd),
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -464,10 +467,10 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
       context: context,
       builder: (c) => AlertDialog(
         title: Text('Supprimer le menu « ${menu['label']} » ?'),
-        content: const Text('Cette action est irréversible.'),
+        content: Text(l10n.irreversibleAction),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Non')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Oui')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l10n.no)),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: Text(l10n.yes)),
         ],
       ),
     );

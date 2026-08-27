@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class SurveysScreen extends StatefulWidget {
   const SurveysScreen({super.key});

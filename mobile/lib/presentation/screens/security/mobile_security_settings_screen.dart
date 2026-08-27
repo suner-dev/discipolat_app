@@ -5,7 +5,7 @@ import '../../../data/services/data_saver_service.dart';
 import '../../../data/services/orientation_service.dart';
 import '../../../data/services/screenshot_protection_service.dart';
 import '../../../data/services/audit_log_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Unified security & settings screen for mobile.
 /// Combines: session timeout, biometric auth, data saver, orientation.

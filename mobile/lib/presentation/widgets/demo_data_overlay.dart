@@ -7,18 +7,7 @@ import '../../l10n/app_localizations.dart';
 /// Routes dont l'écran est encore alimenté par des DONNÉES DE DÉMONSTRATION
 /// (aucun appel API). Ces écrans doivent être branchés avant la release.
 /// Référence : docs/rapports/AUDIT_VERIFICATION_REEL.md §4bis.
-const Set<String> kDemoDataRoutes = <String>{
-  '/bible-reading',
-  '/discipleship-path',
-  '/dev-plans',
-  '/family-cohesion',
-  '/family-resources',
-  '/maker-tracking',
-  '/sermon-translations',
-  '/skill-matching',
-  '/skills-matrix',
-  '/spiritual-journal',
-};
+const Set<String> kDemoDataRoutes = <String>{};
 
 /// Overlay global : affiche un bandeau discret « Données de démonstration »
 /// en haut de l'écran lorsque la route courante est dans [kDemoDataRoutes].

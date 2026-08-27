@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// P3 #104 — Analyse de santé spirituelle par quartier (heatmap + zones faibles).
 class NeighborhoodHealthScreen extends StatefulWidget {

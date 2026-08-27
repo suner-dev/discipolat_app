@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/format.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Suggestions IA de mentorat — branché sur GET /api/v1/mentoring/all.
 class AiMentoringScreen extends StatefulWidget {

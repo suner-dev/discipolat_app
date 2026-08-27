@@ -1,87 +1,135 @@
 import 'package:flutter/material.dart';
+import '../../widgets/glass_theme.dart';
+import '../../../data/services/api_service.dart';
+import '../../../../l10n/app_localizations.dart';
 
-/// P1 #35 — Matching membres ↔ compétences
-class SkillMatchingScreen extends StatelessWidget {
-  const SkillMatchingScreen({super.key});
+/// P1 #35 — Matching membres ↔ compétences — branché sur API réelle.
+class SkillMatchingScreen extends StatefulWidget {
+  const SkillMatchingScreen({super.key, this.apiService});
+  
+  final ApiService? apiService;
+
+  @override
+  State<SkillMatchingScreen> createState() => _SkillMatchingScreenState();
+}
+
+class _SkillMatchingScreenState extends State<SkillMatchingScreen> {
+  late final ApiService _api = widget.apiService ?? ApiService();
+  List<dynamic> _matches = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      final res = await _api.get('/api/v1/skill-matching');
+      if (mounted) {
+        final data = res.data;
+        setState(() {
+          _matches = (data is Map && data['content'] is List)
+              ? data['content'] as List<dynamic>
+              : (data is List ? data : []);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🧩 Matching Compétences'),
+        title: Text(l10n.skillMatchingTitle),
         backgroundColor: Colors.amber.shade700,
         foregroundColor: Colors.white,
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _load)],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () async {
+          await _load(); // Refresh matches
+        },
         backgroundColor: Colors.amber.shade700,
         child: const Icon(Icons.auto_awesome, color: Colors.white),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // AI Match button
-          Card(
-            color: Colors.amber.shade50,
-            child: ListTile(
-              leading: const Icon(Icons.psychology, color: Colors.amber),
-              title: const Text('Lancer le matching IA'),
-              subtitle: const Text('Analyser les compétences vs besoins'),
-              trailing: const Icon(Icons.play_arrow),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Matching en cours...')),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Proposed matches
-          const Text('Propositions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          _matchCard('Jean-Pierre M.', 'Département Louange', 'Animation', 92, Colors.green),
-          _matchCard('Marie K.', 'Département Accueil', 'Hospitalité', 87, Colors.green),
-          _matchCard('David L.', 'Département Technique', 'Son & Lumière', 78, Colors.orange),
-          _matchCard('Sarah B.', 'Département Enseignement', 'Enfants', 65, Colors.orange),
-          const SizedBox(height: 16),
-          // My skills
-          const Text('Mes compétences déclarées', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              Chip(label: const Text('Animation'), avatar: const Icon(Icons.star, size: 16)),
-              Chip(label: const Text('Musique'), avatar: const Icon(Icons.star, size: 16)),
-              Chip(label: const Text('Accueil'), avatar: const Icon(Icons.star, size: 16)),
-              Chip(
-                label: const Text('Ajouter +'),
-                backgroundColor: Colors.grey.shade100,
-                avatar: const Icon(Icons.add, size: 16),
-              ),
-            ],
-          ),
-        ],
-      ),
+      body: _isLoading
+          ? const ShimmerLoading(itemCount: 4)
+          : _error != null
+              ? _buildError(l10n)
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // AI Match button
+                      GlassCard(
+                        padding: const EdgeInsets.all(12),
+                        child: ListTile(
+                          leading: const Icon(Icons.psychology, color: Colors.amber),
+                          title: Text(l10n.launchAiMatching),
+                          subtitle: Text(l10n.matchingSubtitle),
+                          trailing: const Icon(Icons.play_arrow),
+                          onTap: _load,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Matches
+                      Text(l10n.proposals, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      if (_matches.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Center(child: Text(l10n.noMatches, style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
+                        )
+                      else
+                        ..._matches.map((m) {
+                          final match = m as Map<String, dynamic>;
+                          final name = match['membreNom'] ?? match['nom'] ?? '';
+                          final dept = match['departement'] ?? '';
+                          final skill = match['competence'] ?? '';
+                          final score = match['score'] ?? 0;
+                          final scoreColor = (score as num) >= 80 ? Colors.green : Colors.orange;
+                          return Card(child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: scoreColor.withValues(alpha: 0.1),
+                              child: Text('$score', style: TextStyle(color: scoreColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                            ),
+                            title: Text(name),
+                            subtitle: Text('$dept — $skill'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () {}),
+                                IconButton(icon: const Icon(Icons.cancel, color: Colors.red), onPressed: () {}),
+                              ],
+                            ),
+                          ));
+                        }),
+                    ],
+                  ),
+                ),
     );
   }
 
-  Widget _matchCard(String name, String dept, String skill, int score, Color color) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.1),
-          child: Text('$score', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
-        ),
-        title: Text(name),
-        subtitle: Text('$dept — $skill'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () {}),
-            IconButton(icon: const Icon(Icons.cancel, color: Colors.red), onPressed: () {}),
-          ],
-        ),
-      ),
-    );
+  Widget _buildError(AppLocalizations l10n) {
+    return Center(child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.error_outline, color: Colors.white.withValues(alpha: 0.3), size: 48),
+        const SizedBox(height: 12),
+        Text(l10n.error, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+        const SizedBox(height: 12),
+        FilledButton.icon(onPressed: _load, icon: const Icon(Icons.refresh, size: 16), label: Text(l10n.retry)),
+      ],
+    ));
   }
 }

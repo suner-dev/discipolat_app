@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// P3 #106 — Tableau de bord sabbatique : état spirituel sur 12 axes de maturité.
 class SabbathDashboardScreen extends StatefulWidget {

@@ -3,7 +3,7 @@ import 'dart:async';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../widgets/secure_screen.dart';
 
 /// Dîmes & Offrandes 2.0 — don par Mobile Money avec suivi du statut.

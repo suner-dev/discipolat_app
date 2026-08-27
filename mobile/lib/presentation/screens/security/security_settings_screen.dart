@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../../../data/services/biometric_auth_service.dart';
 import '../../../data/services/session_timeout_service.dart';

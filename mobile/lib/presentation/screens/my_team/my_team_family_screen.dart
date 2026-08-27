@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// P3 #115 — Mon équipe / ma famille : membres de la famille spirituelle + encouragements.
 class MyTeamFamilyScreen extends StatefulWidget {

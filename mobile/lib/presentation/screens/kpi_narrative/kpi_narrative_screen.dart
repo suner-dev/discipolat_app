@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Narration IA des KPIs — branché sur GET /api/v1/kpi-narrative.
 class KpiNarrativeScreen extends StatefulWidget {

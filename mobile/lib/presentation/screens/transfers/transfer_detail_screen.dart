@@ -3,7 +3,7 @@ import '../../../app.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/document_create_dialog.dart';
 import '../../widgets/glass_theme.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'transfer_labels.dart';
 
 class TransferDetailScreen extends StatefulWidget {

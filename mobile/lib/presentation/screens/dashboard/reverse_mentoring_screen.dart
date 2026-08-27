@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/format.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Mentorat inversé — branché sur GET /api/v1/reverse-mentoring.
 class ReverseMentoringScreen extends StatefulWidget {
