@@ -695,6 +695,10 @@ class AppLocalizations {
   String get secAuditClear => translate('secAuditClear');
   String get secAuditViewLog => translate('secAuditViewLog');
   String get secInfoPersisted => translate('secInfoPersisted');
+  String get secActivated => translate('secActivated');
+  String get secDeactivated => translate('secDeactivated');
+  String get secCacheFirst => translate('secCacheFirst');
+  String get secAlwaysNetwork => translate('secAlwaysNetwork');
   String get dictTitle => translate('dictTitle');
   String get dictEmpty => translate('dictEmpty');
   String dictEntriesCount(int count) => translate('dictEntriesCount').replaceAll('{count}', '$count');
@@ -974,6 +978,12 @@ class AppLocalizations {
   String get navChangeRole => translate('navChangeRole');
   String get navActiveLabel => translate('navActiveLabel');
   String get roleSwitchFailed => translate('roleSwitchFailed');
+  String get roleAdmin => translate('roleAdmin');
+  String get rolePasteur => translate('rolePasteur');
+  String get roleResponsable => translate('roleResponsable');
+  String get roleChefFamille => translate('roleChefFamille');
+  String get roleFaiseur => translate('roleFaiseur');
+  String get roleMembre => translate('roleMembre');
   String get feedbackTitle => translate('feedbackTitle');
   String get feedbackSubtitle => translate('feedbackSubtitle');
   String get profileTitle => translate('profileTitle');
@@ -2076,6 +2086,12 @@ class AppLocalizations {
     'profileTitle': 'Profil',
     'rejectAction': 'Cancelar',
     'roleSwitchFailed': 'Échec du changement de rôle',
+    'roleAdmin': 'Admin',
+    'rolePasteur': 'Pasteur',
+    'roleResponsable': 'Responsable',
+    'roleChefFamille': 'Chef de famille',
+    'roleFaiseur': 'Faiseur',
+    'roleMembre': 'Membre',
     'sendError': 'Erro ao enviar',
 
     // ── H7 nav+profile (re-add) ──
@@ -2465,6 +2481,10 @@ class AppLocalizations {
     'secAuditClear': 'Effacer',
     'secAuditViewLog': 'Voir le journal',
     'secInfoPersisted': 'Ces paramètres sont sauvegardés localement et persistés entre les sessions.',
+    'secActivated': 'Activé',
+    'secDeactivated': 'Désactivé',
+    'secCacheFirst': 'Cache d\'abord',
+    'secAlwaysNetwork': 'Toujours le réseau',
     'dictTitle': 'Dictionnaires',
     'dictEmpty': 'Aucun dictionnaire',
     'dictEntriesCount': '{count} entrée(s)',
@@ -3181,6 +3201,13 @@ class AppLocalizations {
     'orgLabel': 'Organization',
     'activeRoleLabel': 'Active role',
     'rolesLabel': 'Roles',
+    'roleAdmin': 'Admin',
+    'rolePasteur': 'Pastor',
+    'roleResponsable': 'Leader',
+    'roleChefFamille': 'Family head',
+    'roleFaiseur': 'Maker',
+    'roleMembre': 'Member',
+    'roleSwitchFailed': 'Role switch failed',
     'noEntries': 'No entries',
     'logExported': 'Log exported',
     'entriesExported': '{count} entries exported',
@@ -3719,6 +3746,10 @@ class AppLocalizations {
     'secAuditClear': 'Clear',
     'secAuditViewLog': 'View log',
     'secInfoPersisted': 'Settings are saved locally and persist between sessions.',
+    'secActivated': 'Enabled',
+    'secDeactivated': 'Disabled',
+    'secCacheFirst': 'Cache first',
+    'secAlwaysNetwork': 'Always network',
     'dictTitle': 'Dictionaries',
     'dictEmpty': 'No dictionaries',
     'dictEntriesCount': '{count} entry/entries',
@@ -4435,6 +4466,13 @@ class AppLocalizations {
     'orgLabel': 'Organização',
     'activeRoleLabel': 'Papel ativo',
     'rolesLabel': 'Papéis',
+    'roleAdmin': 'Admin',
+    'rolePasteur': 'Pastor',
+    'roleResponsable': 'Responsável',
+    'roleChefFamille': 'Chefe de família',
+    'roleFaiseur': 'Fazedor',
+    'roleMembre': 'Membro',
+    'roleSwitchFailed': 'Falha ao mudar de papel',
     'noEntries': 'Nenhuma entrada',
     'logExported': 'Registo exportado',
     'entriesExported': '{count} entradas exportadas',
@@ -4973,6 +5011,10 @@ class AppLocalizations {
     'secAuditClear': 'Limpar',
     'secAuditViewLog': 'Ver registo',
     'secInfoPersisted': 'As configurações são guardadas localmente e persistem entre sessões.',
+    'secActivated': 'Ativado',
+    'secDeactivated': 'Desativado',
+    'secCacheFirst': 'Cache primeiro',
+    'secAlwaysNetwork': 'Sempre rede',
     'dictTitle': 'Dicionários',
     'dictEmpty': 'Nenhum dicionário',
     'dictEntriesCount': '{count} entrada(s)',

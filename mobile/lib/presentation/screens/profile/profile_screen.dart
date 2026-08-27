@@ -145,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Text(AppLocalizations.of(context).profileQuickActions, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 12),
-                          _actionRow(Icons.security, 'Sécurité et confidentialité', () => context.go('/security-settings')),
+                          _actionRow(Icons.security, AppLocalizations.of(context).securityTitle, () => context.go('/security-settings')),
                         ],
                       ),
                     ),

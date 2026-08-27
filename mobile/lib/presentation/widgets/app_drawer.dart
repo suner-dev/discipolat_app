@@ -286,14 +286,17 @@ class _AppDrawerState extends State<AppDrawer> {
     }
   }
 
-  static const _roleLabels = {
-    'ADMIN': 'Admin',
-    'PASTEUR': 'Pasteur',
-    'RESPONSABLE': 'Responsable',
-    'CHEF_DE_FAMILLE': 'Chef de famille',
-    'FAISEUR': 'Faiseur',
-    'MEMBRE': 'Membre',
-  };
+  static String _roleLabel(String role, AppLocalizations l10n) {
+    switch (role) {
+      case 'ADMIN': return l10n.roleAdmin;
+      case 'PASTEUR': return l10n.rolePasteur;
+      case 'RESPONSABLE': return l10n.roleResponsable;
+      case 'CHEF_DE_FAMILLE': return l10n.roleChefFamille;
+      case 'FAISEUR': return l10n.roleFaiseur;
+      case 'MEMBRE': return l10n.roleMembre;
+      default: return role;
+    }
+  }
 
   static const _roleIcons = {
     'ADMIN': Icons.admin_panel_settings,
@@ -419,7 +422,7 @@ class _AppDrawerState extends State<AppDrawer> {
                         Icon(_roleIcons[activeRole] ?? Icons.person, size: 14, color: _roleColor(activeRole)),
                         const SizedBox(width: 6),
                         Text(
-                          _roleLabels[activeRole] ?? activeRole,
+                          _roleLabel(activeRole, AppLocalizations.of(context)),
                           style: TextStyle(color: _roleColor(activeRole), fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -458,7 +461,7 @@ class _AppDrawerState extends State<AppDrawer> {
                                 Icon(_roleIcons[role] ?? Icons.person, size: 18, color: _roleColor(role)),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _roleLabels[role] ?? role,
+                                  _roleLabel(role, AppLocalizations.of(context)),
                                   style: TextStyle(
                                     color: role == activeRole ? _roleColor(role) : Colors.white.withValues(alpha: 0.6),
                                     fontWeight: role == activeRole ? FontWeight.bold : FontWeight.normal,
