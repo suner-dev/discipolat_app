@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../app.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 
 /// Outil métier COMMUNICATION — parité web.
@@ -25,13 +26,6 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
   List<Map<String, dynamic>> _published = [];
   List<Map<String, dynamic>> _all = [];
   bool _isLoading = true;
-
-  static const _cibleLabels = {
-    'TOUS': 'Toute l’église',
-    'ROLE': 'Par rôle',
-    'FAMILLE': 'Par famille',
-    'DEPARTEMENT': 'Par département',
-  };
 
   bool get _canManage => AuthState().hasActiveRole(['ADMIN', 'PASTEUR']);
 
@@ -68,29 +62,32 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       final res = await _apiService.post('/communications/admin/${c['id']}/publish');
       final destinataires = (res.data as Map<String, dynamic>?)?['destinataires'];
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Annonce publiée et diffusée à $destinataires destinataire(s)')),
+          SnackBar(content: Text(l10n.commPublishSuccess('$destinataires'))),
         );
       }
       _load();
     } catch (_) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la publication')),
+          SnackBar(content: Text(l10n.commPublishError)),
         );
       }
     }
   }
 
   Future<void> _delete(Map<String, dynamic> c) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer l’annonce ?'),
+        title: Text(l10n.commDeleteTitle),
         content: Text('${c['titre']}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Non')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Oui')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.no)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.yes)),
         ],
       ),
     );
@@ -99,14 +96,14 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       await _apiService.delete('/communications/admin/${c['id']}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Annonce supprimée')),
+          SnackBar(content: Text(l10n.commDeleted)),
         );
       }
       _load();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la suppression')),
+          SnackBar(content: Text(l10n.commDeleteError)),
         );
       }
     }
@@ -124,31 +121,42 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       if (edit != null) {
         await _apiService.put('/communications/admin/${edit['id']}', data: payload);
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Annonce modifiée')),
+            SnackBar(content: Text(l10n.commModified)),
           );
         }
       } else {
         await _apiService.post('/communications/admin', data: payload);
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Annonce créée')),
+            SnackBar(content: Text(l10n.commCreated)),
           );
         }
       }
       _load();
     } catch (_) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Échec de l'enregistrement")),
+          SnackBar(content: Text(l10n.commSaveError)),
         );
       }
     }
   }
 
-  String _cibleLabel(Object? cible) => _cibleLabels[cible] ?? '$cible';
+  String _cibleLabel(Object? cible, AppLocalizations l10n) {
+    switch (cible) {
+      case 'TOUS': return l10n.commCibleAll;
+      case 'ROLE': return l10n.commCibleRole;
+      case 'FAMILLE': return l10n.commCibleFamily;
+      case 'DEPARTEMENT': return l10n.commCibleDept;
+      default: return '$cible';
+    }
+  }
 
-  Widget _cibleChip(Map<String, dynamic> c) {
+  Widget _cibleChip(Map<String, dynamic> c, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -156,17 +164,17 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        _cibleLabel(c['cible']) + (c['cible'] == 'ROLE' ? ' : ${(c['roles'] as List?)?.join(', ') ?? ''}' : ''),
+        _cibleLabel(c['cible'], l10n) + (c['cible'] == 'ROLE' ? ' : ${(c['roles'] as List?)?.join(', ') ?? ''}' : ''),
         style: TextStyle(color: AppColors.primaryLight, fontSize: 8, fontWeight: FontWeight.w600),
       ),
     );
   }
 
-  String _statutLabel(Object? statut) {
+  String _statutLabel(Object? statut, AppLocalizations l10n) {
     switch (statut) {
-      case 'PUBLIEE': return 'Publiée';
-      case 'ARCHIVEE': return 'Archivée';
-      default: return 'Brouillon';
+      case 'PUBLIEE': return l10n.commStatusPublished;
+      case 'ARCHIVEE': return l10n.commStatusArchived;
+      default: return l10n.commStatusDraft;
     }
   }
 
@@ -186,15 +194,16 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Annonces')),
+      appBar: AppBar(title: Text(l10n.commTitle)),
       floatingActionButton: _canManage
           ? FloatingActionButton.extended(
               onPressed: () => _openEditor(),
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: const Text('Annonce'),
+              label: Text(l10n.commNew),
             )
           : null,
       body: _isLoading
@@ -208,7 +217,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                     Row(children: [
                       Icon(Icons.campaign_rounded, color: AppColors.primaryLight, size: 16),
                       const SizedBox(width: 6),
-                      Text('Gestion des annonces',
+                      Text(l10n.commManagement,
                           style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.bold)),
                     ]),
                     const SizedBox(height: 8),
@@ -216,12 +225,12 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Center(
-                          child: Text('Aucune annonce. Créez la première avec le bouton +.',
+                          child: Text(l10n.commEmpty,
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
                         ),
                       )
                     else
-                      ..._all.map(_adminCard),
+                      ..._all.map((c) => _adminCard(c, l10n)),
                     const SizedBox(height: 20),
                   ],
                   if (_published.isEmpty)
@@ -230,7 +239,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                       child: Column(children: [
                         const Icon(Icons.campaign_outlined, size: 56, color: Colors.white24),
                         const SizedBox(height: 12),
-                        Text('Aucune annonce publiée pour vous pour le moment',
+                        Text(l10n.commPublishedEmpty,
                             style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
                       ]),
                     )
@@ -238,11 +247,11 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                     Row(children: [
                       Icon(Icons.campaign_rounded, color: AppColors.primaryLight, size: 16),
                       const SizedBox(width: 6),
-                      Text('Annonces publiées',
+                      Text(l10n.commPublished,
                           style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.bold)),
                     ]),
                     const SizedBox(height: 8),
-                    ..._published.map(_publishedCard),
+                    ..._published.map((c) => _publishedCard(c, l10n)),
                   ],
                   const SizedBox(height: 80),
                 ],
@@ -251,7 +260,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
     );
   }
 
-  Widget _adminCard(Map<String, dynamic> c) {
+  Widget _adminCard(Map<String, dynamic> c, AppLocalizations l10n) {
     final published = c['statut'] == 'PUBLIEE';
     return GlassCard(
       margin: const EdgeInsets.only(bottom: 8),
@@ -272,12 +281,12 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                   color: _statutColor(c['statut']).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(_statutLabel(c['statut']),
+                child: Text(_statutLabel(c['statut'], l10n),
                     style: TextStyle(color: _statutColor(c['statut']), fontSize: 8, fontWeight: FontWeight.bold)),
               ),
             ]),
             const SizedBox(height: 4),
-            Row(children: [_cibleChip(c)]),
+            Row(children: [_cibleChip(c, l10n)]),
             const SizedBox(height: 2),
             Text('${c['contenu'] ?? ''}',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 10),
@@ -303,7 +312,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
     );
   }
 
-  Widget _publishedCard(Map<String, dynamic> c) {
+  Widget _publishedCard(Map<String, dynamic> c, AppLocalizations l10n) {
     return GlassCard(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
@@ -313,7 +322,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
             child: Text('${c['titre']}',
                 style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
           ),
-          _cibleChip(c),
+          _cibleChip(c, l10n),
         ]),
         if (_formatDate(c['datePublication']).isNotEmpty) ...[
           const SizedBox(height: 4),
@@ -398,6 +407,7 @@ class _CommunicationSheetState extends State<_CommunicationSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
@@ -411,32 +421,32 @@ class _CommunicationSheetState extends State<_CommunicationSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(widget.edit != null ? 'Modifier l’annonce' : 'Nouvelle annonce',
+              Text(widget.edit != null ? l10n.commEdit : l10n.commNew,
                   style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: _titreCtrl,
                 style: const TextStyle(color: Colors.white),
-                decoration: _input('Titre', Icons.title),
+                decoration: _input(l10n.commInputTitle, Icons.title, l10n),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: _contenuCtrl,
                 style: const TextStyle(color: Colors.white),
                 maxLines: 4,
-                decoration: _input('Contenu', Icons.notes),
+                decoration: _input(l10n.commInputContent, Icons.notes, l10n),
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 initialValue: _cible,
                 dropdownColor: const Color(0xFF111C33),
                 style: const TextStyle(color: Colors.white, fontSize: 13),
-                decoration: _input('Cible de diffusion', Icons.people),
-                items: const [
-                  DropdownMenuItem(value: 'TOUS', child: Text('Toute l’église')),
-                  DropdownMenuItem(value: 'ROLE', child: Text('Par rôle')),
-                  DropdownMenuItem(value: 'FAMILLE', child: Text('Par famille')),
-                  DropdownMenuItem(value: 'DEPARTEMENT', child: Text('Par département')),
+                decoration: _input(l10n.commInputCible, Icons.people, l10n),
+                items: [
+                  DropdownMenuItem(value: 'TOUS', child: Text(l10n.commCibleAll)),
+                  DropdownMenuItem(value: 'ROLE', child: Text(l10n.commCibleRole)),
+                  DropdownMenuItem(value: 'FAMILLE', child: Text(l10n.commCibleFamily)),
+                  DropdownMenuItem(value: 'DEPARTEMENT', child: Text(l10n.commCibleDept)),
                 ],
                 onChanged: (v) => setState(() {
                   _cible = v ?? 'TOUS';
@@ -485,7 +495,7 @@ class _CommunicationSheetState extends State<_CommunicationSheet> {
                       initialValue: _familleId.isEmpty && items.isNotEmpty ? null : _familleId,
                       dropdownColor: const Color(0xFF111C33),
                       style: const TextStyle(color: Colors.white, fontSize: 13),
-                      decoration: _input('Famille', Icons.home),
+                      decoration: _input(l10n.commInputFamily, Icons.home, l10n),
                       items: items
                           .map((f) => DropdownMenuItem(value: '${f['id']}', child: Text('${f['nom']}')))
                           .toList(),
@@ -504,7 +514,7 @@ class _CommunicationSheetState extends State<_CommunicationSheet> {
                       initialValue: _departmentId.isEmpty && items.isNotEmpty ? null : _departmentId,
                       dropdownColor: const Color(0xFF111C33),
                       style: const TextStyle(color: Colors.white, fontSize: 13),
-                      decoration: _input('Département', Icons.business),
+                      decoration: _input(l10n.commInputDept, Icons.business, l10n),
                       items: items
                           .map((d) => DropdownMenuItem(value: '${d['id']}', child: Text('${d['nom']}')))
                           .toList(),
@@ -523,7 +533,7 @@ class _CommunicationSheetState extends State<_CommunicationSheet> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: _submit,
-                  child: Text(widget.edit != null ? 'Enregistrer' : 'Créer',
+                  child: Text(widget.edit != null ? l10n.commBtnSave : l10n.commBtnCreate,
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
@@ -534,7 +544,7 @@ class _CommunicationSheetState extends State<_CommunicationSheet> {
     );
   }
 
-  InputDecoration _input(String label, IconData icon) {
+  InputDecoration _input(String label, IconData icon, AppLocalizations l10n) {
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),

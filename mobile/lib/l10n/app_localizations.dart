@@ -437,6 +437,59 @@ class AppLocalizations {
   String transferValidateCount(int count) => translate('transferValidateCount').replaceAll('{count}', count.toString());
   String get transferAttachmentsUpdated => translate('transferAttachmentsUpdated');
   String get transferAttachmentsError => translate('transferAttachmentsError');
+  String get bibleReadingTitle => translate('bibleReadingTitle');
+  String get myProgress => translate('myProgress');
+  String get days => translate('days');
+  String get consecutiveDays => translate('consecutiveDays');
+  String get todaysReading => translate('todaysReading');
+  String get markAsRead => translate('markAsRead');
+  String get addNote => translate('addNote');
+  String get availablePlans => translate('availablePlans');
+  String get noPlans => translate('noPlans');
+  String get familySharing => translate('familySharing');
+  String get devPlanTitle => translate('devPlanTitle');
+  String get globalProgress => translate('globalProgress');
+  String get activeObjectives => translate('activeObjectives');
+  String get completedObjectives => translate('completedObjectives');
+  String get spiritualJournalTitle => translate('spiritualJournalTitle');
+  String get reflection => translate('reflection');
+  String get thanksgiving => translate('thanksgiving');
+  String get praise => translate('praise');
+  String get lesson => translate('lesson');
+  String get newEntry => translate('newEntry');
+  String get discipleshipPathTitle => translate('discipleshipPathTitle');
+  String get familyCohesionTitle => translate('familyCohesionTitle');
+  String get cohesionScore => translate('cohesionScore');
+  String get goodEffort => translate('goodEffort');
+  String get needsImprovement => translate('needsImprovement');
+  String get networkFamilies => translate('networkFamilies');
+  String get noFamilies => translate('noFamilies');
+  String get familyResourcesTitle => translate('familyResourcesTitle');
+  String get categories => translate('categories');
+  String get recentResources => translate('recentResources');
+  String get noResources => translate('noResources');
+  String get makerTrackingTitle => translate('makerTrackingTitle');
+  String get timeline => translate('timeline');
+  String get noTimeline => translate('noTimeline');
+  String get sermonTranslationTitle => translate('sermonTranslationTitle');
+  String get translationInProgress => translate('translationInProgress');
+  String get recentTranslations => translate('recentTranslations');
+  String get noTranslations => translate('noTranslations');
+  String get skillMatchingTitle => translate('skillMatchingTitle');
+  String get launchAiMatching => translate('launchAiMatching');
+  String get matchingSubtitle => translate('matchingSubtitle');
+  String get proposals => translate('proposals');
+  String get noMatches => translate('noMatches');
+  String get skillsMatrixTitle => translate('skillsMatrixTitle');
+  String get overview => translate('overview');
+  String get skills => translate('skills');
+  String get evaluatedMembers => translate('evaluatedMembers');
+  String get gapsFound => translate('gapsFound');
+  String get skillsByDepartment => translate('skillsByDepartment');
+  String get needsMoreMembers => translate('needsMoreMembers');
+  String get read => translate('read');
+  String get progression => translate('progression');
+  String get prayer => translate('prayer');
   String get statusDraft => translate('statusDraft');
   String get statusPendingValidation => translate('statusPendingValidation');
   String get statusApproval => translate('statusApproval');
@@ -817,6 +870,80 @@ class AppLocalizations {
   String get detectedRows => translate('detectedRows');
   String get mappedColumns => translate('mappedColumns');
   String get mappingConfidence => translate('mappingConfidence');
+  // ── Lot H8 : communications + compliance ──
+  String get commTitle => translate('commTitle');
+  String get commManagement => translate('commManagement');
+  String get commEmpty => translate('commEmpty');
+  String get commPublishedEmpty => translate('commPublishedEmpty');
+  String get commNew => translate('commNew');
+  String get commEdit => translate('commEdit');
+  String get commPublished => translate('commPublished');
+  String commPublishSuccess(String count) => translate('commPublishSuccess').replaceAll('{count}', count);
+  String get commPublishError => translate('commPublishError');
+  String get commDeleteTitle => translate('commDeleteTitle');
+  String get commDeleted => translate('commDeleted');
+  String get commDeleteError => translate('commDeleteError');
+  String get commCreated => translate('commCreated');
+  String get commModified => translate('commModified');
+  String get commSaveError => translate('commSaveError');
+  String get commStatusDraft => translate('commStatusDraft');
+  String get commStatusPublished => translate('commStatusPublished');
+  String get commStatusArchived => translate('commStatusArchived');
+  String get commCibleAll => translate('commCibleAll');
+  String get commCibleRole => translate('commCibleRole');
+  String get commCibleFamily => translate('commCibleFamily');
+  String get commCibleDept => translate('commCibleDept');
+  String get commBtnCreate => translate('commBtnCreate');
+  String get commBtnSave => translate('commBtnSave');
+  String get commInputTitle => translate('commInputTitle');
+  String get commInputContent => translate('commInputContent');
+  String get commInputCible => translate('commInputCible');
+  String get commInputFamily => translate('commInputFamily');
+  String get commInputDept => translate('commInputDept');
+  String get complianceTitle => translate('complianceTitle');
+  String get complianceVerifyAudit => translate('complianceVerifyAudit');
+  String get complianceTabOverview => translate('complianceTabOverview');
+  String get complianceTabRetention => translate('complianceTabRetention');
+  String get complianceTabAudit => translate('complianceTabAudit');
+  String get complianceTabPortability => translate('complianceTabPortability');
+  String get complianceStatPolicies => translate('complianceStatPolicies');
+  String get complianceStatConsents => translate('complianceStatConsents');
+  String get complianceStatAuditEntries => translate('complianceStatAuditEntries');
+  String get complianceStatGdprRequests => translate('complianceStatGdprRequests');
+  String get complianceAuditIntegrity => translate('complianceAuditIntegrity');
+  String get complianceAuditValid => translate('complianceAuditValid');
+  String get complianceAuditInvalid => translate('complianceAuditInvalid');
+  String complianceVerifySuccess(String count) => translate('complianceVerifySuccess').replaceAll('{count}', count);
+  String complianceVerifyBroken(String count) => translate('complianceVerifyBroken').replaceAll('{count}', count);
+  String get complianceVerifyImpossible => translate('complianceVerifyImpossible');
+  String complianceExportSuccess(String count) => translate('complianceExportSuccess').replaceAll('{count}', count);
+  String get complianceExportError => translate('complianceExportError');
+  String get complianceChecklist => translate('complianceChecklist');
+  String get complianceCheckPolicy => translate('complianceCheckPolicy');
+  String get complianceCheckConsents => translate('complianceCheckConsents');
+  String get complianceCheckAudit => translate('complianceCheckAudit');
+  String get complianceCheckPortability => translate('complianceCheckPortability');
+  String get complianceCheckRightToForget => translate('complianceCheckRightToForget');
+  String get complianceCheckEncryption => translate('complianceCheckEncryption');
+  String get compliancePurgeTitle => translate('compliancePurgeTitle');
+  String get compliancePurgeContent => translate('compliancePurgeContent');
+  String get compliancePurgeAction => translate('compliancePurgeAction');
+  String get compliancePurgeSuccess => translate('compliancePurgeSuccess');
+  String get complianceRetentionTitle => translate('complianceRetentionTitle');
+  String get complianceRetentionEmpty => translate('complianceRetentionEmpty');
+  String get complianceRetentionDurations => translate('complianceRetentionDurations');
+  String get complianceActionAnonymize => translate('complianceActionAnonymize');
+  String get complianceActionArchive => translate('complianceActionArchive');
+  String get complianceAuditEmpty => translate('complianceAuditEmpty');
+  String get complianceExportTitle => translate('complianceExportTitle');
+  String get complianceExportSubtitle => translate('complianceExportSubtitle');
+  String get complianceExportContent => translate('complianceExportContent');
+  String get complianceExportProfile => translate('complianceExportProfile');
+  String get complianceExportSouls => translate('complianceExportSouls');
+  String get complianceExportConsents => translate('complianceExportConsents');
+  String get complianceExportGdpr => translate('complianceExportGdpr');
+  String get complianceExportMeta => translate('complianceExportMeta');
+  String get complianceExportBtn => translate('complianceExportBtn');
   String get launchMigration => translate('launchMigration');
   String get previousMigrations => translate('previousMigrations');
   String get noMigrations => translate('noMigrations');
@@ -869,6 +996,22 @@ class AppLocalizations {
   String get activeMakers => translate('activeMakers');
   String get familiesAtRisk => translate('familiesAtRisk');
   String get twelveAxes => translate('twelveAxes');
+
+  // ==================== ONBOARDING / LANDING ====================
+  String get onboardingSkip => translate('onboardingSkip');
+  String get onboardingNext => translate('onboardingNext');
+  String get onboardingStart => translate('onboardingStart');
+  String get onboardingWelcomeTitle => translate('onboardingWelcomeTitle');
+  String get onboardingWelcomeDesc => translate('onboardingWelcomeDesc');
+  String get onboardingTrackingTitle => translate('onboardingTrackingTitle');
+  String get onboardingTrackingDesc => translate('onboardingTrackingDesc');
+  String get onboardingOfflineTitle => translate('onboardingOfflineTitle');
+  String get onboardingOfflineDesc => translate('onboardingOfflineDesc');
+  String get onboardingNotificationsTitle => translate('onboardingNotificationsTitle');
+  String get onboardingNotificationsDesc => translate('onboardingNotificationsDesc');
+  String get onboardingSecurityTitle => translate('onboardingSecurityTitle');
+  String get onboardingSecurityDesc => translate('onboardingSecurityDesc');
+  String get onboardingAR => translate('onboardingAR');
 
   // ==================== FRENCH ====================
   static const Map<String, String> _french = {
@@ -1666,6 +1809,146 @@ class AppLocalizations {
     'statusExecuted': 'Exécuté',
     'statusArchive': 'Archivé',
     'statusRequestedInfo': 'Demande d\'informations',
+    'bibleReadingTitle': 'Plan de Lecture Biblique',
+    'myProgress': 'Ma progression',
+    'days': 'jours',
+    'consecutiveDays': 'jours consécutifs',
+    'todaysReading': 'Lecture du jour',
+    'markAsRead': 'Marquer lu',
+    'addNote': 'Ajouter une note',
+    'availablePlans': 'Plans disponibles',
+    'noPlans': 'Aucun plan disponible',
+    'familySharing': 'Partagé avec ma famille',
+    'devPlanTitle': 'Mon Plan de Développement',
+    'globalProgress': 'Progression globale',
+    'activeObjectives': 'objectifs actifs',
+    'completedObjectives': 'Objectifs terminés',
+    'spiritualJournalTitle': 'Journal Spirituel',
+    'reflection': 'Réflexion',
+    'thanksgiving': 'Remerciement',
+    'praise': 'Louange',
+    'lesson': 'Leçon',
+    'newEntry': 'Nouvelle entrée',
+    'discipleshipPathTitle': 'Parcours de discipolat',
+    'familyCohesionTitle': 'Cohésion Familiale',
+    'cohesionScore': 'Score de cohésion',
+    'goodEffort': 'Bon — Maintenir les efforts',
+    'needsImprovement': 'À améliorer',
+    'networkFamilies': 'Familles du réseau',
+    'noFamilies': 'Aucune famille',
+    'familyResourcesTitle': 'Ressources Familiales',
+    'categories': 'Catégories',
+    'recentResources': 'Ressources récentes',
+    'noResources': 'Aucune ressource',
+    'makerTrackingTitle': 'Mon Parcours de Faiseur',
+    'timeline': 'Timeline',
+    'noTimeline': 'Aucune activité',
+    'sermonTranslationTitle': 'Traduction des sermons',
+    'translationInProgress': 'Traduction en cours',
+    'recentTranslations': 'Traductions récentes',
+    'noTranslations': 'Aucune traduction',
+    'skillMatchingTitle': 'Matching Compétences',
+    'launchAiMatching': 'Lancer le matching IA',
+    'matchingSubtitle': 'Analyser les compétences vs besoins',
+    'proposals': 'Propositions',
+    'noMatches': 'Aucune proposition',
+    'skillsMatrixTitle': 'Matrice de Compétences',
+    'overview': 'Vue d\'ensemble',
+    'skills': 'Compétences',
+    'evaluatedMembers': 'Membres évalués',
+    'gapsFound': 'Gaps identifiés',
+    'skillsByDepartment': 'Compétences par département',
+    'needsMoreMembers': 'besoin de membres supplémentaires',
+    'read': 'Lu',
+    'progression': 'Progression',
+    'prayer': 'Prière',
+    'commTitle': 'Annonces',
+    'commManagement': 'Gestion des annonces',
+    'commEmpty': 'Aucune annonce. Créez la première avec le bouton +.',
+    'commPublishedEmpty': 'Aucune annonce publiée pour vous pour le moment',
+    'commNew': 'Nouvelle annonce',
+    'commEdit': 'Modifier l’annonce',
+    'commPublished': 'Annonces publiées',
+    'commPublishSuccess': 'Annonce publiée et diffusée à {count} destinataire(s)',
+    'commPublishError': 'Erreur lors de la publication',
+    'commDeleteTitle': 'Supprimer l’annonce ?',
+    'commDeleted': 'Annonce supprimée',
+    'commDeleteError': 'Erreur lors de la suppression',
+    'commCreated': 'Annonce créée',
+    'commModified': 'Annonce modifiée',
+    'commSaveError': 'Échec de l\'enregistrement',
+    'commStatusDraft': 'Brouillon',
+    'commStatusPublished': 'Publiée',
+    'commStatusArchived': 'Archivée',
+    'commCibleAll': 'Toute l\'église',
+    'commCibleRole': 'Par rôle',
+    'commCibleFamily': 'Par famille',
+    'commCibleDept': 'Par département',
+    'commBtnCreate': 'Créer',
+    'commBtnSave': 'Enregistrer',
+    'commInputTitle': 'Titre',
+    'commInputContent': 'Contenu',
+    'commInputCible': 'Cible de diffusion',
+    'commInputFamily': 'Famille',
+    'commInputDept': 'Département',
+    'complianceTitle': 'Compliance RGPD',
+    'complianceVerifyAudit': 'Vérifier audit',
+    'complianceTabOverview': 'Vue d\'ensemble',
+    'complianceTabRetention': 'Rétention',
+    'complianceTabAudit': 'Audit',
+    'complianceTabPortability': 'Portabilité',
+    'complianceStatPolicies': 'Politiques actives',
+    'complianceStatConsents': 'Consentements',
+    'complianceStatAuditEntries': 'Entrées audit',
+    'complianceStatGdprRequests': 'Demandes RGPD',
+    'complianceAuditIntegrity': 'Intégrité de l’audit',
+    'complianceAuditValid': 'Chaîne intacte — aucune altération',
+    'complianceAuditInvalid': 'Altération détectée',
+    'complianceVerifySuccess': 'Chaîne valide — {count} entrées vérifiées',
+    'complianceVerifyBroken': '{count} lien(s) brisé(s) dans la chaîne !',
+    'complianceVerifyImpossible': 'Vérification impossible',
+    'complianceExportSuccess': 'Export téléchargé ({count} sections)',
+    'complianceExportError': 'Erreur lors de l\'export',
+    'complianceChecklist': 'Checklist de conformité',
+    'complianceCheckPolicy': 'Politique de rétention',
+    'complianceCheckConsents': 'Consentements collectés',
+    'complianceCheckAudit': 'Audit trail immuable',
+    'complianceCheckPortability': 'Portabilité 1-clic',
+    'complianceCheckRightToForget': 'Droit à l’oubli',
+    'complianceCheckEncryption': 'Chiffrement AES-256',
+    'compliancePurgeTitle': 'Exécuter la purge ?',
+    'compliancePurgeContent': 'Les données dépassant la durée de rétention seront traitées.',
+    'compliancePurgeAction': 'Purger',
+    'compliancePurgeSuccess': 'Purge exécutée',
+    'complianceRetentionTitle': 'Politiques de rétention',
+    'complianceRetentionEmpty': 'Aucune politique configurée',
+    'complianceRetentionDurations': 'Durées suggérées',
+    'complianceActionAnonymize': 'Anonymiser',
+    'complianceActionArchive': 'Archiver',
+    'complianceAuditEmpty': 'Aucune entrée d\'audit',
+    'complianceExportTitle': 'Export portabilité',
+    'complianceExportSubtitle': 'RGPD Art. 20 — Format JSON',
+    'complianceExportContent': 'Contenu de l\'export :',
+    'complianceExportProfile': 'Profil utilisateur',
+    'complianceExportSouls': 'Âmes liées (disciples)',
+    'complianceExportConsents': 'Historique consentements',
+    'complianceExportGdpr': 'Demandes RGPD passées',
+    'complianceExportMeta': 'Métadonnées (format, version)',
+    'complianceExportBtn': 'Exporter mes données',
+    'onboardingSkip': 'Passer',
+    'onboardingNext': 'Suivant',
+    'onboardingStart': 'Commencer',
+    'onboardingAR': 'Visite AR',
+    'onboardingWelcomeTitle': 'Bienvenue sur Discipolat',
+    'onboardingWelcomeDesc': 'La plateforme qui facilite le suivi de disciples de votre église.',
+    'onboardingTrackingTitle': 'Suivi en temps réel',
+    'onboardingTrackingDesc': 'Accédez à vos âmes, rapports et événements depuis n\'importe où.',
+    'onboardingOfflineTitle': 'Mode hors ligne',
+    'onboardingOfflineDesc': 'Toutes les fonctionnalités critiques fonctionnent sans connexion.',
+    'onboardingNotificationsTitle': 'Notifications intelligentes',
+    'onboardingNotificationsDesc': 'Recevez des alertes personnalisées selon votre rôle.',
+    'onboardingSecurityTitle': 'Sécurité renforcée',
+    'onboardingSecurityDesc': 'Authentification biométrique, session sécurisée et protection des données.',
   };
 
   // ==================== ENGLISH ====================
@@ -2381,6 +2664,146 @@ class AppLocalizations {
     'statusExecuted': 'Executed',
     'statusArchive': 'Archived',
     'statusRequestedInfo': 'Information requested',
+    'bibleReadingTitle': 'Bible Reading Plan',
+    'myProgress': 'My progress',
+    'days': 'days',
+    'consecutiveDays': 'consecutive days',
+    'todaysReading': 'Today reading',
+    'markAsRead': 'Mark as read',
+    'addNote': 'Add a note',
+    'availablePlans': 'Available plans',
+    'noPlans': 'No plans available',
+    'familySharing': 'Shared with my family',
+    'devPlanTitle': 'My Development Plan',
+    'globalProgress': 'Global progress',
+    'activeObjectives': 'active objectives',
+    'completedObjectives': 'Completed objectives',
+    'spiritualJournalTitle': 'Spiritual Journal',
+    'reflection': 'Reflection',
+    'thanksgiving': 'Thanksgiving',
+    'praise': 'Praise',
+    'lesson': 'Lesson',
+    'newEntry': 'New entry',
+    'discipleshipPathTitle': 'Discipleship Path',
+    'familyCohesionTitle': 'Family Cohesion',
+    'cohesionScore': 'Cohesion score',
+    'goodEffort': 'Good — Keep it up',
+    'needsImprovement': 'Needs improvement',
+    'networkFamilies': 'Network families',
+    'noFamilies': 'No families',
+    'familyResourcesTitle': 'Family Resources',
+    'categories': 'Categories',
+    'recentResources': 'Recent resources',
+    'noResources': 'No resources',
+    'makerTrackingTitle': 'My Maker Journey',
+    'timeline': 'Timeline',
+    'noTimeline': 'No activity',
+    'sermonTranslationTitle': 'Sermon Translations',
+    'translationInProgress': 'Translation in progress',
+    'recentTranslations': 'Recent translations',
+    'noTranslations': 'No translations',
+    'skillMatchingTitle': 'Skill Matching',
+    'launchAiMatching': 'Launch AI matching',
+    'matchingSubtitle': 'Analyze skills vs needs',
+    'proposals': 'Proposals',
+    'noMatches': 'No proposals',
+    'skillsMatrixTitle': 'Skills Matrix',
+    'overview': 'Overview',
+    'skills': 'Skills',
+    'evaluatedMembers': 'Evaluated members',
+    'gapsFound': 'Gaps found',
+    'skillsByDepartment': 'Skills by department',
+    'needsMoreMembers': 'needs additional members',
+    'read': 'Read',
+    'progression': 'Progression',
+    'prayer': 'Prayer',
+    'commTitle': 'Announcements',
+    'commManagement': 'Announcement management',
+    'commEmpty': 'No announcements. Create the first with the + button.',
+    'commPublishedEmpty': 'No published announcements for you yet',
+    'commNew': 'New announcement',
+    'commEdit': 'Edit announcement',
+    'commPublished': 'Published announcements',
+    'commPublishSuccess': 'Announcement published and sent to {count} recipient(s)',
+    'commPublishError': 'Error publishing',
+    'commDeleteTitle': 'Delete announcement?',
+    'commDeleted': 'Announcement deleted',
+    'commDeleteError': 'Error deleting',
+    'commCreated': 'Announcement created',
+    'commModified': 'Announcement updated',
+    'commSaveError': 'Failed to save',
+    'commStatusDraft': 'Draft',
+    'commStatusPublished': 'Published',
+    'commStatusArchived': 'Archived',
+    'commCibleAll': 'Whole church',
+    'commCibleRole': 'By role',
+    'commCibleFamily': 'By family',
+    'commCibleDept': 'By department',
+    'commBtnCreate': 'Create',
+    'commBtnSave': 'Save',
+    'commInputTitle': 'Title',
+    'commInputContent': 'Content',
+    'commInputCible': 'Target audience',
+    'commInputFamily': 'Family',
+    'commInputDept': 'Department',
+    'complianceTitle': 'GDPR Compliance',
+    'complianceVerifyAudit': 'Verify audit',
+    'complianceTabOverview': 'Overview',
+    'complianceTabRetention': 'Retention',
+    'complianceTabAudit': 'Audit',
+    'complianceTabPortability': 'Portability',
+    'complianceStatPolicies': 'Active policies',
+    'complianceStatConsents': 'Consents',
+    'complianceStatAuditEntries': 'Audit entries',
+    'complianceStatGdprRequests': 'GDPR requests',
+    'complianceAuditIntegrity': 'Audit integrity',
+    'complianceAuditValid': 'Chain intact — no tampering',
+    'complianceAuditInvalid': 'Tampering detected',
+    'complianceVerifySuccess': 'Chain valid — {count} entries verified',
+    'complianceVerifyBroken': '{count} broken link(s) in chain!',
+    'complianceVerifyImpossible': 'Verification impossible',
+    'complianceExportSuccess': 'Export downloaded ({count} sections)',
+    'complianceExportError': 'Export error',
+    'complianceChecklist': 'Compliance checklist',
+    'complianceCheckPolicy': 'Retention policy',
+    'complianceCheckConsents': 'Consents collected',
+    'complianceCheckAudit': 'Immutable audit trail',
+    'complianceCheckPortability': '1-click portability',
+    'complianceCheckRightToForget': 'Right to be forgotten',
+    'complianceCheckEncryption': 'AES-256 encryption',
+    'compliancePurgeTitle': 'Execute purge?',
+    'compliancePurgeContent': 'Data exceeding the retention period will be processed.',
+    'compliancePurgeAction': 'Purge',
+    'compliancePurgeSuccess': 'Purge executed',
+    'complianceRetentionTitle': 'Retention policies',
+    'complianceRetentionEmpty': 'No policies configured',
+    'complianceRetentionDurations': 'Suggested durations',
+    'complianceActionAnonymize': 'Anonymize',
+    'complianceActionArchive': 'Archive',
+    'complianceAuditEmpty': 'No audit entries',
+    'complianceExportTitle': 'Export portability',
+    'complianceExportSubtitle': 'GDPR Art. 20 — JSON format',
+    'complianceExportContent': 'Export content:',
+    'complianceExportProfile': 'User profile',
+    'complianceExportSouls': 'Related souls (disciples)',
+    'complianceExportConsents': 'Consent history',
+    'complianceExportGdpr': 'Past GDPR requests',
+    'complianceExportMeta': 'Metadata (format, version)',
+    'complianceExportBtn': 'Export my data',
+    'onboardingSkip': 'Skip',
+    'onboardingNext': 'Next',
+    'onboardingStart': 'Get Started',
+    'onboardingAR': 'AR Visit',
+    'onboardingWelcomeTitle': 'Welcome to Discipolat',
+    'onboardingWelcomeDesc': 'The platform that makes disciple tracking easy for your church.',
+    'onboardingTrackingTitle': 'Real-time tracking',
+    'onboardingTrackingDesc': 'Access your souls, reports and events from anywhere.',
+    'onboardingOfflineTitle': 'Offline mode',
+    'onboardingOfflineDesc': 'All critical features work without connection.',
+    'onboardingNotificationsTitle': 'Smart notifications',
+    'onboardingNotificationsDesc': 'Receive personalized alerts based on your role.',
+    'onboardingSecurityTitle': 'Enhanced security',
+    'onboardingSecurityDesc': 'Biometric authentication, secure session and data protection.',
   };
 
   // ==================== PORTUGUESE ====================
@@ -3096,6 +3519,146 @@ class AppLocalizations {
     'statusExecuted': 'Executado',
     'statusArchive': 'Arquivado',
     'statusRequestedInfo': 'Informação solicitada',
+    'bibleReadingTitle': 'Plano de Leitura Bíblica',
+    'myProgress': 'Minha progressão',
+    'days': 'dias',
+    'consecutiveDays': 'dias consecutivos',
+    'todaysReading': 'Leitura do dia',
+    'markAsRead': 'Marcar como lido',
+    'addNote': 'Adicionar nota',
+    'availablePlans': 'Planos disponíveis',
+    'noPlans': 'Nenhum plano disponível',
+    'familySharing': 'Compartilhado com minha família',
+    'devPlanTitle': 'Meu Plano de Desenvolvimento',
+    'globalProgress': 'Progressão global',
+    'activeObjectives': 'objetivos ativos',
+    'completedObjectives': 'Objetivos concluídos',
+    'spiritualJournalTitle': 'Diário Espiritual',
+    'reflection': 'Reflexão',
+    'thanksgiving': 'Agradecimento',
+    'praise': 'Louvor',
+    'lesson': 'Lição',
+    'newEntry': 'Nova entrada',
+    'discipleshipPathTitle': 'Caminho do Discipulado',
+    'familyCohesionTitle': 'Coesão Familiar',
+    'cohesionScore': 'Pontuação de coesão',
+    'goodEffort': 'Bom — Manter os esforços',
+    'needsImprovement': 'Precisa melhorar',
+    'networkFamilies': 'Famílias da rede',
+    'noFamilies': 'Nenhuma família',
+    'familyResourcesTitle': 'Recursos Familiares',
+    'categories': 'Categorias',
+    'recentResources': 'Recursos recentes',
+    'noResources': 'Nenhum recurso',
+    'makerTrackingTitle': 'Minha Jornada de Fazedor',
+    'timeline': 'Linha do tempo',
+    'noTimeline': 'Nenhuma atividade',
+    'sermonTranslationTitle': 'Tradução de sermões',
+    'translationInProgress': 'Tradução em andamento',
+    'recentTranslations': 'Traduções recentes',
+    'noTranslations': 'Nenhuma tradução',
+    'skillMatchingTitle': 'Correspondência de Competências',
+    'launchAiMatching': 'Iniciar correspondência IA',
+    'matchingSubtitle': 'Analisar competências vs necessidades',
+    'proposals': 'Propostas',
+    'noMatches': 'Nenhuma proposta',
+    'skillsMatrixTitle': 'Matriz de Competências',
+    'overview': 'Visão geral',
+    'skills': 'Competências',
+    'evaluatedMembers': 'Membros avaliados',
+    'gapsFound': 'Lacunas encontradas',
+    'skillsByDepartment': 'Competências por departamento',
+    'needsMoreMembers': 'precisa de membros adicionais',
+    'read': 'Lido',
+    'progression': 'Progressão',
+    'prayer': 'Oração',
+    'commTitle': 'Anúncios',
+    'commManagement': 'Gestão de anúncios',
+    'commEmpty': 'Nenhum anúncio. Crie o primeiro com o botão +.',
+    'commPublishedEmpty': 'Nenhum anúncio publicado para si ainda',
+    'commNew': 'Novo anúncio',
+    'commEdit': 'Editar anúncio',
+    'commPublished': 'Anúncios publicados',
+    'commPublishSuccess': 'Anúncio publicado e enviado para {count} destinatário(s)',
+    'commPublishError': 'Erro ao publicar',
+    'commDeleteTitle': 'Eliminar anúncio?',
+    'commDeleted': 'Anúncio eliminado',
+    'commDeleteError': 'Erro ao eliminar',
+    'commCreated': 'Anúncio criado',
+    'commModified': 'Anúncio atualizado',
+    'commSaveError': 'Falha ao guardar',
+    'commStatusDraft': 'Rascunho',
+    'commStatusPublished': 'Publicado',
+    'commStatusArchived': 'Arquivado',
+    'commCibleAll': 'Toda a igreja',
+    'commCibleRole': 'Por função',
+    'commCibleFamily': 'Por família',
+    'commCibleDept': 'Por departamento',
+    'commBtnCreate': 'Criar',
+    'commBtnSave': 'Guardar',
+    'commInputTitle': 'Título',
+    'commInputContent': 'Conteúdo',
+    'commInputCible': 'Público-alvo',
+    'commInputFamily': 'Família',
+    'commInputDept': 'Departamento',
+    'complianceTitle': 'Conformidade RGPD',
+    'complianceVerifyAudit': 'Verificar auditoria',
+    'complianceTabOverview': 'Visão geral',
+    'complianceTabRetention': 'Retenção',
+    'complianceTabAudit': 'Auditoria',
+    'complianceTabPortability': 'Portabilidade',
+    'complianceStatPolicies': 'Políticas ativas',
+    'complianceStatConsents': 'Consentimentos',
+    'complianceStatAuditEntries': 'Entradas de auditoria',
+    'complianceStatGdprRequests': 'Pedidos RGPD',
+    'complianceAuditIntegrity': 'Integridade da auditoria',
+    'complianceAuditValid': 'Cadeia intacta — sem adulteração',
+    'complianceAuditInvalid': 'Adulteração detetada',
+    'complianceVerifySuccess': 'Cadeia válida — {count} entradas verificadas',
+    'complianceVerifyBroken': '{count} ligação(ões) quebrada(s) na cadeia!',
+    'complianceVerifyImpossible': 'Verificação impossível',
+    'complianceExportSuccess': 'Exportação descarregada ({count} secções)',
+    'complianceExportError': 'Erro na exportação',
+    'complianceChecklist': 'Lista de conformidade',
+    'complianceCheckPolicy': 'Política de retenção',
+    'complianceCheckConsents': 'Consentimentos recolhidos',
+    'complianceCheckAudit': 'Registo de auditoria imutável',
+    'complianceCheckPortability': 'Portabilidade 1-clique',
+    'complianceCheckRightToForget': 'Direito ao esquecimento',
+    'complianceCheckEncryption': 'Encriptação AES-256',
+    'compliancePurgeTitle': 'Executar purge?',
+    'compliancePurgeContent': 'Os dados que excedam o período de retenção serão processados.',
+    'compliancePurgeAction': 'Purgar',
+    'compliancePurgeSuccess': 'Purge executada',
+    'complianceRetentionTitle': 'Políticas de retenção',
+    'complianceRetentionEmpty': 'Nenhuma política configurada',
+    'complianceRetentionDurations': 'Durações sugeridas',
+    'complianceActionAnonymize': 'Anonimizar',
+    'complianceActionArchive': 'Arquivar',
+    'complianceAuditEmpty': 'Nenhuma entrada de auditoria',
+    'complianceExportTitle': 'Exportação de portabilidade',
+    'complianceExportSubtitle': 'RGPD Art. 20 — Formato JSON',
+    'complianceExportContent': 'Conteúdo da exportação:',
+    'complianceExportProfile': 'Perfil do utilizador',
+    'complianceExportSouls': 'Almas vinculadas (discípulos)',
+    'complianceExportConsents': 'Histórico de consentimentos',
+    'complianceExportGdpr': 'Pedidos RGPD anteriores',
+    'complianceExportMeta': 'Metadados (formato, versão)',
+    'complianceExportBtn': 'Exportar os meus dados',
+    'onboardingSkip': 'Pular',
+    'onboardingNext': 'Próximo',
+    'onboardingStart': 'Começar',
+    'onboardingAR': 'Visita AR',
+    'onboardingWelcomeTitle': 'Bem-vindo ao Discipolat',
+    'onboardingWelcomeDesc': 'A plataforma que facilita o acompanhamento de discípulos da sua igreja.',
+    'onboardingTrackingTitle': 'Acompanhamento em tempo real',
+    'onboardingTrackingDesc': 'Acesse suas almas, relatórios e eventos de qualquer lugar.',
+    'onboardingOfflineTitle': 'Modo offline',
+    'onboardingOfflineDesc': 'Todas as funcionalidades críticas funcionam sem conexão.',
+    'onboardingNotificationsTitle': 'Notificações inteligentes',
+    'onboardingNotificationsDesc': 'Receba alertas personalizados de acordo com o seu papel.',
+    'onboardingSecurityTitle': 'Segurança reforçada',
+    'onboardingSecurityDesc': 'Autenticação biométrica, sessão segura e proteção de dados.',
   };
 }
 

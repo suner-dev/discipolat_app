@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// P0 #4 — Compliance Manager RGPD/CCPA (mobile).
 ///
@@ -27,8 +28,6 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
   List<dynamic> _auditEntries = [];
   bool _isLoading = true;
   int _selectedTab = 0;
-
-  static const _tabs = ['Vue d\'ensemble', 'Rétention', 'Audit', 'Portabilité'];
 
   @override
   void initState() {
@@ -62,24 +61,26 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
       final res = await _api.get('/compliance/audit/verify');
       final data = res.data as Map<String, dynamic>;
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       if (data['integrityValid'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              '✅ Chaîne valide — ${data['totalEntries']} entrées vérifiées'),
+              '✅ ${l10n.complianceVerifySuccess('${data['totalEntries']}')}'),
           backgroundColor: Colors.green.shade700,
         ));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              '⚠️ ${data['brokenLinks']} lien(s) brisé(s) dans la chaîne !'),
+              '⚠️ ${l10n.complianceVerifyBroken('${data['brokenLinks']}')}'),
           backgroundColor: Colors.red.shade700,
         ));
       }
       _loadAll();
     } catch (_) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vérification impossible')),
+        SnackBar(content: Text(l10n.complianceVerifyImpossible)),
       );
     }
   }
@@ -88,39 +89,42 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
     try {
       final res = await _api.get('/compliance/portability/$userId');
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
-            '📦 Export téléchargé (${(res.data as Map).keys.length} sections)'),
+            '📦 ${l10n.complianceExportSuccess('${(res.data as Map).keys.length}')}'),
         backgroundColor: Colors.green.shade700,
       ));
     } catch (_) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erreur lors de l\'export')),
+        SnackBar(content: Text(l10n.complianceExportError)),
       );
     }
   }
 
   Future<void> _executePurge(String policyId) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1F2937),
-        title: const Text('Exécuter la purge ?',
-            style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'Les données dépassant la durée de rétention seront traitées.',
-          style: TextStyle(color: Colors.white70),
+        title: Text(l10n.compliancePurgeTitle,
+            style: const TextStyle(color: Colors.white)),
+        content: Text(
+          l10n.compliancePurgeContent,
+          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Purger',
-                style: TextStyle(color: Colors.red)),
+            child: Text(l10n.compliancePurgeAction,
+                style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -131,28 +135,36 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
       await _api.post('/compliance/retention-policies/$policyId/execute');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('✅ Purge exécutée'),
+        SnackBar(
+            content: Text('✅ ${l10n.compliancePurgeSuccess}'),
             backgroundColor: Colors.green),
       );
       _loadAll();
     } catch (_) {}
   }
 
+  List<String> _tabs(AppLocalizations l10n) => [
+    l10n.complianceTabOverview,
+    l10n.complianceTabRetention,
+    l10n.complianceTabAudit,
+    l10n.complianceTabPortability,
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFF030712),
       appBar: AppBar(
-        title: const Text('🛡️ Compliance RGPD',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('🛡️ ${l10n.complianceTitle}',
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.verified_user, color: Colors.white70),
             onPressed: _verifyIntegrity,
-            tooltip: 'Vérifier audit',
+            tooltip: l10n.complianceVerifyAudit,
           ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white70),
@@ -167,15 +179,16 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
           : Column(
               children: [
                 // Tab bar
-                _buildTabBar(),
+                _buildTabBar(l10n),
                 // Content
-                Expanded(child: _buildContent()),
+                Expanded(child: _buildContent(l10n)),
               ],
             ),
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(AppLocalizations l10n) {
+    final tabs = _tabs(l10n);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       padding: const EdgeInsets.all(4),
@@ -184,7 +197,7 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: List.generate(_tabs.length, (i) {
+        children: List.generate(tabs.length, (i) {
           final isSelected = _selectedTab == i;
           return Expanded(
             child: GestureDetector(
@@ -199,7 +212,7 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  _tabs[i],
+                  tabs[i],
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: isSelected
@@ -217,16 +230,16 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(AppLocalizations l10n) {
     switch (_selectedTab) {
       case 0:
-        return _buildOverviewTab();
+        return _buildOverviewTab(l10n);
       case 1:
-        return _buildRetentionTab();
+        return _buildRetentionTab(l10n);
       case 2:
-        return _buildAuditTab();
+        return _buildAuditTab(l10n);
       case 3:
-        return _buildPortabilityTab();
+        return _buildPortabilityTab(l10n);
       default:
         return const SizedBox.shrink();
     }
@@ -234,7 +247,7 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
 
   // ── Overview Tab ──────────────────────────────────────
 
-  Widget _buildOverviewTab() {
+  Widget _buildOverviewTab(AppLocalizations l10n) {
     return RefreshIndicator(
       onRefresh: _loadAll,
       child: ListView(
@@ -250,25 +263,25 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
             childAspectRatio: 1.4,
             children: [
               _buildStatCard(
-                'Politiques actives',
+                l10n.complianceStatPolicies,
                 '${_overview?['activeRetentionPolicies'] ?? 0}',
                 Icons.schedule,
                 const Color(0xFF06B6D4),
               ),
               _buildStatCard(
-                'Consentements',
+                l10n.complianceStatConsents,
                 '${_overview?['activeConsents'] ?? 0}',
                 Icons.how_to_reg,
                 const Color(0xFF22C55E),
               ),
               _buildStatCard(
-                'Entrées audit',
+                l10n.complianceStatAuditEntries,
                 '${_overview?['auditTotalEntries'] ?? 0}',
                 Icons.history,
                 const Color(0xFFA855F7),
               ),
               _buildStatCard(
-                'Demandes RGPD',
+                l10n.complianceStatGdprRequests,
                 '${_overview?['pendingGdprRequests'] ?? 0}',
                 Icons.assignment,
                 const Color(0xFFF59E0B),
@@ -298,15 +311,15 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Intégrité de l\'audit',
-                          style: TextStyle(
+                      Text(l10n.complianceAuditIntegrity,
+                          style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold)),
                       Text(
                         _overview?['auditIntegrityValid'] == true
-                            ? '✅ Chaîne intacte — aucune altération'
-                            : '⚠️ Altération détectée',
+                            ? '✅ ${l10n.complianceAuditValid}'
+                            : '⚠️ ${l10n.complianceAuditInvalid}',
                         style: TextStyle(
                             color: Colors.white.withAlpha(140), fontSize: 12),
                       ),
@@ -328,13 +341,13 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Checklist de conformité',
-                    style: TextStyle(
+                Text(l10n.complianceChecklist,
+                    style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
-                ..._buildChecklist(),
+                ..._buildChecklist(l10n),
               ],
             ),
           ),
@@ -368,14 +381,14 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
     );
   }
 
-  List<Widget> _buildChecklist() {
+  List<Widget> _buildChecklist(AppLocalizations l10n) {
     final items = [
-      ('Politique de rétention', (_overview?['activeRetentionPolicies'] ?? 0) > 0),
-      ('Consentements collectés', (_overview?['activeConsents'] ?? 0) > 0),
-      ('Audit trail immuable', _overview?['auditIntegrityValid'] == true),
-      ('Portabilité 1-clic', true),
-      ('Droit à l\'oubli', true),
-      ('Chiffrement AES-256', true),
+      (l10n.complianceCheckPolicy, (_overview?['activeRetentionPolicies'] ?? 0) > 0),
+      (l10n.complianceCheckConsents, (_overview?['activeConsents'] ?? 0) > 0),
+      (l10n.complianceCheckAudit, _overview?['auditIntegrityValid'] == true),
+      (l10n.complianceCheckPortability, true),
+      (l10n.complianceCheckRightToForget, true),
+      (l10n.complianceCheckEncryption, true),
     ];
     return items.map((item) {
       final (label, done) = item;
@@ -406,14 +419,14 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
 
   // ── Retention Tab ──────────────────────────────────────
 
-  Widget _buildRetentionTab() {
+  Widget _buildRetentionTab(AppLocalizations l10n) {
     return RefreshIndicator(
       onRefresh: _loadAll,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Politiques de rétention',
-              style: TextStyle(
+          Text(l10n.complianceRetentionTitle,
+              style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold)),
@@ -428,7 +441,7 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
                       Icon(Icons.schedule,
                           color: Colors.white.withAlpha(40), size: 48),
                       const SizedBox(height: 12),
-                      Text('Aucune politique configurée',
+                      Text(l10n.complianceRetentionEmpty,
                           style: TextStyle(
                               color: Colors.white.withAlpha(120), fontSize: 14)),
                     ],
@@ -437,14 +450,14 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
               ),
             )
           else
-            ..._policies.map((p) => _buildPolicyCard(p)),
+            ..._policies.map((p) => _buildPolicyCard(p, l10n)),
           const SizedBox(height: 16),
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Durées suggérées',
-                    style: TextStyle(
+                Text(l10n.complianceRetentionDurations,
+                    style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.bold)),
@@ -480,12 +493,12 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
     );
   }
 
-  Widget _buildPolicyCard(Map<String, dynamic> policy) {
+  Widget _buildPolicyCard(Map<String, dynamic> policy, AppLocalizations l10n) {
     final action = policy['actionOnExpiry'] == 'ANONYMIZE'
-        ? 'Anonymiser'
+        ? l10n.complianceActionAnonymize
         : policy['actionOnExpiry'] == 'DELETE'
-            ? 'Supprimer'
-            : 'Archiver';
+            ? l10n.delete
+            : l10n.complianceActionArchive;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GlassCard(
@@ -536,7 +549,7 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
 
   // ── Audit Tab ──────────────────────────────────────
 
-  Widget _buildAuditTab() {
+  Widget _buildAuditTab(AppLocalizations l10n) {
     return RefreshIndicator(
       onRefresh: _loadAll,
       child: _auditEntries.isEmpty
@@ -547,7 +560,7 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
                   Icon(Icons.history,
                       color: Colors.white.withAlpha(40), size: 48),
                   const SizedBox(height: 12),
-                  Text('Aucune entrée d\'audit',
+                  Text(l10n.complianceAuditEmpty,
                       style: TextStyle(
                           color: Colors.white.withAlpha(120), fontSize: 14)),
                 ],
@@ -635,7 +648,7 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
 
   // ── Portability Tab ──────────────────────────────────────
 
-  Widget _buildPortabilityTab() {
+  Widget _buildPortabilityTab(AppLocalizations l10n) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -648,17 +661,17 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
                   const Icon(Icons.download,
                       color: Color(0xFF22C55E), size: 24),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Export portabilité',
-                            style: TextStyle(
+                        Text(l10n.complianceExportTitle,
+                            style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold)),
-                        Text('RGPD Art. 20 — Format JSON',
-                            style: TextStyle(
+                        Text(l10n.complianceExportSubtitle,
+                            style: const TextStyle(
                                 color: Colors.white54, fontSize: 12)),
                       ],
                     ),
@@ -666,15 +679,15 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              const Text('Contenu de l\'export :',
-                  style: TextStyle(color: Colors.white70, fontSize: 13)),
+              Text(l10n.complianceExportContent,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13)),
               const SizedBox(height: 8),
               ...[
-                '👤 Profil utilisateur',
-                '📖 Âmes liées (disciples)',
-                '✅ Historique consentements',
-                '📋 Demandes RGPD passées',
-                '📦 Métadonnées (format, version)',
+                ('👤 ${l10n.complianceExportProfile}'),
+                ('📖 ${l10n.complianceExportSouls}'),
+                ('✅ ${l10n.complianceExportConsents}'),
+                ('📋 ${l10n.complianceExportGdpr}'),
+                ('📦 ${l10n.complianceExportMeta}'),
               ].map((item) => Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Row(
@@ -695,7 +708,7 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () => _exportPortability('current'),
                   icon: const Icon(Icons.download, size: 18),
-                  label: const Text('Exporter mes données'),
+                  label: Text(l10n.complianceExportBtn),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF22C55E),
                     foregroundColor: Colors.white,
