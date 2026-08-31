@@ -149,9 +149,9 @@ describe('CustomPageView — rendu public des pages personnalisées', () => {
   });
 
   it('rend les blocs GRAPHIQUE, CALENDRIER, TIMELINE et CHECKLIST', async () => {
-    // Date d'événement toujours dans le mois courant (aujourd'hui + 3 jours).
-    const soon = new Date(Date.now() + 3 * 86400000);
-    const iso = `${soon.getFullYear()}-${String(soon.getMonth() + 1).padStart(2, '0')}-${String(soon.getDate()).padStart(2, '0')}`;
+    // Date d'événement toujours dans le mois courant (jour 15 fixe).
+    const now = new Date();
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-15`;
     const page = JSON.parse(JSON.stringify(RESOLVED_PAGE));
     page.blocks = [
       {

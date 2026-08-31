@@ -84,6 +84,21 @@ app:
   whatsapp:
     # Pont WhatsApp Business Cloud API — désactivé tant que les credentials Meta ne sont pas fournis.
     enabled: ${WHATSAPP_ENABLED:false}
+  payments:
+    # Secret partagé accepté sur le webhook opérateur (vide => endpoint fermé, 503).
+    webhook-secret: ${PAYMENTS_WEBHOOK_SECRET:}
+    # Mode simulation robuste : confirme automatiquement les paiements PENDING
+    # sans passerelle réelle (utile en beta/dev pour rendre le module fonctionnel
+    # dîmes & offrandes de bout en bout). En production, laisser à false et
+    # brancher l'API opérateur via le webhook.
+    simulate-auto-confirm: ${PAYMENTS_SIMULATE_AUTO_CONFIRM:false}
+    # Délai avant confirmation automatique d'une intention PENDING (ms).
+    simulate-confirm-delay-ms: ${PAYMENTS_SIMULATE_CONFIRM_DELAY_MS:6000}
+    # Délai de confirmation auto pour les rôles autres que gestionnaires (ms),
+    # appliqué lorsque la simulation est active. Par défaut identique au délai nominal.
+    simulate-confirm-delay-non-manager-ms: ${PAYMENTS_SIMULATE_CONFIRM_DELAY_NON_MANAGER_MS:6000}
+    # Périodicité du balayage des intentions en attente (ms).
+    simulate-scan-interval-ms: ${PAYMENTS_SIMULATE_SCAN_INTERVAL_MS:5000}
   encryption:
     # Clé AES-256 (base64, 32 octets) pour le chiffrement au repos des données sensibles.
     # Générer avec : openssl rand -base64 32
@@ -184,6 +199,8 @@ app:
     demo-accounts-enabled: true
     seed-demo-accounts: true
     reset-enabled: true
+  payments:
+    simulate-auto-confirm: true
   jwt:
     private-key: ${JWT_PRIVATE_KEY:}
     public-key: ${JWT_PUBLIC_KEY:}
@@ -244,6 +261,10 @@ app:
     demo-accounts-enabled: true
     seed-demo-accounts: true
     reset-enabled: true
+  payments:
+    # Environnement bêta : module dîmes & offrandes fonctionnel de bout en bout
+    # via la passerelle simulée (aucune confirmation réelle opérateur requise).
+    simulate-auto-confirm: true
 
 ---
 spring:
