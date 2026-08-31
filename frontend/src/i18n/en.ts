@@ -507,6 +507,36 @@ const en: Record<string, string> = {
   'landing.footer.rights': 'All rights reserved.', 'landing.footer.links': 'Useful links',
   'landing.footer.about': 'About', 'landing.footer.contact': 'Contact',
   'landing.footer.privacy': 'Privacy', 'landing.footer.terms': 'Terms',
+
+
+  // Dîmes & offrandes (Mobile Money)
+  'giving.title': 'Tithes & Offerings',
+  'giving.subtitle': 'Instant Mobile Money — M-Pesa, MTN, Orange, Wave…',
+  'giving.purpose': 'Donation type',
+  'giving.operator': 'Operator',
+  'giving.amount': 'Amount (XOF)',
+  'giving.phone': 'Mobile Money number (optional)',
+  'giving.phonePlaceholder': '+225 07 xx xx xx xx',
+  'giving.donate': 'Give now',
+  'giving.pending': 'Payment being confirmed by the operator…',
+  'giving.byOperator': 'Breakdown by giving method',
+  'giving.lastPayments': 'Latest payments',
+  'giving.noPayments': 'No payments yet.',
+  'giving.initiated': 'Payment initiated — reference {ref}',
+  'giving.confirmed': 'Payment confirmed — receipt generated!',
+  'giving.status.confirmed': 'Confirmed',
+  'giving.status.pending': 'Pending',
+  'giving.status.failed': 'Failed',
+  'giving.status.cancelled': 'Cancelled',
+  'giving.receipt': 'Tax receipt',
+  'giving.receiptUnavailable': 'Receipt unavailable.',
+  'giving.purpose.dime': 'Tithe',
+  'giving.purpose.offrande': 'Offering',
+  'giving.purpose.promesse': 'Pledge',
+  'giving.purpose.projet': 'Special project',
+  'giving.purpose.diaspora': 'Diaspora gift',
+  'giving.operator.urban': 'Orange Money',
+  'giving.recurring.title': 'Recurring gifts',
 };
 
 export default en;

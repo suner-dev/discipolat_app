@@ -548,6 +548,36 @@ const sw: Record<string, string> = {
   'contentModeration.approve': 'Idhinisha',
   'contentModeration.reject': 'Kataa',
 
+
+
+  // Dîmes & offrandes (Mobile Money)
+  'giving.title': 'Zaka na Sadaka',
+  'giving.subtitle': 'Pesa ya simu ya papo hapo — M-Pesa, MTN, Orange, Wave…',
+  'giving.purpose': 'Aina ya mchango',
+  'giving.operator': 'Mtoa huduma',
+  'giving.amount': 'Kiasi (XOF)',
+  'giving.phone': 'Nambari ya pesa ya simu (si lazima)',
+  'giving.phonePlaceholder': '+225 07 xx xx xx xx',
+  'giving.donate': 'Toa sasa',
+  'giving.pending': 'Malipo yanathibitishwa na mtoa huduma…',
+  'giving.byOperator': 'Mgawanyo kwa njia ya mchango',
+  'giving.lastPayments': 'Malipo ya hivi karibuni',
+  'giving.noPayments': 'Hakuna malipo bado.',
+  'giving.initiated': 'Malipo yameanzishwa — rejeleo {ref}',
+  'giving.confirmed': 'Malipo yamethibitishwa — risiti imetolewa!',
+  'giving.status.confirmed': 'Imethibitishwa',
+  'giving.status.pending': 'Inasubiri',
+  'giving.status.failed': 'Imeshindwa',
+  'giving.status.cancelled': 'Imeghairiwa',
+  'giving.receipt': 'Risiti ya kodi',
+  'giving.receiptUnavailable': 'Risiti haipatikani.',
+  'giving.purpose.dime': 'Zaka',
+  'giving.purpose.offrande': 'Sadaka',
+  'giving.purpose.promesse': 'Ahadi',
+  'giving.purpose.projet': 'Mradi maalum',
+  'giving.purpose.diaspora': 'Mchango wa diaspora',
+  'giving.operator.urban': 'Orange Money',
+  'giving.recurring.title': 'Michango ya mara kwa mara',
 };
 
 export default sw;

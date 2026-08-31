@@ -564,6 +564,36 @@ const es: Record<string, string> = {
   'contentModeration.approve': 'Aprobar',
   'contentModeration.reject': 'Rechazar',
 
+
+
+  // Dîmes & offrandes (Mobile Money)
+  'giving.title': 'Diezmos y Ofrendas',
+  'giving.subtitle': 'Dinero móvil instantáneo — M-Pesa, MTN, Orange, Wave…',
+  'giving.purpose': 'Tipo de donación',
+  'giving.operator': 'Operador',
+  'giving.amount': 'Monto (XOF)',
+  'giving.phone': 'Número de dinero móvil (opcional)',
+  'giving.phonePlaceholder': '+225 07 xx xx xx xx',
+  'giving.donate': 'Donar ahora',
+  'giving.pending': 'Pago en proceso de confirmación por el operador…',
+  'giving.byOperator': 'Desglose por método de donación',
+  'giving.lastPayments': 'Últimos pagos',
+  'giving.noPayments': 'Aún no hay pagos.',
+  'giving.initiated': 'Pago iniciado — referencia {ref}',
+  'giving.confirmed': '¡Pago confirmado — recibo generado!',
+  'giving.status.confirmed': 'Confirmado',
+  'giving.status.pending': 'Pendiente',
+  'giving.status.failed': 'Fallido',
+  'giving.status.cancelled': 'Cancelado',
+  'giving.receipt': 'Recibo fiscal',
+  'giving.receiptUnavailable': 'Recibo no disponible.',
+  'giving.purpose.dime': 'Diezmo',
+  'giving.purpose.offrande': 'Ofrenda',
+  'giving.purpose.promesse': 'Promesa',
+  'giving.purpose.projet': 'Proyecto especial',
+  'giving.purpose.diaspora': 'Donación diáspora',
+  'giving.operator.urban': 'Orange Money',
+  'giving.recurring.title': 'Dones recurrentes',
 };
 
 export default es;

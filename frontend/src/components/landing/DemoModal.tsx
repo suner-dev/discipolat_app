@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { X, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { useSettings } from '@/contexts/SettingsContext';
+import api from '@/lib/api';
 
 interface DemoModalProps {
   open: boolean;
@@ -45,7 +46,7 @@ export default function DemoModal({ open, onClose }: DemoModalProps) {
   const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.church.trim()) {
       setError(true);
@@ -54,19 +55,38 @@ export default function DemoModal({ open, onClose }: DemoModalProps) {
     setError(false);
     setSending(true);
 
-    const subject = encodeURIComponent(`[Discipolat] Demande de démonstration — ${form.church.trim()}`);
-    const body =
-      'Nom : ' + form.name.trim() + '\n' +
-      'Email : ' + form.email.trim() + '\n' +
-      'Église : ' + form.church.trim() + '\n' +
-      'Rôle : ' + (form.role.trim() || '—') + '\n\n' +
-      form.message.trim();
-    const encodedBody = encodeURIComponent(body).replace(/%0A/g, '%0D%0A');
+    const payload = {
+      fullName: form.name.trim(),
+      email: form.email.trim(),
+      churchName: form.church.trim(),
+      role: form.role.trim() || undefined,
+      message: form.message.trim() || undefined,
+      source: 'landing',
+    };
 
-    // Ouvre la messagerie par défaut avec le message pré-rempli.
-    window.open(`mailto:${targetEmail}?subject=${subject}&body=${encodedBody}`, '_self');
+    const mailToFallback = () => {
+      const subject = encodeURIComponent(`[Discipolat] Demande de démonstration — ${form.church.trim()}`);
+      const body =
+        'Nom : ' + form.name.trim() + '\n' +
+        'Email : ' + form.email.trim() + '\n' +
+        'Église : ' + form.church.trim() + '\n' +
+        'Rôle : ' + (form.role.trim() || '—') + '\n\n' +
+        form.message.trim();
+      const encodedBody = encodeURIComponent(body).replace(/%0A/g, '%0D%0A');
+      // Ouvre la messagerie par défaut avec le message pré-rempli.
+      window.open(`mailto:${targetEmail}?subject=${subject}&body=${encodedBody}`, '_self');
+    };
 
-    window.setTimeout(() => { setSending(false); setDone(true); }, 700);
+    try {
+      // Envoi réel au backend (persisté + visible côté admin).
+      await api.post('/public/demo-requests', payload);
+      setSending(false);
+      setDone(true);
+    } catch {
+      // API indisponible → repli messagerie (la demande part quand même).
+      mailToFallback();
+      window.setTimeout(() => { setSending(false); setDone(true); }, 500);
+    }
   };
 
   const inputCls =

@@ -81,6 +81,13 @@ public class PerIpRateLimiter {
     @Value("${app.rate-limiting.switch-role-period-minutes:1}")
     private int switchRolePeriodMinutes;
 
+    @Value("${app.rate-limiting.demo-request-capacity:3}")
+    private int demoRequestCapacity;
+    @Value("${app.rate-limiting.demo-request-refill:3}")
+    private int demoRequestRefill;
+    @Value("${app.rate-limiting.demo-request-period-minutes:10}")
+    private int demoRequestPeriodMinutes;
+
     private final MeterRegistry meterRegistry;
     private final boolean usingRedis;
     private final LettuceBasedProxyManager<byte[]> redisProxyManager;
@@ -89,9 +96,11 @@ public class PerIpRateLimiter {
     private Counter counterLoginTotal, counterRefreshTotal, counterForgotPasswordTotal;
     private Counter counterResetPasswordTotal, counterActivateTotal, counterChangePasswordTotal;
     private Counter counterSwitchRoleTotal;
+    private Counter counterDemoRequestTotal;
     private Counter counterLoginDenied, counterRefreshDenied, counterForgotPasswordDenied;
     private Counter counterResetPasswordDenied, counterActivateDenied, counterChangePasswordDenied;
     private Counter counterSwitchRoleDenied;
+    private Counter counterDemoRequestDenied;
 
     public PerIpRateLimiter(
             Optional<LettuceBasedProxyManager<byte[]>> redisProxyManager,
@@ -116,6 +125,7 @@ public class PerIpRateLimiter {
         counterActivateTotal = buildCounter("activate", "total");
         counterChangePasswordTotal = buildCounter("change_password", "total");
         counterSwitchRoleTotal = buildCounter("switch_role", "total");
+        counterDemoRequestTotal = buildCounter("demo_request", "total");
 
         counterLoginDenied = buildCounter("login", "denied");
         counterRefreshDenied = buildCounter("refresh", "denied");
@@ -124,6 +134,7 @@ public class PerIpRateLimiter {
         counterActivateDenied = buildCounter("activate", "denied");
         counterChangePasswordDenied = buildCounter("change_password", "denied");
         counterSwitchRoleDenied = buildCounter("switch_role", "denied");
+        counterDemoRequestDenied = buildCounter("demo_request", "denied");
     }
 
     private Counter buildCounter(String endpoint, String result) {
@@ -169,6 +180,12 @@ public class PerIpRateLimiter {
     public RateLimitResult tryConsumeSwitchRole(String ip) {
         return consume("switch_role", switchRoleCapacity, switchRoleRefill, switchRolePeriodMinutes, ip,
                 counterSwitchRoleTotal, counterSwitchRoleDenied);
+    }
+
+    /** Demandes de démonstration (endpoint public landing) — quota serré anti-spam. */
+    public RateLimitResult tryConsumeDemoRequest(String ip) {
+        return consume("demo_request", demoRequestCapacity, demoRequestRefill, demoRequestPeriodMinutes, ip,
+                counterDemoRequestTotal, counterDemoRequestDenied);
     }
 
     public static String extractClientIp(HttpServletRequest request) {

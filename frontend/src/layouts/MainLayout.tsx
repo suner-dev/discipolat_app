@@ -7,6 +7,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import { usePlatformMeta } from '@/contexts/MetaContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { RealtimeSync } from '@/hooks/useRealtimeSync';
 import { FlaskConical, X } from 'lucide-react';
 
 const TESTER_BANNER_KEY = 'discipolat:tester-banner-dismissed';
@@ -35,6 +36,9 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen flex bg-gradient-mesh">
+      {/* Synchronisation temps réel (SSE) : les données saisies par d'autres rôles
+          apparaissent automatiquement, sans rechargement. */}
+      <RealtimeSync />
       {/* Sidebar */}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

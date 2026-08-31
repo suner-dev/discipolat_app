@@ -215,6 +215,36 @@ const ar: Record<string, string> = {
   'broadcast.new': 'بث جديد',
   'broadcast.send': 'إرسال',
   'broadcast.draft': 'مسودة',
+
+
+  // Dîmes & offrandes (Mobile Money)
+  'giving.title': 'العشور والتقدمات',
+  'giving.subtitle': 'دفع عبر الهاتف فوري — M-Pesa، MTN، Orange، Wave…',
+  'giving.purpose': 'نوع التبرع',
+  'giving.operator': 'المشغل',
+  'giving.amount': 'المبلغ (XOF)',
+  'giving.phone': 'رقم الدفع عبر الهاتف (اختياري)',
+  'giving.phonePlaceholder': '+225 07 xx xx xx xx',
+  'giving.donate': 'تبرع الآن',
+  'giving.pending': 'جاري تأكيد الدفع من قبل المشغل…',
+  'giving.byOperator': 'التوزيع حسب طريقة التبرع',
+  'giving.lastPayments': 'أحدث المدفوعات',
+  'giving.noPayments': 'لا توجد مدفوعات بعد.',
+  'giving.initiated': 'تم بدء الدفع — المرجع {ref}',
+  'giving.confirmed': 'تم تأكيد الدفع — تم إنشاء الإيصال!',
+  'giving.status.confirmed': 'مؤكد',
+  'giving.status.pending': 'قيد الانتظار',
+  'giving.status.failed': 'فشل',
+  'giving.status.cancelled': 'ملغي',
+  'giving.receipt': 'إيصال ضريبي',
+  'giving.receiptUnavailable': 'الإيصال غير متوفر.',
+  'giving.purpose.dime': 'العشور',
+  'giving.purpose.offrande': 'تقدمة',
+  'giving.purpose.promesse': 'وعد',
+  'giving.purpose.projet': 'مشروع خاص',
+  'giving.purpose.diaspora': 'تبرع المغتربين',
+  'giving.operator.urban': 'أورنج موني',
+  'giving.recurring.title': 'التبرعات المتكررة',
 };
 
 export default ar;

@@ -6,6 +6,7 @@ import LandingPage from '@/pages/LandingPage';
 import AuthLayout from '@/layouts/AuthLayout';
 import LoginPage from '@/pages/LoginPage';
 import DemoModal from '@/components/landing/DemoModal';
+import api from '@/lib/api';
 
 vi.mock('@/lib/api', () => ({
   default: {
@@ -117,6 +118,17 @@ describe('LandingPage — page accueil', () => {
     await user.type(screen.getByLabelText(/email professionnel/i), 'jean@eglise.org');
     await user.type(screen.getByLabelText(/nom de l’église/i), 'Église Locale');
     await user.click(screen.getByRole('button', { name: /envoyer la demande/i }));
+
+    // La demande est bien envoyée au backend (persistée côté serveur).
+    expect(vi.mocked(api.post)).toHaveBeenCalledWith(
+      '/public/demo-requests',
+      expect.objectContaining({
+        fullName: 'Jean Dupont',
+        email: 'jean@eglise.org',
+        churchName: 'Église Locale',
+        source: 'landing',
+      })
+    );
 
     expect(await screen.findByText(/demande envoyée/i)).toBeInTheDocument();
   });

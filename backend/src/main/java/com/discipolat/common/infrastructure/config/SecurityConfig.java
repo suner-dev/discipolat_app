@@ -68,6 +68,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers("/api/v1/auth/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                    // Demande de démonstration depuis la landing (public, rate-limitée
+                    // par IP : 3 req / 10 min — cf. PerIpRateLimiter.tryConsumeDemoRequest)
+                    .requestMatchers(HttpMethod.POST, "/api/v1/public/demo-requests").permitAll()
                     // Webhook opérateur Mobile Money : sécurisé par la référence unique
                     // de l'intention + (en production) signature HMAC opérateur / IP allowlist.
                     // Webhook endpoint moved behind authentication — webhook secret is now mandatory in production.

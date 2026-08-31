@@ -123,6 +123,7 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/appointments': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
 
   // Nouvelles modules P1/P3
+  '/currency-settings': ['ADMIN'],
   '/streaming': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/broadcast': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/inventory': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],

@@ -209,6 +209,36 @@ const pt: Record<string, string> = {
   'broadcast.new': 'Nova transmissão',
   'broadcast.send': 'Enviar',
   'broadcast.draft': 'Rascunho',
+
+
+  // Dîmes & offrandes (Mobile Money)
+  'giving.title': 'Dízimos e Ofertas',
+  'giving.subtitle': 'Dinheiro móvel instantâneo — M-Pesa, MTN, Orange, Wave…',
+  'giving.purpose': 'Tipo de doação',
+  'giving.operator': 'Operadora',
+  'giving.amount': 'Valor (XOF)',
+  'giving.phone': 'Número de dinheiro móvel (opcional)',
+  'giving.phonePlaceholder': '+225 07 xx xx xx xx',
+  'giving.donate': 'Doar agora',
+  'giving.pending': 'Pagamento em confirmação pela operadora…',
+  'giving.byOperator': 'Repartição por método de doação',
+  'giving.lastPayments': 'Últimos pagamentos',
+  'giving.noPayments': 'Ainda não há pagamentos.',
+  'giving.initiated': 'Pagamento iniciado — referência {ref}',
+  'giving.confirmed': 'Pagamento confirmado — recibo gerado!',
+  'giving.status.confirmed': 'Confirmado',
+  'giving.status.pending': 'Pendente',
+  'giving.status.failed': 'Falhou',
+  'giving.status.cancelled': 'Cancelado',
+  'giving.receipt': 'Recibo fiscal',
+  'giving.receiptUnavailable': 'Recibo indisponível.',
+  'giving.purpose.dime': 'Dízimo',
+  'giving.purpose.offrande': 'Oferta',
+  'giving.purpose.promesse': 'Promessa',
+  'giving.purpose.projet': 'Projeto especial',
+  'giving.purpose.diaspora': 'Doação diáspora',
+  'giving.operator.urban': 'Orange Money',
+  'giving.recurring.title': 'Dons recorrentes',
 };
 
 export default pt;

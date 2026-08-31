@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/i18n/index';
 import { Loader2, Smartphone, CheckCircle2, XCircle, Clock, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -16,11 +17,11 @@ const OPERATORS = [
 ];
 
 const PURPOSES = [
-  { value: 'DIME', label: 'Dîme' },
-  { value: 'OFFRANDE', label: 'Offrande' },
-  { value: 'PROMESSE', label: 'Promesse' },
-  { value: 'PROJET_SPECIAL', label: 'Projet spécial' },
-  { value: 'DON_DIASPORA', label: 'Don diaspora' },
+  { value: 'DIME', key: 'giving.purpose.dime' },
+  { value: 'OFFRANDE', key: 'giving.purpose.offrande' },
+  { value: 'PROMESSE', key: 'giving.purpose.promesse' },
+  { value: 'PROJET_SPECIAL', key: 'giving.purpose.projet' },
+  { value: 'DON_DIASPORA', key: 'giving.purpose.diaspora' },
 ];
 
 interface PaymentIntent {
@@ -37,6 +38,7 @@ interface PaymentIntent {
 /** Tithe & Offering 2.0 — dons par Mobile Money avec suivi temps réel. */
 export default function GivingPage() {
   const { activeRole } = useAuth();
+  const { t } = useI18n();
   // Gestionnaires : vue globale (tous les paiements + statistiques agrégées).
   // Autres rôles : uniquement « mes dons » (endpoint /payments/mine).
   const canManage = activeRole === 'ADMIN' || activeRole === 'PASTEUR' || activeRole === 'RESPONSABLE';
@@ -47,13 +49,13 @@ export default function GivingPage() {
   const [pendingRef, setPendingRef] = useState<string | null>(null);
 
   const recentQuery = useQuery({
-    queryKey: ['payments-recent', canManage],
+    queryKey: ['payments', 'recent', canManage],
     queryFn: async () => (await api.get<PaymentIntent[]>(canManage ? '/payments' : '/payments/mine')).data,
     refetchInterval: pendingRef ? 3000 : false,
   });
 
   const statsQuery = useQuery({
-    queryKey: ['payments-stats'],
+    queryKey: ['payments', 'stats'],
     enabled: canManage,
     queryFn: async () =>
       (
@@ -77,22 +79,28 @@ export default function GivingPage() {
         })
       ).data,
     onSuccess: (intent) => {
-      toast.success(`Paiement initié — référence ${intent.providerReference}`);
+      toast.success(t('giving.initiated', { ref: intent.providerReference ?? '' }));
       setPendingRef(intent.id);
       setAmount('');
-      // Simulation de confirmation opérateur (sandbox, gestionnaires uniquement)
-      if (import.meta.env.DEV && canManage) {
-        setTimeout(() => {
-          api.post(`/payments/${intent.id}/simulate-confirmation?success=true`)
-            .then(() => toast.success('Paiement confirmé — reçu généré !'))
-            .catch(() => undefined)
-            .finally(() => {
-              setPendingRef(null);
-              statsQuery.refetch();
-              recentQuery.refetch();
-            });
-        }, 4000);
-      }
+      // Boucle le parcours de démonstration en sandbox : l'auteur (ou le
+      // simulateur backend automatique) confirme le paiement. En production,
+      // c'est le webhook opérateur réel qui déclenche {id}/simulate-confirmation.
+      setTimeout(() => {
+        api
+          .post(`/payments/${intent.id}/simulate-confirmation?success=true`)
+          .then(() => {
+            toast.success(t('giving.confirmed'));
+            statsQuery.refetch();
+          })
+          .catch(() => {
+            // Le backend peut rejeter la simulation (ex. webhook réel actif) :
+            // on s'appuie alors sur le polling pour refléter le statut final.
+          })
+          .finally(() => {
+            setPendingRef(null);
+            recentQuery.refetch();
+          });
+      }, 5000);
     },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
@@ -104,8 +112,8 @@ export default function GivingPage() {
           <Smartphone className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Dîmes & Offrandes</h1>
-          <p className="page-subtitle">Mobile Money instantané — M-Pesa, MTN, Orange, Wave…</p>
+          <h1 className="page-title">{t('giving.title')}</h1>
+          <p className="page-subtitle">{t('giving.subtitle')}</p>
         </div>
       </div>
 
@@ -118,15 +126,15 @@ export default function GivingPage() {
         className="glass-card p-6 mb-6 grid gap-4 md:grid-cols-2 animate-slide-up"
       >
         <div>
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Type de don</label>
+          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">{t('giving.purpose')}</label>
           <select className="input w-full" value={purpose} onChange={(e) => setPurpose(e.target.value)}>
             {PURPOSES.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
+              <option key={p.value} value={p.value}>{t(p.key)}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Opérateur</label>
+          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">{t('giving.operator')}</label>
           <select className="input w-full" value={operator} onChange={(e) => setOperator(e.target.value)}>
             {OPERATORS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -134,15 +142,15 @@ export default function GivingPage() {
           </select>
         </div>
         <div>
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Montant (XOF)</label>
+          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">{t('giving.amount')}</label>
           <input required type="number" min="100" step="100" placeholder="5000"
             className="input w-full" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
         <div>
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">
-            Numéro Mobile Money (optionnel)
+            {t('giving.phone')}
           </label>
-          <input type="tel" placeholder="+225 07 xx xx xx xx"
+          <input type="tel" placeholder={t('giving.phonePlaceholder')}
             className="input w-full" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <button type="submit" disabled={initiateMutation.isPending}
@@ -152,11 +160,11 @@ export default function GivingPage() {
           ) : (
             <Smartphone className="w-5 h-5" />
           )}
-          Donner maintenant
+          {t('giving.donate')}
         </button>
         {pendingRef && (
           <p className="md:col-span-2 text-sm text-center text-amber-600 dark:text-amber-400 flex items-center justify-center gap-2">
-            <Clock className="w-4 h-4 animate-pulse" /> Paiement en cours de confirmation par l'opérateur…
+            <Clock className="w-4 h-4 animate-pulse" /> {t('giving.pending')}
           </p>
         )}
       </form>
@@ -165,7 +173,7 @@ export default function GivingPage() {
       {(statsQuery.data?.byOperator ?? []).length > 0 && (
         <div className="glass-card p-6 mb-6">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary-500" /> Répartition par mode de don
+            <TrendingUp className="w-5 h-5 text-primary-500" /> {t('giving.byOperator')}
           </h2>
           <div className="space-y-3">
             {(statsQuery.data?.byOperator ?? []).map((o) => {
@@ -192,7 +200,7 @@ export default function GivingPage() {
       {/* Derniers paiements */}
       <div className="glass-card divide-y divide-gray-100 dark:divide-gray-800">
         <div className="px-5 py-4">
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Derniers paiements</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('giving.lastPayments')}</h2>
         </div>
         {(recentQuery.data ?? []).map((p) => (
           <div key={p.id} className="flex items-center justify-between px-5 py-3">
@@ -202,38 +210,39 @@ export default function GivingPage() {
                 {Number(p.amount).toLocaleString('fr-FR')} {p.currency}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {PURPOSES.find((x) => x.value === p.purpose)?.label ?? p.purpose} · {p.providerReference}
+                {t(PURPOSES.find((x) => x.value === p.purpose)?.key ?? 'giving.purpose.offrande')} · {p.providerReference}
               </p>
             </div>
             {p.status === 'CONFIRMED' && (
               <span className="badge badge-success flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Confirmé
+                <CheckCircle2 className="w-3 h-3" /> {t('giving.status.confirmed')}
               </span>
             )}
             {p.status === 'CONFIRMED' && (
-              <RecuFiscalButton id={p.id} />
+              <RecuFiscalButton id={p.id} t={t} />
             )}
             {p.status === 'PENDING' && (
               <span className="badge badge-warning flex items-center gap-1">
-                <Clock className="w-3 h-3" /> En attente
+                <Clock className="w-3 h-3" /> {t('giving.status.pending')}
               </span>
             )}
             {p.status === 'FAILED' && (
               <span className="badge badge-danger flex items-center gap-1">
-                <XCircle className="w-3 h-3" /> Échoué
+                <XCircle className="w-3 h-3" /> {t('giving.status.failed')}
               </span>
             )}
           </div>
         ))}
         {!recentQuery.isLoading && (recentQuery.data ?? []).length === 0 && (
-          <p className="text-center text-sm text-gray-500 py-8">Aucun paiement pour le moment.</p>
+          <p className="text-center text-sm text-gray-500 py-8">{t('giving.noPayments')}</p>
         )}
       </div>
     </div>
   );
 }
+
 /** P12 — Téléchargement du reçu fiscal PDF pour un paiement confirmé. */
-function RecuFiscalButton({ id }: { id: string }) {
+function RecuFiscalButton({ id, t }: { id: string; t: (k: string) => string }) {
   const [loading, setLoading] = useState(false);
   const download = async () => {
     setLoading(true);
@@ -248,14 +257,14 @@ function RecuFiscalButton({ id }: { id: string }) {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      toast.error('Reçu indisponible.');
+      toast.error(t('giving.receiptUnavailable'));
     } finally {
       setLoading(false);
     }
   };
   return (
     <button onClick={download} disabled={loading} className="btn-secondary btn-sm flex items-center gap-1.5 ml-2">
-      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>🧾</span>} Reçu fiscal
+      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>🧾</span>} {t('giving.receipt')}
     </button>
   );
 }
