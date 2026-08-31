@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_service.dart';
 import 'group_message_service.dart';
+import 'testimony_service.dart';
+import 'announcement_service.dart';
+import 'form_service.dart';
 import '../models/branding.dart';
 import '../models/platform_meta.dart';
 
@@ -49,5 +52,23 @@ final brandingProvider = FutureProvider<Branding>((ref) async {
 final groupMessageServiceProvider = Provider<GroupMessageService>((ref) {
   final api = ref.watch(apiServiceProvider);
   return GroupMessageService(api);
+});
+
+/// Service communautaire (témoignages) — backend TestimonyController.
+final testimonyServiceProvider = Provider<TestimonyService>((ref) {
+  final api = ref.watch(apiServiceProvider);
+  return TestimonyService(api);
+});
+
+/// Service annonces planifiées — backend AnnouncementController.
+final announcementServiceProvider = Provider<AnnouncementService>((ref) {
+  final api = ref.watch(apiServiceProvider);
+  return AnnouncementService(api);
+});
+
+/// Service formulaires — backend FormController.
+final formServiceProvider = Provider<FormService>((ref) {
+  final api = ref.watch(apiServiceProvider);
+  return FormService(api);
 });
 
