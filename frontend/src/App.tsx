@@ -180,6 +180,8 @@ const ChurchComparisonPage = lazy(() => import('@/pages/ChurchComparisonPage'));
 const UsageAnalyticsPage = lazy(() => import('@/pages/UsageAnalyticsPage'));
 const EncouragementsPage = lazy(() => import('@/pages/EncouragementsPage'));
 const NetworkPage = lazy(() => import('@/pages/NetworkPage'));
+const PassportPage = lazy(() => import('@/pages/PassportPage'));
+const PassportVerifyPage = lazy(() => import('@/pages/PassportVerifyPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -932,10 +934,12 @@ export default function App() {
           <Route path="/usage-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><UsageAnalyticsPage /></ProtectedRoute>} />
           <Route path="/encouragements" element={<ProtectedRoute><EncouragementsPage /></ProtectedRoute>} />
           <Route path="/network" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><NetworkPage /></ProtectedRoute>} />
+          <Route path="/passport" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><PassportPage /></ProtectedRoute>} />
         </Route>
 
         {/* Page d'accueil publique (landing) — redirige vers /dashboard si connecté */}
         <Route path="/" element={<HomeGate />} />
+        <Route path="/verify/passport/:code" element={<PassportVerifyPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </Suspense>

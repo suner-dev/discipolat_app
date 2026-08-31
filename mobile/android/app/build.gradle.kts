@@ -18,8 +18,10 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
     }
 
     defaultConfig {
@@ -49,4 +51,6 @@ flutter {
 dependencies {
     // Nécessaire pour flutter_local_notifications (core library desugaring).
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Fix camera_android_camerax: CallbackToFutureAdapter class not found
+    implementation("androidx.concurrent:concurrent-futures:1.2.0")
 }

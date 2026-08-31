@@ -19,6 +19,7 @@ nohup java -jar backend/target/discipolat-backend-1.0.0.jar \
   --app.environment=beta \
   --app.jwt.private-key-path=keys/private.pem \
   --app.jwt.public-key-path=keys/public.pem \
+  --app.encryption.aes-key="$ENCRYPTION_AES_KEY" \
   </dev/null > /tmp/discipolat-backend.log 2>&1 &
 BACKEND_PID=$!
 echo "   PID: $BACKEND_PID"

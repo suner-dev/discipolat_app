@@ -54,6 +54,71 @@ class ReportDraftsTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Cache hors-ligne des ressources partagées du réseau inter-églises.
+@DataClassName('NetworkResourceLocal')
+class NetworkResourcesTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get title => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get category => text()();
+  TextColumn get resourceType => text()();
+  TextColumn get fileUrl => text().nullable()();
+  TextColumn get content => text().nullable()();
+  BoolColumn get sharedWithPublic => boolean()();
+  IntColumn get downloads => integer().withDefault(const Constant(0))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  TextColumn get lastSyncAt => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Cache hors-ligne des événements inter-églises.
+@DataClassName('NetworkEventLocal')
+class NetworkEventsTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get title => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get eventType => text()();
+  TextColumn get location => text().nullable()();
+  TextColumn get city => text().nullable()();
+  TextColumn get country => text().nullable()();
+  TextColumn get startsAt => text()();
+  TextColumn get endsAt => text().nullable()();
+  IntColumn get maxParticipants => integer().nullable()();
+  IntColumn get currentParticipants => integer().withDefault(const Constant(0))();
+  BoolColumn get isVirtual => boolean().withDefault(const Constant(false))();
+  BoolColumn get sharedWithPublic => boolean()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  BoolColumn get joinedByMe => boolean().withDefault(const Constant(false))();
+  TextColumn get lastSyncAt => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Cache hors-ligne du répertoire des églises.
+@DataClassName('NetworkDirectoryLocal')
+class NetworkDirectoryTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get churchName => text().nullable()();
+  TextColumn get city => text().nullable()();
+  TextColumn get country => text().nullable()();
+  TextColumn get denomination => text().nullable()();
+  TextColumn get pastorName => text().nullable()();
+  TextColumn get contactEmail => text().nullable()();
+  TextColumn get contactPhone => text().nullable()();
+  IntColumn get memberCount => integer().nullable()();
+  BoolColumn get isListed => boolean().withDefault(const Constant(false))();
+  TextColumn get lastSyncAt => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// File d'attente des rapports à synchroniser à la reconnexion.
 @DataClassName('SyncQueueItem')
 class SyncQueueTable extends Table {
@@ -72,12 +137,12 @@ class SyncQueueTable extends Table {
 
 // ==================== DATABASE ====================
 
-@DriftDatabase(tables: [SoulsTable, ReportDraftsTable, SyncQueueTable])
+@DriftDatabase(tables: [SoulsTable, ReportDraftsTable, SyncQueueTable, NetworkResourcesTable, NetworkEventsTable, NetworkDirectoryTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -183,11 +248,64 @@ class AppDatabase extends _$AppDatabase {
         .write(SyncQueueTableCompanion(retryCount: Value(retryCount), lastError: Value(error)));
   }
 
+  // ==================== NETWORK CACHE ========================
+
+  Future<void> saveNetworkResources(List<NetworkResourceLocal> resources) async {
+    await batch((batch) {
+      for (final r in resources) {
+        batch.insert(networkResourcesTable, r, mode: InsertMode.replace);
+      }
+    });
+  }
+
+  Future<List<NetworkResourceLocal>> getLocalNetworkResources() =>
+      select(networkResourcesTable).get();
+
+  Future<void> clearNetworkResources() =>
+      delete(networkResourcesTable).go();
+
+  Future<void> saveNetworkEvents(List<NetworkEventLocal> events) async {
+    await batch((batch) {
+      for (final e in events) {
+        batch.insert(networkEventsTable, e, mode: InsertMode.replace);
+      }
+    });
+  }
+
+  Future<List<NetworkEventLocal>> getLocalNetworkEvents() =>
+      select(networkEventsTable).get();
+
+  Future<void> clearNetworkEvents() =>
+      delete(networkEventsTable).go();
+
+  Future<void> saveNetworkDirectory(List<NetworkDirectoryLocal> entries) async {
+    await batch((batch) {
+      for (final e in entries) {
+        batch.insert(networkDirectoryTable, e, mode: InsertMode.replace);
+      }
+    });
+  }
+
+  Future<List<NetworkDirectoryLocal>> getLocalNetworkDirectory() =>
+      select(networkDirectoryTable).get();
+
+  Future<void> clearNetworkDirectory() =>
+      delete(networkDirectoryTable).go();
+
+  Future<void> clearNetworkCache() async {
+    await delete(networkResourcesTable).go();
+    await delete(networkEventsTable).go();
+    await delete(networkDirectoryTable).go();
+  }
+
   /// Purge les données d'un tenant donné (à la déconnexion d'une organisation).
   Future<void> clearTenant(String tenantId) async {
     await (delete(soulsTable)..where((t) => t.tenantId.equals(tenantId))).go();
     await (delete(reportDraftsTable)..where((t) => t.tenantId.equals(tenantId))).go();
     await (delete(syncQueueTable)..where((t) => t.tenantId.equals(tenantId))).go();
+    await delete(networkResourcesTable).go();
+    await delete(networkEventsTable).go();
+    await delete(networkDirectoryTable).go();
   }
 
   /// Clear all data (e.g., on logout)
@@ -195,6 +313,9 @@ class AppDatabase extends _$AppDatabase {
     await delete(soulsTable).go();
     await delete(reportDraftsTable).go();
     await delete(syncQueueTable).go();
+    await delete(networkResourcesTable).go();
+    await delete(networkEventsTable).go();
+    await delete(networkDirectoryTable).go();
   }
 }
 

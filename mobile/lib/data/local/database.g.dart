@@ -1747,6 +1747,2066 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
   }
 }
 
+class $NetworkResourcesTableTable extends NetworkResourcesTable
+    with TableInfo<$NetworkResourcesTableTable, NetworkResourceLocal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NetworkResourcesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _tenantIdMeta =
+      const VerificationMeta('tenantId');
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+      'tenant_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _categoryMeta =
+      const VerificationMeta('category');
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+      'category', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _resourceTypeMeta =
+      const VerificationMeta('resourceType');
+  @override
+  late final GeneratedColumn<String> resourceType = GeneratedColumn<String>(
+      'resource_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _fileUrlMeta =
+      const VerificationMeta('fileUrl');
+  @override
+  late final GeneratedColumn<String> fileUrl = GeneratedColumn<String>(
+      'file_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _contentMeta =
+      const VerificationMeta('content');
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+      'content', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _sharedWithPublicMeta =
+      const VerificationMeta('sharedWithPublic');
+  @override
+  late final GeneratedColumn<bool> sharedWithPublic = GeneratedColumn<bool>(
+      'shared_with_public', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("shared_with_public" IN (0, 1))'));
+  static const VerificationMeta _downloadsMeta =
+      const VerificationMeta('downloads');
+  @override
+  late final GeneratedColumn<int> downloads = GeneratedColumn<int>(
+      'downloads', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _lastSyncAtMeta =
+      const VerificationMeta('lastSyncAt');
+  @override
+  late final GeneratedColumn<String> lastSyncAt = GeneratedColumn<String>(
+      'last_sync_at', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        tenantId,
+        title,
+        description,
+        category,
+        resourceType,
+        fileUrl,
+        content,
+        sharedWithPublic,
+        downloads,
+        isActive,
+        lastSyncAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'network_resources_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<NetworkResourceLocal> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(_tenantIdMeta,
+          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('category')) {
+      context.handle(_categoryMeta,
+          category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
+    if (data.containsKey('resource_type')) {
+      context.handle(
+          _resourceTypeMeta,
+          resourceType.isAcceptableOrUnknown(
+              data['resource_type']!, _resourceTypeMeta));
+    } else if (isInserting) {
+      context.missing(_resourceTypeMeta);
+    }
+    if (data.containsKey('file_url')) {
+      context.handle(_fileUrlMeta,
+          fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta));
+    }
+    if (data.containsKey('content')) {
+      context.handle(_contentMeta,
+          content.isAcceptableOrUnknown(data['content']!, _contentMeta));
+    }
+    if (data.containsKey('shared_with_public')) {
+      context.handle(
+          _sharedWithPublicMeta,
+          sharedWithPublic.isAcceptableOrUnknown(
+              data['shared_with_public']!, _sharedWithPublicMeta));
+    } else if (isInserting) {
+      context.missing(_sharedWithPublicMeta);
+    }
+    if (data.containsKey('downloads')) {
+      context.handle(_downloadsMeta,
+          downloads.isAcceptableOrUnknown(data['downloads']!, _downloadsMeta));
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    if (data.containsKey('last_sync_at')) {
+      context.handle(
+          _lastSyncAtMeta,
+          lastSyncAt.isAcceptableOrUnknown(
+              data['last_sync_at']!, _lastSyncAtMeta));
+    } else if (isInserting) {
+      context.missing(_lastSyncAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NetworkResourceLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NetworkResourceLocal(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      tenantId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      category: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}category'])!,
+      resourceType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}resource_type'])!,
+      fileUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}file_url']),
+      content: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}content']),
+      sharedWithPublic: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}shared_with_public'])!,
+      downloads: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}downloads'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      lastSyncAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}last_sync_at'])!,
+    );
+  }
+
+  @override
+  $NetworkResourcesTableTable createAlias(String alias) {
+    return $NetworkResourcesTableTable(attachedDatabase, alias);
+  }
+}
+
+class NetworkResourceLocal extends DataClass
+    implements Insertable<NetworkResourceLocal> {
+  final String id;
+  final String tenantId;
+  final String title;
+  final String? description;
+  final String category;
+  final String resourceType;
+  final String? fileUrl;
+  final String? content;
+  final bool sharedWithPublic;
+  final int downloads;
+  final bool isActive;
+  final String lastSyncAt;
+  const NetworkResourceLocal(
+      {required this.id,
+      required this.tenantId,
+      required this.title,
+      this.description,
+      required this.category,
+      required this.resourceType,
+      this.fileUrl,
+      this.content,
+      required this.sharedWithPublic,
+      required this.downloads,
+      required this.isActive,
+      required this.lastSyncAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['category'] = Variable<String>(category);
+    map['resource_type'] = Variable<String>(resourceType);
+    if (!nullToAbsent || fileUrl != null) {
+      map['file_url'] = Variable<String>(fileUrl);
+    }
+    if (!nullToAbsent || content != null) {
+      map['content'] = Variable<String>(content);
+    }
+    map['shared_with_public'] = Variable<bool>(sharedWithPublic);
+    map['downloads'] = Variable<int>(downloads);
+    map['is_active'] = Variable<bool>(isActive);
+    map['last_sync_at'] = Variable<String>(lastSyncAt);
+    return map;
+  }
+
+  NetworkResourcesTableCompanion toCompanion(bool nullToAbsent) {
+    return NetworkResourcesTableCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      title: Value(title),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      category: Value(category),
+      resourceType: Value(resourceType),
+      fileUrl: fileUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileUrl),
+      content: content == null && nullToAbsent
+          ? const Value.absent()
+          : Value(content),
+      sharedWithPublic: Value(sharedWithPublic),
+      downloads: Value(downloads),
+      isActive: Value(isActive),
+      lastSyncAt: Value(lastSyncAt),
+    );
+  }
+
+  factory NetworkResourceLocal.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NetworkResourceLocal(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      title: serializer.fromJson<String>(json['title']),
+      description: serializer.fromJson<String?>(json['description']),
+      category: serializer.fromJson<String>(json['category']),
+      resourceType: serializer.fromJson<String>(json['resourceType']),
+      fileUrl: serializer.fromJson<String?>(json['fileUrl']),
+      content: serializer.fromJson<String?>(json['content']),
+      sharedWithPublic: serializer.fromJson<bool>(json['sharedWithPublic']),
+      downloads: serializer.fromJson<int>(json['downloads']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      lastSyncAt: serializer.fromJson<String>(json['lastSyncAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'title': serializer.toJson<String>(title),
+      'description': serializer.toJson<String?>(description),
+      'category': serializer.toJson<String>(category),
+      'resourceType': serializer.toJson<String>(resourceType),
+      'fileUrl': serializer.toJson<String?>(fileUrl),
+      'content': serializer.toJson<String?>(content),
+      'sharedWithPublic': serializer.toJson<bool>(sharedWithPublic),
+      'downloads': serializer.toJson<int>(downloads),
+      'isActive': serializer.toJson<bool>(isActive),
+      'lastSyncAt': serializer.toJson<String>(lastSyncAt),
+    };
+  }
+
+  NetworkResourceLocal copyWith(
+          {String? id,
+          String? tenantId,
+          String? title,
+          Value<String?> description = const Value.absent(),
+          String? category,
+          String? resourceType,
+          Value<String?> fileUrl = const Value.absent(),
+          Value<String?> content = const Value.absent(),
+          bool? sharedWithPublic,
+          int? downloads,
+          bool? isActive,
+          String? lastSyncAt}) =>
+      NetworkResourceLocal(
+        id: id ?? this.id,
+        tenantId: tenantId ?? this.tenantId,
+        title: title ?? this.title,
+        description: description.present ? description.value : this.description,
+        category: category ?? this.category,
+        resourceType: resourceType ?? this.resourceType,
+        fileUrl: fileUrl.present ? fileUrl.value : this.fileUrl,
+        content: content.present ? content.value : this.content,
+        sharedWithPublic: sharedWithPublic ?? this.sharedWithPublic,
+        downloads: downloads ?? this.downloads,
+        isActive: isActive ?? this.isActive,
+        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      );
+  NetworkResourceLocal copyWithCompanion(NetworkResourcesTableCompanion data) {
+    return NetworkResourceLocal(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      title: data.title.present ? data.title.value : this.title,
+      description:
+          data.description.present ? data.description.value : this.description,
+      category: data.category.present ? data.category.value : this.category,
+      resourceType: data.resourceType.present
+          ? data.resourceType.value
+          : this.resourceType,
+      fileUrl: data.fileUrl.present ? data.fileUrl.value : this.fileUrl,
+      content: data.content.present ? data.content.value : this.content,
+      sharedWithPublic: data.sharedWithPublic.present
+          ? data.sharedWithPublic.value
+          : this.sharedWithPublic,
+      downloads: data.downloads.present ? data.downloads.value : this.downloads,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      lastSyncAt:
+          data.lastSyncAt.present ? data.lastSyncAt.value : this.lastSyncAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NetworkResourceLocal(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('category: $category, ')
+          ..write('resourceType: $resourceType, ')
+          ..write('fileUrl: $fileUrl, ')
+          ..write('content: $content, ')
+          ..write('sharedWithPublic: $sharedWithPublic, ')
+          ..write('downloads: $downloads, ')
+          ..write('isActive: $isActive, ')
+          ..write('lastSyncAt: $lastSyncAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      tenantId,
+      title,
+      description,
+      category,
+      resourceType,
+      fileUrl,
+      content,
+      sharedWithPublic,
+      downloads,
+      isActive,
+      lastSyncAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NetworkResourceLocal &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.title == this.title &&
+          other.description == this.description &&
+          other.category == this.category &&
+          other.resourceType == this.resourceType &&
+          other.fileUrl == this.fileUrl &&
+          other.content == this.content &&
+          other.sharedWithPublic == this.sharedWithPublic &&
+          other.downloads == this.downloads &&
+          other.isActive == this.isActive &&
+          other.lastSyncAt == this.lastSyncAt);
+}
+
+class NetworkResourcesTableCompanion
+    extends UpdateCompanion<NetworkResourceLocal> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String> title;
+  final Value<String?> description;
+  final Value<String> category;
+  final Value<String> resourceType;
+  final Value<String?> fileUrl;
+  final Value<String?> content;
+  final Value<bool> sharedWithPublic;
+  final Value<int> downloads;
+  final Value<bool> isActive;
+  final Value<String> lastSyncAt;
+  final Value<int> rowid;
+  const NetworkResourcesTableCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.description = const Value.absent(),
+    this.category = const Value.absent(),
+    this.resourceType = const Value.absent(),
+    this.fileUrl = const Value.absent(),
+    this.content = const Value.absent(),
+    this.sharedWithPublic = const Value.absent(),
+    this.downloads = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.lastSyncAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NetworkResourcesTableCompanion.insert({
+    required String id,
+    required String tenantId,
+    required String title,
+    this.description = const Value.absent(),
+    required String category,
+    required String resourceType,
+    this.fileUrl = const Value.absent(),
+    this.content = const Value.absent(),
+    required bool sharedWithPublic,
+    this.downloads = const Value.absent(),
+    this.isActive = const Value.absent(),
+    required String lastSyncAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        tenantId = Value(tenantId),
+        title = Value(title),
+        category = Value(category),
+        resourceType = Value(resourceType),
+        sharedWithPublic = Value(sharedWithPublic),
+        lastSyncAt = Value(lastSyncAt);
+  static Insertable<NetworkResourceLocal> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? title,
+    Expression<String>? description,
+    Expression<String>? category,
+    Expression<String>? resourceType,
+    Expression<String>? fileUrl,
+    Expression<String>? content,
+    Expression<bool>? sharedWithPublic,
+    Expression<int>? downloads,
+    Expression<bool>? isActive,
+    Expression<String>? lastSyncAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (category != null) 'category': category,
+      if (resourceType != null) 'resource_type': resourceType,
+      if (fileUrl != null) 'file_url': fileUrl,
+      if (content != null) 'content': content,
+      if (sharedWithPublic != null) 'shared_with_public': sharedWithPublic,
+      if (downloads != null) 'downloads': downloads,
+      if (isActive != null) 'is_active': isActive,
+      if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NetworkResourcesTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? tenantId,
+      Value<String>? title,
+      Value<String?>? description,
+      Value<String>? category,
+      Value<String>? resourceType,
+      Value<String?>? fileUrl,
+      Value<String?>? content,
+      Value<bool>? sharedWithPublic,
+      Value<int>? downloads,
+      Value<bool>? isActive,
+      Value<String>? lastSyncAt,
+      Value<int>? rowid}) {
+    return NetworkResourcesTableCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      resourceType: resourceType ?? this.resourceType,
+      fileUrl: fileUrl ?? this.fileUrl,
+      content: content ?? this.content,
+      sharedWithPublic: sharedWithPublic ?? this.sharedWithPublic,
+      downloads: downloads ?? this.downloads,
+      isActive: isActive ?? this.isActive,
+      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (resourceType.present) {
+      map['resource_type'] = Variable<String>(resourceType.value);
+    }
+    if (fileUrl.present) {
+      map['file_url'] = Variable<String>(fileUrl.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (sharedWithPublic.present) {
+      map['shared_with_public'] = Variable<bool>(sharedWithPublic.value);
+    }
+    if (downloads.present) {
+      map['downloads'] = Variable<int>(downloads.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (lastSyncAt.present) {
+      map['last_sync_at'] = Variable<String>(lastSyncAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NetworkResourcesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('category: $category, ')
+          ..write('resourceType: $resourceType, ')
+          ..write('fileUrl: $fileUrl, ')
+          ..write('content: $content, ')
+          ..write('sharedWithPublic: $sharedWithPublic, ')
+          ..write('downloads: $downloads, ')
+          ..write('isActive: $isActive, ')
+          ..write('lastSyncAt: $lastSyncAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NetworkEventsTableTable extends NetworkEventsTable
+    with TableInfo<$NetworkEventsTableTable, NetworkEventLocal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NetworkEventsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _tenantIdMeta =
+      const VerificationMeta('tenantId');
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+      'tenant_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _eventTypeMeta =
+      const VerificationMeta('eventType');
+  @override
+  late final GeneratedColumn<String> eventType = GeneratedColumn<String>(
+      'event_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _locationMeta =
+      const VerificationMeta('location');
+  @override
+  late final GeneratedColumn<String> location = GeneratedColumn<String>(
+      'location', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _cityMeta = const VerificationMeta('city');
+  @override
+  late final GeneratedColumn<String> city = GeneratedColumn<String>(
+      'city', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _countryMeta =
+      const VerificationMeta('country');
+  @override
+  late final GeneratedColumn<String> country = GeneratedColumn<String>(
+      'country', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _startsAtMeta =
+      const VerificationMeta('startsAt');
+  @override
+  late final GeneratedColumn<String> startsAt = GeneratedColumn<String>(
+      'starts_at', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _endsAtMeta = const VerificationMeta('endsAt');
+  @override
+  late final GeneratedColumn<String> endsAt = GeneratedColumn<String>(
+      'ends_at', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _maxParticipantsMeta =
+      const VerificationMeta('maxParticipants');
+  @override
+  late final GeneratedColumn<int> maxParticipants = GeneratedColumn<int>(
+      'max_participants', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _currentParticipantsMeta =
+      const VerificationMeta('currentParticipants');
+  @override
+  late final GeneratedColumn<int> currentParticipants = GeneratedColumn<int>(
+      'current_participants', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _isVirtualMeta =
+      const VerificationMeta('isVirtual');
+  @override
+  late final GeneratedColumn<bool> isVirtual = GeneratedColumn<bool>(
+      'is_virtual', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_virtual" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _sharedWithPublicMeta =
+      const VerificationMeta('sharedWithPublic');
+  @override
+  late final GeneratedColumn<bool> sharedWithPublic = GeneratedColumn<bool>(
+      'shared_with_public', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("shared_with_public" IN (0, 1))'));
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _joinedByMeMeta =
+      const VerificationMeta('joinedByMe');
+  @override
+  late final GeneratedColumn<bool> joinedByMe = GeneratedColumn<bool>(
+      'joined_by_me', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("joined_by_me" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _lastSyncAtMeta =
+      const VerificationMeta('lastSyncAt');
+  @override
+  late final GeneratedColumn<String> lastSyncAt = GeneratedColumn<String>(
+      'last_sync_at', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        tenantId,
+        title,
+        description,
+        eventType,
+        location,
+        city,
+        country,
+        startsAt,
+        endsAt,
+        maxParticipants,
+        currentParticipants,
+        isVirtual,
+        sharedWithPublic,
+        isActive,
+        joinedByMe,
+        lastSyncAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'network_events_table';
+  @override
+  VerificationContext validateIntegrity(Insertable<NetworkEventLocal> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(_tenantIdMeta,
+          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('event_type')) {
+      context.handle(_eventTypeMeta,
+          eventType.isAcceptableOrUnknown(data['event_type']!, _eventTypeMeta));
+    } else if (isInserting) {
+      context.missing(_eventTypeMeta);
+    }
+    if (data.containsKey('location')) {
+      context.handle(_locationMeta,
+          location.isAcceptableOrUnknown(data['location']!, _locationMeta));
+    }
+    if (data.containsKey('city')) {
+      context.handle(
+          _cityMeta, city.isAcceptableOrUnknown(data['city']!, _cityMeta));
+    }
+    if (data.containsKey('country')) {
+      context.handle(_countryMeta,
+          country.isAcceptableOrUnknown(data['country']!, _countryMeta));
+    }
+    if (data.containsKey('starts_at')) {
+      context.handle(_startsAtMeta,
+          startsAt.isAcceptableOrUnknown(data['starts_at']!, _startsAtMeta));
+    } else if (isInserting) {
+      context.missing(_startsAtMeta);
+    }
+    if (data.containsKey('ends_at')) {
+      context.handle(_endsAtMeta,
+          endsAt.isAcceptableOrUnknown(data['ends_at']!, _endsAtMeta));
+    }
+    if (data.containsKey('max_participants')) {
+      context.handle(
+          _maxParticipantsMeta,
+          maxParticipants.isAcceptableOrUnknown(
+              data['max_participants']!, _maxParticipantsMeta));
+    }
+    if (data.containsKey('current_participants')) {
+      context.handle(
+          _currentParticipantsMeta,
+          currentParticipants.isAcceptableOrUnknown(
+              data['current_participants']!, _currentParticipantsMeta));
+    }
+    if (data.containsKey('is_virtual')) {
+      context.handle(_isVirtualMeta,
+          isVirtual.isAcceptableOrUnknown(data['is_virtual']!, _isVirtualMeta));
+    }
+    if (data.containsKey('shared_with_public')) {
+      context.handle(
+          _sharedWithPublicMeta,
+          sharedWithPublic.isAcceptableOrUnknown(
+              data['shared_with_public']!, _sharedWithPublicMeta));
+    } else if (isInserting) {
+      context.missing(_sharedWithPublicMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    if (data.containsKey('joined_by_me')) {
+      context.handle(
+          _joinedByMeMeta,
+          joinedByMe.isAcceptableOrUnknown(
+              data['joined_by_me']!, _joinedByMeMeta));
+    }
+    if (data.containsKey('last_sync_at')) {
+      context.handle(
+          _lastSyncAtMeta,
+          lastSyncAt.isAcceptableOrUnknown(
+              data['last_sync_at']!, _lastSyncAtMeta));
+    } else if (isInserting) {
+      context.missing(_lastSyncAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NetworkEventLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NetworkEventLocal(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      tenantId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      eventType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}event_type'])!,
+      location: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}location']),
+      city: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}city']),
+      country: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}country']),
+      startsAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}starts_at'])!,
+      endsAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}ends_at']),
+      maxParticipants: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}max_participants']),
+      currentParticipants: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}current_participants'])!,
+      isVirtual: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_virtual'])!,
+      sharedWithPublic: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}shared_with_public'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      joinedByMe: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}joined_by_me'])!,
+      lastSyncAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}last_sync_at'])!,
+    );
+  }
+
+  @override
+  $NetworkEventsTableTable createAlias(String alias) {
+    return $NetworkEventsTableTable(attachedDatabase, alias);
+  }
+}
+
+class NetworkEventLocal extends DataClass
+    implements Insertable<NetworkEventLocal> {
+  final String id;
+  final String tenantId;
+  final String title;
+  final String? description;
+  final String eventType;
+  final String? location;
+  final String? city;
+  final String? country;
+  final String startsAt;
+  final String? endsAt;
+  final int? maxParticipants;
+  final int currentParticipants;
+  final bool isVirtual;
+  final bool sharedWithPublic;
+  final bool isActive;
+  final bool joinedByMe;
+  final String lastSyncAt;
+  const NetworkEventLocal(
+      {required this.id,
+      required this.tenantId,
+      required this.title,
+      this.description,
+      required this.eventType,
+      this.location,
+      this.city,
+      this.country,
+      required this.startsAt,
+      this.endsAt,
+      this.maxParticipants,
+      required this.currentParticipants,
+      required this.isVirtual,
+      required this.sharedWithPublic,
+      required this.isActive,
+      required this.joinedByMe,
+      required this.lastSyncAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['event_type'] = Variable<String>(eventType);
+    if (!nullToAbsent || location != null) {
+      map['location'] = Variable<String>(location);
+    }
+    if (!nullToAbsent || city != null) {
+      map['city'] = Variable<String>(city);
+    }
+    if (!nullToAbsent || country != null) {
+      map['country'] = Variable<String>(country);
+    }
+    map['starts_at'] = Variable<String>(startsAt);
+    if (!nullToAbsent || endsAt != null) {
+      map['ends_at'] = Variable<String>(endsAt);
+    }
+    if (!nullToAbsent || maxParticipants != null) {
+      map['max_participants'] = Variable<int>(maxParticipants);
+    }
+    map['current_participants'] = Variable<int>(currentParticipants);
+    map['is_virtual'] = Variable<bool>(isVirtual);
+    map['shared_with_public'] = Variable<bool>(sharedWithPublic);
+    map['is_active'] = Variable<bool>(isActive);
+    map['joined_by_me'] = Variable<bool>(joinedByMe);
+    map['last_sync_at'] = Variable<String>(lastSyncAt);
+    return map;
+  }
+
+  NetworkEventsTableCompanion toCompanion(bool nullToAbsent) {
+    return NetworkEventsTableCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      title: Value(title),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      eventType: Value(eventType),
+      location: location == null && nullToAbsent
+          ? const Value.absent()
+          : Value(location),
+      city: city == null && nullToAbsent ? const Value.absent() : Value(city),
+      country: country == null && nullToAbsent
+          ? const Value.absent()
+          : Value(country),
+      startsAt: Value(startsAt),
+      endsAt:
+          endsAt == null && nullToAbsent ? const Value.absent() : Value(endsAt),
+      maxParticipants: maxParticipants == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxParticipants),
+      currentParticipants: Value(currentParticipants),
+      isVirtual: Value(isVirtual),
+      sharedWithPublic: Value(sharedWithPublic),
+      isActive: Value(isActive),
+      joinedByMe: Value(joinedByMe),
+      lastSyncAt: Value(lastSyncAt),
+    );
+  }
+
+  factory NetworkEventLocal.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NetworkEventLocal(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      title: serializer.fromJson<String>(json['title']),
+      description: serializer.fromJson<String?>(json['description']),
+      eventType: serializer.fromJson<String>(json['eventType']),
+      location: serializer.fromJson<String?>(json['location']),
+      city: serializer.fromJson<String?>(json['city']),
+      country: serializer.fromJson<String?>(json['country']),
+      startsAt: serializer.fromJson<String>(json['startsAt']),
+      endsAt: serializer.fromJson<String?>(json['endsAt']),
+      maxParticipants: serializer.fromJson<int?>(json['maxParticipants']),
+      currentParticipants:
+          serializer.fromJson<int>(json['currentParticipants']),
+      isVirtual: serializer.fromJson<bool>(json['isVirtual']),
+      sharedWithPublic: serializer.fromJson<bool>(json['sharedWithPublic']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      joinedByMe: serializer.fromJson<bool>(json['joinedByMe']),
+      lastSyncAt: serializer.fromJson<String>(json['lastSyncAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'title': serializer.toJson<String>(title),
+      'description': serializer.toJson<String?>(description),
+      'eventType': serializer.toJson<String>(eventType),
+      'location': serializer.toJson<String?>(location),
+      'city': serializer.toJson<String?>(city),
+      'country': serializer.toJson<String?>(country),
+      'startsAt': serializer.toJson<String>(startsAt),
+      'endsAt': serializer.toJson<String?>(endsAt),
+      'maxParticipants': serializer.toJson<int?>(maxParticipants),
+      'currentParticipants': serializer.toJson<int>(currentParticipants),
+      'isVirtual': serializer.toJson<bool>(isVirtual),
+      'sharedWithPublic': serializer.toJson<bool>(sharedWithPublic),
+      'isActive': serializer.toJson<bool>(isActive),
+      'joinedByMe': serializer.toJson<bool>(joinedByMe),
+      'lastSyncAt': serializer.toJson<String>(lastSyncAt),
+    };
+  }
+
+  NetworkEventLocal copyWith(
+          {String? id,
+          String? tenantId,
+          String? title,
+          Value<String?> description = const Value.absent(),
+          String? eventType,
+          Value<String?> location = const Value.absent(),
+          Value<String?> city = const Value.absent(),
+          Value<String?> country = const Value.absent(),
+          String? startsAt,
+          Value<String?> endsAt = const Value.absent(),
+          Value<int?> maxParticipants = const Value.absent(),
+          int? currentParticipants,
+          bool? isVirtual,
+          bool? sharedWithPublic,
+          bool? isActive,
+          bool? joinedByMe,
+          String? lastSyncAt}) =>
+      NetworkEventLocal(
+        id: id ?? this.id,
+        tenantId: tenantId ?? this.tenantId,
+        title: title ?? this.title,
+        description: description.present ? description.value : this.description,
+        eventType: eventType ?? this.eventType,
+        location: location.present ? location.value : this.location,
+        city: city.present ? city.value : this.city,
+        country: country.present ? country.value : this.country,
+        startsAt: startsAt ?? this.startsAt,
+        endsAt: endsAt.present ? endsAt.value : this.endsAt,
+        maxParticipants: maxParticipants.present
+            ? maxParticipants.value
+            : this.maxParticipants,
+        currentParticipants: currentParticipants ?? this.currentParticipants,
+        isVirtual: isVirtual ?? this.isVirtual,
+        sharedWithPublic: sharedWithPublic ?? this.sharedWithPublic,
+        isActive: isActive ?? this.isActive,
+        joinedByMe: joinedByMe ?? this.joinedByMe,
+        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      );
+  NetworkEventLocal copyWithCompanion(NetworkEventsTableCompanion data) {
+    return NetworkEventLocal(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      title: data.title.present ? data.title.value : this.title,
+      description:
+          data.description.present ? data.description.value : this.description,
+      eventType: data.eventType.present ? data.eventType.value : this.eventType,
+      location: data.location.present ? data.location.value : this.location,
+      city: data.city.present ? data.city.value : this.city,
+      country: data.country.present ? data.country.value : this.country,
+      startsAt: data.startsAt.present ? data.startsAt.value : this.startsAt,
+      endsAt: data.endsAt.present ? data.endsAt.value : this.endsAt,
+      maxParticipants: data.maxParticipants.present
+          ? data.maxParticipants.value
+          : this.maxParticipants,
+      currentParticipants: data.currentParticipants.present
+          ? data.currentParticipants.value
+          : this.currentParticipants,
+      isVirtual: data.isVirtual.present ? data.isVirtual.value : this.isVirtual,
+      sharedWithPublic: data.sharedWithPublic.present
+          ? data.sharedWithPublic.value
+          : this.sharedWithPublic,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      joinedByMe:
+          data.joinedByMe.present ? data.joinedByMe.value : this.joinedByMe,
+      lastSyncAt:
+          data.lastSyncAt.present ? data.lastSyncAt.value : this.lastSyncAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NetworkEventLocal(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('eventType: $eventType, ')
+          ..write('location: $location, ')
+          ..write('city: $city, ')
+          ..write('country: $country, ')
+          ..write('startsAt: $startsAt, ')
+          ..write('endsAt: $endsAt, ')
+          ..write('maxParticipants: $maxParticipants, ')
+          ..write('currentParticipants: $currentParticipants, ')
+          ..write('isVirtual: $isVirtual, ')
+          ..write('sharedWithPublic: $sharedWithPublic, ')
+          ..write('isActive: $isActive, ')
+          ..write('joinedByMe: $joinedByMe, ')
+          ..write('lastSyncAt: $lastSyncAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      tenantId,
+      title,
+      description,
+      eventType,
+      location,
+      city,
+      country,
+      startsAt,
+      endsAt,
+      maxParticipants,
+      currentParticipants,
+      isVirtual,
+      sharedWithPublic,
+      isActive,
+      joinedByMe,
+      lastSyncAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NetworkEventLocal &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.title == this.title &&
+          other.description == this.description &&
+          other.eventType == this.eventType &&
+          other.location == this.location &&
+          other.city == this.city &&
+          other.country == this.country &&
+          other.startsAt == this.startsAt &&
+          other.endsAt == this.endsAt &&
+          other.maxParticipants == this.maxParticipants &&
+          other.currentParticipants == this.currentParticipants &&
+          other.isVirtual == this.isVirtual &&
+          other.sharedWithPublic == this.sharedWithPublic &&
+          other.isActive == this.isActive &&
+          other.joinedByMe == this.joinedByMe &&
+          other.lastSyncAt == this.lastSyncAt);
+}
+
+class NetworkEventsTableCompanion extends UpdateCompanion<NetworkEventLocal> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String> title;
+  final Value<String?> description;
+  final Value<String> eventType;
+  final Value<String?> location;
+  final Value<String?> city;
+  final Value<String?> country;
+  final Value<String> startsAt;
+  final Value<String?> endsAt;
+  final Value<int?> maxParticipants;
+  final Value<int> currentParticipants;
+  final Value<bool> isVirtual;
+  final Value<bool> sharedWithPublic;
+  final Value<bool> isActive;
+  final Value<bool> joinedByMe;
+  final Value<String> lastSyncAt;
+  final Value<int> rowid;
+  const NetworkEventsTableCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.description = const Value.absent(),
+    this.eventType = const Value.absent(),
+    this.location = const Value.absent(),
+    this.city = const Value.absent(),
+    this.country = const Value.absent(),
+    this.startsAt = const Value.absent(),
+    this.endsAt = const Value.absent(),
+    this.maxParticipants = const Value.absent(),
+    this.currentParticipants = const Value.absent(),
+    this.isVirtual = const Value.absent(),
+    this.sharedWithPublic = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.joinedByMe = const Value.absent(),
+    this.lastSyncAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NetworkEventsTableCompanion.insert({
+    required String id,
+    required String tenantId,
+    required String title,
+    this.description = const Value.absent(),
+    required String eventType,
+    this.location = const Value.absent(),
+    this.city = const Value.absent(),
+    this.country = const Value.absent(),
+    required String startsAt,
+    this.endsAt = const Value.absent(),
+    this.maxParticipants = const Value.absent(),
+    this.currentParticipants = const Value.absent(),
+    this.isVirtual = const Value.absent(),
+    required bool sharedWithPublic,
+    this.isActive = const Value.absent(),
+    this.joinedByMe = const Value.absent(),
+    required String lastSyncAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        tenantId = Value(tenantId),
+        title = Value(title),
+        eventType = Value(eventType),
+        startsAt = Value(startsAt),
+        sharedWithPublic = Value(sharedWithPublic),
+        lastSyncAt = Value(lastSyncAt);
+  static Insertable<NetworkEventLocal> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? title,
+    Expression<String>? description,
+    Expression<String>? eventType,
+    Expression<String>? location,
+    Expression<String>? city,
+    Expression<String>? country,
+    Expression<String>? startsAt,
+    Expression<String>? endsAt,
+    Expression<int>? maxParticipants,
+    Expression<int>? currentParticipants,
+    Expression<bool>? isVirtual,
+    Expression<bool>? sharedWithPublic,
+    Expression<bool>? isActive,
+    Expression<bool>? joinedByMe,
+    Expression<String>? lastSyncAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (eventType != null) 'event_type': eventType,
+      if (location != null) 'location': location,
+      if (city != null) 'city': city,
+      if (country != null) 'country': country,
+      if (startsAt != null) 'starts_at': startsAt,
+      if (endsAt != null) 'ends_at': endsAt,
+      if (maxParticipants != null) 'max_participants': maxParticipants,
+      if (currentParticipants != null)
+        'current_participants': currentParticipants,
+      if (isVirtual != null) 'is_virtual': isVirtual,
+      if (sharedWithPublic != null) 'shared_with_public': sharedWithPublic,
+      if (isActive != null) 'is_active': isActive,
+      if (joinedByMe != null) 'joined_by_me': joinedByMe,
+      if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NetworkEventsTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? tenantId,
+      Value<String>? title,
+      Value<String?>? description,
+      Value<String>? eventType,
+      Value<String?>? location,
+      Value<String?>? city,
+      Value<String?>? country,
+      Value<String>? startsAt,
+      Value<String?>? endsAt,
+      Value<int?>? maxParticipants,
+      Value<int>? currentParticipants,
+      Value<bool>? isVirtual,
+      Value<bool>? sharedWithPublic,
+      Value<bool>? isActive,
+      Value<bool>? joinedByMe,
+      Value<String>? lastSyncAt,
+      Value<int>? rowid}) {
+    return NetworkEventsTableCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      eventType: eventType ?? this.eventType,
+      location: location ?? this.location,
+      city: city ?? this.city,
+      country: country ?? this.country,
+      startsAt: startsAt ?? this.startsAt,
+      endsAt: endsAt ?? this.endsAt,
+      maxParticipants: maxParticipants ?? this.maxParticipants,
+      currentParticipants: currentParticipants ?? this.currentParticipants,
+      isVirtual: isVirtual ?? this.isVirtual,
+      sharedWithPublic: sharedWithPublic ?? this.sharedWithPublic,
+      isActive: isActive ?? this.isActive,
+      joinedByMe: joinedByMe ?? this.joinedByMe,
+      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (eventType.present) {
+      map['event_type'] = Variable<String>(eventType.value);
+    }
+    if (location.present) {
+      map['location'] = Variable<String>(location.value);
+    }
+    if (city.present) {
+      map['city'] = Variable<String>(city.value);
+    }
+    if (country.present) {
+      map['country'] = Variable<String>(country.value);
+    }
+    if (startsAt.present) {
+      map['starts_at'] = Variable<String>(startsAt.value);
+    }
+    if (endsAt.present) {
+      map['ends_at'] = Variable<String>(endsAt.value);
+    }
+    if (maxParticipants.present) {
+      map['max_participants'] = Variable<int>(maxParticipants.value);
+    }
+    if (currentParticipants.present) {
+      map['current_participants'] = Variable<int>(currentParticipants.value);
+    }
+    if (isVirtual.present) {
+      map['is_virtual'] = Variable<bool>(isVirtual.value);
+    }
+    if (sharedWithPublic.present) {
+      map['shared_with_public'] = Variable<bool>(sharedWithPublic.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (joinedByMe.present) {
+      map['joined_by_me'] = Variable<bool>(joinedByMe.value);
+    }
+    if (lastSyncAt.present) {
+      map['last_sync_at'] = Variable<String>(lastSyncAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NetworkEventsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('eventType: $eventType, ')
+          ..write('location: $location, ')
+          ..write('city: $city, ')
+          ..write('country: $country, ')
+          ..write('startsAt: $startsAt, ')
+          ..write('endsAt: $endsAt, ')
+          ..write('maxParticipants: $maxParticipants, ')
+          ..write('currentParticipants: $currentParticipants, ')
+          ..write('isVirtual: $isVirtual, ')
+          ..write('sharedWithPublic: $sharedWithPublic, ')
+          ..write('isActive: $isActive, ')
+          ..write('joinedByMe: $joinedByMe, ')
+          ..write('lastSyncAt: $lastSyncAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NetworkDirectoryTableTable extends NetworkDirectoryTable
+    with TableInfo<$NetworkDirectoryTableTable, NetworkDirectoryLocal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NetworkDirectoryTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _tenantIdMeta =
+      const VerificationMeta('tenantId');
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+      'tenant_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _churchNameMeta =
+      const VerificationMeta('churchName');
+  @override
+  late final GeneratedColumn<String> churchName = GeneratedColumn<String>(
+      'church_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _cityMeta = const VerificationMeta('city');
+  @override
+  late final GeneratedColumn<String> city = GeneratedColumn<String>(
+      'city', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _countryMeta =
+      const VerificationMeta('country');
+  @override
+  late final GeneratedColumn<String> country = GeneratedColumn<String>(
+      'country', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _denominationMeta =
+      const VerificationMeta('denomination');
+  @override
+  late final GeneratedColumn<String> denomination = GeneratedColumn<String>(
+      'denomination', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _pastorNameMeta =
+      const VerificationMeta('pastorName');
+  @override
+  late final GeneratedColumn<String> pastorName = GeneratedColumn<String>(
+      'pastor_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _contactEmailMeta =
+      const VerificationMeta('contactEmail');
+  @override
+  late final GeneratedColumn<String> contactEmail = GeneratedColumn<String>(
+      'contact_email', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _contactPhoneMeta =
+      const VerificationMeta('contactPhone');
+  @override
+  late final GeneratedColumn<String> contactPhone = GeneratedColumn<String>(
+      'contact_phone', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _memberCountMeta =
+      const VerificationMeta('memberCount');
+  @override
+  late final GeneratedColumn<int> memberCount = GeneratedColumn<int>(
+      'member_count', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _isListedMeta =
+      const VerificationMeta('isListed');
+  @override
+  late final GeneratedColumn<bool> isListed = GeneratedColumn<bool>(
+      'is_listed', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_listed" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _lastSyncAtMeta =
+      const VerificationMeta('lastSyncAt');
+  @override
+  late final GeneratedColumn<String> lastSyncAt = GeneratedColumn<String>(
+      'last_sync_at', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        tenantId,
+        churchName,
+        city,
+        country,
+        denomination,
+        pastorName,
+        contactEmail,
+        contactPhone,
+        memberCount,
+        isListed,
+        lastSyncAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'network_directory_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<NetworkDirectoryLocal> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(_tenantIdMeta,
+          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('church_name')) {
+      context.handle(
+          _churchNameMeta,
+          churchName.isAcceptableOrUnknown(
+              data['church_name']!, _churchNameMeta));
+    }
+    if (data.containsKey('city')) {
+      context.handle(
+          _cityMeta, city.isAcceptableOrUnknown(data['city']!, _cityMeta));
+    }
+    if (data.containsKey('country')) {
+      context.handle(_countryMeta,
+          country.isAcceptableOrUnknown(data['country']!, _countryMeta));
+    }
+    if (data.containsKey('denomination')) {
+      context.handle(
+          _denominationMeta,
+          denomination.isAcceptableOrUnknown(
+              data['denomination']!, _denominationMeta));
+    }
+    if (data.containsKey('pastor_name')) {
+      context.handle(
+          _pastorNameMeta,
+          pastorName.isAcceptableOrUnknown(
+              data['pastor_name']!, _pastorNameMeta));
+    }
+    if (data.containsKey('contact_email')) {
+      context.handle(
+          _contactEmailMeta,
+          contactEmail.isAcceptableOrUnknown(
+              data['contact_email']!, _contactEmailMeta));
+    }
+    if (data.containsKey('contact_phone')) {
+      context.handle(
+          _contactPhoneMeta,
+          contactPhone.isAcceptableOrUnknown(
+              data['contact_phone']!, _contactPhoneMeta));
+    }
+    if (data.containsKey('member_count')) {
+      context.handle(
+          _memberCountMeta,
+          memberCount.isAcceptableOrUnknown(
+              data['member_count']!, _memberCountMeta));
+    }
+    if (data.containsKey('is_listed')) {
+      context.handle(_isListedMeta,
+          isListed.isAcceptableOrUnknown(data['is_listed']!, _isListedMeta));
+    }
+    if (data.containsKey('last_sync_at')) {
+      context.handle(
+          _lastSyncAtMeta,
+          lastSyncAt.isAcceptableOrUnknown(
+              data['last_sync_at']!, _lastSyncAtMeta));
+    } else if (isInserting) {
+      context.missing(_lastSyncAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NetworkDirectoryLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NetworkDirectoryLocal(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      tenantId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
+      churchName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}church_name']),
+      city: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}city']),
+      country: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}country']),
+      denomination: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}denomination']),
+      pastorName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}pastor_name']),
+      contactEmail: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}contact_email']),
+      contactPhone: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}contact_phone']),
+      memberCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}member_count']),
+      isListed: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_listed'])!,
+      lastSyncAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}last_sync_at'])!,
+    );
+  }
+
+  @override
+  $NetworkDirectoryTableTable createAlias(String alias) {
+    return $NetworkDirectoryTableTable(attachedDatabase, alias);
+  }
+}
+
+class NetworkDirectoryLocal extends DataClass
+    implements Insertable<NetworkDirectoryLocal> {
+  final String id;
+  final String tenantId;
+  final String? churchName;
+  final String? city;
+  final String? country;
+  final String? denomination;
+  final String? pastorName;
+  final String? contactEmail;
+  final String? contactPhone;
+  final int? memberCount;
+  final bool isListed;
+  final String lastSyncAt;
+  const NetworkDirectoryLocal(
+      {required this.id,
+      required this.tenantId,
+      this.churchName,
+      this.city,
+      this.country,
+      this.denomination,
+      this.pastorName,
+      this.contactEmail,
+      this.contactPhone,
+      this.memberCount,
+      required this.isListed,
+      required this.lastSyncAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || churchName != null) {
+      map['church_name'] = Variable<String>(churchName);
+    }
+    if (!nullToAbsent || city != null) {
+      map['city'] = Variable<String>(city);
+    }
+    if (!nullToAbsent || country != null) {
+      map['country'] = Variable<String>(country);
+    }
+    if (!nullToAbsent || denomination != null) {
+      map['denomination'] = Variable<String>(denomination);
+    }
+    if (!nullToAbsent || pastorName != null) {
+      map['pastor_name'] = Variable<String>(pastorName);
+    }
+    if (!nullToAbsent || contactEmail != null) {
+      map['contact_email'] = Variable<String>(contactEmail);
+    }
+    if (!nullToAbsent || contactPhone != null) {
+      map['contact_phone'] = Variable<String>(contactPhone);
+    }
+    if (!nullToAbsent || memberCount != null) {
+      map['member_count'] = Variable<int>(memberCount);
+    }
+    map['is_listed'] = Variable<bool>(isListed);
+    map['last_sync_at'] = Variable<String>(lastSyncAt);
+    return map;
+  }
+
+  NetworkDirectoryTableCompanion toCompanion(bool nullToAbsent) {
+    return NetworkDirectoryTableCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      churchName: churchName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(churchName),
+      city: city == null && nullToAbsent ? const Value.absent() : Value(city),
+      country: country == null && nullToAbsent
+          ? const Value.absent()
+          : Value(country),
+      denomination: denomination == null && nullToAbsent
+          ? const Value.absent()
+          : Value(denomination),
+      pastorName: pastorName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pastorName),
+      contactEmail: contactEmail == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contactEmail),
+      contactPhone: contactPhone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contactPhone),
+      memberCount: memberCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(memberCount),
+      isListed: Value(isListed),
+      lastSyncAt: Value(lastSyncAt),
+    );
+  }
+
+  factory NetworkDirectoryLocal.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NetworkDirectoryLocal(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      churchName: serializer.fromJson<String?>(json['churchName']),
+      city: serializer.fromJson<String?>(json['city']),
+      country: serializer.fromJson<String?>(json['country']),
+      denomination: serializer.fromJson<String?>(json['denomination']),
+      pastorName: serializer.fromJson<String?>(json['pastorName']),
+      contactEmail: serializer.fromJson<String?>(json['contactEmail']),
+      contactPhone: serializer.fromJson<String?>(json['contactPhone']),
+      memberCount: serializer.fromJson<int?>(json['memberCount']),
+      isListed: serializer.fromJson<bool>(json['isListed']),
+      lastSyncAt: serializer.fromJson<String>(json['lastSyncAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'churchName': serializer.toJson<String?>(churchName),
+      'city': serializer.toJson<String?>(city),
+      'country': serializer.toJson<String?>(country),
+      'denomination': serializer.toJson<String?>(denomination),
+      'pastorName': serializer.toJson<String?>(pastorName),
+      'contactEmail': serializer.toJson<String?>(contactEmail),
+      'contactPhone': serializer.toJson<String?>(contactPhone),
+      'memberCount': serializer.toJson<int?>(memberCount),
+      'isListed': serializer.toJson<bool>(isListed),
+      'lastSyncAt': serializer.toJson<String>(lastSyncAt),
+    };
+  }
+
+  NetworkDirectoryLocal copyWith(
+          {String? id,
+          String? tenantId,
+          Value<String?> churchName = const Value.absent(),
+          Value<String?> city = const Value.absent(),
+          Value<String?> country = const Value.absent(),
+          Value<String?> denomination = const Value.absent(),
+          Value<String?> pastorName = const Value.absent(),
+          Value<String?> contactEmail = const Value.absent(),
+          Value<String?> contactPhone = const Value.absent(),
+          Value<int?> memberCount = const Value.absent(),
+          bool? isListed,
+          String? lastSyncAt}) =>
+      NetworkDirectoryLocal(
+        id: id ?? this.id,
+        tenantId: tenantId ?? this.tenantId,
+        churchName: churchName.present ? churchName.value : this.churchName,
+        city: city.present ? city.value : this.city,
+        country: country.present ? country.value : this.country,
+        denomination:
+            denomination.present ? denomination.value : this.denomination,
+        pastorName: pastorName.present ? pastorName.value : this.pastorName,
+        contactEmail:
+            contactEmail.present ? contactEmail.value : this.contactEmail,
+        contactPhone:
+            contactPhone.present ? contactPhone.value : this.contactPhone,
+        memberCount: memberCount.present ? memberCount.value : this.memberCount,
+        isListed: isListed ?? this.isListed,
+        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      );
+  NetworkDirectoryLocal copyWithCompanion(NetworkDirectoryTableCompanion data) {
+    return NetworkDirectoryLocal(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      churchName:
+          data.churchName.present ? data.churchName.value : this.churchName,
+      city: data.city.present ? data.city.value : this.city,
+      country: data.country.present ? data.country.value : this.country,
+      denomination: data.denomination.present
+          ? data.denomination.value
+          : this.denomination,
+      pastorName:
+          data.pastorName.present ? data.pastorName.value : this.pastorName,
+      contactEmail: data.contactEmail.present
+          ? data.contactEmail.value
+          : this.contactEmail,
+      contactPhone: data.contactPhone.present
+          ? data.contactPhone.value
+          : this.contactPhone,
+      memberCount:
+          data.memberCount.present ? data.memberCount.value : this.memberCount,
+      isListed: data.isListed.present ? data.isListed.value : this.isListed,
+      lastSyncAt:
+          data.lastSyncAt.present ? data.lastSyncAt.value : this.lastSyncAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NetworkDirectoryLocal(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('churchName: $churchName, ')
+          ..write('city: $city, ')
+          ..write('country: $country, ')
+          ..write('denomination: $denomination, ')
+          ..write('pastorName: $pastorName, ')
+          ..write('contactEmail: $contactEmail, ')
+          ..write('contactPhone: $contactPhone, ')
+          ..write('memberCount: $memberCount, ')
+          ..write('isListed: $isListed, ')
+          ..write('lastSyncAt: $lastSyncAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      tenantId,
+      churchName,
+      city,
+      country,
+      denomination,
+      pastorName,
+      contactEmail,
+      contactPhone,
+      memberCount,
+      isListed,
+      lastSyncAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NetworkDirectoryLocal &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.churchName == this.churchName &&
+          other.city == this.city &&
+          other.country == this.country &&
+          other.denomination == this.denomination &&
+          other.pastorName == this.pastorName &&
+          other.contactEmail == this.contactEmail &&
+          other.contactPhone == this.contactPhone &&
+          other.memberCount == this.memberCount &&
+          other.isListed == this.isListed &&
+          other.lastSyncAt == this.lastSyncAt);
+}
+
+class NetworkDirectoryTableCompanion
+    extends UpdateCompanion<NetworkDirectoryLocal> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> churchName;
+  final Value<String?> city;
+  final Value<String?> country;
+  final Value<String?> denomination;
+  final Value<String?> pastorName;
+  final Value<String?> contactEmail;
+  final Value<String?> contactPhone;
+  final Value<int?> memberCount;
+  final Value<bool> isListed;
+  final Value<String> lastSyncAt;
+  final Value<int> rowid;
+  const NetworkDirectoryTableCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.churchName = const Value.absent(),
+    this.city = const Value.absent(),
+    this.country = const Value.absent(),
+    this.denomination = const Value.absent(),
+    this.pastorName = const Value.absent(),
+    this.contactEmail = const Value.absent(),
+    this.contactPhone = const Value.absent(),
+    this.memberCount = const Value.absent(),
+    this.isListed = const Value.absent(),
+    this.lastSyncAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NetworkDirectoryTableCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.churchName = const Value.absent(),
+    this.city = const Value.absent(),
+    this.country = const Value.absent(),
+    this.denomination = const Value.absent(),
+    this.pastorName = const Value.absent(),
+    this.contactEmail = const Value.absent(),
+    this.contactPhone = const Value.absent(),
+    this.memberCount = const Value.absent(),
+    this.isListed = const Value.absent(),
+    required String lastSyncAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        tenantId = Value(tenantId),
+        lastSyncAt = Value(lastSyncAt);
+  static Insertable<NetworkDirectoryLocal> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? churchName,
+    Expression<String>? city,
+    Expression<String>? country,
+    Expression<String>? denomination,
+    Expression<String>? pastorName,
+    Expression<String>? contactEmail,
+    Expression<String>? contactPhone,
+    Expression<int>? memberCount,
+    Expression<bool>? isListed,
+    Expression<String>? lastSyncAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (churchName != null) 'church_name': churchName,
+      if (city != null) 'city': city,
+      if (country != null) 'country': country,
+      if (denomination != null) 'denomination': denomination,
+      if (pastorName != null) 'pastor_name': pastorName,
+      if (contactEmail != null) 'contact_email': contactEmail,
+      if (contactPhone != null) 'contact_phone': contactPhone,
+      if (memberCount != null) 'member_count': memberCount,
+      if (isListed != null) 'is_listed': isListed,
+      if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NetworkDirectoryTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? tenantId,
+      Value<String?>? churchName,
+      Value<String?>? city,
+      Value<String?>? country,
+      Value<String?>? denomination,
+      Value<String?>? pastorName,
+      Value<String?>? contactEmail,
+      Value<String?>? contactPhone,
+      Value<int?>? memberCount,
+      Value<bool>? isListed,
+      Value<String>? lastSyncAt,
+      Value<int>? rowid}) {
+    return NetworkDirectoryTableCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      churchName: churchName ?? this.churchName,
+      city: city ?? this.city,
+      country: country ?? this.country,
+      denomination: denomination ?? this.denomination,
+      pastorName: pastorName ?? this.pastorName,
+      contactEmail: contactEmail ?? this.contactEmail,
+      contactPhone: contactPhone ?? this.contactPhone,
+      memberCount: memberCount ?? this.memberCount,
+      isListed: isListed ?? this.isListed,
+      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (churchName.present) {
+      map['church_name'] = Variable<String>(churchName.value);
+    }
+    if (city.present) {
+      map['city'] = Variable<String>(city.value);
+    }
+    if (country.present) {
+      map['country'] = Variable<String>(country.value);
+    }
+    if (denomination.present) {
+      map['denomination'] = Variable<String>(denomination.value);
+    }
+    if (pastorName.present) {
+      map['pastor_name'] = Variable<String>(pastorName.value);
+    }
+    if (contactEmail.present) {
+      map['contact_email'] = Variable<String>(contactEmail.value);
+    }
+    if (contactPhone.present) {
+      map['contact_phone'] = Variable<String>(contactPhone.value);
+    }
+    if (memberCount.present) {
+      map['member_count'] = Variable<int>(memberCount.value);
+    }
+    if (isListed.present) {
+      map['is_listed'] = Variable<bool>(isListed.value);
+    }
+    if (lastSyncAt.present) {
+      map['last_sync_at'] = Variable<String>(lastSyncAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NetworkDirectoryTableCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('churchName: $churchName, ')
+          ..write('city: $city, ')
+          ..write('country: $country, ')
+          ..write('denomination: $denomination, ')
+          ..write('pastorName: $pastorName, ')
+          ..write('contactEmail: $contactEmail, ')
+          ..write('contactPhone: $contactPhone, ')
+          ..write('memberCount: $memberCount, ')
+          ..write('isListed: $isListed, ')
+          ..write('lastSyncAt: $lastSyncAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1754,12 +3814,24 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ReportDraftsTableTable reportDraftsTable =
       $ReportDraftsTableTable(this);
   late final $SyncQueueTableTable syncQueueTable = $SyncQueueTableTable(this);
+  late final $NetworkResourcesTableTable networkResourcesTable =
+      $NetworkResourcesTableTable(this);
+  late final $NetworkEventsTableTable networkEventsTable =
+      $NetworkEventsTableTable(this);
+  late final $NetworkDirectoryTableTable networkDirectoryTable =
+      $NetworkDirectoryTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [soulsTable, reportDraftsTable, syncQueueTable];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+        soulsTable,
+        reportDraftsTable,
+        syncQueueTable,
+        networkResourcesTable,
+        networkEventsTable,
+        networkDirectoryTable
+      ];
 }
 
 typedef $$SoulsTableTableCreateCompanionBuilder = SoulsTableCompanion Function({
@@ -2573,6 +4645,943 @@ typedef $$SyncQueueTableTableProcessedTableManager = ProcessedTableManager<
     ),
     SyncQueueItem,
     PrefetchHooks Function()>;
+typedef $$NetworkResourcesTableTableCreateCompanionBuilder
+    = NetworkResourcesTableCompanion Function({
+  required String id,
+  required String tenantId,
+  required String title,
+  Value<String?> description,
+  required String category,
+  required String resourceType,
+  Value<String?> fileUrl,
+  Value<String?> content,
+  required bool sharedWithPublic,
+  Value<int> downloads,
+  Value<bool> isActive,
+  required String lastSyncAt,
+  Value<int> rowid,
+});
+typedef $$NetworkResourcesTableTableUpdateCompanionBuilder
+    = NetworkResourcesTableCompanion Function({
+  Value<String> id,
+  Value<String> tenantId,
+  Value<String> title,
+  Value<String?> description,
+  Value<String> category,
+  Value<String> resourceType,
+  Value<String?> fileUrl,
+  Value<String?> content,
+  Value<bool> sharedWithPublic,
+  Value<int> downloads,
+  Value<bool> isActive,
+  Value<String> lastSyncAt,
+  Value<int> rowid,
+});
+
+class $$NetworkResourcesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $NetworkResourcesTableTable> {
+  $$NetworkResourcesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get resourceType => $composableBuilder(
+      column: $table.resourceType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fileUrl => $composableBuilder(
+      column: $table.fileUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get content => $composableBuilder(
+      column: $table.content, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get sharedWithPublic => $composableBuilder(
+      column: $table.sharedWithPublic,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get downloads => $composableBuilder(
+      column: $table.downloads, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$NetworkResourcesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $NetworkResourcesTableTable> {
+  $$NetworkResourcesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get resourceType => $composableBuilder(
+      column: $table.resourceType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fileUrl => $composableBuilder(
+      column: $table.fileUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get content => $composableBuilder(
+      column: $table.content, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get sharedWithPublic => $composableBuilder(
+      column: $table.sharedWithPublic,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get downloads => $composableBuilder(
+      column: $table.downloads, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$NetworkResourcesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NetworkResourcesTableTable> {
+  $$NetworkResourcesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get resourceType => $composableBuilder(
+      column: $table.resourceType, builder: (column) => column);
+
+  GeneratedColumn<String> get fileUrl =>
+      $composableBuilder(column: $table.fileUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<bool> get sharedWithPublic => $composableBuilder(
+      column: $table.sharedWithPublic, builder: (column) => column);
+
+  GeneratedColumn<int> get downloads =>
+      $composableBuilder(column: $table.downloads, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<String> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => column);
+}
+
+class $$NetworkResourcesTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $NetworkResourcesTableTable,
+    NetworkResourceLocal,
+    $$NetworkResourcesTableTableFilterComposer,
+    $$NetworkResourcesTableTableOrderingComposer,
+    $$NetworkResourcesTableTableAnnotationComposer,
+    $$NetworkResourcesTableTableCreateCompanionBuilder,
+    $$NetworkResourcesTableTableUpdateCompanionBuilder,
+    (
+      NetworkResourceLocal,
+      BaseReferences<_$AppDatabase, $NetworkResourcesTableTable,
+          NetworkResourceLocal>
+    ),
+    NetworkResourceLocal,
+    PrefetchHooks Function()> {
+  $$NetworkResourcesTableTableTableManager(
+      _$AppDatabase db, $NetworkResourcesTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NetworkResourcesTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NetworkResourcesTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NetworkResourcesTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> tenantId = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String> category = const Value.absent(),
+            Value<String> resourceType = const Value.absent(),
+            Value<String?> fileUrl = const Value.absent(),
+            Value<String?> content = const Value.absent(),
+            Value<bool> sharedWithPublic = const Value.absent(),
+            Value<int> downloads = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<String> lastSyncAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NetworkResourcesTableCompanion(
+            id: id,
+            tenantId: tenantId,
+            title: title,
+            description: description,
+            category: category,
+            resourceType: resourceType,
+            fileUrl: fileUrl,
+            content: content,
+            sharedWithPublic: sharedWithPublic,
+            downloads: downloads,
+            isActive: isActive,
+            lastSyncAt: lastSyncAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String tenantId,
+            required String title,
+            Value<String?> description = const Value.absent(),
+            required String category,
+            required String resourceType,
+            Value<String?> fileUrl = const Value.absent(),
+            Value<String?> content = const Value.absent(),
+            required bool sharedWithPublic,
+            Value<int> downloads = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            required String lastSyncAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NetworkResourcesTableCompanion.insert(
+            id: id,
+            tenantId: tenantId,
+            title: title,
+            description: description,
+            category: category,
+            resourceType: resourceType,
+            fileUrl: fileUrl,
+            content: content,
+            sharedWithPublic: sharedWithPublic,
+            downloads: downloads,
+            isActive: isActive,
+            lastSyncAt: lastSyncAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$NetworkResourcesTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $NetworkResourcesTableTable,
+        NetworkResourceLocal,
+        $$NetworkResourcesTableTableFilterComposer,
+        $$NetworkResourcesTableTableOrderingComposer,
+        $$NetworkResourcesTableTableAnnotationComposer,
+        $$NetworkResourcesTableTableCreateCompanionBuilder,
+        $$NetworkResourcesTableTableUpdateCompanionBuilder,
+        (
+          NetworkResourceLocal,
+          BaseReferences<_$AppDatabase, $NetworkResourcesTableTable,
+              NetworkResourceLocal>
+        ),
+        NetworkResourceLocal,
+        PrefetchHooks Function()>;
+typedef $$NetworkEventsTableTableCreateCompanionBuilder
+    = NetworkEventsTableCompanion Function({
+  required String id,
+  required String tenantId,
+  required String title,
+  Value<String?> description,
+  required String eventType,
+  Value<String?> location,
+  Value<String?> city,
+  Value<String?> country,
+  required String startsAt,
+  Value<String?> endsAt,
+  Value<int?> maxParticipants,
+  Value<int> currentParticipants,
+  Value<bool> isVirtual,
+  required bool sharedWithPublic,
+  Value<bool> isActive,
+  Value<bool> joinedByMe,
+  required String lastSyncAt,
+  Value<int> rowid,
+});
+typedef $$NetworkEventsTableTableUpdateCompanionBuilder
+    = NetworkEventsTableCompanion Function({
+  Value<String> id,
+  Value<String> tenantId,
+  Value<String> title,
+  Value<String?> description,
+  Value<String> eventType,
+  Value<String?> location,
+  Value<String?> city,
+  Value<String?> country,
+  Value<String> startsAt,
+  Value<String?> endsAt,
+  Value<int?> maxParticipants,
+  Value<int> currentParticipants,
+  Value<bool> isVirtual,
+  Value<bool> sharedWithPublic,
+  Value<bool> isActive,
+  Value<bool> joinedByMe,
+  Value<String> lastSyncAt,
+  Value<int> rowid,
+});
+
+class $$NetworkEventsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $NetworkEventsTableTable> {
+  $$NetworkEventsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get eventType => $composableBuilder(
+      column: $table.eventType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get location => $composableBuilder(
+      column: $table.location, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get city => $composableBuilder(
+      column: $table.city, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get country => $composableBuilder(
+      column: $table.country, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get startsAt => $composableBuilder(
+      column: $table.startsAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endsAt => $composableBuilder(
+      column: $table.endsAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get maxParticipants => $composableBuilder(
+      column: $table.maxParticipants,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get currentParticipants => $composableBuilder(
+      column: $table.currentParticipants,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isVirtual => $composableBuilder(
+      column: $table.isVirtual, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get sharedWithPublic => $composableBuilder(
+      column: $table.sharedWithPublic,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get joinedByMe => $composableBuilder(
+      column: $table.joinedByMe, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$NetworkEventsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $NetworkEventsTableTable> {
+  $$NetworkEventsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get eventType => $composableBuilder(
+      column: $table.eventType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get location => $composableBuilder(
+      column: $table.location, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get city => $composableBuilder(
+      column: $table.city, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get country => $composableBuilder(
+      column: $table.country, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get startsAt => $composableBuilder(
+      column: $table.startsAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endsAt => $composableBuilder(
+      column: $table.endsAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get maxParticipants => $composableBuilder(
+      column: $table.maxParticipants,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get currentParticipants => $composableBuilder(
+      column: $table.currentParticipants,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isVirtual => $composableBuilder(
+      column: $table.isVirtual, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get sharedWithPublic => $composableBuilder(
+      column: $table.sharedWithPublic,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get joinedByMe => $composableBuilder(
+      column: $table.joinedByMe, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$NetworkEventsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NetworkEventsTableTable> {
+  $$NetworkEventsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get eventType =>
+      $composableBuilder(column: $table.eventType, builder: (column) => column);
+
+  GeneratedColumn<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => column);
+
+  GeneratedColumn<String> get city =>
+      $composableBuilder(column: $table.city, builder: (column) => column);
+
+  GeneratedColumn<String> get country =>
+      $composableBuilder(column: $table.country, builder: (column) => column);
+
+  GeneratedColumn<String> get startsAt =>
+      $composableBuilder(column: $table.startsAt, builder: (column) => column);
+
+  GeneratedColumn<String> get endsAt =>
+      $composableBuilder(column: $table.endsAt, builder: (column) => column);
+
+  GeneratedColumn<int> get maxParticipants => $composableBuilder(
+      column: $table.maxParticipants, builder: (column) => column);
+
+  GeneratedColumn<int> get currentParticipants => $composableBuilder(
+      column: $table.currentParticipants, builder: (column) => column);
+
+  GeneratedColumn<bool> get isVirtual =>
+      $composableBuilder(column: $table.isVirtual, builder: (column) => column);
+
+  GeneratedColumn<bool> get sharedWithPublic => $composableBuilder(
+      column: $table.sharedWithPublic, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<bool> get joinedByMe => $composableBuilder(
+      column: $table.joinedByMe, builder: (column) => column);
+
+  GeneratedColumn<String> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => column);
+}
+
+class $$NetworkEventsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $NetworkEventsTableTable,
+    NetworkEventLocal,
+    $$NetworkEventsTableTableFilterComposer,
+    $$NetworkEventsTableTableOrderingComposer,
+    $$NetworkEventsTableTableAnnotationComposer,
+    $$NetworkEventsTableTableCreateCompanionBuilder,
+    $$NetworkEventsTableTableUpdateCompanionBuilder,
+    (
+      NetworkEventLocal,
+      BaseReferences<_$AppDatabase, $NetworkEventsTableTable, NetworkEventLocal>
+    ),
+    NetworkEventLocal,
+    PrefetchHooks Function()> {
+  $$NetworkEventsTableTableTableManager(
+      _$AppDatabase db, $NetworkEventsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NetworkEventsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NetworkEventsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NetworkEventsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> tenantId = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String> eventType = const Value.absent(),
+            Value<String?> location = const Value.absent(),
+            Value<String?> city = const Value.absent(),
+            Value<String?> country = const Value.absent(),
+            Value<String> startsAt = const Value.absent(),
+            Value<String?> endsAt = const Value.absent(),
+            Value<int?> maxParticipants = const Value.absent(),
+            Value<int> currentParticipants = const Value.absent(),
+            Value<bool> isVirtual = const Value.absent(),
+            Value<bool> sharedWithPublic = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<bool> joinedByMe = const Value.absent(),
+            Value<String> lastSyncAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NetworkEventsTableCompanion(
+            id: id,
+            tenantId: tenantId,
+            title: title,
+            description: description,
+            eventType: eventType,
+            location: location,
+            city: city,
+            country: country,
+            startsAt: startsAt,
+            endsAt: endsAt,
+            maxParticipants: maxParticipants,
+            currentParticipants: currentParticipants,
+            isVirtual: isVirtual,
+            sharedWithPublic: sharedWithPublic,
+            isActive: isActive,
+            joinedByMe: joinedByMe,
+            lastSyncAt: lastSyncAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String tenantId,
+            required String title,
+            Value<String?> description = const Value.absent(),
+            required String eventType,
+            Value<String?> location = const Value.absent(),
+            Value<String?> city = const Value.absent(),
+            Value<String?> country = const Value.absent(),
+            required String startsAt,
+            Value<String?> endsAt = const Value.absent(),
+            Value<int?> maxParticipants = const Value.absent(),
+            Value<int> currentParticipants = const Value.absent(),
+            Value<bool> isVirtual = const Value.absent(),
+            required bool sharedWithPublic,
+            Value<bool> isActive = const Value.absent(),
+            Value<bool> joinedByMe = const Value.absent(),
+            required String lastSyncAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NetworkEventsTableCompanion.insert(
+            id: id,
+            tenantId: tenantId,
+            title: title,
+            description: description,
+            eventType: eventType,
+            location: location,
+            city: city,
+            country: country,
+            startsAt: startsAt,
+            endsAt: endsAt,
+            maxParticipants: maxParticipants,
+            currentParticipants: currentParticipants,
+            isVirtual: isVirtual,
+            sharedWithPublic: sharedWithPublic,
+            isActive: isActive,
+            joinedByMe: joinedByMe,
+            lastSyncAt: lastSyncAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$NetworkEventsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $NetworkEventsTableTable,
+    NetworkEventLocal,
+    $$NetworkEventsTableTableFilterComposer,
+    $$NetworkEventsTableTableOrderingComposer,
+    $$NetworkEventsTableTableAnnotationComposer,
+    $$NetworkEventsTableTableCreateCompanionBuilder,
+    $$NetworkEventsTableTableUpdateCompanionBuilder,
+    (
+      NetworkEventLocal,
+      BaseReferences<_$AppDatabase, $NetworkEventsTableTable, NetworkEventLocal>
+    ),
+    NetworkEventLocal,
+    PrefetchHooks Function()>;
+typedef $$NetworkDirectoryTableTableCreateCompanionBuilder
+    = NetworkDirectoryTableCompanion Function({
+  required String id,
+  required String tenantId,
+  Value<String?> churchName,
+  Value<String?> city,
+  Value<String?> country,
+  Value<String?> denomination,
+  Value<String?> pastorName,
+  Value<String?> contactEmail,
+  Value<String?> contactPhone,
+  Value<int?> memberCount,
+  Value<bool> isListed,
+  required String lastSyncAt,
+  Value<int> rowid,
+});
+typedef $$NetworkDirectoryTableTableUpdateCompanionBuilder
+    = NetworkDirectoryTableCompanion Function({
+  Value<String> id,
+  Value<String> tenantId,
+  Value<String?> churchName,
+  Value<String?> city,
+  Value<String?> country,
+  Value<String?> denomination,
+  Value<String?> pastorName,
+  Value<String?> contactEmail,
+  Value<String?> contactPhone,
+  Value<int?> memberCount,
+  Value<bool> isListed,
+  Value<String> lastSyncAt,
+  Value<int> rowid,
+});
+
+class $$NetworkDirectoryTableTableFilterComposer
+    extends Composer<_$AppDatabase, $NetworkDirectoryTableTable> {
+  $$NetworkDirectoryTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get churchName => $composableBuilder(
+      column: $table.churchName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get city => $composableBuilder(
+      column: $table.city, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get country => $composableBuilder(
+      column: $table.country, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get denomination => $composableBuilder(
+      column: $table.denomination, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get pastorName => $composableBuilder(
+      column: $table.pastorName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get contactEmail => $composableBuilder(
+      column: $table.contactEmail, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get contactPhone => $composableBuilder(
+      column: $table.contactPhone, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get memberCount => $composableBuilder(
+      column: $table.memberCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isListed => $composableBuilder(
+      column: $table.isListed, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$NetworkDirectoryTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $NetworkDirectoryTableTable> {
+  $$NetworkDirectoryTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get churchName => $composableBuilder(
+      column: $table.churchName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get city => $composableBuilder(
+      column: $table.city, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get country => $composableBuilder(
+      column: $table.country, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get denomination => $composableBuilder(
+      column: $table.denomination,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get pastorName => $composableBuilder(
+      column: $table.pastorName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get contactEmail => $composableBuilder(
+      column: $table.contactEmail,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get contactPhone => $composableBuilder(
+      column: $table.contactPhone,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get memberCount => $composableBuilder(
+      column: $table.memberCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isListed => $composableBuilder(
+      column: $table.isListed, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$NetworkDirectoryTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NetworkDirectoryTableTable> {
+  $$NetworkDirectoryTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get churchName => $composableBuilder(
+      column: $table.churchName, builder: (column) => column);
+
+  GeneratedColumn<String> get city =>
+      $composableBuilder(column: $table.city, builder: (column) => column);
+
+  GeneratedColumn<String> get country =>
+      $composableBuilder(column: $table.country, builder: (column) => column);
+
+  GeneratedColumn<String> get denomination => $composableBuilder(
+      column: $table.denomination, builder: (column) => column);
+
+  GeneratedColumn<String> get pastorName => $composableBuilder(
+      column: $table.pastorName, builder: (column) => column);
+
+  GeneratedColumn<String> get contactEmail => $composableBuilder(
+      column: $table.contactEmail, builder: (column) => column);
+
+  GeneratedColumn<String> get contactPhone => $composableBuilder(
+      column: $table.contactPhone, builder: (column) => column);
+
+  GeneratedColumn<int> get memberCount => $composableBuilder(
+      column: $table.memberCount, builder: (column) => column);
+
+  GeneratedColumn<bool> get isListed =>
+      $composableBuilder(column: $table.isListed, builder: (column) => column);
+
+  GeneratedColumn<String> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => column);
+}
+
+class $$NetworkDirectoryTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $NetworkDirectoryTableTable,
+    NetworkDirectoryLocal,
+    $$NetworkDirectoryTableTableFilterComposer,
+    $$NetworkDirectoryTableTableOrderingComposer,
+    $$NetworkDirectoryTableTableAnnotationComposer,
+    $$NetworkDirectoryTableTableCreateCompanionBuilder,
+    $$NetworkDirectoryTableTableUpdateCompanionBuilder,
+    (
+      NetworkDirectoryLocal,
+      BaseReferences<_$AppDatabase, $NetworkDirectoryTableTable,
+          NetworkDirectoryLocal>
+    ),
+    NetworkDirectoryLocal,
+    PrefetchHooks Function()> {
+  $$NetworkDirectoryTableTableTableManager(
+      _$AppDatabase db, $NetworkDirectoryTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NetworkDirectoryTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NetworkDirectoryTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NetworkDirectoryTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> tenantId = const Value.absent(),
+            Value<String?> churchName = const Value.absent(),
+            Value<String?> city = const Value.absent(),
+            Value<String?> country = const Value.absent(),
+            Value<String?> denomination = const Value.absent(),
+            Value<String?> pastorName = const Value.absent(),
+            Value<String?> contactEmail = const Value.absent(),
+            Value<String?> contactPhone = const Value.absent(),
+            Value<int?> memberCount = const Value.absent(),
+            Value<bool> isListed = const Value.absent(),
+            Value<String> lastSyncAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NetworkDirectoryTableCompanion(
+            id: id,
+            tenantId: tenantId,
+            churchName: churchName,
+            city: city,
+            country: country,
+            denomination: denomination,
+            pastorName: pastorName,
+            contactEmail: contactEmail,
+            contactPhone: contactPhone,
+            memberCount: memberCount,
+            isListed: isListed,
+            lastSyncAt: lastSyncAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String tenantId,
+            Value<String?> churchName = const Value.absent(),
+            Value<String?> city = const Value.absent(),
+            Value<String?> country = const Value.absent(),
+            Value<String?> denomination = const Value.absent(),
+            Value<String?> pastorName = const Value.absent(),
+            Value<String?> contactEmail = const Value.absent(),
+            Value<String?> contactPhone = const Value.absent(),
+            Value<int?> memberCount = const Value.absent(),
+            Value<bool> isListed = const Value.absent(),
+            required String lastSyncAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NetworkDirectoryTableCompanion.insert(
+            id: id,
+            tenantId: tenantId,
+            churchName: churchName,
+            city: city,
+            country: country,
+            denomination: denomination,
+            pastorName: pastorName,
+            contactEmail: contactEmail,
+            contactPhone: contactPhone,
+            memberCount: memberCount,
+            isListed: isListed,
+            lastSyncAt: lastSyncAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$NetworkDirectoryTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $NetworkDirectoryTableTable,
+        NetworkDirectoryLocal,
+        $$NetworkDirectoryTableTableFilterComposer,
+        $$NetworkDirectoryTableTableOrderingComposer,
+        $$NetworkDirectoryTableTableAnnotationComposer,
+        $$NetworkDirectoryTableTableCreateCompanionBuilder,
+        $$NetworkDirectoryTableTableUpdateCompanionBuilder,
+        (
+          NetworkDirectoryLocal,
+          BaseReferences<_$AppDatabase, $NetworkDirectoryTableTable,
+              NetworkDirectoryLocal>
+        ),
+        NetworkDirectoryLocal,
+        PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2583,4 +5592,10 @@ class $AppDatabaseManager {
       $$ReportDraftsTableTableTableManager(_db, _db.reportDraftsTable);
   $$SyncQueueTableTableTableManager get syncQueueTable =>
       $$SyncQueueTableTableTableManager(_db, _db.syncQueueTable);
+  $$NetworkResourcesTableTableTableManager get networkResourcesTable =>
+      $$NetworkResourcesTableTableTableManager(_db, _db.networkResourcesTable);
+  $$NetworkEventsTableTableTableManager get networkEventsTable =>
+      $$NetworkEventsTableTableTableManager(_db, _db.networkEventsTable);
+  $$NetworkDirectoryTableTableTableManager get networkDirectoryTable =>
+      $$NetworkDirectoryTableTableTableManager(_db, _db.networkDirectoryTable);
 }
