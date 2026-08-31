@@ -246,6 +246,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Streaming & Live', href: '/streaming', icon: Video, subtitle: 'Cultes en direct' },
       { name: 'Diffusion', href: '/broadcast', icon: Megaphone, subtitle: 'Messages massifs' },
       { name: 'Communauté', href: '/community', icon: UsersIcon, subtitle: 'Fil social & témoignages' },
+      { name: 'Réseau inter-églises', href: '/network', icon: Globe, subtitle: 'Ressources, événements & annuaire' },
       { name: 'Prédictions IA', href: '/ai-predictions', icon: Sparkles, subtitle: 'Forecasting & analytics' },
       { name: 'Objectifs spirituels', href: '/personal-objectives', icon: Target, subtitle: 'Mes objectifs personnels' },
       { name: 'Cohésion familiale', href: '/family-cohesion', icon: Heart, subtitle: 'Santé de la famille' },

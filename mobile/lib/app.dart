@@ -121,6 +121,7 @@ import 'presentation/screens/event_checklist/event_checklist_screen.dart';
 import 'presentation/screens/skills_matrix/skills_matrix_screen.dart';
 import 'presentation/screens/group_messages/group_messages_screen.dart';
 import 'presentation/screens/broadcast/broadcast_screen.dart';
+import 'presentation/screens/network/network_screen.dart';
 import 'presentation/screens/gantt/team_gantt_screen.dart';
 import 'presentation/screens/dashboard/discipleship_path_screen.dart';
 import 'presentation/screens/dashboard/weekly_challenges_screen.dart';
@@ -920,6 +921,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/skills-matrix', name: 'skills-matrix', builder: (ctx, s) => const SkillsMatrixScreen()),
     GoRoute(path: '/group-messages', name: 'group-messages', builder: (ctx, s) => const GroupMessagesScreen()),
     GoRoute(path: '/broadcast', name: 'broadcast', builder: (ctx, s) => const BroadcastScreen()),
+    GoRoute(path: '/network', name: 'network', builder: (ctx, s) => const NetworkScreen()),
     // ===== P3 — Innovation / futuriste =====
     GoRoute(path: '/load-prediction', name: 'load-prediction', builder: (ctx, s) => const LoadPredictionScreen()),
     GoRoute(path: '/neighborhood-health', name: 'neighborhood-health', builder: (ctx, s) => const NeighborhoodHealthScreen()),

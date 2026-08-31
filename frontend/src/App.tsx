@@ -179,6 +179,7 @@ const ModerationPage = lazy(() => import('@/pages/ModerationPage'));
 const ChurchComparisonPage = lazy(() => import('@/pages/ChurchComparisonPage'));
 const UsageAnalyticsPage = lazy(() => import('@/pages/UsageAnalyticsPage'));
 const EncouragementsPage = lazy(() => import('@/pages/EncouragementsPage'));
+const NetworkPage = lazy(() => import('@/pages/NetworkPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -930,6 +931,7 @@ export default function App() {
           <Route path="/church-comparison" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ChurchComparisonPage /></ProtectedRoute>} />
           <Route path="/usage-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><UsageAnalyticsPage /></ProtectedRoute>} />
           <Route path="/encouragements" element={<ProtectedRoute><EncouragementsPage /></ProtectedRoute>} />
+          <Route path="/network" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><NetworkPage /></ProtectedRoute>} />
         </Route>
 
         {/* Page d'accueil publique (landing) — redirige vers /dashboard si connecté */}

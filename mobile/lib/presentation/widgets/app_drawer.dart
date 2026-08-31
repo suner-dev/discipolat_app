@@ -63,6 +63,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.inventory_2_rounded, 'title': 'Inventaire', 'route': '/inventory'},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
+    {'icon': Icons.hub_rounded, 'title': 'Réseau inter-églises', 'route': '/network'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
   ];
 
@@ -119,6 +120,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.inventory_2_rounded, 'title': 'Inventaire', 'route': '/inventory'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
+    {'icon': Icons.hub_rounded, 'title': 'Réseau inter-églises', 'route': '/network'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];    // Espace FAISEUR — discipolat, visites, prières, rapports, suivi, progression, présence, événements
@@ -142,6 +144,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
+    {'icon': Icons.hub_rounded, 'title': 'Réseau inter-églises', 'route': '/network'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];    // Espace CHEF DE FAMILLE — faiseurs, disciples, âmes, familles, rapports, prières, progression, alertes
@@ -164,6 +167,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
+    {'icon': Icons.hub_rounded, 'title': 'Réseau inter-églises', 'route': '/network'},
     {'icon': Icons.person_rounded, 'title': 'Profil', 'route': '/profile'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];    // Espace MEMBRE — profil, départements, famille, faiseur, présence, progression, événements, prières, activités
@@ -185,6 +189,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {'icon': Icons.notifications_rounded, 'title': 'Notifications', 'route': '/notifications'},
+    {'icon': Icons.hub_rounded, 'title': 'Réseau inter-églises', 'route': '/network'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
   ];
 
@@ -230,6 +235,7 @@ class _AppDrawerState extends State<AppDrawer> {
       case '/trainings': return l10n.navTrainings;
       case '/finances': return l10n.navFinances;
       case '/communications': return l10n.navCommunications;
+      case '/network': return l10n.networkTitle;
       case '/inventory': return l10n.navInventory;
       case '/notifications': return l10n.navNotifications;
       case '/profile': return l10n.navProfile;

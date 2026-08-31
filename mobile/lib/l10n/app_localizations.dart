@@ -286,6 +286,22 @@ class AppLocalizations {
   String get byRole => translate('byRole');
   String get broadcastEmpty => translate('broadcastEmpty');
   String get broadcastError => translate('broadcastError');
+  // ── Réseau inter-églises (PHASE 3) ──
+  String get networkTitle => translate('networkTitle');
+  String get networkResources => translate('networkResources');
+  String get networkEvents => translate('networkEvents');
+  String get networkDirectory => translate('networkDirectory');
+  String get networkError => translate('networkError');
+  String get networkEmptyResources => translate('networkEmptyResources');
+  String get networkEmptyEvents => translate('networkEmptyEvents');
+  String get networkEmptyDirectory => translate('networkEmptyDirectory');
+  String get networkJoin => translate('networkJoin');
+  String get networkLeave => translate('networkLeave');
+  String get networkDownloads => translate('networkDownloads');
+  String get networkParticipants => translate('networkParticipants');
+  String get networkVirtual => translate('networkVirtual');
+  String get networkSearchResources => translate('networkSearchResources');
+  String get networkMembers => translate('networkMembers');
   String get readLabel => translate('readLabel');
   String get formsTitle => translate('formsTitle');
   String get createForm => translate('createForm');
@@ -1988,6 +2004,22 @@ class AppLocalizations {
     'byRole': 'Par rôle',
     'broadcastEmpty': 'Aucune diffusion',
     'broadcastError': 'Erreur lors du chargement des diffusions',
+    // ── Réseau inter-églises (PHASE 3) ──
+    'networkTitle': 'Réseau inter-églises',
+    'networkResources': 'Ressources',
+    'networkEvents': 'Événements',
+    'networkDirectory': 'Annuaire',
+    'networkError': 'Erreur lors du chargement du réseau',
+    'networkEmptyResources': 'Aucune ressource partagée',
+    'networkEmptyEvents': 'Aucun événement à venir',
+    'networkEmptyDirectory': 'Aucune église listée',
+    'networkJoin': 'Participer',
+    'networkLeave': 'Quitter',
+    'networkDownloads': 'téléchargements',
+    'networkParticipants': 'participants',
+    'networkVirtual': 'En ligne',
+    'networkSearchResources': 'Rechercher une ressource…',
+    'networkMembers': 'membres',
     'readLabel': 'lu',
     'formsTitle': 'Formulaires',
     'createForm': 'Créer un formulaire',
@@ -3338,6 +3370,22 @@ class AppLocalizations {
     'byRole': 'By role',
     'broadcastEmpty': 'No broadcasts',
     'broadcastError': 'Error loading broadcasts',
+    // ── Inter-church network (PHASE 3) ──
+    'networkTitle': 'Inter-church network',
+    'networkResources': 'Resources',
+    'networkEvents': 'Events',
+    'networkDirectory': 'Directory',
+    'networkError': 'Error loading the network',
+    'networkEmptyResources': 'No shared resources',
+    'networkEmptyEvents': 'No upcoming events',
+    'networkEmptyDirectory': 'No churches listed',
+    'networkJoin': 'Join',
+    'networkLeave': 'Leave',
+    'networkDownloads': 'downloads',
+    'networkParticipants': 'participants',
+    'networkVirtual': 'Online',
+    'networkSearchResources': 'Search resources…',
+    'networkMembers': 'members',
     'readLabel': 'read',
     'formsTitle': 'Forms',
     'createForm': 'Create a form',
@@ -4603,6 +4651,22 @@ class AppLocalizations {
     'byRole': 'Por cargo',
     'broadcastEmpty': 'Nenhuma difusão',
     'broadcastError': 'Erro ao carregar difusões',
+    // ── Rede entre igrejas (PHASE 3) ──
+    'networkTitle': 'Rede entre igrejas',
+    'networkResources': 'Recursos',
+    'networkEvents': 'Eventos',
+    'networkDirectory': 'Diretório',
+    'networkError': 'Erro ao carregar a rede',
+    'networkEmptyResources': 'Nenhum recurso partilhado',
+    'networkEmptyEvents': 'Nenhum evento futuro',
+    'networkEmptyDirectory': 'Nenhuma igreja listada',
+    'networkJoin': 'Participar',
+    'networkLeave': 'Sair',
+    'networkDownloads': 'transferências',
+    'networkParticipants': 'participantes',
+    'networkVirtual': 'Online',
+    'networkSearchResources': 'Pesquisar recursos…',
+    'networkMembers': 'membros',
     'readLabel': 'lido',
     'formsTitle': 'Formulários',
     'createForm': 'Criar formulário',
