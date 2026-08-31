@@ -6,6 +6,7 @@ class Testimony {
   final String categorie;
   final String statut;
   final String auteurId;
+  final String auteurNom;
   final int likes;
   final int commentaires;
   final DateTime createdAt;
@@ -17,6 +18,7 @@ class Testimony {
     required this.categorie,
     required this.statut,
     required this.auteurId,
+    required this.auteurNom,
     required this.likes,
     required this.commentaires,
     required this.createdAt,
@@ -29,6 +31,7 @@ class Testimony {
         categorie: (json['categorie'] ?? json['category'] ?? 'AUTRE').toString(),
         statut: (json['statut'] ?? json['status'] ?? 'EN_ATTENTE').toString(),
         auteurId: (json['auteurId'] ?? json['auteur_id'] ?? '').toString(),
+        auteurNom: (json['auteurNom'] ?? json['auteur_nom'] ?? 'Anonyme').toString(),
         likes: json['likes'] is int ? json['likes'] as int : int.tryParse('${json['likes']}') ?? 0,
         commentaires: json['commentaires'] is int ? json['commentaires'] as int : int.tryParse('${json['commentaires']}') ?? 0,
         createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),

@@ -29,7 +29,7 @@ export default function CommunityPage() {
 
   const posts: CommunityPost[] = (postsData?.content ?? postsData ?? []).map((p: any) => ({
     id: p.id,
-    author: p.author || p.auteur || 'Anonyme',
+    author: p.auteurNom || p.author || p.auteur || 'Anonyme',
     role: p.role || p.categorie || '',
     content: p.contenu || p.content || '',
     type: (p.type || p.categorie || 'testimony') as CommunityPost['type'],

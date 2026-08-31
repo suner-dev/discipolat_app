@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,19 +26,25 @@ public class TestimonyController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponse<Testimony>> list(
+    public ResponseEntity<PageResponse<TestimonyResponse>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String statut,
             @RequestParam(required = false) String categorie) {
         Page<Testimony> result = testimonyService.list(PageRequest.of(page, size), statut, categorie);
-        return ResponseEntity.ok(PageResponse.of(result.getContent(), page, size,
+        Map<UUID, String> auteurNames = testimonyService.resolveAuteurNames(result.getContent());
+        List<TestimonyResponse> responses = result.getContent().stream()
+                .map(t -> TestimonyResponse.from(t, auteurNames.getOrDefault(t.getAuteurId(), "Anonyme")))
+                .toList();
+        return ResponseEntity.ok(PageResponse.of(responses, page, size,
                 result.getTotalElements(), result.getTotalPages()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Testimony> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(testimonyService.getById(id));
+    public ResponseEntity<TestimonyResponse> get(@PathVariable UUID id) {
+        Testimony t = testimonyService.getById(id);
+        Map<UUID, String> auteurNames = testimonyService.resolveAuteurNames(List.of(t));
+        return ResponseEntity.ok(TestimonyResponse.from(t, auteurNames.getOrDefault(t.getAuteurId(), "Anonyme")));
     }
 
     @PostMapping

@@ -218,7 +218,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   backgroundColor: Colors.pink.shade100,
                   radius: 18,
                   child: Text(
-                    t.auteurId.isNotEmpty ? t.auteurId[0].toUpperCase() : '?',
+                    t.auteurNom.isNotEmpty ? t.auteurNom[0].toUpperCase() : '?',
                     style: TextStyle(color: Colors.pink.shade700, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
