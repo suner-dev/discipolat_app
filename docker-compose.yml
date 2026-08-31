@@ -65,6 +65,7 @@ services:
       APP_BETA_TESTING_SEED_DEMO_ACCOUNTS: "true"
       FRONTEND_URL: "*"
       SERVER_FORWARD_HEADERS_STRATEGY: "framework"
+      ENCRYPTION_AES_KEY: ${ENCRYPTION_AES_KEY:-}
     depends_on:
       db:
         condition: service_healthy
