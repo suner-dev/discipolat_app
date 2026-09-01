@@ -28,13 +28,11 @@ const RISK_MAP: Record<string, string> = { LOW: 'low', MEDIUM: 'medium', HIGH: '
 export default function AiPredictionsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const tenantId = Number(localStorage.getItem('tenantId') || localStorage.getItem('orgId') || 0);
   const [filter, setFilter] = useState<'all' | 'high' | 'growth'>('all');
 
   const { data: rawPredictions = [], isLoading, error } = useQuery({
-    queryKey: ['ai-predictions', tenantId],
-    queryFn: async () => (await api.get('/ai-predictions', { params: { tenantId } })).data as Prediction[],
-    enabled: tenantId > 0,
+    queryKey: ['ai-predictions'],
+    queryFn: async () => (await api.get('/ai-predictions')).data as Prediction[],
     retry: false,
   });
 
@@ -49,7 +47,7 @@ export default function AiPredictionsPage() {
   }));
 
   const generateMutation = useMutation({
-    mutationFn: async () => (await api.post(`/ai-predictions/generate?tenantId=${tenantId}`)).data,
+    mutationFn: async () => (await api.post('/ai-predictions/generate')).data,
     onSuccess: () => { toast.success('Prédictions régénérées'); queryClient.invalidateQueries({ queryKey: ['ai-predictions'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
