@@ -209,12 +209,12 @@ class _GivingScreenState extends State<GivingScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: Text(AppLocalizations.of(context).common['cancel'] ?? 'Annuler'),
+        title: Text(AppLocalizations.of(context).cancel),
         content: Text(AppLocalizations.of(context).recurringCancelled),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(c, false),
-              child: Text(AppLocalizations.of(context).common['cancel'] ?? 'Non')),
+              child: Text(AppLocalizations.of(context).cancel)),
           TextButton(
               onPressed: () => Navigator.pop(c, true),
               child: const Text('Oui')),

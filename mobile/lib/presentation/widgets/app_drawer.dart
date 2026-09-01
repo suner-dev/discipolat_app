@@ -57,6 +57,8 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.savings_rounded, 'title': 'Tontines', 'route': '/tontines'},
     {'icon': Icons.mic_rounded, 'title': 'Rapports vocaux', 'route': '/voice-reports'},
     {'icon': Icons.record_voice_over_rounded, 'title': 'PasteurBot Vocal', 'route': '/voice-assistant'},
+    {'icon': Icons.smart_toy_rounded, 'title': 'Assistant IA', 'route': '/ai-assistant'},
+    {'icon': Icons.query_stats_rounded, 'title': 'Prédictions IA', 'route': '/ai-predictions'},
     {'icon': Icons.face_retouching_natural_rounded, 'title': 'Pointage facial', 'route': '/face-checkin'},
     {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
     {'icon': Icons.account_balance_wallet_rounded, 'title': 'Finances', 'route': '/finances'},
@@ -116,6 +118,8 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.warning_amber_rounded, 'title': 'Alertes', 'route': '/alerts'},
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
     {'icon': Icons.favorite_border_rounded, 'title': 'Actions de grâce', 'route': '/prayers/actions-de-grace'},
+    {'icon': Icons.smart_toy_rounded, 'title': 'Assistant IA', 'route': '/ai-assistant'},
+    {'icon': Icons.query_stats_rounded, 'title': 'Prédictions IA', 'route': '/ai-predictions'},
     {'icon': Icons.folder_rounded, 'title': 'Documents', 'route': '/documents'},
     {'icon': Icons.campaign_rounded, 'title': 'Annonces', 'route': '/communications'},
     {'icon': Icons.inventory_2_rounded, 'title': 'Inventaire', 'route': '/inventory'},
@@ -134,6 +138,9 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.flag_rounded, 'title': 'Objectifs', 'route': '/objectives'},
     {'icon': Icons.mic_rounded, 'title': 'Rapports vocaux', 'route': '/voice-reports'},
     {'icon': Icons.record_voice_over_rounded, 'title': 'PasteurBot Vocal', 'route': '/voice-assistant'},
+    {'icon': Icons.smart_toy_rounded, 'title': 'Assistant IA', 'route': '/ai-assistant'},
+    {'icon': Icons.query_stats_rounded, 'title': 'Prédictions IA', 'route': '/ai-predictions'},
+    {'icon': Icons.auto_stories_rounded, 'title': 'Journal Prophétique', 'route': '/prophetic-journal'},
     {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
     {'icon': Icons.favorite_border_rounded, 'title': 'Actions de grâce', 'route': '/prayers/actions-de-grace'},
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
@@ -158,6 +165,8 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.star_rounded, 'title': 'Évaluations', 'route': '/evaluations'},
     {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
     {'icon': Icons.favorite_border_rounded, 'title': 'Actions de grâce', 'route': '/prayers/actions-de-grace'},
+    {'icon': Icons.smart_toy_rounded, 'title': 'Assistant IA', 'route': '/ai-assistant'},
+    {'icon': Icons.query_stats_rounded, 'title': 'Prédictions IA', 'route': '/ai-predictions'},
     {'icon': Icons.trending_up_rounded, 'title': 'Progression', 'route': '/families'},
     {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits'},
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
@@ -179,6 +188,8 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.timeline_rounded, 'title': 'Mes activités', 'route': '/dashboard/membre/activities'},
     {'icon': Icons.book_rounded, 'title': 'Prières', 'route': '/prayers'},
     {'icon': Icons.favorite_border_rounded, 'title': 'Actions de grâce', 'route': '/prayers/actions-de-grace'},
+    {'icon': Icons.smart_toy_rounded, 'title': 'Assistant IA', 'route': '/ai-assistant'},
+    {'icon': Icons.query_stats_rounded, 'title': 'Prédictions IA', 'route': '/ai-predictions'},
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
     {'icon': Icons.school_rounded, 'title': 'Formations', 'route': '/trainings'},
     {'icon': Icons.emoji_events_rounded, 'title': 'Badges', 'route': '/badges'},
@@ -231,6 +242,9 @@ class _AppDrawerState extends State<AppDrawer> {
       case '/tontines': return l10n.navTontines;
       case '/voice-reports': return l10n.navVoiceReports;
       case '/voice-assistant': return l10n.navVoiceAssistant;
+      case '/ai-assistant': return l10n.navAiAssistant;
+      case '/ai-predictions': return l10n.navAiPredictions;
+      case '/prophetic-journal': return l10n.navPropheticJournal;
       case '/face-checkin': return l10n.navFaceCheckin;
       case '/trainings': return l10n.navTrainings;
       case '/finances': return l10n.navFinances;

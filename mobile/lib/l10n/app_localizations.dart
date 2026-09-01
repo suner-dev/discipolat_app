@@ -974,6 +974,9 @@ class AppLocalizations {
   String get navTontines => translate('navTontines');
   String get navVoiceReports => translate('navVoiceReports');
   String get navVoiceAssistant => translate('navVoiceAssistant');
+  String get navAiAssistant => translate('navAiAssistant');
+  String get navAiPredictions => translate('navAiPredictions');
+  String get navPropheticJournal => translate('navPropheticJournal');
   String get navFaceCheckin => translate('navFaceCheckin');
   String get navTrainings => translate('navTrainings');
   String get navFinances => translate('navFinances');
@@ -2137,6 +2140,9 @@ class AppLocalizations {
     'navVisits': 'Visites',
     'navVoiceAssistant': 'PasteurBot Vocal',
     'navVoiceReports': 'Rapports vocaux',
+    'navAiAssistant': 'Assistant IA',
+    'navAiPredictions': 'Prédictions IA',
+    'navPropheticJournal': 'Journal Prophétique',
     'navWeeklyChallenges': 'Défis hebdo',
     'navWhatsApp': 'WhatsApp Rappels',
     'profileDepartment': 'Département',

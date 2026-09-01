@@ -48,6 +48,7 @@ import 'presentation/screens/tontine/tontine_screen.dart';
 import 'presentation/screens/voice_reports/voice_report_screen.dart';
 import 'presentation/screens/face_checkin/face_checkin_screen.dart';
 import 'presentation/screens/ar_onboarding/ar_onboarding_screen.dart';
+import 'presentation/screens/prophetic_journal/prophetic_journal_screen.dart';
 import 'presentation/screens/trainings/trainings_screen.dart';
 import 'presentation/screens/trainings/sermon_transcription_screen.dart';
 import 'presentation/screens/messages/messages_screen.dart';
@@ -305,7 +306,10 @@ Map<String, List<String>> _routeRoles = {
   '/giving': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/tontines': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/voice-reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-  '/voice-assistant': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/voice-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/ai-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/ai-predictions': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/prophetic-journal': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/compliance': ['ADMIN', 'PASTEUR'],
   '/whatsapp-reminders': ['ADMIN', 'PASTEUR'],
   '/discipleship-path': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -331,7 +335,7 @@ Map<String, List<String>> _routeRoles = {
   '/admin/tenants': ['ADMIN'],
   '/security-settings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/onboarding': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
-  '/health-observatory': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  '/health-observatory': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/digital-twin': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
 };
 
@@ -936,6 +940,9 @@ final appRouter = GoRouter(
     GoRoute(path: '/team-gantt', name: 'team-gantt', builder: (ctx, s) => const TeamGanttScreen()),
     // P0 new screens
     GoRoute(path: '/voice-assistant', name: 'voice-assistant', builder: (ctx, s) => const VoiceAssistantScreen()),
+    GoRoute(path: '/ai-assistant', name: 'ai-assistant', builder: (ctx, s) => const AiAssistantScreen()),
+    GoRoute(path: '/ai-predictions', name: 'ai-predictions', builder: (ctx, s) => const AiPredictionsScreen()),
+    GoRoute(path: '/prophetic-journal', name: 'prophetic-journal', builder: (ctx, s) => const PropheticJournalScreen()),
     GoRoute(path: '/compliance', name: 'compliance', builder: (ctx, s) => const ComplianceManagerScreen()),
     GoRoute(path: '/whatsapp-reminders', name: 'whatsapp-reminders', builder: (ctx, s) => const WhatsAppRemindersScreen()),
     GoRoute(path: '/data-migration', name: 'data-migration', builder: (ctx, s) => const DataMigrationScreen()),

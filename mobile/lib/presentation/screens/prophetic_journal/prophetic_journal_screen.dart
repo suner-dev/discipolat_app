@@ -131,7 +131,7 @@ class _PropheticJournalScreenState extends State<PropheticJournalScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final typeMeta = (key: String) =>
+    final typeMeta = (String key) =>
         _entryTypes[key] ?? ('Révélation', Icons.lightbulb, const Color(0xFFFBBF24));
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -281,35 +281,33 @@ class _PropheticJournalScreenState extends State<PropheticJournalScreen> {
                                         const SizedBox(height: 8),
                                         Wrap(
                                           spacing: 6,
-                                          children: (e['tags']
-                                                  .toString()
-                                                  .split(RegExp(r'[,;]')))
-                                              .map((t) => t.trim())
-                                              .where((t) => t.isNotEmpty)
-                                              .map((t) => Container(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 3),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white
-                                                          .withValues(
-                                                              alpha: 0.06),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                    ),
-                                                    child: Text('#$t',
-                                                        style: TextStyle(
-                                                            color: Colors.white
-                                                                .withValues(
-                                                                    alpha:
-                                                                        0.6),
-                                                            fontSize: 11)),
-                                                  ))
-                                              .toList(),
+                                          runSpacing: 6,
+                                          children: [
+                                            for (final t in e['tags']
+                                                .toString()
+                                                .split(RegExp(r'[,;]'))
+                                                .map((x) => x.trim())
+                                                .where((x) => x.isNotEmpty))
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.06),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: Text('#$t',
+                                                    style: TextStyle(
+                                                        color: Colors.white
+                                                            .withValues(
+                                                                alpha: 0.6),
+                                                        fontSize: 11)),
+                                              ),
+                                          ],
                                         ),
-                                      ),
+                                      ],
                                       const SizedBox(height: 8),
                                       Row(
                                         children: [
@@ -543,6 +541,7 @@ class _CorrelationSheet extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
