@@ -1,5 +1,9 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:record/record.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
@@ -25,6 +29,8 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
   final _sessionId = ValueNotifier<String>(_generateSessionId());
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _sttConfigured = true;
 
   final List<_ChatMessage> _messages = [];
   bool _isProcessing = false;
@@ -46,28 +52,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
     'Quelles sont les alertes actives ?',
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _inputController.dispose();
-    _scrollController.dispose();
-    _pulseController.dispose();
-    _sessionId.dispose();
-    super.dispose();
-  }
-
-  // ── API calls ──────────────────────────────────────
+// ── API calls ──────────────────────────────────────
 
   Future<void> _processMessage(String text) async {
     if (text.trim().isEmpty || _isProcessing) return;
@@ -135,29 +120,151 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
     } catch (_) {}
   }
 
-  // ── Recording simulation ──────────────────────────
+  // ── Real recording + STT ─────────────────────────
 
-  void _toggleRecording() {
-    if (_isRecording) {
-      setState(() => _isRecording = false);
-      // Demo: pick a random command
-      final cmd =
-          _quickCommands[DateTime.now().millisecond % _quickCommands.length];
-      _inputController.text = cmd;
-    } else {
-      setState(() => _isRecording = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎙️ Écoute en cours...'),
-          duration: Duration(seconds: 2),
-          backgroundColor: Color(0xFF0891B2),
-        ),
-      );
-      // Auto-stop after 3 seconds (demo)
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted && _isRecording) _toggleRecording();
-      });
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    _checkSttAvailability();
+  }
+
+  Future<void> _checkSttAvailability() async {
+    try {
+      final res = await _api.get('/voice/stt-status');
+      if (mounted) {
+        setState(() {
+          _sttConfigured = (res.data as Map<String, dynamic>)['configured'] == true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _sttConfigured = false);
     }
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      await _stopRecording();
+      return;
+    }
+
+    final hasPermission = await AudioRecorder().hasPermission();
+    if (!hasPermission) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎙️ Autorisation micro requise (paramètres système)'),
+            backgroundColor: Color(0xFFB45309),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}/pasteurbot_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: path,
+      );
+      if (mounted) {
+        setState(() => _isRecording = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎙️ Enregistrement en cours... Speak now'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Color(0xFF0891B2),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impossible de démarrer l\'enregistrement'),
+            backgroundColor: Color(0xFFB45309),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    if (!_isRecording) return;
+    setState(() => _isRecording = false);
+    try {
+      final filePath = await _recorder.stop();
+      if (filePath == null || filePath.isEmpty) return;
+      final file = File(filePath);
+      if (!await file.exists() || await file.length() == 0) return;
+
+      final bytes = await file.readAsBytes();
+      await _processTranscription(bytes, filePath.split('/').last);
+    } catch (_) {
+      // silencieux : le micro peut ne pas être disponible sur l'émulateur
+    }
+  }
+
+  Future<void> _processTranscription(List<int> bytes, String filename) async {
+    setState(() => _isProcessing = true);
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    try {
+      final res = await _api.postMultipart(
+        '/voice/transcribe',
+        fieldName: 'file',
+        fileBytes: Uint8List.fromList(bytes),
+        filename: filename,
+        data: {'sessionId': _sessionId.value},
+      );
+      final data = res.data as Map<String, dynamic>;
+      final transcription = data['transcription']?.toString() ?? data['text']?.toString() ?? '';
+      if (transcription.isEmpty) {
+        if (mounted) {
+          setState(() => _isProcessing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Aucune parole reconnue')),
+          );
+        }
+        return;
+      }
+      _inputController.text = transcription;
+      await _processMessage(transcription);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isProcessing = false);
+      final message = e.toString().contains('503') ||
+              e.toString().contains('STT_NOT_CONFIGURED')
+          ? '🤖 La transcription vocale n\'est pas configurée sur le serveur. Tapez votre question ou activez le provider STT.'
+          : '🤖 Transcription impossible pour le moment. Réessayez.';
+      _messages.add(_ChatMessage(
+        role: 'assistant',
+        content: message,
+        timestamp: DateTime.now(),
+      ));
+      _scrollToBottom();
+    }
+  }
+
+  @override
+  void dispose() {
+    _recorder.dispose();
+    _inputController.dispose();
+    _scrollController.dispose();
+    _pulseController.dispose();
+    _sessionId.dispose();
+    super.dispose();
   }
 
   // ── Helpers ──────────────────────────────────────
@@ -266,6 +373,16 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
               'Tapez ou enregistrez une question vocale.',
               style: TextStyle(color: Colors.white.withAlpha(140), fontSize: 13),
             ),
+            if (!_sttConfigured)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '⚙️ Transcription vocale indisponible : configurez le provider STT côté serveur, puis réessayez.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.amber.shade300, fontSize: 11),
+                ),
+              ),
             const SizedBox(height: 24),
             Wrap(
               spacing: 8,
