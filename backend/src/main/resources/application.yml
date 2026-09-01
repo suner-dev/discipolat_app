@@ -84,6 +84,30 @@ app:
   whatsapp:
     # Pont WhatsApp Business Cloud API — désactivé tant que les credentials Meta ne sont pas fournis.
     enabled: ${WHATSAPP_ENABLED:false}
+  mobilemoney:
+    # Bascule générale : passer en mode appels opérateurs réels.
+    # false = fallback local (référence générée, pas d'appel API opérateur).
+    enabled: ${MOBILEMONEY_ENABLED:false}
+    orange:
+      api-key: ${ORANGE_API_KEY:}
+      merchant-key: ${ORANGE_MERCHANT_KEY:}
+      base-url: ${ORANGE_BASE_URL:https://api.orange.com}
+      webhook-secret: ${ORANGE_WEBHOOK_SECRET:}
+      return-url: ${ORANGE_RETURN_URL:http://localhost:5173/giving}
+      notif-url: ${ORANGE_NOTIF_URL:}
+    mtn:
+      base-url: ${MTN_BASE_URL:https://sandbox.momodeveloper.mtn.com}
+      subscription-key: ${MTN_SUBSCRIPTION_KEY:}
+      client-id: ${MTN_CLIENT_ID:}
+      client-secret: ${MTN_CLIENT_SECRET:}
+      webhook-secret: ${MTN_WEBHOOK_SECRET:}
+    mpesa:
+      base-url: ${MPESA_BASE_URL:https://sandbox.safaricom.co.ke}
+      consumer-key: ${MPESA_CONSUMER_KEY:}
+      consumer-secret: ${MPESA_CONSUMER_SECRET:}
+      short-code: ${MPESA_SHORT_CODE:}
+      passkey: ${MPESA_PASSKEY:}
+      webhook-secret: ${MPESA_WEBHOOK_SECRET:}
   payments:
     # Secret partagé accepté sur le webhook opérateur (vide => endpoint fermé, 503).
     webhook-secret: ${PAYMENTS_WEBHOOK_SECRET:}
