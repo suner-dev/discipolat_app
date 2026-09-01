@@ -2,13 +2,14 @@ package com.discipolat.modules.payments.api;
 
 import com.discipolat.modules.payments.domain.*;
 import com.discipolat.modules.payments.domain.PaymentProviderProperties;
+import com.discipolat.modules.payments.domain.WebhookSignatureVerifier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -16,16 +17,18 @@ import java.util.Map;
 /**
  * Webhooks opérateurs Mobile Money — réceptionne les callbacks de confirmation.
  *
- * <p>Chaque opérateur a son propre format de callback :</p>
+ * <p>Chaque opérateur a son propre format de callback et son mécanisme de
+ * vérification :</p>
  * <ul>
- *   <li><strong>M-Pesa (Safaricom)</strong> : POST JSON avec {@code stkCallback} (ResultCode=0 → succès)</li>
- *   <li><strong>Orange Money</strong> : POST JSON avec {@code status} + {@code pay_token} + {@code order_id}</li>
- *   <li><strong>MTN MoMo</strong> : pas de webhook natif — le {@link PaymentWebhookScheduler} poll l'API de vérification</li>
+ *   <li><strong>M-Pesa (Safaricom)</strong> : POST JSON stkCallback + IP whitelisting</li>
+ *   <li><strong>Orange Money</strong> : POST JSON + HMAC-SHA256 dans X-Orange-Signature</li>
+ *   <li><strong>MTN MoMo</strong> : pas de webhook natif — HMAC sur l'endpoint manuel</li>
+ *   <li><strong>Générique</strong> : HMAC-SHA256 dans X-Webhook-Signature</li>
  * </ul>
  *
- * <p>Sécurité : chaque webhook vérifie le secret partagé de l'opérateur. Sans
- * secret configuré, l'endpoint est désactivé (503). Un webhook reçu deux fois
- * est idempotent grâce à {@link PaymentGatewayService#handleWebhook}.</p>
+ * <p>Sécurité : chaque webhook vérifie la signature/origine. Sans secret configuré,
+ * la vérification est désactivée (mode sandbox). En production, un secret est
+ * OBLIGATOIRE. Un webhook reçu deux fois est idempotent.</p>
  */
 @RestController
 @RequestMapping("/api/v1/payments/webhooks")
@@ -36,14 +39,17 @@ public class PaymentWebhookController {
     private final PaymentGatewayService gatewayService;
     private final PaymentProviderProperties props;
     private final MobileMoneyProviderRegistry providerRegistry;
+    private final WebhookSignatureVerifier verifier;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public PaymentWebhookController(PaymentGatewayService gatewayService,
                                      PaymentProviderProperties props,
-                                     MobileMoneyProviderRegistry providerRegistry) {
+                                     MobileMoneyProviderRegistry providerRegistry,
+                                     WebhookSignatureVerifier verifier) {
         this.gatewayService = gatewayService;
         this.props = props;
         this.providerRegistry = providerRegistry;
+        this.verifier = verifier;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -52,6 +58,8 @@ public class PaymentWebhookController {
 
     /**
      * Callback M-Pesa reçu par Safaricom après validation STK Push.
+     *
+     * <p>Sécurité : vérification IP source + lookup référence en base.</p>
      *
      * <p>Format Safaricom :
      * <pre>{
@@ -64,17 +72,18 @@ public class PaymentWebhookController {
      *     }
      *   }
      * }</pre></p>
-     *
-     * <p>ResultCode 0 = succès, tout autre code = échec.</p>
      */
     @PostMapping("/mpesa")
-    public ResponseEntity<?> mpesaCallback(@RequestBody String rawBody) {
-        log.info("[Webhook:M-Pesa] Callback reçu");
+    public ResponseEntity<?> mpesaCallback(@RequestBody String rawBody,
+                                            HttpServletRequest request) {
+        String sourceIp = getClientIp(request);
+        log.info("[Webhook:M-Pesa] Callback reçu depuis {}", sourceIp);
 
-        // Vérification secret (optionnel mais recommandé en production)
-        if (props.getMpesaWebhookSecret() != null && !props.getMpesaWebhookSecret().isBlank()) {
-            // Safaricom peut envoyer le Basic Auth ou un header dédié
-            // En sandbox, on accepte sans vérification stricte
+        // Vérification sécurité M-Pesa (IP +TLS)
+        if (!verifier.verifyMpesa(rawBody, sourceIp, props.getMpesaWebhookSecret())) {
+            log.warn("[Webhook:M-Pesa] Vérification échouée — IP={}, refusé", sourceIp);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Invalid M-Pesa callback source"));
         }
 
         try {
@@ -104,7 +113,7 @@ public class PaymentWebhookController {
             boolean success = resultCode == 0;
             String reason = success ? null : (resultDesc != null ? resultDesc : "M-Pesa ResultCode=" + resultCode);
 
-            log.info("[Webhook:M-Pesa] ref={} — code={} — success={}", reference, resultCode, success);
+            log.info("[Webhook:M-Pesa] ref={} — code={} — success={} — ip={}", reference, resultCode, success, sourceIp);
             PaymentIntent result = gatewayService.handleWebhook(reference, success, reason);
 
             return ResponseEntity.ok(Map.of(
@@ -118,11 +127,14 @@ public class PaymentWebhookController {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // Orange Money — Web Payment notification
+    // Orange Money — Web Payment notification + HMAC-SHA256
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
      * Notification Orange Money après paiement web.
+     *
+     * <p>Sécurité : HMAC-SHA256 du body dans le header X-Orange-Signature,
+     * signé avec le merchant key.</p>
      *
      * <p>Format Orange :
      * <pre>{
@@ -133,17 +145,18 @@ public class PaymentWebhookController {
      *   "amount": "5000",
      *   "currency": "XOF"
      * }</pre></p>
-     *
-     * <p>statut {@code SUCCESS} = paiement confirmé.</p>
      */
     @PostMapping("/orange")
-    public ResponseEntity<?> orangeCallback(@RequestBody String rawBody) {
-        log.info("[Webhook:Orange] Notification reçue");
+    public ResponseEntity<?> orangeCallback(@RequestBody String rawBody,
+                                             @RequestHeader(value = "X-Orange-Signature", required = false) String signature,
+                                             HttpServletRequest request) {
+        log.info("[Webhook:Orange] Notification reçue depuis {}", getClientIp(request));
 
-        // Vérification secret webhook
-        if (props.getOrangeWebhookSecret() != null && !props.getOrangeWebhookSecret().isBlank()) {
-            // En production, Orange signe le body — vérification HMAC ici
-            // En sandbox, on accepte sans vérification
+        // Vérification HMAC-SHA256 avec le merchant key
+        if (!verifier.verifyOrange(rawBody, signature, props.getOrangeMerchantKey())) {
+            log.warn("[Webhook:Orange] Signature HMAC invalide — refusé");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Invalid Orange Money signature"));
         }
 
         try {
@@ -167,7 +180,6 @@ public class PaymentWebhookController {
 
             // Orange envoie le pay_token comme référence, mais notre intent peut avoir
             // soit le pay_token soit la référence locale comme providerReference.
-            // On essaie d'abord le pay_token, puis l'order_id.
             PaymentIntent result = null;
             try {
                 result = gatewayService.handleWebhook(reference, success, reason);
@@ -191,24 +203,33 @@ public class PaymentWebhookController {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // MTN MoMo — Pas de webhook natif → vérification manuelle par le scheduler
+    // MTN MoMo — Vérification manuelle signée
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Endpoint de vérification manuelle pour MTN MoMo.
+     * Endpoint de vérification manuelle pour MTN MoMo, protégé par HMAC.
      *
      * <p>MTN ne fournit pas de callback push. Ce endpoint permet au scheduler
-     * ({@link PaymentWebhookScheduler}) de vérifier le statut d'un paiement
-     * MTN via l'API de polling, OU à un tiers de pousser la confirmation
-     * lorsqu'il a vérifié côté MTN.</p>
+     * ou à un tiers de vérifier/pousser la confirmation. La requête doit
+     * être signée avec HMAC-SHA256 dans le header {@code X-MTN-Signature}.</p>
+     *
+     * <p>Signature = HMAC-SHA256(reference, subscription_key)</p>
      */
     @PostMapping("/mtn/verify")
-    public ResponseEntity<?> mtnManualVerify(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> mtnManualVerify(@RequestBody Map<String, Object> body,
+                                              @RequestHeader(value = "X-MTN-Signature", required = false) String signature) {
         log.info("[Webhook:MTN] Vérification manuelle reçue");
 
         String reference = body.get("reference") != null ? body.get("reference").toString() : null;
         if (reference == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Missing 'reference' field"));
+        }
+
+        // Vérification HMAC-SHA256 de la référence
+        if (!verifier.verifyMtn(reference, signature, props.getMtnSubscriptionKey())) {
+            log.warn("[Webhook:MTN] Signature invalide pour ref={} — refusé", reference);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Invalid MTN signature"));
         }
 
         try {
@@ -245,28 +266,65 @@ public class PaymentWebhookController {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // Webhook générique (backward-compatible)
+    // Webhook générique — HMAC-SHA256 du body
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
      * Webhook générique — format unifié pour tous les opérateurs.
-     * Utilisable avec n'importe quel provider ou pour des tests manuels.
+     *
+     * <p>Sécurité : HMAC-SHA256 du body dans le header {@code X-Webhook-Signature},
+     * signé avec le secret partagé {@code app.payments.webhook-secret}.</p>
      *
      * <p>Body : {@code { "reference": "...", "success": true/false, "reason": "..." }}</p>
      */
     @PostMapping("/generic")
-    public ResponseEntity<?> genericCallback(@RequestBody Map<String, Object> body) {
-        String reference = body.get("reference") != null ? body.get("reference").toString() : null;
-        if (reference == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Missing 'reference' field"));
+    public ResponseEntity<?> genericCallback(@RequestBody String rawBody,
+                                              @RequestHeader(value = "X-Webhook-Signature", required = false) String signature) {
+        // Vérification HMAC-SHA256
+        if (!verifier.verifyGeneric(rawBody, signature, props.getOrangeWebhookSecret())) {
+            log.warn("[Webhook:Generic] Signature invalide — refusé");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Invalid webhook signature"));
         }
-        boolean success = Boolean.TRUE.equals(body.get("success"));
-        String reason = body.get("reason") != null ? body.get("reason").toString() : null;
 
-        log.info("[Webhook:Generic] ref={} — success={}", reference, success);
-        PaymentIntent result = gatewayService.handleWebhook(reference, success, reason);
-        return ResponseEntity.ok(Map.of(
-                "status", result.getStatus().name(),
-                "reference", reference));
+        try {
+            JsonNode json = objectMapper.readTree(rawBody);
+            String reference = json.has("reference") ? json.get("reference").asText() : null;
+            if (reference == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Missing 'reference' field"));
+            }
+            boolean success = json.has("success") && json.get("success").asBoolean();
+            String reason = json.has("reason") && !json.get("reason").isNull()
+                    ? json.get("reason").asText() : null;
+
+            log.info("[Webhook:Generic] ref={} — success={}", reference, success);
+            PaymentIntent result = gatewayService.handleWebhook(reference, success, reason);
+            return ResponseEntity.ok(Map.of(
+                    "status", result.getStatus().name(),
+                    "reference", reference));
+        } catch (Exception e) {
+            log.error("[Webhook:Generic] Erreur traitement", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Processing error"));
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Utilitaires
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Extrait l'IP réelle du client (en tenant compte des proxies/load balancers).
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isBlank()) {
+            return xRealIp;
+        }
+        return request.getRemoteAddr();
     }
 }
