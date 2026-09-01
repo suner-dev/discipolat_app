@@ -273,6 +273,25 @@ class AppLocalizations {
   String get statusPending => translate('statusPending');
   String get statusFailed => translate('statusFailed');
   String get statusCancelled => translate('statusCancelled');
+  // ── Dons récurrents ──
+  String get recurringTitle => translate('recurringTitle');
+  String get recurringNew => translate('recurringNew');
+  String get recurringHide => translate('recurringHide');
+  String get recurringCreate => translate('recurringCreate');
+  String get recurringFrequency => translate('recurringFrequency');
+  String get recurringWeekly => translate('recurringWeekly');
+  String get recurringBimonthly => translate('recurringBimonthly');
+  String get recurringMonthly => translate('recurringMonthly');
+  String get recurringQuarterly => translate('recurringQuarterly');
+  String get recurringYearly => translate('recurringYearly');
+  String get recurringCreated => translate('recurringCreated');
+  String get recurringCancelled => translate('recurringCancelled');
+  String get recurringActive => translate('recurringActive');
+  String get recurringInactive => translate('recurringInactive');
+  String get recurringEmpty => translate('recurringEmpty');
+  String get recurringNextDate => translate('recurringNextDate');
+  String get recurringTotalDonated => translate('recurringTotalDonated');
+  String get recurringDonations => translate('recurringDonations');
   // ── Lot H5 : broadcast / forms / church-directory ──
   String get broadcastTitle => translate('broadcastTitle');
   String get newBroadcast => translate('newBroadcast');
@@ -1991,6 +2010,25 @@ class AppLocalizations {
     'statusPending': 'En attente',
     'statusFailed': 'Échoué',
     'statusCancelled': 'Annulé',
+    // ── Dons récurrents ──
+    'recurringTitle': 'Dons récurrents',
+    'recurringNew': 'Nouveau don récurrent',
+    'recurringHide': 'Masquer',
+    'recurringCreate': 'Créer le don récurrent',
+    'recurringFrequency': 'Fréquence',
+    'recurringWeekly': 'Hebdomadaire',
+    'recurringBimonthly': 'Bimensuel',
+    'recurringMonthly': 'Mensuel',
+    'recurringQuarterly': 'Trimestriel',
+    'recurringYearly': 'Annuel',
+    'recurringCreated': 'Don récurrent créé avec succès !',
+    'recurringCancelled': 'Don récurrent annulé.',
+    'recurringActive': 'Actif',
+    'recurringInactive': 'Inactif',
+    'recurringEmpty': 'Aucun don récurrent. Créez-en un pour automatiser vos dons.',
+    'recurringNextDate': 'Prochaine échéance',
+    'recurringTotalDonated': 'Total donné',
+    'recurringDonations': 'dons',
     // ── Lot H5 : broadcast / forms / church-directory ──
     'broadcastTitle': 'Diffusion / Broadcast',
     'newBroadcast': 'Nouvelle diffusion',
@@ -3358,6 +3396,25 @@ class AppLocalizations {
     'statusPending': 'Pending',
     'statusFailed': 'Failed',
     'statusCancelled': 'Cancelled',
+    // ── Recurring donations ──
+    'recurringTitle': 'Recurring gifts',
+    'recurringNew': 'New recurring gift',
+    'recurringHide': 'Hide',
+    'recurringCreate': 'Create recurring gift',
+    'recurringFrequency': 'Frequency',
+    'recurringWeekly': 'Weekly',
+    'recurringBimonthly': 'Bi-monthly',
+    'recurringMonthly': 'Monthly',
+    'recurringQuarterly': 'Quarterly',
+    'recurringYearly': 'Yearly',
+    'recurringCreated': 'Recurring gift created successfully!',
+    'recurringCancelled': 'Recurring gift cancelled.',
+    'recurringActive': 'Active',
+    'recurringInactive': 'Inactive',
+    'recurringEmpty': 'No recurring gifts. Create one to automate your donations.',
+    'recurringNextDate': 'Next due date',
+    'recurringTotalDonated': 'Total donated',
+    'recurringDonations': 'donations',
     'broadcastTitle': 'Broadcast',
     'newBroadcast': 'New broadcast',
     'sent': 'Sent',

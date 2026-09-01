@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'presentation/screens/ai_assistant/ai_assistant_screen.dart';
+import 'presentation/screens/ai_predictions/ai_predictions_screen.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/main_scaffold.dart';
 import 'presentation/screens/dashboard/pasteur_dashboard_screen.dart';

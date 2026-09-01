@@ -6,7 +6,7 @@ import '../../../data/services/api_service.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../widgets/secure_screen.dart';
 
-/// Dîmes & Offrandes 2.0 — don par Mobile Money avec suivi du statut.
+/// Dîmes & Offrandes 2.0 — don par Mobile Money avec suivi du statut + dons récurrents.
 class GivingScreen extends StatefulWidget {
   const GivingScreen({super.key});
 
@@ -28,6 +28,17 @@ class _GivingScreenState extends State<GivingScreen> {
   List<dynamic> _mine = [];
   bool _isLoading = true;
 
+  // Recurring donation state
+  bool _showRecurringForm = false;
+  final _rcAmountCtrl = TextEditingController();
+  final _rcPhoneCtrl = TextEditingController();
+  String _rcOperator = 'ORANGE_MONEY';
+  String _rcPurpose = 'DIME';
+  String _rcFrequency = 'MONTHLY';
+  bool _rcSubmitting = false;
+  List<dynamic> _recurring = [];
+  bool _recurringLoading = true;
+
   static const _operators = {
     'M_PESA': 'M-Pesa',
     'MTN_MOMO': 'MTN MoMo',
@@ -44,11 +55,19 @@ class _GivingScreenState extends State<GivingScreen> {
     'PROJET_SPECIAL': 'Projet spécial',
     'DON_DIASPORA': 'Don diaspora',
   };
+  static const _frequencies = {
+    'WEEKLY': 'Hebdomadaire',
+    'BIWEEKLY': 'Bimensuel',
+    'MONTHLY': 'Mensuel',
+    'QUARTERLY': 'Trimestriel',
+    'YEARLY': 'Annuel',
+  };
 
   @override
   void initState() {
     super.initState();
     _loadMine();
+    _loadRecurring();
   }
 
   @override
@@ -56,6 +75,8 @@ class _GivingScreenState extends State<GivingScreen> {
     _pollTimer?.cancel();
     _amountCtrl.dispose();
     _phoneCtrl.dispose();
+    _rcAmountCtrl.dispose();
+    _rcPhoneCtrl.dispose();
     super.dispose();
   }
 
@@ -69,6 +90,19 @@ class _GivingScreenState extends State<GivingScreen> {
       });
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadRecurring() async {
+    try {
+      final res = await _apiService.get('/payments/recurring/mine');
+      if (!mounted) return;
+      setState(() {
+        _recurring = (res.data is List ? res.data : []) as List<dynamic>;
+        _recurringLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _recurringLoading = false);
     }
   }
 
@@ -135,6 +169,76 @@ class _GivingScreenState extends State<GivingScreen> {
     }
   }
 
+  Future<void> _createRecurring() async {
+    final amount = num.tryParse(_rcAmountCtrl.text.trim());
+    if (amount == null || amount <= 0) return;
+    setState(() => _rcSubmitting = true);
+    try {
+      await _apiService.post('/payments/recurring', data: {
+        'operator': _rcOperator,
+        'amount': amount,
+        'purpose': _rcPurpose,
+        'frequency': _rcFrequency,
+        'currency': 'XOF',
+        if (_rcPhoneCtrl.text.trim().isNotEmpty)
+          'phoneNumber': _rcPhoneCtrl.text.trim(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context).recurringCreated),
+            backgroundColor: const Color(0xFF2E7D32)));
+        setState(() {
+          _showRecurringForm = false;
+          _rcAmountCtrl.clear();
+          _rcPhoneCtrl.clear();
+        });
+        _loadRecurring();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context).paymentFailed),
+            backgroundColor: Color(0xFFC62828)));
+      }
+    } finally {
+      if (mounted) setState(() => _rcSubmitting = false);
+    }
+  }
+
+  Future<void> _cancelRecurring(String id) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(AppLocalizations.of(context).common['cancel'] ?? 'Annuler'),
+        content: Text(AppLocalizations.of(context).recurringCancelled),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: Text(AppLocalizations.of(context).common['cancel'] ?? 'Non')),
+          TextButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('Oui')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _apiService.post('/payments/recurring/$id/cancel');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context).recurringCancelled),
+            backgroundColor: const Color(0xFF2E7D32)));
+        _loadRecurring();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context).paymentFailed),
+            backgroundColor: Color(0xFFC62828)));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SecureScreen(
@@ -144,10 +248,14 @@ class _GivingScreenState extends State<GivingScreen> {
       appBar: AppBar(title: Text(AppLocalizations.of(context).tithesAndOfferings)),
       drawer: const AppDrawer(),
       body: RefreshIndicator(
-        onRefresh: _loadMine,
+        onRefresh: () async {
+          await _loadMine();
+          await _loadRecurring();
+        },
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
+            // ── Formulaire de don unique ──
             GlassCard(
               child: Form(
                 key: _formKey,
@@ -178,7 +286,7 @@ class _GivingScreenState extends State<GivingScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      initialValue: _operator,
+                      value: _operator,
                       dropdownColor: const Color(0xFF1E293B),
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
@@ -196,7 +304,7 @@ class _GivingScreenState extends State<GivingScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      initialValue: _purpose,
+                      value: _purpose,
                       dropdownColor: const Color(0xFF1E293B),
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
@@ -250,7 +358,7 @@ class _GivingScreenState extends State<GivingScreen> {
                                     strokeWidth: 2)),
                             const SizedBox(width: 8),
                             Expanded(
-                              child:                  Text(
+                              child: Text(
                                 AppLocalizations.of(context).waitingConfirmation(_pendingRef!),
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
@@ -266,11 +374,216 @@ class _GivingScreenState extends State<GivingScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // ── Section dons récurrents ──
+            GlassCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.repeat_rounded,
+                              color: Color(0xFF9C27B0), size: 20),
+                          const SizedBox(width: 8),
+                          Text(AppLocalizations.of(context).recurringTitle,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      TextButton.icon(
+                        onPressed: () =>
+                            setState(() => _showRecurringForm = !_showRecurringForm),
+                        icon: Icon(
+                          _showRecurringForm
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          color: Colors.white54,
+                        ),
+                        label: Text(
+                          _showRecurringForm
+                              ? AppLocalizations.of(context).recurringHide
+                              : AppLocalizations.of(context).recurringNew,
+                          style: const TextStyle(color: Colors.white54, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_showRecurringForm) ...[
+                    const SizedBox(height: 12),
+                    _buildRecurringForm(),
+                  ],
+                  const SizedBox(height: 12),
+                  _buildRecurringList(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Historique des dons ──
             ..._buildHistory(),
           ],
         ),
       ),
     ),
+    );
+  }
+
+  Widget _buildRecurringForm() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _rcAmountCtrl,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).amountXOF,
+              labelStyle: TextStyle(color: Colors.white54),
+              prefixIcon: Icon(Icons.payments_rounded, color: Colors.white54),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _rcPurpose,
+            dropdownColor: const Color(0xFF1E293B),
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            isDense: true,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).destinationLabel,
+              labelStyle: TextStyle(color: Colors.white54),
+              prefixIcon: Icon(Icons.church_rounded, color: Colors.white54, size: 18),
+            ),
+            items: _purposes.entries
+                .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                .toList(),
+            onChanged: (v) => setState(() => _rcPurpose = v ?? _rcPurpose),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _rcFrequency,
+            dropdownColor: const Color(0xFF1E293B),
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            isDense: true,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).recurringFrequency,
+              labelStyle: TextStyle(color: Colors.white54),
+              prefixIcon: Icon(Icons.schedule_rounded, color: Colors.white54, size: 18),
+            ),
+            items: _frequencies.entries
+                .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                .toList(),
+            onChanged: (v) => setState(() => _rcFrequency = v ?? _rcFrequency),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _rcPhoneCtrl,
+            keyboardType: TextInputType.phone,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).mobilePhoneOptional,
+              labelStyle: TextStyle(color: Colors.white54),
+              prefixIcon: Icon(Icons.phone_rounded, color: Colors.white54, size: 18),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _rcSubmitting ? null : _createRecurring,
+              icon: _rcSubmitting
+                  ? const SizedBox(
+                      width: 14, height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.repeat_rounded, size: 18),
+              label: Text(AppLocalizations.of(context).recurringCreate),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecurringList() {
+    if (_recurringLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(12),
+        child: Center(
+            child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2))),
+      );
+    }
+    if (_recurring.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: Text(
+          AppLocalizations.of(context).recurringEmpty,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
+        ),
+      );
+    }
+    return Column(
+      children: _recurring.map((rd) {
+        final m = rd as Map<String, dynamic>;
+        final active = m['active'] == true;
+        final color = active ? const Color(0xFF9C27B0) : Colors.white24;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Icon(Icons.repeat_rounded, color: color, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${m['amount']} ${m['currency'] ?? 'XOF'} · ${_operators[m['operator']] ?? m['operator']}',
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      '${_frequencies[m['frequency']] ?? m['frequency']}${m['nextDonationDate'] != null ? ' · ${AppLocalizations.of(context).recurringNextDate}: ${m['nextDonationDate']}' : ''}',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color.withAlpha(38),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  active ? AppLocalizations.of(context).recurringActive : AppLocalizations.of(context).recurringInactive,
+                  style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+                ),
+              ),
+              if (active)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.pause_circle_outline, color: Colors.white38, size: 20),
+                  onPressed: () => _cancelRecurring(m['id'] as String),
+                ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 

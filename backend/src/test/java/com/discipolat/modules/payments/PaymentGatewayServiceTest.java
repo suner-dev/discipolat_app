@@ -6,6 +6,7 @@ import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.finances.api.FinanceTransactionRequest;
 import com.discipolat.modules.finances.domain.FinanceService;
+import com.discipolat.modules.payments.domain.MobileMoneyProviderRegistry;
 import com.discipolat.modules.payments.domain.PaymentGatewayService;
 import com.discipolat.modules.payments.domain.PaymentIntent;
 import com.discipolat.modules.payments.domain.PaymentIntentRepository;
@@ -34,13 +35,14 @@ class PaymentGatewayServiceTest {
     @Mock private FinanceService financeService;
     @Mock private EntityPropagationPublisher propagationPublisher;
     @Mock private SecurityUtils securityUtils;
+    @Mock private MobileMoneyProviderRegistry providerRegistry;
 
     private PaymentGatewayService service;
     private final UUID tenantId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        service = new PaymentGatewayService(repository, financeService, propagationPublisher, securityUtils);
+        service = new PaymentGatewayService(repository, financeService, propagationPublisher, securityUtils, providerRegistry);
         TenantContext.setTenantId(tenantId);
         lenient().when(repository.save(any(PaymentIntent.class))).thenAnswer(inv -> inv.getArgument(0));
         Map<String, Object> txResult = new java.util.LinkedHashMap<>();

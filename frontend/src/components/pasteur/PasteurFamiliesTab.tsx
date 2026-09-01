@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -7,15 +7,33 @@ import {
   Users, Plus, Search, Eye, Edit3, Trash2, ArrowLeft,
   Loader2, AlertTriangle, Shield, History, ChevronRight,
   BarChart3, Filter, RotateCcw, Archive,
+  Bot, Send, Sparkles, X, MessageSquare, Copy, Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 type ViewMode = 'liste' | 'detail' | 'create' | 'edit' | 'archive';
 
+interface AiChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+const FAMILY_SUGGESTIONS = [
+  'Quelles familles sont à risque ?',
+  'Résumé des présences cette semaine',
+  'Quels nouveaux convertis suivre en priorité ?',
+  'Génère un rapport pastoral pour les familles',
+];
+
 export default function PasteurFamiliesTab() {
   const queryClient = useQueryClient();
-  const [aiQuery, setAiQuery] = useState('');
-  const [aiResponse, setAiResponse] = useState<Map<string, any> | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiInput, setAiInput] = useState('');
+  const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([]);
+  const aiMessagesEndRef = useRef<HTMLDivElement>(null);
+  const [aiCopiedId, setAiCopiedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState('');
@@ -91,12 +109,58 @@ export default function PasteurFamiliesTab() {
     else { createMutation.mutate(form); }
   }, [form, editingId, createMutation, updateMutation]);
 
-  const handleAiQuery = async () => {
-    if (!aiQuery) return;
-    const response = await api.post('/api/v1/ai/chat', { message: aiQuery });
-    setAiResponse(response.data);
-    setAiQuery('');
+  const aiMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const userMsg: AiChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content,
+        timestamp: new Date().toISOString(),
+      };
+      setAiMessages((prev) => [...prev, userMsg]);
+      try {
+        const res = await api.post('/api/v1/ai/chat', { message: content });
+        return res.data as { reply: string; sources?: string[] };
+      } catch {
+        return { reply: 'Désolé, je ne peux pas répondre pour le moment. Vérifiez que l\'assistant IA est configuré.', sources: [] };
+      }
+    },
+    onSuccess: (data) => {
+      const assistantMsg: AiChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: data.reply,
+        timestamp: new Date().toISOString(),
+      };
+      setAiMessages((prev) => [...prev, assistantMsg]);
+    },
+    onError: () => {
+      toast.error('Erreur de communication avec l\'assistant IA');
+    },
+  });
+
+  const handleAiSend = useCallback(() => {
+    if (!aiInput.trim() || aiMutation.isPending) return;
+    aiMutation.mutate(aiInput.trim());
+    setAiInput('');
+  }, [aiInput, aiMutation]);
+
+  const handleAiKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAiSend();
+    }
   };
+
+  const handleAiCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setAiCopiedId(id);
+    setTimeout(() => setAiCopiedId(null), 2000);
+  };
+
+  useEffect(() => {
+    aiMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [aiMessages]);
 
   // === VUE DÉTAIL ===
   if (view === 'detail' && selectedFamily) {
@@ -298,6 +362,127 @@ export default function PasteurFamiliesTab() {
           </div>
         </div>
       )}
+
+      {/* === COPILOT IA FLOTTANT === */}
+      {aiOpen && (
+        <div className="fixed bottom-20 right-4 z-40 w-[380px] max-h-[500px] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col animate-slide-up overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-violet-500/10 to-purple-500/10 dark:from-violet-500/5 dark:to-purple-500/5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center">
+                <Bot className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Copilot Familles</p>
+                <p className="text-[10px] text-gray-400">IA locale • Aucune donnée externe</p>
+              </div>
+            </div>
+            <button onClick={() => setAiOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+              <X className="w-4 h-4 text-gray-500" />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-[200px]">
+            {aiMessages.length === 0 && (
+              <div className="text-center py-4">
+                <Sparkles className="w-8 h-8 text-violet-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Posez une question sur vos familles</p>
+                <p className="text-xs text-gray-400 mb-3">L'IA connaît les données de votre église</p>
+                <div className="space-y-1.5">
+                  {FAMILY_SUGGESTIONS.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setAiInput(s); }}
+                      className="w-full text-left p-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50/50 dark:hover:bg-violet-900/10 transition-all text-xs text-gray-600 dark:text-gray-400"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {aiMessages.map((msg) => (
+              <div key={msg.id} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'assistant' && (
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-3 h-3 text-white" />
+                  </div>
+                )}
+                <div className={`max-w-[80%] p-3 rounded-xl text-sm ${
+                  msg.role === 'user'
+                    ? 'bg-primary-600 text-white rounded-br-md'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
+                }`}>
+                  <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="text-[9px] opacity-50">
+                      {new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {msg.role === 'assistant' && (
+                      <button onClick={() => handleAiCopy(msg.id, msg.content)} className="opacity-50 hover:opacity-100">
+                        {aiCopiedId === msg.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {aiMutation.isPending && (
+              <div className="flex gap-2">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                  <Bot className="w-3 h-3 text-white" />
+                </div>
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-xl rounded-bl-md p-3">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    L'IA réfléchit...
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={aiMessagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="border-t border-gray-200/50 dark:border-gray-700/50 px-4 py-3">
+            <div className="flex gap-2 items-end">
+              <textarea
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                onKeyDown={handleAiKeyDown}
+                placeholder="Question sur les familles..."
+                className="flex-1 resize-none rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                rows={1}
+                disabled={aiMutation.isPending}
+              />
+              <button
+                onClick={handleAiSend}
+                disabled={!aiInput.trim() || aiMutation.isPending}
+                className="rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white p-2.5 hover:from-violet-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {aiMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating AI button */}
+      <button
+        onClick={() => setAiOpen(!aiOpen)}
+        className={`fixed bottom-4 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all ${
+          aiOpen
+            ? 'bg-gray-800 dark:bg-gray-700 text-white rotate-0'
+            : 'bg-gradient-to-br from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:scale-105'
+        }`}
+        title="Copilot IA Familles"
+      >
+        {aiOpen ? <X className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+      </button>
     </div>
   );
 }

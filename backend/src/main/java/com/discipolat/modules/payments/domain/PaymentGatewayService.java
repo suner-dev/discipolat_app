@@ -36,19 +36,29 @@ public class PaymentGatewayService {
     private final FinanceService financeService;
     private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
+    private final MobileMoneyProviderRegistry providerRegistry;
 
     public PaymentGatewayService(PaymentIntentRepository repository,
                                  FinanceService financeService,
                                  EntityPropagationPublisher propagationPublisher,
-                                 SecurityUtils securityUtils) {
+                                 SecurityUtils securityUtils,
+                                 MobileMoneyProviderRegistry providerRegistry) {
         this.repository = repository;
         this.financeService = financeService;
         this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
+        this.providerRegistry = providerRegistry;
     }
 
     /**
      * Démarre une intention de paiement et retourne la référence opérateur.
+     *
+     * <p>Si un provider opérateur réel est configuré pour cet opérateur
+     * (credentials présents), l'API opérateur est appelée via
+     * {@link MobileMoneyProvider#initiate} et la référence, l'URL de checkout
+     * et les instructions sont stockées sur l'intention. Sinon, une référence
+     * locale est générée (fallback dev) et la confirmation passera par le
+     * webhook opérateur signé.</p>
      */
     public PaymentIntent initiate(PaymentIntent intent) {
         intent.setTenantId(securityUtils.getCurrentTenantId());
@@ -63,6 +73,28 @@ public class PaymentGatewayService {
             intent.setStatus(PaymentIntent.Status.PENDING);
         }
         intent.setProviderReference(generateReference(intent));
+
+        // Appel API opérateur réel si un provider est configuré
+        MobileMoneyProvider provider = providerRegistry.find(intent.getOperator());
+        if (provider != null) {
+            try {
+                MobileMoneyProvider.Result result = provider.initiate(intent);
+                intent.setProviderReference(result.providerReference());
+                intent.setProviderName(intent.getOperator().getLabel());
+                intent.setCheckoutUrl(result.checkoutUrl());
+                intent.setInstructions(result.instructions());
+                log.info("[Gateway] Provider réel {} invoqué pour {} — ref={}",
+                        intent.getOperator().getLabel(), intent.getId(), result.providerReference());
+            } catch (Exception e) {
+                log.error("[Gateway] Provider {} échoué, fallback référence locale",
+                        intent.getOperator().getLabel(), e);
+                // Le intent conserve la référence locale générée, pas de throw
+            }
+        } else {
+            log.debug("[Gateway] Aucun provider actif pour {} — référence locale",
+                    intent.getOperator().getLabel());
+        }
+
         PaymentIntent saved = repository.save(intent);
         propagationPublisher.publishCreated("PAYMENT_INTENT", saved.getId(),
                 Map.of("operator", saved.getOperator().name(),
