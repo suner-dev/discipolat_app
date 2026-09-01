@@ -31,4 +31,22 @@ public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, UU
     @Query("SELECT FUNCTION('to_char', p.createdAt, 'YYYY-MM'), COALESCE(SUM(p.amount), 0) FROM PaymentIntent p " +
            "WHERE p.status = 'CONFIRMED' GROUP BY FUNCTION('to_char', p.createdAt, 'YYYY-MM') ORDER BY 1 DESC")
     List<Object[]> monthlyTrend();
+
+    @Query("SELECT p.purpose, COALESCE(SUM(p.amount), 0), COUNT(p) FROM PaymentIntent p " +
+           "WHERE p.status = 'CONFIRMED' GROUP BY p.purpose ORDER BY SUM(p.amount) DESC")
+    List<Object[]> sumConfirmedByPurpose();
+
+    @Query("SELECT COALESCE(AVG(p.amount), 0), COALESCE(MAX(p.amount), 0), COALESCE(MIN(p.amount), 0) " +
+           "FROM PaymentIntent p WHERE p.status = 'CONFIRMED'")
+    Object[] amountStats();
+
+    @Query("SELECT FUNCTION('to_char', p.createdAt, 'YYYY-MM-DD'), COALESCE(SUM(p.amount), 0), COUNT(p) " +
+           "FROM PaymentIntent p WHERE p.status = 'CONFIRMED' " +
+           "AND p.createdAt >= :since GROUP BY FUNCTION('to_char', p.createdAt, 'YYYY-MM-DD') ORDER BY 1 DESC")
+    List<Object[]> dailyTrend(@Param("since") java.time.LocalDateTime since);
+
+    @Query("SELECT p.providerName, COALESCE(SUM(p.amount), 0), COUNT(p) FROM PaymentIntent p " +
+           "WHERE p.status = 'CONFIRMED' AND p.providerName IS NOT NULL " +
+           "GROUP BY p.providerName ORDER BY SUM(p.amount) DESC")
+    List<Object[]> confirmedByProvider();
 }

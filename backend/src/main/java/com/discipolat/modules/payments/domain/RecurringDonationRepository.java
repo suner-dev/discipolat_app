@@ -20,4 +20,16 @@ public interface RecurringDonationRepository extends JpaRepository<RecurringDona
     List<RecurringDonation> findByTenantIdAndActiveTrue(UUID tenantId);
 
     long countByTenantIdAndActiveTrue(UUID tenantId);
+
+    @Query("SELECT r.frequency, COALESCE(SUM(r.amount), 0), COUNT(r) FROM RecurringDonation r " +
+           "WHERE r.active = true AND r.tenantId = :tenantId GROUP BY r.frequency ORDER BY SUM(r.amount) DESC")
+    List<Object[]> sumActiveByFrequency(@Param("tenantId") UUID tenantId);
+
+    @Query("SELECT r.operator, COALESCE(SUM(r.amount), 0), COUNT(r) FROM RecurringDonation r " +
+           "WHERE r.active = true AND r.tenantId = :tenantId GROUP BY r.operator ORDER BY SUM(r.amount) DESC")
+    List<Object[]> sumActiveByOperator(@Param("tenantId") UUID tenantId);
+
+    @Query("SELECT COALESCE(SUM(r.amount), 0), COALESCE(AVG(r.amount), 0), COALESCE(SUM(r.donationCount), 0), COALESCE(SUM(r.totalDonated), 0) FROM RecurringDonation r " +
+           "WHERE r.active = true AND r.tenantId = :tenantId")
+    Object[] recurringSummary(@Param("tenantId") UUID tenantId);
 }

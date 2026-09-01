@@ -102,6 +102,7 @@ const QuestPage = lazy(() => import('@/pages/QuestPage'));
 const HealthObservatoryPage = lazy(() => import('@/pages/HealthObservatoryPage'));
 const TontinePage = lazy(() => import('@/pages/TontinePage'));
 const GivingPage = lazy(() => import('@/pages/GivingPage'));
+const AdminPaymentDashboardPage = lazy(() => import('@/pages/AdminPaymentDashboardPage'));
 const AdminWebhooksPage = lazy(() => import('@/pages/AdminWebhooksPage'));
 const AdminWhatsappPage = lazy(() => import('@/pages/AdminWhatsappPage'));
 const AdminConnectorsPage = lazy(() => import('@/pages/AdminConnectorsPage'));
@@ -492,6 +493,11 @@ export default function App() {
           <Route path="/giving" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
               <GivingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/payments" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <AdminPaymentDashboardPage />
             </ProtectedRoute>
           } />
           <Route path="/health-observatory" element={

@@ -132,6 +132,13 @@ public class PaymentController {
         return ResponseEntity.ok(service.stats());
     }
 
+    /** Dashboard admin complet — KPIs, répartitions, tendances, dons récurrents. */
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> dashboard() {
+        return ResponseEntity.ok(service.dashboard());
+    }
+
     // === P12 — Dons récurrents ===
 
     /** Crée un don récurrent (dîme mensuelle, offrande hebdomadaire…). */

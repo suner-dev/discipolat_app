@@ -33,17 +33,20 @@ public class PaymentGatewayService {
     private static final Logger log = LoggerFactory.getLogger(PaymentGatewayService.class);
 
     private final PaymentIntentRepository repository;
+    private final RecurringDonationRepository recurringDonationRepository;
     private final FinanceService financeService;
     private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
     private final MobileMoneyProviderRegistry providerRegistry;
 
     public PaymentGatewayService(PaymentIntentRepository repository,
+                                 RecurringDonationRepository recurringDonationRepository,
                                  FinanceService financeService,
                                  EntityPropagationPublisher propagationPublisher,
                                  SecurityUtils securityUtils,
                                  MobileMoneyProviderRegistry providerRegistry) {
         this.repository = repository;
+        this.recurringDonationRepository = recurringDonationRepository;
         this.financeService = financeService;
         this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
@@ -202,6 +205,118 @@ public class PaymentGatewayService {
     public PaymentIntent findById(UUID id) {
         return repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("PaymentIntent", id));
+    }
+
+    /**
+     * Dashboard admin complet — stats enrichies pour le tableau de bord.
+     * Combine les stats de base, la répartition par opérateur, par destination,
+     * les montants moyens et la tendance mensuelle.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> dashboard() {
+        Map<String, Object> dashboard = new LinkedHashMap<>();
+
+        // KPIs de base
+        long pending = repository.countByStatus(PaymentIntent.Status.PENDING);
+        long confirmed = repository.countByStatus(PaymentIntent.Status.CONFIRMED);
+        long failed = repository.countByStatus(PaymentIntent.Status.FAILED);
+        long cancelled = repository.countByStatus(PaymentIntent.Status.CANCELLED);
+        dashboard.put("pending", pending);
+        dashboard.put("confirmed", confirmed);
+        dashboard.put("failed", failed);
+        dashboard.put("cancelled", cancelled);
+        dashboard.put("total", pending + confirmed + failed + cancelled);
+        dashboard.put("confirmationRate", confirmed + failed > 0
+                ? Math.round(confirmed * 100.0 / (confirmed + failed)) : 0);
+
+        // Montants
+        Object[] amountStats = repository.amountStats();
+        dashboard.put("avgAmount", amountStats[0]);
+        dashboard.put("maxAmount", amountStats[1]);
+        dashboard.put("minAmount", amountStats[2]);
+
+        // Répartition par opérateur
+        List<Map<String, Object>> byOperator = new ArrayList<>();
+        for (Object[] row : repository.sumConfirmedByOperator()) {
+            PaymentIntent.Operator op = (PaymentIntent.Operator) row[0];
+            byOperator.add(Map.of(
+                    "operator", op.name(),
+                    "label", op.getLabel(),
+                    "total", row[1],
+                    "count", row[2]));
+        }
+        dashboard.put("byOperator", byOperator);
+
+        // Répartition par provider réel
+        List<Map<String, Object>> byProvider = new ArrayList<>();
+        for (Object[] row : repository.confirmedByProvider()) {
+            byProvider.add(Map.of(
+                    "provider", row[0],
+                    "total", row[1],
+                    "count", row[2]));
+        }
+        dashboard.put("byProvider", byProvider);
+
+        // Répartition par destination (purpose)
+        List<Map<String, Object>> byPurpose = new ArrayList<>();
+        for (Object[] row : repository.sumConfirmedByPurpose()) {
+            PaymentIntent.Purpose purpose = (PaymentIntent.Purpose) row[0];
+            byPurpose.add(Map.of(
+                    "purpose", purpose.name(),
+                    "total", row[1],
+                    "count", row[2]));
+        }
+        dashboard.put("byPurpose", byPurpose);
+
+        // Tendance mensuelle
+        List<Map<String, Object>> monthlyTrend = new ArrayList<>();
+        for (Object[] row : repository.monthlyTrend()) {
+            monthlyTrend.add(Map.of("month", row[0], "total", row[1]));
+        }
+        dashboard.put("monthlyTrend", monthlyTrend);
+
+        // Tendance quotidienne (30 derniers jours)
+        List<Map<String, Object>> dailyTrend = new ArrayList<>();
+        for (Object[] row : repository.dailyTrend(java.time.LocalDateTime.now().minusDays(30))) {
+            dailyTrend.add(Map.of("date", row[0], "total", row[1], "count", row[2]));
+        }
+        dashboard.put("dailyTrend", dailyTrend);
+
+        // Stats dons récurrents
+        UUID tenantId = securityUtils.getCurrentTenantId();
+        Object[] recurringSummary = recurringDonationRepository.recurringSummary(tenantId);
+        dashboard.put("recurring", Map.of(
+                "activeCount", recurringDonationRepository.countByTenantIdAndActiveTrue(tenantId),
+                "monthlyCommitment", recurringSummary[0],
+                "avgCommitment", recurringSummary[1],
+                "totalProcessed", recurringSummary[2],
+                "totalRecurringDonated", recurringSummary[3]));
+
+        // Récurrents par fréquence
+        List<Map<String, Object>> recurringByFrequency = new ArrayList<>();
+        for (Object[] row : recurringDonationRepository.sumActiveByFrequency(tenantId)) {
+            RecurringDonation.Frequency freq = (RecurringDonation.Frequency) row[0];
+            recurringByFrequency.add(Map.of(
+                    "frequency", freq.name(),
+                    "label", freq.getLabel(),
+                    "total", row[1],
+                    "count", row[2]));
+        }
+        dashboard.put("recurringByFrequency", recurringByFrequency);
+
+        // Récurrents par opérateur
+        List<Map<String, Object>> recurringByOperator = new ArrayList<>();
+        for (Object[] row : recurringDonationRepository.sumActiveByOperator(tenantId)) {
+            PaymentIntent.Operator op = (PaymentIntent.Operator) row[0];
+            recurringByOperator.add(Map.of(
+                    "operator", op.name(),
+                    "label", op.getLabel(),
+                    "total", row[1],
+                    "count", row[2]));
+        }
+        dashboard.put("recurringByOperator", recurringByOperator);
+
+        return dashboard;
     }
 
     /* ------------------------------ Internes ------------------------------ */
