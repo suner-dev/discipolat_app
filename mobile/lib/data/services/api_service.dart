@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_config.dart';
@@ -102,6 +103,26 @@ class ApiService {
     _dio.patch(path, data: data);
 
   Future<Response> delete(String path) => _dio.delete(path);
+
+  /// Envoie un fichier (multipart/form-data) sur [path].
+  /// [fieldName] est le nom du champ multipart attendu par le backend.
+  Future<Response> postMultipart(
+    String path, {
+    required String fieldName,
+    required Uint8List fileBytes,
+    required String filename,
+    Map<String, dynamic>? data,
+  }) async {
+    final form = FormData.fromMap({
+      if (data != null) ...data,
+      fieldName: MultipartFile.fromBytes(
+        fileBytes,
+        filename: filename,
+        contentType: DioMediaType('audio', 'wav'),
+      ),
+    });
+    return _dio.post(path, data: form);
+  }
 
   Future<void> saveTokens(Map<String, dynamic> data) async {
     if (data.containsKey('accessToken')) {

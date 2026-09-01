@@ -284,7 +284,7 @@ class _FamiliesListScreenState extends State<FamiliesListScreen> {
                     )
                   else
                     ..._families.map((f) {
-                      final family = f as Map;
+                      final family = Map<String, dynamic>.from(f);
                       final nom = family['nom'] ?? 'Famille';
                       final chefNom = family['chefFamilleNom'] ?? '—';
                       final statut = family['statut'] ?? 'ACTIVE';

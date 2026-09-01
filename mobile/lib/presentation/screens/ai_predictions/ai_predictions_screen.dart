@@ -332,7 +332,7 @@ class _AiPredictionsScreenState extends State<AiPredictionsScreen> {
                   child: _valueColumn('ACTUEL',
                       _formatNum(current), Colors.grey.shade600),
                 ),
-                const Icon(Icons.arrow_forward, size: 18, color: color),
+                Icon(Icons.arrow_forward, size: 18, color: color),
                 Expanded(
                   child: _valueColumn('PRÉVU', _formatNum(predicted), color,
                       bold: true),
