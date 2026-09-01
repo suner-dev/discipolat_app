@@ -76,6 +76,7 @@ import 'presentation/screens/platform/admin_integrations_screen.dart';
 import 'presentation/screens/platform/admin_tenants_screen.dart';
 import 'presentation/screens/admin/benchmark_screen.dart';
 import 'presentation/screens/admin/admin_payment_dashboard_screen.dart';
+import 'presentation/screens/admin/webhook_log_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
 import 'presentation/screens/souls/soul_qr_screen.dart';
 import 'presentation/screens/departments/qr_scanner_screen.dart';
@@ -335,6 +336,7 @@ Map<String, List<String>> _routeRoles = {
   '/admin/integrations': ['ADMIN'],
   '/admin/tenants': ['ADMIN'],
   '/admin/payments': ['ADMIN', 'PASTEUR'],
+  '/admin/webhook-logs': ['ADMIN', 'PASTEUR'],
   '/security-settings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/onboarding': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/health-observatory': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -804,6 +806,11 @@ final appRouter = GoRouter(
       path: '/admin/payments',
       name: 'admin-payments',
       builder: (context, state) => const AdminPaymentDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/admin/webhook-logs',
+      name: 'admin-webhook-logs',
+      builder: (context, state) => const WebhookLogScreen(),
     ),
     GoRoute(
       path: '/benchmark',

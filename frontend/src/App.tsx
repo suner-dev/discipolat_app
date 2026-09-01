@@ -103,6 +103,7 @@ const HealthObservatoryPage = lazy(() => import('@/pages/HealthObservatoryPage')
 const TontinePage = lazy(() => import('@/pages/TontinePage'));
 const GivingPage = lazy(() => import('@/pages/GivingPage'));
 const AdminPaymentDashboardPage = lazy(() => import('@/pages/AdminPaymentDashboardPage'));
+const WebhookLogPage = lazy(() => import('@/pages/WebhookLogPage'));
 const AdminWebhooksPage = lazy(() => import('@/pages/AdminWebhooksPage'));
 const AdminWhatsappPage = lazy(() => import('@/pages/AdminWhatsappPage'));
 const AdminConnectorsPage = lazy(() => import('@/pages/AdminConnectorsPage'));
@@ -548,6 +549,11 @@ export default function App() {
           <Route path="/admin/webhooks" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminWebhooksPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/webhook-logs" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <WebhookLogPage />
             </ProtectedRoute>
           } />
           <Route path="/trainings" element={
