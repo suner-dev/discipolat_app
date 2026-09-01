@@ -25,7 +25,9 @@ public class PaymentProviderProperties {
     private String orangeApiKey;
     @Value("${app.mobilemoney.orange.merchant-key:}")
     private String orangeMerchantKey;
-        @Value("${app.mobilemoney.orange.base-url:https://api.orange.com}")
+    @Value("${app.mobilemoney.orange.client-secret:}")
+    private String orangeClientSecret;
+    @Value("${app.mobilemoney.orange.base-url:https://api.orange.com}")
     private String orangeBaseUrl;
     @Value("${app.mobilemoney.orange.webhook-secret:}")
     private String orangeWebhookSecret;
@@ -61,7 +63,8 @@ public class PaymentProviderProperties {
     private String mpesaWebhookSecret;
 
     public boolean isOrangeEnabled() {
-        return enabled && orangeApiKey != null && !orangeApiKey.isBlank();
+        return enabled && orangeApiKey != null && !orangeApiKey.isBlank()
+                && orangeMerchantKey != null && !orangeMerchantKey.isBlank();
     }
 
     public boolean isMtnEnabled() {

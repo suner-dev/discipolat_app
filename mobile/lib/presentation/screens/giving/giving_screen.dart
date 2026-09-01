@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
@@ -120,10 +121,30 @@ class _GivingScreenState extends State<GivingScreen> {
       });
       final ref = res.data['providerReference'] as String?;
       final id = res.data['id'] as String?;
+      final checkoutUrl = res.data['checkoutUrl'] as String?;
+      final instructions = res.data['instructions'] as String?;
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(AppLocalizations.of(context).paymentInitiated(ref ?? '')),
             backgroundColor: const Color(0xFF2E7D32)));
+      }
+
+      // Orange Money retourne une URL de paiement externe — ouvrir le navigateur
+      if (checkoutUrl != null && checkoutUrl.isNotEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(instructions ?? 'Ouverture de la page de paiement...'),
+            backgroundColor: const Color(0xFF0891B2),
+            duration: const Duration(seconds: 4)));
+        try {
+          await launchUrl(Uri.parse(checkoutUrl), mode: LaunchMode.externalApplication);
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('Impossible d\'ouvrir la page de paiement'),
+                backgroundColor: const Color(0xFFF44336)));
+          }
+        }
       }
       _amountCtrl.clear();
       _phoneCtrl.clear();

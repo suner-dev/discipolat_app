@@ -173,10 +173,13 @@ class OrangeMoneyProvider implements MobileMoneyProvider {
 
             String formBody = "grant_type=client_credentials";
 
+            // OAuth2 Basic auth: api_key:client_secret (Orange Developer Portal credentials)
+            String clientSecret = props.getOrangeClientSecret() != null && !props.getOrangeClientSecret().isBlank()
+                    ? props.getOrangeClientSecret() : props.getOrangeMerchantKey();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString(
-                            (props.getOrangeApiKey() + ":" + props.getOrangeMerchantKey()).getBytes()))
+                            (props.getOrangeApiKey() + ":" + clientSecret).getBytes()))
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .POST(HttpRequest.BodyPublishers.ofString(formBody))
                     .timeout(Duration.ofSeconds(10))

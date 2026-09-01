@@ -91,6 +91,7 @@ app:
     orange:
       api-key: ${ORANGE_API_KEY:}
       merchant-key: ${ORANGE_MERCHANT_KEY:}
+      client-secret: ${ORANGE_CLIENT_SECRET:}
       base-url: ${ORANGE_BASE_URL:https://api.orange.com}
       webhook-secret: ${ORANGE_WEBHOOK_SECRET:}
       return-url: ${ORANGE_RETURN_URL:http://localhost:5173/giving}

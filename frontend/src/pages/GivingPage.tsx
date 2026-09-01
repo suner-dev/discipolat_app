@@ -50,6 +50,8 @@ interface PaymentIntent {
   purpose: string;
   status: string;
   providerReference: string | null;
+  checkoutUrl?: string | null;
+  instructions?: string | null;
   failureReason?: string | null;
   createdAt?: string;
   confirmedAt?: string;
@@ -132,21 +134,40 @@ export default function GivingPage() {
       ).data,
     onSuccess: (intent) => {
       toast.success(t('giving.initiated', { ref: intent.providerReference ?? '' }));
-      setPendingRef(intent.id);
       setAmount('');
-      setTimeout(() => {
+
+      // Orange Money retourne une URL de paiement externe
+      if (intent.checkoutUrl) {
+        toast.success(intent.instructions ?? 'Redirection vers Orange Money...', { duration: 4000 });
+        window.open(intent.checkoutUrl, '_blank');
+      }
+
+      // Polling du statut en arrière-plan
+      setPendingRef(intent.id);
+      let attempts = 0;
+      const pollInterval = setInterval(() => {
+        attempts++;
         api
-          .post(`/payments/${intent.id}/simulate-confirmation?success=true`)
-          .then(() => {
-            toast.success(t('giving.confirmed'));
-            statsQuery.refetch();
+          .get<PaymentIntent>(`/payments/${intent.id}`)
+          .then((res) => {
+            const status = res.data.status;
+            if (status === 'CONFIRMED' || status === 'FAILED' || status === 'CANCELLED' || attempts > 20) {
+              clearInterval(pollInterval);
+              if (status === 'CONFIRMED') {
+                toast.success(t('giving.confirmed'));
+              }
+              setPendingRef(null);
+              recentQuery.refetch();
+              statsQuery.refetch();
+            }
           })
-          .catch(() => {})
-          .finally(() => {
-            setPendingRef(null);
-            recentQuery.refetch();
+          .catch(() => {
+            if (attempts > 20) {
+              clearInterval(pollInterval);
+              setPendingRef(null);
+            }
           });
-      }, 5000);
+      }, 3000);
     },
     onError: (e) => toast.error(getErrorMessage(e)),
   });

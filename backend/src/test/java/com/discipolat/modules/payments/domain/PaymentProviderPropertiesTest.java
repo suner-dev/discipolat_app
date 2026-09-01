@@ -66,10 +66,11 @@ class PaymentProviderPropertiesTest {
     }
 
     @Test
-    @DisplayName("isOrangeEnabled : true si global enabled et api-key présente")
+    @DisplayName("isOrangeEnabled : true si global enabled, api-key et merchant-key présentes")
     void isOrangeEnabled_trueSiEnabledEtApiKey() throws Exception {
         setField(props, "enabled", true);
         setField(props, "orangeApiKey", "orange-api-key-abc");
+        setField(props, "orangeMerchantKey", "orange-merchant-key-abc");
 
         assertThat(props.isOrangeEnabled()).isTrue();
     }
@@ -201,6 +202,7 @@ class PaymentProviderPropertiesTest {
     void troisProvidersActivesSimultanement() throws Exception {
         setField(props, "enabled", true);
         setField(props, "orangeApiKey", "orange-key");
+        setField(props, "orangeMerchantKey", "orange-merchant-key");
         setField(props, "mtnSubscriptionKey", "mtn-key");
         setField(props, "mtnClientId", "mtn-client");
         setField(props, "mpesaConsumerKey", "mpesa-key");
