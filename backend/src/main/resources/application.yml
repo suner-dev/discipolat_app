@@ -87,6 +87,9 @@ app:
   payments:
     # Secret partagé accepté sur le webhook opérateur (vide => endpoint fermé, 503).
     webhook-secret: ${PAYMENTS_WEBHOOK_SECRET:}
+    # Intervalle de poll des paiements PENDING (MTN MoMo n'a pas de webhook).
+    webhook:
+      poll-interval-ms: ${PAYMENTS_WEBHOOK_POLL_INTERVAL_MS:30000}
     # Mode simulation robuste : confirme automatiquement les paiements PENDING
     # sans passerelle réelle (utile en beta/dev pour rendre le module fonctionnel
     # dîmes & offrandes de bout en bout). En production, laisser à false et
