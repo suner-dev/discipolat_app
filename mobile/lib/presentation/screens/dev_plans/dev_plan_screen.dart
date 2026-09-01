@@ -30,7 +30,7 @@ class _DevelopmentPlanScreenState extends State<DevelopmentPlanScreen> {
     setState(() { _isLoading = true; _error = null; });
     try {
       final userId = AuthState().userId;
-      final res = await _api.get('/api/v1/development-plans/by-member/$userId');
+      final res = await _api.get('/development-plans/by-member/$userId');
       if (mounted) {
         setState(() {
           _plans = (res.data is List ? res.data : []) as List<dynamic>;

@@ -66,7 +66,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
     _scrollToBottom();
 
     try {
-      final res = await _apiService.post('/api/v1/ai/chat', data: {'message': text.trim()});
+      final res = await _apiService.post('/ai/chat', data: {'message': text.trim()});
       final data = res.data;
       final reply = data is Map ? (data['reply'] ?? data['response'] ?? 'Pas de réponse.') : 'Pas de réponse.';
 

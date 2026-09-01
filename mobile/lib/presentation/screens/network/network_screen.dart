@@ -75,9 +75,9 @@ class _NetworkScreenState extends ConsumerState<NetworkScreen>
     // 2. Try to sync from network
     try {
       final results = await Future.wait([
-        _api.get('/api/v1/network/resources'),
-        _api.get('/api/v1/network/events'),
-        _api.get('/api/v1/network/directory'),
+        _api.get('/network/resources'),
+        _api.get('/network/events'),
+        _api.get('/network/directory'),
       ]);
 
       final resourceList = (results[0].data is List ? results[0].data as List : <dynamic>[]);
@@ -113,8 +113,8 @@ class _NetworkScreenState extends ConsumerState<NetworkScreen>
   Future<void> _searchResources(String query) async {
     try {
       final res = query.trim().isEmpty
-          ? await _api.get('/api/v1/network/resources')
-          : await _api.get('/api/v1/network/resources/search', params: {'q': query.trim()});
+          ? await _api.get('/network/resources')
+          : await _api.get('/network/resources/search', params: {'q': query.trim()});
       if (mounted) {
         setState(() {
           _resources = (res.data is List ? res.data : <dynamic>[]) as List<dynamic>;
@@ -130,7 +130,7 @@ class _NetworkScreenState extends ConsumerState<NetworkScreen>
     if (id == null || id.isEmpty) return;
     final joinedByMe = event['joinedByMe'] == true;
     try {
-      final res = await _api.post('/api/v1/network/events/$id/${joinedByMe ? 'leave' : 'join'}');
+      final res = await _api.post('/network/events/$id/${joinedByMe ? 'leave' : 'join'}');
       if (mounted && res.data is Map<String, dynamic>) {
         final updated = res.data as Map<String, dynamic>;
         setState(() {
@@ -154,7 +154,7 @@ class _NetworkScreenState extends ConsumerState<NetworkScreen>
     final id = resource['id']?.toString();
     if (id == null || id.isEmpty) return;
     try {
-      final res = await _api.post('/api/v1/network/resources/$id/download');
+      final res = await _api.post('/network/resources/$id/download');
       if (mounted && res.data is Map<String, dynamic>) {
         final updated = res.data as Map<String, dynamic>;
         setState(() {

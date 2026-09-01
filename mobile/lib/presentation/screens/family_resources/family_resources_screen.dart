@@ -30,7 +30,7 @@ class _FamilyResourcesScreenState extends State<FamilyResourcesScreen> {
     setState(() { _isLoading = true; _error = null; });
     try {
       final userId = AuthState().userId;
-      final res = await _api.get('/api/v1/family-resources', params: {'userId': userId, 'size': '50'});
+      final res = await _api.get('/family-resources', params: {'userId': userId, 'size': '50'});
       if (mounted) {
         final data = res.data;
         setState(() {

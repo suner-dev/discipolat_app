@@ -33,8 +33,8 @@ class _SpiritualJournalScreenState extends State<SpiritualJournalScreen> {
     try {
       final userId = AuthState().userId;
       final results = await Future.wait([
-        _api.get('/api/v1/spiritual-journals/by-author/$userId'),
-        _api.get('/api/v1/spiritual-journals/stats/$userId'),
+        _api.get('/spiritual-journals/by-author/$userId'),
+        _api.get('/spiritual-journals/stats/$userId'),
       ]);
       if (mounted) {
         setState(() {
@@ -53,8 +53,8 @@ class _SpiritualJournalScreenState extends State<SpiritualJournalScreen> {
     try {
       final userId = AuthState().userId;
       final url = type == 'all'
-          ? '/api/v1/spiritual-journals/by-author/$userId'
-          : '/api/v1/spiritual-journals/by-type/$userId/$type';
+          ? '/spiritual-journals/by-author/$userId'
+          : '/spiritual-journals/by-type/$userId/$type';
       final res = await _api.get(url);
       if (mounted) {
         setState(() {
@@ -146,7 +146,7 @@ class _SpiritualJournalScreenState extends State<SpiritualJournalScreen> {
                                           color: Colors.amber,
                                         ),
                                         onPressed: () async {
-                                          await _api.post('/api/v1/spiritual-journals/${e['id']}/toggle-favorite');
+                                          await _api.post('/spiritual-journals/${e['id']}/toggle-favorite');
                                           _load();
                                         },
                                       ),
@@ -221,7 +221,7 @@ class _SpiritualJournalScreenState extends State<SpiritualJournalScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.purple.shade600),
                     onPressed: () async {
-                      await _api.post('/api/v1/spiritual-journals', data: {
+                      await _api.post('/spiritual-journals', data: {
                         'titre': titleCtrl.text,
                         'contenu': contentCtrl.text,
                         'typeEntree': typeEntry,

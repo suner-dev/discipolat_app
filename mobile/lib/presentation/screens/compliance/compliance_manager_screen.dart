@@ -39,9 +39,9 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
-        _api.get('/compliance/overview'),
+        _api.get('/compliance/stats'),
         _api.get('/compliance/retention-policies'),
-        _api.get('/compliance/audit', params: {'limit': 50}),
+        _api.get('/compliance/gdpr', params: {'limit': 50}),
       ]);
       if (mounted) {
         setState(() {
@@ -58,7 +58,7 @@ class _ComplianceManagerScreenState extends State<ComplianceManagerScreen> {
 
   Future<void> _verifyIntegrity() async {
     try {
-      final res = await _api.get('/compliance/audit/verify');
+      final res = await _api.get('/compliance/audit-hash/verify');
       final data = res.data as Map<String, dynamic>;
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);

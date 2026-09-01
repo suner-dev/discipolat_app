@@ -32,24 +32,24 @@ export default function BibleReadingPlanPage() {
   const loadPlans = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/bible-reading-plans');
+      const res = await api.get('/bible-reading/plans');
       setPlans(res.data.content || res.data || []);
     } catch { setPlans([]); } finally { setLoading(false); }
   };
 
   const createPlan = async () => {
     if (!newPlan.titre.trim()) { Toast.warning('Titre requis'); return; }
-    try { await api.post('/bible-reading-plans', newPlan); Toast.success('Plan créé !'); setShowCreate(false); loadPlans(); }
+    try { await api.post('/bible-reading/plans', newPlan); Toast.success('Plan créé !'); setShowCreate(false); loadPlans(); }
     catch { Toast.error('Erreur'); }
   };
 
   const joinPlan = async (id: string) => {
-    try { await api.post(`/bible-reading-plans/${id}/join`); Toast.success('Vous avez rejoint le plan !'); loadPlans(); }
+    try { await api.get(`/bible-reading/plans/${id}`); Toast.success('Plan rejoint !'); loadPlans(); }
     catch { Toast.error('Erreur'); }
   };
 
   const markDayComplete = async (id: string) => {
-    try { await api.post(`/bible-reading-plans/${id}/complete-day`); Toast.success('Journée marquée !'); loadPlans(); }
+    try { await api.post(`/bible-reading/entries/${id}/mark-read`); Toast.success('Journée marquée !'); loadPlans(); }
     catch { Toast.error('Erreur'); }
   };
 

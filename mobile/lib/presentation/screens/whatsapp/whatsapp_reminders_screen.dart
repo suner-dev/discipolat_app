@@ -45,7 +45,7 @@ class _WhatsAppRemindersScreenState extends State<WhatsAppRemindersScreen> {
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
-        _api.get('/whatsapp/reminders'),
+        _api.get('/whatsapp/stats'),
         _api.get('/whatsapp/stats'),
         _api.get('/whatsapp/config'),
       ]);

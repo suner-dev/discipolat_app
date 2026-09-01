@@ -32,10 +32,10 @@ class _BibleReadingScreenState extends State<BibleReadingScreen> {
     setState(() { _isLoading = true; _error = null; });
     try {
       final results = await Future.wait([
-        _api.get('/api/v1/bible-reading/stats'),
-        _api.get('/api/v1/bible-reading/plans'),
-        _api.get('/api/v1/bible-reading/today'),
-        _api.get('/api/v1/bible-reading/family-progress'),
+        _api.get('/bible-reading/stats'),
+        _api.get('/bible-reading/plans'),
+        _api.get('/bible-reading/today'),
+        _api.get('/bible-reading/family-progress'),
       ]);
       if (mounted) {
         setState(() {
@@ -109,7 +109,7 @@ class _BibleReadingScreenState extends State<BibleReadingScreen> {
                               Row(children: [
                                 OutlinedButton.icon(
                                   onPressed: () async {
-                                    await _api.post('/api/v1/bible-reading/entries/${entry['id']}/mark-read');
+                                    await _api.post('/bible-reading/entries/${entry['id']}/mark-read');
                                     _load();
                                   },
                                   icon: Icon(entry['lu'] == true ? Icons.check_circle : Icons.check, size: 16),
@@ -202,7 +202,7 @@ class _BibleReadingScreenState extends State<BibleReadingScreen> {
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(context).cancel)),
         FilledButton(onPressed: () async {
-          await _api.put('/api/v1/bible-reading/entries/$entryId/note', data: {'note': ctrl.text});
+          await _api.put('/bible-reading/entries/$entryId/note', data: {'note': ctrl.text});
           if (mounted) Navigator.pop(ctx);
           _load();
         }, child: Text(AppLocalizations.of(context).save)),

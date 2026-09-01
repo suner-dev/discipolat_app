@@ -37,7 +37,7 @@ public class VoiceSttService {
         for (SpeechToTextProvider p : providers) {
             if (p.isConfigured()) configured.add(p.name());
         }
-        return new SpeechToTextStatus(configured.isEmpty() ? null : configured, configured);
+        return new SpeechToTextStatus(configured.isEmpty() ? null : String.join(",", configured), configured);
     }
 
     /**

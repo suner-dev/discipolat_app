@@ -29,7 +29,7 @@ class _SermonTranslationScreenState extends State<SermonTranslationScreen> {
   Future<void> _load() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final res = await _api.get('/api/v1/sermons/translations');
+      final res = await _api.get('/sermons/translations');
       if (mounted) {
         final data = res.data;
         final list = (data is Map && data['content'] is List)

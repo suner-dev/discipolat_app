@@ -48,7 +48,7 @@ class _DiscipleshipPathScreenState extends State<DiscipleshipPathScreen> {
     setState(() { _isLoading = true; _error = null; });
     try {
       final userId = AuthState().userId;
-      final res = await _api.get('/api/v1/discipleship-paths/member/$userId');
+      final res = await _api.get('/discipleship-paths/member/$userId');
       if (mounted) {
         setState(() {
           final data = res.data;

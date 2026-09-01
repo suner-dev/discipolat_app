@@ -90,7 +90,7 @@ export default function ComplianceDashboardPage() {
   const { data: overview, isLoading: overviewLoading } = useQuery({
     queryKey: ['compliance', 'overview'],
     queryFn: async () => {
-      const res = await api.get('/compliance/overview');
+      const res = await api.get('/compliance/stats');
       return res.data as ComplianceOverview;
     },
   });
@@ -106,7 +106,7 @@ export default function ComplianceDashboardPage() {
   const { data: auditEntries = [], refetch: refetchAudit } = useQuery({
     queryKey: ['compliance', 'audit', auditLimit],
     queryFn: async () => {
-      const res = await api.get('/compliance/audit', { params: { limit: auditLimit } });
+      const res = await api.get('/compliance/gdpr', { params: { limit: auditLimit } });
       return res.data as AuditEntry[];
     },
   });
@@ -149,7 +149,7 @@ export default function ComplianceDashboardPage() {
 
   const grantConsentMutation = useMutation({
     mutationFn: async () => {
-      await api.post('/compliance/consents', newConsent);
+      await api.post('/compliance/consent', newConsent);
     },
     onSuccess: () => {
       toast.success('Consentement enregistré');
@@ -161,7 +161,7 @@ export default function ComplianceDashboardPage() {
 
   const verifyIntegrityMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.get('/compliance/audit/verify');
+      const res = await api.get('/compliance/audit-hash/verify');
       return res.data as { integrityValid: boolean; totalEntries: number; brokenLinks: number };
     },
     onSuccess: (data) => {

@@ -30,8 +30,8 @@ class _SkillsMatrixScreenState extends State<SkillsMatrixScreen> {
     setState(() { _isLoading = true; _error = null; });
     try {
       final results = await Future.wait([
-        _api.get('/api/v1/skills/matrix'),
-        _api.get('/api/v1/skills', params: {'size': '50'}),
+        _api.get('/skills/matrix'),
+        _api.get('/skills', params: {'size': '50'}),
       ]);
       if (mounted) {
         final matrixData = results[0].data;

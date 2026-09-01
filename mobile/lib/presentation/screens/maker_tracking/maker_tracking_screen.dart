@@ -32,8 +32,8 @@ class _MakerTrackingScreenState extends State<MakerTrackingScreen> {
     try {
       final userId = AuthState().userId;
       final results = await Future.wait([
-        _api.get('/api/v1/maker-tracking/resume/$userId'),
-        _api.get('/api/v1/maker-tracking', params: {'faiseurId': userId, 'size': '20'}),
+        _api.get('/maker-tracking/resume/$userId'),
+        _api.get('/maker-tracking', params: {'faiseurId': userId, 'size': '20'}),
       ]);
       if (mounted) {
         final resumeData = results[0].data;

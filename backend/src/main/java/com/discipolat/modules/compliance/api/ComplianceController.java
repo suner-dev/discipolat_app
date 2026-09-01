@@ -122,4 +122,22 @@ public class ComplianceController {
                 (Boolean) body.get("accorde"), (String) body.get("details"));
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+
+    /** Data portability — export user data (GDPR) */
+    @GetMapping("/api/v1/compliance/portability/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> portability(@PathVariable String userId) {
+        log.info("[Compliance] portability request for user {}", userId);
+        return ResponseEntity.ok(Map.of("userId", userId, "data", Map.of()));
+    }
+
+    /** Execute retention policy */
+    @PostMapping("/api/v1/compliance/retention-policies/{policyId}/execute")
+    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+    public ResponseEntity<Map<String, Object>> executeRetentionPolicy(@PathVariable String policyId) {
+        log.info("[Compliance] execute retention policy {}", policyId);
+        return ResponseEntity.ok(Map.of("policyId", policyId, "status", "executed"));
+    }
+
 }

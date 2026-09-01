@@ -30,8 +30,8 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
   Future<void> _load() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final res = await _api.get('/api/v1/announcements');
-      final statsRes = await _api.get('/api/v1/announcements/stats');
+      final res = await _api.get('/announcements');
+      final statsRes = await _api.get('/announcements/stats');
       if (mounted) {
         setState(() {
           _broadcasts = (res.data is List ? res.data : []) as List<dynamic>;

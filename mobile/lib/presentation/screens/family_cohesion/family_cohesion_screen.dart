@@ -33,8 +33,8 @@ class _FamilyCohesionScreenState extends State<FamilyCohesionScreen> {
       final userId = AuthState().userId;
       // Try fetching cohesion data; family ID may come from user context
       final results = await Future.wait([
-        _api.get('/api/v1/family-cohesion', params: {'userId': userId}),
-        _api.get('/api/v1/families', params: {'size': '50'}),
+        _api.get('/family-cohesion', params: {'userId': userId}),
+        _api.get('/families', params: {'size': '50'}),
       ]);
       if (mounted) {
         final cohesionData = results[0].data;

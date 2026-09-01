@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 
@@ -91,8 +92,8 @@ public class AiPredictionService {
      * Génère les prédictions à partir des métriques réelles de l'église du
      * tenant courant (résolue côté serveur, jamais fournie par le client).
      */
-    public List<AiPrediction> generatePredictions(Long tenantId) {
-        Long safeTenantId = securityUtils.getCurrentTenantId();
+    public List<AiPrediction> generatePredictions(UUID tenantId) {
+        UUID safeTenantId = securityUtils.getCurrentTenantId();
         if (tenantId != null && !tenantId.equals(safeTenantId)) {
             log.warn("[AiPrediction] tenant {} ignoré, utilisation du tenant courant {}",
                     tenantId, safeTenantId);

@@ -30,7 +30,7 @@ class _ChurchDirectoryScreenState extends State<ChurchDirectoryScreen> {
   Future<void> _load() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final res = await _api.get('/api/v1/directory/all');
+      final res = await _api.get('/directory/all');
       if (mounted) {
         setState(() {
           _entries = (res.data is List ? res.data : []) as List<dynamic>;

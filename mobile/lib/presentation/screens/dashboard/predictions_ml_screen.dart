@@ -30,9 +30,8 @@ class _PredictionsMlScreenState extends State<PredictionsMlScreen> {
       _error = null;
     });
     try {
-      // Endpoint hors /api/v1 -> URL absolue basée sur l'API courante.
-      final origin = Uri.parse(_api.dio.options.baseUrl).origin;
-      final res = await _api.get('$origin/api/predictions');
+      // Use the standard /api/v1/ai-predictions endpoint
+      final res = await _api.get('/ai-predictions');
       final data = res.data;
       final list = data is List ? data : (data is Map && data['content'] != null ? data['content'] : []);
       if (mounted) {
