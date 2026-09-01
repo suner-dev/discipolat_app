@@ -189,11 +189,14 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    private static final UUID DEFAULT_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     private void seedUser(String email, String firstName, String lastName,
                           UserRole primaryRole, Set<UserRole> roles,
                           UserRole activeRole, boolean estChefDeFamille) {
         if (userRepository.findByEmail(email).isPresent()) return;
         User user = User.builder()
+                .tenantId(DEFAULT_TENANT_ID)
                 .email(email)
                 .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName(firstName)
