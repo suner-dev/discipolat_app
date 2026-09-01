@@ -75,6 +75,7 @@ import 'presentation/screens/platform/admin_dictionaries_screen.dart';
 import 'presentation/screens/platform/admin_integrations_screen.dart';
 import 'presentation/screens/platform/admin_tenants_screen.dart';
 import 'presentation/screens/admin/benchmark_screen.dart';
+import 'presentation/screens/admin/admin_payment_dashboard_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
 import 'presentation/screens/souls/soul_qr_screen.dart';
 import 'presentation/screens/departments/qr_scanner_screen.dart';
@@ -333,6 +334,7 @@ Map<String, List<String>> _routeRoles = {
   '/admin/dictionaries': ['ADMIN'],
   '/admin/integrations': ['ADMIN'],
   '/admin/tenants': ['ADMIN'],
+  '/admin/payments': ['ADMIN', 'PASTEUR'],
   '/security-settings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/onboarding': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/health-observatory': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -797,6 +799,11 @@ final appRouter = GoRouter(
       path: '/admin/tenants',
       name: 'admin-tenants',
       builder: (context, state) => const AdminTenantsScreen(),
+    ),
+    GoRoute(
+      path: '/admin/payments',
+      name: 'admin-payments',
+      builder: (context, state) => const AdminPaymentDashboardScreen(),
     ),
     GoRoute(
       path: '/benchmark',

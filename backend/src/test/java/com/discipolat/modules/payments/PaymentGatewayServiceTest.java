@@ -10,6 +10,7 @@ import com.discipolat.modules.payments.domain.MobileMoneyProviderRegistry;
 import com.discipolat.modules.payments.domain.PaymentGatewayService;
 import com.discipolat.modules.payments.domain.PaymentIntent;
 import com.discipolat.modules.payments.domain.PaymentIntentRepository;
+import com.discipolat.modules.payments.domain.RecurringDonationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 class PaymentGatewayServiceTest {
 
     @Mock private PaymentIntentRepository repository;
+    @Mock private RecurringDonationRepository recurringDonationRepository;
     @Mock private FinanceService financeService;
     @Mock private EntityPropagationPublisher propagationPublisher;
     @Mock private SecurityUtils securityUtils;
@@ -42,7 +44,7 @@ class PaymentGatewayServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PaymentGatewayService(repository, financeService, propagationPublisher, securityUtils, providerRegistry);
+        service = new PaymentGatewayService(repository, recurringDonationRepository, financeService, propagationPublisher, securityUtils, providerRegistry);
         TenantContext.setTenantId(tenantId);
         lenient().when(repository.save(any(PaymentIntent.class))).thenAnswer(inv -> inv.getArgument(0));
         Map<String, Object> txResult = new java.util.LinkedHashMap<>();
