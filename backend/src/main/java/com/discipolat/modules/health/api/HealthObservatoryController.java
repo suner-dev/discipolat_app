@@ -21,7 +21,7 @@ public class HealthObservatoryController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<Map<String, Object>> observatory() {
         return ResponseEntity.ok(service.observatory());
     }

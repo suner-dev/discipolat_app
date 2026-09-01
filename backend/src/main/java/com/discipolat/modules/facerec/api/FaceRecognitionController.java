@@ -40,7 +40,7 @@ public class FaceRecognitionController {
 
     /** Identifie un visage parmi les gabarits actifs. */
     @PostMapping("/identify")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<Map<String, Object>> identify(@RequestBody IdentifyRequest body) throws Exception {
         FaceRecognitionService.IdentificationResult result =
                 service.identify(decode(body.imageBase64()));
@@ -103,7 +103,7 @@ public class FaceRecognitionController {
 
     /** P13 — Identifie avec seuil de confiance configurable. */
     @PostMapping("/identify-configurable")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<Map<String, Object>> identifyConfigurable(
             @RequestBody IdentifyWithThresholdRequest body) throws Exception {
         FaceRecognitionService.IdentificationResult result =

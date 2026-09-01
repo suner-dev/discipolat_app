@@ -22,19 +22,19 @@ public class EmergencyAidController {
 
     /** Bouton « Urgence Pastorale » : ouvre une demande + plan de secours automatisé. */
     @PostMapping("/emergency")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<EmergencyAidRequest> open(@RequestBody EmergencyAidRequest request) {
         return ResponseEntity.ok(service.open(request));
     }
 
     @GetMapping("/emergency")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<List<EmergencyAidRequest>> recent() {
         return ResponseEntity.ok(service.recent());
     }
 
     @GetMapping("/emergency/open")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<List<EmergencyAidRequest>> openRequests() {
         return ResponseEntity.ok(service.openRequests());
     }

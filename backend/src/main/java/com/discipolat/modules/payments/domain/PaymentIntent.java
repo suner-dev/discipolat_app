@@ -70,6 +70,19 @@ public class PaymentIntent {
     @Column(name = "failure_reason")
     private String failureReason;
 
+    /** Nom du provider opérateur réellement utilisé (MTN MoMo / Orange / M-Pesa). */
+    @Column(name = "provider_name", length = 40)
+    private String providerName;
+
+    /** URL de redirection/checkout opérateur (providers à redirection externe). */
+    @Column(name = "checkout_url")
+    private String checkoutUrl;
+
+    /** Instructions affichées au client (ex. code OTP reçu par SMS). */
+    @Column(columnDefinition = "TEXT")
+    private String instructions;
+
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -14,6 +14,8 @@ type ViewMode = 'liste' | 'detail' | 'create' | 'edit' | 'archive';
 
 export default function PasteurFamiliesTab() {
   const queryClient = useQueryClient();
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiResponse, setAiResponse] = useState<Map<string, any> | null>(null);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState('');
@@ -88,6 +90,13 @@ export default function PasteurFamiliesTab() {
     if (editingId) { updateMutation.mutate({ id: editingId, data: form }); }
     else { createMutation.mutate(form); }
   }, [form, editingId, createMutation, updateMutation]);
+
+  const handleAiQuery = async () => {
+    if (!aiQuery) return;
+    const response = await api.post('/api/v1/ai/chat', { message: aiQuery });
+    setAiResponse(response.data);
+    setAiQuery('');
+  };
 
   // === VUE DÉTAIL ===
   if (view === 'detail' && selectedFamily) {

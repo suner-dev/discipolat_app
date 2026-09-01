@@ -33,7 +33,7 @@ public class KingdomMappingController {
 
     /** Heatmap : cellules de densité avec intensité 0-100 par type de disciple. */
     @GetMapping("/heatmap")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<List<Map<String, Object>>> heatmap(
             @RequestParam(required = false) String typeDisciple) {
         List<Soul> souls = soulRepository.findByDeletedFalseAndLatitudeIsNotNullAndLongitudeIsNotNull()
@@ -75,7 +75,7 @@ public class KingdomMappingController {
 
     /** Secteurs : découpage par zone nommée avec stats d'occupation. */
     @GetMapping("/sectors")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<List<Map<String, Object>>> sectors() {
         List<Soul> souls = soulRepository.findByDeletedFalse();
 

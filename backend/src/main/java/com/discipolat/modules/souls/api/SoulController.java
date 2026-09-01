@@ -35,7 +35,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 
 @RestController
 @RequestMapping("/api/v1/souls")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
 public class SoulController {
 
     private final SoulService soulService;
