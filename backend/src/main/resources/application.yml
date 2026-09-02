@@ -119,7 +119,6 @@ app:
     # sans passerelle réelle (utile en beta/dev pour rendre le module fonctionnel
     # dîmes & offrandes de bout en bout). En production, laisser à false et
     # brancher l'API opérateur via le webhook.
-    simulate-auto-confirm: ${PAYMENTS_SIMULATE_AUTO_CONFIRM:false}
     # Délai avant confirmation automatique d'une intention PENDING (ms).
     simulate-confirm-delay-ms: ${PAYMENTS_SIMULATE_CONFIRM_DELAY_MS:6000}
     # Délai de confirmation auto pour les rôles autres que gestionnaires (ms),
@@ -231,7 +230,6 @@ app:
     seed-demo-accounts: true
     reset-enabled: true
   payments:
-    simulate-auto-confirm: true
   jwt:
     private-key: ${JWT_PRIVATE_KEY:}
     public-key: ${JWT_PUBLIC_KEY:}
@@ -295,7 +293,6 @@ app:
   payments:
     # Environnement bêta : module dîmes & offrandes fonctionnel de bout en bout
     # via la passerelle simulée (aucune confirmation réelle opérateur requise).
-    simulate-auto-confirm: true
 
 ---
 spring:

@@ -81,25 +81,6 @@ public class PaymentController {
         return ResponseEntity.ok(service.handleWebhook(reference, success, reason));
     }
 
-    /**
-     * Simulation de confirmation (sandbox/dev uniquement).
-     *
-     * Le propriétaire de l'intention (son auteur) peut confirmer SON propre
-     * paiement pour boucler le parcours de démonstration ; un super-utilisateur
-     * (ADMIN/PASTEUR) peut le faire pour n'importe quel paiement.
-     * `findByIdForCurrentUser` applique le contrôle de propriété (anti-IDOR).
-     */
-    @PostMapping("/{id}/simulate-confirmation")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PaymentIntent> simulate(@PathVariable UUID id,
-                                                  @RequestParam(defaultValue = "true") boolean success) {
-        PaymentIntent intent = service.findByIdForCurrentUser(id);
-        if (intent.getStatus() != PaymentIntent.Status.CONFIRMED) {
-            service.handleWebhook(intent.getProviderReference(), success, success ? null : "Simulated failure");
-        }
-        return ResponseEntity.ok(service.findById(id));
-    }
-
     /** Statut d'un paiement — polling mobile pendant le parcours (auteur ou super-utilisateur). */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")

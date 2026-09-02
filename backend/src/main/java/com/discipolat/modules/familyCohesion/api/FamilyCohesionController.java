@@ -4,6 +4,8 @@ import com.discipolat.modules.familyCohesion.domain.FamilyCohesion;
 import com.discipolat.modules.familyCohesion.domain.FamilyCohesionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -13,6 +15,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/family-cohesion")
 public class FamilyCohesionController {
 
+    private static final Logger log = LoggerFactory.getLogger(FamilyCohesionController.class);
     private final FamilyCohesionService service;
 
     public FamilyCohesionController(FamilyCohesionService service) {

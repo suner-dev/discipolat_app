@@ -22,9 +22,10 @@ import java.util.*;
  * opérateur (M-Pesa, MTN MoMo, Orange Money…) → webhook de confirmation →
  * reçu automatique + comptabilisation dans le module Finances.
  *
- * NOTE PRODUCTION : les adaptateurs opérateurs réels (APIs MTN/MoMo/Orange)
- * se branchent dans {@link #initiate} et {@link #handleWebhook}. Le flux
- * actuel simule la passerelle pour permettre le fonctionnement hors sandbox.
+ * NOTE : les adaptateurs opérateurs réels (APIs M-Pesa, MTN MoMo, Orange Money)
+ * sont appelés dans {@link #initiate} via MobileMoneyProviderRegistry.
+ * La confirmation passe par les webhooks opérateurs ({@link #handleWebhook})
+ * et le scheduler auto-poll ({@link PaymentWebhookScheduler}).
  */
 @Service
 @Transactional

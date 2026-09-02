@@ -1,7 +1,6 @@
 package com.discipolat.modules.admin.api;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -124,34 +123,4 @@ public class AdminSystemHealthController {
         double gb = mb / 1024.0;
         return String.format("%.2f GB", gb);
     }
-}
-
-    /** BI dashboard stats overview — used by mobile BI dashboard */
-    @GetMapping("/api/v1/admin/stats/overview")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
-    public ResponseEntity<Map<String, Object>> statsOverview(@RequestParam(defaultValue = "MONTH") String period) {
-        log.debug("[Admin] stats overview, period={}", period);
-        return ResponseEntity.ok(Map.of(
-            "period", period,
-            "activeUsers", 0,
-            "totalEvents", 0,
-            "totalOfferings", 0,
-            "memberGrowth", 0
-        ));
-    
-
-    /** BI dashboard stats overview — used by mobile BI dashboard */
-    @GetMapping("/api/v1/admin/stats/overview")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
-    public ResponseEntity<Map<String, Object>> statsOverview(@RequestParam(defaultValue = "MONTH") String period) {
-        log.debug("[Admin] stats overview, period={}", period);
-        return ResponseEntity.ok(Map.of(
-            "period", period,
-            "activeUsers", 0,
-            "totalEvents", 0,
-            "totalOfferings", 0,
-            "memberGrowth", 0
-        ));
-    }
-
 }
