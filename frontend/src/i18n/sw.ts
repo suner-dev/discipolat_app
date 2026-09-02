@@ -569,6 +569,8 @@ const sw: Record<string, string> = {
   'giving.status.pending': 'Inasubiri',
   'giving.status.failed': 'Imeshindwa',
   'giving.status.cancelled': 'Imeghairiwa',
+  'giving.cancel': 'Ghairi',
+  'giving.cancelled': 'Malipo yameghairiwa.',
   'giving.receipt': 'Risiti ya kodi',
   'giving.receiptUnavailable': 'Risiti haipatikani.',
   'giving.purpose.dime': 'Zaka',

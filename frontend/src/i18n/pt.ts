@@ -230,6 +230,8 @@ const pt: Record<string, string> = {
   'giving.status.pending': 'Pendente',
   'giving.status.failed': 'Falhou',
   'giving.status.cancelled': 'Cancelado',
+  'giving.cancel': 'Cancelar',
+  'giving.cancelled': 'Pagamento cancelado.',
   'giving.receipt': 'Recibo fiscal',
   'giving.receiptUnavailable': 'Recibo indisponível.',
   'giving.purpose.dime': 'Dízimo',

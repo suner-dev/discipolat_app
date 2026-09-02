@@ -21,6 +21,7 @@ class _WebhookLogScreenState extends State<WebhookLogScreen> {
   int _totalPages = 0;
   String? _filterProvider;
   String? _filterStatus;
+  Map<String, dynamic>? _stats;
 
   static const _providers = {
     'M_PESA': 'M-Pesa',
@@ -41,6 +42,14 @@ class _WebhookLogScreenState extends State<WebhookLogScreen> {
   void initState() {
     super.initState();
     _load();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final res = await _api.get('/payments/webhooks/logs/stats');
+      if (mounted) setState(() => _stats = res.data as Map<String, dynamic>);
+    } catch (_) {}
   }
 
   Future<void> _load() async {
@@ -81,13 +90,28 @@ class _WebhookLogScreenState extends State<WebhookLogScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () { setState(() => _loading = true); _load(); },
+              onPressed: () { setState(() => _loading = true); _load(); _loadStats(); },
             ),
           ],
         ),
         drawer: const AppDrawer(),
         body: Column(
           children: [
+            if (_stats != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                child: Row(
+                  children: [
+                    _statChip('Total', '${_stats!['totalLogs'] ?? 0}', Colors.blue),
+                    const SizedBox(width: 8),
+                    _statChip('Traité', '${_stats!['processedCount'] ?? 0}', Colors.green),
+                    const SizedBox(width: 8),
+                    _statChip('Rejeté', '${_stats!['rejectedCount'] ?? 0}', Colors.red),
+                    const SizedBox(width: 8),
+                    _statChip('Erreur', '${_stats!['errorCount'] ?? 0}', Colors.orange),
+                  ],
+                ),
+              ),
             _buildFilters(),
             Expanded(
               child: _loading
@@ -335,5 +359,26 @@ class _WebhookLogScreenState extends State<WebhookLogScreen> {
     } catch (_) {
       return iso;
     }
+  }
+
+  Widget _statChip(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withAlpha(30),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withAlpha(60)),
+        ),
+        child: Column(
+          children: [
+            Text(value,
+                style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(label,
+                style: TextStyle(color: color.withAlpha(180), fontSize: 10)),
+          ],
+        ),
+      ),
+    );
   }
 }

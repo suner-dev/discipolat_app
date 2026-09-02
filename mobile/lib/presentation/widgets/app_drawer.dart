@@ -71,7 +71,7 @@ class _AppDrawerState extends State<AppDrawer> {
 
   // ── Section Administration (groupée dans le drawer) ──
   static const List<Map<String, Object>> _adminNav = [
-    {'icon': Icons.auto_fix_high_rounded, 'title': 'Workflows', 'route': '/workflows'},
+    {'icon': Icons.auto_fix_high_rounded, 'title': 'Workflows', 'route': '/admin/transfers'},
     {'icon': Icons.inventory_2_rounded, 'title': 'Modules plateforme', 'route': '/admin/modules'},
     {'icon': Icons.menu_book_rounded, 'title': 'Menus plateforme', 'route': '/admin/menus'},
     {'icon': Icons.dashboard_customize_rounded, 'title': 'Pages personnalisées', 'route': '/admin/pages'},
@@ -302,7 +302,7 @@ class _AppDrawerState extends State<AppDrawer> {
       case 'PASTEUR':
         // Pasteur = vue complète, sans la configuration plateforme réservée Admin
         // (matrice des permissions, modules, menus, pages).
-        return _fullNav.where((item) => !const {'/permissions', '/admin/modules', '/admin/menus', '/admin/pages', '/workflows'}.contains(item['route'])).toList();
+        return _fullNav.where((item) => !const {'/permissions', '/admin/modules', '/admin/menus', '/admin/pages', '/admin/transfers'}.contains(item['route'])).toList();
       default:
         return _fullNav; // ADMIN
     }

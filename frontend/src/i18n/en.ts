@@ -528,6 +528,8 @@ const en: Record<string, string> = {
   'giving.status.pending': 'Pending',
   'giving.status.failed': 'Failed',
   'giving.status.cancelled': 'Cancelled',
+  'giving.cancel': 'Cancel',
+  'giving.cancelled': 'Payment cancelled.',
   'giving.receipt': 'Tax receipt',
   'giving.receiptUnavailable': 'Receipt unavailable.',
   'giving.purpose.dime': 'Tithe',

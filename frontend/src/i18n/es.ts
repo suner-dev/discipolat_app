@@ -585,6 +585,8 @@ const es: Record<string, string> = {
   'giving.status.pending': 'Pendiente',
   'giving.status.failed': 'Fallido',
   'giving.status.cancelled': 'Cancelado',
+  'giving.cancel': 'Cancelar',
+  'giving.cancelled': 'Pago cancelado.',
   'giving.receipt': 'Recibo fiscal',
   'giving.receiptUnavailable': 'Recibo no disponible.',
   'giving.purpose.dime': 'Diezmo',

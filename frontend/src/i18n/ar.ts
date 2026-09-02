@@ -236,6 +236,8 @@ const ar: Record<string, string> = {
   'giving.status.pending': 'قيد الانتظار',
   'giving.status.failed': 'فشل',
   'giving.status.cancelled': 'ملغي',
+  'giving.cancel': 'إلغاء',
+  'giving.cancelled': 'تم إلغاء الدفعة.',
   'giving.receipt': 'إيصال ضريبي',
   'giving.receiptUnavailable': 'الإيصال غير متوفر.',
   'giving.purpose.dime': 'العشور',

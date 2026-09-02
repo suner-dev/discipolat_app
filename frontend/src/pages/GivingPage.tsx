@@ -205,6 +205,17 @@ export default function GivingPage() {
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
+  const cancelPaymentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/payments/${id}/cancel`);
+    },
+    onSuccess: () => {
+      toast.success(t('giving.cancelled'));
+      recentQuery.refetch();
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -548,9 +559,19 @@ export default function GivingPage() {
               )}
               {p.status === 'CONFIRMED' && <RecuFiscalButton id={p.id} t={t} />}
               {p.status === 'PENDING' && (
-                <span className="badge badge-warning flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {t('giving.status.pending')}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="badge badge-warning flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {t('giving.status.pending')}
+                  </span>
+                  <button
+                    onClick={() => cancelPaymentMutation.mutate(p.id)}
+                    disabled={cancelPaymentMutation.isPending}
+                    className="text-xs text-red-500 hover:text-red-700 underline"
+                    title={t('giving.cancel')}
+                  >
+                    {t('giving.cancel')}
+                  </button>
+                </div>
               )}
               {p.status === 'FAILED' && (
                 <span className="badge badge-danger flex items-center gap-1">

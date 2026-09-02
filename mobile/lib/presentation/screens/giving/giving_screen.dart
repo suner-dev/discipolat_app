@@ -29,6 +29,9 @@ class _GivingScreenState extends State<GivingScreen> {
   List<dynamic> _mine = [];
   bool _isLoading = true;
 
+  // Payment stats
+  List<dynamic> _statsByOperator = [];
+
   // Recurring donation state
   bool _showRecurringForm = false;
   final _rcAmountCtrl = TextEditingController();
@@ -69,6 +72,7 @@ class _GivingScreenState extends State<GivingScreen> {
     super.initState();
     _loadMine();
     _loadRecurring();
+    _loadStats();
   }
 
   @override
@@ -92,6 +96,16 @@ class _GivingScreenState extends State<GivingScreen> {
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final res = await _apiService.get('/payments/stats');
+      if (!mounted) return;
+      setState(() {
+        _statsByOperator = (res.data['byOperator'] ?? []) as List<dynamic>;
+      });
+    } catch (_) {}
   }
 
   Future<void> _loadRecurring() async {
@@ -250,6 +264,40 @@ class _GivingScreenState extends State<GivingScreen> {
             content: Text(AppLocalizations.of(context).recurringCancelled),
             backgroundColor: const Color(0xFF2E7D32)));
         _loadRecurring();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context).paymentFailed),
+            backgroundColor: Color(0xFFC62828)));
+      }
+    }
+  }
+
+  Future<void> _cancelPayment(String id) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(AppLocalizations.of(context).cancel),
+        content: const Text('Annuler ce paiement en attente ?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: Text(AppLocalizations.of(context).cancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('Oui')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _apiService.post('/payments/$id/cancel');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: const Text('Paiement annulé.'),
+            backgroundColor: const Color(0xFF2E7D32)));
+        _loadMine();
       }
     } catch (_) {
       if (mounted) {
@@ -443,6 +491,71 @@ class _GivingScreenState extends State<GivingScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+
+            // ── Répartition par opérateur ──
+            if (_statsByOperator.isNotEmpty)
+              GlassCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.trending_up_rounded, color: Color(0xFF00BCD4), size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Répartition par opérateur',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ..._statsByOperator.map((o) {
+                        final total = (o['total'] ?? 0).toDouble();
+                        final count = o['count'] ?? 0;
+                        final label = _operators[o['operator']] ?? o['operator'];
+                        final max = _statsByOperator
+                            .map((x) => (x['total'] ?? 0).toDouble())
+                            .reduce((a, b) => a > b ? a : b);
+                        final pct = max > 0 ? (total / max * 100) : 0.0;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(label,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                  Text('${total.toStringAsFixed(0)} XOF ($count)',
+                                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: pct / 100,
+                                  backgroundColor: Colors.white12,
+                                  valueColor: const AlwaysStoppedAnimation(Color(0xFF00BCD4)),
+                                  minHeight: 6,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+
             const SizedBox(height: 16),
 
             // ── Historique des dons ──
@@ -685,6 +798,12 @@ class _GivingScreenState extends State<GivingScreen> {
                         fontSize: 11,
                         fontWeight: FontWeight.bold)),
               ),
+              if (status == 'PENDING')
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.cancel_outlined, color: Colors.white38, size: 20),
+                  onPressed: () => _cancelPayment(m['id'] as String),
+                ),
             ],
           ),
         ),

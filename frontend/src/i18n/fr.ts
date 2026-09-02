@@ -727,6 +727,8 @@ const fr = {
   'giving.status.pending': 'En attente',
   'giving.status.failed': 'Échoué',
   'giving.status.cancelled': 'Annulé',
+  'giving.cancel': 'Annuler',
+  'giving.cancelled': 'Paiement annulé.',
   'giving.receipt': 'Reçu fiscal',
   'giving.receiptUnavailable': 'Reçu indisponible.',
   'giving.purpose.dime': 'Dîme',
