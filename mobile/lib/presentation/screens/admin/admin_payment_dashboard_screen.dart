@@ -69,7 +69,16 @@ class _AdminPaymentDashboardScreenState extends State<AdminPaymentDashboardScree
       screenName: 'AdminPaymentDashboard',
       auditAction: AuditActions.viewPayments,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Tableau de bord paiements')),
+        appBar: AppBar(
+          title: const Text('Tableau de bord paiements'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.webhook_rounded),
+              tooltip: 'Logs webhooks',
+              onPressed: () => Navigator.pushNamed(context, '/admin/webhook-logs'),
+            ),
+          ],
+        ),
         drawer: const AppDrawer(),
         body: _loading
             ? const Center(child: CircularProgressIndicator())

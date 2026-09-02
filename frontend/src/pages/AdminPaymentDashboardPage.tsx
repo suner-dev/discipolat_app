@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import { useI18n } from '@/i18n/index';
 import {
@@ -122,6 +123,11 @@ export default function AdminPaymentDashboardPage() {
         <div>
           <h1 className="page-title">{t('paymentDashboard.title')}</h1>
           <p className="page-subtitle">{t('paymentDashboard.subtitle')}</p>
+        </div>
+        <div className="ml-auto flex gap-2">
+          <Link to="/admin/webhook-logs" className="btn-secondary btn-sm flex items-center gap-1.5">
+            <Activity className="w-4 h-4" /> Logs webhooks
+          </Link>
         </div>
       </div>
 

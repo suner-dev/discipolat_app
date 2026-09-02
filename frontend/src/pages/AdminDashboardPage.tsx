@@ -6,7 +6,7 @@ import {
   ArrowRight, Sparkles, MessageSquareText, BookOpen, LayoutTemplate, Building2,
   Users, Bell, Settings, Workflow, Database, Zap, Globe, Sliders, Server,
   Gauge, RefreshCw, Clock, AlertTriangle, CheckCircle2, Cpu, HardDrive,
-  Search, TrendingUp, BarChart3, FileDown, UserPlus, Eye,
+  Search, TrendingUp, BarChart3, FileDown, UserPlus, Eye, Smartphone,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -58,6 +58,15 @@ const CONFIG_SECTIONS = [
       { href: '/permissions', icon: Shield, title: 'Rôles & permissions', desc: 'Matrice granulaire R/W/D + scopes', gradient: 'from-indigo-500 to-violet-600' },
       { href: '/users', icon: UserCog, title: 'Utilisateurs', desc: 'Comptes, sessions, sécurité, historique', gradient: 'from-teal-500 to-cyan-600' },
       { href: '/audit', icon: Activity, title: 'Audit', desc: 'Journal immuable de toutes les actions', gradient: 'from-gray-500 to-slate-600' },
+    ],
+  },
+  {
+    title: 'Paiements & finances',
+    description: 'Dashboard paiements, webhooks, dîmes & offrandes',
+    items: [
+      { href: '/admin/payments', icon: BarChart3, title: 'Dashboard paiements', desc: 'Stats, graphiques, dons récurrents', gradient: 'from-green-500 to-emerald-600' },
+      { href: '/admin/webhook-logs', icon: Activity, title: 'Logs webhooks', desc: 'Historique des callbacks opérateurs', gradient: 'from-indigo-500 to-purple-600' },
+      { href: '/giving', icon: Smartphone, title: 'Dîmes & offrandes', desc: 'Module de dons Mobile Money', gradient: 'from-blue-500 to-cyan-600' },
     ],
   },
   {

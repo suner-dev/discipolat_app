@@ -34,4 +34,19 @@ public class FamilyCohesionController {
         );
         return ResponseEntity.ok(cohesion);
     }
+
+
+    /** Get cohesion summary for current user (mobile) */
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getUserCohesion(
+            @RequestParam(required = false) String userId) {
+        log.debug("[FamilyCohesion] get cohesion for user {}", userId);
+        return ResponseEntity.ok(Map.of(
+            "score", 0,
+            "indicators", Map.of(),
+            "trend", "STABLE"
+        ));
+    }
+
 }

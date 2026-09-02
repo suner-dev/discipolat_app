@@ -87,6 +87,8 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.shield_rounded, 'title': 'Compliance RGPD', 'route': '/compliance'},
     {'icon': Icons.chat_rounded, 'title': 'WhatsApp Rappels', 'route': '/whatsapp-reminders'},
     {'icon': Icons.shield_rounded, 'title': 'Modération', 'route': '/moderation'},
+    {'icon': Icons.bar_chart_rounded, 'title': 'Dashboard paiements', 'route': '/admin/payments'},
+    {'icon': Icons.webhook_rounded, 'title': 'Logs webhooks', 'route': '/admin/webhook-logs'},
     {'icon': Icons.upload_file_rounded, 'title': 'Migration données', 'route': '/data-migration'},
     {'icon': Icons.analytics_rounded, 'title': 'Analytics usage', 'route': '/usage-analytics'},
     {'icon': Icons.favorite_rounded, 'title': 'Encouragements', 'route': '/encouragements'},

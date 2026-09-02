@@ -289,6 +289,8 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Notifications', href: '/admin/notifications', icon: Bell, subtitle: 'Modèles & canaux' },
       { name: 'Configuration workflow', href: '/admin/transfers', icon: Workflow, subtitle: 'Circuits de validation' },
       { name: 'Intégrations', href: '/admin/integrations', icon: Globe, subtitle: 'SMTP, stockage, API' },
+      { name: 'Dashboard paiements', href: '/admin/payments', icon: BarChart3, subtitle: 'Stats & graphiques' },
+      { name: 'Logs webhooks paiements', href: '/admin/webhook-logs', icon: Activity, subtitle: 'Historique callbacks' },
       { name: 'Webhooks & API', href: '/admin/webhooks', icon: WebhookIcon, subtitle: 'Connecteur écosystème' },
       { name: 'Pont WhatsApp', href: '/admin/whatsapp', icon: MessageCircle, subtitle: 'Diffusion & commandes' },
       { name: 'Connecteurs tiers', href: '/admin/connectors', icon: Plug, subtitle: 'Zapier, agendas, comptabilité' },
