@@ -282,6 +282,8 @@ export default function InventoryPage() {
                       <UserCheck className="w-4 h-4" />
                     </button>
                     <button onClick={() => unassignMutation.mutate(item.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-gray-600 transition" title="Désaffecter">
+                      <UserX className="w-4 h-4" />
+                    </button>
                     <button onClick={() => maintenanceMutation.mutate(item.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-amber-500 transition" title="Envoyer en maintenance">
                       <Wrench className="w-4 h-4" />
                     </button>
@@ -329,7 +331,7 @@ export default function InventoryPage() {
                 <div className="flex justify-between"><span className="text-gray-500">Prochaine maintenance</span><span className="font-medium text-gray-900 dark:text-white">
                   {detail['prochaineMaintenance'] ? new Date(String(detail['prochaineMaintenance'])).toLocaleDateString('fr-FR') : '-'}
                 </span></div>
-                {detail['description'] && <p className="text-gray-500 mt-2">Description : {String(detail['description'])}</p>}
+                {String(detail['description'] ?? '') && <p className="text-gray-500 mt-2">Description : {String(detail['description'] ?? '')}</p>}
               </div>
             )}
             <div className="mt-4 flex justify-between">
