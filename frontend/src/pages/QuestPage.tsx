@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import api from '@/lib/api';
-import { Loader2, Trophy, Zap, Target, Crown } from 'lucide-react';
+import api, { getErrorMessage } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
+import { Loader2, Trophy, Zap, Target, Crown, BarChart3, Users, Shield, Send, Award } from 'lucide-react';
 
 interface QuestProfile {
   totalXp: number;
@@ -31,9 +33,47 @@ interface LeaderboardEntry {
   title: string;
 }
 
+interface GroupEntry {
+  rank: number;
+  nom: string;
+  type: string;
+  membres: number;
+  xpTotal: number;
+  xpMoyen: number;
+}
+
+interface QuestStats {
+  levelStep: number;
+  participants: number;
+  totalXpDistributed: number;
+}
+
+interface WeeklyChallengesResult {
+  challenges: { id: string; label: string; target: number; xpReward: number; action: string; current: number; completed: boolean; progressPct: number }[];
+  weekStart: string;
+  weekEnd: string;
+  totalXpAvailable: number;
+}
+
+interface ContextualBadge {
+  code: string;
+  name: string;
+  description: string;
+  xpValue: number;
+  earned: boolean;
+}
+
 /** Gamification « Discipolat Quest » — XP, niveaux, quêtes hebdo, classement. */
 export default function QuestPage() {
+  const { user, hasRole } = useAuth();
+  const qc = useQueryClient();
   const [tab, setTab] = useState<'quests' | 'leaderboard'>('quests');
+  const [viewUserId, setViewUserId] = useState('');
+  const [awardUserId, setAwardUserId] = useState('');
+  const [awardAction, setAwardAction] = useState('PRESENCE_CULTE');
+  const [awardPoints, setAwardPoints] = useState('');
+  const [awardDesc, setAwardDesc] = useState('');
+  const isAdmin = hasRole('ADMIN', 'PASTEUR');
 
   const profileQuery = useQuery({
     queryKey: ['quest-profile'],

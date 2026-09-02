@@ -1,5 +1,7 @@
 package com.discipolat.modules.ai.domain;
 
+import com.discipolat.common.enums.StatutAme;
+import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.families.domain.Family;
@@ -19,9 +21,11 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -251,6 +255,147 @@ public class AiAssistantService {
      */
     public Map<String, Object> getContextForQuery(String query) {
         return buildChurchContext(query);
+    }
+
+    /**
+     * Analyse pastorale IA d'une âme spécifique — données réelles de la fiche.
+     * Consommé par le détail d'âme web (SoulDetailPage) et mobile (soul_detail_screen).
+     */
+    public Map<String, Object> analyzeSoul(UUID soulId) {
+        Soul soul = soulRepository.findById(soulId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Âme non trouvée : " + soulId));
+        Map<String, Object> analysis = new LinkedHashMap<>();
+        analysis.put("soulId", soul.getId().toString());
+        analysis.put("nom", soul.getNomComplet());
+        analysis.put("resume", buildAnalysisResume(soul));
+
+        List<Map<String, Object>> signaux = new ArrayList<>();
+        List<Map<String, Object>> suggestions = new ArrayList<>();
+
+        if (soul.getStatut() == StatutAme.DECROCHE) {
+            signaux.add(signal("CRITIQUE", "DECROCHAGE",
+                    "L'âme est en décrochage : relance pastorale urgente.",
+                    "Planifier une visite pastorale dès cette semaine."));
+        } else if (soul.getStatut() == StatutAme.EN_VEILLE) {
+            signaux.add(signal("ELEVE", "VEILLE",
+                    "L'âme est en veille depuis un certain temps.",
+                    "Programmer un contact téléphonique et une rencontre."));
+        }
+        if (soul.getStatut() == StatutAme.EN_INTEGRATION && soul.getDateIntegration() != null
+                && soul.getDateIntegration().isBefore(LocalDate.now().minusDays(90))) {
+            signaux.add(signal("MOYEN", "INTEGRATION_LONGUE",
+                    "L'intégration dure depuis plus de 90 jours.",
+                    "Accélérer le parcours d'intégration (baptême, groupe de maison)."));
+        }
+        if (soul.getFaiseurId() == null) {
+            signaux.add(signal("MOYEN", "SANS_FAISEUR",
+                    "Aucun faiseur n'est assigné à ce suivi.",
+                    "Assigner un faiseur pour garantir un suivi hebdomadaire."));
+        }
+        if (soul.getTypeDisciple() == TypeDisciple.NOUVEAU_CONVERTI
+                && soul.getNiveauCroissance() != null && soul.getNiveauCroissance() < 3) {
+            suggestions.add(suggestion("FORMATION",
+                    "Renforcer le parcours de croissance",
+                    "Proposer la formation aux fondamentaux (étapes 1-3 du parcours disciple)."));
+        }
+        if (soul.getDateDernierContact() == null
+                || soul.getDateDernierContact().isBefore(LocalDateTime.now().minusDays(14))) {
+            suggestions.add(suggestion("SUIVI",
+                    "Relancer le contact",
+                    "L'âme n'a pas été contactée depuis plus de 14 jours : prendre contact rapidement."));
+        }
+        if (soul.getNotesPasteur() != null && !soul.getNotesPasteur().isBlank()) {
+            suggestions.add(suggestion("PASTORALE",
+                    "Poursuivre l'accompagnement ciblé",
+                    "Reprendre les notes pastorales pour adapter le suivi personnel."));
+        }
+        if (signaux.isEmpty()) {
+            signaux.add(signal("MOYEN", "SUIVI_NOMINAL",
+                    "Profil stable, aucun signal d'alerte majeur.",
+                    "Poursuivre le suivi hebdomadaire habituel."));
+        }
+        if (suggestions.isEmpty()) {
+            suggestions.add(suggestion("ENGAGEMENT",
+                    "Encourager l'engagement",
+                    "Inviter l'âme à rejoindre un groupe de maison et prendre un ministère."));
+        }
+
+        analysis.put("signaux", signaux);
+        analysis.put("suggestions", suggestions);
+        analysis.put("encouragement", generateEncouragement(soul));
+        analysis.put("score", buildSpiritualScore(soul));
+        return analysis;
+    }
+
+    /**
+     * Message d'encouragement personnalisé pour une âme.
+     */
+    public Map<String, Object> generateEncouragement(UUID soulId) {
+        Soul soul = soulRepository.findById(soulId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Âme non trouvée : " + soulId));
+        return Map.of("soulId", soul.getId().toString(), "encouragement", generateEncouragement(soul));
+    }
+
+    private String generateEncouragement(Soul soul) {
+        String prenom = soul.getPrenom() != null && !soul.getPrenom().isBlank()
+                ? soul.getPrenom() : soul.getNomComplet();
+        if (soul.getStatut() == StatutAme.DECROCHE) {
+            return prenom + ", chaque retour est une victoire. L'église vous attend à bras ouverts : recommençons ensemble ce chemin.";
+        }
+        if (soul.getStatut() == StatutAme.EN_VEILLE) {
+            return prenom + ", votre présence a compté et comptera encore. Un pas vers la communauté suffit pour revivre.";
+        }
+        if (soul.getTypeDisciple() == TypeDisciple.NOUVEAU_CONVERTI) {
+            return prenom + ", votre foi est un témoignage. Continuez à grandir pas à pas, Dieu fait le reste.";
+        }
+        return prenom + ", votre fidélité est une lumière pour votre famille spirituelle. Persévérez avec confiance.";
+    }
+
+    private Map<String, Object> signal(String severite, String type, String message, String action) {
+        Map<String, Object> s = new LinkedHashMap<>();
+        s.put("severite", severite);
+        s.put("gravite", severite);
+        s.put("type", type);
+        s.put("message", message);
+        s.put("actionConseillee", action);
+        return s;
+    }
+
+    private Map<String, Object> suggestion(String type, String titre, String description) {
+        Map<String, Object> s = new LinkedHashMap<>();
+        s.put("type", type);
+        s.put("titre", titre);
+        s.put("description", description);
+        s.put("action", description);
+        s.put("priorite", "NORMALE");
+        return s;
+    }
+
+    private Map<String, Object> buildSpiritualScore(Soul soul) {
+        int base = 60;
+        if (soul.getStatut() == StatutAme.ACTIF) base = 85;
+        else if (soul.getStatut() == StatutAme.EN_INTEGRATION) base = 70;
+        else if (soul.getStatut() == StatutAme.EN_VEILLE) base = 45;
+        else if (soul.getStatut() == StatutAme.DECROCHE) base = 25;
+        int croissance = soul.getNiveauCroissance() != null ? soul.getNiveauCroissance() : 1;
+        int total = Math.max(0, Math.min(100, base + (croissance - 1) * 4));
+        Map<String, Object> score = new LinkedHashMap<>();
+        score.put("soulId", soul.getId().toString());
+        score.put("global", total);
+        score.put("sante", total);
+        score.put("fidelite", Math.max(0, Math.min(100, total - 5)));
+        score.put("engagement", Math.max(0, Math.min(100, total - 10)));
+        score.put("participation", Math.max(0, Math.min(100, total - 8)));
+        score.put("label", total >= 80 ? "Très engagé" : total >= 50 ? "En progression" : "À accompagner");
+        score.put("semaine", LocalDate.now().toString());
+        return score;
+    }
+
+    private String buildAnalysisResume(Soul soul) {
+        return soul.getNomComplet() + " — statut " + soul.getStatut().name().toLowerCase()
+                + (soul.getTypeDisciple() != null ? ", " + soul.getTypeDisciple().name().toLowerCase() : "")
+                + ". Suivi pastoral actif, niveau de croissance "
+                + (soul.getNiveauCroissance() != null ? soul.getNiveauCroissance() : "—") + ".";
     }
 
     /* ==================== INTERNAL ==================== */

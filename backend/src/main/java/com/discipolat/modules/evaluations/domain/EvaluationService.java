@@ -312,6 +312,30 @@ public class EvaluationService {
         return result;
     }
 
+    /** Liste paginée de toutes les évaluations (vue Pasteur) avec filtres recherche/catégorie.
+     *  L'évaluateur reste anonyme : evaluateurId/evaluateurNom ne sont jamais exposés. */
+    @Transactional(readOnly = true)
+    public Page<Map<String, Object>> getAllEvaluations(String search, CategorieEvaluation categorie, Pageable pageable) {
+        String trimmed = (search == null || search.isBlank()) ? null : search.trim();
+        Page<Evaluation> evals = evaluationRepository.search(categorie, trimmed, pageable);
+        return evals.map(e -> {
+            String evalueNom = userRepository.findById(e.getEvalueId())
+                    .map(u -> u.getFirstName() + " " + u.getLastName()).orElse(null);
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", e.getId());
+            item.put("evalueId", e.getEvalueId());
+            item.put("evalueNom", evalueNom != null ? evalueNom : "");
+            item.put("evaluateurId", null);
+            item.put("evaluateurNom", null);
+            item.put("categorie", e.getCategorie().name());
+            item.put("note", e.getNote());
+            item.put("commentaire", e.getCommentaire() != null ? e.getCommentaire() : "");
+            item.put("anonyme", true);
+            item.put("createdAt", e.getCreatedAt().toString());
+            return item;
+        });
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> getAllEvaluationsAggregated() {
         Map<String, Object> result = new LinkedHashMap<>();

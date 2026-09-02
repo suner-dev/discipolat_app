@@ -138,6 +138,21 @@ import 'presentation/screens/usage_analytics/usage_analytics_screen.dart';
 import 'presentation/screens/encouragements/encouragements_screen.dart';
 import 'presentation/screens/dashboard/moderation_screen.dart';
 import 'presentation/screens/rewards/rewards_screen.dart';
+import 'presentation/screens/calendar/calendar_screen.dart';
+import 'presentation/screens/community/community_screen.dart';
+import 'presentation/screens/leave_requests/leave_requests_screen.dart';
+import 'presentation/screens/marketplace/marketplace_screen.dart';
+import 'presentation/screens/streaming/streaming_screen.dart';
+import 'presentation/screens/surveys/surveys_screen.dart';
+import 'presentation/screens/testimonials/testimonials_screen.dart';
+import 'presentation/screens/tickets/tickets_screen.dart';
+import 'presentation/screens/messages/conversation_detail_screen.dart';
+import 'presentation/screens/messages/enhanced_conversation_screen.dart';
+import 'presentation/screens/dashboard/dashboard_screen.dart';
+import 'presentation/screens/dashboard/kpi_drilldown_screen.dart';
+import 'presentation/screens/dashboard/mentorat_ai_screen.dart';
+import 'presentation/screens/dashboard/predictions_ml_screen.dart';
+import 'presentation/screens/dashboard/scheduled_announcements_screen.dart';
 import 'tenant_config.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
@@ -341,6 +356,21 @@ Map<String, List<String>> _routeRoles = {
   '/onboarding': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/health-observatory': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/digital-twin': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/calendar': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/community': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/leave-requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/marketplace': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/streaming': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/surveys': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/testimonials': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/tickets': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/conversation/:conversationId': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/conversation/enhanced/:conversationId': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/dashboard/main': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/kpi-drilldown': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/ai-mentoring/detail': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE'],
+  '/predictions-ml': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/scheduled-announcements': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
 };
 
 final appRouter = GoRouter(
@@ -964,6 +994,36 @@ final appRouter = GoRouter(
     GoRoute(path: '/encouragements', name: 'encouragements', builder: (ctx, s) => const EncouragementsScreen()),
     GoRoute(path: '/moderation', name: 'moderation', builder: (ctx, s) => const ModerationScreen()),
     GoRoute(path: '/rewards', name: 'rewards', builder: (ctx, s) => const RewardsScreen()),
+    GoRoute(path: '/calendar', name: 'calendar', builder: (ctx, s) => const CalendarIntegrationScreen()),
+    GoRoute(path: '/community', name: 'community', builder: (ctx, s) => const CommunityScreen()),
+    GoRoute(path: '/leave-requests', name: 'leave-requests', builder: (ctx, s) => const LeaveRequestsScreen()),
+    GoRoute(path: '/marketplace', name: 'marketplace', builder: (ctx, s) => const MarketplaceScreen()),
+    GoRoute(path: '/streaming', name: 'streaming', builder: (ctx, s) => const StreamingScreen()),
+    GoRoute(path: '/surveys', name: 'surveys', builder: (ctx, s) => const SurveysScreen()),
+    GoRoute(path: '/testimonials', name: 'testimonials', builder: (ctx, s) => const TestimonialsScreen()),
+    GoRoute(path: '/tickets', name: 'tickets', builder: (ctx, s) => const TicketsScreen()),
+    GoRoute(
+      path: '/conversation/:conversationId',
+      name: 'conversation-detail',
+      builder: (ctx, s) => ConversationDetailScreen(
+        conversationId: s.pathParameters['conversationId']!,
+        title: s.uri.queryParameters['title'] ?? 'Conversation',
+      ),
+    ),
+    GoRoute(
+      path: '/conversation/enhanced/:conversationId',
+      name: 'conversation-enhanced',
+      builder: (ctx, s) => EnhancedConversationScreen(
+        conversationId: s.pathParameters['conversationId']!,
+        title: s.uri.queryParameters['title'] ?? 'Conversation',
+        isGroup: s.uri.queryParameters['isGroup'] == '1',
+      ),
+    ),
+    GoRoute(path: '/dashboard/main', name: 'dashboard-main', builder: (ctx, s) => const DashboardScreen()),
+    GoRoute(path: '/kpi-drilldown', name: 'kpi-drilldown', builder: (ctx, s) => const KpiDrilldownScreen()),
+    GoRoute(path: '/ai-mentoring/detail', name: 'ai-mentoring-detail', builder: (ctx, s) => const MentoratAiScreen()),
+    GoRoute(path: '/predictions-ml', name: 'predictions-ml', builder: (ctx, s) => const PredictionsMlScreen()),
+    GoRoute(path: '/scheduled-announcements', name: 'scheduled-announcements', builder: (ctx, s) => const ScheduledAnnouncementsScreen()),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
 );

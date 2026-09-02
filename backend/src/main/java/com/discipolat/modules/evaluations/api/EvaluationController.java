@@ -29,6 +29,27 @@ public class EvaluationController {
     }
 
     /**
+     * Toutes les évaluations (vue Pasteur, paginée) — filtres : recherche texte
+     * sur le commentaire et catégorie. L'évaluateur reste anonyme.
+     */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<PageResponse<Map<String, Object>>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String categorie) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50),
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        CategorieEvaluation cat = (categorie != null && !categorie.isBlank())
+                ? CategorieEvaluation.valueOf(categorie) : null;
+        Page<Map<String, Object>> result = evaluationService.getAllEvaluations(search, cat, pageable);
+        return ResponseEntity.ok(PageResponse.of(
+                result.getContent(), result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages()));
+    }
+
+    /**
      * Submit an anonymous evaluation.
      */
     @PostMapping

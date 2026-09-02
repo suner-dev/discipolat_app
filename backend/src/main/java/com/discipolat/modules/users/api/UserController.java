@@ -98,6 +98,13 @@ public class UserController {
         ));
     }
 
+    /** Recherche rapide d'utilisateurs (nom prénom / email) — consommé par le dashboard RGPD. */
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<List<UserResponse>> search(@RequestParam String q) {
+        return ResponseEntity.ok(userService.search(q).stream().map(UserResponse::from).toList());
+    }
+
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> me() {

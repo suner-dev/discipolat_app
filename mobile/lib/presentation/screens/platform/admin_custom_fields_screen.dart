@@ -23,7 +23,7 @@ class _AdminCustomFieldsScreenState extends State<AdminCustomFieldsScreen> {
   Future<void> _load() async {
     setState(() => _isLoading = true);
     try {
-      final res = await _apiService.get('/custom-fields');
+      final res = await _apiService.get('/custom-fields/definitions/all');
       _fields = (res.data is List ? res.data : []) as List<dynamic>;
     } catch (_) {}
     if (mounted) setState(() => _isLoading = false);
@@ -49,8 +49,18 @@ class _AdminCustomFieldsScreenState extends State<AdminCustomFieldsScreen> {
         FilledButton(onPressed: () async {
           if (nameCtrl.text.trim().isEmpty) return;
           try {
-            await _apiService.post('/custom-fields', data: {
-              'name': nameCtrl.text.trim(), 'entityType': entityCtrl.text.trim(), 'fieldType': typeCtrl.text.trim(),
+            await _apiService.post('/custom-fields/definitions', data: {
+              'entiteType': entityCtrl.text.trim(),
+              'code': nameCtrl.text.trim().toLowerCase().replaceAll(' ', '_'),
+              'label': nameCtrl.text.trim(),
+              'type': typeCtrl.text.trim(),
+              'obligatoire': false,
+              'ordre': 0,
+              'options': <String>[],
+              'placeholder': '',
+              'defaultValue': '',
+              'rolesLecture': <String>[],
+              'rolesEcriture': <String>[],
             });
             if (ctx.mounted) Navigator.pop(ctx);
             _load();
@@ -79,14 +89,14 @@ class _AdminCustomFieldsScreenState extends State<AdminCustomFieldsScreen> {
                   child: Icon(Icons.text_fields, color: AppColors.primaryLight, size: 18)),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(f['name']?.toString() ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                  Text('${f['entityType'] ?? ''} · ${f['fieldType'] ?? ''}', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
+                  Text(f['label']?.toString() ?? f['name']?.toString() ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                  Text('${f['entiteType'] ?? ''} · ${f['type'] ?? f['fieldType'] ?? ''}', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
                 ])),
                 IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.withValues(alpha: 0.6), size: 18), onPressed: () async {
                   final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(backgroundColor: AppColors.cardDark,
                     title: Text(AppLocalizations.of(context).deleteQuestion, style: const TextStyle(color: Colors.white)),
                     actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text(AppLocalizations.of(context).no)), TextButton(onPressed: () => Navigator.pop(c, true), child: Text(AppLocalizations.of(context).yes))]));
-                  if (ok == true) { try { await _apiService.delete('/custom-fields/${f['id']}'); _load(); } catch (_) {} }
+                  if (ok == true) { try { await _apiService.delete('/custom-fields/definitions/${f['id']}'); _load(); } catch (_) {} }
                 }),
               ]));
             }),

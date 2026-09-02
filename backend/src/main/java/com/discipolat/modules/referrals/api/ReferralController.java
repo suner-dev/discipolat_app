@@ -54,6 +54,15 @@ public class ReferralController {
         return ResponseEntity.status(HttpStatus.CREATED).body(r);
     }
 
+    @PostMapping("/invite")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Referral> invite(@RequestBody Map<String, String> body) {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        Referral r = service.create(body.get("nom"), null,
+                body.get("email"), "Invitation envoyée depuis la page parrainage", userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(r);
+    }
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Referral> updateStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {

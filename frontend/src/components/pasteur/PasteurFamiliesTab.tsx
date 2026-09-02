@@ -119,7 +119,7 @@ export default function PasteurFamiliesTab() {
       };
       setAiMessages((prev) => [...prev, userMsg]);
       try {
-        const res = await api.post('/api/v1/ai/chat', { message: content });
+        const res = await api.post('/ai/chat', { message: content });
         return res.data as { reply: string; sources?: string[] };
       } catch {
         return { reply: 'Désolé, je ne peux pas répondre pour le moment. Vérifiez que l\'assistant IA est configuré.', sources: [] };

@@ -8,37 +8,43 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+/** Aligné sur VisitResponse (backend) : soulId/soulNom, datePrevue, dateRealisee, statut, motif, objectif, compteRendu, present. */
 interface Visit {
-  id: string; ameId: string; ameNom?: string; visiteurId: string; visiteurNom?: string;
-  dateVisite: string; datePrevue?: string; typeVisite: string; statut: string;
-  notes?: string; rapport?: string; motif?: string; objectif?: string;
-  lieu?: string; compteRendu?: string; createdAt: string;
+  id: string; soulId: string; soulNom?: string; visiteurId: string; visiteurNom?: string;
+  datePrevue?: string; dateRealisee?: string; statut: string;
+  motif?: string; objectif?: string; compteRendu?: string; photoUrl?: string; present?: boolean;
+  createdAt: string;
 }
 
 type ViewMode = 'liste' | 'detail' | 'create' | 'edit';
+
+const STATUTS: Record<string, { label: string; cls: string }> = {
+  PLANIFIEE: { label: 'Planifiée', cls: 'badge-info' },
+  REALISEE: { label: 'Réalisée', cls: 'badge-success' },
+  REPORTEE: { label: 'Reportée', cls: 'badge-warning' },
+  ANNULEE: { label: 'Annulée', cls: 'badge-gray' },
+};
 
 export default function PasteurVisitsTab() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState<ViewMode>('liste');
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
-  const emptyForm = { ameId: '', dateVisite: '', typeVisite: 'PASTORALE', statut: 'PLANIFIEE', notes: '', motif: '', objectif: '', lieu: '', compteRendu: '' };
+  const emptyForm = { soulId: '', datePrevue: '', statut: 'PLANIFIEE', motif: '', objectif: '', compteRendu: '' };
   const [form, setForm] = useState(emptyForm);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['visits', page, search, statutFilter, typeFilter, view],
+    queryKey: ['visits', page, search, statutFilter, view],
     queryFn: async () => {
       const params = new URLSearchParams({ size: '20', page: String(page) });
       if (search) params.set('search', search);
       if (statutFilter) params.set('statut', statutFilter);
-      if (typeFilter) params.set('typeVisite', typeFilter);
       const res = await api.get(`/visits?${params}`);
       return res.data as PageResponse<Visit>;
     },
@@ -58,19 +64,21 @@ export default function PasteurVisitsTab() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: typeof form) => {
-      const payload: any = { ameId: data.ameId, typeVisite: data.typeVisite, statut: data.statut || 'PLANIFIEE', notes: data.notes, motif: data.motif, objectif: data.objectif, lieu: data.lieu };
-      if (data.dateVisite) payload.datePrevue = data.dateVisite + 'T00:00:00';
-      await api.post('/visits', payload);
+    mutationFn: async (data: typeof emptyForm) => {
+      // CreateVisitRequest : soulId, datePrevue, motif, objectif (statut PLANIFIEE par défaut côté backend)
+      await api.post('/visits', { soulId: data.soulId, datePrevue: data.datePrevue, motif: data.motif, objectif: data.objectif });
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['visits'] }); toast.success('Visite créée'); setView('liste'); setForm(emptyForm); },
     onError: () => toast.error('Erreur lors de la création'),
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof form }) => {
-      const payload: any = { typeVisite: data.typeVisite, statut: data.statut, notes: data.notes, motif: data.motif, objectif: data.objectif, lieu: data.lieu, compteRendu: data.compteRendu };
-      if (data.dateVisite) payload.datePrevue = data.dateVisite + 'T00:00:00';
+    mutationFn: async ({ id, data }: { id: string; data: typeof emptyForm }) => {
+      // UpdateVisitRequest : statut (requis), datePrevue, dateRealisee, compteRendu
+      const payload: Record<string, unknown> = { statut: data.statut };
+      if (data.datePrevue) payload.datePrevue = data.datePrevue;
+      if (data.compteRendu) payload.compteRendu = data.compteRendu;
+      if (data.statut === 'REALISEE') payload.dateRealisee = new Date().toISOString().slice(0, 10);
       await api.patch(`/visits/${id}`, payload);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['visits'] }); toast.success('Visite mise à jour'); setView('liste'); setEditingId(null); setForm(emptyForm); },
@@ -85,39 +93,32 @@ export default function PasteurVisitsTab() {
 
   const handleEdit = useCallback((v: Visit) => {
     setForm({
-      ameId: v.ameId, dateVisite: v.datePrevue || v.dateVisite?.split('T')[0] || '',
-      typeVisite: v.typeVisite, statut: v.statut, notes: v.notes || '',
-      motif: v.motif || '', objectif: v.objectif || '', lieu: v.lieu || '', compteRendu: v.compteRendu || '',
+      soulId: v.soulId,
+      datePrevue: v.datePrevue?.slice(0, 10) || '',
+      statut: v.statut,
+      motif: v.motif || '',
+      objectif: v.objectif || '',
+      compteRendu: v.compteRendu || '',
     });
     setEditingId(v.id);
     setView('edit');
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (!form.ameId) { toast.error('Sélectionnez une âme'); return; }
+    if (!form.soulId) { toast.error('Sélectionnez une âme'); return; }
+    if (!form.datePrevue) { toast.error('Sélectionnez une date prévue'); return; }
     if (editingId) { updateMutation.mutate({ id: editingId, data: form }); }
     else { createMutation.mutate(form); }
   }, [form, editingId, createMutation, updateMutation]);
 
   const statutBadge = (s: string) => {
-    const m: Record<string, { cls: string; icon: any; label: string }> = {
-      PLANIFIEE: { cls: 'badge-info', icon: Clock, label: 'Planifiée' },
-      EN_COURS: { cls: 'badge-warning', icon: AlertTriangle, label: 'En cours' },
-      REALISEE: { cls: 'badge-success', icon: CheckCircle, label: 'Réalisée' },
-      REPORTEE: { cls: 'badge-warning', icon: Clock, label: 'Reportée' },
-      ANNULEE: { cls: 'badge-gray', icon: X, label: 'Annulée' },
-    };
-    const item = m[s] || { cls: 'badge-info', icon: Clock, label: s };
-    const Icon = item.icon;
+    const item = STATUTS[s] || { label: s, cls: 'badge-info' };
+    const icons: Record<string, any> = { PLANIFIEE: Clock, REALISEE: CheckCircle, REPORTEE: AlertTriangle, ANNULEE: X };
+    const Icon = icons[s] || Clock;
     return <span className={`badge text-[10px] ${item.cls}`}><Icon className="w-3 h-3 inline mr-1" />{item.label}</span>;
   };
 
-  const typeLabel = (t: string) => {
-    const m: Record<string, string> = { PASTORALE: 'Pastorale', DOMICILIAIRE: 'Domiciliaire', HOPITAL: 'Hôpital', URGENCE: 'Urgence', VISITE_AMI: 'Visite amicale', SUIVI: 'Suivi' };
-    return m[t] || t;
-  };
-
-  const isUpcoming = (d: string) => new Date(d) > new Date();
+  const isUpcoming = (d?: string) => !!d && new Date(d) > new Date();
 
   // === VUE DÉTAIL ===
   if (view === 'detail' && selectedVisit) {
@@ -130,7 +131,7 @@ export default function PasteurVisitsTab() {
         <div className="glass-card p-6">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Visite — {v.ameNom || '—'}</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Visite — {v.soulNom || '—'}</h2>
               <p className="text-sm text-gray-500">Par {v.visiteurNom || '—'}</p>
             </div>
             <div className="flex gap-2">
@@ -142,20 +143,20 @@ export default function PasteurVisitsTab() {
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Calendar className="w-4 h-4 mx-auto text-gray-400 mb-1" />
               <p className="text-xs text-gray-400">Date prévue</p>
-              <p className="font-semibold text-sm">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR') : v.dateVisite ? new Date(v.dateVisite).toLocaleDateString('fr-FR') : '—'}</p>
+              <p className="font-semibold text-sm">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR') : '—'}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
-              <MapPin className="w-4 h-4 mx-auto text-gray-400 mb-1" />
-              <p className="text-xs text-gray-400">Lieu</p>
-              <p className="font-semibold text-sm">{v.lieu || '—'}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
-              <AlertTriangle className="w-4 h-4 mx-auto text-gray-400 mb-1" />
-              <p className="text-xs text-gray-400">Type</p>
-              <p className="font-semibold text-sm">{typeLabel(v.typeVisite)}</p>
+              <CheckCircle className="w-4 h-4 mx-auto text-gray-400 mb-1" />
+              <p className="text-xs text-gray-400">Réalisée le</p>
+              <p className="font-semibold text-sm">{v.dateRealisee ? new Date(v.dateRealisee).toLocaleDateString('fr-FR') : '—'}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Eye className="w-4 h-4 mx-auto text-gray-400 mb-1" />
+              <p className="text-xs text-gray-400">Présence</p>
+              <p className="font-semibold text-sm">{v.present == null ? '—' : (v.present ? 'Oui' : 'Non')}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
+              <AlertTriangle className="w-4 h-4 mx-auto text-gray-400 mb-1" />
               <p className="text-xs text-gray-400">Motif</p>
               <p className="font-semibold text-sm">{v.motif || '—'}</p>
             </div>
@@ -164,12 +165,6 @@ export default function PasteurVisitsTab() {
             <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200/30 mb-4">
               <p className="text-xs font-medium text-blue-600 mb-1">Objectif</p>
               <p className="text-sm text-gray-700 dark:text-gray-300">{v.objectif}</p>
-            </div>
-          )}
-          {v.notes && (
-            <div className="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/30 mb-4">
-              <p className="text-xs font-medium text-amber-600 mb-1">Notes</p>
-              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{v.notes}</p>
             </div>
           )}
           {v.compteRendu && (
@@ -195,38 +190,23 @@ export default function PasteurVisitsTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">Âme *</label>
-              <select className="input" value={form.ameId} onChange={e => setForm({ ...form, ameId: e.target.value })}>
+              <select className="input" value={form.soulId} onChange={e => setForm({ ...form, soulId: e.target.value })}>
                 <option value="">Sélectionner...</option>
                 {(souls || []).map(s => <option key={s.id} value={s.id}>{s.prenom} {s.nom}</option>)}
               </select>
             </div>
             <div>
               <label className="label">Date prévue *</label>
-              <input className="input" type="date" value={form.dateVisite} onChange={e => setForm({ ...form, dateVisite: e.target.value })} />
+              <input className="input" type="date" value={form.datePrevue} onChange={e => setForm({ ...form, datePrevue: e.target.value })} />
             </div>
-            <div>
-              <label className="label">Type</label>
-              <select className="input" value={form.typeVisite} onChange={e => setForm({ ...form, typeVisite: e.target.value })}>
-                <option value="PASTORALE">Pastorale</option>
-                <option value="DOMICILIAIRE">Domiciliaire</option>
-                <option value="HOPITAL">Hôpital</option>
-                <option value="URGENCE">Urgence</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Statut</label>
-              <select className="input" value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>
-                <option value="PLANIFIEE">Planifiée</option>
-                <option value="EN_COURS">En cours</option>
-                <option value="REALISEE">Réalisée</option>
-                <option value="REPORTEE">Reportée</option>
-                <option value="ANNULEE">Annulée</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Lieu</label>
-              <input className="input" value={form.lieu} onChange={e => setForm({ ...form, lieu: e.target.value })} placeholder="Lieu de la visite..." />
-            </div>
+            {editingId && (
+              <div>
+                <label className="label">Statut</label>
+                <select className="input" value={form.statut} onChange={e => setForm({ ...form, statut: e.target.value })}>
+                  {Object.entries(STATUTS).map(([value, { label }]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+            )}
             <div>
               <label className="label">Motif</label>
               <input className="input" value={form.motif} onChange={e => setForm({ ...form, motif: e.target.value })} placeholder="Motif de la visite..." />
@@ -234,10 +214,6 @@ export default function PasteurVisitsTab() {
             <div className="md:col-span-2">
               <label className="label">Objectif</label>
               <textarea className="input" rows={2} value={form.objectif} onChange={e => setForm({ ...form, objectif: e.target.value })} placeholder="Objectif de la visite..." />
-            </div>
-            <div className="md:col-span-2">
-              <label className="label">Notes</label>
-              <textarea className="input" rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notes de visite..." />
             </div>
             {editingId && (
               <div className="md:col-span-2">
@@ -285,7 +261,7 @@ export default function PasteurVisitsTab() {
           <div className="flex gap-2 overflow-x-auto pb-1">
             {upcomingVisits.slice(0, 5).map(v => (
               <div key={v.id} className="flex-shrink-0 p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 min-w-[140px]">
-                <p className="text-[10px] font-medium text-gray-900 dark:text-gray-100">{v.ameNom || '—'}</p>
+                <p className="text-[10px] font-medium text-gray-900 dark:text-gray-100">{v.soulNom || '—'}</p>
                 <p className="text-[9px] text-gray-400">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}</p>
               </div>
             ))}
@@ -303,18 +279,7 @@ export default function PasteurVisitsTab() {
           <div className="flex gap-3 mt-4 pt-4 border-t border-white/20">
             <select value={statutFilter} onChange={e => { setStatutFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
               <option value="">Tous statuts</option>
-              <option value="PLANIFIEE">Planifiée</option>
-              <option value="EN_COURS">En cours</option>
-              <option value="REALISEE">Réalisée</option>
-              <option value="REPORTEE">Reportée</option>
-              <option value="ANNULEE">Annulée</option>
-            </select>
-            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-              <option value="">Tous types</option>
-              <option value="PASTORALE">Pastorale</option>
-              <option value="DOMICILIAIRE">Domiciliaire</option>
-              <option value="HOPITAL">Hôpital</option>
-              <option value="URGENCE">Urgence</option>
+              {Object.entries(STATUTS).map(([value, { label }]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </div>
         )}
@@ -331,9 +296,8 @@ export default function PasteurVisitsTab() {
                 <tr>
                   <th>Âme</th>
                   <th>Visiteur</th>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Lieu</th>
+                  <th>Date prévue</th>
+                  <th>Réalisée</th>
                   <th>Statut</th>
                   <th className="text-right">Actions</th>
                 </tr>
@@ -343,13 +307,12 @@ export default function PasteurVisitsTab() {
                   <tr key={v.id} className="hover:bg-white/40 dark:hover:bg-gray-800/20 transition-colors">
                     <td>
                       <button onClick={() => { setSelectedVisit(v); setView('detail'); }} className="text-primary-600 hover:text-primary-700 font-medium hover:underline">
-                        {v.ameNom || v.ameId}
+                        {v.soulNom || v.soulId.slice(0, 8)}
                       </button>
                     </td>
                     <td className="text-sm text-gray-500">{v.visiteurNom || '—'}</td>
-                    <td className="text-sm text-gray-500">{new Date(v.datePrevue || v.dateVisite).toLocaleDateString('fr-FR')}</td>
-                    <td className="text-sm text-gray-500">{typeLabel(v.typeVisite)}</td>
-                    <td className="text-sm text-gray-500">{v.lieu || '—'}</td>
+                    <td className="text-sm text-gray-500">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR') : '—'}</td>
+                    <td className="text-sm text-gray-500">{v.dateRealisee ? new Date(v.dateRealisee).toLocaleDateString('fr-FR') : '—'}</td>
                     <td>{statutBadge(v.statut)}</td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -360,7 +323,7 @@ export default function PasteurVisitsTab() {
                     </td>
                   </tr>
                 ))}
-                {(data?.content || []).length === 0 && <tr><td colSpan={7} className="py-12 text-center text-gray-400">Aucune visite</td></tr>}
+                {(data?.content || []).length === 0 && <tr><td colSpan={6} className="py-12 text-center text-gray-400">Aucune visite</td></tr>}
               </tbody>
             </table>
           </div>

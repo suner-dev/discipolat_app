@@ -6,7 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import {
   Wallet, ArrowDownCircle, ArrowUpCircle, PiggyBank, Plus, Pencil, Trash2, Loader2,
-  Download, TrendingUp, TrendingDown, Scale, X, BarChart3,
+  Download, TrendingUp, TrendingDown, Scale, X, BarChart3, Globe,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -28,6 +28,7 @@ export default function FinancePage() {
   const queryClient = useQueryClient();
   const year = new Date().getFullYear();
   const [annee, setAnnee] = useState(year);
+  const [currency, setCurrency] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [categorieFilter, setCategorieFilter] = useState('');
   const [modal, setModal] = useState<null | { edit?: FinanceTransaction }>(null);
@@ -63,6 +64,15 @@ export default function FinancePage() {
   const { data: stats } = useQuery({
     queryKey: ['finances', 'stats', annee],
     queryFn: async () => (await api.get(`/finances/stats?annee=${annee}`)).data as FinanceStats,
+  });
+
+  const { data: currencyStats } = useQuery({
+    queryKey: ['finances', 'stats', 'currency', annee, currency],
+    queryFn: async () => {
+      const params = new URLSearchParams({ annee: String(annee) });
+      if (currency) params.set('currency', currency);
+      return (await api.get(`/finances/stats/currency?${params.toString()}`)).data as Record<string, unknown>;
+    },
   });
 
   const { data: budgets = [] } = useQuery({
@@ -149,6 +159,12 @@ export default function FinancePage() {
         <select className="input w-36" value={annee} onChange={(e) => setAnnee(Number(e.target.value))}>
           {[year, year - 1, year - 2].map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
+        <label className="label !mb-0 ml-3">Devise</label>
+        <select className="input w-36" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+          <option value="">FCFA (défaut)</option>
+          <option value="EUR">EUR</option>
+          <option value="USD">USD</option>
+        </select>
       </div>
 
       {/* KPIs */}
@@ -172,6 +188,29 @@ export default function FinancePage() {
           </div>
         ))}
       </div>
+
+      {currency && currencyStats && (
+        <div className="glass-card p-5 mb-6 animate-slide-up" style={{ animationDelay: '120ms' }}>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+            <Globe className="w-4 h-4 text-primary-500" /> Statistiques en {currency} ({annee})
+          </h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: 'Recettes', value: Number(currencyStats.totalRecettes ?? 0) },
+              { label: 'Dépenses', value: Number(currencyStats.totalDepenses ?? 0) },
+              { label: 'Solde', value: Number(currencyStats.solde ?? 0) },
+              { label: 'Taux de change', value: Number(currencyStats.exchangeRate ?? 0) },
+            ].map((item) => (
+              <div key={item.label} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-0.5">
+                  {item.label === 'Taux de change' ? item.value.toFixed(4) : `${fmt(item.value)} ${currency}`}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Graphique recettes / dépenses par mois */}
       {chartData.length > 0 && (

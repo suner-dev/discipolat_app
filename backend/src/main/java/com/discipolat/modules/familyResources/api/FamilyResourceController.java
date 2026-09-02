@@ -1,8 +1,12 @@
 package com.discipolat.modules.familyResources.api;
 
+import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.familyResources.domain.FamilyResource;
 import com.discipolat.modules.familyResources.domain.FamilyResourceService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +24,22 @@ public class FamilyResourceController {
 
     public FamilyResourceController(FamilyResourceService service) {
         this.service = service;
+    }
+
+    /** Liste paginée des ressources (filtres : userId ou familleId). */
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PageResponse<FamilyResource>> list(
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) UUID familleId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50));
+        if (familleId != null) {
+            return ResponseEntity.ok(PageResponse.from(service.listByFamilyPage(familleId, pageable)));
+        }
+        UUID uid = (userId != null) ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(PageResponse.from(service.listForUser(uid, pageable)));
     }
 
     @GetMapping("/family/{familleId}")

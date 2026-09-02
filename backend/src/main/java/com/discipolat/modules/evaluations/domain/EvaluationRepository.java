@@ -33,4 +33,11 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, UUID> {
 
     @Query("SELECT COUNT(e) FROM Evaluation e WHERE e.evalueId = :evalueId AND e.categorie = :categorie")
     long countByEvalueAndCategorie(@Param("evalueId") UUID evalueId, @Param("categorie") CategorieEvaluation categorie);
+
+    /** Recherche paginée avec filtres optionnels (catégorie + texte dans le commentaire). */
+    @Query("SELECT e FROM Evaluation e WHERE (:categorie IS NULL OR e.categorie = :categorie) " +
+            "AND (:search IS NULL OR LOWER(COALESCE(e.commentaire, '')) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Evaluation> search(@Param("categorie") CategorieEvaluation categorie,
+                            @Param("search") String search,
+                            Pageable pageable);
 }

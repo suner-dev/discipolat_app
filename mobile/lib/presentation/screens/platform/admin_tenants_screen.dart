@@ -26,7 +26,7 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen> {
   Future<void> _load() async {
     setState(() => _isLoading = true);
     try {
-      final res = await _apiService.get('/admin/tenants');
+      final res = await _apiService.get('/tenants');
       _tenants = (res.data is List ? res.data : []) as List<dynamic>;
     } catch (_) {}
     if (mounted) setState(() => _isLoading = false);

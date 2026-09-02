@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/ai")
@@ -73,5 +74,24 @@ public class AiAssistantController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(service.checkHealth());
+    }
+
+    /**
+     * Analyse pastorale IA d'une âme — données réelles de la fiche âme.
+     * Consommé par le détail d'âme web et mobile.
+     */
+    @GetMapping("/analyze/{soulId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> analyze(@PathVariable UUID soulId) {
+        return ResponseEntity.ok(service.analyzeSoul(soulId));
+    }
+
+    /**
+     * Message d'encouragement personnalisé pour une âme.
+     */
+    @GetMapping("/encouragement/{soulId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> encouragement(@PathVariable UUID soulId) {
+        return ResponseEntity.ok(service.generateEncouragement(soulId));
     }
 }

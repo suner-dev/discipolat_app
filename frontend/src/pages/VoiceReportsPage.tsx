@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '@/lib/api';
-import { Loader2, Mic, Search, Smile, Frown, Meh, Heart, UserRound } from 'lucide-react';
+import { Loader2, Mic, Search, Smile, Frown, Meh, Heart, UserRound, ClipboardList, FileText, ChevronDown } from 'lucide-react';
 
 interface VoiceReport {
   id: string;
   authorId: string;
+  authorName?: string;
   transcription: string;
   analysis: string | null;
   createdAt: string;
@@ -18,19 +19,39 @@ interface Analysis {
   actions: string[];
 }
 
+interface ActionItem {
+  id: string;
+  reportId: string;
+  action: string;
+  personne?: string;
+  statut?: string;
+}
+
 const MOOD_STYLES: Record<string, { icon: typeof Smile; cls: string; label: string }> = {
   JOYEUX: { icon: Smile, cls: 'text-green-500', label: 'Joyeux' },
   TRISTE: { icon: Frown, cls: 'text-blue-500', label: 'Triste' },
   NEUTRE: { icon: Meh, cls: 'text-gray-400', label: 'Neutre' },
 };
 
+type ReportTab = 'all' | 'mine';
+
 /** Rapports Vocaux IA — transcription + extraction automatique (personnes, humeur, actions). */
 export default function VoiceReportsPage() {
   const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<ReportTab>('all');
+  const [openStructured, setOpenStructured] = useState<string | null>(null);
+  const [structured, setStructured] = useState<Record<string, string> | null>(null);
+  const [structuredLoading, setStructuredLoading] = useState<string | null>(null);
+  const [structuredError, setStructuredError] = useState<string | null>(null);
 
   const reportsQuery = useQuery({
-    queryKey: ['voice-reports'],
-    queryFn: async () => (await api.get<VoiceReport[]>('/voice-reports')).data,
+    queryKey: ['voice-reports', tab],
+    queryFn: async () => (await api.get<VoiceReport[]>(tab === 'mine' ? '/voice-reports/mine' : '/voice-reports')).data,
+  });
+
+  const actionItemsQuery = useQuery({
+    queryKey: ['voice-reports-action-items'],
+    queryFn: async () => (await api.get<ActionItem[]>('/voice-reports/action-items')).data,
   });
 
   const parseAnalysis = (raw: string | null): Analysis | null => {
@@ -42,11 +63,30 @@ export default function VoiceReportsPage() {
     }
   };
 
+  const loadStructured = async (id: string) => {
+    if (openStructured === id) {
+      setOpenStructured(null);
+      setStructured(null);
+      return;
+    }
+    setStructuredLoading(id);
+    setStructuredError(null);
+    try {
+      const res = await api.get(`/voice-reports/${id}/structured`);
+      setStructured(res.data ?? {});
+      setOpenStructured(id);
+    } catch (e) {
+      setStructuredError('Impossible de générer le rapport structuré.');
+    } finally {
+      setStructuredLoading(null);
+    }
+  };
+
   const filtered = (reportsQuery.data ?? []).filter(
     (r) => !search || r.transcription.toLowerCase().includes(search.toLowerCase()),
   );
 
-  if (reportsQuery.isLoading) {
+  if (reportsQuery.isLoading && tab === 'all') {
     return <Loader2 className="w-8 h-8 animate-spin text-primary-500 mx-auto mt-20" />;
   }
 
@@ -62,16 +102,50 @@ export default function VoiceReportsPage() {
             Dictés sur le terrain (même hors-ligne), transcrits et analysés par l'IA
           </p>
         </div>
-        <div className="ml-auto relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            placeholder="Rechercher…"
-            className="input pl-9 w-48"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="ml-auto flex items-center gap-3">
+          <div className="flex rounded-xl bg-white/5 border border-white/10 p-1">
+            <button
+              onClick={() => setTab('all')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === 'all' ? 'bg-pink-500 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              Tous
+            </button>
+            <button
+              onClick={() => setTab('mine')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === 'mine' ? 'bg-pink-500 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              Mes rapports
+            </button>
+          </div>
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              placeholder="Rechercher…"
+              className="input pl-9 w-48"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Action items — liste des actions à suivre (extraites de tous les rapports) */}
+      {actionItemsQuery.data && actionItemsQuery.data.length > 0 && (
+        <div className="glass-card p-5 mb-6">
+          <h2 className="flex items-center gap-2 font-semibold mb-3">
+            <ClipboardList className="w-5 h-5 text-amber-500" /> Actions à suivre
+          </h2>
+          <ul className="space-y-2">
+            {actionItemsQuery.data.map((a) => (
+              <li key={a.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                {a.personne ? <strong>{a.personne} :</strong> : null} {a.action}
+                {a.statut && <span className="badge badge-ghost text-xs">{a.statut}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {filtered.map((r) => {
@@ -83,6 +157,7 @@ export default function VoiceReportsPage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                   <UserRound className="w-4 h-4" />
+                  {r.authorName ? `${r.authorName} — ` : ''}
                   {new Date(r.createdAt).toLocaleString('fr-FR')}
                 </div>
                 <span className={`flex items-center gap-1 text-xs font-medium ${mood.cls}`}>
@@ -119,6 +194,26 @@ export default function VoiceReportsPage() {
                   )}
                 </div>
               )}
+
+              {/* Rapport structuré */}
+              <div className="mt-4 border-t border-white/10 pt-3">
+                <button
+                  onClick={() => loadStructured(r.id)}
+                  className="flex items-center gap-2 text-xs font-medium text-primary-500 hover:text-primary-600 transition"
+                >
+                  <FileText className="w-4 h-4" />
+                  {structuredLoading === r.id ? 'Génération…' : 'Rapport structuré'}
+                  <ChevronDown className={`w-3 h-3 transition ${openStructured === r.id ? 'rotate-180' : ''}`} />
+                </button>
+                {structuredError && openStructured === r.id && (
+                  <p className="text-xs text-red-500 mt-2">{structuredError}</p>
+                )}
+                {openStructured === r.id && structured && (
+                  <pre className="mt-3 text-xs text-gray-600 dark:text-gray-300 bg-black/5 dark:bg-white/5 rounded-lg p-3 whitespace-pre-wrap max-h-64 overflow-y-auto">
+                    {JSON.stringify(structured, null, 2)}
+                  </pre>
+                )}
+              </div>
             </div>
           );
         })}

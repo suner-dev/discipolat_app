@@ -2,6 +2,8 @@ package com.discipolat.modules.makerTracking.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.multitenancy.TenantContext;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,11 @@ public class MakerTrackingService {
 
     public List<MakerTracking> listByFaiseur(UUID faiseurId) {
         return repo.findByFaiseurIdOrderByDateEvenementDesc(faiseurId);
+    }
+
+    /** Liste paginée des évènements de suivi d'un faiseur. */
+    public Page<MakerTracking> listByFaiseurPage(UUID faiseurId, Pageable pageable) {
+        return repo.findByFaiseurIdOrderByDateEvenementDesc(faiseurId, pageable);
     }
 
     public MakerTracking get(UUID id) {

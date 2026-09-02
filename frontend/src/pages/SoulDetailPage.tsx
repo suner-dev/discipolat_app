@@ -306,7 +306,7 @@ export default function SoulDetailPage() {
   const [tagInput, setTagInput] = useState('');
   const { data: tags = [] } = useQuery({
     queryKey: ['soul', id, 'tags'],
-    queryFn: async () => (await api.get(`/souls/${id}/tags`)).data as string[],
+    queryFn: async () => (await api.get(`/soul-tags/${id}`)).data as string[],
     enabled: !!id,
   });
   const { data: isFav = false } = useQuery({
@@ -317,7 +317,7 @@ export default function SoulDetailPage() {
 
   const addTagMutation = useMutation({
     mutationFn: async (tag: string) => {
-      const res = await api.post(`/souls/${id}/tags`, { tag });
+      const res = await api.post(`/soul-tags/${id}`, { tag });
       return res.data as string[];
     },
     onSuccess: (newTags) => { queryClient.setQueryData(['soul', id, 'tags'], newTags); setTagInput(''); },
@@ -325,7 +325,7 @@ export default function SoulDetailPage() {
   });
   const removeTagMutation = useMutation({
     mutationFn: async (tag: string) => {
-      const res = await api.delete(`/souls/${id}/tags/${encodeURIComponent(tag)}`);
+      const res = await api.delete(`/soul-tags/${id}/${encodeURIComponent(tag)}`);
       return res.data as string[];
     },
     onSuccess: (newTags) => queryClient.setQueryData(['soul', id, 'tags'], newTags),

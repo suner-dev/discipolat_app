@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../data/services/api_service.dart';
@@ -33,37 +32,11 @@ class _BiDashboardScreenState extends State<BiDashboardScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _bi = _generateMockData();
+          _bi = null;
           _isLoading = false;
         });
       }
     }
-  }
-
-  Map<String, dynamic> _generateMockData() {
-    final rng = Random();
-    return {
-      'totalMembers': 248 + rng.nextInt(20),
-      'activeMembers': 198 + rng.nextInt(15),
-      'growthRate': 3.2 + rng.nextDouble() * 2,
-      'attendanceRate': 72 + rng.nextDouble() * 15,
-      'weeklyTrend': List.generate(12, (i) => {
-        'week': 'S${i + 1}',
-        'present': 150 + rng.nextInt(60),
-        'absent': 30 + rng.nextInt(40),
-      }),
-      'departmentPerformance': [
-        {'name': 'Louange', 'score': 85 + rng.nextInt(10)},
-        {'name': 'Accueil', 'score': 78 + rng.nextInt(12)},
-        {'name': 'Enseignement', 'score': 90 + rng.nextInt(8)},
-        {'name': 'Évangélisation', 'score': 65 + rng.nextInt(15)},
-        {'name': 'Jeunes', 'score': 72 + rng.nextInt(10)},
-      ],
-      'newConverts': 12 + rng.nextInt(8),
-      'activeDisciples': 45 + rng.nextInt(10),
-      'reportsSubmitted': 89 + rng.nextInt(10),
-      'reportsPending': 15 - rng.nextInt(10).abs(),
-    };
   }
 
   @override
@@ -84,7 +57,9 @@ class _BiDashboardScreenState extends State<BiDashboardScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.cyanAccent))
-          : RefreshIndicator(
+          : _bi == null
+              ? _buildErrorState()
+              : RefreshIndicator(
               onRefresh: _loadData,
               child: ListView(
                 padding: const EdgeInsets.all(16),
@@ -102,6 +77,32 @@ class _BiDashboardScreenState extends State<BiDashboardScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.cloud_off, color: Colors.white38, size: 48),
+          const SizedBox(height: 12),
+          const Text(
+            'Données indisponibles pour le moment',
+            style: TextStyle(color: Colors.white54, fontSize: 14),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _loadData,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Réessayer'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.cyanAccent.withAlpha(40),
+              foregroundColor: Colors.cyanAccent,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

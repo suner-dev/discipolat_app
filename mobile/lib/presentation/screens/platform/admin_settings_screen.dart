@@ -41,7 +41,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   Future<void> _load() async {
     setState(() => _isLoading = true);
     try {
-      final res = await _apiService.get('/admin/settings');
+      final res = await _apiService.get('/settings');
       _settings = res.data as Map<String, dynamic>?;
       _nameCtrl.text = _settings?['churchName']?.toString() ?? '';
       _sloganCtrl.text = _settings?['slogan']?.toString() ?? '';
@@ -54,7 +54,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   Future<void> _save() async {
     setState(() => _isSaving = true);
     try {
-      await _apiService.put('/admin/settings', data: {
+      await _apiService.put('/settings', data: {
         'churchName': _nameCtrl.text.trim(),
         'slogan': _sloganCtrl.text.trim(),
         'primaryColor': _primaryColorCtrl.text.trim(),

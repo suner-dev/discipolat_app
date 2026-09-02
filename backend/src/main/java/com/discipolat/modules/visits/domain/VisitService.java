@@ -9,6 +9,8 @@ import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.visits.api.CreateVisitRequest;
 import com.discipolat.modules.visits.api.UpdateVisitRequest;
 import com.discipolat.modules.visits.api.VisitResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,6 +118,15 @@ public class VisitService {
     public List<VisitResponse> upcoming() {
         return visitRepository.findByStatutOrderByDatePrevueAsc(Visit.StatutVisite.PLANIFIEE)
                 .stream().map(this::toResponse).toList();
+    }
+
+    /** Liste paginée de toutes les visites avec filtres optionnels (statut + texte). */
+    @Transactional(readOnly = true)
+    public Page<VisitResponse> findAll(String statut, String search, Pageable pageable) {
+        Visit.StatutVisite st = (statut != null && !statut.isBlank())
+                ? Visit.StatutVisite.valueOf(statut) : null;
+        String trimmed = (search == null || search.isBlank()) ? null : search.trim();
+        return visitRepository.search(st, trimmed, pageable).map(this::toResponse);
     }
 
     public void delete(UUID visitId) {

@@ -1,7 +1,12 @@
 package com.discipolat.modules.visits.api;
 
+import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.modules.visits.domain.VisitService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +29,22 @@ public class VisitController {
     @PostMapping
     public ResponseEntity<VisitResponse> create(@Valid @RequestBody CreateVisitRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(visitService.create(request));
+    }
+
+    /** Liste paginée de toutes les visites (vue Pasteur / Administration). */
+    @GetMapping
+    public ResponseEntity<PageResponse<VisitResponse>> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String statut,
+            @RequestParam(required = false) String typeVisite) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50),
+                Sort.by(Sort.Direction.DESC, "datePrevue"));
+        Page<VisitResponse> result = visitService.findAll(statut, search, pageable);
+        return ResponseEntity.ok(PageResponse.of(
+                result.getContent(), result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages()));
     }
 
     @GetMapping("/my")

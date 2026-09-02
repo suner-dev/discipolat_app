@@ -88,6 +88,15 @@ public class ComplianceManagerService {
         return toMap(policyRepository.save(policy), 0);
     }
 
+    public Map<String, Object> deleteRetentionPolicy(UUID id) {
+        UUID tenantId = TenantContext.requireTenantId();
+        RetentionPolicy policy = policyRepository.findById(id)
+                .filter(p -> tenantId.equals(p.getTenantId()))
+                .orElseThrow(() -> new NoSuchElementException("Politique de rétention introuvable : " + id));
+        policy.setActive(false);
+        return toMap(policyRepository.save(policy), 0);
+    }
+
     // ── Purge automatisée ───────────────────────────────────────
 
     /**

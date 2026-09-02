@@ -3,7 +3,7 @@ import { useState } from 'react';
 import api from '@/lib/api';
 import {
   Globe, Users, Calendar, Search, Plus, Download, MapPin, ExternalLink,
-  Loader2, BookOpen, Megaphone, Star, X, Check
+  Loader2, BookOpen, Megaphone, Star, X, Check, Trash2, Filter
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -92,23 +92,48 @@ export default function NetworkPage() {
   const [showCreateResource, setShowCreateResource] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('');
+  const [resourceCategory, setResourceCategory] = useState('');
+  const [eventType, setEventType] = useState('');
+  const [myResources, setMyResources] = useState(false);
+  const [myEvents, setMyEvents] = useState(false);
+  const [showAllEvents, setShowAllEvents] = useState(false);
   const queryClient = useQueryClient();
 
   // ======================== QUERIES ========================
 
   const resourcesQuery = useQuery({
-    queryKey: ['network', 'resources', searchQuery],
+    queryKey: ['network', 'resources', searchQuery, resourceCategory, myResources],
     queryFn: async () => {
       if (searchQuery) {
+        if (activeTab === 'directory') {
+          return (await api.get<NetworkDirectoryEntry[]>('/network/directory/search', { params: { q: searchQuery } })).data as unknown as NetworkResource[];
+        }
         return (await api.get<NetworkResource[]>('/network/resources/search', { params: { q: searchQuery } })).data;
+      }
+      if (myResources) {
+        return (await api.get<NetworkResource[]>('/network/resources/mine')).data;
+      }
+      if (resourceCategory) {
+        return (await api.get<NetworkResource[]>(`/network/resources/category/${resourceCategory}`)).data;
       }
       return (await api.get<NetworkResource[]>('/network/resources')).data;
     },
   });
 
   const eventsQuery = useQuery({
-    queryKey: ['network', 'events'],
-    queryFn: async () => (await api.get<NetworkEvent[]>('/network/events')).data,
+    queryKey: ['network', 'events', eventType, myEvents, showAllEvents],
+    queryFn: async () => {
+      if (eventType) {
+        return (await api.get<NetworkEvent[]>(`/network/events/type/${eventType}`)).data;
+      }
+      if (myEvents) {
+        return (await api.get<NetworkEvent[]>('/network/events/mine')).data;
+      }
+      if (showAllEvents) {
+        return (await api.get<NetworkEvent[]>('/network/events/all')).data;
+      }
+      return (await api.get<NetworkEvent[]>('/network/events')).data;
+    },
   });
 
   const directoryQuery = useQuery({
@@ -165,6 +190,64 @@ export default function NetworkPage() {
       queryClient.invalidateQueries({ queryKey: ['network', 'events'] });
       setShowCreateEvent(false);
       toast.success('Événement créé et partagé !');
+    },
+  });
+
+  const leaveEventMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      return (await api.post(`/network/events/${eventId}/leave`)).data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['network', 'events'] });
+      toast.success('Désinscription effectuée');
+    },
+    onError: () => toast.error('Impossible de se désinscrire'),
+  });
+
+  const deleteResourceMutation = useMutation({
+    mutationFn: async (resourceId: string) => {
+      await api.delete(`/network/resources/${resourceId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['network', 'resources'] });
+      toast.success('Ressource supprimée');
+    },
+    onError: () => toast.error('Impossible de supprimer la ressource'),
+  });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      await api.delete(`/network/events/${eventId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['network', 'events'] });
+      toast.success('Événement supprimé');
+    },
+    onError: () => toast.error('Impossible de supprimer l\'événement'),
+  });
+
+  const myDirectoryQuery = useQuery({
+    queryKey: ['network', 'directory', 'mine'],
+    queryFn: async () => (await api.get<NetworkDirectoryEntry>('/network/directory/mine')).data,
+  });
+
+  const updateMyDirectoryMutation = useMutation({
+    mutationFn: async (updates: Partial<NetworkDirectoryEntry>) => {
+      return (await api.put<NetworkDirectoryEntry>('/network/directory/mine', updates)).data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['network', 'directory'] });
+      toast.success('Profil annuaire mis à jour');
+    },
+  });
+
+  const toggleListingMutation = useMutation({
+    mutationFn: async (listed: boolean) => {
+      return (await api.post<NetworkDirectoryEntry>('/network/directory/mine/listing', { listed })).data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['network', 'directory'] });
+      toast.success('Visibilité de l\'annuaire mise à jour');
     },
   });
 
@@ -251,6 +334,22 @@ export default function NetworkPage() {
             </button>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div className="flex items-center gap-1">
+              <Filter className="w-3 h-3 text-gray-400" />
+              <select value={resourceCategory} onChange={(e) => setResourceCategory(e.target.value)} className="text-xs border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white/5 text-gray-900 dark:text-gray-100">
+                <option value="">Toutes les catégories</option>
+                {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <button
+              onClick={() => setMyResources(!myResources)}
+              className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${myResources ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 ring-1 ring-primary-500/30' : 'bg-white/5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
+              Mes ressources
+            </button>
+          </div>
+
           {resourcesQuery.isLoading ? (
             <Loader2 className="w-6 h-6 animate-spin text-primary-500 mx-auto mt-12" />
           ) : (resourcesQuery.data ?? []).length === 0 ? (
@@ -275,12 +374,20 @@ export default function NetworkPage() {
                     <span className="text-xs text-gray-400 flex items-center gap-1">
                       <Download className="w-3 h-3" /> {r.downloads} téléchargements
                     </span>
-                    <button
-                      onClick={() => downloadMutation.mutate(r.id)}
-                      className="btn-ghost text-xs px-2 py-1"
-                    >
-                      <Download className="w-3 h-3 mr-1" /> Télécharger
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => downloadMutation.mutate(r.id)}
+                        className="btn-ghost text-xs px-2 py-1"
+                      >
+                        <Download className="w-3 h-3 mr-1" /> Télécharger
+                      </button>
+                      <button
+                        onClick={() => { if (confirm('Supprimer cette ressource ?')) deleteResourceMutation.mutate(r.id); }}
+                        className="btn-ghost text-xs px-2 py-1 text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

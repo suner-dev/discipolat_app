@@ -125,19 +125,35 @@ public class ComplianceController {
 
 
     /** Data portability — export user data (GDPR) */
-    @GetMapping("/api/v1/compliance/portability/{userId}")
+    @GetMapping("/portability/{userId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> portability(@PathVariable String userId) {
-        log.info("[Compliance] portability request for user {}", userId);
         return ResponseEntity.ok(Map.of("userId", userId, "data", Map.of()));
     }
 
     /** Execute retention policy */
-    @PostMapping("/api/v1/compliance/retention-policies/{policyId}/execute")
+    @PostMapping("/retention-policies/{policyId}/execute")
     @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
     public ResponseEntity<Map<String, Object>> executeRetentionPolicy(@PathVariable String policyId) {
-        log.info("[Compliance] execute retention policy {}", policyId);
         return ResponseEntity.ok(Map.of("policyId", policyId, "status", "executed"));
+    }
+
+    /** Créer une politique de rétention — consommé par le Compliance Dashboard web */
+    public record RetentionPolicyCreateRequest(String dataCategory, int retentionDays, String actionOnExpiry) {}
+
+    @PostMapping("/retention-policies")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> createRetentionPolicy(@RequestBody RetentionPolicyCreateRequest request) {
+        boolean hardDelete = "DELETE".equalsIgnoreCase(request.actionOnExpiry());
+        return ResponseEntity.ok(managerService.setRetentionPolicy(
+                request.dataCategory(), request.retentionDays(), "", hardDelete));
+    }
+
+    /** Désactiver/supprimer une politique de rétention */
+    @DeleteMapping("/retention-policies/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Map<String, Object>> deleteRetentionPolicy(@PathVariable UUID id) {
+        return ResponseEntity.ok(managerService.deleteRetentionPolicy(id));
     }
 
 }

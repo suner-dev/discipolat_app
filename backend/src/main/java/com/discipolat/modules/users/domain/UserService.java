@@ -292,6 +292,21 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public List<User> search(String q) {
+        String lower = q.trim().toLowerCase();
+        if (lower.isEmpty()) return List.of();
+        return userRepository.findAll().stream()
+                .filter(u -> {
+                    String fullName = ((u.getFirstName() == null ? "" : u.getFirstName()) + " "
+                            + (u.getLastName() == null ? "" : u.getLastName())).trim().toLowerCase();
+                    return (u.getEmail() != null && u.getEmail().toLowerCase().contains(lower))
+                            || fullName.contains(lower);
+                })
+                .limit(20)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<User> findByRole(UserRole role) {
         return userRepository.findByRole(role);
     }
