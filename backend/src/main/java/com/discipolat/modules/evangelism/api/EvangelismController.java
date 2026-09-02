@@ -51,6 +51,19 @@ public class EvangelismController {
         return ResponseEntity.ok(evangelismService.updateStage(soulId, request));
     }
 
+    /**
+     * Déplacement relatif dans le pipeline — consommé par le mobile
+     * avec {"action": "ADVANCE"} ou {"action": "RETREAT"}.
+     */
+    @PatchMapping("/{soulId}")
+    public ResponseEntity<EvangelismTrackResponse> moveStage(
+            @PathVariable UUID soulId,
+            @RequestBody Map<String, String> body) {
+        String action = body.getOrDefault("action", "ADVANCE");
+        boolean forward = !"RETREAT".equalsIgnoreCase(action);
+        return ResponseEntity.ok(evangelismService.moveStage(soulId, forward));
+    }
+
     /** Historique des franchissements d'étapes d'une âme. */
     @GetMapping("/souls/{soulId}/history")
     public ResponseEntity<List<Map<String, Object>>> history(@PathVariable UUID soulId) {

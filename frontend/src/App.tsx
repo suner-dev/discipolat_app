@@ -19,6 +19,7 @@ const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const TwoFactorChallengePage = lazy(() => import('@/pages/TwoFactorChallengePage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
+const ActivateAccountPage = lazy(() => import('@/pages/ActivateAccountPage'));
 const MagicLinkVerifyPage = lazy(() => import('@/pages/MagicLinkVerifyPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const PasteurDashboardPage = lazy(() => import('@/pages/PasteurDashboardPage'));
@@ -275,6 +276,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/activate" element={<ActivateAccountPage />} />
           <Route path="/auth/magic-link" element={<MagicLinkVerifyPage />} />
         </Route>
 

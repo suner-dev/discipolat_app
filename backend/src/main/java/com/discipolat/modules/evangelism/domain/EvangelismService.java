@@ -129,6 +129,26 @@ public class EvangelismService {
         return toResponse(saved);
     }
 
+    /** Déplacement relatif dans le pipeline (ADVANCE / RETREAT) — consommé par le mobile. */
+    public EvangelismTrackResponse moveStage(UUID soulId, boolean forward) {
+        EvangelismTrack track = trackRepository.findBySoulId(soulId)
+                .orElseGet(() -> {
+                    if (!soulRepository.existsById(soulId)) {
+                        throw new EntityNotFoundException("Soul", soulId);
+                    }
+                    return EvangelismTrack.builder()
+                            .soulId(soulId)
+                            .etape(EvangelismEtape.NOUVELLE_AME)
+                            .dateEtape(LocalDate.now())
+                            .creePar(securityUtils.getCurrentUserId())
+                            .build();
+                });
+        EvangelismEtape[] etapes = EvangelismEtape.values();
+        int idx = track.getEtape().ordinal();
+        int target = forward ? Math.min(idx + 1, etapes.length - 1) : Math.max(idx - 1, 0);
+        return updateStage(soulId, new UpdateEvangelismRequest(etapes[target], null));
+    }
+
     /** Liste des âmes à une étape donnée du pipeline (ou toutes si null). */
     @Transactional(readOnly = true)
     public List<EvangelismTrackResponse> findAll(EvangelismEtape etape, String search) {
