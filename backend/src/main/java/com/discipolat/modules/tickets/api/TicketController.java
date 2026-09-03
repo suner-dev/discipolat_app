@@ -39,9 +39,14 @@ public class TicketController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    // TODO: add ownership check — verify the ticket belongs to the authenticated user or user has admin role
     public ResponseEntity<Ticket> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(ticketService.getById(id));
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        Ticket ticket = ticketService.getById(id);
+        // Ownership check: verify the ticket belongs to the authenticated user or user has admin role
+        if (!ticket.getUserId().equals(currentUserId) && !SecurityUtils.isSuperUser()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(ticket);
     }
 
     @PostMapping

@@ -20,6 +20,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
   Map<String, dynamic>? _stats;
   bool _isLoading = true;
   String? _error;
+  String _filterTarget = 'ALL';
 
   @override
   void initState() {
@@ -30,11 +31,11 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
   Future<void> _load() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final res = await _api.get('/announcements');
-      final statsRes = await _api.get('/announcements/stats');
+      final res = await _api.get('/broadcast');
+      final statsRes = await _api.get('/broadcast/stats');
       if (mounted) {
         setState(() {
-          _broadcasts = (res.data is List ? res.data : []) as List<dynamic>;
+          _broadcasts = (res.data is List ? res.data : (res.data is Map ? res.data['content'] : [])) as List<dynamic>;
           _stats = statsRes.data as Map<String, dynamic>?;
           _isLoading = false;
         });
@@ -42,6 +43,86 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
     }
+  }
+
+  Future<void> _showCreateDialog() async {
+    final titleCtrl = TextEditingController();
+    final contentCtrl = TextEditingController();
+    String target = 'ALL';
+    final l10n = AppLocalizations.of(context);
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.newBroadcast),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(labelText: 'Titre', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: contentCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Contenu', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: target,
+                decoration: const InputDecoration(labelText: 'Cible', border: OutlineInputBorder()),
+                items: const [
+                  DropdownMenuItem(value: 'ALL', child: Text('Tous les membres')),
+                  DropdownMenuItem(value: 'DEPARTMENT', child: Text('Par département')),
+                  DropdownMenuItem(value: 'FAMILY', child: Text('Par famille')),
+                  DropdownMenuItem(value: 'ROLE', child: Text('Par rôle')),
+                ],
+                onChanged: (v) => target = v ?? 'ALL',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Créer'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && titleCtrl.text.isNotEmpty && contentCtrl.text.isNotEmpty) {
+      try {
+        await _api.post('/broadcast', data: {
+          'titre': titleCtrl.text,
+          'contenu': contentCtrl.text,
+          'cible': target,
+        });
+        _load();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Broadcast créé avec succès')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: ${e.toString().split(':').first}')),
+          );
+        }
+      }
+    }
+  }
+
+  List<dynamic> get _filteredBroadcasts {
+    if (_filterTarget == 'ALL') return _broadcasts;
+    return _broadcasts.where((b) {
+      final item = b as Map<String, dynamic>;
+      return (item['target']?.toString() ?? item['cible']?.toString() ?? '') == _filterTarget;
+    }).toList();
   }
 
   @override
@@ -57,7 +138,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
       ),
       drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: _showCreateDialog,
         backgroundColor: Colors.deepOrange.shade700,
         icon: const Icon(Icons.send, color: Colors.white),
         label: Text(l10n.newBroadcast, style: const TextStyle(color: Colors.white)),
@@ -90,13 +171,13 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                       // Recent broadcasts
                       Text(l10n.recentBroadcasts, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      if (_broadcasts.isEmpty)
+                      if (_filteredBroadcasts.isEmpty)
                         Padding(
                           padding: const EdgeInsets.all(24),
                           child: Center(child: Text(l10n.broadcastEmpty, style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
                         )
                       else
-                        ..._broadcasts.map((b) {
+                        ..._filteredBroadcasts.map((b) {
                           final item = b as Map<String, dynamic>;
                           final title = item['titre']?.toString() ?? item['title']?.toString() ?? '';
                           final target = item['target']?.toString() ?? item['audience']?.toString() ?? '';
@@ -109,10 +190,10 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                       Text(l10n.targeting, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Wrap(spacing: 8, children: [
-                        _targetChip(l10n.allMembers),
-                        _targetChip(l10n.byDepartment),
-                        _targetChip(l10n.byFamily),
-                        _targetChip(l10n.byRole),
+                        _targetChip(l10n.allMembers, 'ALL'),
+                        _targetChip(l10n.byDepartment, 'DEPARTMENT'),
+                        _targetChip(l10n.byFamily, 'FAMILY'),
+                        _targetChip(l10n.byRole, 'ROLE'),
                       ]),
                     ],
                   ),
@@ -149,11 +230,12 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
     );
   }
 
-  Widget _targetChip(String label) {
+  Widget _targetChip(String label, String target) {
+    final isSelected = _filterTarget == target;
     return ActionChip(
       label: Text(label),
-      onPressed: () {},
-      backgroundColor: Colors.white.withValues(alpha: 0.08),
+      onPressed: () => setState(() => _filterTarget = target),
+      backgroundColor: isSelected ? Colors.deepOrange.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.08),
     );
   }
 }

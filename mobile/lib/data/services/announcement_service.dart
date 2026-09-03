@@ -21,6 +21,21 @@ class AnnouncementService {
     }
   }
 
+  /// Create a new announcement.
+  Future<void> create({
+    required String title,
+    required String content,
+    String target = 'ALL',
+    DateTime? scheduledAt,
+  }) async {
+    await _api.post('/announcements', data: {
+      'title': title,
+      'content': content,
+      'target': target,
+      'scheduledAt': scheduledAt?.toIso8601String(),
+    });
+  }
+
   /// Publish a scheduled announcement.
   Future<void> publish(String id) async {
     await _api.post('/announcements/$id/publish');

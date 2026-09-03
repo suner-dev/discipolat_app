@@ -69,10 +69,9 @@ public class WeeklyChallengeService {
         if (!existing.isEmpty()) return existing;
 
         List<WeeklyChallenge> generated = new ArrayList<>();
-        Random rand = new Random();
-        // Pick 3 random templates
+        // Deterministic selection based on week number (same challenges for same week)
         var shuffled = new ArrayList<>(CHALLENGE_TEMPLATES);
-        Collections.shuffle(shuffled, rand);
+        Collections.shuffle(shuffled, new Random(week.longValue() * 31L + year.longValue()));
         for (var template : shuffled.subList(0, Math.min(3, shuffled.size()))) {
             WeeklyChallenge challenge = new WeeklyChallenge();
             challenge.setTenantId(tenantId);

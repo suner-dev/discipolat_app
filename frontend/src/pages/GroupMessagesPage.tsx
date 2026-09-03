@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useI18n } from '@/i18n';
-import { MessageCircle, Send, Image, Users, Search, Loader2 } from 'lucide-react';
+import { MessageCircle, Send, Image, Users, Search, Loader2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import apiRaw from '@/lib/apiRaw';
+import api from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 
 interface GroupMsg {
@@ -17,44 +17,67 @@ interface GroupMsg {
   createdAt: string;
 }
 
-// Exemple de groupes (à remplacer par un endpoint de listing des groupes).
-// Le module backend `groupMessages` ne fournit que /group-messages/group/{groupId}
-// et /search, pas la liste des groupes — les IDs doivent provenir des départements/familles.
-const SAMPLE_GROUPS = [
-  { id: '00000000-0000-0000-0000-00000000000a', name: 'Équipe Louange', groupType: 'DEPARTMENT' },
-  { id: '00000000-0000-0000-0000-00000000000b', name: 'Équipe Accueil', groupType: 'DEPARTMENT' },
-  { id: '00000000-0000-0000-0000-00000000000c', name: 'Département Jeunesse', groupType: 'DEPARTMENT' },
-];
+interface Department {
+  id: string;
+  nom: string;
+  description?: string;
+  responsableId?: string;
+}
 
 export default function GroupMessagesPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const [selectedGroup, setSelectedGroup] = useState(SAMPLE_GROUPS[0].id);
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [newMsg, setNewMsg] = useState('');
   const [query, setQuery] = useState('');
 
-  const activeGroup = SAMPLE_GROUPS.find(g => g.id === selectedGroup);
+  // Fetch departments from real API
+  const { data: departments = [], isLoading: isLoadingDepts, error: deptsError } = useQuery({
+    queryKey: ['departments-for-messages'],
+    queryFn: async () => {
+      const res = await api.get('/departments?page=0&size=50');
+      return (res.data?.content || res.data || []) as Department[];
+    },
+    retry: false,
+  });
 
-  const { data: messages = [], isLoading, error } = useQuery({
+  const activeGroup = departments.find(d => d.id === selectedGroup);
+
+  // Set first group as default when departments load
+  useEffect(() => {
+    if (departments.length > 0 && !selectedGroup) {
+      setSelectedGroup(departments[0].id);
+    }
+  }, [departments, selectedGroup]);
+
+  const { data: messages = [], isLoading: isLoadingMsgs, error: msgsError } = useQuery({
     queryKey: ['group-messages', selectedGroup],
-    queryFn: async () => (await apiRaw.get(`/group-messages/group/${selectedGroup}`)).data as GroupMsg[],
+    queryFn: async () => {
+      if (!selectedGroup) return [];
+      const res = await api.get(`/group-messages/group/${selectedGroup}`);
+      return res.data as GroupMsg[];
+    },
+    enabled: !!selectedGroup,
     retry: false,
   });
 
   const { data: searchResults } = useQuery({
     queryKey: ['group-messages-search', selectedGroup, query],
-    queryFn: async () =>
-      (await apiRaw.get('/group-messages/search', { params: { groupId: selectedGroup, q: query } })).data as GroupMsg[],
-    enabled: query.trim().length > 0,
+    queryFn: async () => {
+      if (!selectedGroup) return [];
+      const res = await api.get('/group-messages/search', { params: { groupId: selectedGroup, q: query } });
+      return res.data as GroupMsg[];
+    },
+    enabled: query.trim().length > 0 && !!selectedGroup,
     retry: false,
   });
 
   const sendMutation = useMutation({
     mutationFn: async () => {
-      if (!newMsg.trim()) return;
-      return (await apiRaw.post('/group-messages', {
+      if (!newMsg.trim() || !selectedGroup) return;
+      return (await api.post('/group-messages', {
         groupId: selectedGroup,
-        groupType: activeGroup?.groupType || 'DEPARTMENT',
+        groupType: 'DEPARTMENT',
         content: newMsg,
         messageType: 'TEXT',
       })).data as GroupMsg;
@@ -68,6 +91,8 @@ export default function GroupMessagesPage() {
   });
 
   const displayed = query.trim().length > 0 ? (searchResults || []) : messages;
+  const isLoading = isLoadingMsgs || isLoadingDepts;
+  const error = msgsError || deptsError;
   const senderName = (m: GroupMsg) => (m.senderId ? `#${m.senderId.slice(0, 6)}` : 'Membre');
   const timeLabel = (m: GroupMsg) => new Date(m.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
@@ -77,20 +102,33 @@ export default function GroupMessagesPage() {
       <div className="w-64 bg-white/5 backdrop-blur rounded-2xl border border-white/10 overflow-hidden flex flex-col">
         <div className="p-4 border-b border-white/10"><h2 className="text-white font-semibold flex items-center gap-2"><Users className="w-4 h-4" /> {t('groupMessages.groups') || 'Groupes'}</h2></div>
         <div className="flex-1 overflow-y-auto">
-          {SAMPLE_GROUPS.map(g => (
-            <button key={g.id} onClick={() => { setSelectedGroup(g.id); setQuery(''); }}
-              className={`w-full text-left p-3 border-b border-white/5 transition ${selectedGroup === g.id ? 'bg-blue-600/20 border-l-2 border-l-blue-400' : 'hover:bg-white/5'}`}>
-              <div className="text-white text-sm font-medium">{g.name}</div>
-              <div className="text-xs text-gray-400">{g.groupType}</div>
-            </button>
-          ))}
+          {isLoadingDepts ? (
+            <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>
+          ) : deptsError ? (
+            <div className="p-3 text-center">
+              <p className="text-xs text-red-400 mb-2">Erreur de chargement</p>
+              <button onClick={() => queryClient.invalidateQueries({ queryKey: ['departments-for-messages'] })} className="text-xs text-blue-400 hover:underline flex items-center gap-1 mx-auto">
+                <RefreshCw className="w-3 h-3" /> Réessayer
+              </button>
+            </div>
+          ) : departments.length === 0 ? (
+            <div className="p-3 text-center text-xs text-gray-400">Aucun département</div>
+          ) : (
+            departments.map(g => (
+              <button key={g.id} onClick={() => { setSelectedGroup(g.id); setQuery(''); }}
+                className={`w-full text-left p-3 border-b border-white/5 transition ${selectedGroup === g.id ? 'bg-blue-600/20 border-l-2 border-l-blue-400' : 'hover:bg-white/5'}`}>
+                <div className="text-white text-sm font-medium">{g.nom}</div>
+                <div className="text-xs text-gray-400">DEPARTMENT</div>
+              </button>
+            ))
+          )}
         </div>
       </div>
 
       {/* Chat area */}
       <div className="flex-1 bg-white/5 backdrop-blur rounded-2xl border border-white/10 flex flex-col">
         <div className="p-4 border-b border-white/10 flex items-center justify-between">
-          <h3 className="text-white font-semibold">{activeGroup?.name}</h3>
+          <h3 className="text-white font-semibold">{activeGroup?.nom || 'Sélectionnez un groupe'}</h3>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input value={query} onChange={(e) => setQuery(e.target.value)}

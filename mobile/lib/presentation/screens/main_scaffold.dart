@@ -187,10 +187,6 @@ class _MorePage extends StatelessWidget {
         onTap: () {
           if (route != null) {
             Navigator.pushNamed(context, route);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$title — bientôt disponible')),
-            );
           }
         },
       ),

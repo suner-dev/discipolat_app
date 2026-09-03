@@ -15,8 +15,6 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class RateLimitingConfig {
-    // Configuration is now handled by PerIpRateLimiter.
-    // This class remains as a placeholder for future rate limiting enhancements
-    // (e.g., Redis-backed distributed rate limiting).
+    // Configuration is handled by PerIpRateLimiter at runtime.
 }
 

@@ -78,6 +78,78 @@ class _ScheduledAnnouncementsScreenState extends ConsumerState<ScheduledAnnounce
     }
   }
 
+  Future<void> _showCreateDialog() async {
+    final titleCtrl = TextEditingController();
+    final contentCtrl = TextEditingController();
+    String target = 'ALL';
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Créer une annonce'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(labelText: 'Titre', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: contentCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Contenu', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: target,
+                decoration: const InputDecoration(labelText: 'Cible', border: OutlineInputBorder()),
+                items: const [
+                  DropdownMenuItem(value: 'ALL', child: Text('Tous')),
+                  DropdownMenuItem(value: 'DEPARTMENT', child: Text('Département')),
+                  DropdownMenuItem(value: 'FAMILY', child: Text('Famille')),
+                  DropdownMenuItem(value: 'ROLE', child: Text('Rôle')),
+                ],
+                onChanged: (v) => target = v ?? 'ALL',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Créer'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && titleCtrl.text.isNotEmpty && contentCtrl.text.isNotEmpty) {
+      try {
+        final svc = ref.read(announcementServiceProvider);
+        await svc.create(
+          title: titleCtrl.text,
+          content: contentCtrl.text,
+          target: target,
+        );
+        _reload();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Annonce créée avec succès')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: ${e.toString().split(':').first}')),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,11 +162,7 @@ class _ScheduledAnnouncementsScreenState extends ConsumerState<ScheduledAnnounce
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Création d\'annonce — bientôt disponible')),
-          );
-        },
+        onPressed: _showCreateDialog,
         backgroundColor: Colors.orange,
         child: const Icon(Icons.add, color: Colors.white),
       ),
