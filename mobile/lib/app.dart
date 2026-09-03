@@ -182,6 +182,7 @@ import 'features/users/UserRolesScreen.dart';
 import 'features/compliance/ComplianceExportsScreen.dart';
 import 'features/discipleship/DiscipleshipPathsScreen.dart';
 import 'features/conversations/ConversationsScreen.dart';
+import 'features/families/AiChatScreen.dart';
 import 'features/visits/VisitNotesVerifyScreen.dart';
 import 'features/encouragements/EncouragementDetailScreen.dart';
 import 'features/referrals/ReferralsStatusScreen.dart';
@@ -490,6 +491,7 @@ Map<String, List<String>> _routeRoles = {
   '/referrals/status': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/spiritual-challenges/detail': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/conversations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/ai-chat': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
 };
 
 final appRouter = GoRouter(
@@ -1187,6 +1189,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/passport', name: 'passport', builder: (ctx, s) => const PassportScreen()),
     GoRoute(path: '/spiritual-journey', name: 'spiritual-journey', builder: (ctx, s) => const SpiritualJourneyScreen()),
     GoRoute(path: '/conversations', name: 'conversations', builder: (ctx, s) => const ConversationsScreen()),
+    GoRoute(path: '/ai-chat', name: 'ai-chat', builder: (ctx, s) => const AiChatScreen()),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
 );
