@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../data/services/api_service.dart';
 
 /// Carte Vivante des Âmes — interactive map showing members by location.
@@ -20,17 +22,41 @@ class _SoulMapScreenState extends State<SoulMapScreen> {
   bool _isLoading = true;
   String _filter = 'all'; // all, disciples, new, inactive
 
-
-  // Default center: Paris
-  static const CameraPosition _defaultPosition = CameraPosition(
-    target: LatLng(48.8566, 2.3522),
+  CameraPosition _defaultPosition = const CameraPosition(
+    target: LatLng(0, 0),
     zoom: 12,
   );
 
   @override
   void initState() {
     super.initState();
+    _initLocation();
     _loadSouls();
+  }
+
+  Future<void> _initLocation() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        final req = await Geolocator.requestPermission();
+        if (req == LocationPermission.denied) return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _defaultPosition = CameraPosition(
+            target: LatLng(pos.latitude, pos.longitude),
+            zoom: 12,
+          );
+        });
+      }
+    } catch (_) {
+      // Keep (0,0) as last resort — user can pan to their area
+    }
   }
 
   Future<void> _loadSouls() async {
@@ -59,14 +85,16 @@ class _SoulMapScreenState extends State<SoulMapScreen> {
   void _buildMarkers() {
     final markers = <Marker>{};
 
-
     for (int i = 0; i < _souls.length; i++) {
       final soul = _souls[i];
 
-      // In production: use real lat/lng from soul data
-      // For demo: generate spread around Paris
-      final lat = 48.8566 + (((soul['id'].hashCode % 1000) / 1000.0) - 0.5) * 0.1;
-      final lng = 2.3522 + (((soul['id'].hashCode % 700) / 700.0) - 0.5) * 0.1;
+      final lat = soul['latitude'] ?? soul['lat'];
+      final lng = soul['longitude'] ?? soul['lng'] ?? soul['lon'];
+
+      if (lat == null || lng == null) continue;
+      final double? dLat = (lat is num) ? lat.toDouble() : double.tryParse(lat.toString());
+      final double? dLng = (lng is num) ? lng.toDouble() : double.tryParse(lng.toString());
+      if (dLat == null || dLng == null) continue;
 
       final type = soul['typeDisciple']?.toString() ?? '';
       final statut = soul['statut']?.toString() ?? '';
@@ -91,7 +119,7 @@ class _SoulMapScreenState extends State<SoulMapScreen> {
 
       markers.add(Marker(
         markerId: MarkerId(soul['id']?.toString() ?? '$i'),
-        position: LatLng(lat, lng),
+        position: LatLng(dLat, dLng),
         icon: icon,
         infoWindow: InfoWindow(
           title: '${soul['prenom'] ?? ''} ${soul['nom'] ?? ''}',
@@ -164,7 +192,7 @@ class _SoulMapScreenState extends State<SoulMapScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/souls/${soul['id']}');
+                  context.go('/souls/${soul['id']}');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.cyanAccent,

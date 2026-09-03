@@ -147,7 +147,7 @@ class _PrayerJournalScreenState extends State<PrayerJournalScreen> {
             TextField(controller: ctrl, decoration: InputDecoration(labelText: l.yourPrayer), maxLines: 4),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: categorie,
+              initialValue: categorie,
               decoration: InputDecoration(labelText: l.categoryLabel),
               items: [
                 DropdownMenuItem(value: 'PRIERE', child: Text(l.catPrayer)),

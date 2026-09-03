@@ -32,7 +32,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   String _createRole = 'FAISEUR';
   bool _isProcessing = false;
 
-  AppLocalizations get l10n => AppLocalizations.of(context)!;
+  AppLocalizations get l10n => AppLocalizations.of(context);
 
   static const _roleLabels = {
     'ADMIN': 'Administrateur',
@@ -439,7 +439,7 @@ class _ActionModal extends StatefulWidget {
 }
 
 class _ActionModalState extends State<_ActionModal> {
-  AppLocalizations get l10n => AppLocalizations.of(context)!;
+  AppLocalizations get l10n => AppLocalizations.of(context);
   bool _isProcessing = false;
   String _demoteRole = 'FAISEUR';
   String _transferFamilleId = '';
@@ -825,7 +825,7 @@ class _ActionModalState extends State<_ActionModal> {
 
   Widget _buildDemoteContent(String name) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('${l10n.usersListDemoteConfirm.replaceAll('{name}', name)}',
+      Text(l10n.usersListDemoteConfirm.replaceAll('{name}', name),
           style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
       const SizedBox(height: 8),
       DropdownButtonFormField<String>(

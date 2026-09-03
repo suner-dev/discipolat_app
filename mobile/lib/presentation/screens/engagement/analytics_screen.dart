@@ -62,7 +62,7 @@ class _EngagementAnalyticsScreenState extends State<EngagementAnalyticsScreen> {
                               padding: const EdgeInsets.all(10),
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
                                 Text(m['metricCategory']?.toString().toUpperCase() ?? '', style: TextStyle(fontSize: 9, color: Colors.grey.shade600)),
-                                Text('${((m['metricValue'] as num?) ?? 0).toStringAsFixed(1)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                Text(((m['metricValue'] as num?) ?? 0).toStringAsFixed(1), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                                 Text(m['metricName']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
                                 Row(children: [
                                   Icon(change >= 0 ? Icons.trending_up : Icons.trending_down, size: 12, color: change >= 0 ? Colors.green : Colors.red),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../../l10n/app_localizations.dart';
 
-/// Prédictions ML — branché sur `GET /api/predictions` (hors /v1).
+/// Prédictions ML — branché sur `GET /api/v1/ai-predictions`.
 class PredictionsMlScreen extends StatefulWidget {
   const PredictionsMlScreen({super.key, this.apiService});
 
@@ -127,7 +127,7 @@ class _PredictionsMlScreenState extends State<PredictionsMlScreen> {
                                     const SizedBox(height: 4),
                                     Text(_typeLabel(p['predictionType']?.toString() ?? ''), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                     const Spacer(),
-                                    Text('${current.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                    Text(current.toStringAsFixed(0), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                                     Text(AppLocalizations.of(context).predictedValue(predicted), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                                     Text('${growth >= 0 ? '+' : ''}${growth.toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, color: isUp ? Colors.green : Colors.red)),
                                   ],

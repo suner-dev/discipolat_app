@@ -71,7 +71,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: target,
+                initialValue: target,
                 decoration: const InputDecoration(labelText: 'Cible', border: OutlineInputBorder()),
                 items: const [
                   DropdownMenuItem(value: 'ALL', child: Text('Tous les membres')),

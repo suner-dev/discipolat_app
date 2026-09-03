@@ -1,324 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import { useI18n } from '@/i18n';
-import api from '@/lib/api';
-import SkeletonLoader from '@/components/shared/SkeletonLoader';
-import EmptyState from '@/components/shared/EmptyState';
-import Toast from '@/components/shared/Toast';
-import { CalendarOff, Plus, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api, { getErrorMessage } from '@/lib/api';
+import { PlaneTakeoff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface LeaveRequest {
   id: string;
-  type: 'MALADIE' | 'CONGE' | 'MISSION' | 'PERSONNEL' | 'AUTRE';
-  dateDebut: string;
-  dateFin: string;
-  motif: string;
-  statut: 'EN_ATTENTE' | 'APPROUVE' | 'REFUSE' | 'ANNULE';
-  demandeur: { id: string; firstName: string; lastName: string; email: string };
-  validePar?: { firstName: string; lastName: string };
+  requesterName?: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  status: string;
   createdAt: string;
-  commentaire?: string;
 }
 
-const LEAVE_TYPES = [
-  { key: 'MALADIE', label: 'Maladie', icon: '🤒', color: 'bg-red-100 text-red-700' },
-  { key: 'CONGE', label: 'Congé', icon: '🏖️', color: 'bg-blue-100 text-blue-700' },
-  { key: 'MISSION', label: 'Mission', icon: '✈️', color: 'bg-purple-100 text-purple-700' },
-  { key: 'PERSONNEL', label: 'Personnel', icon: '📋', color: 'bg-amber-100 text-amber-700' },
-  { key: 'AUTRE', label: 'Autre', icon: '📝', color: 'bg-gray-100 text-gray-700' },
-];
-
-const STATUS_CONFIG = {
-  EN_ATTENTE: { label: 'En attente', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-100' },
-  APPROUVE: { label: 'Approuvé', icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-100' },
-  REFUSE: { label: 'Refusé', icon: XCircle, color: 'text-red-500', bg: 'bg-red-100' },
-  ANNULE: { label: 'Annulé', icon: XCircle, color: 'text-gray-400', bg: 'bg-gray-100' },
+const STATUS_STYLE: Record<string, string> = {
+  PENDING: 'text-yellow-400 bg-yellow-500/20',
+  APPROVED: 'text-green-400 bg-green-500/20',
+  REJECTED: 'text-red-400 bg-red-500/20',
 };
 
 export default function LeaveRequestsPage() {
-  const { t } = useI18n();
-  const [requests, setRequests] = useState<LeaveRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('');
-  const [newRequest, setNewRequest] = useState({
-    type: 'MALADIE',
-    dateDebut: '',
-    dateFin: '',
-    motif: '',
+  const qc = useQueryClient();
+
+  const { data: requests = [], isLoading } = useQuery({
+    queryKey: ['leave-requests'],
+    queryFn: async () => (await api.get('/leave-requests')).data as LeaveRequest[],
   });
 
-  useEffect(() => { loadRequests(); }, []);
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) =>
+      api.put(`/leave-requests/${id}`, { status }),
+    onSuccess: () => { toast.success('Demande mise à jour'); qc.invalidateQueries({ queryKey: ['leave-requests'] }); },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
 
-  const loadRequests = async () => {
-    try {
-      setLoading(true);
-      const params = filterStatus ? `?statut=${filterStatus}` : '';
-      const res = await api.get(`/leave-requests${params}`);
-      setRequests(res.data.content || res.data || []);
-    } catch {
-      setRequests([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createRequest = async () => {
-    if (!newRequest.dateDebut || !newRequest.dateFin || !newRequest.motif.trim()) {
-      Toast.warning('Veuillez remplir tous les champs');
-      return;
-    }
-    try {
-      await api.post('/leave-requests', newRequest);
-      Toast.success('Demande créée avec succès');
-      setShowCreate(false);
-      setNewRequest({ type: 'MALADIE', dateDebut: '', dateFin: '', motif: '' });
-      loadRequests();
-    } catch {
-      Toast.error('Erreur lors de la création');
-    }
-  };
-
-  const handleAction = async (id: string, action: 'approve' | 'reject') => {
-    try {
-      await api.patch(`/leave-requests/${id}/${action}`);
-      Toast.success(action === 'approve' ? 'Demande approuvée' : 'Demande refusée');
-      loadRequests();
-    } catch {
-      Toast.error('Erreur lors de l\'action');
-    }
-  };
-
-  const cancelRequest = async (id: string) => {
-    try {
-      await api.patch(`/leave-requests/${id}/cancel`);
-      Toast.success('Demande annulée');
-      loadRequests();
-    } catch {
-      Toast.error('Erreur lors de l\'annulation');
-    }
-  };
-
-  const getDaysCount = (start: string, end: string) => {
-    const s = new Date(start);
-    const e = new Date(end);
-    return Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  };
-
-  const pendingCount = requests.filter(r => r.statut === 'EN_ATTENTE').length;
-  const approvedCount = requests.filter(r => r.statut === 'APPROUVE').length;
+  const pending = requests.filter((r) => r.status === 'PENDING');
+  const processed = requests.filter((r) => r.status !== 'PENDING');
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+    <div className="page-container">
+      <div className="page-header">
+        <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-lg">
+          <PlaneTakeoff className="w-6 h-6" />
+        </div>
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <CalendarOff className="w-8 h-8 text-orange-500" />
-            Demandes d'absence
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Gérez les congés, absences et missions de vos membres
-          </p>
+          <h1 className="page-title">Demandes de congé</h1>
+          <p className="page-subtitle">Gestion des absences et congés du personnel</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-medium hover:from-orange-600 hover:to-red-600 transition-all shadow-lg shadow-orange-500/25 flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nouvelle demande
-        </button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4 text-amber-600" />
-            <span className="text-xs font-medium text-amber-700 dark:text-amber-400">En attente</span>
+        {[
+          { label: 'Total', value: requests.length, color: 'text-blue-600' },
+          { label: 'En attente', value: pending.length, color: 'text-yellow-600' },
+          { label: 'Traitées', value: processed.length, color: 'text-green-600' },
+        ].map((s) => (
+          <div key={s.label} className="stat-card">
+            <p className={`stat-value ${s.color}`}>{s.value}</p>
+            <p className="stat-label">{s.label}</p>
           </div>
-          <div className="text-2xl font-bold text-amber-900 dark:text-amber-300">{pendingCount}</div>
-        </div>
-        <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 className="w-4 h-4 text-green-600" />
-            <span className="text-xs font-medium text-green-700 dark:text-green-400">Approuvées</span>
-          </div>
-          <div className="text-2xl font-bold text-green-900 dark:text-green-300">{approvedCount}</div>
-        </div>
-        <div className="p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10">
-          <div className="flex items-center gap-2 mb-1">
-            <CalendarOff className="w-4 h-4 text-gray-600" />
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-400">Total</span>
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{requests.length}</div>
-        </div>
-      </div>
-
-      {/* Filter */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {['', 'EN_ATTENTE', 'APPROUVE', 'REFUSE'].map(status => (
-          <button
-            key={status}
-            onClick={() => { setFilterStatus(status); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              filterStatus === status
-                ? 'bg-orange-600 text-white'
-                : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
-            }`}
-          >
-            {status ? STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]?.label : 'Toutes'}
-          </button>
         ))}
       </div>
 
-      {loading ? (
-        <SkeletonLoader lines={5} variant="table" />
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : requests.length === 0 ? (
-        <EmptyState
-          icon={<CalendarOff className="w-8 h-8 text-gray-400" />}
-          title="Aucune demande d'absence"
-          message="Aucune demande n'a été soumise pour le moment"
-          action={{ label: 'Créer une demande', onClick: () => setShowCreate(true) }}
-        />
+        <div className="glass-card p-10 text-center text-gray-500">Aucune demande de congé</div>
       ) : (
         <div className="space-y-3">
-          {requests.map(req => {
-            const typeInfo = LEAVE_TYPES.find(lt => lt.key === req.type) || LEAVE_TYPES[4];
-            const statusInfo = STATUS_CONFIG[req.statut];
-            const StatusIcon = statusInfo.icon;
-            return (
-              <div key={req.id} className="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">{typeInfo.icon}</span>
+          {pending.length > 0 && (
+            <>
+              <h2 className="text-sm font-semibold text-gray-400 mb-2">En attente ({pending.length})</h2>
+              {pending.map((r) => (
+                <div key={r.id} className="glass-card p-5 border-l-[3px] border-l-yellow-500">
+                  <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {typeInfo.label}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeInfo.color}`}>
-                          {typeInfo.key}
-                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium text-yellow-400 bg-yellow-500/20">En attente</span>
+                        <span className="text-xs text-gray-400">{r.type}</span>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        {req.demandeur.firstName} {req.demandeur.lastName}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(req.dateDebut).toLocaleDateString('fr-FR')} → {new Date(req.dateFin).toLocaleDateString('fr-FR')}
-                        ({getDaysCount(req.dateDebut, req.dateFin)} jour(s))
-                      </p>
-                      {req.motif && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">"{req.motif}"</p>
-                      )}
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.requesterName ?? 'Membre inconnu'}</p>
+                      <div className="flex gap-4 mt-1 text-xs text-gray-500">
+                        <span>Du {new Date(r.startDate).toLocaleDateString('fr-FR')}</span>
+                        <span>Au {new Date(r.endDate).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                      {r.reason && <p className="text-xs text-gray-500 mt-1">{r.reason}</p>}
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <button onClick={() => updateMutation.mutate({ id: r.id, status: 'APPROVED' })} disabled={updateMutation.isPending}
+                        className="btn-sm px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs hover:bg-green-700 flex items-center gap-1">
+                        {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />} Approuver
+                      </button>
+                      <button onClick={() => updateMutation.mutate({ id: r.id, status: 'REJECTED' })} disabled={updateMutation.isPending}
+                        className="btn-sm px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs hover:bg-red-700 flex items-center gap-1">
+                        <XCircle className="w-3 h-3" /> Rejeter
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusInfo.bg} ${statusInfo.color}`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {statusInfo.label}
-                    </span>
-                    {req.statut === 'EN_ATTENTE' && (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => handleAction(req.id, 'approve')}
-                          className="px-2 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-all"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          onClick={() => handleAction(req.id, 'reject')}
-                          className="px-2 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-all"
-                        >
-                          ✕
-                        </button>
+                </div>
+              ))}
+            </>
+          )}
+
+          {processed.length > 0 && (
+            <>
+              <h2 className="text-sm font-semibold text-gray-400 mt-6 mb-2">Traitées ({processed.length})</h2>
+              {processed.map((r) => (
+                <div key={r.id} className="glass-card p-5 opacity-70">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[r.status]}`}>{r.status}</span>
+                        <span className="text-xs text-gray-400">{r.type}</span>
                       </div>
-                    )}
-                    {req.statut === 'EN_ATTENTE' && (
-                      <button
-                        onClick={() => cancelRequest(req.id)}
-                        className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 text-xs hover:bg-gray-200 dark:hover:bg-white/10 transition-all"
-                      >
-                        Annuler
-                      </button>
-                    )}
+                      <p className="text-sm text-gray-800 dark:text-gray-200">{r.requesterName ?? 'Membre inconnu'}</p>
+                      <div className="flex gap-4 mt-1 text-xs text-gray-500">
+                        <span>Du {new Date(r.startDate).toLocaleDateString('fr-FR')}</span>
+                        <span>Au {new Date(r.endDate).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                {req.validePar && (
-                  <p className="text-xs text-gray-400 mt-2">
-                    Validé par {req.validePar.firstName} {req.validePar.lastName}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Create Modal */}
-      {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouvelle demande d'absence</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type d'absence</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {LEAVE_TYPES.map(lt => (
-                    <button
-                      key={lt.key}
-                      onClick={() => setNewRequest({ ...newRequest, type: lt.key })}
-                      className={`p-2 rounded-xl border text-center transition-all ${
-                        newRequest.type === lt.key
-                          ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10'
-                          : 'border-gray-200 dark:border-white/10 hover:border-gray-300'
-                      }`}
-                    >
-                      <span className="text-lg">{lt.icon}</span>
-                      <div className="text-xs mt-1 text-gray-700 dark:text-gray-300">{lt.label}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date de début *</label>
-                  <input
-                    type="date"
-                    value={newRequest.dateDebut}
-                    onChange={e => setNewRequest({ ...newRequest, dateDebut: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date de fin *</label>
-                  <input
-                    type="date"
-                    value={newRequest.dateFin}
-                    onChange={e => setNewRequest({ ...newRequest, dateFin: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Motif *</label>
-                <textarea
-                  value={newRequest.motif}
-                  onChange={e => setNewRequest({ ...newRequest, motif: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
-                  placeholder="Expliquez la raison de votre absence..."
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
-                Annuler
-              </button>
-              <button onClick={createRequest} className="px-4 py-2 rounded-xl bg-orange-600 text-white text-sm font-medium hover:bg-orange-700 transition-all">
-                Soumettre
-              </button>
-            </div>
-          </div>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>

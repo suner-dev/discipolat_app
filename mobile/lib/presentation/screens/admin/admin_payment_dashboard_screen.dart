@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
@@ -75,7 +76,7 @@ class _AdminPaymentDashboardScreenState extends State<AdminPaymentDashboardScree
             IconButton(
               icon: const Icon(Icons.webhook_rounded),
               tooltip: 'Logs webhooks',
-              onPressed: () => Navigator.pushNamed(context, '/admin/webhook-logs'),
+              onPressed: () => context.push('/admin/webhook-logs'),
             ),
           ],
         ),

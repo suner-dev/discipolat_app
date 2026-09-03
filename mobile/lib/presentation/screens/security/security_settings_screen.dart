@@ -200,7 +200,7 @@ class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen>
                 child: ListTile(
                   leading: Icon(Icons.logout, color: AppColors.primary),
                   title: Text(l10n.sessionExpiry),
-                  subtitle: Text(l10n.sessionExpirySubtitle(_timeoutMinutes == 0 ? l10n.never.toLowerCase() : '${_timeoutMinutes} min')),
+                  subtitle: Text(l10n.sessionExpirySubtitle(_timeoutMinutes == 0 ? l10n.never.toLowerCase() : '$_timeoutMinutes min')),
                   trailing: DropdownButton<int>(
                     value: _timeoutMinutes,
                     dropdownColor: Color(0xFF111827),

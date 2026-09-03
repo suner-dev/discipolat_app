@@ -28,7 +28,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   int _hoverNote = 0;
   final TextEditingController _commentCtrl = TextEditingController();
 
-  AppLocalizations get l10n => AppLocalizations.of(context)!;
+  AppLocalizations get l10n => AppLocalizations.of(context);
 
   static const _roleLabels = {
     'ADMIN': 'Administrateur',

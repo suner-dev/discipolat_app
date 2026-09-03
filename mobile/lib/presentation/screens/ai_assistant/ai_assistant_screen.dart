@@ -17,7 +17,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   late final ApiService _apiService = widget.apiService ?? ApiService();
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  List<_CovMessage> _messages = [];
+  final List<_CovMessage> _messages = [];
   bool _isLoading = false;
   bool _loadingHistory = true;
   String? _copiedId;

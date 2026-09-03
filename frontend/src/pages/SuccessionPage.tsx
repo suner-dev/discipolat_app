@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import api from '@/lib/api';
-import SkeletonLoader from '@/components/shared/SkeletonLoader';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { GitBranch, Plus, UserCheck, Clock, CheckCircle2, Loader2, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
-import Toast from '@/components/shared/Toast';
-import { GitBranch, Plus, UserCheck, Clock, CheckCircle2 } from 'lucide-react';
+import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
-interface Plan {
+interface SuccessionPlan {
   id: string;
   candidatId: string;
   rôleCible: string;
@@ -17,40 +18,59 @@ interface Plan {
 }
 
 export default function SuccessionPage() {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
-  const [newPlan, setNewPlan] = useState({ candidatId: '', rôleCible: '', planFormation: '' });
+  const [newPlan, setNewPlan] = useState({ candidatId: '', rôleCible: '', mentorId: '', planFormation: '' });
 
-  useEffect(() => { loadPlans(); }, []);
+  const { data: plans = [], isLoading } = useQuery({
+    queryKey: ['succession'],
+    queryFn: async () => (await api.get<SuccessionPlan[]>('/succession')).data,
+  });
 
-  const loadPlans = async () => {
-    try { setLoading(true); const res = await api.get('/succession'); setPlans(res.data || []); }
-    catch { setPlans([]); } finally { setLoading(false); }
-  };
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      if (!newPlan.candidatId || !newPlan.rôleCible) { toast('Remplissez les champs requis', { icon: '⚠️' }); throw new Error('empty'); }
+      return api.post('/succession', newPlan);
+    },
+    onSuccess: () => {
+      toast.success('Plan créé');
+      setShowCreate(false);
+      setNewPlan({ candidatId: '', rôleCible: '', mentorId: '', planFormation: '' });
+      queryClient.invalidateQueries({ queryKey: ['succession'] });
+    },
+    onError: (e: unknown) => { if ((e as Error).message !== 'empty') toast.error(getErrorMessage(e)); },
+  });
 
-  const createPlan = async () => {
-    if (!newPlan.candidatId || !newPlan.rôleCible) { Toast.warning('Remplissez les champs'); return; }
-    try { await api.post('/succession', newPlan); Toast.success('Plan créé'); setShowCreate(false); loadPlans(); }
-    catch { Toast.error('Erreur'); }
-  };
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, statut }: { id: string; statut: string }) =>
+      api.patch(`/succession/${id}/status`, { statut }),
+    onSuccess: () => { toast.success('Statut mis à jour'); queryClient.invalidateQueries({ queryKey: ['succession'] }); },
+    onError: (e: unknown) => toast.error(getErrorMessage(e)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => api.delete(`/succession/${id}`),
+    onSuccess: () => { toast.success('Supprimé'); queryClient.invalidateQueries({ queryKey: ['succession'] }); },
+    onError: (e: unknown) => toast.error(getErrorMessage(e)),
+  });
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+    <div className="page-container">
+      <div className="page-header">
+        <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg">
+          <GitBranch className="w-6 h-6" />
+        </div>
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <GitBranch className="w-8 h-8 text-violet-500" /> Plan de Succession
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Préparez les futurs leaders de votre église</p>
+          <h1 className="page-title">Plan de Succession</h1>
+          <p className="page-subtitle">Préparez les futurs leaders de votre église</p>
         </div>
         <button onClick={() => setShowCreate(true)}
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 text-white text-sm font-medium hover:from-violet-600 hover:to-purple-600 transition-all shadow-lg flex items-center gap-2">
+          className="ml-auto px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 text-white text-sm font-medium hover:from-violet-600 hover:to-purple-600 transition-all shadow-lg flex items-center gap-2">
           <Plus className="w-4 h-4" /> Nouveau plan
         </button>
       </div>
 
-      {loading ? <SkeletonLoader lines={4} variant="card" /> :
+      {isLoading ? <SkeletonLoader lines={4} variant="card" /> :
         plans.length === 0 ? (
           <EmptyState icon={<GitBranch className="w-8 h-8 text-gray-400" />}
             title="Aucun plan de succession"
@@ -66,10 +86,24 @@ export default function SuccessionPage() {
                     {plan.statut}
                   </span>
                 </div>
-                <div className="text-xs text-gray-500 space-y-1">
+                <div className="text-xs text-gray-500 space-y-1 mb-3">
                   <div className="flex items-center gap-1"><UserCheck className="w-3 h-3" /> Candidat: {plan.candidatId.slice(0, 8)}...</div>
                   {plan.mentorId && <div className="flex items-center gap-1"><Clock className="w-3 h-3" /> Mentor: {plan.mentorId.slice(0, 8)}...</div>}
                   <div>Readiness: {plan.readiness}</div>
+                  {plan.planFormation && <div className="text-gray-400 mt-1">{plan.planFormation}</div>}
+                </div>
+                <div className="flex gap-2">
+                  {plan.statut !== 'COMPLÉTÉ' && (
+                    <button onClick={() => updateStatusMutation.mutate({ id: plan.id, statut: plan.statut === 'PRÊT' ? 'COMPLÉTÉ' : 'PRÊT' })}
+                      className="px-3 py-1 rounded-lg bg-violet-500 text-white text-xs font-medium hover:bg-violet-600 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      {plan.statut === 'PRÊT' ? 'Compléter' : 'Marquer prêt'}
+                    </button>
+                  )}
+                  <button onClick={() => deleteMutation.mutate(plan.id)}
+                    className="px-3 py-1 rounded-lg bg-red-100 text-red-600 text-xs font-medium hover:bg-red-200 flex items-center gap-1">
+                    <Trash2 className="w-3 h-3" /> Supprimer
+                  </button>
                 </div>
               </div>
             ))}
@@ -83,15 +117,25 @@ export default function SuccessionPage() {
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau plan de succession</h2>
             <div className="space-y-4">
               <input type="text" value={newPlan.candidatId} onChange={e => setNewPlan({ ...newPlan, candidatId: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" placeholder="ID du candidat" />
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
+                placeholder="ID du candidat" />
               <input type="text" value={newPlan.rôleCible} onChange={e => setNewPlan({ ...newPlan, rôleCible: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" placeholder="Rôle cible (ex: RESPONSABLE)" />
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
+                placeholder="Rôle cible (ex: RESPONSABLE)" />
+              <input type="text" value={newPlan.mentorId} onChange={e => setNewPlan({ ...newPlan, mentorId: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
+                placeholder="ID du mentor (optionnel)" />
               <textarea value={newPlan.planFormation} onChange={e => setNewPlan({ ...newPlan, planFormation: e.target.value })}
-                rows={3} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none" placeholder="Plan de formation" />
+                rows={3} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none"
+                placeholder="Plan de formation" />
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
-              <button onClick={createPlan} className="px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-medium hover:bg-violet-600">Créer</button>
+              <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}
+                className="px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-medium hover:bg-violet-600 flex items-center gap-2">
+                {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                Créer
+              </button>
             </div>
           </div>
         </div>

@@ -141,6 +141,9 @@ class _MorePage extends StatelessWidget {
         _moreItem(context, Icons.sticky_note_2, 'KPI narratif', 'Drill-down récits', route: '/kpi-narrative'),
         // Espace membre
         _moreItem(context, Icons.book, 'Journal spirituel', 'Prières & réflexions', route: '/spiritual-journal'),
+        _moreItem(context, Icons.auto_fix_high, 'Passeport spirituel', 'Carte de vérification de votre parcours', route: '/passport'),
+        _moreItem(context, Icons.account_tree, 'Parcours spirituel', 'Progression dans les étapes', route: '/spiritual-journey'),
+        _moreItem(context, Icons.group, 'Cercle de faiseurs', 'Entraide entre faiseurs', route: '/cercle-faiseurs'),
         // P3 — Innovation / futuriste
         _moreItem(context, Icons.handshake_outlined, 'Demandes de suivi', 'Demander un faiseur', route: '/follow-up-requests'),
         _moreItem(context, Icons.groups_2, 'Mon équipe / ma famille', 'Encouragements', route: '/my-team-family'),

@@ -185,6 +185,45 @@ const EncouragementsPage = lazy(() => import('@/pages/EncouragementsPage'));
 const NetworkPage = lazy(() => import('@/pages/NetworkPage'));
 const PassportPage = lazy(() => import('@/pages/PassportPage'));
 const PassportVerifyPage = lazy(() => import('@/pages/PassportVerifyPage'));
+const AdminRequestsPage = lazy(() => import('@/pages/AdminRequestsPage'));
+const EmergencyAidPage = lazy(() => import('@/pages/EmergencyAidPage'));
+const AidExchangePage = lazy(() => import('@/pages/AidExchangePage'));
+const Auth2faStatusPage = lazy(() => import('@/pages/Auth2faStatusPage'));
+const VisitNotesVerifyPage = lazy(() => import('@/pages/VisitNotesVerifyPage'));
+const AiHealthPage = lazy(() => import('@/pages/AiHealthPage'));
+const PredictionsRiskPage = lazy(() => import('@/pages/PredictionsRiskPage'));
+const TeamTasksPage = lazy(() => import('@/pages/TeamTasksPage'));
+const SermonTranslationsPage = lazy(() => import('@/pages/SermonTranslationsPage'));
+const ImportDataPage = lazy(() => import('@/pages/ImportDataPage'));
+const KpiNarrativePage = lazy(() => import('@/pages/KpiNarrativePage'));
+const MakerTrackingPage = lazy(() => import('@/pages/MakerTrackingPage'));
+const MemberCompetencesPage = lazy(() => import('@/pages/MemberCompetencesPage'));
+const QrCheckinPage = lazy(() => import('@/pages/QrCheckinPage'));
+const NetworkStatsPage = lazy(() => import('@/pages/NetworkStatsPage'));
+const VoicesPage = lazy(() => import('@/pages/VoicesPage'));
+const WorkflowPage = lazy(() => import('@/pages/WorkflowPage'));
+const SkillMatchingPage = lazy(() => import('@/pages/SkillMatchingPage'));
+const FaceRecognitionPage = lazy(() => import('@/pages/FaceRecognitionPage'));
+const TwinSnapshotPage = lazy(() => import('@/pages/TwinSnapshotPage'));
+const RewardCertificatesPage = lazy(() => import('@/pages/RewardCertificatesPage'));
+const SermonsPage = lazy(() => import('@/pages/SermonsPage'));
+const DevelopmentPlansPage = lazy(() => import('@/pages/DevelopmentPlansPage'));
+const SurveyDetailPage = lazy(() => import('@/pages/SurveyDetailPage'));
+const FormResponsesPage = lazy(() => import('@/pages/FormResponsesPage'));
+const CalendrierPage = lazy(() => import('@/pages/CalendrierPage'));
+const DepartmentReportsPage = lazy(() => import('@/pages/DepartmentReportsPage'));
+const FamilyTreePage = lazy(() => import('@/pages/FamilyTreePage'));
+const AnnouncementSchedulePage = lazy(() => import('@/pages/AnnouncementSchedulePage'));
+const DocumentDetailPage = lazy(() => import('@/pages/DocumentDetailPage'));
+const TicketDetailPage = lazy(() => import('@/pages/TicketDetailPage'));
+const TestimonyDetailPage = lazy(() => import('@/pages/TestimonyDetailPage'));
+const RewardsClaimsPage = lazy(() => import('@/pages/RewardsClaimsPage'));
+const UserRolesPage = lazy(() => import('@/pages/UserRolesPage'));
+const ComplianceExportsPage = lazy(() => import('@/pages/ComplianceExportsPage'));
+const ConversationsPage = lazy(() => import('@/pages/ConversationsPage'));
+const CoursesPage = lazy(() => import('@/pages/CoursesPage'));
+const EquipmentPage = lazy(() => import('@/pages/EquipmentPage'));
+const BudgetPage = lazy(() => import('@/pages/BudgetPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -949,6 +988,45 @@ export default function App() {
           <Route path="/encouragements" element={<ProtectedRoute><EncouragementsPage /></ProtectedRoute>} />
           <Route path="/network" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><NetworkPage /></ProtectedRoute>} />
           <Route path="/passport" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><PassportPage /></ProtectedRoute>} />
+          <Route path="/admin-requests" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AdminRequestsPage /></ProtectedRoute>} />
+          <Route path="/emergency-aid" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EmergencyAidPage /></ProtectedRoute>} />
+          <Route path="/aid-exchange" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><AidExchangePage /></ProtectedRoute>} />
+          <Route path="/2fa-status" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><Auth2faStatusPage /></ProtectedRoute>} />
+          <Route path="/visit-notes/verify" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}><VisitNotesVerifyPage /></ProtectedRoute>} />
+          <Route path="/ai-health" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AiHealthPage /></ProtectedRoute>} />
+          <Route path="/ai-predictions/risks" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><PredictionsRiskPage /></ProtectedRoute>} />
+          <Route path="/team-tasks" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><TeamTasksPage /></ProtectedRoute>} />
+          <Route path="/sermon-translations" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><SermonTranslationsPage /></ProtectedRoute>} />
+          <Route path="/admin/import" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ImportDataPage /></ProtectedRoute>} />
+          <Route path="/kpi-narrative" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><KpiNarrativePage /></ProtectedRoute>} />
+          <Route path="/maker-tracking" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><MakerTrackingPage /></ProtectedRoute>} />
+          <Route path="/member-competences" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><MemberCompetencesPage /></ProtectedRoute>} />
+          <Route path="/qr-checkin" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}><QrCheckinPage /></ProtectedRoute>} />
+          <Route path="/network/stats" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><NetworkStatsPage /></ProtectedRoute>} />
+          <Route path="/voices" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><VoicesPage /></ProtectedRoute>} />
+          <Route path="/workflow" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><WorkflowPage /></ProtectedRoute>} />
+          <Route path="/skill-matching" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><SkillMatchingPage /></ProtectedRoute>} />
+          <Route path="/face-recognition" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><FaceRecognitionPage /></ProtectedRoute>} />
+          <Route path="/twin-snapshot" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><TwinSnapshotPage /></ProtectedRoute>} />
+          <Route path="/reward-certificates" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><RewardCertificatesPage /></ProtectedRoute>} />
+          <Route path="/sermons" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><SermonsPage /></ProtectedRoute>} />
+          <Route path="/development-plans" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}><DevelopmentPlansPage /></ProtectedRoute>} />
+          <Route path="/surveys/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><SurveyDetailPage /></ProtectedRoute>} />
+          <Route path="/forms/:id/responses" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><FormResponsesPage /></ProtectedRoute>} />
+          <Route path="/calendar-ical" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><CalendrierPage /></ProtectedRoute>} />
+          <Route path="/department-reports" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><DepartmentReportsPage /></ProtectedRoute>} />
+          <Route path="/family-tree" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><FamilyTreePage /></ProtectedRoute>} />
+          <Route path="/announcement-schedule" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AnnouncementSchedulePage /></ProtectedRoute>} />
+          <Route path="/documents/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><DocumentDetailPage /></ProtectedRoute>} />
+          <Route path="/tickets/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><TicketDetailPage /></ProtectedRoute>} />
+          <Route path="/testimonies/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><TestimonyDetailPage /></ProtectedRoute>} />
+          <Route path="/rewards/claims" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}><RewardsClaimsPage /></ProtectedRoute>} />
+          <Route path="/users/roles" element={<ProtectedRoute roles={['ADMIN']}><UserRolesPage /></ProtectedRoute>} />
+          <Route path="/admin/compliance-exports" element={<ProtectedRoute roles={['ADMIN']}><ComplianceExportsPage /></ProtectedRoute>} />
+          <Route path="/conversations" element={<ProtectedRoute><ConversationsPage /></ProtectedRoute>} />
+          <Route path="/courses" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><CoursesPage /></ProtectedRoute>} />
+          <Route path="/equipment" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EquipmentPage /></ProtectedRoute>} />
+          <Route path="/budgets" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><BudgetPage /></ProtectedRoute>} />
         </Route>
 
         {/* Page d'accueil publique (landing) — redirige vers /dashboard si connecté */}

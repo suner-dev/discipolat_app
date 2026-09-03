@@ -103,7 +103,7 @@ class _ScheduledAnnouncementsScreenState extends ConsumerState<ScheduledAnnounce
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: target,
+                initialValue: target,
                 decoration: const InputDecoration(labelText: 'Cible', border: OutlineInputBorder()),
                 items: const [
                   DropdownMenuItem(value: 'ALL', child: Text('Tous')),

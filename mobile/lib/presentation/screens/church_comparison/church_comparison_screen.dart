@@ -64,7 +64,7 @@ class _ChurchComparisonScreenState extends State<ChurchComparisonScreen> {
                                   _chip('Présence', '${((c['tauxPresence'] as num?) ?? 0).toStringAsFixed(0)}%'),
                                   _chip('Conversion', '${((c['tauxConversion'] as num?) ?? 0).toStringAsFixed(1)}%'),
                                   _chip('Rétention', '${((c['tauxRetention'] as num?) ?? 0).toStringAsFixed(0)}%'),
-                                  _chip('Score', '${((c['scoreSpirituelMoyen'] as num?) ?? 0).toStringAsFixed(0)}'),
+                                  _chip('Score', ((c['scoreSpirituelMoyen'] as num?) ?? 0).toStringAsFixed(0)),
                                 ]),
                               ]),
                             ),

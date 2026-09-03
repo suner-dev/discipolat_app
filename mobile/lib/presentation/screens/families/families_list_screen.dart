@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
-import '../../../data/models/soul.dart';
 
 class FamiliesListScreen extends StatefulWidget {
   const FamiliesListScreen({super.key});
@@ -180,7 +178,6 @@ class _FamiliesListScreenState extends State<FamiliesListScreen> {
       case ViewMode.edit:
         return _buildForm();
       case ViewMode.list:
-      default:
         return _buildList();
     }
   }
@@ -519,7 +516,7 @@ class _FamiliesListScreenState extends State<FamiliesListScreen> {
                       radius: 16,
                       backgroundColor: const Color(0xFF7C3AED).withAlpha(50),
                       child: Text(
-                        '${prenom}'.isNotEmpty ? '${prenom}'.substring(0, 1).toUpperCase() : '?',
+                        '$prenom'.isNotEmpty ? '$prenom'.substring(0, 1).toUpperCase() : '?',
                         style: const TextStyle(color: Color(0xFF7C3AED), fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),
@@ -583,7 +580,7 @@ class _FamiliesListScreenState extends State<FamiliesListScreen> {
                       style: TextStyle(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    value: _chefFamilleId,
+                    initialValue: _chefFamilleId,
                     dropdownColor: const Color(0xFF1E293B),
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(

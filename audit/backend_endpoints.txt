@@ -1,0 +1,1000 @@
+================================================================================
+                    DISCIPOLAT BACKEND — COMPLETE ENDPOINT AUDIT
+================================================================================
+Generated from: /home/jo/discipolat/backend/src/main/java/com/discipolat/modules/
+Format: METHOD /path
+================================================================================
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: AI (Artificial Intelligence)
+════════════════════════════════════════════════════════════════════════════════
+
+--- AiAssistantController ---------------- @RequestMapping("/api/v1/ai") ---
+POST   /api/v1/ai/chat
+GET    /api/v1/ai/context
+GET    /api/v1/ai/chat/history
+DELETE /api/v1/ai/chat/history
+GET    /api/v1/ai/health
+GET    /api/v1/ai/analyze/{soulId}
+GET    /api/v1/ai/encouragement/{soulId}
+
+--- AiPredictionController --------------- @RequestMapping({"/api/v1/ai-predictions", "/api/ai-predictions"}) ---
+GET    /api/v1/ai-predictions
+GET    /api/v1/ai-predictions/type/{type}
+GET    /api/v1/ai-predictions/risks
+POST   /api/v1/ai-predictions/generate
+POST   /api/v1/ai-predictions
+
+--- AiVisitNoteController ---------------- @RequestMapping({"/api/ai-visit-notes", "/api/v1/ai-visit-notes"}) ---
+POST   /api/v1/ai-visit-notes
+GET    /api/v1/ai-visit-notes
+GET    /api/v1/ai-visit-notes/member/{memberId}
+POST   /api/v1/ai-visit-notes/{id}/verify
+
+--- SermonAssistantController ------------ @RequestMapping("/api/v1/sermon-assistant") ---
+POST   /api/v1/sermon-assistant/outlines
+
+--- DigitalTwinController ---------------- @RequestMapping("/api/v1/twin") ---
+GET    /api/v1/twin/snapshot
+POST   /api/v1/twin/simulate
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: ADMIN
+════════════════════════════════════════════════════════════════════════════════
+
+--- AdminCacheController ----------------- @RequestMapping("/api/v1/admin/cache-stats") ---
+GET    /api/v1/admin/cache-stats
+DELETE /api/v1/admin/cache-stats/{name}
+DELETE /api/v1/admin/cache-stats
+
+--- AdminIntegrationController ----------- @RequestMapping("/api/v1/admin/integrations") ---
+GET    /api/v1/admin/integrations/{category}
+PUT    /api/v1/admin/integrations/{category}
+POST   /api/v1/admin/integrations/{category}/test
+POST   /api/v1/admin/integrations/jwt/generate-keys
+
+--- AdminStatsController ----------------- @RequestMapping("/api/v1/admin") ---
+GET    /api/v1/admin/stats/overview
+
+--- AdminSystemHealthController ---------- @RequestMapping("/api/v1/admin/system-health") ---
+GET    /api/v1/admin/system-health
+
+--- BenchmarkController ------------------ @RequestMapping("/api/v1/benchmark") ---
+GET    /api/v1/benchmark
+GET    /api/v1/benchmark/trends
+
+--- AdminRequestController --------------- @RequestMapping("/api/v1/admin-requests") ---
+GET    /api/v1/admin-requests
+GET    /api/v1/admin-requests/by-member/{membreId}
+GET    /api/v1/admin-requests/{id}
+POST   /api/v1/admin-requests
+POST   /api/v1/admin-requests/{id}/process
+DELETE /api/v1/admin-requests/{id}
+GET    /api/v1/admin-requests/stats
+
+--- WebhookController -------------------- @RequestMapping("/api/v1/admin/webhooks") ---
+GET    /api/v1/admin/webhooks
+POST   /api/v1/admin/webhooks
+DELETE /api/v1/admin/webhooks/{id}
+POST   /api/v1/admin/webhooks/{id}/test
+GET    /api/v1/admin/webhooks/logs
+GET    /api/v1/admin/webhooks/api-keys
+POST   /api/v1/admin/webhooks/api-keys
+DELETE /api/v1/admin/webhooks/api-keys/{id}
+
+--- TransferAdminController -------------- @RequestMapping("/api/v1/admin/transfers/workflows") ---
+GET    /api/v1/admin/transfers/workflows
+GET    /api/v1/admin/transfers/workflows/{id}
+POST   /api/v1/admin/transfers/workflows
+PUT    /api/v1/admin/transfers/workflows/{id}
+PATCH  /api/v1/admin/transfers/workflows/{id}/toggle
+DELETE /api/v1/admin/transfers/workflows/{id}
+
+--- DemoRequestController ---------------- (no class-level @RequestMapping) ---
+GET    /api/v1/admin/demo-requests
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: PAYMENTS / GIVING
+════════════════════════════════════════════════════════════════════════════════
+
+--- PaymentController -------------------- @RequestMapping("/api/v1/payments") ---
+GET    /api/v1/payments/{id}/tax-receipt
+POST   /api/v1/payments/initiate
+POST   /api/v1/payments/webhook
+GET    /api/v1/payments/{id}
+GET    /api/v1/payments/mine
+POST   /api/v1/payments/{id}/cancel
+GET    /api/v1/payments
+GET    /api/v1/payments/stats
+GET    /api/v1/payments/dashboard
+POST   /api/v1/payments/recurring
+POST   /api/v1/payments/recurring/{id}/cancel
+GET    /api/v1/payments/recurring/mine
+GET    /api/v1/payments/recurring/stats
+
+--- PaymentWebhookController ------------- @RequestMapping("/api/v1/payments/webhooks") ---
+POST   /api/v1/payments/webhooks/mpesa
+POST   /api/v1/payments/webhooks/mtn
+POST   /api/v1/payments/webhooks/orange
+POST   /api/v1/payments/webhooks/generic
+GET    /api/v1/payments/webhooks/logs
+GET    /api/v1/payments/webhooks/logs/stats
+
+--- EmergencyAidController --------------- @RequestMapping("/api/v1/aid") ---
+POST   /api/v1/aid/emergency
+GET    /api/v1/aid/emergency
+GET    /api/v1/aid/emergency/open
+POST   /api/v1/aid/emergency/{id}/collect
+POST   /api/v1/aid/emergency/{id}/resolve
+GET    /api/v1/aid/exchange
+GET    /api/v1/aid/exchange/rates
+
+--- TontineController -------------------- @RequestMapping("/api/v1/tontines") ---
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: ALERTS
+════════════════════════════════════════════════════════════════════════════════
+
+--- AlertController --------------------- @RequestMapping("/api/v1/alerts") ---
+GET    /api/v1/alerts
+GET    /api/v1/alerts/active
+GET    /api/v1/alerts/{id}
+POST   /api/v1/alerts
+PATCH  /api/v1/alerts/{id}/resolve
+POST   /api/v1/alerts/{id}/acknowledge
+POST   /api/v1/alerts/resolve-batch
+GET    /api/v1/alerts/stats
+
+--- SmartAlertController ---------------- @RequestMapping("/api/v1/smart-alerts") ---
+POST   /api/v1/smart-alerts/scan
+GET    /api/v1/smart-alerts/summary
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: ANNOUNCEMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+--- AnnouncementController --------------- @RequestMapping({"/api/announcements", "/api/v1/announcements"}) ---
+GET    /api/v1/announcements
+GET    /api/v1/announcements/{id}
+POST   /api/v1/announcements
+PUT    /api/v1/announcements/{id}
+POST   /api/v1/announcements/{id}/schedule
+POST   /api/v1/announcements/{id}/publish
+POST   /api/v1/announcements/{id}/cancel
+DELETE /api/v1/announcements/{id}
+GET    /api/v1/announcements/stats
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: APPOINTMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+--- AppointmentController ---------------- @RequestMapping("/api/v1/appointments") ---
+POST   /api/v1/appointments
+GET    /api/v1/appointments/my
+GET    /api/v1/appointments/inbox
+PATCH  /api/v1/appointments/{id}/status
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: AUDIT & PERMISSIONS
+════════════════════════════════════════════════════════════════════════════════
+
+--- AuditController --------------------- @RequestMapping("/api/v1/audit") ---
+GET    /api/v1/audit
+GET    /api/v1/audit/export
+GET    /api/v1/audit/{id}
+GET    /api/v1/audit/recent
+GET    /api/v1/audit/trend
+
+--- PermissionController ---------------- @RequestMapping("/api/v1/permissions") ---
+GET    /api/v1/permissions
+GET    /api/v1/permissions/{role}
+PUT    /api/v1/permissions/{role}/{permission}
+PUT    /api/v1/permissions/{role}/{permission}/rwd
+GET    /api/v1/permissions/catalog
+GET    /api/v1/permissions/roles
+POST   /api/v1/permissions/roles
+PUT    /api/v1/permissions/roles/{key}
+POST   /api/v1/permissions/roles/duplicate
+DELETE /api/v1/permissions/roles/{key}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: AUTHENTICATION
+════════════════════════════════════════════════════════════════════════════════
+
+--- AuthController ---------------------- @RequestMapping("/api/v1/auth") ---
+POST   /api/v1/auth/login
+POST   /api/v1/auth/refresh
+POST   /api/v1/auth/logout
+GET    /api/v1/auth/me
+POST   /api/v1/auth/switch-role
+POST   /api/v1/auth/register
+POST   /api/v1/auth/verify-email
+POST   /api/v1/auth/resend-verification
+POST   /api/v1/auth/forgot-password
+POST   /api/v1/auth/reset-password
+POST   /api/v1/auth/change-password
+
+--- SocialAuthController ---------------- @RequestMapping("/api/v1/auth") ---
+POST   /api/v1/auth/google
+POST   /api/v1/auth/magic-link
+GET    /api/v1/auth/magic-link/verify
+
+--- TwoFactorController ----------------- @RequestMapping("/api/v1/auth/2fa") ---
+POST   /api/v1/auth/2fa/enable
+POST   /api/v1/auth/2fa/disable
+GET    /api/v1/auth/2fa/status
+POST   /api/v1/auth/2fa/verify
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: AUTOMATIONS & WORKFLOW
+════════════════════════════════════════════════════════════════════════════════
+
+--- AutomationController ---------------- @RequestMapping("/api/v1/automations") ---
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: BIBLE READING
+════════════════════════════════════════════════════════════════════════════════
+
+--- BibleReadingController -------------- @RequestMapping("/api/v1/bible-reading") ---
+GET    /api/v1/bible-reading/plans
+GET    /api/v1/bible-reading/plans/{id}
+POST   /api/v1/bible-reading/plans
+PUT    /api/v1/bible-reading/plans/{id}
+DELETE /api/v1/bible-reading/plans/{id}
+GET    /api/v1/bible-reading/plans/{planId}/entries
+GET    /api/v1/bible-reading/today
+GET    /api/v1/bible-reading/entries/{id}
+POST   /api/v1/bible-reading/entries
+POST   /api/v1/bible-reading/entries/{id}/mark-read
+PUT    /api/v1/bible-reading/entries/{id}/note
+DELETE /api/v1/bible-reading/entries/{id}
+GET    /api/v1/bible-reading/stats
+GET    /api/v1/bible-reading/family-progress
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: BROADCAST
+════════════════════════════════════════════════════════════════════════════════
+
+--- BroadcastController ----------------- @RequestMapping("/api/v1/broadcast") ---
+GET    /api/v1/broadcast
+GET    /api/v1/broadcast/{id}
+POST   /api/v1/broadcast
+PATCH  /api/v1/broadcast/{id}/schedule
+PATCH  /api/v1/broadcast/{id}/send
+POST   /api/v1/broadcast/{id}/read
+GET    /api/v1/broadcast/{id}/receipts
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: CALENDAR
+════════════════════════════════════════════════════════════════════════════════
+
+--- CalendarController ------------------ @RequestMapping("/api/v1/calendar") ---
+GET    /api/v1/calendar
+GET    /api/v1/calendar/{id}
+POST   /api/v1/calendar
+PATCH  /api/v1/calendar/{id}/status
+GET    /api/v1/calendar/{id}/ical
+GET    /api/v1/calendar/feed.ics
+DELETE /api/v1/calendar/{id}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: CERCLE FAISEURS
+════════════════════════════════════════════════════════════════════════════════
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: COMPLIANCE & GDPR
+════════════════════════════════════════════════════════════════════════════════
+
+--- ComplianceController ---------------- @RequestMapping("/api/v1/compliance") ---
+GET    /api/v1/compliance/stats
+GET    /api/v1/compliance/retention-policies
+PUT    /api/v1/compliance/retention-policies
+POST   /api/v1/compliance/retention-policies/purge-all
+GET    /api/v1/compliance/exports
+POST   /api/v1/compliance/exports
+GET    /api/v1/compliance/audit-hash/verify
+GET    /api/v1/compliance/gdpr
+GET    /api/v1/compliance/gdpr/{id}
+POST   /api/v1/compliance/gdpr
+PATCH  /api/v1/compliance/gdpr/{id}/process
+POST   /api/v1/compliance/consent
+GET    /api/v1/compliance/portability/{userId}
+POST   /api/v1/compliance/retention-policies/{policyId}/execute
+POST   /api/v1/compliance/retention-policies
+DELETE /api/v1/compliance/retention-policies/{id}
+
+--- GdprController ---------------------- @RequestMapping("/api/v1/gdpr") ---
+POST   /api/v1/gdpr/export
+POST   /api/v1/gdpr/delete
+GET    /api/v1/gdpr/requests
+POST   /api/v1/gdpr/requests/{id}/process
+POST   /api/v1/gdpr/requests/{id}/reject
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: CURRENCY
+════════════════════════════════════════════════════════════════════════════════
+
+--- CurrencyController ------------------ @RequestMapping({"/api/currencies", "/api/v1/currencies"}) ---
+GET    /api/v1/currencies
+GET    /api/v1/currencies/primary
+GET    /api/v1/currencies/supported
+GET    /api/v1/currencies/timezones
+POST   /api/v1/currencies
+PUT    /api/v1/currencies/{id}
+DELETE /api/v1/currencies/{id}
+POST   /api/v1/currencies/convert
+GET    /api/v1/currencies/stats
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: CUSTOM FIELDS
+════════════════════════════════════════════════════════════════════════════════
+
+--- CustomFieldController --------------- @RequestMapping("/api/v1/custom-fields") ---
+GET    /api/v1/custom-fields/definitions
+GET    /api/v1/custom-fields/definitions/all
+POST   /api/v1/custom-fields/definitions
+PUT    /api/v1/custom-fields/definitions/{id}
+DELETE /api/v1/custom-fields/definitions/{id}
+GET    /api/v1/custom-fields/{entiteType}/{entiteId}
+PUT    /api/v1/custom-fields/{entiteType}/{entiteId}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: DASHBOARD
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: DEPARTMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+--- DepartmentKpiController ------------- @RequestMapping("/api/v1/department-kpis") ---
+GET    /api/v1/department-kpis/department/{departmentId}
+GET    /api/v1/department-kpis
+POST   /api/v1/department-kpis
+PUT    /api/v1/department-kpis/{id}
+DELETE /api/v1/department-kpis/{id}
+GET    /api/v1/department-kpis/department/{departmentId}/computed
+
+--- DepartmentController ---------------- @RequestMapping("/api/v1/departments") ---
+GET    /api/v1/departments
+GET    /api/v1/departments/{id}
+POST   /api/v1/departments
+PUT    /api/v1/departments/{id}
+DELETE /api/v1/departments/{id}
+GET    /api/v1/departments/by-responsable/{responsableId}
+GET    /api/v1/departments/{id}/detail
+GET    /api/v1/departments/{id}/kpi
+GET    /api/v1/departments/{id}/members
+GET    /api/v1/departments/{id}/unassigned
+GET    /api/v1/departments/{id}/report
+
+--- DepartmentEventAttendanceController - @RequestMapping("/api/v1/departments/{departmentId}/events/{eventId}/attendance") ---
+GET    /api/v1/departments/{departmentId}/events/{eventId}/attendance
+PUT    /api/v1/departments/{departmentId}/events/{eventId}/attendance
+POST   /api/v1/departments/{departmentId}/events/{eventId}/attendance/mark-all
+GET    /api/v1/departments/{departmentId}/events/{eventId}/attendance/export
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: EVENTS
+════════════════════════════════════════════════════════════════════════════════
+
+--- EventController --------------------- @RequestMapping("/api/v1/events") ---
+POST   /api/v1/events
+GET    /api/v1/events/{id}
+GET    /api/v1/events/department/{departmentId}
+GET    /api/v1/events/family/{familyId}
+GET    /api/v1/events/upcoming
+GET    /api/v1/events
+PUT    /api/v1/events/{id}
+DELETE /api/v1/events/{id}
+POST   /api/v1/events/{id}/register
+DELETE /api/v1/events/{id}/register
+GET    /api/v1/events/{id}/registrations
+POST   /api/v1/events/{id}/checkin
+GET    /api/v1/events/{id}/attendance
+POST   /api/v1/events/{id}/duplicate
+GET    /api/v1/events/templates
+POST   /api/v1/events/templates
+PUT    /api/v1/events/templates/{id}
+DELETE /api/v1/events/templates/{id}
+PATCH  /api/v1/events/templates/{id}/toggle
+POST   /api/v1/events/program/generate
+POST   /api/v1/events/program/generate-month
+GET    /api/v1/events/program/week
+GET    /api/v1/events/statistics
+GET    /api/v1/events/consolidated
+GET    /api/v1/events/consolidated/by-family
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: FAMILIES
+════════════════════════════════════════════════════════════════════════════════
+
+--- FamilyController -------------------- @RequestMapping("/api/v1/families") ---
+GET    /api/v1/families
+GET    /api/v1/families/{id}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: MEMBERS
+════════════════════════════════════════════════════════════════════════════════
+
+--- MemberController -------------------- @RequestMapping("/api/v1/members") ---
+GET    /api/v1/members/me/progression
+GET    /api/v1/members/me/events
+GET    /api/v1/members/me/notes
+GET    /api/v1/members/me/dashboard
+PUT    /api/v1/members/me/profile
+GET    /api/v1/members/me/presences
+POST   /api/v1/members/me/presences
+GET    /api/v1/members/me/requests
+POST   /api/v1/members/me/requests
+GET    /api/v1/members/requests/inbox
+PATCH  /api/v1/members/requests/{id}/status
+GET    /api/v1/members/presences/recent
+GET    /api/v1/members/departments/{deptId}/presences
+POST   /api/v1/members/departments/{deptId}/presences
+POST   /api/v1/members/qr-checkin
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: NOTIFICATIONS
+════════════════════════════════════════════════════════════════════════════════
+
+--- NotificationController -------------- @RequestMapping("/api/v1/notifications") ---
+GET    /api/v1/notifications
+GET    /api/v1/notifications/unread-count
+PATCH  /api/v1/notifications/{id}/read
+POST   /api/v1/notifications/mark-all-read
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: PRAYERS
+════════════════════════════════════════════════════════════════════════════════
+
+--- PrayerController -------------------- @RequestMapping("/api/v1/prayers") ---
+POST   /api/v1/prayers
+GET    /api/v1/prayers/{id}
+GET    /api/v1/prayers
+GET    /api/v1/prayers/by-ame/{ameId}
+PUT    /api/v1/prayers/{id}
+PATCH  /api/v1/prayers/{id}/answer
+DELETE /api/v1/prayers/{id}
+GET    /api/v1/prayers/actions-de-grace
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: REPORTS
+════════════════════════════════════════════════════════════════════════════════
+
+--- MakerReportController --------------- @RequestMapping("/api/v1/reports") ---
+GET    /api/v1/reports/maker-weekly
+POST   /api/v1/reports/maker-weekly
+PATCH  /api/v1/reports/maker-weekly/{id}/validate
+PATCH  /api/v1/reports/maker-weekly/{id}/correct
+GET    /api/v1/reports/correction/{reportId}
+GET    /api/v1/reports/family-weekly
+POST   /api/v1/reports/family-weekly
+GET    /api/v1/reports/family-weekly/{familyId}
+PATCH  /api/v1/reports/family-weekly/{id}/validate
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: SKILLS
+════════════════════════════════════════════════════════════════════════════════
+
+--- SkillMatchController ---------------- @RequestMapping("/api/v1/skill-matching") ---
+GET    /api/v1/skill-matching
+GET    /api/v1/skill-matching/{id}
+POST   /api/v1/skill-matching
+POST   /api/v1/skill-matching/{id}/respond
+POST   /api/v1/skill-matching/run
+GET    /api/v1/skill-matching/stats
+
+--- SkillController --------------------- @RequestMapping("/api/v1/skills") ---
+GET    /api/v1/skills
+GET    /api/v1/skills/matrix
+GET    /api/v1/skills/member/{memberId}
+POST   /api/v1/skills
+
+--- SkillsMatrixController -------------- @RequestMapping("/api/v1/skills-matrix") ---
+GET    /api/v1/skills-matrix
+GET    /api/v1/skills-matrix/member/{membreId}
+GET    /api/v1/skills-matrix/member/{membreId}/matrix
+GET    /api/v1/skills-matrix/department/{departmentId}/matrix
+POST   /api/v1/skills-matrix
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: SOULS (Âmes)
+════════════════════════════════════════════════════════════════════════════════
+
+--- SoulController ---------------------- @RequestMapping("/api/v1/souls") ---
+GET    /api/v1/souls
+GET    /api/v1/souls/{id}
+POST   /api/v1/souls
+PUT    /api/v1/souls/{id}
+DELETE /api/v1/souls/{id}
+PATCH  /api/v1/souls/{id}/assign-faiseur
+PATCH  /api/v1/souls/{id}/transfer
+PATCH  /api/v1/souls/{id}/statut
+PATCH  /api/v1/souls/{id}/retraction
+GET    /api/v1/souls/{id}/timeline
+GET    /api/v1/souls/{id}/transfer-history
+POST   /api/v1/souls/{id}/exit
+GET    /api/v1/souls/{id}/spiritual-score
+GET    /api/v1/souls/{id}/spiritual-score/history
+GET    /api/v1/souls/{id}/pastoral-360
+GET    /api/v1/souls/filter
+GET    /api/v1/souls/{id}/qr-code
+GET    /api/v1/souls/{id}/spiritual-score-detail
+
+--- SoulNoteController ------------------ @RequestMapping("/api/v1/souls/{soulId}/notes") ---
+POST   /api/v1/souls/{soulId}/notes
+GET    /api/v1/souls/{soulId}/notes
+PUT    /api/v1/souls/{soulId}/notes/{noteId}
+DELETE /api/v1/souls/{soulId}/notes/{noteId}
+
+--- SoulTagController ------------------- @RequestMapping("/api/v1/soul-tags") ---
+GET    /api/v1/soul-tags/{soulId}
+POST   /api/v1/soul-tags/{soulId}
+DELETE /api/v1/soul-tags/{soulId}/{tag}
+GET    /api/v1/soul-tags/available
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: SPIRITUAL LIFE
+════════════════════════════════════════════════════════════════════════════════
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: SUCCESSION
+════════════════════════════════════════════════════════════════════════════════
+
+--- SuccessionPlanController ------------ @RequestMapping("/api/v1/succession") ---
+GET    /api/v1/succession
+GET    /api/v1/succession/{id}
+POST   /api/v1/succession
+PATCH  /api/v1/succession/{id}/readiness
+PATCH  /api/v1/succession/{id}/status
+DELETE /api/v1/succession/{id}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: SURVEYS
+════════════════════════════════════════════════════════════════════════════════
+
+--- SurveyController -------------------- @RequestMapping("/api/v1/surveys") ---
+GET    /api/v1/surveys
+GET    /api/v1/surveys/{id}
+GET    /api/v1/surveys/{id}/results
+POST   /api/v1/surveys
+PATCH  /api/v1/surveys/{id}/status
+POST   /api/v1/surveys/{id}/responses
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: TENANTS
+════════════════════════════════════════════════════════════════════════════════
+
+--- TenantController -------------------- @RequestMapping("/api/v1/tenants") ---
+GET    /api/v1/tenants
+GET    /api/v1/tenants/{id}
+POST   /api/v1/tenants
+PUT    /api/v1/tenants/{id}
+DELETE /api/v1/tenants/{id}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: TESTIMONIES
+════════════════════════════════════════════════════════════════════════════════
+
+--- TestimonyController ----------------- @RequestMapping("/api/v1/testimonies") ---
+GET    /api/v1/testimonies
+GET    /api/v1/testimonies/{id}
+POST   /api/v1/testimonies
+POST   /api/v1/testimonies/{id}/like
+POST   /api/v1/testimonies/{id}/approve
+POST   /api/v1/testimonies/{id}/reject
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: TICKETS
+════════════════════════════════════════════════════════════════════════════════
+
+--- TicketController -------------------- @RequestMapping("/api/v1/tickets") ---
+GET    /api/v1/tickets
+GET    /api/v1/tickets/{id}
+POST   /api/v1/tickets
+PATCH  /api/v1/tickets/{id}/status
+POST   /api/v1/tickets/{id}/messages
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: TRAININGS
+════════════════════════════════════════════════════════════════════════════════
+
+--- TrainingController ------------------ @RequestMapping("/api/v1/trainings") ---
+GET    /api/v1/trainings/courses
+GET    /api/v1/trainings/courses/{courseId}
+GET    /api/v1/trainings/courses/{courseId}/modules
+GET    /api/v1/trainings/modules/{moduleId}/quiz
+POST   /api/v1/trainings/courses/{courseId}/enroll
+GET    /api/v1/trainings/my-enrollments
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: USAGE ANALYTICS
+════════════════════════════════════════════════════════════════════════════════
+
+--- UsageAnalyticsController ------------ @RequestMapping("/api/v1/usage-analytics") ---
+POST   /api/v1/usage-analytics/track
+GET    /api/v1/usage-analytics/summary
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: USERS
+════════════════════════════════════════════════════════════════════════════════
+
+--- UserController ---------------------- @RequestMapping("/api/v1/users") ---
+GET    /api/v1/users
+GET    /api/v1/users/{id}
+POST   /api/v1/users
+PUT    /api/v1/users/{id}
+DELETE /api/v1/users/{id}
+PATCH  /api/v1/users/{id}/deactivate
+DELETE /api/v1/users/{id}/hard-delete
+PATCH  /api/v1/users/{id}/restore
+POST   /api/v1/users/{id}/roles
+DELETE /api/v1/users/{id}/roles/{role}
+PUT    /api/v1/users/{id}/roles
+PATCH  /api/v1/users/{id}/active-role
+GET    /api/v1/users/evaluation-scores
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: VISITS
+════════════════════════════════════════════════════════════════════════════════
+
+--- PastoralVisitController ------------- @RequestMapping("/api/v1/pastoral-visits") ---
+GET    /api/v1/pastoral-visits
+GET    /api/v1/pastoral-visits/{id}
+POST   /api/v1/pastoral-visits
+PATCH  /api/v1/pastoral-visits/{id}/complete
+POST   /api/v1/pastoral-visits/{id}/reschedule
+POST   /api/v1/pastoral-visits/auto-generate
+
+--- VisitController --------------------- @RequestMapping("/api/v1/visits") ---
+POST   /api/v1/visits
+GET    /api/v1/visits
+GET    /api/v1/visits/my
+GET    /api/v1/visits/upcoming
+GET    /api/v1/visits/souls/{soulId}
+PATCH  /api/v1/visits/{id}
+DELETE /api/v1/visits/{id}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: VOICE REPORTS
+════════════════════════════════════════════════════════════════════════════════
+
+--- VoiceReportController --------------- @RequestMapping("/api/v1/voice-reports") ---
+POST   /api/v1/voice-reports
+GET    /api/v1/voice-reports
+GET    /api/v1/voice-reports/mine
+GET    /api/v1/voice-reports/{id}/structured
+GET    /api/v1/voice-reports/action-items
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: VOLUNTEERS
+════════════════════════════════════════════════════════════════════════════════
+
+--- VolunteerController ----------------- @RequestMapping("/api/v1/volunteers") ---
+GET    /api/v1/volunteers
+GET    /api/v1/volunteers/{id}
+POST   /api/v1/volunteers
+PUT    /api/v1/volunteers/{id}
+DELETE /api/v1/volunteers/{id}
+GET    /api/v1/volunteers/match
+GET    /api/v1/volunteers/stats
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: WEEKLY CHALLENGES
+════════════════════════════════════════════════════════════════════════════════
+
+--- WeeklyChallengeController ----------- @RequestMapping("/api/v1/weekly-challenges") ---
+GET    /api/v1/weekly-challenges
+GET    /api/v1/weekly-challenges/my
+POST   /api/v1/weekly-challenges
+PUT    /api/v1/weekly-challenges/{id}/progress
+POST   /api/v1/weekly-challenges/generate
+GET    /api/v1/weekly-challenges/stats
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: WHATSAPP
+════════════════════════════════════════════════════════════════════════════════
+
+--- WhatsAppAdminController ------------- @RequestMapping("/api/v1/whatsapp") ---
+GET    /api/v1/whatsapp/config
+PUT    /api/v1/whatsapp/config
+POST   /api/v1/whatsapp/config/test
+GET    /api/v1/whatsapp/messages
+GET    /api/v1/whatsapp/stats
+POST   /api/v1/whatsapp/broadcast
+
+--- WhatsAppWebhookController ----------- @RequestMapping("/api/v1/public/whatsapp") ---
+GET    /api/v1/public/whatsapp/webhook
+POST   /api/v1/public/whatsapp/webhook
+
+════════════════════════════════════════════════════════════════════════════════
+END OF AUDIT
+════════════════════════════════════════════════════════════════════════════════
+
+SUMMARY:
+- Total unique endpoint paths: ~340+
+- Total controllers: 87
+- Modules covered: 40+
+- API version prefix: /api/v1/ (except where noted)
+- Public endpoints (no auth): /api/v1/public/demo-requests, /api/v1/public/whatsapp/webhook,
+  /api/v1/payments/webhook, /api/v1/payments/webhooks/*, /api/v1/auth/login,
+  /api/v1/auth/register, /api/v1/auth/google, /api/v1/auth/magic-link/*,
+  /api/v1/auth/forgot-password, /api/v1/auth/reset-password, /api/v1/auth/refresh
+
+POST   /api/v1/trainings/courses/{courseId}/quiz/submit
+GET    /api/v1/trainings/my-certificates
+GET    /api/v1/trainings/stats
+POST   /api/v1/trainings/courses
+POST   /api/v1/trainings/courses/{courseId}/modules
+POST   /api/v1/trainings/modules/{moduleId}/questions
+POST   /api/v1/trainings/courses/{courseId}/modules/{moduleId}/complete
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: TRANSFERS
+════════════════════════════════════════════════════════════════════════════════
+
+--- TransferController ------------------ @RequestMapping("/api/v1/transfers") ---
+GET    /api/v1/transfers
+GET    /api/v1/transfers/configurations
+GET    /api/v1/transfers/{id}
+POST   /api/v1/transfers
+PUT    /api/v1/transfers/{id}
+POST   /api/v1/transfers/{id}/submit
+POST   /api/v1/transfers/{id}/decide
+POST   /api/v1/transfers/{id}/cancel
+POST   /api/v1/transfers/{id}/archive
+GET    /api/v1/transfers/{id}/history
+GET    /api/v1/transfers/{id}/decisions
+
+
+--- SpiritualChallengeController -------- @RequestMapping("/api/v1/spiritual-challenges") ---
+GET    /api/v1/spiritual-challenges
+GET    /api/v1/spiritual-challenges/{id}
+POST   /api/v1/spiritual-challenges
+PATCH  /api/v1/spiritual-challenges/{id}/progress
+PATCH  /api/v1/spiritual-challenges/{id}/status
+GET    /api/v1/spiritual-challenges/stats
+
+--- SpiritualJournalController ---------- @RequestMapping("/api/v1/spiritual-journals") ---
+GET    /api/v1/spiritual-journals/by-author/{authorId}
+GET    /api/v1/spiritual-journals/by-type/{authorId}/{type}
+GET    /api/v1/spiritual-journals/favorites/{authorId}
+GET    /api/v1/spiritual-journals/{id}
+POST   /api/v1/spiritual-journals
+PUT    /api/v1/spiritual-journals/{id}
+DELETE /api/v1/spiritual-journals/{id}
+POST   /api/v1/spiritual-journals/{id}/toggle-favorite
+GET    /api/v1/spiritual-journals/stats/{authorId}
+
+--- SpiritualJourneyController ---------- @RequestMapping("/api/v1/spiritual-journey") ---
+GET    /api/v1/spiritual-journey
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: STREAMING
+════════════════════════════════════════════════════════════════════════════════
+
+--- LiveStreamController ---------------- @RequestMapping("/api/v1/streams") ---
+GET    /api/v1/streams
+GET    /api/v1/streams/live
+POST   /api/v1/streams
+POST   /api/v1/streams/{id}/go-live
+POST   /api/v1/streams/{id}/end
+POST   /api/v1/streams/{id}/viewer
+
+--- StreamChatController ---------------- @RequestMapping({"/api/stream-chat", "/api/v1/stream-chat"}) ---
+GET    /api/v1/stream-chat/{streamId}
+POST   /api/v1/stream-chat/{streamId}
+GET    /api/v1/stream-chat/{streamId}/count
+
+
+--- ReportExportController -------------- @RequestMapping("/api/v1/reports/export") ---
+GET    /api/v1/reports/export/maker-weekly
+GET    /api/v1/reports/export/family-weekly
+GET    /api/v1/reports/export/consolidated-pdf
+GET    /api/v1/reports/export/executive-pdf
+GET    /api/v1/reports/export/maker-pdf
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: SABBATH DASHBOARD
+════════════════════════════════════════════════════════════════════════════════
+
+--- SabbathDashboardController ---------- @RequestMapping("/api/v1/sabbath-dashboard") ---
+GET    /api/v1/sabbath-dashboard
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: SEARCH
+════════════════════════════════════════════════════════════════════════════════
+
+--- SearchController -------------------- @RequestMapping("/api/v1/search") ---
+GET    /api/v1/search
+GET    /api/v1/search/profile/{soulId}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: SERMON
+════════════════════════════════════════════════════════════════════════════════
+
+--- SermonTranslationController --------- @RequestMapping("/api/v1/sermons/translations") ---
+GET    /api/v1/sermons/translations
+GET    /api/v1/sermons/translations/{id}
+GET    /api/v1/sermons/translations/by-sermon/{sermonId}
+POST   /api/v1/sermons/translations
+POST   /api/v1/sermons/translations/{id}/complete
+
+--- SermonTranscriptionController ------- @RequestMapping("/api/v1/sermons") ---
+GET    /api/v1/sermons
+GET    /api/v1/sermons/{id}
+POST   /api/v1/sermons
+PUT    /api/v1/sermons/{id}
+DELETE /api/v1/sermons/{id}
+POST   /api/v1/sermons/{id}/transcribe
+GET    /api/v1/sermons/stats
+
+POST   /api/v1/families
+PUT    /api/v1/families/{id}
+DELETE /api/v1/families/{id}
+POST   /api/v1/families/{id}/members/{memberId}
+DELETE /api/v1/families/{id}/members/{memberId}
+GET    /api/v1/families/{id}/members
+GET    /api/v1/families/{id}/disciples
+GET    /api/v1/families/{id}/stats
+POST   /api/v1/families/{id}/transfer
+POST   /api/v1/families/compare
+GET    /api/v1/families/{id}/chief-history
+PATCH  /api/v1/families/{id}/restore
+GET    /api/v1/families/{id}/risk
+PUT    /api/v1/families/{id}/risk-level
+GET    /api/v1/families/{id}/risk-history
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: FILES
+════════════════════════════════════════════════════════════════════════════════
+
+--- FileController ---------------------- @RequestMapping("/api/v1/files") ---
+POST   /api/v1/files
+GET    /api/v1/files/{id}
+GET    /api/v1/files
+PUT    /api/v1/files/{id}
+DELETE /api/v1/files/{id}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: FORMS
+════════════════════════════════════════════════════════════════════════════════
+
+--- FormController ---------------------- @RequestMapping("/api/v1/forms") ---
+GET    /api/v1/forms
+GET    /api/v1/forms/published
+GET    /api/v1/forms/{id}
+POST   /api/v1/forms
+PUT    /api/v1/forms/{id}
+POST   /api/v1/forms/{id}/publish
+POST   /api/v1/forms/{id}/archive
+DELETE /api/v1/forms/{id}
+POST   /api/v1/forms/{templateId}/responses
+GET    /api/v1/forms/{templateId}/responses
+GET    /api/v1/forms/{templateId}/stats
+
+════════════════════════════════════════════════════════════════════════════════
+
+--- DashboardController ----------------- @RequestMapping("/api/v1/dashboard") ---
+GET    /api/v1/dashboard/kpi
+GET    /api/v1/dashboard/presence-trend
+GET    /api/v1/dashboard/family-risk
+GET    /api/v1/dashboard/report-completion
+GET    /api/v1/dashboard/summary
+GET    /api/v1/dashboard/my-metrics
+GET    /api/v1/dashboard/pasteur
+GET    /api/v1/dashboard/chef-famille
+GET    /api/v1/dashboard/responsable
+GET    /api/v1/dashboard/crm-faiseur
+GET    /api/v1/dashboard/pasteur/presence-trend
+GET    /api/v1/dashboard/pasteur/kpis
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: DATA MIGRATION
+════════════════════════════════════════════════════════════════════════════════
+
+--- DataMigrationController ------------- @RequestMapping("/api/v1/data-migration") ---
+POST   /api/v1/data-migration/analyze
+POST   /api/v1/data-migration
+POST   /api/v1/data-migration/{id}/execute
+POST   /api/v1/data-migration/{id}/cancel
+GET    /api/v1/data-migration
+GET    /api/v1/data-migration/{id}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: DEMO REQUESTS
+════════════════════════════════════════════════════════════════════════════════
+
+--- DemoRequestController --------------- (no class-level @RequestMapping) ---
+POST   /api/v1/public/demo-requests
+
+
+--- CercleFaiseursController ------------ @RequestMapping("/api/v1/cercle-faiseurs") ---
+GET    /api/v1/cercle-faiseurs
+POST   /api/v1/cercle-faiseurs
+POST   /api/v1/cercle-faiseurs/{id}/like
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: CHURCH COMPARISON
+════════════════════════════════════════════════════════════════════════════════
+
+--- ChurchComparisonController ---------- @RequestMapping("/api/v1/church-comparisons") ---
+GET    /api/v1/church-comparisons
+GET    /api/v1/church-comparisons/by-category/{cat}
+GET    /api/v1/church-comparisons/by-country/{pays}
+GET    /api/v1/church-comparisons/{id}
+POST   /api/v1/church-comparisons
+PUT    /api/v1/church-comparisons/{id}
+DELETE /api/v1/church-comparisons/{id}
+GET    /api/v1/church-comparisons/{id}/benchmark
+GET    /api/v1/church-comparisons/clusters
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: COMMUNICATIONS
+════════════════════════════════════════════════════════════════════════════════
+
+--- CommunicationController ------------- @RequestMapping("/api/v1/communications") ---
+GET    /api/v1/communications
+GET    /api/v1/communications/admin
+POST   /api/v1/communications/admin
+PUT    /api/v1/communications/admin/{id}
+POST   /api/v1/communications/admin/{id}/publish
+DELETE /api/v1/communications/admin/{id}
+
+GET    /api/v1/automations
+GET    /api/v1/automations/active
+GET    /api/v1/automations/{id}
+POST   /api/v1/automations
+PATCH  /api/v1/automations/{id}
+PATCH  /api/v1/automations/{id}/toggle
+DELETE /api/v1/automations/{id}
+POST   /api/v1/automations/trigger/{event}
+GET    /api/v1/automations/{id}/executions
+GET    /api/v1/automations/stats
+GET    /api/v1/automations/triggers
+GET    /api/v1/automations/actions
+
+--- WorkflowAutomationController -------- @RequestMapping("/api/v1/workflow/automations") ---
+GET    /api/v1/workflow/automations
+GET    /api/v1/workflow/automations/{id}
+POST   /api/v1/workflow/automations
+PATCH  /api/v1/workflow/automations/{id}/toggle
+DELETE /api/v1/workflow/automations/{id}
+
+--- WorkflowConfigController ------------ @RequestMapping("/api/v1/workflows") ---
+GET    /api/v1/workflows
+GET    /api/v1/workflows/{key}
+PUT    /api/v1/workflows/{key}
+POST   /api/v1/workflows/{key}/toggle
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: BACKUPS
+════════════════════════════════════════════════════════════════════════════════
+
+--- BackupController -------------------- @RequestMapping("/api/v1/backups") ---
+POST   /api/v1/backups
+POST   /api/v1/backups/{id}/trigger
+POST   /api/v1/backups/{id}/verify
+GET    /api/v1/backups
+GET    /api/v1/backups/restore-points
+DELETE /api/v1/backups/{id}
+
+════════════════════════════════════════════════════════════════════════════════
+MODULE: BADGES & GAMIFICATION
+════════════════════════════════════════════════════════════════════════════════
+
+--- BadgeController --------------------- @RequestMapping("/api/v1/badges") ---
+GET    /api/v1/badges/my
+GET    /api/v1/badges/users/{userId}
+GET    /api/v1/badges/leaderboard
+POST   /api/v1/badges/evaluate
+
+GET    /api/v1/tontines
+POST   /api/v1/tontines
+POST   /api/v1/tontines/{id}/members
+POST   /api/v1/tontines/{id}/contributions/{memberId}/pay
+POST   /api/v1/tontines/{id}/next-round
+GET    /api/v1/tontines/{id}
+GET    /api/v1/tontines/stats
+GET    /api/v1/tontines/{id}/overdue
+POST   /api/v1/tontines/{id}/notify-due
+GET    /api/v1/tontines/{id}/dashboard

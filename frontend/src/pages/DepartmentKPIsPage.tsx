@@ -1,110 +1,95 @@
 import { useQuery } from '@tanstack/react-query';
-import { useI18n } from '@/i18n';
-import { BarChart3, TrendingUp, TrendingDown, Target, ArrowUpRight } from 'lucide-react';
-import api, { getErrorMessage } from '@/lib/api';
-import SkeletonLoader from '@/components/shared/SkeletonLoader';
-import EmptyState from '@/components/shared/EmptyState';
+import api from '@/lib/api';
+import {
+  Target, BarChart3, TrendingUp, TrendingDown, Users, Award, Loader2,
+} from 'lucide-react';
 
 interface DepartmentKpi {
   id: string;
-  departmentId: number;
   name: string;
-  description?: string;
-  targetValue?: number;
-  currentValue?: number;
-  unit?: string;
-  period?: string;
+  departmentId: string;
+  departmentName: string;
+  currentValue: number;
+  targetValue: number;
+  unit: string;
+  trend: 'UP' | 'DOWN' | 'STABLE';
+  lastUpdated: string;
 }
 
-export default function DepartmentKPIsPage() {
-  const { t } = useI18n();
-
-  const { data: kpis = [], isLoading, error } = useQuery({
+export default function DepartmentKpisPage() {
+  const { data: kpis = [], isLoading } = useQuery({
     queryKey: ['department-kpis'],
-    queryFn: async () => (await api.get('/department-kpis')).data as DepartmentKpi[],
-    retry: false,
+    queryFn: async () => {
+      const res = await api.get('/department-kpis');
+      return (res.data.content || res.data || []) as DepartmentKpi[];
+    },
   });
 
-  const current = (k: DepartmentKpi) => k.currentValue ?? 0;
-  const target = (k: DepartmentKpi) => k.targetValue ?? 0;
-  const trend = (k: DepartmentKpi) =>
-    target(k) === 0 ? 'stable' : current(k) >= target(k) ? 'up' : 'down';
-  const progressPercent = (k: DepartmentKpi) => Math.min(Math.round((current(k) / (target(k) || 1)) * 100), 100);
-  const progressColor = (pct: number) => pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
+  const grouped = kpis.reduce<Record<string, DepartmentKpi[]>>((acc, kpi) => {
+    const key = kpi.departmentName || 'Autre';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(kpi);
+    return acc;
+  }, {});
 
-  const departmentsCount = new Set(kpis.map(k => k.departmentId)).size;
-  const upCount = kpis.filter(k => trend(k) === 'up')
-    .reduce((a, k) => a + (current(k) >= target(k) && target(k) > 0 ? 1 : 0), 0);
-  const attainedCount = kpis.filter(k => progressPercent(k) >= 80).length;
-  const downCount = kpis.filter(k => target(k) > 0 && current(k) < target(k)).length;
-
-  if (isLoading) return <SkeletonLoader lines={6} variant="card" />;
-  if (error) return <div className="p-6 text-red-500 dark:text-red-400">{getErrorMessage(error)}</div>;
+  if (isLoading) return <div className="min-h-[40vh] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-          <BarChart3 className="w-7 h-7 text-teal-500" />
-          {t('nav.departmentKpis') ?? 'KPIs Départementaux'}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">Suivi des objectifs par département</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
-          <p className="text-xs text-gray-500">Départements suivis</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{departmentsCount}</p>
-        </div>
-        <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
-          <p className="text-xs text-gray-500">KPIs atteints (≥80%)</p>
-          <p className="text-2xl font-bold text-teal-500 mt-1">{attainedCount}</p>
-        </div>
-        <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
-          <p className="text-xs text-gray-500">KPIs à la cible</p>
-          <p className="text-2xl font-bold text-green-500 mt-1">{upCount}</p>
-        </div>
-        <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
-          <p className="text-xs text-gray-500">KPIs en baisse</p>
-          <p className="text-2xl font-bold text-red-500 mt-1">{downCount}</p>
+    <div className="page-container max-w-6xl">
+      <div className="page-header">
+        <div className="animate-fade-in">
+          <div className="flex items-center gap-2 mb-1">
+            <Target className="w-5 h-5 text-primary-500" />
+            <h1 className="page-title">KPIs par département</h1>
+          </div>
+          <p className="page-subtitle">Indicateurs de performance clés par département</p>
         </div>
       </div>
 
       {kpis.length === 0 ? (
-        <EmptyState
-          icon={<BarChart3 className="w-6 h-6 text-teal-400" />}
-          title="Aucun KPI départemental"
-          message="Les KPIs mis en place par département apparaîtront ici."
-        />
+        <div className="glass-card p-10 text-center">
+          <Target className="w-10 h-10 text-gray-300 mb-3 mx-auto" />
+          <p className="text-gray-500 font-medium">Aucun KPI configuré.</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {kpis.map((kpi) => {
-            const pct = progressPercent(kpi);
-            const tr = trend(kpi);
-            return (
-              <div key={kpi.id} className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06] hover:shadow-lg transition">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Département #{kpi.departmentId}</p>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mt-1">{kpi.name}</h3>
-                  </div>
-                  <span className={`flex items-center gap-1 text-xs font-medium ${tr === 'up' ? 'text-green-500' : tr === 'down' ? 'text-red-500' : 'text-gray-400'}`}>
-                    {tr === 'up' ? <TrendingUp className="w-3 h-3" /> : tr === 'down' ? <TrendingDown className="w-3 h-3" /> : <Target className="w-3 h-3" />}
-                  </span>
-                </div>
-                <div className="mt-4">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{current(kpi).toLocaleString()}</span>
-                    <span className="text-xs text-gray-400">/ {target(kpi).toLocaleString()} {kpi.unit || ''}</span>
-                  </div>
-                  <div className="mt-2 h-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all ${progressColor(pct)}`} style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1 text-right flex items-center justify-end gap-1">{pct}% <ArrowUpRight className="w-3 h-3" /></p>
-                </div>
+        <div className="space-y-6">
+          {Object.entries(grouped).map(([deptName, deptKpis]) => (
+            <div key={deptName} className="animate-slide-up">
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="w-4 h-4 text-primary-500" />
+                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{deptName}</h3>
               </div>
-            );
-          })}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {deptKpis.map((kpi) => {
+                  const progress = kpi.targetValue > 0 ? Math.min((kpi.currentValue / kpi.targetValue) * 100, 100) : 0;
+                  const TrendIcon = kpi.trend === 'UP' ? TrendingUp : kpi.trend === 'DOWN' ? TrendingDown : null;
+                  return (
+                    <div key={kpi.id} className="glass-card px-5 py-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300">{kpi.name}</h4>
+                        {TrendIcon && (
+                          <TrendIcon className={`w-4 h-4 ${kpi.trend === 'UP' ? 'text-green-500' : 'text-red-500'}`} />
+                        )}
+                      </div>
+                      <div className="flex items-baseline gap-1 mb-2">
+                        <span className="text-xl font-bold text-gray-900 dark:text-gray-100">{kpi.currentValue}</span>
+                        <span className="text-xs text-gray-400">/ {kpi.targetValue} {kpi.unit}</span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${progress >= 80 ? 'bg-green-500' : progress >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-2">
+                        Mis à jour le {new Date(kpi.lastUpdated).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

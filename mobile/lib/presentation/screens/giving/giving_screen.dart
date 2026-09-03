@@ -36,7 +36,7 @@ class _GivingScreenState extends State<GivingScreen> {
   bool _showRecurringForm = false;
   final _rcAmountCtrl = TextEditingController();
   final _rcPhoneCtrl = TextEditingController();
-  String _rcOperator = 'ORANGE_MONEY';
+  final String _rcOperator = 'ORANGE_MONEY';
   String _rcPurpose = 'DIME';
   String _rcFrequency = 'MONTHLY';
   bool _rcSubmitting = false;
@@ -355,7 +355,7 @@ class _GivingScreenState extends State<GivingScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: _operator,
+                      initialValue: _operator,
                       dropdownColor: const Color(0xFF1E293B),
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
@@ -373,7 +373,7 @@ class _GivingScreenState extends State<GivingScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: _purpose,
+                      initialValue: _purpose,
                       dropdownColor: const Color(0xFF1E293B),
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
@@ -590,7 +590,7 @@ class _GivingScreenState extends State<GivingScreen> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _rcPurpose,
+            initialValue: _rcPurpose,
             dropdownColor: const Color(0xFF1E293B),
             style: const TextStyle(color: Colors.white, fontSize: 13),
             isDense: true,
@@ -606,7 +606,7 @@ class _GivingScreenState extends State<GivingScreen> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _rcFrequency,
+            initialValue: _rcFrequency,
             dropdownColor: const Color(0xFF1E293B),
             style: const TextStyle(color: Colors.white, fontSize: 13),
             isDense: true,

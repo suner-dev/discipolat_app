@@ -131,7 +131,7 @@ class _PropheticJournalScreenState extends State<PropheticJournalScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final typeMeta = (String key) =>
+    (String, IconData, Color) typeMeta(String key) =>
         _entryTypes[key] ?? ('Révélation', Icons.lightbulb, const Color(0xFFFBBF24));
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -393,7 +393,7 @@ class _PropheticJournalScreenState extends State<PropheticJournalScreen> {
                   color: Colors.white, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            value: _type,
+            initialValue: _type,
             dropdownColor: const Color(0xFF1E293B),
             decoration: _fieldDecoration('Type'),
             style: const TextStyle(color: Colors.white, fontSize: 13),

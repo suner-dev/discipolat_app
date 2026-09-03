@@ -159,7 +159,7 @@ class _WebhookLogScreenState extends State<WebhookLogScreen> {
         children: [
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _filterProvider,
+              initialValue: _filterProvider,
               isDense: true,
               dropdownColor: const Color(0xFF1E293B),
               style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -179,7 +179,7 @@ class _WebhookLogScreenState extends State<WebhookLogScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _filterStatus,
+              initialValue: _filterStatus,
               isDense: true,
               dropdownColor: const Color(0xFF1E293B),
               style: const TextStyle(color: Colors.white, fontSize: 12),

@@ -1,137 +1,126 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useI18n } from '@/i18n';
-import { Sparkles, AlertTriangle, Lightbulb, Eye, X, RefreshCw } from 'lucide-react';
-import toast from 'react-hot-toast';
-import api, { getErrorMessage } from '@/lib/api';
-import SkeletonLoader from '@/components/shared/SkeletonLoader';
-import EmptyState from '@/components/shared/EmptyState';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import {
+  Brain, TrendingUp, Users, BarChart3, Activity, Target, Loader2,
+} from 'lucide-react';
 
-interface Insight {
-  id: string;
-  title: string;
-  description: string;
-  severity: string;
-  category: string;
-  recommendedAction: string;
-  metricValue: string;
-  metricChange: string;
-  isRead: boolean;
-  createdAt?: string;
+interface ExecutiveStats {
+  totalMembers: number;
+  activeFamilies: number;
+  totalEvents: number;
+  conversionRate: number;
+  averageEngagement: number;
+  growthRate: number;
+  totalRevenue?: number;
+  pendingRequests: number;
 }
 
 export default function ExecutiveInsightsPage() {
-  const { t } = useI18n();
-  const queryClient = useQueryClient();
-  const [filter, setFilter] = useState('all');
-
-  const { data: insights = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['executive-insights'],
-    queryFn: async () => (await api.get('/executive-insights')).data as Insight[],
-    retry: false,
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['executive-insights', 'stats'],
+    queryFn: async () => {
+      const res = await api.get('/executive-insights/stats');
+      return res.data as ExecutiveStats;
+    },
   });
 
-  const generateMutation = useMutation({
-    mutationFn: async () => (await api.post('/executive-insights/generate')).data,
-    onSuccess: () => { toast.success('Insights régénérés'); queryClient.invalidateQueries({ queryKey: ['executive-insights'] }); },
-    onError: (e: unknown) => toast.error(getErrorMessage(e)),
-  });
-
-  const markReadMutation = useMutation({
-    mutationFn: async (id: string) => (await api.post(`/executive-insights/${id}/read`)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['executive-insights'] }),
-    onError: (e: unknown) => toast.error(getErrorMessage(e)),
-  });
-
-  const dismissMutation = useMutation({
-    mutationFn: async (id: string) => (await api.post(`/executive-insights/${id}/dismiss`)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['executive-insights'] }),
-    onError: (e: unknown) => toast.error(getErrorMessage(e)),
-  });
-
-  const filtered = filter === 'all' ? insights : insights.filter(i => i.severity === filter);
-
-  const severityIcon = (s: string) =>
-    s === 'CRITICAL' ? <AlertTriangle className="w-5 h-5 text-red-400" />
-    : s === 'WARNING' ? <AlertTriangle className="w-5 h-5 text-orange-400" />
-    : s === 'OPPORTUNITY' ? <Lightbulb className="w-5 h-5 text-blue-400" />
-    : <Sparkles className="w-5 h-5 text-gray-400" />;
-  const severityBorder = (s: string) =>
-    s === 'CRITICAL' ? 'border-red-500/40' : s === 'WARNING' ? 'border-orange-500/30' : s === 'OPPORTUNITY' ? 'border-blue-500/30' : 'border-white/10';
-
-  if (isLoading) return <SkeletonLoader lines={5} variant="card" />;
-  if (error) return <div className="p-6 text-red-400">{getErrorMessage(error)}</div>;
+  if (isLoading) return <div className="min-h-[40vh] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>;
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Sparkles className="text-violet-400" /> {t('executiveInsights.title') || 'Insights exécutifs IA'}
-        </h1>
-        <div className="flex items-center gap-2">
-          <button onClick={() => refetch()} className="px-3 py-2 rounded-xl bg-white/5 text-gray-400 text-sm hover:bg-white/10 transition flex items-center gap-2">
-            <RefreshCw className="w-4 h-4" /> Actualiser
-          </button>
-          <button onClick={() => generateMutation.mutate()}
-            disabled={generateMutation.isPending}
-            className="px-3 py-2 rounded-xl bg-violet-500 text-white text-sm font-medium hover:bg-violet-600 transition disabled:opacity-50">
-            Régénérer
-          </button>
+    <div className="page-container max-w-6xl">
+      <div className="page-header">
+        <div className="animate-fade-in">
+          <div className="flex items-center gap-2 mb-1">
+            <Brain className="w-5 h-5 text-purple-500" />
+            <h1 className="page-title">Aperçu exécutif</h1>
+          </div>
+          <p className="page-subtitle">Indicateurs stratégiques et synthèse de performance</p>
         </div>
       </div>
 
-      <div className="flex gap-2">
-        {(['all', 'CRITICAL', 'WARNING', 'OPPORTUNITY', 'INFO'] as const).map((f) => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${filter === f ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-            {f === 'all' ? 'Tous' : f}
-          </button>
-        ))}
-      </div>
-
-      {filtered.length === 0 ? (
-        <EmptyState
-          icon={<Sparkles className="w-6 h-6 text-violet-400" />}
-          title="Aucun insight disponible"
-          message="Générez des insights exécutifs IA pour analyser la santé de l'église."
-        />
-      ) : (
-        <div className="space-y-4">
-          {filtered.map(insight => (
-            <div key={insight.id} className={`bg-white/5 backdrop-blur rounded-2xl p-5 border transition hover:scale-[1.01] ${severityBorder(insight.severity)}`}>
-              <div className="flex items-start gap-3">
-                {severityIcon(insight.severity)}
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className={`font-semibold ${insight.isRead ? 'text-gray-300' : 'text-white'}`}>{insight.title}</h3>
-                    <div className="flex items-center gap-3">
-                      {insight.metricValue && <span className="text-lg font-bold text-white">{insight.metricValue}</span>}
-                      {insight.metricChange && (
-                        <span className={`text-sm font-medium ${insight.metricChange.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>{insight.metricChange}</span>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-300 mb-2">{insight.description}</p>
-                  {insight.recommendedAction && (
-                    <div className="bg-blue-500/10 rounded-lg p-3 flex items-start gap-2">
-                      <Lightbulb className="w-4 h-4 text-blue-400 mt-0.5" />
-                      <p className="text-sm text-blue-300">{insight.recommendedAction}</p>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 mt-3">
-                    <button onClick={() => markReadMutation.mutate(insight.id)}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-gray-400 text-xs hover:bg-white/10 transition">
-                      <Eye className="w-3 h-3" /> Marquer comme lu
-                    </button>
-                    <button onClick={() => dismissMutation.mutate(insight.id)}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-gray-400 text-xs hover:bg-white/10 transition">
-                      <X className="w-3 h-3" /> Ignorer
-                    </button>
+      {stats ? (
+        <div className="space-y-6 animate-slide-up">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'Membres', value: stats.totalMembers, icon: Users, color: 'from-primary-500 to-primary-600' },
+              { label: 'Familles actives', value: stats.activeFamilies, icon: Users, color: 'from-green-500 to-emerald-500' },
+              { label: 'Événements', value: stats.totalEvents, icon: Activity, color: 'from-blue-500 to-indigo-500' },
+              { label: 'Demandes en attente', value: stats.pendingRequests, icon: Target, color: 'from-amber-500 to-orange-500' },
+            ].map((stat, i) => (
+              <div key={stat.label} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 60}ms` }}>
+                <div className="flex items-start justify-between mb-2">
+                  <span className="stat-label text-[10px]">{stat.label}</span>
+                  <div className={`p-1.5 rounded-lg bg-gradient-to-br ${stat.color} text-white shadow-sm`}>
+                    <stat.icon className="w-3.5 h-3.5" />
                   </div>
                 </div>
+                <p className="stat-value text-xl">{stat.value}</p>
               </div>
+            ))}
+          </div>
+
+          {/* Performance metrics */}
+          <div className="glass-card p-6">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-purple-500" />
+              Indicateurs de performance
+            </h3>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { label: 'Taux de conversion', value: `${stats.conversionRate}%`, desc: 'Nouveaux membres / visiteurs' },
+                { label: 'Engagement moyen', value: `${stats.averageEngagement}%`, desc: 'Participation aux activités' },
+                { label: 'Taux de croissance', value: `${stats.growthRate >= 0 ? '+' : ''}${stats.growthRate}%`, desc: 'Croissance mensuelle' },
+                ...(stats.totalRevenue !== undefined ? [{ label: 'Revenus', value: `${stats.totalRevenue.toLocaleString()} €`, desc: 'Revenus totaux' }] : []),
+              ].map((metric) => (
+                <div key={metric.label} className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/60">
+                  <p className="text-xs text-gray-400 mb-1">{metric.label}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{metric.value}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{metric.desc}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Insights */}
+          <div className="glass-card p-6">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+              <Brain className="w-4 h-4 text-purple-500" />
+              Insights IA
+            </h3>
+            <div className="space-y-3">
+              {[
+                {
+                  title: 'Croissance',
+                  insight: stats.growthRate > 0
+                    ? `Croissance positive de ${stats.growthRate}%. Continuez les efforts d'évangélisation.`
+                    : 'Croissance négative. Revoyez les stratégies d\'accueil et d\'intégration.',
+                  color: stats.growthRate > 0 ? 'border-green-500' : 'border-red-500',
+                },
+                {
+                  title: 'Engagement',
+                  insight: stats.averageEngagement >= 60
+                    ? 'Bon niveau d\'engagement. Les membres sont actifs et participent aux activités.'
+                    : 'Engagement faible. Proposez des activités plus variées et interactives.',
+                  color: stats.averageEngagement >= 60 ? 'border-green-500' : 'border-amber-500',
+                },
+                {
+                  title: 'Recommandation',
+                  insight: `Avec ${stats.activeFamilies} familles actives et ${stats.totalMembers} membres, ${stats.pendingRequests > 0 ? `${stats.pendingRequests} demande(s) nécessitent votre attention.` : 'tout est à jour.'}`,
+                  color: 'border-primary-500',
+                },
+              ].map((item) => (
+                <div key={item.title} className={`p-4 rounded-xl border-l-4 ${item.color} bg-gray-50 dark:bg-gray-800/40`}>
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{item.title}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{item.insight}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="glass-card p-10 text-center">
+          <Brain className="w-10 h-10 text-gray-300 mb-3 mx-auto" />
+          <p className="text-gray-500 font-medium">Aucune donnée exécutive disponible.</p>
         </div>
       )}
     </div>

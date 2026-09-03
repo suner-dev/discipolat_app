@@ -344,7 +344,7 @@ class _HealthObservatoryScreenState extends State<HealthObservatoryScreen> {
               leading: CircleAvatar(
                 radius: 16,
                 backgroundColor: color.withAlpha(30),
-                child: Text('${riskScore}', style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+                child: Text('$riskScore', style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
               title: Text(s['nom'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 14)),
               subtitle: Text(s['intervention'] ?? '',

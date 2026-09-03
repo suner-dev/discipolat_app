@@ -1,0 +1,1166 @@
+================================================================================
+FRONTEND-CONSUMED API ENDPOINTS AUDIT
+Discipolat Platform — Extracted from frontend/src/
+================================================================================
+
+Base URL: /api/v1 (configured in frontend/src/lib/api.ts)
+All paths below are relative to this base.
+
+Total unique endpoints found: ~400+
+
+================================================================================
+MODULE: AUTHENTICATION & AUTHORIZATION
+================================================================================
+
+POST   /auth/login
+POST   /auth/logout
+POST   /auth/refresh
+POST   /auth/switch-role
+GET    /auth/2fa/status
+POST   /auth/2fa/enable
+POST   /auth/2fa/disable
+
+================================================================================
+MODULE: AI / ARTIFICIAL INTELLIGENCE
+================================================================================
+
+POST   /ai/chat
+GET    /ai/chat/history
+DELETE /ai/chat/history
+GET    /ai/health
+GET    /ai/analyze/{soulId}
+GET    /ai/encouragement/{soulId}
+GET    /ai-predictions
+GET    /ai-predictions/type/{type}
+GET    /ai-predictions/risks
+POST   /ai-predictions/generate
+GET    /ai-visit-notes
+POST   /ai-visit-notes/{id}/verify
+
+================================================================================
+MODULE: ADMIN
+================================================================================
+
+GET    /admin/system-health
+GET    /admin/cache-stats
+DELETE /admin/cache-stats/{cacheName}
+GET    /admin/beta/status
+POST   /admin/beta/reset
+GET    /admin-demo-requests
+GET    /admin/dictionaries
+POST   /admin/dictionaries/reset
+DELETE /admin/dictionaries/{id}
+GET    /admin/feedback
+GET    /admin/feedback/stats
+GET    /admin/integrations/jwt
+GET    /admin/integrations/rate-limiting
+GET    /admin/integrations/smtp
+GET    /admin/integrations/storage
+PUT    /admin/integrations/{key}
+POST   /admin/integrations/{key}/test
+GET    /admin/notifications/events
+GET    /admin/notifications/templates
+DELETE /admin/notifications/templates/{id}
+PUT    /admin/notifications/templates/{editId}
+GET    /admin-requests
+GET    /admin-requests/stats
+GET    /admin/transfers/workflows
+DELETE /admin/transfers/workflows/{id}
+PUT    /admin/transfers/workflows/{editing}
+GET    /admin/webhooks/api-keys
+DELETE /admin/webhooks/api-keys/{id}
+DELETE /admin/webhooks/{id}
+
+================================================================================
+MODULE: DEPARTMENTS
+================================================================================
+
+GET    /departments
+POST   /departments
+GET    /departments/{id}
+PUT    /departments/{id}
+DELETE /departments/{id}
+GET    /departments/{id}/activity
+GET    /departments/{id}/alerts/smart
+GET    /departments/{deptId}/announcements
+POST   /departments/{deptId}/announcements
+DELETE /departments/{deptId}/announcements/{announcementId}
+GET    /departments/{deptId}/assignments
+POST   /departments/{deptId}/assignments
+DELETE /departments/{deptId}/assignments/{assignmentId}
+GET    /departments/{deptId}/checklists
+POST   /departments/{deptId}/checklists
+PUT    /departments/{deptId}/checklists/{checklistId}
+DELETE /departments/{deptId}/checklists/{checklistId}
+PUT    /departments/{deptId}/checklists/{checklistId}/items/{itemId}
+DELETE /departments/{deptId}/checklists/{checklistId}/items/{itemId}
+GET    /departments/{deptId}/documents
+POST   /departments/{deptId}/documents
+PUT    /departments/{deptId}/documents/{docId}
+DELETE /departments/{deptId}/documents/{docId}
+GET    /departments/{deptId}/documents/stats
+GET    /departments/{deptId}/equipment
+POST   /departments/{deptId}/equipment
+PUT    /departments/{deptId}/equipment/{equipmentId}
+DELETE /departments/{deptId}/equipment/{equipmentId}
+GET    /departments/{deptId}/events
+POST   /departments/{deptId}/events
+GET    /departments/{deptId}/events/{eventId}/attendance
+PUT    /departments/{deptId}/events/{eventId}/attendance
+POST   /departments/{deptId}/events/{eventId}/attendance/mark-all
+GET    /departments/{deptId}/management
+GET    /departments/{deptId}/members
+POST   /departments/{deptId}/members
+DELETE /departments/{deptId}/members/{memberId}
+GET    /departments/{deptId}/members/management
+GET    /departments/{deptId}/members/candidates
+POST   /departments/{id}/members/{memberId}/event-attendance/mark-all
+GET    /departments/{id}/notes
+DELETE /departments/{id}/notes/{noteId}
+GET    /departments/{id}/objectives
+POST   /departments/{id}/objectives
+PUT    /departments/{id}/objectives/{objectiveId}
+DELETE /departments/{id}/objectives/{objectiveId}
+GET    /departments/{deptId}/positions
+POST   /departments/{deptId}/positions
+DELETE /departments/{deptId}/positions/{positionId}
+GET    /departments/{departmentId}/reports
+POST   /departments/{departmentId}/reports
+GET    /departments/{departmentId}/reports/list
+PUT    /departments/{departmentId}/reports/saved/{reportId}
+DELETE /departments/{departmentId}/reports/saved/{reportId}
+GET    /departments/{deptId}/settings
+PUT    /departments/{deptId}/settings
+GET    /departments/{id}/stats
+GET    /departments/{deptId}/tasks
+POST   /departments/{deptId}/tasks
+PUT    /departments/{deptId}/tasks/{taskId}
+DELETE /departments/{deptId}/tasks/{taskId}
+GET    /departments/{deptId}/teams
+POST   /departments/{deptId}/teams
+PUT    /departments/{deptId}/teams/{teamId}
+================================================================================
+MODULE: EVENTS
+================================================================================
+
+GET    /events
+POST   /events
+GET    /events/{id}
+PUT    /events/{id}
+DELETE /events/{id}
+GET    /events/consolidated
+GET    /events/consolidated/by-family
+GET    /events/statistics
+GET    /events/templates
+POST   /events/templates
+PUT    /events/templates/{id}
+DELETE /events/templates/{id}
+POST   /events/{eventId}/register
+POST   /events/{eventId}/attendance
+PUT    /events/{eventId}/rsvp
+POST   /events/program/generate-month
+POST   /events/program/generate
+GET    /events/department/{deptId}
+GET    /event-checklists
+POST   /event-checklists/{id}/toggle
+GET    /events/entity-changes              (SSE — real-time sync)
+
+================================================================================
+MODULE: SOULS
+================================================================================
+
+GET    /souls
+POST   /souls
+GET    /souls/{id}
+PUT    /souls/{id}
+DELETE /souls/{id}
+GET    /souls/trash
+PATCH  /souls/{id}/restore
+PATCH  /souls/{id}/discipline/{eventId}/resolve
+DELETE /soul-tags/{id}/{tag}
+GET    /favorites/souls
+
+================================================================================
+MODULE: USERS & MEMBERS
+================================================================================
+
+GET    /users
+GET    /users/{id}
+PUT    /users/{id}
+DELETE /users/{id}/hard-delete
+GET    /users/{id}/detail
+GET    /users/{id}/active-role
+GET    /users/{id}/roles
+POST   /users/{id}/roles/{role}
+DELETE /users/{id}/roles/{role}
+POST   /users/{id}/promote-chef
+POST   /users/{id}/demote-chef
+PATCH  /users/{id}/activate
+PATCH  /users/{id}/deactivate
+PATCH  /users/{id}/restore
+PATCH  /users/{id}/promote-faiseur
+GET    /users/{id}/faiseur-history
+GET    /users/search
+GET    /users/faiseur-workload
+GET    /users/evaluation-scores
+PUT    /users/me
+GET    /members/me/dashboard
+PUT    /members/me/profile
+GET    /members/me/events
+GET    /members/me/notes
+GET    /members/me/presences
+GET    /members/me/progression
+GET    /members/me/requests
+GET    /members/competences/mine
+GET    /members/competences/stats
+POST   /members/competences
+DELETE /members/competences/{id}
+GET    /members/presences/recent
+GET    /members/requests/inbox
+
+================================================================================
+MODULE: FAMILIES
+================================================================================
+
+GET    /families
+POST   /families
+GET    /families/{id}
+PUT    /families/{id}
+DELETE /families/{id}
+PATCH  /families/{id}/restore
+GET    /families/trash
+PUT    /families/{id}/risk-level
+
+================================================================================
+MODULE: GIVING / PAYMENTS
+================================================================================
+
+GET    /payments
+POST   /payments
+GET    /payments/{id}
+POST   /payments/{id}/cancel
+POST   /payments/recurring/{id}/cancel
+GET    /payments/recurring
+POST   /payments/recurring
+GET    /payments/stats
+GET    /payments/methods
+POST   /payments/intents
+GET    /payments/intents/{id}
+GET    /giving
+POST   /giving
+GET    /giving/stats
+GET    /giving/pledges
+POST   /giving/pledges
+GET    /giving/recurring
+POST   /giving/recurring
+
+================================================================================
+MODULE: TONTINES
+================================================================================
+
+GET    /tontines
+POST   /tontines
+GET    /tontines/{id}
+POST   /tontines/{id}/next-round
+POST   /tontines/{id}/contributions/{memberId}/pay
+
+================================================================================
+MODULE: VISITS
+================================================================================
+
+GET    /visits
+POST   /visits
+GET    /visits/{id}
+PUT    /visits/{id}
+DELETE /visits/{id}
+GET    /visits/upcoming
+GET    /pastoral-visits
+POST   /pastoral-visits/auto-generate
+POST   /pastoral-visits/{id}/reschedule
+
+================================================================================
+MODULE: NOTIFICATIONS
+================================================================================
+
+GET    /notifications
+GET    /notifications/unread-count
+PATCH  /notifications/{id}/read
+POST   /notifications/mark-all-read
+GET    /notifications/preferences
+PUT    /notifications/preferences
+
+================================================================================
+MODULE: PLATFORM
+================================================================================
+
+GET    /platform/menus
+POST   /platform/menus
+PUT    /platform/menus/{id}
+DELETE /platform/menus/{id}
+PUT    /platform/menus/{id}/toggle
+GET    /platform/gating
+GET    /platform/modules
+PUT    /platform/modules/{key}
+DELETE /platform/modules/{key}
+PUT    /platform/modules/{key}/edit
+GET    /platform/revisions
+GET    /platform/admin/menus
+
+================================================================================
+MODULE: DASHBOARD & ANALYTICS
+================================================================================
+
+GET    /dashboard/summary
+GET    /dashboard/kpi
+GET    /dashboard/my-metrics
+GET    /dashboard/pasteur
+GET    /dashboard/pasteur/kpis
+GET    /dashboard/presence-trend
+GET    /dashboard/report-completion
+GET    /dashboard/crm-faiseur
+GET    /dashboard/family-risk
+GET    /engagement-analytics/dashboard
+GET    /executive-insights/stats
+================================================================================
+MODULE: REPORTS
+================================================================================
+
+GET    /reports/maker-weekly
+GET    /reports/family-weekly
+PATCH  /reports/maker-weekly/urgent-aid/{reportId}/mark-treated
+
+================================================================================
+MODULE: EVALUATIONS
+================================================================================
+
+GET    /evaluations/me
+GET    /evaluations/all
+GET    /evaluations/to-evaluate
+PUT    /evaluations/{userId}
+
+================================================================================
+MODULE: TRANSFERS
+================================================================================
+
+GET    /transfers
+POST   /transfers
+GET    /transfers/{id}
+PUT    /transfers/{id}
+POST   /transfers/{id}/submit
+POST   /transfers/{id}/cancel
+POST   /transfers/{id}/archive
+GET    /transfers/{id}/history
+GET    /transfers/{id}/decisions
+GET    /transfers/configurations
+
+================================================================================
+MODULE: TRAININGS
+================================================================================
+
+GET    /trainings/courses
+POST   /trainings/courses
+GET    /trainings/courses/{id}
+PUT    /trainings/courses/{id}
+DELETE /trainings/courses/{id}
+POST   /trainings/courses/{courseId}/enroll
+GET    /trainings/courses/{selectedId}/modules
+POST   /trainings/courses/{courseId}/modules/{moduleId}/complete
+GET    /trainings/modules/{activeModule}/quiz
+GET    /trainings/my-enrollments
+GET    /trainings/my-certificates
+GET    /trainings/stats
+
+================================================================================
+MODULE: INVENTORY
+================================================================================
+
+GET    /inventory
+POST   /inventory
+GET    /inventory/{id}
+PUT    /inventory/{id}
+DELETE /inventory/{id}
+GET    /inventory/stats
+GET    /inventory/alerts
+POST   /inventory/{id}/maintenance
+POST   /inventory/{id}/unassign
+
+================================================================================
+MODULE: FINANCE
+================================================================================
+
+GET    /finances/transactions
+POST   /finances/transactions
+PUT    /finances/transactions/{id}
+DELETE /finances/transactions/{id}
+GET    /finances/budgets
+POST   /finances/budgets
+PUT    /finances/budgets/{id}
+DELETE /finances/budgets/{id}
+GET    /finances/stats
+
+================================================================================
+MODULE: MARKETPLACE
+================================================================================
+
+GET    /marketplace
+POST   /marketplace
+GET    /marketplace/{id}
+DELETE /marketplace/{id}
+POST   /marketplace/{id}/install
+
+================================================================================
+MODULE: NETWORK
+================================================================================
+
+GET    /network/resources
+POST   /network/resources
+DELETE /network/resources/{resourceId}
+POST   /network/resources/{resourceId}/download
+GET    /network/events
+POST   /network/events
+POST   /network/events/{eventId}/join
+POST   /network/events/{eventId}/leave
+DELETE /network/events/{eventId}
+GET    /network/directory
+PUT    /network/directory/mine
+================================================================================
+MODULE: MESSAGING
+================================================================================
+
+GET    /messages/conversations
+POST   /messages/conversations
+PATCH  /messages/conversations/{convId}/read
+POST   /messages/conversations/{cId}/messages
+POST   /messages/conversations/{cId}/reply
+POST   /messages/conversations/{cId}/messages/enhanced
+POST   /messages/conversations/{cId}/voice
+GET    /messages/groups
+POST   /messages/groups
+POST   /messages/groups/{cId}/messages
+POST   /messages/groups/{cId}/voice
+POST   /messages/messages/{messageId}/reactions
+
+================================================================================
+MODULE: CALENDAR
+================================================================================
+
+GET    /calendar
+POST   /calendar/events
+GET    /calendar/{id}
+PUT    /calendar/{id}
+DELETE /calendar/{id}
+PUT    /calendar/{id}/status
+GET    /calendar/{id}/ical
+
+================================================================================
+MODULE: PRAYERS
+================================================================================
+
+GET    /prayers
+POST   /prayers
+GET    /prayers/{id}
+PUT    /prayers/{id}
+DELETE /prayers/{id}
+GET    /prayers/actions-de-grace
+GET    /prayer-journal
+POST   /prayer-journal
+PUT    /prayer-journal/{id}
+DELETE /prayer-journal/{id}
+PATCH  /prayer-journal/{id}/remembered
+GET    /prayer-journal/stats
+
+================================================================================
+MODULE: SERMONS
+================================================================================
+
+GET    /sermons
+POST   /sermons
+GET    /sermons/{id}
+PUT    /sermons/{id}
+DELETE /sermons/{id}
+POST   /sermons/{id}/transcribe
+GET    /sermons/stats
+GET    /sermons/translations
+
+================================================================================
+MODULE: ALERTS
+================================================================================
+
+GET    /alerts
+POST   /alerts
+GET    /alerts/{id}
+PATCH  /alerts/{id}/resolve
+POST   /alerts/{id}/acknowledge
+GET    /alerts/stats
+
+================================================================================
+MODULE: ANNOUNCEMENTS
+================================================================================
+
+GET    /announcements
+POST   /announcements
+GET    /announcements/{id}
+PUT    /announcements/{id}
+DELETE /announcements/{id}
+POST   /announcements/{id}/publish
+POST   /announcements/{id}/cancel
+
+================================================================================
+MODULE: BROADCAST
+================================================================================
+
+GET    /broadcast
+POST   /broadcast
+GET    /broadcast/{id}
+PATCH  /broadcast/{id}/send
+
+================================================================================
+MODULE: COMMUNICATIONS
+================================================================================
+
+GET    /communications
+POST   /communications
+GET    /communications/{id}
+PUT    /communications/{id}
+DELETE /communications/{id}
+GET    /communications/admin
+POST   /communications/admin
+PUT    /communications/admin/{id}
+DELETE /communications/admin/{id}
+POST   /communications/admin/{id}/publish
+
+================================================================================
+MODULE: FORMS
+================================================================================
+
+GET    /forms
+POST   /forms
+GET    /forms/{id}
+PUT    /forms/{id}
+DELETE /forms/{id}
+POST   /forms/{id}/publish
+POST   /forms/{id}/archive
+
+================================================================================
+MODULE: PAGES
+================================================================================
+
+GET    /pages
+POST   /pages
+GET    /pages/{id}
+PUT    /pages/{id}
+DELETE /pages/{id}
+POST   /pages/{id}/publish
+GET    /pages/sources
+
+================================================================================
+MODULE: SURVEYS
+================================================================================
+
+GET    /surveys
+POST   /surveys
+GET    /surveys/{id}
+PUT    /surveys/{id}
+DELETE /surveys/{id}
+
+================================================================================
+MODULE: TICKETS
+================================================================================
+
+GET    /tickets
+POST   /tickets
+GET    /tickets/{id}
+PUT    /tickets/{id}
+DELETE /tickets/{id}
+
+================================================================================
+MODULE: TESTIMONIES
+================================================================================
+
+GET    /testimonies
+POST   /testimonies
+GET    /testimonies/{id}
+PUT    /testimonies/{id}
+DELETE /testimonies/{id}
+POST   /testimonies/{id}/approve
+POST   /testimonies/{id}/reject
+POST   /testimonies/{id}/like
+================================================================================
+MODULE: WORKFLOW / AUTOMATIONS
+================================================================================
+
+GET    /workflow/automations
+POST   /workflow/automations
+PUT    /workflow/automations/{id}
+DELETE /workflow/automations/{id}
+PATCH  /workflow/automations/{id}/toggle
+GET    /automations
+GET    /automations/stats
+PATCH  /automations/{id}/toggle
+DELETE /automations/{id}
+
+================================================================================
+MODULE: MENTORING
+================================================================================
+
+GET    /mentoring
+POST   /mentoring
+GET    /mentoring/{id}
+PUT    /mentoring/{id}
+DELETE /mentoring/{id}
+PATCH  /mentoring/{id}/read
+GET    /mentoring/all
+GET    /mentoring/stats
+GET    /reverse-mentoring
+POST   /reverse-mentoring
+
+================================================================================
+MODULE: OBJECTIVES
+================================================================================
+
+GET    /objectives
+POST   /objectives
+GET    /objectives/{id}
+PUT    /objectives/{id}
+DELETE /objectives/{id}
+GET    /objectives/my-progress
+GET    /personal-objectives
+POST   /personal-objectives
+PUT    /personal-objectives/{id}
+DELETE /personal-objectives/{id}
+PATCH  /personal-objectives/{id}/progress
+GET    /personal-objectives/stats
+
+================================================================================
+MODULE: BADGES & QUESTS
+================================================================================
+
+GET    /badges/my
+GET    /badges/leaderboard
+POST   /badges/evaluate
+GET    /quest/contextual-badges
+GET    /quest/leaderboard/groups
+GET    /quest/stats
+GET    /quest/weekly-challenges
+
+================================================================================
+MODULE: REWARDS
+================================================================================
+
+GET    /rewards
+POST   /rewards
+GET    /rewards/{id}
+DELETE /rewards/{id}
+GET    /rewards/my-claims
+GET    /reward-certificates
+POST   /reward-certificates
+
+================================================================================
+MODULE: TENANTS
+================================================================================
+
+GET    /tenants
+POST   /tenants
+GET    /tenants/{id}
+PUT    /tenants/{id}
+DELETE /tenants/{id}
+
+================================================================================
+MODULE: SETTINGS & CONFIGURATION
+================================================================================
+
+GET    /settings
+PUT    /settings
+POST   /settings/reset
+GET    /public/settings
+GET    /public/meta
+POST   /public/demo-requests
+
+================================================================================
+MODULE: DIRECTORIES
+================================================================================
+
+GET    /directory
+GET    /directory/me
+PUT    /directory/me
+PATCH  /directory/me/toggle
+
+================================================================================
+MODULE: MAP & GEOLOCATION
+================================================================================
+
+GET    /map/heatmap
+GET    /map/sectors
+GET    /map/points
+
+================================================================================
+MODULE: HEALTH OBSERVATORY
+================================================================================
+
+GET    /health-observatory
+GET    /health-observatory/trend
+GET    /health-observatory/departments
+GET    /neighborhood-health
+
+================================================================================
+MODULE: INTELLIGENCE CENTER
+================================================================================
+
+GET    /intelligence
+GET    /intelligence/alerts
+GET    /intelligence/dashboard
+POST   /intelligence/initialize
+GET    /kpi-narrative
+
+================================================================================
+MODULE: COMPLIANCE & GDPR
+================================================================================
+
+GET    /compliance/gdpr
+POST   /compliance/gdpr/{id}/process
+GET    /compliance/exports
+GET    /compliance/stats
+GET    /compliance/audit-hash/verify
+GET    /compliance/portability/{userId}
+GET    /compliance/retention-policies
+POST   /compliance/retention-policies
+PUT    /compliance/retention-policies/{id}
+DELETE /compliance/retention-policies/{id}
+POST   /compliance/retention-policies/{id}/execute
+GET    /gdpr/requests
+POST   /gdpr/requests/{id}/process
+POST   /gdpr/requests/{id}/reject
+POST   /gdpr/delete
+POST   /gdpr/export
+================================================================================
+MODULE: CURRENCIES
+================================================================================
+
+GET    /currencies
+POST   /currencies
+GET    /currencies/{id}
+PUT    /currencies/{id}
+DELETE /currencies/{id}
+GET    /currencies/primary
+GET    /currencies/supported
+GET    /currencies/stats
+GET    /currencies/timezones
+
+================================================================================
+MODULE: DICTIONARIES
+================================================================================
+
+GET    /dictionaries
+POST   /dictionaries
+GET    /dictionaries/{id}
+PUT    /dictionaries/{id}
+DELETE /dictionaries/{id}
+
+================================================================================
+MODULE: BACKUPS
+================================================================================
+
+GET    /backups
+POST   /backups
+GET    /backups/{id}
+DELETE /backups/{id}
+POST   /backups/{id}/trigger
+POST   /backups/{id}/verify
+GET    /backups/restore-points
+
+================================================================================
+MODULE: DATA MIGRATION
+================================================================================
+
+GET    /data-migration
+POST   /data-migration
+GET    /data-migration/{id}
+POST   /data-migration/{id}/cancel
+
+================================================================================
+MODULE: CUSTOM FIELDS
+================================================================================
+
+GET    /custom-fields/definitions
+GET    /custom-fields/definitions/all
+POST   /custom-fields/definitions
+PUT    /custom-fields/definitions/{id}
+DELETE /custom-fields/definitions/{id}
+PUT    /custom-fields/{entiteType}/{entityId}
+
+================================================================================
+MODULE: PERMISSIONS & ROLES
+================================================================================
+
+GET    /permissions
+GET    /permissions/catalog
+GET    /permissions/roles
+POST   /permissions/roles
+PUT    /permissions/roles/{key}
+DELETE /permissions/roles/{key}
+PUT    /permissions/{role}/{permission}
+PUT    /permissions/{role}/{permission}/rwd
+
+================================================================================
+MODULE: PROGRAMS
+================================================================================
+
+GET    /programs
+POST   /programs
+GET    /programs/{id}
+PUT    /programs/{id}
+DELETE /programs/{id}
+GET    /programs/active
+
+================================================================================
+MODULE: TEAM TASKS
+================================================================================
+
+GET    /team-tasks
+POST   /team-tasks
+GET    /team-tasks/{id}
+PUT    /team-tasks/{id}
+DELETE /team-tasks/{id}
+
+================================================================================
+MODULE: TEAM GANTT
+================================================================================
+
+GET    /team-gantt
+POST   /team-gantt
+GET    /team-gantt/{id}
+PUT    /team-gantt/{id}
+DELETE /team-gantt/{id}
+
+================================================================================
+MODULE: SABBATH DASHBOARD
+================================================================================
+
+GET    /sabbath-dashboard
+
+================================================================================
+MODULE: GROWTH PROJECTIONS
+================================================================================
+
+GET    /growth-projections
+POST   /growth-projections
+GET    /growth-projections/{id}
+DELETE /growth-projections/{id}
+GET    /growth-projections/prophecy
+
+================================================================================
+MODULE: SUCCESSION PLANNING
+================================================================================
+
+GET    /succession
+POST   /succession
+GET    /succession/{id}
+PUT    /succession/{id}
+DELETE /succession/{id}
+
+================================================================================
+MODULE: PREDICTIONS & ML
+================================================================================
+
+GET    /predictions
+POST   /predictions
+GET    /predictions/{id}
+PUT    /predictions/{id}
+DELETE /predictions/{id}
+GET    /load-prediction
+
+================================================================================
+MODULE: ENCOURAGEMENTS
+================================================================================
+
+GET    /encouragements/my-team
+GET    /encouragements/received
+POST   /encouragements
+
+================================================================================
+MODULE: REFERRALS
+================================================================================
+
+GET    /referrals
+POST   /referrals
+GET    /referrals/{id}
+DELETE /referrals/{id}
+GET    /referrals/stats
+
+================================================================================
+MODULE: VOLUNTEERS
+================================================================================
+
+GET    /volunteers
+POST   /volunteers
+GET    /volunteers/{id}
+PUT    /volunteers/{id}
+DELETE /volunteers/{id}
+GET    /volunteers/stats
+================================================================================
+MODULE: WEEKLY CHALLENGES
+================================================================================
+
+GET    /weekly-challenges
+POST   /weekly-challenges
+GET    /weekly-challenges/my
+POST   /weekly-challenges/generate
+PUT    /weekly-challenges/{id}/progress
+
+================================================================================
+MODULE: SPIRITUAL JOURNEY
+================================================================================
+
+GET    /spiritual-journey
+POST   /spiritual-journey
+GET    /spiritual-journey/{id}
+PUT    /spiritual-journey/{id}
+DELETE /spiritual-journey/{id}
+
+================================================================================
+MODULE: SPIRITUAL CHALLENGES
+================================================================================
+
+GET    /spiritual-challenges
+POST   /spiritual-challenges
+GET    /spiritual-challenges/{id}
+PUT    /spiritual-challenges/{id}
+DELETE /spiritual-challenges/{id}
+
+================================================================================
+MODULE: SPIRITUAL JOURNALS
+================================================================================
+
+GET    /spiritual-journals
+POST   /spiritual-journals
+GET    /spiritual-journals/{id}
+PUT    /spiritual-journals/{id}
+DELETE /spiritual-journals/{id}
+POST   /spiritual-journals/{id}/toggle-favorite
+
+================================================================================
+MODULE: BIBLE READING
+================================================================================
+
+GET    /bible-reading/plans
+POST   /bible-reading/plans
+GET    /bible-reading/plans/{id}
+PUT    /bible-reading/plans/{id}
+DELETE /bible-reading/plans/{id}
+POST   /bible-reading/entries/{id}/mark-read
+
+================================================================================
+MODULE: CHURCH COMPARISONS
+================================================================================
+
+GET    /church-comparisons
+POST   /church-comparisons
+GET    /church-comparisons/{id}
+PUT    /church-comparisons/{id}
+DELETE /church-comparisons/{id}
+GET    /church-comparisons/{id}/benchmark
+GET    /church-comparisons/by-category/{category}
+GET    /church-comparisons/clusters
+
+================================================================================
+MODULE: EVANGELISM
+================================================================================
+
+GET    /evangelism/stats
+GET    /evangelism/souls
+PUT    /evangelism/souls/{soulId}
+
+================================================================================
+MODULE: MAKER TRACKING
+================================================================================
+
+GET    /maker-tracking
+POST   /maker-tracking
+GET    /maker-tracking/{id}
+PUT    /maker-tracking/{id}
+DELETE /maker-tracking/{id}
+
+================================================================================
+MODULE: FACE TEMPLATES
+================================================================================
+
+GET    /face/templates
+POST   /face/templates
+GET    /face/templates/{id}
+PUT    /face/templates/{id}
+DELETE /face/templates/{id}
+================================================================================
+MODULE: VOICE ASSISTANT
+================================================================================
+
+GET    /voice/commands
+GET    /voice/stt-status
+POST   /voice/process
+GET    /voice-reports/{id}/structured
+
+================================================================================
+MODULE: STREAMING
+================================================================================
+
+GET    /streams
+POST   /streams
+GET    /streams/{id}
+POST   /streams/{id}/go-live
+POST   /streams/{id}/end
+POST   /stream-chat/{streamId}
+
+================================================================================
+MODULE: CONNECTORS & INTEGRATIONS
+================================================================================
+
+GET    /connectors
+POST   /connectors
+PUT    /connectors
+DELETE /connectors
+GET    /whatsapp/config
+PUT    /whatsapp/config
+
+================================================================================
+MODULE: ONBOARDING
+================================================================================
+
+GET    /onboarding-wizard
+POST   /onboarding-wizard/complete
+
+================================================================================
+MODULE: LEAVE REQUESTS
+================================================================================
+
+GET    /leave-requests
+POST   /leave-requests
+GET    /leave-requests/{id}
+PUT    /leave-requests/{id}
+DELETE /leave-requests/{id}
+
+================================================================================
+MODULE: APPOINTMENTS
+================================================================================
+
+GET    /appointments/inbox
+GET    /appointments/my
+POST   /appointments
+GET    /appointments/{id}
+PUT    /appointments/{id}
+DELETE /appointments/{id}
+
+================================================================================
+MODULE: FILES
+================================================================================
+
+GET    /files
+POST   /files
+GET    /files/{id}
+DELETE /files/{id}
+
+================================================================================
+MODULE: INTERACTIONS
+================================================================================
+
+GET    /interactions
+POST   /interactions
+GET    /interactions/{id}
+DELETE /interactions/{id}
+
+================================================================================
+MODULE: CERCLE FAISEURS
+================================================================================
+
+GET    /cercle-faiseurs
+POST   /cercle-faiseurs
+GET    /cercle-faiseurs/{id}
+POST   /cercle-faiseurs/{id}/like
+
+================================================================================
+MODULE: DEPARTMENT KPIs
+================================================================================
+
+GET    /department-kpis
+
+================================================================================
+MODULE: TWIN (DIGITAL TWIN)
+================================================================================
+
+GET    /twin/snapshot
+
+================================================================================
+MODULE: FOLLOW-UP REQUESTS
+================================================================================
+
+GET    /follow-up-requests/assigned-to-me
+GET    /follow-up-requests/mine
+POST   /follow-up-requests
+
+================================================================================
+MODULE: FAMILY MEETINGS
+================================================================================
+
+GET    /family-meetings
+POST   /family-meetings
+POST   /family-meetings/{id}/complete
+
+================================================================================
+MODULE: DEVELOPMENT PLANS
+================================================================================
+
+POST   /development-plans/auto-generate
+
+================================================================================
+MODULE: DISCIPLESHIP PATHS
+================================================================================
+
+GET    /discipleship-paths
+POST   /discipleship-paths
+GET    /discipleship-paths/{id}
+POST   /discipleship-paths/{id}/advance
+
+================================================================================
+MODULE: CONTENT MODERATION
+================================================================================
+
+GET    /moderation
+GET    /moderation/pending
+GET    /moderation/stats
+PUT    /moderation/{id}/review
+
+================================================================================
+MODULE: EMERGENCY AID
+================================================================================
+
+GET    /aid/emergency/open
+POST   /aid/emergency/{id}/collect
+POST   /aid/emergency/{id}/resolve
+GET    /aid/exchange
+GET    /aid/exchange/rates
+
+================================================================================
+MODULE: AUDIT LOG
+================================================================================
+
+GET    /audit
+
+================================================================================
+MODULE: PASSPORTS
+================================================================================
+
+GET    /passports/{id}/qr
+POST   /passports/member/{memberId}
+POST   /passports/{id}/entries
+POST   /passports/{id}/revoke
+
+================================================================================
+END OF AUDIT
+================================================================================
+
+Notes:
+- All paths are prefixed with /api/v1 (the axios baseURL)
+- {id}, {deptId}, {userId}, etc. are path parameters
+- Query parameters are shown where they are statically defined in the frontend
+- SSE endpoint (/events/entity-changes) uses fetch() directly, not axios
+- The /auth/refresh endpoint uses axios directly (not the api instance) for token refresh
+- Some endpoints may accept additional query parameters not shown here
+DELETE /departments/{deptId}/teams/{teamId}

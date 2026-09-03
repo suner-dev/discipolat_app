@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useI18n } from '@/i18n';
-import { MessageCircle, Send, Image, Users, Search, Loader2, RefreshCw } from 'lucide-react';
+import { MessageCircle, Send, Image, Users, Search, Loader2, RefreshCw, BarChart3 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
@@ -24,14 +23,20 @@ interface Department {
   responsableId?: string;
 }
 
+interface GroupStats {
+  totalMessages: number;
+  activeMembers: number;
+  messagesThisWeek: number;
+  topSender?: string;
+}
+
 export default function GroupMessagesPage() {
-  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [newMsg, setNewMsg] = useState('');
   const [query, setQuery] = useState('');
+  const [showStats, setShowStats] = useState(false);
 
-  // Fetch departments from real API
   const { data: departments = [], isLoading: isLoadingDepts, error: deptsError } = useQuery({
     queryKey: ['departments-for-messages'],
     queryFn: async () => {
@@ -43,7 +48,6 @@ export default function GroupMessagesPage() {
 
   const activeGroup = departments.find(d => d.id === selectedGroup);
 
-  // Set first group as default when departments load
   useEffect(() => {
     if (departments.length > 0 && !selectedGroup) {
       setSelectedGroup(departments[0].id);
@@ -58,6 +62,17 @@ export default function GroupMessagesPage() {
       return res.data as GroupMsg[];
     },
     enabled: !!selectedGroup,
+    retry: false,
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['group-messages-stats', selectedGroup],
+    queryFn: async () => {
+      if (!selectedGroup) return null;
+      const res = await api.get(`/group-messages/group/${selectedGroup}/stats`);
+      return res.data as GroupStats;
+    },
+    enabled: !!selectedGroup && showStats,
     retry: false,
   });
 
@@ -100,7 +115,7 @@ export default function GroupMessagesPage() {
     <div className="flex h-[calc(100vh-120px)] gap-4 p-6">
       {/* Group list */}
       <div className="w-64 bg-white/5 backdrop-blur rounded-2xl border border-white/10 overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-white/10"><h2 className="text-white font-semibold flex items-center gap-2"><Users className="w-4 h-4" /> {t('groupMessages.groups') || 'Groupes'}</h2></div>
+        <div className="p-4 border-b border-white/10"><h2 className="text-white font-semibold flex items-center gap-2"><Users className="w-4 h-4" /> Groupes</h2></div>
         <div className="flex-1 overflow-y-auto">
           {isLoadingDepts ? (
             <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>
@@ -129,13 +144,30 @@ export default function GroupMessagesPage() {
       <div className="flex-1 bg-white/5 backdrop-blur rounded-2xl border border-white/10 flex flex-col">
         <div className="p-4 border-b border-white/10 flex items-center justify-between">
           <h3 className="text-white font-semibold">{activeGroup?.nom || 'Sélectionnez un groupe'}</h3>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechercher..."
-              className="bg-white/10 rounded-lg pl-9 pr-3 py-1.5 text-white text-sm placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500" />
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowStats(!showStats)} className="p-1.5 rounded-lg hover:bg-white/10 transition" title="Statistiques">
+              <BarChart3 className="w-4 h-4 text-gray-400" />
+            </button>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)}
+                placeholder="Rechercher..."
+                className="bg-white/10 rounded-lg pl-9 pr-3 py-1.5 text-white text-sm placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
           </div>
         </div>
+
+        {showStats && stats && (
+          <div className="p-4 border-b border-white/10 bg-white/5">
+            <div className="grid grid-cols-4 gap-4 text-center">
+              <div><div className="text-lg font-bold text-white">{stats.totalMessages}</div><div className="text-xs text-gray-400">Messages</div></div>
+              <div><div className="text-lg font-bold text-white">{stats.activeMembers}</div><div className="text-xs text-gray-400">Membres actifs</div></div>
+              <div><div className="text-lg font-bold text-white">{stats.messagesThisWeek}</div><div className="text-xs text-gray-400">Cette semaine</div></div>
+              {stats.topSender && <div><div className="text-lg font-bold text-white truncate">{stats.topSender}</div><div className="text-xs text-gray-400">Top envoyeur</div></div>}
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-400" /></div>
@@ -162,7 +194,7 @@ export default function GroupMessagesPage() {
           <input value={newMsg} onChange={(e) => setNewMsg(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMutation.mutate()}
             className="flex-1 bg-white/10 rounded-xl px-4 py-2 text-white text-sm placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder={t('groupMessages.placeholder') || 'Écrire un message...'} />
+            placeholder="Écrire un message..." />
           <button className="p-2 text-gray-400 hover:text-white"><Image className="w-5 h-5" /></button>
           <button onClick={() => sendMutation.mutate()} className="p-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-white"><Send className="w-5 h-5" /></button>
         </div>
