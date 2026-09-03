@@ -4,7 +4,6 @@ import { formatEnum } from '@/lib/labels';
 import { useI18n } from '@/i18n';
 import { HelpCircle, Clock, CheckCircle, UserPlus, RefreshCw, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import apiRaw from '@/lib/apiRaw';
 import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
@@ -38,7 +37,7 @@ export default function ReverseMentoringPage() {
 
   const { data: requests = [], isLoading, error, refetch } = useQuery({
     queryKey: ['reverse-mentoring'],
-    queryFn: async () => (await apiRaw.get('/reverse-mentoring')).data as ReverseRequest[],
+    queryFn: async () => (await api.get('/reverse-mentoring')).data as ReverseRequest[],
     retry: false,
   });
 
@@ -48,7 +47,7 @@ export default function ReverseMentoringPage() {
   const acceptMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!hasCurrentId) throw new Error('Identifiant mentor manquant (userId).');
-      return (await apiRaw.post(`/reverse-mentoring/${id}/accept`, { mentorId: currentId })).data;
+      return (await api.post(`/reverse-mentoring/${id}/accept`, { mentorId: currentId })).data;
     },
     onSuccess: () => { toast.success('Demande acceptée'); queryClient.invalidateQueries({ queryKey: ['reverse-mentoring'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),

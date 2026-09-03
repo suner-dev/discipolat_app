@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useI18n } from '@/i18n';
-import apiRaw from '@/lib/apiRaw';
+import api from '@/lib/api';
 import { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
@@ -22,7 +22,7 @@ export default function AiVisitNotesPage() {
 
   const { data: notes = [], isLoading, error } = useQuery({
     queryKey: ['ai-visit-notes'],
-    queryFn: async () => (await apiRaw.get('/ai-visit-notes')).data as VisitNote[],
+    queryFn: async () => (await api.get('/ai-visit-notes')).data as VisitNote[],
     retry: false,
   });
 

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useI18n } from '@/i18n';
 import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import apiRaw from '@/lib/apiRaw';
+import api from '@/lib/api';
 import { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
@@ -34,11 +34,9 @@ const CONFIDENCE_LABEL: Record<string, string> = {
 export default function PredictionsMLPage() {
   const { t } = useI18n();
 
-  // NOTE : le contrôleur backend des prédictions est /api/predictions (sans /v1),
-  // c'est pourquoi on utilise `apiRaw` (baseURL /api) pour le GET.
   const { data: predictions = [], isLoading, error } = useQuery({
     queryKey: ['ml-predictions'],
-    queryFn: async () => (await apiRaw.get('/predictions')).data as Prediction[],
+    queryFn: async () => (await api.get('/predictions')).data as Prediction[],
     retry: false,
   });
 

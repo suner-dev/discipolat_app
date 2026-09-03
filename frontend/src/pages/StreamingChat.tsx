@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, MessageCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import apiRaw from '@/lib/apiRaw';
+import api from '@/lib/api';
 
 interface ChatMessage {
   id: string;
@@ -27,7 +27,7 @@ export default function StreamingChat({ streamId }: StreamingChatProps) {
     queryKey: ['stream-chat', streamId],
     queryFn: async () => {
       if (!streamId) return [];
-      const res = await apiRaw.get(`/stream-chat/${streamId}`);
+      const res = await api.get(`/stream-chat/${streamId}`);
       return Array.isArray(res.data) ? res.data : [];
     },
     enabled: !!streamId,
@@ -38,7 +38,7 @@ export default function StreamingChat({ streamId }: StreamingChatProps) {
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       if (!streamId) return;
-      await apiRaw.post(`/stream-chat/${streamId}`, {
+      await api.post(`/stream-chat/${streamId}`, {
         content,
         senderName: 'Vous',
       });
@@ -52,7 +52,7 @@ export default function StreamingChat({ streamId }: StreamingChatProps) {
   const sendReactionMutation = useMutation({
     mutationFn: async (emoji: string) => {
       if (!streamId) return;
-      await apiRaw.post(`/stream-chat/${streamId}`, {
+      await api.post(`/stream-chat/${streamId}`, {
         content: emoji,
         emoji,
         senderName: 'Vous',
@@ -68,7 +68,7 @@ export default function StreamingChat({ streamId }: StreamingChatProps) {
     queryKey: ['stream-viewers', streamId],
     queryFn: async () => {
       if (!streamId) return { count: 0 };
-      const res = await apiRaw.get(`/stream-chat/${streamId}/count`);
+      const res = await api.get(`/stream-chat/${streamId}/count`);
       return res.data;
     },
     enabled: !!streamId,
