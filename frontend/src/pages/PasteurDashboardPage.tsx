@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/i18n';
 import { useExportReport } from '@/hooks/useExportReport';
 import {
   Church, Heart, Users, Building2, FileText, Bell, ArrowLeftRight,
@@ -48,6 +49,7 @@ const getGreeting = () => {
 };
 
 export default function PasteurDashboardPage() {
+  const { locale } = useI18n();
   const { user } = useAuth();
   const { exportReport, isExporting } = useExportReport();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -93,7 +95,7 @@ export default function PasteurDashboardPage() {
             <span className="text-gradient font-display">Pasteur</span>
           </h1>
           <p className="page-subtitle">
-            Vision 360° de l'église · {new Date().toLocaleDateString('fr-FR', {
+            Vision 360° de l'église · {new Date().toLocaleDateString(locale, {
               weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             })}
           </p>

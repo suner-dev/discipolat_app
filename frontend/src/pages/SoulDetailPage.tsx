@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/i18n';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Soul, MakerReport, SoulHistoryEntry, SoulNote, Interaction, InteractionType, SpiritualScore, ScoreHistoryPoint, SpiritualScoreDetail, AiAnalysis, CreateInteractionRequest } from '@/types';
 import { SPIRITUAL_AXIS_LABELS } from '@/types';
@@ -41,6 +42,7 @@ const TYPE_STYLES: Record<string, string> = {
 };
 
 export default function SoulDetailPage() {
+  const { locale } = useI18n();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const dictionaries = useDictionaries();
@@ -521,9 +523,9 @@ export default function SoulDetailPage() {
                     { icon: Mail, label: 'Email', value: soul.email },
                     { icon: Phone, label: 'Téléphone', value: soul.telephone },
                     { icon: MapPin, label: 'Adresse', value: soul.adresse },
-                    { icon: Calendar, label: 'Date de naissance', value: soul.dateNaissance ? new Date(soul.dateNaissance).toLocaleDateString('fr-FR') : undefined },
+                    { icon: Calendar, label: 'Date de naissance', value: soul.dateNaissance ? new Date(soul.dateNaissance).toLocaleDateString(locale) : undefined },
                     { icon: Briefcase, label: 'Profession', value: soul.profession },
-                    { icon: Calendar, label: "Date d'intégration", value: new Date(soul.dateIntegration).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) },
+                    { icon: Calendar, label: "Date d'intégration", value: new Date(soul.dateIntegration).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) },
                   ].filter(f => f.value).map(field => (
                     <div key={field.label} className="flex items-start gap-3 p-3 rounded-xl bg-white/30 dark:bg-gray-800/30">
                       <field.icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
@@ -548,11 +550,11 @@ export default function SoulDetailPage() {
                   </div>
                   {soul.dateConversion && <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                     <p className="text-xs text-gray-400 mb-1">Date de conversion</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{new Date(soul.dateConversion).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{new Date(soul.dateConversion).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                   </div>}
                   {soul.dateDernierContact && <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                     <p className="text-xs text-gray-400 mb-1">Dernier contact</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{new Date(soul.dateDernierContact).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{new Date(soul.dateDernierContact).toLocaleDateString(locale, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</p>
                   </div>}
                 </div>
               </div>
@@ -651,7 +653,7 @@ export default function SoulDetailPage() {
                         <div className="p-3.5 rounded-xl bg-white/30 dark:bg-gray-800/30 hover:bg-white/40 dark:hover:bg-gray-800/40 transition-colors">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{entry.typeEvenement}</span>
-                            <span className="text-[10px] text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(entry.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-[10px] text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(entry.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
                           {entry.description && <p className="text-sm text-gray-600 dark:text-gray-400">{entry.description}</p>}
                           {(entry.ancienStatut || entry.nouveauStatut) && (
@@ -698,7 +700,7 @@ export default function SoulDetailPage() {
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs text-gray-400">{note.auteurId?.slice(0, 12)}...</span>
-                            <span className="text-[10px] text-gray-400">{new Date(note.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-[10px] text-gray-400">{new Date(note.dateCreation).toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
                           <p className="text-sm text-gray-700 dark:text-gray-300">{note.contenu}</p>
                         </div>
@@ -726,7 +728,7 @@ export default function SoulDetailPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            Semaine du {new Date(report.semaine).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            Semaine du {new Date(report.semaine).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}
                           </p>
                           <span className="text-[10px] text-gray-400">{report.soumis ? 'Soumis' : 'Brouillon'}</span>
                         </div>
@@ -872,7 +874,7 @@ export default function SoulDetailPage() {
                           <div className="flex items-center gap-2 text-[10px] text-gray-400 mb-1">
                             <span className="font-medium">{disciplineLabel(d.categorie)}</span>
                             <span>•</span>
-                            <span>{new Date(d.dateEvenement).toLocaleDateString('fr-FR')}</span>
+                            <span>{new Date(d.dateEvenement).toLocaleDateString(locale)}</span>
                             {d.resolu ? (
                               <span className="text-green-600 flex items-center gap-0.5">
                                 <CheckCircle2 className="w-3 h-3" /> Résolu
@@ -981,7 +983,7 @@ export default function SoulDetailPage() {
                             {interaction.canal && <span className="text-[10px] text-gray-400 uppercase tracking-wider">{interaction.canal}</span>}
                             <span className="text-[10px] text-gray-400 flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              {new Date(interaction.dateInteraction || interaction.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              {new Date(interaction.dateInteraction || interaction.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                           {interaction.objet && <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{interaction.objet}</p>}
@@ -1025,11 +1027,11 @@ export default function SoulDetailPage() {
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10 dark:border-white/[0.04]">
                 <span className="text-xs text-gray-400">Intégration</span>
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{new Date(soul.dateIntegration).toLocaleDateString('fr-FR')}</span>
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{new Date(soul.dateIntegration).toLocaleDateString(locale)}</span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-xs text-gray-400">Dernier contact</span>
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{soul.dateDernierContact ? new Date(soul.dateDernierContact).toLocaleDateString('fr-FR') : '-'}</span>
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{soul.dateDernierContact ? new Date(soul.dateDernierContact).toLocaleDateString(locale) : '-'}</span>
               </div>
             </div>
           </div>
@@ -1113,7 +1115,7 @@ export default function SoulDetailPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{score.label}</p>
-                    <p className="text-[10px] text-gray-400">Semaine du {new Date(score.semaine).toLocaleDateString('fr-FR')}</p>
+                    <p className="text-[10px] text-gray-400">Semaine du {new Date(score.semaine).toLocaleDateString(locale)}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
