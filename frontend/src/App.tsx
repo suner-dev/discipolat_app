@@ -16,6 +16,7 @@ import { useUsageTracking } from '@/hooks/useUsageTracking';
  * ========================================================================== */
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 const TwoFactorChallengePage = lazy(() => import('@/pages/TwoFactorChallengePage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
@@ -318,6 +319,7 @@ export default function App() {
         {/* Auth routes */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />
@@ -618,7 +620,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/users" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
               <UsersPage />
             </ProtectedRoute>
           } />

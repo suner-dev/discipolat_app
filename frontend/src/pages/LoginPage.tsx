@@ -333,13 +333,21 @@ export default function LoginPage() {
           )}
         </button>
 
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-3">
           <Link
             to="/forgot-password"
             className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors group"
           >
             <HelpCircle className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
             Mot de passe oublié ?
+          </Link>
+
+          <Link
+            to="/register"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+          >
+            {t('auth.noAccount')}{" "}
+            <span className="text-primary-500 font-medium">{t('auth.createAccount')}</span>
           </Link>
         </div>
 

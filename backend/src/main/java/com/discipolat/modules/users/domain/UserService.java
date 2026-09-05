@@ -220,11 +220,13 @@ public class UserService {
         if (securityUtils.isSuperUser()) return;
         UUID currentUserId = securityUtils.getCurrentUserId();
         if (target.getId().equals(currentUserId)) return;
-        if (securityUtils.hasActiveRole("RESPONSABLE")) {
-            Set<UUID> accessibleFaiseurIds = workspaceScopeService.accessibleFaiseurIds();
-            if (accessibleFaiseurIds.contains(target.getId())) return;
-        }
-        throw new com.discipolat.common.exception.ForbiddenException("You do not have access to this user");
+        // L'annuaire des utilisateurs est visible par tous les rôles du tenant
+        // (chacun voit les membres, chefs de famille, faiseurs, responsables…).
+        // L'isolation inter-tenant reste garantie par le filtre Hibernate :
+        // un utilisateur d'un autre tenant ne peut jamais atteindre ce code
+        // avec un profil du tenant voisin.
+        // Seules les actions d'écriture restent restreintes au RBAC.
+        return;
     }
 
     @Transactional(readOnly = true)

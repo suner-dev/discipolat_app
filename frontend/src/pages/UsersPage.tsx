@@ -49,10 +49,12 @@ export default function UsersPage() {
   const { user } = useAuth();
   const dictionaries = useDictionaries();
   const isResponsable = user?.activeRole === 'RESPONSABLE';
+  const canManageRoles = user?.role === 'ADMIN' || user?.role === 'PASTEUR' ||
+    user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR';
   const [page, setPage] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [actionModal, setActionModal] = useState<'' | 'detail' | 'promote' | 'demote' | 'transfer' | 'history' | 'hardDelete'>('');
+  const [actionModal, setActionModal] = useState<'' | 'detail' | 'promote' | 'demote' | 'roles' | 'transfer' | 'history' | 'hardDelete'>('');
   const [transferFamilleId, setTransferFamilleId] = useState('');
   const [transferAmes, setTransferAmes] = useState(false);
   const [demoteRole, setDemoteRole] = useState('RESPONSABLE');
@@ -193,6 +195,35 @@ export default function UsersPage() {
       }
       setActionModal('');
       setSelectedUser(null);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const roleMutation = useMutation({
+    mutationFn: async ({ id, role, action }: { id: string; role: import('@/types').UserRole; action: 'add' | 'remove' }) => {
+      if (action === 'add') {
+        await api.post(`/users/${id}/roles`, { role });
+      } else {
+        await api.delete(`/users/${id}/roles/${role}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Rôles mis à jour');
+      // Re-fetch the selected user to refresh its roles list
+      const u = data?.content.find((x) => x.id === selectedUser?.id);
+      if (u) setSelectedUser({ ...u });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const setActiveRoleMutation = useMutation({
+    mutationFn: async ({ id, activeRole }: { id: string; activeRole: string }) => {
+      await api.patch(`/users/${id}/active-role`, { activeRole });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Rôle actif mis à jour');
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -481,6 +512,15 @@ export default function UsersPage() {
               title="Promouvoir Faiseur"
             >
               <ArrowUp className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {canManageRoles && (
+            <button
+              onClick={() => { setSelectedUser(user); setActionModal('roles'); }}
+              className="p-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/20 text-indigo-600 hover:text-indigo-700 transition-colors"
+              title="Gérer les rôles (attribuer / rétrograder)"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
             </button>
           )}
           <button
@@ -805,6 +845,90 @@ export default function UsersPage() {
                 {demoteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDown className="w-4 h-4" />}
                 Rétrograder
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Roles management modal — attribuer / rétrograder n'importe quel rôle */}
+      {actionModal === 'roles' && selectedUser && (
+        <div className="modal-overlay" onClick={() => { setActionModal(''); setSelectedUser(null); }}>
+          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Gérer les rôles</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{selectedUser.firstName} {selectedUser.lastName} — {selectedUser.email}</p>
+              </div>
+              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            <div className="modal-body space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Attribuez ou retirez des rôles. Tout compte démarre en <strong>Membre</strong> ; un
+                pasteur ou administrateur peut promouvoir puis rétrograder à tout moment.
+              </p>
+
+              {/* Current roles */}
+              <div className="space-y-2">
+                {(selectedUser.roles && selectedUser.roles.length > 0 ? selectedUser.roles : [selectedUser.role]).map((r) => (
+                  <div key={r} className="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
+                    <div className="flex items-center gap-2">
+                      <span className={`badge ${ROLE_BADGES[r] || 'badge-gray'}`}>{ROLE_FALLBACK[r] || r}</span>
+                      {selectedUser.activeRole === r && (
+                        <span className="badge badge-info">Actif</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {r !== 'ADMIN' && (
+                        <>
+                          <button
+                            onClick={() => selectedUser.activeRole !== r && setActiveRoleMutation.mutate({ id: selectedUser.id, activeRole: r })}
+                            disabled={selectedUser.activeRole === r || setActiveRoleMutation.isPending}
+                            className="p-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/20 text-blue-600 transition-colors disabled:opacity-40"
+                            title="Définir comme rôle actif"
+                          >
+                            <Shield className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => roleMutation.mutate({ id: selectedUser.id, role: r, action: 'remove' })}
+                            disabled={roleMutation.isPending}
+                            className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 transition-colors disabled:opacity-40"
+                            title="Retirer ce rôle"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add role */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attribuer un rôle</p>
+                <div className="flex flex-wrap gap-2">
+                  {((['MEMBRE', 'FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE', 'PASTEUR']) as import('@/types').UserRole[]).map((r) => {
+                    const has = (selectedUser.roles && selectedUser.roles.length > 0 ? selectedUser.roles : [selectedUser.role]).includes(r);
+                    if (has) return null;
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => roleMutation.mutate({ id: selectedUser.id, role: r, action: 'add' })}
+                        disabled={roleMutation.isPending}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium border border-primary-500/30 text-primary-600 dark:text-primary-400
+                                   hover:bg-primary-500/10 transition-colors disabled:opacity-40"
+                      >
+                        + {ROLE_FALLBACK[r] || r}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="btn-secondary btn-sm">Fermer</button>
             </div>
           </div>
         </div>

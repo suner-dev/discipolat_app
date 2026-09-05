@@ -6,6 +6,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'l10n/app_localizations.dart';
 import 'data/local/sync_service.dart';
 import 'data/local/database.dart';
+import 'data/local/locale_provider.dart';
 import 'data/models/branding.dart';
 import 'data/services/providers.dart';
 import 'presentation/widgets/glass_theme.dart';
@@ -43,6 +44,8 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
   @override
   void initState() {
     super.initState();
+    // Restaure la langue persistée (ou la langue système) dès le démarrage.
+    ref.read(localeProvider.notifier).init();
     _initAccessibilityServices();
     // Initialize push notifications
     try {
@@ -113,11 +116,8 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('fr'),
-        Locale('en'),
-        Locale('pt'),
-      ],
+      locale: ref.watch(localeProvider),
+      supportedLocales: kSupportedLocales,
             builder: (context, child) {
         return Column(
           children: [

@@ -7,12 +7,14 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import { usePlatformMeta } from '@/contexts/MetaContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/i18n';
 import { RealtimeSync } from '@/hooks/useRealtimeSync';
 import { FlaskConical, X } from 'lucide-react';
 
 const TESTER_BANNER_KEY = 'discipolat:tester-banner-dismissed';
 
 export default function MainLayout() {
+  const { t } = useI18n();
   const { branding } = useSettings();
   const { canAccessPath, isLoaded } = usePlatformConfig();
   const { meta } = usePlatformMeta();
@@ -52,11 +54,10 @@ export default function MainLayout() {
             <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-amber-500/25 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent">
               <FlaskConical className="w-4 h-4 text-amber-500 flex-shrink-0" />
               <p className="text-xs text-amber-700 dark:text-amber-300 flex-1">
-                <span className="font-semibold">Environnement de test public</span>
-                {' '}— toutes les données sont fictives. Rôle actif :{' '}
+                <span className="font-semibold">{t('layout.testerBannerTitle')}</span>
+                {' '}— {t('layout.testerBannerBody')}{' '}
                 <span className="font-semibold">{activeRole || user?.role || '—'}</span>
-                . Vous pouvez changer de rôle depuis votre profil, et signaler tout problème via le bouton
-                « Un retour ? » en bas à droite.
+                . {t('layout.testerBannerHint')}
               </p>
               <button
                 onClick={() => {
@@ -64,7 +65,7 @@ export default function MainLayout() {
                   setTesterBannerVisible(false);
                 }}
                 className="p-1 rounded-lg text-amber-600/70 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
-                aria-label="Masquer le bandeau"
+                aria-label={t('layout.testerBannerHide')}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -89,7 +90,7 @@ export default function MainLayout() {
             </p>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-soft" />
-              <span className="text-[10px] text-gray-400 dark:text-gray-500">Système opérationnel</span>
+              <span className="text-[10px] text-gray-400 dark:text-gray-500">{t('layout.systemOperational')}</span>
             </div>
           </div>
         </footer>

@@ -48,6 +48,26 @@ public class AuthController {
                 .body(response);
     }
 
+    /**
+     * Public self-registration: creates an account with the MEMBRE role.
+     * An admin or pasteur can then assign other roles (and demote) via the
+     * users API. Rate-limited per IP to prevent abuse.
+     */
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+        String clientIp = PerIpRateLimiter.extractClientIp(httpRequest);
+        RateLimitResult rl = rateLimiter.tryConsumeRegister(clientIp);
+        if (!rl.allowed()) {
+            return rateLimitedResponse(rl);
+        }
+
+        authService.register(request.email(), request.password(), request.firstName(), request.lastName(), request.phone());
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "message", "Account created. Check your email to activate it.",
+                "role", "MEMBRE"
+        ));
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest request, HttpServletRequest httpRequest) {
         String clientIp = PerIpRateLimiter.extractClientIp(httpRequest);

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/local/locale_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
@@ -46,6 +48,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout() async {
     await _apiService.clearTokens();
     if (mounted) context.go('/login');
+  }
+
+  void _showLanguagePicker() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogContext).language),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: kSupportedLocales.map((loc) {
+            final code = loc.languageCode;
+            final isSelected =
+                AppLocalizations.of(dialogContext).locale.languageCode == code;
+            return ListTile(
+              leading: Icon(
+                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: isSelected ? Colors.green : Colors.white38,
+              ),
+              title: Text(kLocaleNames[code] ?? code),
+              onTap: () {
+                ProviderScope.containerOf(dialogContext, listen: false)
+                    .read(localeProvider.notifier)
+                    .setLocale(code);
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(AppLocalizations.of(context).languageChanged)),
+                );
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -146,6 +181,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(AppLocalizations.of(context).profileQuickActions, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 12),
                           _actionRow(Icons.security, AppLocalizations.of(context).securityTitle, () => context.go('/security-settings')),
+                          const GlassDivider(),
+                          _actionRow(Icons.language, AppLocalizations.of(context).language, () => _showLanguagePicker()),
                         ],
                       ),
                     ),

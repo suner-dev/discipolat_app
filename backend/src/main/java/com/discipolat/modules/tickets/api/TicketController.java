@@ -21,9 +21,11 @@ import java.util.UUID;
 public class TicketController {
 
     private final TicketService ticketService;
+    private final SecurityUtils securityUtils;
 
-    public TicketController(TicketService ticketService) {
+    public TicketController(TicketService ticketService, SecurityUtils securityUtils) {
         this.ticketService = ticketService;
+        this.securityUtils = securityUtils;
     }
 
     @GetMapping
@@ -43,7 +45,7 @@ public class TicketController {
         UUID currentUserId = SecurityUtils.getCurrentUserId();
         Ticket ticket = ticketService.getById(id);
         // Ownership check: verify the ticket belongs to the authenticated user or user has admin role
-        if (!ticket.getUserId().equals(currentUserId) && !SecurityUtils.isSuperUser()) {
+        if (!ticket.getCreePar().equals(currentUserId) && !securityUtils.isSuperUser()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(ticket);

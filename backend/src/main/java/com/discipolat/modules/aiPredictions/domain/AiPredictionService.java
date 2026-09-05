@@ -75,15 +75,15 @@ public class AiPredictionService {
         this.securityUtils = securityUtils;
     }
 
-    public List<AiPrediction> listByTenant(Long tenantId) {
+    public List<AiPrediction> listByTenant(UUID tenantId) {
         return repository.findByTenantIdOrderByCreatedAtDesc(tenantId);
     }
 
-    public List<AiPrediction> listByType(Long tenantId, AiPrediction.PredictionType type) {
+    public List<AiPrediction> listByType(UUID tenantId, AiPrediction.PredictionType type) {
         return repository.findByTenantIdAndPredictionType(tenantId, type);
     }
 
-    public List<AiPrediction> listRisks(Long tenantId) {
+    public List<AiPrediction> listRisks(UUID tenantId) {
         return repository.findByTenantIdAndRiskLevelIn(tenantId,
                 List.of(AiPrediction.RiskLevel.HIGH, AiPrediction.RiskLevel.CRITICAL));
     }
@@ -107,7 +107,7 @@ public class AiPredictionService {
 
     /* ==================== INTERNAL ==================== */
 
-    private List<AiPrediction> computeAndStore(Long tenantId) {
+    private List<AiPrediction> computeAndStore(UUID tenantId) {
         LocalDate now = LocalDate.now();
 
         // --- Données réelles de l'église ---

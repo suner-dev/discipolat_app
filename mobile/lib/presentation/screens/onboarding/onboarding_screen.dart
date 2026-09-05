@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../data/local/locale_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
 
@@ -163,16 +165,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           color: isDark ? Colors.white : const Color(0xFF111827),
                         ),
                       ),
-                      // Sélecteur de langue
+                      // Sélecteur de langue — applique immédiatement la langue
+                      // choisie à toute l'application (localeProvider persistant).
                       PopupMenuButton<String>(
                         initialValue: l.locale.languageCode,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        onSelected: (code) {},
-                        itemBuilder: (context) => ['fr', 'en', 'pt'].map((code) {
-                          const names = {'fr': '🇫🇷 Français', 'en': '🇬🇧 English', 'pt': '🇵🇹 Português'};
+                        onSelected: (code) => ProviderScope
+                            .containerOf(context, listen: false)
+                            .read(localeProvider.notifier)
+                            .setLocale(code),
+                        itemBuilder: (context) => kSupportedLocales.map((loc) {
+                          final code = loc.languageCode;
                           return PopupMenuItem<String>(
                             value: code,
-                            child: Text(names[code]!),
+                            child: Text(kLocaleNames[code] ?? code),
                           );
                         }).toList(),
                         child: Container(

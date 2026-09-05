@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/i18n';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import type {
@@ -92,17 +93,18 @@ const tauxPresence = (p: MemberPresence) => {
   return Math.round((entries.filter(([, v]) => v).length * 100) / entries.length);
 };
 
-const getGreeting = () => {
+const getGreeting = (t: (k: string) => string) => {
   const h = new Date().getHours();
-  if (h < 12) return 'Bonjour';
-  if (h < 17) return 'Bon après-midi';
-  return 'Bonsoir';
+  if (h < 12) return t('member.greetingMorning');
+  if (h < 17) return t('member.greetingAfternoon');
+  return t('member.greetingEvening');
 };
 
 const initials = (p?: MemberDashboard['user']) =>
   `${p?.firstName?.[0] || ''}${p?.lastName?.[0] || ''}`.toUpperCase() || '👤';
 
 export default function MemberDashboardPage() {
+  const { t, locale } = useI18n();
   const { user, activeRole } = useAuth();
   const dictionaries = useDictionaries();
   const canManage = activeRole === 'MEMBRE'; // Les autres rôles voient en lecture seule
@@ -124,7 +126,7 @@ export default function MemberDashboardPage() {
       return res.data as MemberDashboard;
     },
     onSuccess: () => {
-      toast.success('Vos informations ont été mises à jour ✨');
+      toast.success(t('member.updated'));
       setEditing(false);
       queryClient.invalidateQueries({ queryKey: ['members', 'me', 'dashboard'] });
     },
@@ -157,7 +159,7 @@ export default function MemberDashboardPage() {
       return res.data as MemberPresence;
     },
     onSuccess: () => {
-      toast.success('Votre présence a été enregistrée ✨');
+      toast.success(t('member.presenceSaved'));
       setPresenceNotes('');
       setPresenceForm({});
       setPresenceType('');
@@ -170,7 +172,7 @@ export default function MemberDashboardPage() {
   const submitPresence = () => {
     const selected = Object.values(presenceForm).filter(Boolean).length;
     if (selected === 0 && !presenceNotes.trim()) {
-      toast.error('Cochez au moins un programme ou ajoutez une note');
+      toast.error(t('member.checkProgram'));
       return;
     }
     presenceMutation.mutate({
@@ -201,7 +203,7 @@ export default function MemberDashboardPage() {
       return res.data as MemberRequest;
     },
     onSuccess: () => {
-      toast.success('Votre demande a été envoyée ✅');
+      toast.success(t('member.requestSent'));
       setRequestForm({ type: 'SUGGESTION', cible: 'PASTEUR', message: '', fichierIds: [] });
       queryClient.invalidateQueries({ queryKey: ['members', 'me', 'requests'] });
     },
@@ -210,7 +212,7 @@ export default function MemberDashboardPage() {
 
   const submitRequest = () => {
     if (!requestForm.message.trim()) {
-      toast.error('Écrivez votre message avant d\'envoyer');
+      toast.error(t('member.writeMessage'));
       return;
     }
     requestMutation.mutate(requestForm);
@@ -280,11 +282,11 @@ export default function MemberDashboardPage() {
             <X className="w-6 h-6 text-red-500" />
           </div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            Impossible de charger votre espace membre
+            {t('member.loadError')}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{getErrorMessage(error)}</p>
           <button onClick={() => queryClient.invalidateQueries({ queryKey: ['members', 'me', 'dashboard'] })} className="btn-primary btn-sm">
-            <Loader2 className="w-4 h-4" /> Réessayer
+            <Loader2 className="w-4 h-4" /> {t('member.retry')}
           </button>
         </div>
       </div>
@@ -297,12 +299,12 @@ export default function MemberDashboardPage() {
   const isParentCelibataire = form.situationFamiliale === 'PARENT_CELIBATAIRE';
 
   const infoRows = [
-    { icon: Cake, label: 'Âge', value: d.age != null ? `${d.age} ans` : '—' },
-    { icon: Calendar, label: 'Arrivée à l\'église', value: d.dateArriveeEglise ? new Date(d.dateArriveeEglise + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' },
-    { icon: GraduationCap, label: 'Niveau d\'étude', value: d.soul?.niveauEtude || '—' },
-    { icon: Briefcase, label: 'Profession', value: d.soul?.profession || '—' },
-    { icon: Heart, label: 'Situation familiale', value: d.user.situationFamiliale ? dictionaries.label('SITUATION_FAMILIALE', d.user.situationFamiliale) || SITUATION_FALLBACK[d.user.situationFamiliale] || d.user.situationFamiliale : '—' },
-    { icon: Users, label: 'Enfants', value: d.soul?.nbEnfants != null ? String(d.soul.nbEnfants) : '—' },
+    { icon: Cake, label: t('member.age'), value: d.age != null ? `${d.age} ${t('member.years')}` : '—' },
+    { icon: Calendar, label: t('member.churchArrival'), value: d.dateArriveeEglise ? new Date(d.dateArriveeEglise + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : '—' },
+    { icon: GraduationCap, label: t('member.education'), value: d.soul?.niveauEtude || '—' },
+    { icon: Briefcase, label: t('member.profession'), value: d.soul?.profession || '—' },
+    { icon: Heart, label: t('member.maritalStatus'), value: d.user.situationFamiliale ? dictionaries.label('SITUATION_FAMILIALE', d.user.situationFamiliale) || SITUATION_FALLBACK[d.user.situationFamiliale] || d.user.situationFamiliale : '—' },
+    { icon: Users, label: t('member.children'), value: d.soul?.nbEnfants != null ? String(d.soul.nbEnfants) : '—' },
   ];
 
   return (
@@ -313,32 +315,32 @@ export default function MemberDashboardPage() {
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-5 h-5 text-primary-500" />
             <span className="text-sm font-medium text-primary-600 dark:text-primary-400 uppercase tracking-wider">
-              {getGreeting()}, {d.user.firstName || 'cher membre'}
+              {getGreeting(t)}, {d.user.firstName || t('member.dearMember')}
             </span>
           </div>
           <h1 className="page-title">
-            Espace <span className="text-gradient font-display">Membre</span>
+            {t('member.space')} <span className="text-gradient font-display">{t('member.member')}</span>
           </h1>
           <p className="page-subtitle">
-            Vos informations, votre famille de disciple et vos départements
+            {t('member.subtitle')}
           </p>
         </div>
         {canManage && (
         <button onClick={openEdit} className="btn-glow btn-sm animate-scale-in">
-          <Edit3 className="w-4 h-4" /> Modifier mes informations
+          <Edit3 className="w-4 h-4" /> {t('member.editInfo')}
         </button>
         )}
       </div>
 
       {/* ===================== ACTIONS RAPIDES ===================== */}
       <div className="glass-card p-5 mb-6 animate-slide-up">
-        <div className="flex items-center gap-2 mb-3"><Zap className="w-4 h-4 text-primary-500" /><h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Accès rapides</h3></div>
+        <div className="flex items-center gap-2 mb-3"><Zap className="w-4 h-4 text-primary-500" /><h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('member.quickAccess')}</h3></div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
-            { href: '/events', icon: Calendar, label: 'Événements', color: 'from-blue-500 to-indigo-500' },
-            { href: '/prayers', icon: BookOpen, label: 'Prières', color: 'from-indigo-500 to-violet-500' },
-            { href: '/trainings', icon: GraduationCap, label: 'Formations', color: 'from-emerald-500 to-teal-500' },
-            { href: '/badges', icon: Trophy, label: 'Badges', color: 'from-amber-500 to-orange-500' },
+            { href: '/events', icon: Calendar, label: t('member.events'), color: 'from-blue-500 to-indigo-500' },
+            { href: '/prayers', icon: BookOpen, label: t('member.prayers'), color: 'from-indigo-500 to-violet-500' },
+            { href: '/trainings', icon: GraduationCap, label: t('member.trainings'), color: 'from-emerald-500 to-teal-500' },
+            { href: '/badges', icon: Trophy, label: t('member.badges'), color: 'from-amber-500 to-orange-500' },
           ].map((a) => (
             <Link key={a.href} to={a.href} className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/30 border border-gray-100 dark:border-gray-700/30 transition-all hover:shadow-md group">
               <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${a.color} text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}><a.icon className="w-4 h-4" /></div>
@@ -357,7 +359,7 @@ export default function MemberDashboardPage() {
             {d.user.photoUrl ? (
               <img
                 src={d.user.photoUrl}
-                alt="Photo de profil"
+                alt={t('member.profilePhoto')}
                 className="w-24 h-24 rounded-2xl object-cover shadow-glow ring-2 ring-primary-500/30"
               />
             ) : (
@@ -367,7 +369,7 @@ export default function MemberDashboardPage() {
             )}
             <button
               onClick={openEdit}
-              title="Ajouter / changer ma photo"
+              title={t('member.addChangePhoto')}
               className="absolute -bottom-2 -right-2 w-9 h-9 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md flex items-center justify-center hover:scale-110 transition-transform"
             >
               <Camera className="w-4 h-4 text-primary-600 dark:text-primary-400" />
@@ -389,10 +391,10 @@ export default function MemberDashboardPage() {
               {d.user.phone && <span className="inline-flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {d.user.phone}</span>}
             </div>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 max-w-xl leading-relaxed">
-              Votre statut est <strong className="text-gray-600 dark:text-gray-300">{statut.label.toLowerCase()}</strong>
+              {t('member.statutIs')} <strong className="text-gray-600 dark:text-gray-300">{statut.label.toLowerCase()}</strong>
               {d.estFaiseur
-                ? ' — vous accompagnez des disciples dans leur croissance.'
-                : ' — vous êtes accompagné(e) dans votre croissance spirituelle au sein de votre famille de disciple.'}
+                ? t('member.youAccompany')
+                : t('member.youAreAccompanied')}
             </p>
           </div>
         </div>
@@ -407,9 +409,9 @@ export default function MemberDashboardPage() {
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg">
                 <User className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Mes informations</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('member.myInfo')}</h3>
             </div>
-            <span className="badge-info text-[10px]">Profil personnel</span>
+            <span className="badge-info text-[10px]">{t('member.personalProfile')}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {infoRows.map((row, i) => (
@@ -436,12 +438,12 @@ export default function MemberDashboardPage() {
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg">
               <Users className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ma famille de disciple</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('member.myFamily')}</h3>
           </div>
           {d.famille ? (
             <div className="space-y-3">
               <div className="p-4 rounded-xl bg-violet-50/70 dark:bg-violet-900/10 border border-violet-200/50 dark:border-violet-800/30">
-                <p className="text-[11px] text-violet-500 font-medium uppercase tracking-wider">Famille</p>
+                <p className="text-[11px] text-violet-500 font-medium uppercase tracking-wider">{t('member.family')}</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100 font-display mt-0.5">{d.famille.nom}</p>
               </div>
               <div className="flex items-center gap-3 p-3.5 rounded-xl bg-white/40 dark:bg-gray-800/30">
@@ -449,7 +451,7 @@ export default function MemberDashboardPage() {
                   <UserCheck className="w-4 h-4 text-gold-600 dark:text-gold-400" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Chef de famille</p>
+                  <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">{t('member.familyHead')}</p>
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{d.famille.chefNom || '—'}</p>
                 </div>
               </div>
@@ -457,7 +459,7 @@ export default function MemberDashboardPage() {
           ) : (
             <div className="flex flex-col items-center py-8 text-center">
               <Users className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">Aucune famille associée</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('member.noFamily')}</p>
             </div>
           )}
         </div>
@@ -468,7 +470,7 @@ export default function MemberDashboardPage() {
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg">
               <UserCheck className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Mon encadrement</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('member.myGuidance')}</h3>
           </div>
           {d.faiseur ? (
             <div className="flex items-center gap-3 p-3.5 rounded-xl bg-white/40 dark:bg-gray-800/30 border border-white/40 dark:border-white/[0.04]">
@@ -478,15 +480,15 @@ export default function MemberDashboardPage() {
                 </span>
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Faiseur de disciples</p>
+                <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">{t('member.maker')}</p>
                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{d.faiseur.nom}</p>
-                <p className="text-[11px] text-gray-400">Votre accompagnateur</p>
+                <p className="text-[11px] text-gray-400">{t('member.yourGuide')}</p>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center py-8 text-center">
               <UserCheck className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">Aucun encadrant assigné</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('member.noGuide')}</p>
             </div>
           )}
         </div>
@@ -497,8 +499,8 @@ export default function MemberDashboardPage() {
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg">
               <Building2 className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Mes départements</h3>
-            <span className="badge-warning text-[10px]">{d.departements.length} actif{d.departements.length > 1 ? 's' : ''}</span>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('member.myDepartments')}</h3>
+            <span className="badge-warning text-[10px]">{d.departements.length} {t('member.active')}{d.departements.length > 1 ? 's' : ''}</span>
           </div>
           {d.departements.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -514,7 +516,7 @@ export default function MemberDashboardPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{dept.nom}</p>
                     <p className="text-xs text-gray-400 truncate">
-                      {dept.responsableNom ? `Responsable : ${dept.responsableNom}` : (dept.description || 'Ministère')}
+                      {dept.responsableNom ? `${t('member.responsable')} : ${dept.responsableNom}` : (dept.description || t('member.ministry'))}
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" />
@@ -524,7 +526,7 @@ export default function MemberDashboardPage() {
           ) : (
             <div className="flex flex-col items-center py-8 text-center">
               <Building2 className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">Aucun département pour le moment</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('member.noDepartment')}</p>
             </div>
           )}
         </div>

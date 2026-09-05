@@ -63,6 +63,40 @@ public class AuthService {
         }
     }
 
+    // ======================== SELF-REGISTRATION ========================
+
+    /**
+     * Public self-registration. Every new account starts with the MEMBRE
+     * role (everyone is a member first); an admin or pasteur later assigns
+     * additional roles (or demotes) through the users API. The tenant is
+     * resolved server-side: without a request tenant context the account is
+     * created in the default tenant (TenantAutoSetListener).
+     */
+    public User register(String email, String rawPassword, String firstName, String lastName, String phone) {
+        String normalizedEmail = email.trim().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new BusinessRuleException("Email already exists: " + normalizedEmail);
+        }
+
+        User user = User.builder()
+                .email(normalizedEmail)
+                .firstName(firstName != null ? firstName.trim() : null)
+                .lastName(lastName != null ? lastName.trim() : null)
+                .phone(phone != null ? phone.trim() : null)
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .role(UserRole.MEMBRE)
+                .roles(new HashSet<>(Set.of(UserRole.MEMBRE)))
+                .activeRole(UserRole.MEMBRE)
+                .statut(UserStatus.PENDING_ACTIVATION)
+                .estChefDeFamille(false)
+                .twoFactorEnabled(false)
+                .build();
+
+        User saved = userRepository.save(user);
+        sendActivationEmail(saved.getId());
+        return saved;
+    }
+
     // ======================== LOGIN ========================
 
     public AuthResult login(String email, String password) {

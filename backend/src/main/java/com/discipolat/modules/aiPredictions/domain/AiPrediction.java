@@ -43,7 +43,7 @@ public class AiPrediction {
     private RiskLevel riskLevel;
 
     @Column(name = "tenant_id", nullable = false)
-    private Long tenantId;
+    private UUID tenantId;
 
     @Column(name = "generated_by")
     private String generatedBy = "AI_ENGINE_V1";
@@ -87,8 +87,8 @@ public class AiPrediction {
     public void setExplanation(String explanation) { this.explanation = explanation; }
     public RiskLevel getRiskLevel() { return riskLevel; }
     public void setRiskLevel(RiskLevel riskLevel) { this.riskLevel = riskLevel; }
-    public Long getTenantId() { return tenantId; }
-    public void setTenantId(Long tenantId) { this.tenantId = tenantId; }
+    public UUID getTenantId() { return tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
     public String getGeneratedBy() { return generatedBy; }
     public void setGeneratedBy(String generatedBy) { this.generatedBy = generatedBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }

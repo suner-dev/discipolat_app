@@ -67,8 +67,14 @@ class _UsersListScreenState extends State<UsersListScreen> {
     setState(() => _isLoading = true);
     try {
       final usersRes = await _apiService.get('/users', params: {'size': '50'});
-      final workloadRes = await _apiService.get('/users/faiseur-workload');
       final users = (usersRes.data['content'] as List?) ?? [];
+      // La charge de travail n'est disponible que pour les rôles encadrants
+      // (ADMIN/PASTEUR/RESPONSABLE/CHEF_DE_FAMILLE) : best-effort pour les autres.
+      List<dynamic> workload = [];
+      try {
+        final workloadRes = await _apiService.get('/users/faiseur-workload');
+        workload = (workloadRes.data as List?) ?? [];
+      } catch (_) {/* best-effort : un membre n'a pas accès à la charge de travail */}
       Map<String, dynamic> evalScores = {};
       // Scores d'évaluation agrégés (une requête groupée pour toute la page).
       final ids = users.map((u) => (u as Map<String, dynamic>)['id']?.toString()).whereType<String>().toList();
@@ -81,7 +87,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
       }
       if (mounted) {
         _users = users;
-        _workload = (workloadRes.data as List?) ?? [];
+        _workload = workload;
         _evalScores = evalScores;
         setState(() => _isLoading = false);
       }
@@ -337,7 +343,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
               _actionBtn(Icons.history, () => _showActionModal(u, 'history'), const Color(0xFFA855F7), tooltip: l10n.usersListActionHistory),
             ],
           ]),
-          if (role == 'FAISEUR' || role == 'RESPONSABLE' || role == 'PASTEUR')
+          if (role == 'FAISEUR' || role == 'RESPONSABLE' || role == 'PASTEUR' || AuthState().hasAnyRole(['ADMIN', 'PASTEUR']))
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Row(children: [
@@ -346,9 +352,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
                   const SizedBox(width: 4),
                   _actionBtn(Icons.swap_horiz, () => _showActionModal(u, 'transfer'), Colors.blue),
                 ],
-                if (role != 'FAISEUR' && role != 'ADMIN') ...[
+                if (role != 'FAISEUR' && role != 'ADMIN' && !AuthState().hasAnyRole(['ADMIN', 'PASTEUR'])) ...[
                   const SizedBox(width: 4),
                   _actionBtn(Icons.arrow_upward, () => _showActionModal(u, 'promote'), Colors.green),
+                ],
+                if (AuthState().hasAnyRole(['ADMIN', 'PASTEUR'])) ...[
+                  const SizedBox(width: 4),
+                  _actionBtn(Icons.admin_panel_settings, () => _showActionModal(u, 'roles'), const Color(0xFF6366F1), tooltip: l10n.usersListActionRoles),
                 ],
                 const SizedBox(width: 4),
                 _actionBtn(Icons.delete_forever, () => _showActionModal(u, 'hardDelete'), Colors.red),
@@ -532,6 +542,7 @@ class _ActionModalState extends State<_ActionModal> {
                       : widget.action == 'demote' ? Icons.arrow_downward
                       : widget.action == 'transfer' ? Icons.swap_horiz
                       : widget.action == 'history' ? Icons.history
+                      : widget.action == 'roles' ? Icons.admin_panel_settings
                       : Icons.delete_forever,
                   color: widget.action == 'hardDelete' ? Colors.red : AppColors.primary, size: 20,
                 ),
@@ -541,6 +552,7 @@ class _ActionModalState extends State<_ActionModal> {
                       : widget.action == 'demote' ? l10n.usersListDemoteTitle
                       : widget.action == 'transfer' ? l10n.usersListTransferTitle
                       : widget.action == 'history' ? l10n.usersListHistoryTitle
+                      : widget.action == 'roles' ? l10n.usersListActionRoles
                       : l10n.usersListDeleteTitle,
                   style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
@@ -553,6 +565,8 @@ class _ActionModalState extends State<_ActionModal> {
                 ..._buildTransferContent()
               else if (widget.action == 'demote')
                 _buildDemoteContent(name)
+              else if (widget.action == 'roles')
+                _buildRolesContent()
               else
                 Text(
                   widget.action == 'promote'
@@ -561,7 +575,7 @@ class _ActionModalState extends State<_ActionModal> {
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
                 ),
 
-              if (widget.action != 'history') ...[
+              if (widget.action != 'history' && widget.action != 'roles') ...[
                 const SizedBox(height: 16),
                 Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                   TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.usersListAnnuler)),
@@ -580,6 +594,14 @@ class _ActionModalState extends State<_ActionModal> {
                     style: FilledButton.styleFrom(
                       backgroundColor: widget.action == 'hardDelete' ? Colors.red : AppColors.primary,
                     ),
+                  ),
+                ]),
+              ] else if (widget.action == 'roles') ...[
+                const SizedBox(height: 8),
+                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(l10n.usersListHistoryClose),
                   ),
                 ]),
               ] else ...[
@@ -838,5 +860,91 @@ class _ActionModalState extends State<_ActionModal> {
         onChanged: (v) => setState(() => _demoteRole = v ?? 'FAISEUR'),
       ),
     ]);
+  }
+
+  /// Gestion des rôles : lister / attribuer / retirer les rôles d'un compte.
+  Widget _buildRolesContent() {
+    final user = widget.user;
+    final currentRoles = (user['roles'] as List?)?.cast<String>().toList() ??
+        [user['role'] as String? ?? 'MEMBRE'];
+    final allRoles = ['MEMBRE', 'FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE', 'PASTEUR'];
+    final name = '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}';
+
+    return SizedBox(
+      height: 300,
+      child: SingleChildScrollView(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(
+            'Tout compte démarre en Membre — attribuez ou retirez des rôles pour $name.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          // Rôles actuels
+          ...currentRoles.map((r) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: (widget.roleLabels[r] != null ? const Color(0xFF14B8A6) : Colors.grey)
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(widget.roleLabels[r] ?? r,
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+              if (user['activeRole'] == r) ...[
+                const SizedBox(width: 6),
+                Text('Actif', style: TextStyle(color: AppColors.primaryLight, fontSize: 10)),
+              ],
+              const Spacer(),
+              if (r != 'ADMIN' && r != 'MEMBRE')
+                IconButton(
+                  onPressed: () => _toggleRole(r, remove: true),
+                  icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 18),
+                  tooltip: l10n.userDetailRemoveRole,
+                ),
+            ]),
+          )),
+          const Divider(color: Colors.white12, height: 20),
+          Text(l10n.userDetailAddRole,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: allRoles.map((r) {
+            final has = currentRoles.contains(r);
+            if (has) return const SizedBox.shrink();
+            return ActionChip(
+              backgroundColor: const Color(0xFF1E2A4A),
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
+              label: Text(widget.roleLabels[r] ?? r,
+                  style: const TextStyle(color: Colors.white, fontSize: 12)),
+              onPressed: () => _toggleRole(r),
+            );
+          }).toList()),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _toggleRole(String role, {bool remove = false}) async {
+    setState(() => _isProcessing = true);
+    try {
+      final id = widget.user['id'] as String;
+      if (remove) {
+        await widget.apiService.delete('/users/$id/roles/$role');
+      } else {
+        await widget.apiService.post('/users/$id/roles', data: {'role': role});
+      }
+      widget.onDone();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(remove ? l10n.userDetailRoleRemoved : l10n.userDetailRoleAdded),
+        ));
+      }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.usersListError)));
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
   }
 }

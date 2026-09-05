@@ -39,6 +39,7 @@ public class BenchmarkController {
     private final DepartmentRepository departmentRepository;
     private final FamilyRepository familyRepository;
     private final EventRepository eventRepository;
+    private final com.discipolat.modules.events.domain.EventRegistrationRepository eventRegistrationRepository;
     private final UserRepository userRepository;
 
     @GetMapping
@@ -179,8 +180,13 @@ public class BenchmarkController {
         List<Event> recentEvents = eventRepository.findByDateDebutBetween(
                 LocalDateTime.now().minusMonths(2), LocalDateTime.now());
         if (recentEvents.isEmpty()) return 50.0;
-        long totalRegistered = recentEvents.stream().mapToLong(e -> e.getNbInscrits() != null ? e.getNbInscrits() : 0).sum();
-        long totalPresent = recentEvents.stream().mapToLong(e -> e.getNbPresents() != null ? e.getNbPresents() : 0).sum();
+        long totalRegistered = recentEvents.stream()
+                .mapToLong(e -> e.getNbInscrits() != null ? e.getNbInscrits() : 0).sum();
+        // Présences réelles issues des émargements (statut PRESENT) : aucune
+        // valeur inventée — chaque présence est un enregistrement persisté.
+        long totalPresent = recentEvents.stream()
+                .mapToLong(e -> eventRegistrationRepository.countByEventIdAndStatutInscription(e.getId(), "PRESENT"))
+                .sum();
         return totalRegistered > 0 ? Math.round((double) totalPresent / totalRegistered * 1000.0) / 10.0 : 50.0;
     }
 

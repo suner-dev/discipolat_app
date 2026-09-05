@@ -257,6 +257,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     onPressed: _forgotPassword,
                     child: Text('Mot de passe oublié ?', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
                   ),
+                  const SizedBox(height: 4),
+
+                  // Create member account
+                  TextButton.icon(
+                    onPressed: () => context.go('/register'),
+                    icon: Icon(Icons.person_add_alt_1_rounded, size: 16, color: AppColors.primaryLight),
+                    label: Text(
+                      'Pas encore de compte ? Créer un compte',
+                      style: TextStyle(color: AppColors.primaryLight, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ),
 
                   const SizedBox(height: 24),
                   GlassDivider(),

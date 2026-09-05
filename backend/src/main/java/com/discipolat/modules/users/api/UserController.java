@@ -49,8 +49,14 @@ public class UserController {
         this.auditService = auditService;
     }
 
+    /**
+     * Annuaire des utilisateurs : visible par TOUS les rôles authentifiés.
+     * Chaque membre créé (membre, chef de famille, faiseur, responsable…) est
+     * visible par tout le monde — l'isolation reste garantie au niveau tenant
+     * (filtre Hibernate) et au niveau RBAC pour les actions d'écriture.
+     */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PageResponse<UserResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -70,22 +76,13 @@ public class UserController {
             users = userService.findAll(pageable);
         }
 
-        // FAISEUR: only see themselves and other FAISEURs (check active role)
+        // FAISEUR: only see themselves and other FAISEURs unless an explicit
+        // role filter is applied (they manage disciples, not the whole roster).
         String currentRole = securityUtils.getCurrentUserRole();
         boolean isFaiseurActive = "FAISEUR".equals(currentRole);
         boolean isOnlyFaiseur = userService.isOnlyRole(currentRole, "FAISEUR");
         if (isFaiseurActive && (role == null || !role.equals("FAISEUR"))) {
             users = userService.findByRolesContaining(UserRole.FAISEUR, pageable);
-        }
-
-        // Non super-utilisateur : restreindre aux faiseurs de l'espace métier + soi-même
-        if (!securityUtils.isSuperUser()) {
-            java.util.Set<UUID> accessible = new java.util.HashSet<>(workspaceScopeService.accessibleFaiseurIds());
-            accessible.add(securityUtils.getCurrentUserId());
-            java.util.List<User> scoped = users.getContent().stream()
-                    .filter(u -> accessible.contains(u.getId()))
-                    .toList();
-            users = new org.springframework.data.domain.PageImpl<>(scoped, pageable, scoped.size());
         }
 
         Page<UserResponse> response = users.map(UserResponse::from);
@@ -100,7 +97,7 @@ public class UserController {
 
     /** Recherche rapide d'utilisateurs (nom prénom / email) — consommé par le dashboard RGPD. */
     @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<UserResponse>> search(@RequestParam String q) {
         return ResponseEntity.ok(userService.search(q).stream().map(UserResponse::from).toList());
     }
@@ -113,7 +110,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE') or #id == authentication.principal")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> findById(@PathVariable UUID id) {
         User user = userService.findById(id);
         return ResponseEntity.ok(UserResponse.from(user));

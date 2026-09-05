@@ -1,5 +1,6 @@
 package com.discipolat.modules.authentication.domain;
 
+import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
@@ -162,6 +163,55 @@ class AuthServiceTest {
         assertThrows(BadCredentialsException.class, () ->
                 authService.refreshToken("invalid-token")
         );
+    }
+
+    @Test
+    void register_ShouldCreateMemberWithPendingActivationAndSendEmail() {
+        UUID newUserId = UUID.randomUUID();
+        when(userRepository.existsByEmail("new@member.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            if (u.getId() == null) u.setId(newUserId);
+            return u;
+        });
+        when(userRepository.findById(newUserId)).thenAnswer(inv ->
+                Optional.of(User.builder()
+                        .id(newUserId)
+                        .email("new@member.com")
+                        .passwordHash(testUser.getPasswordHash())
+                        .firstName("New")
+                        .lastName("Member")
+                        .role(UserRole.MEMBRE)
+                        .estChefDeFamille(false)
+                        .statut(UserStatus.PENDING_ACTIVATION)
+                        .failedLoginAttempts(0)
+                        .twoFactorEnabled(false)
+                        .build()));
+        when(activationTokenRepository.save(any(ActivationToken.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+        doNothing().when(emailService).sendWelcomeEmail(anyString(), anyString(), anyString());
+
+        User created = authService.register("New@Member.com", "password123", "New", "Member", null);
+
+        assertEquals(UserRole.MEMBRE, created.getRole());
+        assertEquals(UserRole.MEMBRE, created.getActiveRole());
+        assertEquals(UserStatus.PENDING_ACTIVATION, created.getStatut());
+        assertEquals("new@member.com", created.getEmail());
+        assertTrue(created.getRoles().contains(UserRole.MEMBRE));
+        verify(userRepository).save(argThat(u ->
+                passwordEncoder.matches("password123", u.getPasswordHash())
+        ));
+        verify(emailService).sendWelcomeEmail(eq("new@member.com"), anyString(), anyString());
+    }
+
+    @Test
+    void register_WithExistingEmail_ShouldThrow() {
+        when(userRepository.existsByEmail("dup@member.com")).thenReturn(true);
+
+        assertThrows(BusinessRuleException.class, () ->
+                authService.register("dup@member.com", "password123", "Dup", "Member", null)
+        );
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test

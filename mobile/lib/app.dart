@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/ai_assistant/ai_assistant_screen.dart';
 import 'presentation/screens/ai_predictions/ai_predictions_screen.dart';
 import 'presentation/screens/login/login_screen.dart';
+import 'presentation/screens/login/register_screen.dart';
 import 'presentation/screens/main_scaffold.dart';
 import 'presentation/screens/dashboard/pasteur_dashboard_screen.dart';
 import 'presentation/screens/dashboard/chef_famille_dashboard_screen.dart';
@@ -343,7 +344,7 @@ Map<String, List<String>> _routeRoles = {
   '/crm-faiseur': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/souls/:id/pastoral-360': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/search': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-  '/users': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/users': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/permissions': ['ADMIN'],
   '/discipline': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/prayers/actions-de-grace': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -460,7 +461,7 @@ Map<String, List<String>> _routeRoles = {
   '/souls/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/transfers/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/transfers/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
-  '/users/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/users/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments/:id/report': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   // Nouveaux modules
   '/emergency-aid': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -585,6 +586,11 @@ final appRouter = GoRouter(
       path: '/login',
       name: 'login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/register',
+      name: 'register',
+      builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(
       path: '/dashboard',
