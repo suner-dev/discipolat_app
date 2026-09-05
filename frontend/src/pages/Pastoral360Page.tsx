@@ -17,7 +17,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Legend,
   AreaChart, Area,
 } from 'recharts';
-import type { SpiritualScorePoint } from '@/types';
+import { useI18n } from '@/i18n';
+
 
 const INDICE_LABELS: Record<string, string> = {
   santeSpirituelle: 'Santé spirituelle',
@@ -79,6 +80,7 @@ const EVAL_FALLBACK: Record<string, string> = {
 export default function Pastoral360Page() {
   const { id } = useParams<{ id: string }>();
   const dictionaries = useDictionaries();
+  const { locale } = useI18n();
 
   const { data: dossier, isLoading } = useQuery({
     queryKey: ['soul', id, 'pastoral-360'],
@@ -160,7 +162,7 @@ export default function Pastoral360Page() {
             {infos.prenom ? `${infos.prenom} ${infos.nom}` : infos.nom}
           </h1>
           <p className="page-subtitle">
-            Fiche complète · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            Fiche complète · {new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
       </div>
@@ -237,7 +239,7 @@ export default function Pastoral360Page() {
                   .map((e: any, i: number) => ({
                     index: i + 1,
                     evenement: e.type?.slice(0, 15) || `#${i}`,
-                    date: new Date(e.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+                    date: new Date(e.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' }),
                     statut: e.nouveauStatut,
                   }))
                 }>
@@ -389,7 +391,7 @@ export default function Pastoral360Page() {
               <div className="flex justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
                 <span className="text-xs text-gray-400">Intégré le</span>
                 <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                  {new Date(spirituel.dateIntegration).toLocaleDateString('fr-FR')}
+                  {new Date(spirituel.dateIntegration).toLocaleDateString(locale)}
                 </span>
               </div>
             )}
@@ -397,14 +399,14 @@ export default function Pastoral360Page() {
               <div className="flex justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
                 <span className="text-xs text-gray-400">Conversion le</span>
                 <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                  {new Date(spirituel.dateConversion).toLocaleDateString('fr-FR')}
+                  {new Date(spirituel.dateConversion).toLocaleDateString(locale)}
                 </span>
               </div>
             )}
             <div className="flex justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
               <span className="text-xs text-gray-400">Dernier contact</span>
               <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                {spirituel.dateDernierContact ? new Date(spirituel.dateDernierContact).toLocaleDateString('fr-FR') : '—'}
+                {spirituel.dateDernierContact ? new Date(spirituel.dateDernierContact).toLocaleDateString(locale) : '—'}
               </span>
             </div>
           </div>
@@ -489,7 +491,7 @@ export default function Pastoral360Page() {
                   <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{entry.type}</span>
-                      <span className="text-[9px] text-gray-400">{new Date(entry.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-[9px] text-gray-400">{new Date(entry.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     {entry.description && (
                       <p className="text-xs text-gray-600 dark:text-gray-400">{entry.description}</p>
@@ -531,7 +533,7 @@ export default function Pastoral360Page() {
               <div key={note.id} className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 animate-fade-in" style={{ animationDelay: `${i * 40}ms` }}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[9px] text-gray-400">{note.auteurId?.slice(0, 8)}...</span>
-                  <span className="text-[9px] text-gray-400">{new Date(note.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                  <span className="text-[9px] text-gray-400">{new Date(note.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}</span>
                 </div>
                 <p className="text-xs text-gray-700 dark:text-gray-300">{note.contenu}</p>
               </div>

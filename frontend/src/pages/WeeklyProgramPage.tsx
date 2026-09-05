@@ -11,6 +11,7 @@ import {
   Church, BookOpen, Flame, Coffee, Music,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 const JOUR_LABELS: Record<JourSemaine, string> = {
   LUNDI: 'Lundi', MARDI: 'Mardi', MERCREDI: 'Mercredi',
@@ -55,6 +56,7 @@ export default function WeeklyProgramPage() {
   const { user } = useAuth();
   const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
+  const { locale } = useI18n();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getMonday(new Date()));
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<WeeklyProgramTemplate | null>(null);
@@ -214,7 +216,7 @@ export default function WeeklyProgramPage() {
     return (weekProgram || []).filter((e) => e.dateDebut.startsWith(dateStr));
   };
 
-  const weekLabel = `${weekDays[0].date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} - ${weekDays[6].date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  const weekLabel = `${weekDays[0].date.toLocaleDateString(locale, { day: 'numeric', month: 'long' })} - ${weekDays[6].date.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}`;
 
   return (
     <div className="page-container">
@@ -296,7 +298,7 @@ export default function WeeklyProgramPage() {
                       title={evt.titre}
                     >
                       <p className="font-semibold truncate text-gray-900 dark:text-gray-100">
-                        {new Date(evt.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(evt.dateDebut).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                       </p>
                       <p className="truncate text-gray-600 dark:text-gray-400">{evt.titre}</p>
                       {evt.lieu && (
@@ -557,10 +559,10 @@ export default function WeeklyProgramPage() {
               <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                 <Clock className="w-4 h-4 text-gray-400" />
                 <span>
-                  {new Date(selectedEvent.dateDebut).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {new Date(selectedEvent.dateDebut).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}
                   {' à '}
-                  {new Date(selectedEvent.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                  {selectedEvent.dateFin && ` — ${new Date(selectedEvent.dateFin).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`}
+                  {new Date(selectedEvent.dateDebut).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+                  {selectedEvent.dateFin && ` — ${new Date(selectedEvent.dateFin).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`}
                 </span>
               </div>
               {selectedEvent.lieu && (

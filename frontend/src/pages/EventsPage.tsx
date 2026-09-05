@@ -8,6 +8,7 @@ import DataTable from '@/components/shared/DataTable';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { useI18n } from '@/i18n';
 import type { Evenement, PageResponse, TypeEvenement, StatutEvenement, User, DictionaryEntry } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
@@ -162,6 +163,7 @@ function eventForm(
 export default function EventsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { locale } = useI18n();
   const dictionaries = useDictionaries();
   const { moduleEnabled } = usePlatformConfig();
 
@@ -419,7 +421,7 @@ export default function EventsPage() {
       cell: (evt) => (
         <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
           <Clock className="w-3 h-3" />
-          {new Date(evt.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          {new Date(evt.dateDebut).toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
         </div>
       ),
     },
@@ -516,8 +518,8 @@ export default function EventsPage() {
         e.titre,
         TYPE_LABELS[e.typeEvenement] || e.typeEvenement,
         STATUT_LABELS[e.statut] || e.statut,
-        e.dateDebut ? new Date(e.dateDebut).toLocaleDateString('fr-FR') : '',
-        e.dateFin ? new Date(e.dateFin).toLocaleDateString('fr-FR') : '',
+        e.dateDebut ? new Date(e.dateDebut).toLocaleDateString(locale) : '',
+        e.dateFin ? new Date(e.dateFin).toLocaleDateString(locale) : '',
         e.lieu || '',
         String(e.limitePlaces || ''),
         String(e.nbInscrits || 0),
@@ -840,14 +842,14 @@ export default function EventsPage() {
                             {new Date(evt.dateDebut).getDate()}
                           </span>
                           <span className="text-[10px] text-gray-400 uppercase">
-                            {new Date(evt.dateDebut).toLocaleDateString('fr-FR', { month: 'short' })}
+                            {new Date(evt.dateDebut).toLocaleDateString(locale, { month: 'short' })}
                           </span>
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{evt.titre}</p>
                           <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5">
                             <Clock className="w-3 h-3" />
-                            {new Date(evt.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(evt.dateDebut).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                             {evt.lieu && <><MapPin className="w-3 h-3 ml-1" />{evt.lieu}</>}
                           </div>
                           {evt.organisateurNom && (
@@ -918,7 +920,7 @@ export default function EventsPage() {
             <div className="card p-4 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                  {new Date().toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
                 </h3>
                 <div className="flex gap-2 text-[10px]">
                   {Object.entries(TYPE_LABELS).slice(0, 6).map(([k, v]) => (

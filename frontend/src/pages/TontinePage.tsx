@@ -4,6 +4,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, HandCoins, Plus, CheckCircle2, ArrowRightCircle, Users, Landmark, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 interface TontineGroup {
   id: string;
@@ -66,6 +67,7 @@ export default function TontinePage() {
   // tour suivant) réservées aux gestionnaires — cohérent avec l'API.
   const canManage = activeRole === 'ADMIN' || activeRole === 'PASTEUR' || activeRole === 'RESPONSABLE';
   const queryClient = useQueryClient();
+  const { locale } = useI18n();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', montantParTour: '', periodicite: 'MENSUELLE' });
@@ -190,7 +192,7 @@ export default function TontinePage() {
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
                 <span className="text-gray-500 dark:text-gray-400">Prochain bénéficiaire :</span>
                 <span className="font-semibold text-gray-900 dark:text-gray-100">{dashboardQuery.data.nextRecipient}</span>
-                <span className="text-xs text-gray-400">· Collecté {dashboardQuery.data.totalCollected.toLocaleString('fr-FR')} / {dashboardQuery.data.expectedPerPeriod.toLocaleString('fr-FR')}</span>
+                <span className="text-xs text-gray-400">· Collecté {dashboardQuery.data.totalCollected.toLocaleString(locale)} / {dashboardQuery.data.expectedPerPeriod.toLocaleString(locale)}</span>
                 <span className="text-xs text-gray-400">· Tour {dashboardQuery.data.tourActuel} / {dashboardQuery.data.totalTours}</span>
               </div>
             </div>
@@ -231,7 +233,7 @@ export default function TontinePage() {
           >
             <p className="font-semibold text-gray-900 dark:text-gray-100">{g.name}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {Number(g.montantParTour).toLocaleString('fr-FR')} / tour · {g.periodicite.toLowerCase()}
+              {Number(g.montantParTour).toLocaleString(locale)} / tour · {g.periodicite.toLowerCase()}
             </p>
             <span className="badge badge-info mt-3 inline-block">Tour actuel : {g.tourActuel}</span>
           </button>
@@ -256,8 +258,8 @@ export default function TontinePage() {
                 </h2>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Collecté : {detailQuery.data.totalCollecte.toLocaleString('fr-FR')} /{' '}
-                    {detailQuery.data.totalAttendu.toLocaleString('fr-FR')}
+                    Collecté : {detailQuery.data.totalCollecte.toLocaleString(locale)} /{' '}
+                    {detailQuery.data.totalAttendu.toLocaleString(locale)}
                   </span>
                   {canManage && (
                     <button
@@ -335,7 +337,7 @@ export default function TontinePage() {
                             <td className="py-2 pr-2 font-medium text-gray-900 dark:text-gray-100">{o.membre}</td>
                             <td className="py-2 pr-2 text-gray-500">{o.ordrePassage}</td>
                             <td className="py-2 pr-2 text-gray-500">{o.tour}</td>
-                            <td className="py-2 text-gray-700 dark:text-gray-300 font-medium">{Number(o.montantDu).toLocaleString('fr-FR')}</td>
+                            <td className="py-2 text-gray-700 dark:text-gray-300 font-medium">{Number(o.montantDu).toLocaleString(locale)}</td>
                           </tr>
                         ))}
                       </tbody>

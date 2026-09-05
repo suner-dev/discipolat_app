@@ -14,6 +14,7 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
+import { useI18n } from '@/i18n';
 
 const COLORS = ['#22c55e', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'];
 
@@ -27,6 +28,7 @@ const getGreeting = () => {
 export default function CrmFaiseurPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { locale } = useI18n();
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterDifficulte, setFilterDifficulte] = useState(false);
 
@@ -76,7 +78,7 @@ export default function CrmFaiseurPage() {
             <span className="text-gradient font-display">Faiseur</span>
           </h1>
           <p className="page-subtitle">
-            Suivi complet de vos disciples · {new Date().toLocaleDateString('fr-FR', {
+            Suivi complet de vos disciples · {new Date().toLocaleDateString(locale, {
               weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             })}
           </p>
@@ -337,7 +339,7 @@ export default function CrmFaiseurPage() {
                       </div>
                       {disciple.dateDernierContact && (
                         <span className="text-[9px] text-gray-400">
-                          Contact: {new Date(disciple.dateDernierContact).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                          Contact: {new Date(disciple.dateDernierContact).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                         </span>
                       )}
                       {disciple.nbNotes > 0 && (
@@ -373,7 +375,7 @@ export default function CrmFaiseurPage() {
                 {crm.visites.slice(0, 5).map((v: any) => (
                   <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
                     <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center"><Calendar className="w-4 h-4 text-teal-500" /></div>
-                    <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100">{v.ameNom || '—'}</p><p className="text-[9px] text-gray-400">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'} · {v.typeVisite}</p></div>
+                    <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100">{v.ameNom || '—'}</p><p className="text-[9px] text-gray-400">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : '—'} · {v.typeVisite}</p></div>
                     <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${v.statut === 'PLANIFIEE' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'}`}>{formatEnum(v.statut)}</span>
                   </div>
                 ))}
@@ -415,7 +417,7 @@ export default function CrmFaiseurPage() {
                 {crm.evenements.slice(0, 5).map((e: any) => (
                   <div key={e.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex flex-col items-center justify-center flex-shrink-0">
-                      <span className="text-[9px] text-emerald-500 font-semibold leading-none">{new Date(e.dateEvenement || e.date).toLocaleDateString('fr-FR', { month: 'short' })}</span>
+                      <span className="text-[9px] text-emerald-500 font-semibold leading-none">{new Date(e.dateEvenement || e.date).toLocaleDateString(locale, { month: 'short' })}</span>
                       <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300 leading-none">{new Date(e.dateEvenement || e.date).getDate()}</span>
                     </div>
                     <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{e.titre}</p><p className="text-[9px] text-gray-400">{e.lieu || '—'} · {e.heureDebut || ''}</p></div>
@@ -484,7 +486,7 @@ export default function CrmFaiseurPage() {
           {/* Week info */}
           <div className="text-center mt-6">
             <p className="text-[10px] text-gray-400">
-              Semaine du {stats.semaine ? new Date(stats.semaine + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+              Semaine du {stats.semaine ? new Date(stats.semaine + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
             </p>
           </div>
         </>

@@ -10,6 +10,7 @@ import {
   Calendar, Crown, Sparkles, ChevronRight, Clock, BarChart3, AlertTriangle, ShieldCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const STATUT_FALLBACK: Record<string, string> = {
@@ -24,6 +25,7 @@ export default function FamilyDetailPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const dictionaries = useDictionaries();
+  const { locale } = useI18n();
   const [showChiefModal, setShowChiefModal] = useState(false);
   const [newChiefId, setNewChiefId] = useState('');
 
@@ -183,7 +185,7 @@ export default function FamilyDetailPage() {
                 </span>
                 <span className="text-xs text-gray-400 flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  Créée le {new Date(family.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  Créée le {new Date(family.dateCreation).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
               </div>
             </div>
@@ -357,7 +359,7 @@ export default function FamilyDetailPage() {
                 <p className="stat-label">Dernier changement</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1 mt-1">
                   <Clock className="w-3 h-3" />
-                  {new Date(chefHistory[0].dateChangement).toLocaleDateString('fr-FR', {
+                  {new Date(chefHistory[0].dateChangement).toLocaleDateString(locale, {
                     day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
                   })}
                 </p>
@@ -380,7 +382,7 @@ export default function FamilyDetailPage() {
                         {entry.nouveauChefNom || entry.nouveauChefId?.slice(0, 8)}
                       </span>
                       <span className="text-gray-400 ml-auto whitespace-nowrap">
-                        {new Date(entry.dateChangement).toLocaleDateString('fr-FR')}
+                        {new Date(entry.dateChangement).toLocaleDateString(locale)}
                       </span>
                     </div>
                   ))}
@@ -461,7 +463,7 @@ export default function FamilyDetailPage() {
                   <p className={`text-sm font-semibold ${risk.litiges + risk.retards > 0 ? 'text-amber-500' : 'text-gray-900 dark:text-gray-100'}`}>{risk.litiges} / {risk.retards}</p>
                 </div>
               </div>
-              <p className="text-[10px] text-gray-400 mt-3">Évalué le {new Date(risk.evaluationDate).toLocaleDateString('fr-FR')} · {risk.totalSouls} âmes suivies</p>
+              <p className="text-[10px] text-gray-400 mt-3">Évalué le {new Date(risk.evaluationDate).toLocaleDateString(locale)} · {risk.totalSouls} âmes suivies</p>
             </div>
           )}
         </div>
@@ -524,7 +526,7 @@ export default function FamilyDetailPage() {
                         }`} />
                       </div>
                       <span className="text-sm text-gray-900 dark:text-gray-100">
-                        Semaine du {new Date(report.semaine).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        Semaine du {new Date(report.semaine).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                       </span>
                     </div>
                     <span
