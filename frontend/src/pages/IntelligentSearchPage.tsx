@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { useI18n } from '@/i18n';
 import type { PageResponse, Soul, MakerReport, SoulHistoryEntry, SoulNote, Prayer } from '@/types';
 import {
   Search, Heart, X, Loader2, Sparkles, User, Mail, Phone, Calendar,
@@ -432,6 +433,7 @@ function CompleteMemberProfile({
   isLoading: boolean;
 }) {
   const dictionaries = useDictionaries();
+  const { locale } = useI18n();
   const p = profile.informationsPersonnelles;
   const e = profile.informationsEcclesiales;
   const a = profile.assignations;
@@ -488,7 +490,7 @@ function CompleteMemberProfile({
                 { icon: Mail, label: 'Email', value: p.email },
                 { icon: Phone, label: 'Téléphone', value: p.telephone },
                 { icon: MapPin, label: 'Adresse', value: p.adresse },
-                { icon: Calendar, label: 'Date naissance', value: p.dateNaissance ? new Date(p.dateNaissance).toLocaleDateString('fr-FR') : undefined },
+                { icon: Calendar, label: 'Date naissance', value: p.dateNaissance ? new Date(p.dateNaissance).toLocaleDateString(locale) : undefined },
                 { icon: Briefcase, label: 'Profession', value: p.profession },
                 { icon: Heart, label: 'Situation familiale', value: p.situationFamiliale },
               ].filter(f => f.value).map(field => (
@@ -526,21 +528,21 @@ function CompleteMemberProfile({
                 <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                   <p className="text-xs text-gray-400">Date de conversion</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {new Date(e.dateConversion).toLocaleDateString('fr-FR')}
+                    {new Date(e.dateConversion).toLocaleDateString(locale)}
                   </p>
                 </div>
               )}
               <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                 <p className="text-xs text-gray-400">Date d'intégration</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {new Date(e.dateIntegration).toLocaleDateString('fr-FR')}
+                  {new Date(e.dateIntegration).toLocaleDateString(locale)}
                 </p>
               </div>
               {e.dateDernierContact && (
                 <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                   <p className="text-xs text-gray-400">Dernier contact</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {new Date(e.dateDernierContact).toLocaleDateString('fr-FR')}
+                    {new Date(e.dateDernierContact).toLocaleDateString(locale)}
                   </p>
                 </div>
               )}
@@ -641,7 +643,7 @@ function CompleteMemberProfile({
                   return (
                     <div key={r.id} className="flex items-center justify-between p-2 rounded-lg bg-white/30 dark:bg-gray-800/30 text-xs">
                       <span className="text-gray-500">
-                        {new Date(r.semaine).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        {new Date(r.semaine).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                       </span>
                       <span className={`font-medium ${presents === total ? 'text-green-600' : presents > 0 ? 'text-amber-600' : 'text-red-500'}`}>
                         {presents}/{total}
@@ -704,7 +706,7 @@ function CompleteMemberProfile({
                         <div className="flex items-center justify-between mb-0.5">
                           <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{entry.typeEvenement}</span>
                           <span className="text-[10px] text-gray-400">
-                            {new Date(entry.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                            {new Date(entry.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                           </span>
                         </div>
                         {entry.description && <p className="text-xs text-gray-600 dark:text-gray-400">{entry.description}</p>}
@@ -827,7 +829,7 @@ function CompleteMemberProfile({
                   <div key={note.id} className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30">
                     <p className="text-xs text-gray-700 dark:text-gray-300">{note.contenu}</p>
                     <p className="text-[10px] text-gray-400 mt-1">
-                      {new Date(note.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                      {new Date(note.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                     </p>
                   </div>
                 ))}
@@ -848,7 +850,7 @@ function CompleteMemberProfile({
                     <div>
                       <p className="text-xs font-medium text-red-800 dark:text-red-300">{alert.message}</p>
                       <p className="text-[10px] text-red-500/70">
-                        {new Date(alert.dateDeclenchement).toLocaleDateString('fr-FR')}
+                        {new Date(alert.dateDeclenchement).toLocaleDateString(locale)}
                       </p>
                     </div>
                   </div>
@@ -913,7 +915,7 @@ function CompleteMemberProfile({
                     <div className="flex items-center gap-2 text-[10px] text-gray-400">
                       <span>{dictionaries.label('DISCIPLINE_CATEGORIE', d.categorie) || CATEGORIE_DISCIPLINE_FALLBACK[d.categorie] || d.categorie}</span>
                       <span>•</span>
-                      <span>{new Date(d.dateEvenement).toLocaleDateString('fr-FR')}</span>
+                      <span>{new Date(d.dateEvenement).toLocaleDateString(locale)}</span>
                       {d.resolu && <span className="text-green-600">✓ Résolu</span>}
                     </div>
                     {d.description && (
@@ -937,7 +939,7 @@ function CompleteMemberProfile({
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{exit.motif}</span>
                       <span className="text-[10px] text-gray-400">
-                        {new Date(exit.dateSortie).toLocaleDateString('fr-FR')}
+                        {new Date(exit.dateSortie).toLocaleDateString(locale)}
                       </span>
                     </div>
                     {exit.motifDetail && <p className="text-[10px] text-gray-500 mt-0.5">{exit.motifDetail}</p>}

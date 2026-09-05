@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
+import { useI18n } from '@/i18n';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft, UserRound, Building2, Users2, ListTodo, ClipboardCheck, Gavel,
@@ -377,6 +378,7 @@ function TachesTab({ data }: { data: any }) {
 // ============================================================
 function PresencesTab({ id, memberId, data }: { id: string; memberId: string; data: any }) {
   const queryClient = useQueryClient();
+  const { locale } = useI18n();
   const { data: eventAttendance, isLoading: loadingEvents } = useQuery({
     queryKey: ['department', id, 'dossier', memberId, 'event-attendance'],
     queryFn: async () => (await api.get(`/departments/${id}/members/${memberId}/event-attendance`)).data as any,
@@ -487,7 +489,7 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{e.titre}</p>
                       <p className="text-[10px] text-gray-400">
-                        {e.dateDebut ? new Date(e.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        {e.dateDebut ? new Date(e.dateDebut).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                         {e.statut ? ` · ${e.statut.replace('_', ' ').toLowerCase()}` : ''}
                       </p>
                     </div>
@@ -589,6 +591,7 @@ const REPORT_TYPE_LABELS: Record<string, string> = {
 
 function RapportsTab({ id, memberId, data, items }: { id: string; memberId: string; data: any; items: any[] }) {
   const queryClient = useQueryClient();
+  const { locale } = useI18n();
   const [type, setType] = useState('PROGRESSION');
   const [contenu, setContenu] = useState('');
 
@@ -676,7 +679,7 @@ function RapportsTab({ id, memberId, data, items }: { id: string; memberId: stri
                   </button>
                 </div>
                 <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">{r.contenu}</p>
-                <p className="text-[10px] text-gray-400 mt-1">{r.auteurNom || '—'} · {new Date(r.createdAt).toLocaleString('fr-FR')}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{r.auteurNom || '—'} · {new Date(r.createdAt).toLocaleString(locale)}</p>
               </div>
             ))}
           </div>
@@ -726,6 +729,7 @@ function EvaluationsTab({ data }: { data: any }) {
 // ÉVÉNEMENTS
 // ============================================================
 function EvenementsTab({ data }: { data: any }) {
+  const { locale } = useI18n();
   return (
     <div className="glass-card p-5">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Événements ({data.total ?? 0})</h3>
@@ -753,6 +757,7 @@ function EvenementsTab({ data }: { data: any }) {
 // ANNONCES
 // ============================================================
 function AnnoncesTab({ items }: { items: any[] }) {
+  const { locale } = useI18n();
   return (
     <div className="glass-card p-5">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
@@ -767,7 +772,7 @@ function AnnoncesTab({ items }: { items: any[] }) {
               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{a.titre}</p>
               <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">{a.message}</p>
               <p className="text-[10px] text-gray-400 mt-1">
-                {a.auteurNom || ''} · {new Date(a.createdAt).toLocaleDateString('fr-FR')}
+                {a.auteurNom || ''} · {new Date(a.createdAt).toLocaleDateString(locale)}
                 {a.teamNom ? ` · ${a.teamNom}` : ''}{a.positionNom ? ` · ${a.positionNom}` : ''}
               </p>
             </div>
@@ -783,6 +788,7 @@ function AnnoncesTab({ items }: { items: any[] }) {
 // ============================================================
 function NotesTab({ id, memberId, items }: { id: string; memberId: string; items: any[] }) {
   const queryClient = useQueryClient();
+  const { locale } = useI18n();
   const [contenu, setContenu] = useState('');
   const addMutation = useMutation({
     mutationFn: async () => (await api.post(`/departments/${id}/members/${memberId}/notes`, { contenu })).data,
@@ -829,7 +835,7 @@ function NotesTab({ id, memberId, items }: { id: string; memberId: string; items
             <div key={n.id} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40">
               <p className="text-sm text-gray-800 dark:text-gray-200">{n.contenu}</p>
               <div className="flex items-center justify-between mt-1">
-                <p className="text-[10px] text-gray-400">{n.auteurNom || '—'} · {new Date(n.createdAt).toLocaleString('fr-FR')}</p>
+                <p className="text-[10px] text-gray-400">{n.auteurNom || '—'} · {new Date(n.createdAt).toLocaleString(locale)}</p>
                 <button onClick={() => deleteMutation.mutate(n.id)} className="p-1 text-gray-400 hover:text-red-500 cursor-pointer">
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -1003,6 +1009,7 @@ function ObjectifsTab({ id, memberId, items }: { id: string; memberId: string; i
 // DOCUMENTS & NOTES DE LA FICHE ÂME
 // ============================================================
 function DocumentsTab({ documents, notesDisciple }: { documents: any[]; notesDisciple: any[] }) {
+  const { locale } = useI18n();
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className="glass-card p-5">
@@ -1040,7 +1047,7 @@ function DocumentsTab({ documents, notesDisciple }: { documents: any[]; notesDis
             {notesDisciple.map((n) => (
               <div key={n.id} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40">
                 <p className="text-sm text-gray-800 dark:text-gray-200">{n.contenu}</p>
-                <p className="text-[10px] text-gray-400 mt-1">{n.auteurNom || '—'} · {new Date(n.createdAt).toLocaleString('fr-FR')}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{n.auteurNom || '—'} · {new Date(n.createdAt).toLocaleString(locale)}</p>
               </div>
             ))}
           </div>
@@ -1099,6 +1106,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 function ActiviteTab({ items }: { items: any[] }) {
+  const { locale } = useI18n();
   return (
     <div className="glass-card p-5">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
@@ -1117,7 +1125,7 @@ function ActiviteTab({ items }: { items: any[] }) {
                   <span className="font-semibold">{ACTION_LABELS[a.action] || a.action.replace(/_/g, ' ')}</span>
                   {a.details && <span className="text-gray-500 dark:text-gray-400"> — {a.details}</span>}
                 </p>
-                <p className="text-[10px] text-gray-400">{a.actorNom ? `par ${a.actorNom} · ` : ''}{new Date(a.createdAt).toLocaleString('fr-FR')}</p>
+                <p className="text-[10px] text-gray-400">{a.actorNom ? `par ${a.actorNom} · ` : ''}{new Date(a.createdAt).toLocaleString(locale)}</p>
               </div>
             </div>
           ))}
