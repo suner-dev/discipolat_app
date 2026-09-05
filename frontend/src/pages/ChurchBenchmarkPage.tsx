@@ -1,11 +1,38 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { BarChart3, Plus, Loader2, Trash2, Users2 } from 'lucide-react';
+import { BarChart3, Plus, Loader2, Trash2, Users2, TrendingUp } from 'lucide-react';
 
 interface Comparison { id: string; nomEglise: string; effectif: number; tauxPresence: number; tauxConversion: number; tauxRetention: number; scoreSpirituelMoyen: number; generositeMoyenne: number; nbDepartements: number; nbFamilles: number; categorie?: string; pays?: string; denomination?: string; }
 
+interface BenchmarkResponse {
+  currentChurch: Record<string, number | string>;
+  averagePeers: Record<string, number | string>;
+  topQuartile: Record<string, number | string>;
+  percentile: Record<string, number>;
+  generatedAt: string;
+  note: string;
+}
+
+interface TrendPoint { month: string; current: number; average: number; }
+
+interface TrendsResponse {
+  attendanceTrend: TrendPoint[];
+  growthTrend: TrendPoint[];
+}
+
 const CATEGORIES = ['PETITE', 'MOYENNE', 'GRANDE'] as const;
+
+const BENCHMARK_KEYS: { key: string; label: string; unit: string }[] = [
+  { key: 'totalMembers', label: 'Effectif', unit: '' },
+  { key: 'attendanceRate', label: 'Taux de présence', unit: '%' },
+  { key: 'growthRate', label: 'Croissance', unit: '%' },
+  { key: 'volunteerRate', label: 'Bénévoles', unit: '%' },
+  { key: 'activeAlerts', label: 'Alertes actives', unit: '' },
+  { key: 'reportsSubmitted', label: 'Rapports', unit: '' },
+  { key: 'disciplesActive', label: 'Disciples actifs', unit: '' },
+  { key: 'newConverts', label: 'Nouveaux convertis', unit: '' },
+];
 
 /** P3 #107 — Benchmark anonyme inter-églises amélioré : comparaison par taille/pays/dénomination + clustering. */
 export default function ChurchBenchmarkPage() {
@@ -16,6 +43,16 @@ export default function ChurchBenchmarkPage() {
   const byCatQ = useQuery({
     queryKey: ['church-benchmark', category], enabled: !!category,
     queryFn: async () => (await api.get(`/church-comparisons/by-category/${category}`)).data,
+  });
+
+  const benchmarkQ = useQuery({
+    queryKey: ['benchmark', 'live'],
+    queryFn: async () => (await api.get<BenchmarkResponse>('/benchmark')).data,
+  });
+
+  const trendsQ = useQuery({
+    queryKey: ['benchmark', 'trends'],
+    queryFn: async () => (await api.get<TrendsResponse>('/benchmark/trends')).data,
   });
 
   const create = useMutation({
@@ -40,6 +77,75 @@ export default function ChurchBenchmarkPage() {
         <Kpi label="Rétention moy." value={`${avg((c) => c.tauxRetention)}%`} />
         <Kpi label="Score spirituel moy." value={avg((c) => c.scoreSpirituelMoyen)} />
       </div>
+
+      {/* Benchmark réel de l'église courante vs pairs */}
+      {benchmarkQ.isLoading ? (
+        <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10 flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-sky-400" />
+        </div>
+      ) : benchmarkQ.data && (
+        <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
+          <h2 className="text-white font-semibold mb-1 flex items-center gap-2">
+            <TrendingUp className="text-sky-400 w-5 h-5" /> Mon église face au secteur
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">{benchmarkQ.data.note}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {BENCHMARK_KEYS.map(({ key, label, unit }) => {
+              const ours = benchmarkQ.data.currentChurch[key];
+              const avgP = benchmarkQ.data.averagePeers[key];
+              const top = benchmarkQ.data.topQuartile[key];
+              return (
+                <div key={key} className="bg-black/20 rounded-xl p-3 text-sm">
+                  <p className="text-xs text-gray-400">{label}</p>
+                  <p className="text-xl font-bold text-white mt-1">
+                    {ours != null ? `${Number(ours).toLocaleString('fr-FR')}${unit}` : '—'}
+                  </p>
+                  <p className="text-[10px] text-gray-500">
+                    Secteur : {avgP != null ? `${Number(avgP).toLocaleString('fr-FR')}${unit}` : '—'}
+                    <span className="text-gray-600"> · Top25 : {top != null ? `${Number(top).toLocaleString('fr-FR')}${unit}` : '—'}</span>
+                  </p>
+                  {benchmarkQ.data.percentile[key] != null && (
+                    <p className="text-[10px] text-sky-300 mt-1">
+                      Percentile {Math.round(benchmarkQ.data.percentile[key])}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tendances (présence & croissance sur 6 mois) */}
+      {trendsQ.data && (
+        <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
+          <h2 className="text-white font-semibold mb-3">Tendances sur 6 mois</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {(['attendanceTrend', 'growthTrend'] as const).map((set) => (
+              <div key={set}>
+                <p className="text-xs text-gray-400 mb-2">
+                  {set === 'attendanceTrend' ? 'Taux de présence (%)' : 'Croissance (%)'}
+                </p>
+                <div className="flex items-end gap-1.5 h-24">
+                  {trendsQ.data[set].map((p) => (
+                    <div key={p.month} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full rounded-t bg-gradient-to-t from-sky-600 to-sky-400 hover:opacity-80"
+                        style={{ height: `${Math.max(4, p.current)}%`, minHeight: '4px' }} />
+                      <div className="w-full rounded-t bg-white/15"
+                        style={{ height: `${Math.max(3, p.average)}%`, minHeight: '3px' }} />
+                      <span className="text-[9px] text-gray-400">{p.month}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3 text-[10px] text-gray-400 mt-2">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-sky-500 inline-block" /> Courant</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-white/30 inline-block" /> Moyenne secteur</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
         <div className="flex flex-wrap items-center gap-3 mb-4">

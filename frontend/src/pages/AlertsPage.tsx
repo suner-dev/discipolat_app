@@ -21,8 +21,25 @@ import {
   Users,
   User as UserIcon,
   Church,
+  Radar,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+interface SmartAlertSummary {
+  totalActive: number;
+  criticalActive: number;
+  lastScan: string;
+}
+
+interface SmartScanResult {
+  sustainedAbsences: number;
+  noRecentContact: number;
+  unresolvedDiscipline: number;
+  inactiveDepartments: number;
+  dropoutPrediction: number;
+  interventionPlans: number;
+  timestamp: string;
+}
 
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const TYPE_FALLBACK: Record<string, string> = {
@@ -68,6 +85,21 @@ export default function AlertsPage() {
       const res = await api.get(`/alerts?${params}`);
       return res.data as PageResponse<Alert>;
     },
+  });
+
+  const smartSummaryQuery = useQuery({
+    queryKey: ['smart-alerts', 'summary'],
+    queryFn: async () => (await api.get<SmartAlertSummary>('/smart-alerts/summary')).data,
+  });
+
+  const smartScanMutation = useMutation({
+    mutationFn: async () => (await api.post<SmartScanResult>('/smart-alerts/scan')).data,
+    onSuccess: (r) => {
+      toast.success(`Analyse terminée : ${r.noRecentContact + r.sustainedAbsences + r.unresolvedDiscipline + r.inactiveDepartments} nouvelle(s) alerte(s)`);
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['smart-alerts'] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
   });
 
   const resolveMutation = useMutation({
@@ -266,8 +298,51 @@ export default function AlertsPage() {
             <Plus className="w-4 h-4" />
             Nouvelle alerte
           </button>
+          <button
+            onClick={() => smartScanMutation.mutate()}
+            disabled={smartScanMutation.isPending}
+            className="btn-glow btn-sm flex items-center gap-1.5"
+            title="Lancer le scan de détection d'anomalies"
+          >
+            {smartScanMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Radar className="w-4 h-4" />
+            )}
+            Scan des anomalies
+          </button>
         </div>
       </div>
+
+      {/* Smart Alert summary */}
+      {!smartSummaryQuery.isLoading && (
+        <div className="mb-8 animate-slide-up">
+          <div className={`glass-card p-4 flex items-center justify-between flex-wrap gap-3 ${(smartSummaryQuery.data?.criticalActive ?? 0) > 0 ? 'border-l-4 border-l-red-500' : ''}`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl ${(smartSummaryQuery.data?.criticalActive ?? 0) > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+                <Radar className={`w-5 h-5 ${(smartSummaryQuery.data?.criticalActive ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Détection d'anomalies automatique
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {(smartSummaryQuery.data?.criticalActive ?? 0) > 0
+                    ? `${smartSummaryQuery.data?.criticalActive} alerte(s) critique(s) parmi ${smartSummaryQuery.data?.totalActive} active(s)`
+                    : smartSummaryQuery.data
+                      ? `${smartSummaryQuery.data?.totalActive} alerte(s) active(s) — aucun problème critique`
+                      : 'Aucune donnée de scan disponible'}
+                </p>
+              </div>
+            </div>
+            {smartSummaryQuery.data?.lastScan && (
+              <span className="text-[10px] text-gray-400">
+                Dernier scan : {new Date(smartSummaryQuery.data.lastScan).toLocaleString('fr-FR')}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 animate-slide-up">

@@ -11,6 +11,8 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePlatformConfig, menusToSections } from '@/contexts/PlatformContext';
 import { resolveIcon } from '@/lib/menuIcons';
 import type { MenuEntry } from '@/types';
+import { useI18n } from '@/i18n';
+import { navKeyMap } from '@/i18n/navKeys';
 
 interface NavItemData {
   name: string;
@@ -29,9 +31,11 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-function NavItem({ item, collapsed = false, onClick }: { item: NavItemData; collapsed?: boolean; onClick?: () => void }) {
+function NavItem({ item, collapsed = false, onClick, t }: { item: NavItemData; collapsed?: boolean; onClick?: () => void; t: (key: string) => string }) {
   const location = useLocation();
   const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+  const label = t(navKeyMap[item.name] ?? item.name);
+  const sub = t(navKeyMap[item.subtitle] ?? item.subtitle);
 
   return (
     <NavLink
@@ -65,9 +69,9 @@ function NavItem({ item, collapsed = false, onClick }: { item: NavItemData; coll
 
       {!collapsed && (
         <div className="flex-1 min-w-0">
-          <span className="block truncate">{item.name}</span>
+          <span className="block truncate">{label}</span>
           <span className="block text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
-            {item.subtitle}
+            {sub}
           </span>
         </div>
       )}
@@ -77,7 +81,7 @@ function NavItem({ item, collapsed = false, onClick }: { item: NavItemData; coll
         <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg
                         opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200
                         whitespace-nowrap shadow-lg z-50">
-          {item.name}
+          {label}
         </div>
       )}
     </NavLink>
@@ -94,6 +98,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const { menus: configMenus } = usePlatformConfig();
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   // Fetch evaluation score for the current user
   const { data: myEval } = useQuery({
@@ -186,8 +191,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               </div>
               {!collapsed && (
                 <div className="min-w-0 animate-fade-in">
-                  <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate leading-tight">{meta.label}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{meta.tagline}</p>
+                  <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate leading-tight">{t(`role.${activeRole}.label`) || meta.label}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{t(`role.${activeRole}.tagline`) || meta.tagline}</p>
                 </div>
               )}
             </div>
@@ -199,12 +204,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               <div key={section.title} className="mb-1">
                 {!collapsed && (
                   <p className="px-3 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400/90 dark:text-gray-500">
-                    {section.title}
+                    {t(navKeyMap[section.title] ?? section.title)}
                   </p>
                 )}
                 {collapsed && <div className="pt-3" />}
                 {section.items.map((item) => (
-                  <NavItem key={item.href} item={item} collapsed={collapsed} />
+                  <NavItem key={item.href} item={item} collapsed={collapsed} t={t} />
                 ))}
               </div>
             ))}
@@ -238,7 +243,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                      {user?.activeRole === 'ADMIN' ? 'Admin' : user?.activeRole === 'PASTEUR' ? 'Pasteur' : user?.activeRole === 'RESPONSABLE' ? 'Responsable' : user?.activeRole === 'FAISEUR' ? 'Faiseur' : user?.activeRole === 'CHEF_DE_FAMILLE' ? 'Chef' : user?.role}
+                      {t(`role.${user?.activeRole}.label`) || user?.activeRole === 'ADMIN' ? 'Admin' : user?.activeRole === 'PASTEUR' ? 'Pasteur' : user?.activeRole === 'RESPONSABLE' ? 'Responsable' : user?.activeRole === 'FAISEUR' ? 'Faiseur' : user?.activeRole === 'CHEF_DE_FAMILLE' ? 'Chef' : user?.role}
                     </span>
                     {user?.estChefDeFamille && (
                       <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400 rounded-full uppercase tracking-wider">
@@ -303,17 +308,17 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 <Church className="w-4 h-4 text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{meta.label}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{meta.tagline}</p>
+                <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{t(`role.${activeRole}.label`) || meta.label}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{t(`role.${activeRole}.tagline`) || meta.tagline}</p>
               </div>
             </div>
             {workspaceSections.map((section) => (
               <div key={section.title} className="mb-1">
                 <p className="px-3 pt-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400/90 dark:text-gray-500">
-                  {section.title}
+                  {t(navKeyMap[section.title] ?? section.title)}
                 </p>
                 {section.items.map((item) => (
-                  <NavItem key={item.href} item={item} onClick={onClose} />
+                  <NavItem key={item.href} item={item} onClick={onClose} t={t} />
                 ))}
               </div>
             ))}

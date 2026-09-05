@@ -46,7 +46,7 @@ export default function TeamTasksPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async () => api.put(`/team-tasks/${editId}`, form),
+    mutationFn: async () => api.patch(`/team-tasks/${editId}`, form),
     onSuccess: () => { toast.success('Tâche mise à jour'); resetForm(); qc.invalidateQueries({ queryKey: ['team-tasks'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });

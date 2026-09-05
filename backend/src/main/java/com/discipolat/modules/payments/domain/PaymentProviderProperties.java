@@ -61,6 +61,8 @@ public class PaymentProviderProperties {
     private String mpesaPasskey;
     @Value("${app.mobilemoney.mpesa.webhook-secret:}")
     private String mpesaWebhookSecret;
+    @Value("${app.mobilemoney.mpesa.notif-url:}")
+    private String mpesaNotifUrl;
 
     public boolean isOrangeEnabled() {
         return enabled && orangeApiKey != null && !orangeApiKey.isBlank()

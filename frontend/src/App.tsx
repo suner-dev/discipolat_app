@@ -224,6 +224,11 @@ const ConversationsPage = lazy(() => import('@/pages/ConversationsPage'));
 const CoursesPage = lazy(() => import('@/pages/CoursesPage'));
 const EquipmentPage = lazy(() => import('@/pages/EquipmentPage'));
 const BudgetPage = lazy(() => import('@/pages/BudgetPage'));
+const DashboardSummaryPage = lazy(() => import('@/pages/DashboardSummaryPage'));
+const DiscipleshipPathsPage = lazy(() => import('@/pages/DiscipleshipPathsPage'));
+const FamilyResourcesDetailPage = lazy(() => import('@/pages/FamilyResourcesDetailPage'));
+const GeofencingPage = lazy(() => import('@/pages/GeofencingPage'));
+const ReferralsStatusPage = lazy(() => import('@/pages/ReferralsStatusPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -1027,6 +1032,11 @@ export default function App() {
           <Route path="/courses" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><CoursesPage /></ProtectedRoute>} />
           <Route path="/equipment" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EquipmentPage /></ProtectedRoute>} />
           <Route path="/budgets" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><BudgetPage /></ProtectedRoute>} />
+          <Route path="/dashboard/summary" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><DashboardSummaryPage /></ProtectedRoute>} />
+          <Route path="/discipleship-paths" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><DiscipleshipPathsPage /></ProtectedRoute>} />
+          <Route path="/family-resources/:id" element={<ProtectedRoute><FamilyResourcesDetailPage /></ProtectedRoute>} />
+          <Route path="/geofencing" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}><GeofencingPage /></ProtectedRoute>} />
+          <Route path="/referrals/status" element={<ProtectedRoute><ReferralsStatusPage /></ProtectedRoute>} />
         </Route>
 
         {/* Page d'accueil publique (landing) — redirige vers /dashboard si connecté */}

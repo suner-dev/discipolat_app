@@ -82,7 +82,10 @@ class MpesaProvider implements MobileMoneyProvider {
             bodyMap.put("PartyA", intent.getPhoneNumber());
             bodyMap.put("PartyB", props.getMpesaShortCode());
             bodyMap.put("PhoneNumber", intent.getPhoneNumber());
-            bodyMap.put("CallBackURL", props.getOrangeNotifUrl() != null ? props.getOrangeNotifUrl() : "https://example.com/callback");
+            String callbackUrl = props.getMpesaNotifUrl() != null && !props.getMpesaNotifUrl().isBlank()
+                    ? props.getMpesaNotifUrl()
+                    : (props.getOrangeNotifUrl() != null ? props.getOrangeNotifUrl() : "https://example.com/callback");
+            bodyMap.put("CallBackURL", callbackUrl);
             bodyMap.put("AccountReference", intent.getProviderReference());
             bodyMap.put("TransactionDesc", "Paiement " + intent.getOperator().getLabel());
 

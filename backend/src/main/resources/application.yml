@@ -109,6 +109,7 @@ app:
       short-code: ${MPESA_SHORT_CODE:}
       passkey: ${MPESA_PASSKEY:}
       webhook-secret: ${MPESA_WEBHOOK_SECRET:}
+      notif-url: ${MPESA_NOTIF_URL:}
   payments:
     # Secret partagé accepté sur le webhook opérateur (vide => endpoint fermé, 503).
     webhook-secret: ${PAYMENTS_WEBHOOK_SECRET:}
@@ -117,13 +118,14 @@ app:
       poll-interval-ms: ${PAYMENTS_WEBHOOK_POLL_INTERVAL_MS:30000}
     # Mode simulation robuste : confirme automatiquement les paiements PENDING
     # sans passerelle réelle (utile en beta/dev pour rendre le module fonctionnel
-    # dîmes & offrandes de bout en bout). En production, laisser à false et
+    # dîmes & offrandes de bout en bout). En production, laisser à 0 et
     # brancher l'API opérateur via le webhook.
     # Délai avant confirmation automatique d'une intention PENDING (ms).
-    simulate-confirm-delay-ms: ${PAYMENTS_SIMULATE_CONFIRM_DELAY_MS:6000}
+    # 0 = désactivé (paiements confirmés uniquement par le webhook opérateur).
+    simulate-confirm-delay-ms: ${PAYMENTS_SIMULATE_CONFIRM_DELAY_MS:0}
     # Délai de confirmation auto pour les rôles autres que gestionnaires (ms),
     # appliqué lorsque la simulation est active. Par défaut identique au délai nominal.
-    simulate-confirm-delay-non-manager-ms: ${PAYMENTS_SIMULATE_CONFIRM_DELAY_NON_MANAGER_MS:6000}
+    simulate-confirm-delay-non-manager-ms: ${PAYMENTS_SIMULATE_CONFIRM_DELAY_NON_MANAGER_MS:0}
     # Périodicité du balayage des intentions en attente (ms).
     simulate-scan-interval-ms: ${PAYMENTS_SIMULATE_SCAN_INTERVAL_MS:5000}
   encryption:

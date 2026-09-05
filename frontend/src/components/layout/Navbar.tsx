@@ -24,6 +24,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { useI18n } from '@/i18n';
 import type { Notification } from '@/types';
 
 interface NavbarProps {
@@ -35,6 +36,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   const { darkMode, toggleTheme } = useTheme();
   const { user, logout, switchRole, roles, activeRole } = useAuth();
   const dictionaries = useDictionaries();
+  const { t } = useI18n();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -138,7 +140,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                   <Icon className="w-9 h-9 text-white drop-shadow-sm" />
                 </div>
               </div>
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-medium mt-1">Espace métier</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-medium mt-1">{t('nav.workspace') || 'Espace métier'}</p>
               <p className="text-2xl font-bold text-white font-display">{meta.label}</p>
               <p className="flex items-center gap-1.5 text-xs font-semibold text-primary-400">
                 <CheckCircle2 className="w-4 h-4" />
@@ -164,7 +166,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           <div className="hidden sm:flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary-500" />
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Bon retour, <span className="font-semibold text-gray-900 dark:text-gray-100">{user?.firstName}</span>
+              {t('nav.welcomeBack') || 'Bon retour'}, <span className="font-semibold text-gray-900 dark:text-gray-100">{user?.firstName}</span>
             </span>
           </div>
         </div>
@@ -180,7 +182,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             className="relative p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                        hover:bg-gray-100/80 dark:hover:bg-gray-800/50 transition-all duration-200
                        hover:scale-105 active:scale-95 group"
-            title={darkMode ? 'Mode clair' : 'Mode sombre'}
+            title={darkMode ? (t('settings.lightMode') || 'Mode clair') : (t('settings.darkMode') || 'Mode sombre')}
           >
             {darkMode ? (
               <Sun className="w-[18px] h-[18px] transition-transform duration-500 group-hover:rotate-90" />
@@ -195,7 +197,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             className="relative p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                        hover:bg-gray-100/80 dark:hover:bg-gray-800/50 transition-all duration-200
                        hover:scale-105 active:scale-95 group"
-            title="Notifications"
+            title={t('notifications.title') || 'Notifications'}
           >
             {unreadCount > 0 ? (
               <BellRing className="w-4.5 h-4.5 animate-pulse-soft" />
@@ -263,7 +265,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     onClick={() => setShowProfileMenu(false)}
                   >
                     <User className="w-4 h-4 text-gray-400" />
-                    Mon profil
+                    {t('nav.profile') || 'Mon profil'}
                   </Link>
                   <Link
                     to="/profile"
@@ -272,7 +274,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     onClick={() => setShowProfileMenu(false)}
                   >
                     <Settings className="w-4 h-4 text-gray-400" />
-                    Paramètres
+                    {t('nav.settings') || 'Paramètres'}
                   </Link>
 
                   {/* Role Switcher — only show if user has multiple roles */}
@@ -284,7 +286,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                                  hover:bg-gray-100/60 dark:hover:bg-gray-800/40 transition-colors"
                       >
                         <RotateCw className="w-4 h-4 text-gray-400" />
-                        <span className="flex-1 text-left">Changer de rôle</span>
+                        <span className="flex-1 text-left">{t('nav.switchRole') || 'Changer de rôle'}</span>
                         <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${showRoleMenu ? 'rotate-180' : ''}`} />
                       </button>
 
@@ -321,7 +323,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                   <div className="px-4 py-2 flex items-center justify-between gap-3">
                     <span className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                       <Globe className="w-4 h-4 text-gray-400" />
-                      Langue
+                      {t('settings.language') || 'Langue'}
                     </span>
                     <span onClick={(e) => e.stopPropagation()}>
                       <LanguageSwitcher compact />
@@ -336,7 +338,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                              hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
-                    Déconnexion
+                    {t('nav.logout') || 'Déconnexion'}
                   </button>
                 </div>
               </div>

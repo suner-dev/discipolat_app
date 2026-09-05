@@ -832,6 +832,38 @@ export interface ScoreHistoryPoint {
   participation: number;
 }
 
+/** Score spirituel détaillé à 12 axes + tendance 6 mois (P7). */
+export interface SpiritualScoreDetail {
+  soulId: string;
+  nom: string;
+  prenom?: string;
+  axes: Record<string, number>;
+  scoreGlobal: number;
+  nbAxes: number;
+  tendance6Mois?: {
+    months: string[];
+    scores: number[];
+    tendance: 'HAUSSE' | 'BAISSE' | 'STABLE';
+    variationPct: number;
+  };
+  dateCalcul: string;
+}
+
+export const SPIRITUAL_AXIS_LABELS: Record<string, string> = {
+  sante: 'Santé',
+  fidelite: 'Fidélité',
+  engagement: 'Engagement',
+  participation: 'Participation',
+  evangelisme: 'Évangélisme',
+  service: 'Service',
+  generosite: 'Générosité',
+  priere: 'Prière',
+  mentoring: 'Mentorat',
+  apprentissage: 'Apprentissage',
+  leadership: 'Leadership',
+  communaute: 'Communauté',
+};
+
 export interface AiSignal {
   severite: 'CRITIQUE' | 'ELEVE' | 'MOYEN';
   type: string;
@@ -897,6 +929,19 @@ export interface EvangelismHistoryEntry {
   etape: EvangelismEtape;
   creePar?: string;
   creeLe: string;
+}
+
+export interface EvangelismScore {
+  soulId: string;
+  trackId: string;
+  etape: EvangelismEtape;
+  score: number;
+  label: string;
+  stagesPassed: number;
+  daysSinceLastChange: number;
+  stagnant: boolean;
+  multiplicationPotential: string;
+  recommendation: string;
 }
 
 // ======================== Système d'objectifs ========================

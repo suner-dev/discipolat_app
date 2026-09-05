@@ -32,7 +32,7 @@ export default function ReferralsStatusPage() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) =>
-      api.post(`/referrals/${id}/status`, { status }),
+      api.patch(`/referrals/${id}/status`, { status }),
     onSuccess: () => { toast.success('Statut mis à jour'); setUpdatingId(null); qc.invalidateQueries({ queryKey: ['referrals'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });

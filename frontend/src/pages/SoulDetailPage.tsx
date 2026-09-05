@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
-import type { Soul, MakerReport, SoulHistoryEntry, SoulNote, Interaction, InteractionType, SpiritualScore, ScoreHistoryPoint, AiAnalysis, CreateInteractionRequest } from '@/types';
+import type { Soul, MakerReport, SoulHistoryEntry, SoulNote, Interaction, InteractionType, SpiritualScore, ScoreHistoryPoint, SpiritualScoreDetail, AiAnalysis, CreateInteractionRequest } from '@/types';
+import { SPIRITUAL_AXIS_LABELS } from '@/types';
 import {
   ArrowLeft, Mail, Phone, Calendar, MapPin, Briefcase, FileText,
   Activity, MessageSquare, Send, Loader2, AlertTriangle, BookOpen,
@@ -293,6 +294,11 @@ export default function SoulDetailPage() {
     queryFn: async () => (await api.get(`/souls/${id}/spiritual-score/history`)).data as ScoreHistoryPoint[],
     enabled: !!id,
   });
+  const { data: scoreDetail } = useQuery({
+    queryKey: ['soul', id, 'spiritual-score-detail'],
+    queryFn: async () => (await api.get(`/souls/${id}/spiritual-score-detail`)).data as SpiritualScoreDetail,
+    enabled: !!id,
+  });
 
   // ======================== ASSISTANT IA ========================
   const [aiOpen, setAiOpen] = useState(false);
@@ -574,6 +580,58 @@ export default function SoulDetailPage() {
                   )}
                 </div>
               )}
+
+              {scoreDetail && (() => {
+                const axes = Object.entries(scoreDetail.axes);
+                const trend = scoreDetail.tendance6Mois;
+                const trendColor = trend?.tendance === 'HAUSSE' ? 'text-green-500' : trend?.tendance === 'BAISSE' ? 'text-red-500' : 'text-gray-500';
+                const trendDirection = trend?.tendance === 'HAUSSE' ? '↑' : trend?.tendance === 'BAISSE' ? '↓' : '→';
+                return (
+                  <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '200ms' }}>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary-500" /> Score spirituel détaillé (12 axes)
+                    </h3>
+                    <p className="text-xs text-gray-400 mb-4 flex items-center gap-2">
+                      <span className="font-semibold text-sm text-gray-700 dark:text-gray-200">Global : {scoreDetail.scoreGlobal}/100</span>
+                      {trend && (
+                        <span className={`flex items-center gap-0.5 font-medium ${trendColor}`}>
+                          {trendDirection} {trend.tendance} ({trend.variationPct > 0 ? '+' : ''}{trend.variationPct}%)
+                        </span>
+                      )}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                      {axes.map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between text-[11px]">
+                          <span className="text-gray-500 w-28">{SPIRITUAL_AXIS_LABELS[key] || key}</span>
+                          <div className="flex-1 h-1.5 rounded-full bg-white/20 dark:bg-gray-700/40 overflow-hidden mx-2">
+                            <div
+                              className={`h-full rounded-full transition-all duration-700 ${value >= 70 ? 'bg-green-500' : value >= 45 ? 'bg-amber-500' : 'bg-red-500'}`}
+                              style={{ width: `${value}%` }}
+                            />
+                          </div>
+                          <span className="text-gray-500 font-medium w-7 text-right">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {trend && trend.months.length > 0 && (
+                      <div className="mt-5 pt-4 border-t border-white/10 dark:border-white/[0.04]">
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Tendance 6 mois</p>
+                        <div className="flex items-end gap-1.5 h-16">
+                          {trend.months.map((m, i) => {
+                            const s = trend.scores[i];
+                            return (
+                              <div key={m} className="flex-1 flex flex-col items-center gap-1" title={`${m} : ${s}`}>
+                                <div className="w-full rounded-t bg-primary-500/60 hover:bg-primary-500 transition-colors" style={{ height: `${s}%` }} />
+                                <span className="text-[8px] text-gray-400">{m.slice(2)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </>
           )}
 

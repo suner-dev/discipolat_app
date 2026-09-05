@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, HandCoins, Plus, CheckCircle2, ArrowRightCircle, Users } from 'lucide-react';
+import { Loader2, HandCoins, Plus, CheckCircle2, ArrowRightCircle, Users, Landmark, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface TontineGroup {
@@ -29,6 +29,36 @@ interface GroupDetail {
   progressPercent: number;
 }
 
+interface TontineStats {
+  activeGroups: number;
+}
+
+interface DashboardData {
+  groupId: string;
+  groupName: string;
+  statut: string;
+  montantParTour: number;
+  periodicite: string;
+  totalMembers: number;
+  activeMembers: number;
+  nextRecipient: string;
+  totalContributions: number;
+  totalCollected: number;
+  expectedPerPeriod: number;
+  pendingPayments: number;
+  overduePayments: number;
+  tourActuel: number;
+  toursCompleted: number;
+  totalTours: number;
+}
+
+interface OverdueRow {
+  membre: string;
+  ordrePassage: number;
+  tour: number;
+  montantDu: number;
+}
+
 /** Tontine Numérique — groupes de contribution et suivi des versements. */
 export default function TontinePage() {
   const { activeRole } = useAuth();
@@ -50,6 +80,23 @@ export default function TontinePage() {
     queryKey: ['tontines', selectedId],
     enabled: !!selectedId,
     queryFn: async () => (await api.get<GroupDetail>(`/tontines/${selectedId}`)).data,
+  });
+
+  const statsQuery = useQuery({
+    queryKey: ['tontines', 'stats'],
+    queryFn: async () => (await api.get<TontineStats>('/tontines/stats')).data,
+  });
+
+  const dashboardQuery = useQuery({
+    queryKey: ['tontines', selectedId, 'dashboard'],
+    enabled: !!selectedId,
+    queryFn: async () => (await api.get<DashboardData>(`/tontines/${selectedId}/dashboard`)).data,
+  });
+
+  const overdueQuery = useQuery({
+    queryKey: ['tontines', selectedId, 'overdue'],
+    enabled: !!selectedId,
+    queryFn: async () => (await api.get<OverdueRow[]>(`/tontines/${selectedId}/overdue`)).data,
   });
 
   const invalidate = () => {
@@ -123,6 +170,33 @@ export default function TontinePage() {
           </button>
         )}
       </div>
+
+      {/* Vue d'ensemble */}
+      {statsQuery.data && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="glass-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-900/30">
+                <Landmark className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 font-mono">{statsQuery.data.activeGroups}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Groupes actifs</p>
+              </div>
+            </div>
+          </div>
+          {dashboardQuery.data && (
+            <div className="glass-card p-4 col-span-1 sm:col-span-2">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Prochain bénéficiaire :</span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">{dashboardQuery.data.nextRecipient}</span>
+                <span className="text-xs text-gray-400">· Collecté {dashboardQuery.data.totalCollected.toLocaleString('fr-FR')} / {dashboardQuery.data.expectedPerPeriod.toLocaleString('fr-FR')}</span>
+                <span className="text-xs text-gray-400">· Tour {dashboardQuery.data.tourActuel} / {dashboardQuery.data.totalTours}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {showCreate && (
         <form
@@ -231,6 +305,44 @@ export default function TontinePage() {
                   </div>
                 ))}
               </div>
+
+              {/* Impayés */}
+              {overdueQuery.isLoading ? (
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                </div>
+              ) : overdueQuery.data && overdueQuery.data.length > 0 ? (
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-red-500" />
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Impayés ({overdueQuery.data.length})
+                    </p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-[10px] uppercase text-gray-400 border-b border-gray-100 dark:border-gray-800">
+                          <th className="py-2 pr-2">Membre</th>
+                          <th className="py-2 pr-2">Ordre</th>
+                          <th className="py-2 pr-2">Tour</th>
+                          <th className="py-2">Montant dû</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {overdueQuery.data.map((o, i) => (
+                          <tr key={i} className="border-b border-gray-50 dark:border-gray-800/60">
+                            <td className="py-2 pr-2 font-medium text-gray-900 dark:text-gray-100">{o.membre}</td>
+                            <td className="py-2 pr-2 text-gray-500">{o.ordrePassage}</td>
+                            <td className="py-2 pr-2 text-gray-500">{o.tour}</td>
+                            <td className="py-2 text-gray-700 dark:text-gray-300 font-medium">{Number(o.montantDu).toLocaleString('fr-FR')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
 
               {canManage && (
                 <form

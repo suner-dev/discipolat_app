@@ -21,7 +21,7 @@ export default function OnboardingWizardPage() {
   });
 
   const completeMutation = useMutation({
-    mutationFn: async () => api.post('/onboarding-wizard/complete'),
+    mutationFn: async (id: string) => api.post(`/onboarding-wizard/${id}/complete`),
     onSuccess: () => { toast.success('Onboarding complété !'); qc.invalidateQueries({ queryKey: ['onboarding-wizard'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
@@ -92,7 +92,7 @@ export default function OnboardingWizardPage() {
             <div className="glass-card p-6 text-center">
               <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-3" />
               <p className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">Toutes les étapes sont complétées !</p>
-              <button onClick={() => completeMutation.mutate()} disabled={completeMutation.isPending}
+              <button onClick={() => completeMutation.mutate(sorted[sorted.length - 1].id)} disabled={completeMutation.isPending}
                 className="btn-primary inline-flex items-center gap-2">
                 {completeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
                 Finaliser la configuration

@@ -18,12 +18,15 @@ import {
   Download,
   BarChart3,
   Trophy,
+  Gauge,
+  Flame,
 } from 'lucide-react';
 import type {
   EvangelismTrack,
   EvangelismStats,
   EvangelismEtape,
   EvangelismHistoryEntry,
+  EvangelismScore,
   UpdateEvangelismRequest,
 } from '@/types';
 
@@ -96,6 +99,14 @@ export default function EvangelismPage() {
     },
   });
 
+  const scoringQuery = useQuery({
+    queryKey: ['evangelism', 'scoring'],
+    queryFn: async () => {
+      const res = await api.get('/evangelism/scoring');
+      return res.data as EvangelismScore[];
+    },
+  });
+
   const historyQuery = useQuery({
     queryKey: ['evangelism', 'history', historyOpen],
     queryFn: async () => {
@@ -119,6 +130,21 @@ export default function EvangelismPage() {
 
   const stats = statsQuery.data;
   const tracks = tracksQuery.data ?? [];
+  const scores = scoringQuery.data ?? [];
+
+  const soulNameByTrack = useMemo(() => {
+    const m = new Map<string, string>();
+    tracks.forEach((t) => m.set(t.id, t.soulNom ?? ''));
+    return m;
+  }, [tracks]);
+
+  const scoreColor = (score: number) => {
+    if (score >= 80) return 'from-emerald-500 to-green-500';
+    if (score >= 60) return 'from-green-500 to-teal-500';
+    if (score >= 40) return 'from-blue-500 to-indigo-500';
+    if (score >= 20) return 'from-amber-500 to-orange-500';
+    return 'from-red-500 to-rose-500';
+  };
 
   // Export CSV
   const exportCsv = () => {
@@ -240,6 +266,68 @@ export default function EvangelismPage() {
             <p className="stat-value text-xl">{s.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Scoring de conversion / potentiel */}
+      <div className="glass-card p-5 animate-slide-up">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Gauge className="w-4 h-4 text-primary-500" />
+            Score de conversion &amp; potentiel de multiplication
+          </h2>
+          <span className="text-[11px] text-gray-400">
+            {scores.length > 0 ? `${scores.length} prospect(s) évalué(s)` : '—'}
+          </span>
+        </div>
+
+        {scoringQuery.isLoading ? (
+          <p className="text-sm text-gray-400 py-2">Chargement…</p>
+        ) : scores.length === 0 ? (
+          <p className="text-sm text-gray-400 py-2">Aucun score disponible.</p>
+        ) : (
+          <div className="space-y-3">
+            {scores.slice(0, 10).map((s) => {
+              const name = soulNameByTrack.get(s.trackId) || 'Âme';
+              return (
+                <div key={s.trackId} className="border border-gray-100 dark:border-gray-800 rounded-xl p-3">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <div className="min-w-0">
+                      <Link
+                        to={`/souls/${s.soulId}`}
+                        className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-primary-600 truncate"
+                      >
+                        {name}
+                      </Link>
+                      <p className="text-[11px] text-gray-500">
+                        {ETAPES.find((e) => e.etape === s.etape)?.label ?? s.etape}
+                        {s.stagnant && (
+                          <span className="inline-flex items-center gap-1 ml-2 text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
+                            <Flame className="w-3 h-3" /> Stagnant {s.daysSinceLastChange}j
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{s.score}</span>
+                      <span className="text-[10px] text-gray-400">/100</span>
+                      <p className="text-[10px] font-medium text-gray-500">{s.label}</p>
+                    </div>
+                  </div>
+                  <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-2">
+                    <div
+                      className={`h-full bg-gradient-to-r ${scoreColor(s.score)} rounded-full transition-all duration-500`}
+                      style={{ width: `${Math.max(2, Math.min(100, s.score))}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-500">
+                    <span className="font-medium text-primary-600 dark:text-primary-400">{s.multiplicationPotential}</span>
+                    {' — '}{s.recommendation}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Pipeline horizontal */}

@@ -30,7 +30,7 @@ export default function LeaveRequestsPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) =>
-      api.put(`/leave-requests/${id}`, { status }),
+      api.patch(`/leave-requests/${id}/${status === 'APPROVED' ? 'approve' : 'reject'}`),
     onSuccess: () => { toast.success('Demande mise à jour'); qc.invalidateQueries({ queryKey: ['leave-requests'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });

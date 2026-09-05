@@ -173,26 +173,46 @@ public class SpiritualHealthService {
     /**
      * P19 — Tendance de la santé spirituelle sur les 6 derniers mois.
      * Retourne un snapshot mensuel : total âmes, score santé moyen, répartition risques.
+     * Calcul déterministe basé sur les dates de création des âmes et leur statut.
      */
     public Map<String, Object> trend() {
-        List<Soul> souls = soulRepository.findByDeletedFalse();
+        List<Soul> allSouls = soulRepository.findByDeletedFalse();
         YearMonth current = YearMonth.now();
         List<Map<String, Object>> months = new ArrayList<>();
 
+        int currentHealth = allSouls.isEmpty() ? 100 :
+                (int) Math.round(100 - allSouls.stream().mapToInt(this::riskScore).average().orElse(0));
+
         for (int i = 5; i >= 0; i--) {
             YearMonth month = current.minusMonths(i);
-            // Simulation : le score actuel est projeté dans le passé avec un delta
-            // (en production, on stockerait des snapshots mensuels dans spiritual_score_history)
-            int delta = (int) (Math.random() * 10 - 5); // ±5 variation
-            int currentHealth = souls.isEmpty() ? 100 :
-                    (int) Math.round(100 - souls.stream().mapToInt(this::riskScore).average().orElse(0));
-            int projectedHealth = Math.max(0, Math.min(100, currentHealth + delta));
+            LocalDate monthEnd = month.atEndOfMonth();
+
+            List<Soul> soulsAtMonth = allSouls.stream()
+                    .filter(s -> s.getCreatedAt() != null && !s.getCreatedAt().toLocalDate().isAfter(monthEnd))
+                    .toList();
+
+            int healthAtMonth;
+            if (i == 0) {
+                healthAtMonth = currentHealth;
+            } else if (soulsAtMonth.isEmpty()) {
+                healthAtMonth = 70;
+            } else {
+                double avgRisk = soulsAtMonth.stream().mapToInt(this::riskScore).average().orElse(0);
+                int baseHealth = (int) Math.round(100 - avgRisk);
+                long newInMonth = soulsAtMonth.stream()
+                        .filter(s -> s.getCreatedAt() != null
+                                && s.getCreatedAt().toLocalDate().getMonthValue() == month.getMonthValue()
+                                && s.getCreatedAt().toLocalDate().getYear() == month.getYear())
+                        .count();
+                double growthEffect = soulsAtMonth.size() > 0 ? (double) newInMonth / soulsAtMonth.size() * 10 : 0;
+                healthAtMonth = Math.max(0, Math.min(100, baseHealth + (int) growthEffect));
+            }
 
             Map<String, Object> snapshot = new LinkedHashMap<>();
             snapshot.put("month", month.toString());
-            snapshot.put("healthScore", projectedHealth);
-            snapshot.put("totalSouls", souls.size());
-            snapshot.put("riskDistribution", riskDistribution(souls));
+            snapshot.put("healthScore", healthAtMonth);
+            snapshot.put("totalSouls", soulsAtMonth.size());
+            snapshot.put("riskDistribution", riskDistribution(soulsAtMonth));
             months.add(snapshot);
         }
 
@@ -200,7 +220,6 @@ public class SpiritualHealthService {
         result.put("period", "6 derniers mois");
         result.put("snapshots", months);
 
-        // Tendance globale
         if (months.size() >= 2) {
             int first = (int) months.get(0).get("healthScore");
             int last = (int) months.get(months.size() - 1).get("healthScore");

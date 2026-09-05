@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Wrench, Plus, Trash2, Loader2, ToggleLeft, ToggleRight, Zap, Settings } from 'lucide-react';
+import { Wrench, Plus, Trash2, Loader2, ToggleLeft, ToggleRight, Zap, Settings, Save, Sliders } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
@@ -17,6 +17,22 @@ interface Automation {
   statut: string;
   createdBy: string;
   createdAt: string;
+}
+
+interface WorkflowConfigItem {
+  key: string;
+  label: string;
+  description?: string;
+  enabled: boolean;
+  rules: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ConfigDraft {
+  label: string;
+  description: string;
+  rules: string;
 }
 
 const TRIGGER_TYPES = ['MEMBER_ABSENT', 'NEW_SOUL', 'EVENT_REMINDER', 'PRAYER_REQUEST', 'ANNIVERSARY', 'SCORE_DROP', 'CUSTOM'];
@@ -57,6 +73,64 @@ export default function WorkflowPage() {
     onSuccess: () => { toast.success('Supprimé'); queryClient.invalidateQueries({ queryKey: ['workflow-automations'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
+
+  // ======================== WORKFLOW CONFIG CRUD ========================
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [draft, setDraft] = useState<ConfigDraft>({ label: '', description: '', rules: '{}' });
+
+  const { data: configs = [], isLoading: configsLoading } = useQuery({
+    queryKey: ['workflow-configs'],
+    queryFn: async () => (await api.get<WorkflowConfigItem[]>('/workflows')).data,
+  });
+
+  const configsInvalidate = () => queryClient.invalidateQueries({ queryKey: ['workflow-configs'] });
+
+  const saveConfigMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingKey) return;
+      let rules: Record<string, unknown> | undefined;
+      const trimmed = draft.rules.trim();
+      if (trimmed) {
+        try {
+          rules = JSON.parse(trimmed);
+        } catch {
+          toast.error('Règles : JSON invalide');
+          throw new Error('invalid rules');
+        }
+      }
+      await api.put(`/workflows/${editingKey}`, {
+        label: draft.label || undefined,
+        description: draft.description || undefined,
+        rules,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Configuration mise à jour');
+      configsInvalidate();
+      setEditingKey(null);
+    },
+    onError: (e: unknown) => { if ((e as Error).message !== 'invalid rules') toast.error(getErrorMessage(e)); },
+  });
+
+  const toggleConfigMutation = useMutation({
+    mutationFn: async (key: string) => api.post(`/workflows/${key}/toggle`),
+    onSuccess: () => { toast.success('Statut mis à jour'); configsInvalidate(); },
+    onError: (e: unknown) => toast.error(getErrorMessage(e)),
+  });
+
+  const openEditConfig = (c: WorkflowConfigItem) => {
+    setEditingKey(c.key);
+    setDraft({
+      label: c.label || '',
+      description: c.description || '',
+      rules: c.rules && Object.keys(c.rules).length > 0 ? JSON.stringify(c.rules, null, 2) : '{}',
+    });
+  };
+
+  const closeEditConfig = () => {
+    setEditingKey(null);
+    setDraft({ label: '', description: '', rules: '{}' });
+  };
 
   return (
     <div className="page-container">
@@ -114,6 +188,90 @@ export default function WorkflowPage() {
             ))}
           </div>
         )}
+
+      {/* ======================= WORKFLOW CONFIGS (CRUD) ======================= */}
+      <div className="mt-10">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white">
+              <Sliders className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Configurations de workflow</h2>
+              <p className="text-xs text-gray-500">Seuils d'escalade, rappels et modèles de notification paramétrables</p>
+            </div>
+          </div>
+        </div>
+
+        {configsLoading ? <SkeletonLoader lines={3} variant="card" /> :
+          configs.length === 0 ? (
+            <EmptyState icon={<Sliders className="w-8 h-8 text-gray-400" />}
+              title="Aucune configuration"
+              message="Les configurations de workflow apparaîtront ici" />
+          ) : (
+            <div className="space-y-3">
+              {configs.map((c) => (
+                <div key={c.key} className="bg-white dark:bg-white/5 rounded-xl p-5 border border-gray-200 dark:border-white/10">
+                  {editingKey === c.key ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Nom</label>
+                        <input className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
+                          value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Description</label>
+                        <input className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
+                          value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Règles (JSON)</label>
+                        <textarea rows={3}
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm font-mono resize-none"
+                          value={draft.rules} onChange={(e) => setDraft({ ...draft, rules: e.target.value })} />
+                      </div>
+                      <div className="flex justify-end gap-3">
+                        <button onClick={closeEditConfig} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+                        <button onClick={() => saveConfigMutation.mutate()} disabled={saveConfigMutation.isPending}
+                          className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 flex items-center gap-2">
+                          {saveConfigMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                          Enregistrer
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${c.enabled ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
+                          <Sliders className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{c.label || c.key}</h3>
+                            <span className="font-mono text-[10px] text-gray-400">{c.key}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${c.enabled ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-500/20'}`}>
+                              {c.enabled ? 'Activé' : 'Désactivé'}
+                            </span>
+                          </div>
+                          {c.description && <p className="text-xs text-gray-500 mt-0.5">{c.description}</p>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => openEditConfig(c)} className="btn-icon text-gray-400 hover:text-orange-600" title="Modifier">
+                          <Settings className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => toggleConfigMutation.mutate(c.key)}
+                          className={`transition ${c.enabled ? 'text-green-500' : 'text-gray-400'}`} title="Activer/désactiver">
+                          {c.enabled ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+      </div>
 
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
