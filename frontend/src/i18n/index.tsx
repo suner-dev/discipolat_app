@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import fr from './fr';
 import en from './en';
 import pt from './pt';
@@ -52,12 +52,25 @@ function getInitialLocale(): Locale {
   return 'fr';
 }
 
+const RTL_LOCALES: Locale[] = ['ar'];
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
 
+  // Initialize document direction on mount
+  useEffect(() => {
+    document.documentElement.dir = RTL_LOCALES.includes(locale) ? 'rtl' : 'ltr';
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    try { localStorage.setItem(STORAGE_KEY, newLocale); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, newLocale);
+      // Update document direction for RTL languages
+      document.documentElement.dir = RTL_LOCALES.includes(newLocale) ? 'rtl' : 'ltr';
+      document.documentElement.lang = newLocale;
+    } catch { /* ignore */ }
   }, []);
 
   const t = useCallback((key: string, params?: Record<string, string>): string => {
