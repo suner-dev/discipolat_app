@@ -30,6 +30,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   BarChart, Bar, Cell,
 } from 'recharts';
+import { useI18n } from '@/i18n';
 
 interface AuditEntry {
   id: string;
@@ -88,6 +89,7 @@ function toIsoEnd(date: string) {
 }
 
 export default function AuditPage() {
+  const { locale } = useI18n();
   const dictionaries = useDictionaries();
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -457,7 +459,7 @@ export default function AuditPage() {
                       <td className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3 h-3 text-gray-400" />
-                          {new Date(entry.createdAt).toLocaleString('fr-FR', {
+                          {new Date(entry.createdAt).toLocaleString(locale, {
                             day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
                           })}
                         </div>

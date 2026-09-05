@@ -6,6 +6,7 @@ import {
   ArrowLeft, Loader2, User,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '@/i18n';
 
 interface Ticket {
   id: string;
@@ -29,6 +30,7 @@ interface TicketMessage {
 }
 
 export default function TicketDetailPage() {
+  const { locale } = useI18n();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -117,14 +119,14 @@ export default function TicketDetailPage() {
               <Clock className="w-4 h-4 text-gray-400 shrink-0" />
               <span className="text-xs text-gray-400 min-w-[100px]">Créé le</span>
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                {new Date(ticket.createdAt).toLocaleString('fr-FR')}
+                {new Date(ticket.createdAt).toLocaleString(locale)}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <Clock className="w-4 h-4 text-gray-400 shrink-0" />
               <span className="text-xs text-gray-400 min-w-[100px]">Mis à jour</span>
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                {new Date(ticket.updatedAt).toLocaleString('fr-FR')}
+                {new Date(ticket.updatedAt).toLocaleString(locale)}
               </span>
             </div>
           </div>
@@ -147,7 +149,7 @@ export default function TicketDetailPage() {
                       {msg.auteur.firstName} {msg.auteur.lastName}
                     </span>
                     <span className="text-[10px] text-gray-400">
-                      {new Date(msg.createdAt).toLocaleString('fr-FR')}
+                      {new Date(msg.createdAt).toLocaleString(locale)}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{msg.contenu}</p>

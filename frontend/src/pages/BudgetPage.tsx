@@ -3,10 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { Wallet, Plus, Trash2, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 interface Budget { id: string; name: string; category: string; allocated: number; spent: number; period: string; }
 
 export default function BudgetPage() {
+  const { locale } = useI18n();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', category: '', allocated: 0, period: 'monthly' });
@@ -24,9 +26,9 @@ export default function BudgetPage() {
         <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm ml-auto inline-flex items-center gap-1"><Plus className="w-4 h-4" /> Nouveau budget</button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="stat-card"><TrendingUp className="w-5 h-5 text-emerald-500" /><p className="stat-value">{totalAllocated.toLocaleString('fr-FR')} F</p><p className="stat-label">Total alloué</p></div>
-        <div className="stat-card"><TrendingDown className="w-5 h-5 text-red-500" /><p className="stat-value">{totalSpent.toLocaleString('fr-FR')} F</p><p className="stat-label">Total dépensé</p></div>
-        <div className="stat-card"><Wallet className="w-5 h-5 text-blue-500" /><p className="stat-value">{(totalAllocated - totalSpent).toLocaleString('fr-FR')} F</p><p className="stat-label">Restant</p></div>
+        <div className="stat-card"><TrendingUp className="w-5 h-5 text-emerald-500" /><p className="stat-value">{totalAllocated.toLocaleString(locale)} F</p><p className="stat-label">Total alloué</p></div>
+        <div className="stat-card"><TrendingDown className="w-5 h-5 text-red-500" /><p className="stat-value">{totalSpent.toLocaleString(locale)} F</p><p className="stat-label">Total dépensé</p></div>
+        <div className="stat-card"><Wallet className="w-5 h-5 text-blue-500" /><p className="stat-value">{(totalAllocated - totalSpent).toLocaleString(locale)} F</p><p className="stat-label">Restant</p></div>
       </div>
       {showForm && (
         <div className="glass-card p-6 mb-6 space-y-4">
@@ -44,7 +46,7 @@ export default function BudgetPage() {
           <div key={b.id} className="glass-card p-5">
             <div className="flex items-center justify-between mb-3"><div><h3 className="font-semibold text-gray-800 dark:text-gray-200">{b.name}</h3><p className="text-xs text-gray-500">{b.category} • {b.period}</p></div><button onClick={() => deleteMutation.mutate(b.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button></div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2"><div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${Math.min((b.spent / b.allocated) * 100, 100)}%` }} /></div>
-            <div className="flex justify-between text-xs text-gray-500"><span>Dépensé: {b.spent?.toLocaleString('fr-FR')} F</span><span>Alloué: {b.allocated?.toLocaleString('fr-FR')} F</span></div>
+            <div className="flex justify-between text-xs text-gray-500"><span>Dépensé: {b.spent?.toLocaleString(locale)} F</span><span>Alloué: {b.allocated?.toLocaleString(locale)} F</span></div>
           </div>
         ))}</div>
       )}

@@ -22,6 +22,7 @@ import {
   X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 /** Replis */
 const TYPE_FALLBACK: Record<string, string> = {
@@ -48,6 +49,7 @@ const STATUT_COLORS: Record<string, string> = {
 };
 
 export default function SoulsPage() {
+  const { locale } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialStatut = (searchParams.get('statut') as StatutAme | null) ?? '';
   const initialType = (searchParams.get('typeDisciple') as TypeDisciple | null) ?? '';
@@ -214,7 +216,7 @@ export default function SoulsPage() {
       header: 'Intégration',
       cell: (soul) => (
         <span className="text-gray-500 dark:text-gray-400 text-sm">
-          {new Date(soul.dateIntegration).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+          {new Date(soul.dateIntegration).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
         </span>
       ),
     },
@@ -224,7 +226,7 @@ export default function SoulsPage() {
         soul.dateDernierContact ? (
           <span className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
             <span className={`w-1.5 h-1.5 rounded-full ${new Date(soul.dateDernierContact) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) ? 'bg-green-500' : 'bg-amber-500'}`} />
-            {new Date(soul.dateDernierContact).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+            {new Date(soul.dateDernierContact).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
           </span>
         ) : (
           <span className="text-gray-400 dark:text-gray-600 text-sm">—</span>

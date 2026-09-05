@@ -9,6 +9,7 @@ import {
   Key, X, CheckCircle, XCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
@@ -22,6 +23,7 @@ const ROLE_COLORS: Record<string, string> = {
 type ViewMode = 'liste' | 'detail' | 'edit';
 
 export default function PasteurUsersTab() {
+  const { locale } = useI18n();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
@@ -189,7 +191,7 @@ export default function PasteurUsersTab() {
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Calendar className="w-4 h-4 mx-auto text-gray-400 mb-1" />
               <p className="text-xs text-gray-400">Naissance</p>
-              <p className="font-semibold text-sm">{u.dateNaissance ? new Date(u.dateNaissance).toLocaleDateString('fr-FR') : '—'}</p>
+              <p className="font-semibold text-sm">{u.dateNaissance ? new Date(u.dateNaissance).toLocaleDateString(locale) : '—'}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Shield className="w-4 h-4 mx-auto text-gray-400 mb-1" />
@@ -219,8 +221,8 @@ export default function PasteurUsersTab() {
             <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
               <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase">Dates</h4>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-gray-500">Créé le</span><span>{new Date(u.createdAt).toLocaleDateString('fr-FR')}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Modifié le</span><span>{new Date(u.updatedAt).toLocaleDateString('fr-FR')}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Créé le</span><span>{new Date(u.createdAt).toLocaleDateString(locale)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Modifié le</span><span>{new Date(u.updatedAt).toLocaleDateString(locale)}</span></div>
               </div>
             </div>
           </div>
@@ -303,7 +305,7 @@ export default function PasteurUsersTab() {
                     <td><span className={`badge text-[10px] ${ROLE_COLORS[u.role] || 'bg-gray-100 text-gray-700'}`}>{roleLabel(u.role)}</span></td>
                     <td><span className={`badge text-[10px] ${u.statut === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>{u.statut}</span></td>
                     <td className="text-sm">{u.twoFactorEnabled ? '✅' : '—'}</td>
-                    <td className="text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString('fr-FR')}</td>
+                    <td className="text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString(locale)}</td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => { setSelectedUser(u); setView('detail'); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Voir">

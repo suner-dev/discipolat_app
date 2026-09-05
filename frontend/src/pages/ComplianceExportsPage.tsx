@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
+import { useI18n } from '@/i18n';
 import {
   Shield, Download, Trash2, Loader2, Clock, CheckCircle2, FileText,
   AlertTriangle, Search, Eye, ExternalLink,
@@ -29,6 +30,7 @@ interface GdprRequest {
 }
 
 export default function ComplianceExportsPage() {
+  const { locale } = useI18n();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<'exports' | 'gdpr'>('exports');
   const [searchUser, setSearchUser] = useState('');
@@ -224,9 +226,9 @@ export default function ComplianceExportsPage() {
                       <div className="flex items-center gap-3 text-[10px] text-gray-400 mt-0.5">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {new Date(exp.requestedAt).toLocaleString('fr-FR')}
+                          {new Date(exp.requestedAt).toLocaleString(locale)}
                         </span>
-                        {exp.completedAt && <span>Traité le {new Date(exp.completedAt).toLocaleDateString('fr-FR')}</span>}
+                        {exp.completedAt && <span>Traité le {new Date(exp.completedAt).toLocaleDateString(locale)}</span>}
                       </div>
                     </div>
                     {exp.downloadUrl && (
@@ -277,10 +279,10 @@ export default function ComplianceExportsPage() {
                   <div className="flex items-center gap-3 text-[10px] text-gray-400">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {new Date(req.createdAt).toLocaleString('fr-FR')}
+                      {new Date(req.createdAt).toLocaleString(locale)}
                     </span>
                     {req.processedAt && (
-                      <span>Traité le {new Date(req.processedAt).toLocaleDateString('fr-FR')}</span>
+                      <span>Traité le {new Date(req.processedAt).toLocaleDateString(locale)}</span>
                     )}
                   </div>
                   {req.status === 'PENDING' && (

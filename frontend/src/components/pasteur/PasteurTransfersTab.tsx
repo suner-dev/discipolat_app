@@ -10,6 +10,7 @@ import {
   ChevronDown, ChevronUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 interface Transfer {
   id: string; type: string; statut: string; personneNom?: string; cible?: string;
@@ -28,6 +29,7 @@ interface TransferDetail extends Transfer {
 interface DecisionForm { decision: string; commentaire: string; }
 
 export default function PasteurTransfersTab() {
+  const { locale } = useI18n();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
@@ -162,7 +164,7 @@ export default function PasteurTransfersTab() {
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <p className="text-xs text-gray-400">Date soumission</p>
-              <p className="font-semibold text-sm">{t.dateSoumission ? new Date(t.dateSoumission).toLocaleDateString('fr-FR') : '—'}</p>
+              <p className="font-semibold text-sm">{t.dateSoumission ? new Date(t.dateSoumission).toLocaleDateString(locale) : '—'}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <p className="text-xs text-gray-400">Source</p>
@@ -196,7 +198,7 @@ export default function PasteurTransfersTab() {
                   <div key={d.id} className={`p-3 rounded-xl border ${decisionColor(d.decision)}`}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-semibold">{d.decision?.replace(/_/g, ' ')}</span>
-                      <span className="text-[10px] text-gray-400">{d.dateDecision ? new Date(d.dateDecision).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                      <span className="text-[10px] text-gray-400">{d.dateDecision ? new Date(d.dateDecision).toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
                     </div>
                     <p className="text-xs">Par {d.decisioneurNom || '—'}</p>
                     {d.commentaire && <p className="text-xs mt-1 opacity-80">{d.commentaire}</p>}
@@ -217,7 +219,7 @@ export default function PasteurTransfersTab() {
                     <div className="min-w-0">
                       <p className="text-xs text-gray-900 dark:text-gray-100"><span className="font-medium">{h.utilisateurNom || 'Système'}</span> — {h.action?.replace(/_/g, ' ')}</p>
                       {h.details && <p className="text-[10px] text-gray-400">{h.details}</p>}
-                      <p className="text-[10px] text-gray-400">{h.date ? new Date(h.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</p>
+                      <p className="text-[10px] text-gray-400">{h.date ? new Date(h.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</p>
                     </div>
                   </div>
                 ))}
@@ -348,7 +350,7 @@ export default function PasteurTransfersTab() {
                     <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-0.5 flex-wrap">
                       <span className="badge-info text-[9px]">{typeLabel(t.type || t.typeTransfert)}</span>
                       {t.demandeurNom && <span>Par {t.demandeurNom}</span>}
-                      {t.dateSoumission && <span>{new Date(t.dateSoumission).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>}
+                      {t.dateSoumission && <span>{new Date(t.dateSoumission).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}</span>}
                     </div>
                   </div>
                 </div>

@@ -8,6 +8,7 @@ import {
   Inbox, Sparkles, ChevronRight, Filter, X, Search, BarChart3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 /** Replis */
 const TYPE_FALLBACK: Record<string, string> = {
@@ -32,6 +33,7 @@ function canalIcon(canal: string) {
 }
 
 export default function NotificationsPage() {
+  const { locale } = useI18n();
   const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
@@ -246,7 +248,7 @@ export default function NotificationsPage() {
                   <div className="flex items-center gap-2 mt-1.5">
                     <Clock className="w-3 h-3 text-gray-400" />
                     <span className="text-xs text-gray-400">
-                      {new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(n.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 </div>
