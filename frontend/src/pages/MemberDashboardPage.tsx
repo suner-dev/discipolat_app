@@ -548,7 +548,7 @@ export default function MemberDashboardPage() {
             <div className="p-4 rounded-2xl bg-white/40 dark:bg-gray-800/30 border border-white/40 dark:border-white/[0.04]">
               <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-3">
                 Semaine du{' '}
-                {new Date(currentWeekMonday() + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                {new Date(currentWeekMonday() + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long' })}
               </p>
 
               {/* Programme (configuré par le pasteur) */}
@@ -641,7 +641,7 @@ export default function MemberDashboardPage() {
                       >
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            {new Date(p.semaine + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                            {new Date(p.semaine + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long' })}
                           </p>
                           <p className="text-[11px] text-gray-400 truncate">
                             {presents} / {Object.keys(p.presences || {}).length} programmes présents
@@ -764,7 +764,7 @@ export default function MemberDashboardPage() {
                         </span>
                       </div>
                       <span className="text-[10px] text-gray-400">
-                        {new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        {new Date(r.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                       </span>
                     </div>
                     <p className="text-sm text-gray-700 dark:text-gray-200 mt-2 leading-relaxed">{r.message}</p>
@@ -800,8 +800,8 @@ export default function MemberDashboardPage() {
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Événements à venir</h3>
-              <p className="text-xs text-gray-400">Prochains événements de votre communauté</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('member.upcomingEvents')}</h3>
+              <p className="text-xs text-gray-400">{t('member.communityEvents')}</p>
             </div>
           </div>
           <Link to="/events" className="text-[10px] font-medium text-primary-600">Voir tout</Link>
@@ -814,13 +814,13 @@ export default function MemberDashboardPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-primary-600">{ev.titre}</p>
-                <p className="text-[10px] text-gray-400">{ev.dateDebut ? new Date(ev.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}{ev.lieu ? ` · ${ev.lieu}` : ''}</p>
+                <p className="text-[10px] text-gray-400">{ev.dateDebut ? new Date(ev.dateDebut).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : '—'}{ev.lieu ? ` · ${ev.lieu}` : ''}</p>
               </div>
               <ChevronRight className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
           ))}
           {(!(dashboard as any)?.evenements || ((dashboard as any)).evenements.length === 0) && (
-            <div className="col-span-full text-center py-6"><Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-xs text-gray-400">Aucun événement à venir</p></div>
+            <div className="col-span-full text-center py-6"><Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-xs text-gray-400">{t('member.noEvent')}</p></div>
           )}
         </div>
       </div>
@@ -833,8 +833,8 @@ export default function MemberDashboardPage() {
               <Church className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Prières & actions de grâce</h3>
-              <p className="text-xs text-gray-400">Demandes de prière de votre famille et de l'église</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('member.prayersThanks')}</h3>
+              <p className="text-xs text-gray-400">{t('member.prayersHint')}</p>
             </div>
           </div>
           <Link to="/prayers" className="text-[10px] font-medium text-primary-600">Voir tout</Link>
@@ -919,7 +919,7 @@ export default function MemberDashboardPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{ev.titre}</p>
-                  <p className="text-[10px] text-gray-400">{ev.dateDebut ? new Date(ev.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}{ev.lieu ? ` · ${ev.lieu}` : ''}</p>
+                  <p className="text-[10px] text-gray-400">{ev.dateDebut ? new Date(ev.dateDebut).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : '—'}{ev.lieu ? ` · ${ev.lieu}` : ''}</p>
                 </div>
               </div>
             ))}
@@ -939,7 +939,7 @@ export default function MemberDashboardPage() {
               <div key={idx} className="p-3 rounded-xl bg-white/40 dark:bg-gray-800/30 border border-white/40 dark:border-white/[0.04]">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="badge text-[10px] badge-info">{n.type || 'Note'}</span>
-                  <span className="text-[10px] text-gray-400">{n.createdAt ? new Date(n.createdAt).toLocaleDateString('fr-FR') : ''}</span>
+                  <span className="text-[10px] text-gray-400">{n.createdAt ? new Date(n.createdAt).toLocaleDateString(locale) : ''}</span>
                 </div>
                 <p className="text-sm text-gray-700 dark:text-gray-300">{n.contenu || n.texte || ''}</p>
               </div>
