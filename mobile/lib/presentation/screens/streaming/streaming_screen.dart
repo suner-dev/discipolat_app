@@ -16,10 +16,12 @@ class StreamingScreen extends StatefulWidget {
 class _StreamingScreenState extends State<StreamingScreen> {
   late final ApiService _api = widget.apiService ?? ApiService();
   List<dynamic> _streams = [];
+  List<dynamic> _liveStreams = [];
   bool _isLoading = true;
   String? _error;
 
-  List<dynamic> get _live => _streams.where((s) => s['status'] == 'LIVE').toList();
+  List<dynamic> get _live =>
+      _liveStreams.isNotEmpty ? _liveStreams : _streams.where((s) => s['status'] == 'LIVE').toList();
 
   @override
   void initState() {
@@ -35,14 +37,23 @@ class _StreamingScreenState extends State<StreamingScreen> {
     try {
       final orgId = await TenantConfig.resolveOrgId();
       final tenantId = int.tryParse(orgId ?? '');
+      final params = tenantId == null ? null : {'tenantId': tenantId};
+      List<dynamic> live = [];
+      final liveRes = await _api.get('/streams/live',
+          params: params);
+      final liveData = liveRes.data;
+      live = liveData is List
+          ? liveData
+          : (liveData is Map && liveData['content'] != null ? liveData['content'] : []);
       final res = await _api.get('/streams',
-          params: tenantId == null ? null : {'tenantId': tenantId});
+          params: params);
       final data = res.data;
       final list = data is List
           ? data
           : (data is Map && data['content'] != null ? data['content'] : []);
       if (mounted) {
         setState(() {
+          _liveStreams = List<dynamic>.from(live);
           _streams = List<dynamic>.from(list);
           _isLoading = false;
         });

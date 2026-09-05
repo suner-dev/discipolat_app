@@ -222,6 +222,7 @@ class AppLocalizations {
       translate('evangelizationTitle').replaceAll('{count}', '$count');
   String get funnelOfConversion => translate('funnelOfConversion');
   String get clickStageToSeeSouls => translate('clickStageToSeeSouls');
+  String get conversionScores => translate('conversionScores');
   String soulsAtStage(int count) => translate('soulsAtStage').replaceAll('{count}', '$count');
   String get searchHint => translate('searchHint');
   String get noSoulsAtStage => translate('noSoulsAtStage');
@@ -1970,6 +1971,7 @@ class AppLocalizations {
     'evangelizationTitle': 'Évangélisation · {count} âmes',
     'funnelOfConversion': 'Funnel de conversion',
     'clickStageToSeeSouls': 'Cliquez sur une étape pour voir les âmes',
+    'conversionScores': 'Scores de conversion',
     'soulsAtStage': '{count} âme(s)',
     'noSoulsAtStage': 'Aucune âme à cette étape',
     'advanceTo': 'Avancer → {label}',
@@ -3360,6 +3362,7 @@ class AppLocalizations {
     'evangelizationTitle': 'Evangelism · {count} souls',
     'funnelOfConversion': 'Conversion funnel',
     'clickStageToSeeSouls': 'Click a stage to see the souls',
+    'conversionScores': 'Conversion scores',
     'soulsAtStage': '{count} soul(s)',
     'noSoulsAtStage': 'No souls at this stage',
     'advanceTo': 'Advance → {label}',
@@ -4660,6 +4663,7 @@ class AppLocalizations {
     'evangelizationTitle': 'Evangelismo · {count} almas',
     'funnelOfConversion': 'Funil de conversão',
     'clickStageToSeeSouls': 'Clique numa etapa para ver as almas',
+    'conversionScores': 'Pontuações de conversão',
     'soulsAtStage': '{count} alma(s)',
     'noSoulsAtStage': 'Nenhuma alma nesta etapa',
     'advanceTo': 'Avançar → {label}',

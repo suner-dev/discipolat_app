@@ -20,6 +20,7 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
   Soul? _soul;
   Map<String, dynamic>? _pastoral360;
   Map<String, dynamic>? _spiritualScore;
+  Map<String, dynamic>? _spiritualScoreDetail;
   List<dynamic> _scoreHistory = [];
   List<dynamic> _history = [];
   Map<String, dynamic>? _aiAnalysis;
@@ -39,6 +40,11 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
       final soulRes = await _apiService.get('/souls/${widget.soulId}');
       final p360Res = await _apiService.get('/souls/${widget.soulId}/pastoral-360');
       final scoreRes = await _apiService.get('/souls/${widget.soulId}/spiritual-score');
+      Map<String, dynamic>? scoreDetail;
+      try {
+        final sdRes = await _apiService.get('/souls/${widget.soulId}/spiritual-score-detail');
+        scoreDetail = sdRes.data as Map<String, dynamic>?;
+      } catch (_) {}
       List<dynamic> scoreHist = [];
       try {
         final shRes = await _apiService.get('/souls/${widget.soulId}/spiritual-score/history');
@@ -61,6 +67,7 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
           _soul = soul;
           _pastoral360 = p360;
           _spiritualScore = scoreRes.data as Map<String, dynamic>?;
+          _spiritualScoreDetail = scoreDetail;
           _scoreHistory = scoreHist;
           _history = (histRes.data is List ? histRes.data : []) as List<dynamic>;
           _isLoading = false;
@@ -459,6 +466,15 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
             Text('Semaine du $semaine',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10)),
           ],
+          // Detailed breakdown from spiritual-score-detail endpoint
+          if (_spiritualScoreDetail != null) ...[
+            const SizedBox(height: 12),
+            const GlassDivider(),
+            const SizedBox(height: 8),
+            Text('Détail du score', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 6),
+            ..._buildScoreDetailRows(_spiritualScoreDetail!),
+          ],
           // History sparkline
           if (_scoreHistory.length > 1) ...[
             const SizedBox(height: 12),
@@ -478,8 +494,79 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
     );
   }
 
-  Widget _subScoreBar(String label, num value, Color color) {
-    return Row(
+  List<Widget> _buildScoreDetailRows(Map<String, dynamic> detail) {
+    final breakdown = detail['breakdown'] ?? detail['details'];
+    if (breakdown is Map) {
+      return breakdown.entries.map((e) {
+        final label = e.key.toString().replaceAll('_', ' ').toLowerCase();
+        final value = e.value;
+        final val = value is num ? value : double.tryParse('$value') ?? 0;
+        final color = val >= 80 ? Colors.green : val >= 45 ? Colors.amber : Colors.red;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 90,
+                child: Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+              ),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: val.toDouble().clamp(0.0, 100.0) / 100,
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    valueColor: AlwaysStoppedAnimation(color),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text('${val.toInt()}',
+                  style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        );
+      }).toList();
+    }
+    final criteres = detail['criteres'];
+    if (criteres is List) {
+      return criteres.map((c) {
+        final cMap = c as Map<String, dynamic>;
+        final label = (cMap['critere'] ?? cMap['label'] ?? '')?.toString() ?? '';
+        final val = cMap['score'] is num ? cMap['score'] as num : (double.tryParse('${cMap['score']}') ?? 0);
+        final color = val >= 80 ? Colors.green : val >= 45 ? Colors.amber : Colors.red;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 90,
+                child: Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+              ),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: val.toDouble().clamp(0.0, 100.0) / 100,
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    valueColor: AlwaysStoppedAnimation(color),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text('${val.toInt()}',
+                  style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        );
+      }).toList();
+    }
+    return [];
+  }
+
+  Widget _subScoreBar(String label, num value, Color color) {    return Row(
       children: [
         SizedBox(
           width: 70,

@@ -30,7 +30,7 @@ class _SmartAlertsScreenState extends State<SmartAlertsScreen> {
     try {
       final results = await Future.wait([
         _api.get('/smart-alerts/summary'),
-        _api.get('/alerts?statut=ACTIVE&page=0&size=50'),
+        _api.get('/alerts/active'),
       ]);
       final summaryData = results[0].data is Map<String, dynamic>
           ? results[0].data as Map<String, dynamic>

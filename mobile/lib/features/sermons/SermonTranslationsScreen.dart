@@ -65,6 +65,24 @@ class _SermonTranslationsScreenState extends State<SermonTranslationsScreen> {
     }
   }
 
+  Future<void> _completeTranslation(String translationId) async {
+    try {
+      await _apiService.post('/sermons/translations/$translationId/complete');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Traduction terminée'), backgroundColor: Colors.green),
+        );
+        _loadData();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors de la finalisation'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   Color _statusColor(String? s) {
     switch (s) {
       case 'EN_COURS':
@@ -141,6 +159,16 @@ class _SermonTranslationsScreenState extends State<SermonTranslationsScreen> {
                                         onPressed: () => _transcribe(id),
                                         icon: const Icon(Icons.play_arrow, size: 16),
                                         label: const Text('Transcrire'),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    const SizedBox(height: 8),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _completeTranslation(id),
+                                        icon: const Icon(Icons.check, size: 16),
+                                        label: const Text('Terminer'),
                                       ),
                                     ),
                                   ],

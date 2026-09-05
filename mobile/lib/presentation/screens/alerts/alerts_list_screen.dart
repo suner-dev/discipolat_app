@@ -13,6 +13,7 @@ class AlertsListScreen extends StatefulWidget {
 class _AlertsListScreenState extends State<AlertsListScreen> {
   final _apiService = ApiService();
   List<dynamic> _alerts = [];
+  Map<String, dynamic>? _stats;
   bool _isLoading = true;
 
   @override
@@ -20,9 +21,23 @@ class _AlertsListScreenState extends State<AlertsListScreen> {
 
   Future<void> _loadAlerts() async {
     try {
-      final response = await _apiService.get('/alerts', params: {'size': '50'});
-      final data = response.data as Map<String, dynamic>;
-      if (mounted) setState(() { _alerts = data['content'] as List<dynamic>; _isLoading = false; });
+      final results = await Future.wait([
+        _apiService.get('/alerts/active'),
+        _apiService.get('/alerts/stats'),
+      ]);
+      final activeData = results[0].data;
+      final statsData = results[1].data;
+      List<dynamic> active = [];
+      if (activeData is Map && activeData['content'] is List) {
+        active = activeData['content'] as List<dynamic>;
+      } else if (activeData is List) {
+        active = activeData;
+      }
+      if (mounted) setState(() {
+        _alerts = active;
+        _stats = statsData is Map<String, dynamic> ? statsData : null;
+        _isLoading = false;
+      });
     } catch (e) { if (mounted) setState(() => _isLoading = false); }
   }
 
@@ -32,8 +47,8 @@ class _AlertsListScreenState extends State<AlertsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activeCount = _alerts.where((a) => a is Map && a['statut'] == 'ACTIVE').length;
-    final resolvedCount = _alerts.where((a) => a is Map && a['statut'] == 'RESOLUE').length;
+    final activeCount = _alerts.length;
+    final resolvedCount = (_stats?['resolues'] ?? _stats?['resolved'] ?? 0) as num;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Alertes')),
@@ -63,7 +78,7 @@ class _AlertsListScreenState extends State<AlertsListScreen> {
                       child: Column(children: [
                         Icon(Icons.check_circle, color: Colors.green, size: 28),
                         const SizedBox(height: 8),
-                        Text('$resolvedCount', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                        Text('${resolvedCount.toInt()}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                         Text('Résolues', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
                       ]),
                     )),

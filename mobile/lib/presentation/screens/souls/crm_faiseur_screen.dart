@@ -17,6 +17,8 @@ class CrmFaiseurScreen extends StatefulWidget {
 class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerProviderStateMixin {
   final _apiService = ApiService();
   Map<String, dynamic>? _crm;
+  List<Map<String, dynamic>> _disciplesByFaiseur = [];
+  List<Map<String, dynamic>> _soulsEnDifficulte = [];
   bool _isLoading = true;
   String _filterStatus = 'all';
 
@@ -39,9 +41,26 @@ class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerPr
 
   Future<void> _loadData() async {
     try {
-      final response = await _apiService.get('/dashboard/crm-faiseur');
+      final userId = AuthState().userId ?? '';
+      final results = await Future.wait([
+        _apiService.get('/dashboard/crm-faiseur'),
+        _apiService.get('/souls/by-faiseur/$userId'),
+        _apiService.get('/souls/en-difficulte'),
+      ]);
       if (mounted) {
-        setState(() { _crm = response.data as Map<String, dynamic>?; _isLoading = false; });
+        final crmData = results[0].data;
+        _crm = crmData is Map<String, dynamic> ? crmData : null;
+        final byFaiseurData = results[1].data;
+        _disciplesByFaiseur = (byFaiseurData is Map && byFaiseurData['content'] is List
+            ? byFaiseurData['content'] as List
+            : (byFaiseurData is List ? byFaiseurData : []))
+            .cast<Map<String, dynamic>>();
+        final enDiffData = results[2].data;
+        _soulsEnDifficulte = (enDiffData is Map && enDiffData['content'] is List
+            ? enDiffData['content'] as List
+            : (enDiffData is List ? enDiffData : []))
+            .cast<Map<String, dynamic>>();
+        setState(() => _isLoading = false);
         _animCtrl.forward();
       }
     } catch (_) {
@@ -52,8 +71,9 @@ class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerPr
   List<Map<String, dynamic>> get _disciples {
     final raw = (_crm?['disciples'] as List<dynamic>?) ?? [];
     final disciples = raw.cast<Map<String, dynamic>>();
-    if (_filterStatus == 'all') return disciples;
-    return disciples.where((d) => d['statut'] == _filterStatus).toList();
+    final list = _disciplesByFaiseur.isNotEmpty ? _disciplesByFaiseur : disciples;
+    if (_filterStatus == 'all') return list;
+    return list.where((d) => d['statut'] == _filterStatus).toList();
   }
 
   Map<String, dynamic> get _stats => (_crm?['statistiques'] as Map<String, dynamic>?) ?? {};
@@ -377,10 +397,31 @@ class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerPr
                             _filterChip('Veille', 'EN_VEILLE', '${_stats['enVeille'] ?? 0}'),
                             const SizedBox(width: 6),
                             _filterChip('Décrochés', 'DECROCHE', '${_stats['decroches'] ?? 0}'),
+                            const SizedBox(width: 6),
+                            _filterChip('En difficulté', 'EN_DIFFICULTE', '${_soulsEnDifficulte.length}', alert: true),
                           ],
                         ),
                       ),
                       const SizedBox(height: 12),
+
+                      // At-risk souls (en difficulté)
+                      if (_filterStatus == 'EN_DIFFICULTE') ...[
+                        if (_soulsEnDifficulte.isEmpty)
+                          GlassCard(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.green.withValues(alpha: 0.5), size: 48),
+                                const SizedBox(height: 12),
+                                Text('Aucune âme en difficulté',
+                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 14)),
+                              ],
+                            ),
+                          )
+                        else
+                          ..._soulsEnDifficulte.map(_buildDifficultSoulCard),
+                        const SizedBox(height: 12),
+                      ],
 
                       // Disciples list
                       if (_disciples.isEmpty)
@@ -529,12 +570,13 @@ class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerPr
     );
   }
 
-  Widget _filterChip(String label, String status, String count) {
+  Widget _filterChip(String label, String status, String count, {bool alert = false}) {
     final isActive = _filterStatus == status;
     final color = status == 'ACTIF' ? AppColors.primary
         : status == 'EN_INTEGRATION' ? Colors.amber
         : status == 'EN_VEILLE' ? Colors.blue
         : status == 'DECROCHE' ? Colors.red
+        : status == 'EN_DIFFICULTE' ? Colors.deepOrange
         : Colors.white;
     return GestureDetector(
       onTap: () => setState(() => _filterStatus = status),
@@ -545,13 +587,69 @@ class _CrmFaiseurScreenState extends State<CrmFaiseurScreen> with SingleTickerPr
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: isActive ? color.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.08)),
         ),
-        child: Text(
-          isActive && status == 'all' ? 'Tous ($count)' : label,
-          style: TextStyle(
-            color: isActive ? color : Colors.white.withValues(alpha: 0.5),
-            fontSize: 11,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(
+            isActive && status == 'all' ? 'Tous ($count)' : label,
+            style: TextStyle(
+              color: isActive ? color : Colors.white.withValues(alpha: 0.5),
+              fontSize: 11,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+            ),
           ),
+          if (alert) ...[
+            const SizedBox(width: 4),
+            Text('($count)',
+                style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w700)),
+          ],
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildDifficultSoulCard(dynamic e) {
+    final d = e as Map<String, dynamic>;
+    final nom = d['nom']?.toString() ?? d['soulNom']?.toString() ?? '?';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: GlassCard(
+        padding: const EdgeInsets.all(12),
+        onTap: () => context.go('/souls/${d['id'] ?? d['soulId']}'),
+        child: Row(
+          children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.deepOrange, Colors.deepOrange.withValues(alpha: 0.7)]),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(nom.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(nom, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Row(children: [
+                    _smallBadge(Colors.deepOrange, 'En difficulté'),
+                    if ((d['difficultes'] ?? '') != '') ...[
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text('${d['difficultes']}',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10),
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                    ],
+                  ]),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3), size: 18),
+          ],
         ),
       ),
     );

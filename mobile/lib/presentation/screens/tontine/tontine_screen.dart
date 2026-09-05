@@ -17,6 +17,8 @@ class _TontineScreenState extends State<TontineScreen> {
   final _apiService = ApiService();
   List<dynamic> _groups = [];
   Map<String, dynamic>? _detail;
+  Map<String, dynamic>? _stats;
+  List<dynamic> _overdue = [];
   bool _isLoading = true;
   bool _canManage = false;
 
@@ -40,9 +42,17 @@ class _TontineScreenState extends State<TontineScreen> {
     }
     try {
       final res = await _apiService.get('/tontines');
+      Map<String, dynamic>? stats;
+      try {
+        final statsRes = await _apiService.get('/tontines/stats');
+        stats = statsRes.data is Map<String, dynamic>
+            ? statsRes.data as Map<String, dynamic>
+            : (statsRes.data is Map ? Map<String, dynamic>.from(statsRes.data as Map) : null);
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
         _groups = (res.data is List ? res.data : []) as List<dynamic>;
+        _stats = stats;
         _isLoading = false;
       });
     } catch (_) {
@@ -52,9 +62,18 @@ class _TontineScreenState extends State<TontineScreen> {
 
   Future<void> _openDetail(String id) async {
     try {
-      final res = await _apiService.get('/tontines/$id');
+      final results = await Future.wait([
+        _apiService.get('/tontines/$id/dashboard'),
+        _apiService.get('/tontines/$id/overdue'),
+      ]);
       if (!mounted) return;
-      setState(() => _detail = res.data as Map<String, dynamic>?);
+      setState(() {
+        _detail = results[0].data as Map<String, dynamic>?;
+        final overData = results[1].data;
+        _overdue = overData is Map && overData['content'] is List
+            ? overData['content'] as List<dynamic>
+            : (overData is List ? overData : []);
+      });
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -118,6 +137,10 @@ class _TontineScreenState extends State<TontineScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                 children: [
+                  if (_stats != null) ...[
+                    _buildStatsHeader(_stats!),
+                    const SizedBox(height: 16),
+                  ],
                   if (_groups.isEmpty)
                     const GlassCard(
                       child: Padding(
@@ -136,6 +159,69 @@ class _TontineScreenState extends State<TontineScreen> {
               ),
             ),
     );
+  }
+
+  Widget _buildStatsHeader(Map<String, dynamic> stats) {
+    final totalCollecte = (stats['totalCollecte'] ?? stats['totalCollected'] ?? 0) as num;
+    final totalAttendu = (stats['totalAttendu'] ?? stats['totalExpected'] ?? 0) as num;
+    final groupesActifs = (stats['groupesActifs'] ?? stats['activeGroups'] ?? 0) as num;
+    final membresActifs = (stats['membresActifs'] ?? stats['activeMembers'] ?? 0) as num;
+    final overdue = (stats['contributionsEnRetard'] ?? stats['overdueContributions'] ?? 0) as num;
+
+    return Row(children: [
+      Expanded(
+        child: GlassCard(
+          padding: const EdgeInsets.all(12),
+          child: Column(children: [
+            Icon(Icons.groups, color: const Color(0xFF42A5F5), size: 24),
+            const SizedBox(height: 6),
+            Text('${groupesActifs.toInt()}',
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            Text('Groupes actifs', style: const TextStyle(color: Colors.white54, fontSize: 10)),
+          ]),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: GlassCard(
+          padding: const EdgeInsets.all(12),
+          child: Column(children: [
+            Icon(Icons.monetization_on, color: const Color(0xFFFFB300), size: 24),
+            const SizedBox(height: 6),
+            Text('$totalCollecte / $totalAttendu',
+                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis),
+            Text('Collecté', style: const TextStyle(color: Colors.white54, fontSize: 10)),
+          ]),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: GlassCard(
+          padding: const EdgeInsets.all(12),
+          child: Column(children: [
+            Icon(Icons.people_alt, color: const Color(0xFF4CAF50), size: 24),
+            const SizedBox(height: 6),
+            Text('${membresActifs.toInt()}',
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            Text('Membres', style: const TextStyle(color: Colors.white54, fontSize: 10)),
+          ]),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: GlassCard(
+          padding: const EdgeInsets.all(12),
+          child: Column(children: [
+            Icon(Icons.schedule, color: overdue > 0 ? const Color(0xFFC62828) : const Color(0xFF4CAF50), size: 24),
+            const SizedBox(height: 6),
+            Text('${overdue.toInt()}',
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            Text('En retard', style: const TextStyle(color: Colors.white54, fontSize: 10)),
+          ]),
+        ),
+      ),
+    ]);
   }
 
   Widget _buildGroupCard(dynamic g) {
@@ -242,6 +328,37 @@ class _TontineScreenState extends State<TontineScreen> {
                 ),
               );
             }),
+            // Overdue contributions
+            if (_overdue.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Divider(color: Colors.white12),
+              const SizedBox(height: 8),
+              Row(children: [
+                Icon(Icons.schedule, size: 16, color: const Color(0xFFC62828)),
+                const SizedBox(width: 6),
+                const Text('Contributions en retard',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              ]),
+              const SizedBox(height: 8),
+              ..._overdue.take(10).map((o) {
+                final od = o is Map<String, dynamic> ? o : <String, dynamic>{};
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(children: [
+                    Icon(Icons.error_outline, size: 16, color: const Color(0xFFC62828)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(od['nom']?.toString() ?? od['memberName']?.toString() ?? '',
+                          style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    ),
+                    Text(
+                      '${od['montant'] ?? od['amount'] ?? ''} · ${od['tour'] ?? od['round'] ?? ''}',
+                      style: const TextStyle(color: Colors.white54, fontSize: 11),
+                    ),
+                  ]),
+                );
+              }),
+            ],
           ],
         ),
       ),

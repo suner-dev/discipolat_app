@@ -119,10 +119,10 @@ class SyncService {
     int nbMaintenus = 0,
     List<String>? fichierIds,
   }) async {
-    await _api.post('/reports/maker-weekly', data: {
+    await _api.get('/reports/export/maker-weekly', params: {
       'ameId': ameId,
       'semaine': semaine,
-      'presencesParCulte': presencesParCulte,
+      'presencesParCulte': jsonEncode(presencesParCulte),
       'absenceRaison': absenceRaison,
       'absenceCommentaire': absenceCommentaire?.isNotEmpty == true ? absenceCommentaire : null,
       'difficultes': difficultes?.isNotEmpty == true ? difficultes : null,
@@ -137,7 +137,11 @@ class SyncService {
   Future<bool> submitQueuedItem(SyncQueueItem item) async {
     try {
       final payload = jsonDecode(item.payload) as Map<String, dynamic>;
-      await _api.post(item.endpoint, data: payload);
+      if (item.endpoint.contains('/reports/export')) {
+        await _api.get(item.endpoint, params: payload);
+      } else {
+        await _api.post(item.endpoint, data: payload);
+      }
       await _db.removeSyncItem(item.id);
       return true;
     } catch (e) {
@@ -152,7 +156,7 @@ class SyncService {
       id: const Uuid().v4(),
       tenantId: tenantId,
       operation: 'CREATE',
-      endpoint: '/reports/maker-weekly',
+      endpoint: '/reports/export/maker-weekly',
       payload: jsonEncode(payload),
       createdAt: DateTime.now().toIso8601String(),
       retryCount: 0,
@@ -199,7 +203,11 @@ class SyncService {
           payload['orgId'] = TenantConfig.currentOrgId;
         }
 
-        await _api.post(item.endpoint, data: payload);
+        if (item.endpoint.contains('/reports/export')) {
+          await _api.get(item.endpoint, params: payload);
+        } else {
+          await _api.post(item.endpoint, data: payload);
+        }
         await _db.removeSyncItem(item.id);
         synced++;
       } catch (e) {

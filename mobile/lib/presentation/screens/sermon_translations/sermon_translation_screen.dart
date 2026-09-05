@@ -47,6 +47,24 @@ class _SermonTranslationScreenState extends State<SermonTranslationScreen> {
     }
   }
 
+  Future<void> _completeTranslation(String translationId) async {
+    try {
+      await _api.post('/sermons/translations/$translationId/complete');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Traduction terminée'), backgroundColor: Colors.green),
+        );
+        _load();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors de la finalisation'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -88,6 +106,13 @@ class _SermonTranslationScreenState extends State<SermonTranslationScreen> {
                             LinearProgressIndicator(value: ((_activeTranslation!['progression'] ?? 65) as num).toDouble() / 100.0),
                             const SizedBox(height: 4),
                             Text('${_activeTranslation!['progression'] ?? 65}%'),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () =>
+                                  _completeTranslation((_activeTranslation!['id'] ?? '').toString()),
+                              icon: const Icon(Icons.check, size: 16),
+                              label: const Text('Terminer la traduction'),
+                            ),
                           ]),
                         ),
                         const SizedBox(height: 16),

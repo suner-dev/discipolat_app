@@ -20,6 +20,7 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
   final _apiService = ApiService();
   List<dynamic> _tracks = [];
   Map<String, dynamic>? _stats;
+  List<dynamic> _scoring = [];
   bool _isLoading = true;
   int _selectedColumn = -1; // -1 = vue funnel, 0-10 = colonne Kanban
   String _searchQuery = '';
@@ -51,10 +52,19 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
     try {
       final tracksRes = await _apiService.get('/evangelism', params: {'size': '100'});
       final statsRes = await _apiService.get('/evangelism/stats');
+      List<dynamic> scoring = [];
+      try {
+        final scoringRes = await _apiService.get('/evangelism/scoring');
+        final sd = scoringRes.data;
+        scoring = sd is Map && sd['content'] is List
+            ? sd['content'] as List<dynamic>
+            : (sd is List ? sd : []);
+      } catch (_) {}
       if (mounted) {
         setState(() {
           _tracks = (tracksRes.data is Map ? tracksRes.data['content'] : tracksRes.data) as List<dynamic>? ?? [];
           _stats = statsRes.data as Map<String, dynamic>?;
+          _scoring = scoring;
           _isLoading = false;
         });
       }
@@ -63,7 +73,7 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
 
   Future<void> _advanceTrack(String soulId) async {
     try {
-      await _apiService.patch('/evangelism/$soulId', data: {'action': 'ADVANCE'});
+      await _apiService.put('/evangelism/souls/$soulId', data: {'action': 'ADVANCE'});
       HapticFeedback.lightImpact();
       _loadData();
     } catch (_) {}
@@ -71,7 +81,7 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
 
   Future<void> _retreatTrack(String soulId) async {
     try {
-      await _apiService.patch('/evangelism/$soulId', data: {'action': 'RETREAT'});
+      await _apiService.put('/evangelism/souls/$soulId', data: {'action': 'RETREAT'});
       HapticFeedback.lightImpact();
       _loadData();
     } catch (_) {}
@@ -136,8 +146,43 @@ class _EvangelismScreenState extends State<EvangelismScreen> {
           // Funnel bars
           for (int i = 0; i < _etapes.length; i++)
             _funnelBar(i, funnel),
+          const SizedBox(height: 12),
+          // Conversion scores
+          if (_scoring.isNotEmpty) ...[
+            Text(AppLocalizations.of(context).conversionScores,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+            const SizedBox(height: 8),
+            ..._scoring.take(10).map((sc) => _buildScoringCard(sc)),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildScoringCard(dynamic sc) {
+    final s = sc as Map<String, dynamic>;
+    final soulNom = s['soulNom']?.toString() ?? s['soul']?.toString() ?? 'Âme';
+    final score = (s['score'] ?? s['conversionScore'] ?? 0) as num;
+    final etape = s['etape']?.toString() ?? '';
+    final color = _etapeColors[etape] ?? Colors.grey;
+    return GlassCard(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      child: Row(children: [
+        Container(width: 34, height: 34, decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+          child: Center(child: Text(soulNom.isNotEmpty ? soulNom[0].toUpperCase() : '?',
+            style: TextStyle(color: color, fontWeight: FontWeight.bold)))),
+        const SizedBox(width: 10),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(soulNom, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+          if (etape.isNotEmpty)
+            Text(_etapeLabels[etape] ?? etape, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
+        ])),
+        Text('${score.toInt()}%',
+            style: TextStyle(color: score >= 70 ? Colors.green : score >= 40 ? Colors.amber : Colors.red,
+                fontSize: 16, fontWeight: FontWeight.bold)),
+      ]),
     );
   }
 
