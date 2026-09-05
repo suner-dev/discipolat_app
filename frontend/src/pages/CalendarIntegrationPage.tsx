@@ -18,7 +18,7 @@ interface CalEvent {
 }
 
 export default function CalendarIntegrationPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -95,7 +95,7 @@ export default function CalendarIntegrationPage() {
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900 dark:text-white text-sm">{ev.titre}</h3>
                   <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(ev.début).toLocaleString('fr-FR')} → {new Date(ev.fin).toLocaleTimeString('fr-FR')}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(ev.début).toLocaleString(locale)} → {new Date(ev.fin).toLocaleTimeString(locale)}</span>
                     {ev.lieu && <span>📍 {ev.lieu}</span>}
                     <span className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600">{ev.source}</span>
                   </div>

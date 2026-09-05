@@ -20,7 +20,7 @@ interface BroadcastMsg {
 }
 
 export default function BroadcastPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [messages, setMessages] = useState<BroadcastMsg[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -109,7 +109,7 @@ export default function BroadcastPage() {
                         <span className="flex items-center gap-1"><Users className="w-3 h-3" />{msg.cible}</span>
                         <span className="flex items-center gap-1"><Send className="w-3 h-3" />{msg.totalEnvoyé} envoyés</span>
                         <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{msg.totalLu} lus</span>
-                        <span>{new Date(msg.createdAt).toLocaleDateString('fr-FR')}</span>
+                        <span>{new Date(msg.createdAt).toLocaleDateString(locale)}</span>
                       </div>
                     </div>
                   </div>

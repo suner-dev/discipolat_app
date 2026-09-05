@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { BarChart3, Plus, Loader2, Trash2, Users2, TrendingUp } from 'lucide-react';
+import { useI18n } from '@/i18n';
 
 interface Comparison { id: string; nomEglise: string; effectif: number; tauxPresence: number; tauxConversion: number; tauxRetention: number; scoreSpirituelMoyen: number; generositeMoyenne: number; nbDepartements: number; nbFamilles: number; categorie?: string; pays?: string; denomination?: string; }
 
@@ -36,6 +37,7 @@ const BENCHMARK_KEYS: { key: string; label: string; unit: string }[] = [
 
 /** P3 #107 — Benchmark anonyme inter-églises amélioré : comparaison par taille/pays/dénomination + clustering. */
 export default function ChurchBenchmarkPage() {
+  const { locale } = useI18n();
   const qc = useQueryClient();
   const [category, setCategory] = useState<string>('');
   const listQ = useQuery({ queryKey: ['church-comparisons'], queryFn: async () => (await api.get('/church-comparisons')).data as Comparison[] });

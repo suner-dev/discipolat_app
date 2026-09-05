@@ -17,7 +17,7 @@ interface CommunityPost {
 }
 
 export default function CommunityPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const { data: postsData, isLoading, error } = useQuery({
     queryKey: ['community-posts'],
@@ -35,7 +35,7 @@ export default function CommunityPage() {
     type: (p.type || p.categorie || 'testimony') as CommunityPost['type'],
     likes: p.likes || p.nbLikes || 0,
     comments: p.comments || p.nbComments || 0,
-    timeAgo: p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-FR') : '',
+    timeAgo: p.createdAt ? new Date(p.createdAt).toLocaleDateString(locale) : '',
   }));
 
   const typeConfig = (type: string) => {

@@ -55,7 +55,7 @@ const PURPOSE_LABELS: Record<string, string> = {
 };
 
 export default function AdminPaymentDashboardPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const { data, isLoading } = useQuery({
     queryKey: ['payments', 'dashboard'],
@@ -73,9 +73,9 @@ export default function AdminPaymentDashboardPage() {
 
   if (!data) return null;
 
-  const fmt = (n: number) => Number(n).toLocaleString('fr-FR');
+  const fmt = (n: number) => Number(n).toLocaleString(locale);
   const fmtCurrency = (n: number) =>
-    `${Number(n).toLocaleString('fr-FR')} XOF`;
+    `${Number(n).toLocaleString(locale)} XOF`;
 
   const kpis = [
     {

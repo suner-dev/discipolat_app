@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useI18n } from '@/i18n';
 
 interface SystemHealth {
   jvm: { heapUsed: number; heapMax: number; nonHeapUsed: number; threads: number; };
@@ -92,6 +93,7 @@ const CONFIG_SECTIONS = [
 const entityTypeIcon: Record<string, string> = { SOUL: '💜', USER: '👤', FAMILY: '👨‍👩‍👧', DEPARTMENT: '🏢', TRANSFER: '🔄', ALERT: '🔔', REPORT: '📋', EVENT: '📅', VISIT: '🏠', PRAYER: '🙏' };
 
 export default function AdminDashboardPage() {
+  const { locale } = useI18n();
   const { activeRole } = useAuth();
   const { branding } = useSettings();
 

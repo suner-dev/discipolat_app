@@ -43,7 +43,7 @@ const ACTIONS: Record<string, string> = {
 };
 
 export default function AutomationsPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

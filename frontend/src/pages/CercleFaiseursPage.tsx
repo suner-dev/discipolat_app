@@ -26,7 +26,7 @@ const CATEGORIES = [
 ];
 
 export default function CercleFaiseursPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [posts, setPosts] = useState<CerclePost[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -113,7 +113,7 @@ export default function CercleFaiseursPage() {
                     {!post.anonyme && (
                       <span className="text-xs text-gray-500">{post.auteur.firstName} {post.auteur.lastName}</span>
                     )}
-                    <span className="text-xs text-gray-400">• {new Date(post.createdAt).toLocaleDateString('fr-FR')}</span>
+                    <span className="text-xs text-gray-400">• {new Date(post.createdAt).toLocaleDateString(locale)}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <button onClick={() => likePost(post.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-rose-500">
