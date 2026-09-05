@@ -8,6 +8,7 @@ import {
   StickyNote, Clock, ClipboardList,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrateur',
@@ -42,6 +43,7 @@ const CATEGORIE_LABELS: Record<string, string> = {
 };
 
 export function UserDetailModal({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const { locale } = useI18n();
   const queryClient = useQueryClient();
   const [note, setNote] = useState(0);
   const [hoverNote, setHoverNote] = useState(0);
@@ -153,7 +155,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
               </div>
               <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
                 <Mail className="w-3 h-3" /> {user.email || '—'}
-                {user.dateCreation ? ` · membre depuis ${new Date(user.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
+                {user.dateCreation ? ` · membre depuis ${new Date(user.dateCreation).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
               </p>
             </div>
           </div>
@@ -315,7 +317,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                   <div key={i} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-red-50/50 dark:bg-red-900/10 border border-red-200/30 dark:border-red-800/20">
                     <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{ex.motif || 'Sortie du suivi'}</p>
                     <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                      {ex.dateSortie ? new Date(ex.dateSortie).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}
+                      {ex.dateSortie ? new Date(ex.dateSortie).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : '—'}
                     </span>
                   </div>
                 ))}
@@ -474,7 +476,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                               {o.echeance && (
                                 <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
                                   <Calendar className="w-2.5 h-2.5" />
-                                  {new Date(o.echeance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                  {new Date(o.echeance).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                                 </span>
                               )}
                             </div>
@@ -500,7 +502,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                           <div key={r.id} className="p-2.5 rounded-xl bg-white/60 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/40">
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full badge-info">{r.type?.replace(/_/g, ' ')}</span>
-                              <span className="text-[10px] text-gray-400">{r.auteurNom || '—'} · {r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}</span>
+                              <span className="text-[10px] text-gray-400">{r.auteurNom || '—'} · {r.createdAt ? new Date(r.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : '—'}</span>
                             </div>
                             <p className="text-xs text-gray-700 dark:text-gray-300 mt-1.5 leading-relaxed">{r.contenu}</p>
                           </div>
@@ -519,7 +521,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                         {dept.notes.map((n: any) => (
                           <div key={n.id} className="p-2.5 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/30 dark:border-amber-800/20">
                             <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{n.contenu}</p>
-                            <p className="text-[10px] text-gray-400 mt-1">{n.auteurNom || '—'} · {n.createdAt ? new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}</p>
+                            <p className="text-[10px] text-gray-400 mt-1">{n.auteurNom || '—'} · {n.createdAt ? new Date(n.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : '—'}</p>
                           </div>
                         ))}
                       </div>

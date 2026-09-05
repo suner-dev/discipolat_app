@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { useI18n } from '@/i18n';
 import type { TransferDetail, TransferHistoryEntry, DecisionType, TransferStatus } from '@/types';
 import { TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS, DECISION_LABELS, PRIORITE_LABELS } from '@/types';
 import {
@@ -39,6 +40,7 @@ export default function TransferDetailPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const dictionaries = useDictionaries();
+  const { locale } = useI18n();
   const [modal, setModal] = useState<DecisionType | null>(null);
   const [motivation, setMotivation] = useState('');
   const [editingPieces, setEditingPieces] = useState(false);
@@ -135,7 +137,7 @@ export default function TransferDetailPage() {
                 <h1 className="page-title mb-0">{dictionaries.label('TRANSFER_TYPE', t.type) || TRANSFER_TYPE_LABELS[t.type] || t.type}</h1>
                 <span className={`badge ${STATUS_BADGE[t.statut]}`}>{dictionaries.label('TRANSFER_STATUS', t.statut) || TRANSFER_STATUS_LABELS[t.statut] || t.statut}</span>
               </div>
-              <p className="page-subtitle">Demande de {t.demandeurNom || '—'} · créée le {new Date(t.createdAt).toLocaleDateString('fr-FR')}</p>
+              <p className="page-subtitle">Demande de {t.demandeurNom || '—'} · créée le {new Date(t.createdAt).toLocaleDateString(locale)}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -201,7 +203,7 @@ export default function TransferDetailPage() {
             {t.delaiLimite && (
               <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" />
-                Traitement attendu avant le {new Date(t.delaiLimite).toLocaleString('fr-FR')}
+                Traitement attendu avant le {new Date(t.delaiLimite).toLocaleString(locale)}
               </p>
             )}
           </div>
@@ -262,7 +264,7 @@ export default function TransferDetailPage() {
                       }`}>{dictionaries.label('TRANSFER_DECISION', d.decision) || DECISION_LABELS[d.decision] || d.decision}</span>
                     </div>
                     {d.motivation && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">« {d.motivation} »</p>}
-                    <p className="text-xs text-gray-400 mt-1">{new Date(d.createdAt).toLocaleString('fr-FR')}</p>
+                    <p className="text-xs text-gray-400 mt-1">{new Date(d.createdAt).toLocaleString(locale)}</p>
                   </li>
                 ))}
               </ul>
@@ -345,7 +347,7 @@ export default function TransferDetailPage() {
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{meta.label}</p>
                         <p className="text-xs text-gray-400">
                           {h.utilisateurNom || 'Système'}
-                          {h.roleActif ? ` · ${h.roleActif}` : ''} · {new Date(h.createdAt).toLocaleString('fr-FR')}
+                          {h.roleActif ? ` · ${h.roleActif}` : ''} · {new Date(h.createdAt).toLocaleString(locale)}
                         </p>
                         {h.commentaire && <p className="text-xs text-gray-500 mt-0.5">« {h.commentaire} »</p>}
                         {h.nouveauStatut && (

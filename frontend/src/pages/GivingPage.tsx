@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useI18n } from '@/i18n/index';
+import { useI18n } from '@/i18n';
 import {
   Loader2,
   Smartphone,
@@ -75,7 +75,7 @@ interface RecurringDonation {
 /** Tithe & Offering 2.0 — dons par Mobile Money avec suivi temps réel + dons récurrents. */
 export default function GivingPage() {
   const { activeRole } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const canManage =
     activeRole === 'ADMIN' || activeRole === 'PASTEUR' || activeRole === 'RESPONSABLE';
 
@@ -451,7 +451,7 @@ export default function GivingPage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {Number(rd.amount).toLocaleString('fr-FR')} {rd.currency} ·{' '}
+                      {Number(rd.amount).toLocaleString(locale)} {rd.currency} ·{' '}
                       {OPERATORS.find((o) => o.value === rd.operator)?.label ?? rd.operator}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
@@ -468,7 +468,7 @@ export default function GivingPage() {
                       )}
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {t('giving.recurring.totalDonated')}: {Number(rd.totalDonated).toLocaleString('fr-FR')}{' '}
+                      {t('giving.recurring.totalDonated')}: {Number(rd.totalDonated).toLocaleString(locale)}{' '}
                       {rd.currency} ({rd.donationCount} {t('giving.recurring.donations')})
                     </p>
                   </div>
@@ -516,7 +516,7 @@ export default function GivingPage() {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-700 dark:text-gray-300">{o.label}</span>
                     <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {Number(o.total).toLocaleString('fr-FR')} ({o.count})
+                      {Number(o.total).toLocaleString(locale)} ({o.count})
                     </span>
                   </div>
                   <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -544,7 +544,7 @@ export default function GivingPage() {
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {OPERATORS.find((o) => o.value === p.operator)?.label ?? p.operator} ·{' '}
-                {Number(p.amount).toLocaleString('fr-FR')} {p.currency}
+                {Number(p.amount).toLocaleString(locale)} {p.currency}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {t(PURPOSES.find((x) => x.value === p.purpose)?.key ?? 'giving.purpose.offrande')}{' '}

@@ -7,6 +7,7 @@ import {
   Loader2, CheckCircle, Clock, X, Filter, AlertTriangle, MapPin, FileText,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 /** Aligné sur VisitResponse (backend) : soulId/soulNom, datePrevue, dateRealisee, statut, motif, objectif, compteRendu, present. */
 interface Visit {
@@ -26,6 +27,7 @@ const STATUTS: Record<string, { label: string; cls: string }> = {
 };
 
 export default function PasteurVisitsTab() {
+  const { locale } = useI18n();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
@@ -143,12 +145,12 @@ export default function PasteurVisitsTab() {
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Calendar className="w-4 h-4 mx-auto text-gray-400 mb-1" />
               <p className="text-xs text-gray-400">Date prévue</p>
-              <p className="font-semibold text-sm">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR') : '—'}</p>
+              <p className="font-semibold text-sm">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString(locale) : '—'}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <CheckCircle className="w-4 h-4 mx-auto text-gray-400 mb-1" />
               <p className="text-xs text-gray-400">Réalisée le</p>
-              <p className="font-semibold text-sm">{v.dateRealisee ? new Date(v.dateRealisee).toLocaleDateString('fr-FR') : '—'}</p>
+              <p className="font-semibold text-sm">{v.dateRealisee ? new Date(v.dateRealisee).toLocaleDateString(locale) : '—'}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Eye className="w-4 h-4 mx-auto text-gray-400 mb-1" />
@@ -262,7 +264,7 @@ export default function PasteurVisitsTab() {
             {upcomingVisits.slice(0, 5).map(v => (
               <div key={v.id} className="flex-shrink-0 p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 min-w-[140px]">
                 <p className="text-[10px] font-medium text-gray-900 dark:text-gray-100">{v.soulNom || '—'}</p>
-                <p className="text-[9px] text-gray-400">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}</p>
+                <p className="text-[9px] text-gray-400">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : '—'}</p>
               </div>
             ))}
           </div>
@@ -311,8 +313,8 @@ export default function PasteurVisitsTab() {
                       </button>
                     </td>
                     <td className="text-sm text-gray-500">{v.visiteurNom || '—'}</td>
-                    <td className="text-sm text-gray-500">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString('fr-FR') : '—'}</td>
-                    <td className="text-sm text-gray-500">{v.dateRealisee ? new Date(v.dateRealisee).toLocaleDateString('fr-FR') : '—'}</td>
+                    <td className="text-sm text-gray-500">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString(locale) : '—'}</td>
+                    <td className="text-sm text-gray-500">{v.dateRealisee ? new Date(v.dateRealisee).toLocaleDateString(locale) : '—'}</td>
                     <td>{statutBadge(v.statut)}</td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-1">

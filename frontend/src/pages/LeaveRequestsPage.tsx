@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { PlaneTakeoff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 interface LeaveRequest {
   id: string;
@@ -21,6 +22,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default function LeaveRequestsPage() {
+  const { locale } = useI18n();
   const qc = useQueryClient();
 
   const { data: requests = [], isLoading } = useQuery({
@@ -82,8 +84,8 @@ export default function LeaveRequestsPage() {
                       </div>
                       <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.requesterName ?? 'Membre inconnu'}</p>
                       <div className="flex gap-4 mt-1 text-xs text-gray-500">
-                        <span>Du {new Date(r.startDate).toLocaleDateString('fr-FR')}</span>
-                        <span>Au {new Date(r.endDate).toLocaleDateString('fr-FR')}</span>
+                        <span>Du {new Date(r.startDate).toLocaleDateString(locale)}</span>
+                        <span>Au {new Date(r.endDate).toLocaleDateString(locale)}</span>
                       </div>
                       {r.reason && <p className="text-xs text-gray-500 mt-1">{r.reason}</p>}
                     </div>
@@ -116,8 +118,8 @@ export default function LeaveRequestsPage() {
                       </div>
                       <p className="text-sm text-gray-800 dark:text-gray-200">{r.requesterName ?? 'Membre inconnu'}</p>
                       <div className="flex gap-4 mt-1 text-xs text-gray-500">
-                        <span>Du {new Date(r.startDate).toLocaleDateString('fr-FR')}</span>
-                        <span>Au {new Date(r.endDate).toLocaleDateString('fr-FR')}</span>
+                        <span>Du {new Date(r.startDate).toLocaleDateString(locale)}</span>
+                        <span>Au {new Date(r.endDate).toLocaleDateString(locale)}</span>
                       </div>
                     </div>
                   </div>

@@ -12,6 +12,7 @@ import {
   Loader2, Calendar, Crown, Eye,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 type RiskFilter = 'NORMAL' | 'SOUS_SURVEILLANCE' | 'A_RISQUE' | '';
 type StatutFilter = 'ACTIVE' | 'INACTIVE' | '';
@@ -23,6 +24,7 @@ const toStatutFilter = (v: string): StatutFilter =>
 
 export default function FamiliesPage() {
   const { user } = useAuth();
+  const { locale } = useI18n();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -111,7 +113,7 @@ export default function FamiliesPage() {
               {family.nom}
             </p>
             <p className="text-xs text-gray-400">
-              Créée le {new Date(family.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+              Créée le {new Date(family.dateCreation).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           </div>
         </Link>
@@ -167,7 +169,7 @@ export default function FamiliesPage() {
       header: 'Création',
       cell: (family) => (
         <span className="text-sm text-gray-500 dark:text-gray-400">
-          {new Date(family.dateCreation).toLocaleDateString('fr-FR', {
+          {new Date(family.dateCreation).toLocaleDateString(locale, {
             day: 'numeric', month: 'short', year: 'numeric',
           })}
         </span>
@@ -204,7 +206,7 @@ export default function FamiliesPage() {
       header: 'Date création',
       cell: (family) => (
         <span className="text-sm text-gray-500">
-          {new Date(family.dateCreation).toLocaleDateString('fr-FR')}
+          {new Date(family.dateCreation).toLocaleDateString(locale)}
         </span>
       ),
     },
@@ -385,7 +387,7 @@ export default function FamiliesPage() {
                         </div>
                       </td>
                       <td className="text-sm text-gray-500">
-                        {new Date(family.dateCreation).toLocaleDateString('fr-FR')}
+                        {new Date(family.dateCreation).toLocaleDateString(locale)}
                       </td>
                       <td className="text-right">
                         <button

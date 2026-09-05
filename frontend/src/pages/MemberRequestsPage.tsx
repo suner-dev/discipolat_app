@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { useI18n } from '@/i18n';
 
 /** Repli */
 const TYPE_FALLBACK: Record<string, { label: string; icon: typeof Lightbulb; color: string }> = {
@@ -61,6 +62,7 @@ const tauxPresence = (p: MemberPresence) => {
 export default function MemberRequestsPage() {
   const { user } = useAuth();
   const dictionaries = useDictionaries();
+  const { locale } = useI18n();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'demandes' | 'presences'>('demandes');
   const [searchTerm, setSearchTerm] = useState('');
@@ -306,7 +308,7 @@ export default function MemberRequestsPage() {
                         </span>
                       </div>
                       <span className="text-[10px] text-gray-400">
-                        {new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {new Date(r.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
 
@@ -356,7 +358,7 @@ export default function MemberRequestsPage() {
                     {(r.statut === 'RESOLU' || r.statut === 'REJETE') && (
                       <div className="mt-3 flex items-center gap-1.5 text-[11px] text-gray-400">
                         <StatusIcon className="w-3.5 h-3.5" />
-                        Traité {r.dateTraitement ? `le ${new Date(r.dateTraitement).toLocaleDateString('fr-FR')}` : ''}
+                        Traité {r.dateTraitement ? `le ${new Date(r.dateTraitement).toLocaleDateString(locale)}` : ''}
                         {r.traiteParNom && <> par {r.traiteParNom}</>}
                       </div>
                     )}
@@ -404,7 +406,7 @@ export default function MemberRequestsPage() {
                       <tr key={p.id} className="hover:bg-white/40 dark:hover:bg-gray-800/20 transition-colors">
                         <td className="font-medium text-gray-900 dark:text-gray-100">{p.nomMembre || 'Membre'}</td>
                         <td className="text-sm text-gray-500">
-                          {new Date(p.semaine + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                          {new Date(p.semaine + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long' })}
                         </td>
                         <td className="text-sm">
                           <div className="flex flex-wrap gap-1 max-w-[220px]">
@@ -454,7 +456,7 @@ export default function MemberRequestsPage() {
                 <div>
                   <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{(TYPE_FALLBACK[detailItem.type] || TYPE_FALLBACK.SUGGESTION).label}</h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(detailItem.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(detailItem.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>

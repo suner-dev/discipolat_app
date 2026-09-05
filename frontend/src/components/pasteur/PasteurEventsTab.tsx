@@ -9,6 +9,7 @@ import {
   Edit3, CheckCircle, Clock, ArrowLeft, CalendarDays, Users,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n';
 
 interface EventItem {
   id: string; titre: string; description?: string; typeEvenement?: string;
@@ -19,6 +20,7 @@ interface EventItem {
 }
 
 export default function PasteurEventsTab() {
+  const { locale } = useI18n();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
@@ -109,7 +111,7 @@ export default function PasteurEventsTab() {
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Calendar className="w-4 h-4 mx-auto text-gray-400 mb-1" />
               <p className="text-xs text-gray-400">Date</p>
-              <p className="font-semibold text-sm">{new Date(ev.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <p className="font-semibold text-sm">{new Date(ev.dateDebut).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <MapPin className="w-4 h-4 mx-auto text-gray-400 mb-1" />
@@ -124,7 +126,7 @@ export default function PasteurEventsTab() {
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Clock className="w-4 h-4 mx-auto text-gray-400 mb-1" />
               <p className="text-xs text-gray-400">Heure</p>
-              <p className="font-semibold text-sm">{new Date(ev.dateDebut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+              <p className="font-semibold text-sm">{new Date(ev.dateDebut).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</p>
             </div>
           </div>
 
@@ -164,7 +166,7 @@ export default function PasteurEventsTab() {
 
           <div className="flex items-center gap-3 text-xs text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700">
             {ev.organisateurNom && <span>Organisé par {ev.organisateurNom}</span>}
-            <span>Créé le {new Date(ev.createdAt).toLocaleDateString('fr-FR')}</span>
+            <span>Créé le {new Date(ev.createdAt).toLocaleDateString(locale)}</span>
           </div>
         </div>
       </div>
@@ -211,7 +213,7 @@ export default function PasteurEventsTab() {
             {upcomingEvents.slice(0, 8).map((ev: any) => (
               <div key={ev.id} className="flex-shrink-0 p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 min-w-[150px]">
                 <p className="text-[10px] font-medium text-gray-900 dark:text-gray-100 truncate">{ev.titre}</p>
-                <p className="text-[9px] text-gray-400">{new Date(ev.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
+                <p className="text-[9px] text-gray-400">{new Date(ev.dateDebut).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}</p>
                 <div className="flex items-center gap-1 mt-0.5">
                   <span className={`badge text-[8px] ${typeColors[ev.typeEvenement] || 'badge-gray'}`}>{typeLabel(ev.typeEvenement)}</span>
                   {ev.familleNom && <span className="text-[8px] text-gray-400 truncate">{ev.familleNom}</span>}
@@ -260,7 +262,7 @@ export default function PasteurEventsTab() {
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-primary-600">{ev.titre}</p>
                     {ev.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{ev.description}</p>}
                     <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400 flex-wrap">
-                      <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(ev.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(ev.dateDebut).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                       {ev.lieu && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{ev.lieu}</span>}
                       <span className={`badge text-[9px] ${typeColors[ev.typeEvenement || ''] || 'badge-gray'}`}>{typeLabel(ev.typeEvenement)}</span>
                       {ev.organisateurNom && <span>Par {ev.organisateurNom}</span>}
