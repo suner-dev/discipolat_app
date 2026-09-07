@@ -1,0 +1,54 @@
+{
+  "@@locale": "sw",
+  "appTitle": "Discipolat",
+  "login": "Ingia",
+  "logout": "Toka",
+  "email": "Anwani ya barua pepe",
+  "password": "Nenosiri",
+  "emailOrUsername": "Barua pepe au jina la mtumiaji",
+  "signIn": "Ingia",
+  "signInBiometric": "Ingia kwa kutumia biometriska",
+  "forgotPassword": "Umesahau nenosiri?",
+  "presence": {
+    "title": "Mahudhurio",
+    "present": "Yupo",
+    "absent": "Hayupo",
+    "markAllPresent": "Weka wote kuwa yupo",
+    "save": "Hifadhi mahudhurio"
+  },
+  "souls": {
+    "title": "Nafsi",
+    "search": "Tafuta nafsi",
+    "noResults": "Hakuna nafsi iliyopatikana",
+    "newArrival": "Aliyekuja mpya",
+    "newConvert": "Aliyegeuzwa mpya"
+  },
+  "reports": {
+    "weekly": "Ripoti ya kila wiki",
+    "family": "Ripoti ya familia",
+    "submit": "Tuma"
+  },
+  "prayers": {
+    "title": "Maombi",
+    "prayed": "Yamejibiwa",
+    "pending": "Inaendelea"
+  },
+  "events": {
+    "title": "Matukio",
+    "upcoming": "Yajayo",
+    "register": "Jisajili"
+  },
+  "dashboard": {
+    "title": "Dashibodi",
+    "health": "Afya",
+    "score": "Alama ya kiroho"
+  },
+  "common": {
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "delete": "Futa",
+    "edit": "Hariri",
+    "loading": "Inapakia…",
+    "offline": "Nje ya mtandao"
+  }
+}

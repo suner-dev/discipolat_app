@@ -1,0 +1,54 @@
+{
+  "@@locale": "ar",
+  "appTitle": "Discipolat",
+  "login": "تسجيل الدخول",
+  "logout": "تسجيل الخروج",
+  "email": "عنوان البريد الإلكتروني",
+  "password": "كلمة المرور",
+  "emailOrUsername": "البريد الإلكتروني أو اسم المستخدم",
+  "signIn": "تسجيل الدخول",
+  "signInBiometric": "تسجيل الدخول بالبيانات البيومترية",
+  "forgotPassword": "هل نسيت كلمة المرور؟",
+  "presence": {
+    "title": "الحضور",
+    "present": "حاضر",
+    "absent": "غائب",
+    "markAllPresent": "تحديد الجميع حاضر",
+    "save": "حفظ الحضور"
+  },
+  "souls": {
+    "title": "النفوس",
+    "search": "البحث عن نفس",
+    "noResults": "لم يتم العثور على أي نفس",
+    "newArrival": "وافد جديد",
+    "newConvert": "مُهتدٍ جديد"
+  },
+  "reports": {
+    "weekly": "التقرير الأسبوعي",
+    "family": "تقرير العائلة",
+    "submit": "إرسال"
+  },
+  "prayers": {
+    "title": "الصلوات",
+    "prayed": "مُستجابة",
+    "pending": "قيد التنفيذ"
+  },
+  "events": {
+    "title": "الأحداث",
+    "upcoming": "القادمة",
+    "register": "تسجيل"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "health": "الصحة",
+    "score": "الدرجة الروحية"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "loading": "جارٍ التحميل…",
+    "offline": "غير متصل"
+  }
+}

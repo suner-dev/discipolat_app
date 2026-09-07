@@ -1,0 +1,54 @@
+{
+  "@@locale": "pt",
+  "appTitle": "Discipolat",
+  "login": "Entrar",
+  "logout": "Sair",
+  "email": "Endereço de e-mail",
+  "password": "Palavra-passe",
+  "emailOrUsername": "E-mail ou nome de utilizador",
+  "signIn": "Entrar",
+  "signInBiometric": "Entrar com biometria",
+  "forgotPassword": "Esqueceu a palavra-passe?",
+  "presence": {
+    "title": "Presença",
+    "present": "Presente",
+    "absent": "Ausente",
+    "markAllPresent": "Marcar todos como presentes",
+    "save": "Guardar presença"
+  },
+  "souls": {
+    "title": "Almas",
+    "search": "Pesquisar uma alma",
+    "noResults": "Nenhuma alma encontrada",
+    "newArrival": "Novo chegado",
+    "newConvert": "Novo convertido"
+  },
+  "reports": {
+    "weekly": "Relatório semanal",
+    "family": "Relatório de família",
+    "submit": "Submeter"
+  },
+  "prayers": {
+    "title": "Orações",
+    "prayed": "Atendida",
+    "pending": "Em andamento"
+  },
+  "events": {
+    "title": "Eventos",
+    "upcoming": "Próximos",
+    "register": "Inscrever-se"
+  },
+  "dashboard": {
+    "title": "Painel de controlo",
+    "health": "Saúde",
+    "score": "Score espiritual"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "loading": "A carregar…",
+    "offline": "Sem ligação"
+  }
+}
