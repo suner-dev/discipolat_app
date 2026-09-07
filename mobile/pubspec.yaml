@@ -60,6 +60,8 @@ dependencies:
   local_auth: ^2.3.0
   record: ^5.2.0
   just_audio: ^0.9.43
+  stomp_dart_client: ^2.0.0
+  flutter_tts: ^4.2.0
 
 dev_dependencies:
   flutter_test:

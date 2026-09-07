@@ -58,6 +58,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.savings_rounded, 'title': 'Tontines', 'route': '/tontines'},
     {'icon': Icons.mic_rounded, 'title': 'Rapports vocaux', 'route': '/voice-reports'},
     {'icon': Icons.record_voice_over_rounded, 'title': 'PasteurBot Vocal', 'route': '/voice-assistant'},
+    {'icon': Icons.notifications_active_rounded, 'title': 'Notifications Vocales', 'route': '/voice-notifications'},
     {'icon': Icons.smart_toy_rounded, 'title': 'Assistant IA', 'route': '/ai-assistant'},
     {'icon': Icons.query_stats_rounded, 'title': 'Prédictions IA', 'route': '/ai-predictions'},
     {'icon': Icons.face_retouching_natural_rounded, 'title': 'Pointage facial', 'route': '/face-checkin'},

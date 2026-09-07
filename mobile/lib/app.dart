@@ -48,6 +48,7 @@ import 'presentation/screens/giving/giving_screen.dart';
 import 'presentation/screens/ussd/ussd_screen.dart';
 import 'presentation/screens/tontine/tontine_screen.dart';
 import 'presentation/screens/voice_reports/voice_report_screen.dart';
+import 'presentation/screens/voice_notifications/voice_notifications_screen.dart';
 import 'presentation/screens/face_checkin/face_checkin_screen.dart';
 import 'presentation/screens/ar_onboarding/ar_onboarding_screen.dart';
 import 'presentation/screens/prophetic_journal/prophetic_journal_screen.dart';
@@ -366,6 +367,7 @@ Map<String, List<String>> _routeRoles = {
   '/tontines': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/voice-reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/voice-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/voice-notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/ai-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/ai-predictions': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/prophetic-journal': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -1118,6 +1120,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/team-gantt', name: 'team-gantt', builder: (ctx, s) => const TeamGanttScreen()),
     // P0 new screens
     GoRoute(path: '/voice-assistant', name: 'voice-assistant', builder: (ctx, s) => const VoiceAssistantScreen()),
+    GoRoute(path: '/voice-notifications', name: 'voice-notifications', builder: (ctx, s) => const VoiceNotificationsScreen()),
     GoRoute(path: '/ai-assistant', name: 'ai-assistant', builder: (ctx, s) => const AiAssistantScreen()),
     GoRoute(path: '/ai-predictions', name: 'ai-predictions', builder: (ctx, s) => const AiPredictionsScreen()),
     GoRoute(path: '/prophetic-journal', name: 'prophetic-journal', builder: (ctx, s) => const PropheticJournalScreen()),
