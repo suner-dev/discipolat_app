@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:record/record.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:just_audio/just_audio.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
@@ -30,7 +31,10 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
   final _scrollController = ScrollController();
   final _sessionId = ValueNotifier<String>(_generateSessionId());
   final AudioRecorder _recorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
   bool _sttConfigured = true;
+  bool _ttsConfigured = true;
+  bool _isPlaying = false;
 
   final List<_ChatMessage> _messages = [];
   bool _isProcessing = false;
@@ -99,13 +103,40 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
         setState(() {
           _messages.add(_ChatMessage(
             role: 'assistant',
-            content:
-                '🤖 Je suis en mode hors-ligne. Réessayez quand la connexion sera rétablie.',
+            content: '🤖 Je suis en mode hors-ligne. Réessayez quand la connexion sera rétablie.',
             timestamp: DateTime.now(),
           ));
           _isProcessing = false;
         });
       }
+    }
+  }
+
+  /// Synthétise et joue le texte via TTS backend.
+  Future<void> _speak(String text) async {
+    if (_isPlaying || text.trim().isEmpty) return;
+    setState(() => _isPlaying = true);
+    try {
+      final res = await _api.post('/voice/tts', data: {
+        'text': text,
+        'language': 'fr',
+      }, headers: {'Accept': 'audio/mpeg'});
+      if (res.data != null) {
+        final bytes = res.data is List<int> ? Uint8List.fromList(res.data.cast<int>()) : null;
+        if (bytes != null && bytes.isNotEmpty) {
+          await _audioPlayer.setAudioSource(_BytesAudioSource(bytes));
+          await _audioPlayer.play();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _ttsConfigured = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('TTS non configuré'), backgroundColor: Colors.orange),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPlaying = false);
     }
   }
 
@@ -260,6 +291,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
   @override
   void dispose() {
     _recorder.dispose();
+    _audioPlayer.dispose();
     _inputController.dispose();
     _scrollController.dispose();
     _pulseController.dispose();
@@ -484,6 +516,30 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
                             color: const Color(0xFF06B6D4),
                             fontSize: 10,
                             fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                // TTS play button (assistant messages only)
+                if (!isUser && _ttsConfigured)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: GestureDetector(
+                      onTap: () => _speak(msg.content),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isPlaying ? Icons.volume_up : Icons.volume_up_outlined,
+                            color: const Color(0xFF06B6D4),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _isPlaying ? 'Lecture...' : 'Écouter',
+                            style: const TextStyle(
+                                color: Color(0xFF06B6D4), fontSize: 11),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -732,6 +788,24 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
           ),
         ],
       ),
+
+/// Audio source pour jouer des bytes audio (TTS).
+class _BytesAudioSource extends StreamAudioSource {
+  final Uint8List _bytes;
+
+  _BytesAudioSource(this._bytes);
+
+  @override
+  Future<StreamAudioResponse> request([int? start, int? end]) async {
+    return StreamAudioResponse(
+      sourceLength: _bytes.length,
+      contentLength: _bytes.length,
+      offset: 0,
+      stream: Stream.value(_bytes),
+      contentType: 'audio/mpeg',
+    );
+  }
+}
     );
   }
 }

@@ -71,6 +71,8 @@ public class SecurityConfig {
                     // Demande de démonstration depuis la landing (public, rate-limitée
                     // par IP : 3 req / 10 min — cf. PerIpRateLimiter.tryConsumeDemoRequest)
                     .requestMatchers(HttpMethod.POST, "/api/v1/public/demo-requests").permitAll()
+                    // Callback USSD Africa's Talking : public, sécurisé par secret webhook (X-Ussd-Secret)
+                    .requestMatchers(HttpMethod.POST, "/api/v1/ussd/callback").permitAll()
                     // Webhook opérateur Mobile Money : sécurisé par la référence unique
                     // de l'intention + (en production) signature HMAC opérateur / IP allowlist.
                     // Webhook endpoint moved behind authentication — webhook secret is now mandatory in production.

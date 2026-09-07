@@ -45,6 +45,7 @@ import 'presentation/screens/objectives/objectives_screen.dart';
 import 'presentation/screens/badges/badges_screen.dart';
 import 'presentation/screens/quest/quest_screen.dart';
 import 'presentation/screens/giving/giving_screen.dart';
+import 'presentation/screens/ussd/ussd_screen.dart';
 import 'presentation/screens/tontine/tontine_screen.dart';
 import 'presentation/screens/voice_reports/voice_report_screen.dart';
 import 'presentation/screens/face_checkin/face_checkin_screen.dart';
@@ -361,6 +362,7 @@ Map<String, List<String>> _routeRoles = {
   '/badges': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/quest': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/giving': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/ussd': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/tontines': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/voice-reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/voice-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -833,6 +835,11 @@ final appRouter = GoRouter(
       path: '/giving',
       name: 'giving',
       builder: (context, state) => const GivingScreen(),
+    ),
+    GoRoute(
+      path: '/ussd',
+      name: 'ussd',
+      builder: (context, state) => const UssdScreen(),
     ),
     GoRoute(
       path: '/tontines',

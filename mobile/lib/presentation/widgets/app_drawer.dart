@@ -54,6 +54,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.emoji_events_rounded, 'title': 'Badges', 'route': '/badges'},
     {'icon': Icons.bolt_rounded, 'title': 'Quest (XP)', 'route': '/quest'},
     {'icon': Icons.volunteer_activism_rounded, 'title': 'Dîmes & offrandes', 'route': '/giving'},
+    {'icon': Icons.dialpad_rounded, 'title': 'USSD (Feature Phone)', 'route': '/ussd'},
     {'icon': Icons.savings_rounded, 'title': 'Tontines', 'route': '/tontines'},
     {'icon': Icons.mic_rounded, 'title': 'Rapports vocaux', 'route': '/voice-reports'},
     {'icon': Icons.record_voice_over_rounded, 'title': 'PasteurBot Vocal', 'route': '/voice-assistant'},

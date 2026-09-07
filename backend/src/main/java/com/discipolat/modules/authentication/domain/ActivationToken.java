@@ -34,6 +34,9 @@ public class ActivationToken {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "tenant_id", nullable = false)
+    private UUID tenantId;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();

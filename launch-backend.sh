@@ -2,6 +2,7 @@
 # Double-fork daemon launcher
 if [ "$1" = "daemon" ]; then
   cd /home/jo/discipolat/backend
+  set -a; . /home/jo/discipolat/.env; set +a
   export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/discipolat
   export SPRING_DATASOURCE_USERNAME=discipolat
   export SPRING_DATASOURCE_PASSWORD=discipolat_secret

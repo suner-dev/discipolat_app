@@ -1,9 +1,8 @@
 package com.discipolat.modules.prophetic.api;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
-import com.discipolat.modules.prophetic.domain.SpeechToTextException;
-import com.discipolat.modules.prophetic.domain.VoiceAssistantService;
-import com.discipolat.modules.prophetic.domain.VoiceSttService;
+import com.discipolat.modules.prophetic.domain.*;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +16,7 @@ import java.util.UUID;
 
 /**
  * P0 #5 — Assistant vocal conversationnel "PasteurBot".
- * API pour la transcription vocale et les commandes vocales.
+ * API pour la transcription vocale, les commandes vocales et la synthèse vocale (TTS).
  */
 @RestController
 @RequestMapping("/api/v1/voice")
@@ -26,13 +25,16 @@ public class VoiceAssistantController {
 
     private final VoiceAssistantService voiceService;
     private final VoiceSttService sttService;
+    private final VoiceTtsService ttsService;
     private final SecurityUtils securityUtils;
 
     public VoiceAssistantController(VoiceAssistantService voiceService,
                                     VoiceSttService sttService,
+                                    VoiceTtsService ttsService,
                                     SecurityUtils securityUtils) {
         this.voiceService = voiceService;
         this.sttService = sttService;
+        this.ttsService = ttsService;
         this.securityUtils = securityUtils;
     }
 
@@ -103,7 +105,41 @@ public class VoiceAssistantController {
      * GET /api/v1/voice/health
      */
     @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> healthCheck() {
-        return ResponseEntity.ok(voiceService.healthCheck());
+
+    /**
+     * Synthétise un texte en audio MP3 (Text-to-Speech).
+     * POST /api/v1/voice/tts
+     * Body: { "text": "Bonjour", "language": "fr", "voice": "alloy" }
+     */
+    @PostMapping(value = "/tts", produces = "audio/mpeg")
+    public ResponseEntity<?> textToSpeech(@RequestBody Map<String, String> body) {
+        String text = body.getOrDefault("text", "");
+        if (text.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Texte requis"));
+        }
+        try {
+            String language = body.get("language");
+            String voice = body.get("voice");
+            byte[] audio = ttsService.synthesize(text, language, voice);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("audio/mpeg"));
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=speech.mp3");
+            return new ResponseEntity<>(audio, headers, HttpStatus.OK);
+        } catch (TextToSpeechException e) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", e.getMessage(), "code", "TTS_NOT_CONFIGURED"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Synthèse impossible : " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Statut des fournisseurs Text-to-Text configurés.
+     * GET /api/v1/voice/tts-status
+     */
+    @GetMapping("/tts-status")
+    public ResponseEntity<?> ttsStatus() {
+        return ResponseEntity.ok(ttsService.status());
     }
 }
