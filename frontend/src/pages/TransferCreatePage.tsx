@@ -11,6 +11,7 @@ import { TRANSFER_TYPE_LABELS } from '@/types';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import { ArrowLeft, ArrowLeftRight, Loader2, Send, User as UserIcon, Heart, Users, Building2, Paperclip } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface PageResponse<T> {
   content: T[];
   totalElements: number;
@@ -126,15 +127,15 @@ export default function TransferCreatePage() {
       <div className="page-header">
         <Link to="/transfers" className="btn-ghost btn-sm mb-2">
           <ArrowLeft className="w-4 h-4" />
-          Retour aux transferts
+          {tText('Retour aux transferts')}
         </Link>
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg">
             <ArrowLeftRight className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="page-title">Nouvelle demande de transfert</h1>
-            <p className="page-subtitle">Le circuit de validation est défini par le workflow configuré par le pasteur</p>
+            <h1 className="page-title">{tText('Nouvelle demande de transfert')}</h1>
+            <p className="page-subtitle">{tText('Le circuit de validation est défini par le workflow configuré par le pasteur')}</p>
           </div>
         </div>
       </div>
@@ -144,7 +145,7 @@ export default function TransferCreatePage() {
       ) : availableTypes.length === 0 ? (
         <div className="glass-card p-10 text-center">
           <p className="text-gray-500 mb-2">Aucun type de transfert n'est disponible pour votre rôle actif.</p>
-          <Link to="/transfers" className="btn-secondary btn-sm">Retour</Link>
+          <Link to="/transfers" className="btn-secondary btn-sm">{tText('Retour')}</Link>
         </div>
       ) : (
         <div className="glass-card p-6 space-y-5">
@@ -214,7 +215,7 @@ export default function TransferCreatePage() {
 
               {/* Justification */}
               <div>
-                <label className="label">Justification détaillée *</label>
+                <label className="label">{tText('Justification détaillée *')}</label>
                 <textarea
                   className="input"
                   rows={3}
@@ -227,7 +228,7 @@ export default function TransferCreatePage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Priorité</label>
+                  <label className="label">{tText('Priorité')}</label>
                   <select className="input" value={priorite} onChange={(e) => setPriorite(e.target.value as PrioriteTransfert)}>
                     {(dictionaries.options('TRANSFER_PRIORITE').length > 0
                       ? dictionaries.options('TRANSFER_PRIORITE')
@@ -265,11 +266,11 @@ export default function TransferCreatePage() {
                   onChange={(e) => setSoumettreDirectement(e.target.checked)}
                   className="rounded"
                 />
-                Soumettre immédiatement au circuit de validation
+                {tText('Soumettre immédiatement au circuit de validation')}
               </label>
 
               <div className="flex justify-end gap-3 pt-2">
-                <Link to="/transfers" className="btn-secondary">Annuler</Link>
+                <Link to="/transfers" className="btn-secondary">{tText('Annuler')}</Link>
                 <button
                   onClick={() => createMutation.mutate()}
                   disabled={createMutation.isPending || !personneId || !targetId || !justification.trim()}

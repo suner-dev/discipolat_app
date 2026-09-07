@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { Lock, Loader2, CheckCircle2, Eye, EyeOff, Shield, AlertTriangle } from 'lucide-react';
 
+import { tText } from '@/i18n';
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -89,13 +90,13 @@ export default function ResetPasswordPage() {
       <div className="text-center">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-xs font-medium mb-4 animate-fade-in">
           <Shield className="w-3 h-3" />
-          Sécurité
+          {tText('Sécurité')}
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display animate-slide-up">
-          Nouveau mot de passe
+          {tText('Nouveau mot de passe')}
         </h2>
         <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
-          Choisissez un mot de passe sécurisé
+          {tText('Choisissez un mot de passe sécurisé')}
         </p>
       </div>
 
@@ -107,7 +108,7 @@ export default function ResetPasswordPage() {
         )}
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">Nouveau mot de passe</label>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">{tText('Nouveau mot de passe')}</label>
           <div className="relative group">
             <input
               id="password"
@@ -133,7 +134,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">Confirmer le mot de passe</label>
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">{tText('Confirmer le mot de passe')}</label>
           <input
             id="confirmPassword"
             type="password"

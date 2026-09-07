@@ -9,6 +9,7 @@ import { useDictionaries } from '@/hooks/useDictionaries';
 import { MENU_ICON_KEYS, resolveIcon } from '@/lib/menuIcons';
 import ConfigRevisionHistory from '@/components/ConfigRevisionHistory';
 
+import { tText } from '@/i18n';
 const ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
 
 interface MenuForm {
@@ -75,9 +76,9 @@ export default function PlatformMenusPage() {
       setCreateOpen(false);
       setEditing(null);
       setEditId(null);
-      toast.success('Menu enregistré');
+      toast.success(tText('Menu enregistré'));
     } catch {
-      toast.error('Erreur');
+      toast.error(tText('Erreur'));
     } finally {
       setSavePending(false);
     }
@@ -85,8 +86,8 @@ export default function PlatformMenusPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/platform/menus/${id}`); },
-    onSuccess: () => { invalidate(); toast.success('Menu supprimé'); },
-    onError: () => toast.error('Impossible de supprimer ce menu'),
+    onSuccess: () => { invalidate(); toast.success(tText('Menu supprimé')); },
+    onError: () => toast.error(tText('Impossible de supprimer ce menu')),
   });
 
   const toggleMutation = useMutation({
@@ -95,15 +96,15 @@ export default function PlatformMenusPage() {
       await api.put(`/platform/menus/${id}`, { ...menu, enabled });
     },
     onSuccess: () => { invalidate(); },
-    onError: () => toast.error('Erreur'),
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const reorderMutation = useMutation({
     mutationFn: async (items: { id: string; ordre: number; section: string }[]) => {
       await api.post('/platform/menus/reorder', items);
     },
-    onSuccess: () => { invalidate(); toast.success('Ordre mis à jour'); },
-    onError: () => toast.error('Erreur de réordonnancement'),
+    onSuccess: () => { invalidate(); toast.success(tText('Ordre mis à jour')); },
+    onError: () => toast.error(tText('Erreur de réordonnancement')),
   });
 
   const moveUp = (idx: number, section: string) => {
@@ -147,7 +148,7 @@ export default function PlatformMenusPage() {
           <p className="page-subtitle">Personnalisez les entrées de navigation : ordre, libellé, icônes, rôles visibles et activation.</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn-primary btn-sm" onClick={openCreate}><Plus className="w-4 h-4" /> Nouveau menu</button>
+          <button className="btn-primary btn-sm" onClick={openCreate}><Plus className="w-4 h-4" /> {tText('Nouveau menu')}</button>
         </div>
       </div>
 
@@ -158,10 +159,10 @@ export default function PlatformMenusPage() {
       {/* Live preview — shows menus as users will see them */}
       <div className="glass-card p-4 mb-6">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-          Aperçu en direct
+          {tText('Aperçu en direct')}
         </h3>
         {menus.filter(m => m.enabled).length === 0 ? (
-          <span className="text-sm text-gray-500 dark:text-gray-400">Aucun menu visible pour le moment</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{tText('Aucun menu visible pour le moment')}</span>
         ) : (
           <div className="flex flex-wrap gap-2">
             {menus.filter(m => m.enabled).sort((a, b) => a.ordre - b.ordre).map((m) => {
@@ -247,11 +248,11 @@ export default function PlatformMenusPage() {
             <div className="modal-body space-y-4 max-h-[60vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Clé</label>
+                  <label className="label">{tText('Clé')}</label>
                   <input className="input font-mono" value={form.key} disabled={!!editId} onChange={(e) => setForm({ ...form, key: e.target.value })} placeholder="mon-menu" />
                 </div>
                 <div>
-                  <label className="label">Libellé</label>
+                  <label className="label">{tText('Libellé')}</label>
                   <input className="input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
                 </div>
               </div>
@@ -261,7 +262,7 @@ export default function PlatformMenusPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Icône</label>
+                  <label className="label">{tText('Icône')}</label>
                   <select className="input" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })}>
                     {MENU_ICON_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
                   </select>
@@ -269,7 +270,7 @@ export default function PlatformMenusPage() {
                 <div>
                   <label className="label">Module</label>
                   <select className="input" value={form.moduleKey} onChange={(e) => setForm({ ...form, moduleKey: e.target.value })}>
-                    <option value="">Aucun</option>
+                    <option value="">{tText('Aucun')}</option>
                     {modules.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
                   </select>
                 </div>
@@ -285,7 +286,7 @@ export default function PlatformMenusPage() {
                 </div>
               </div>
               <div>
-                <label className="label">Rôles visibles</label>
+                <label className="label">{tText('Rôles visibles')}</label>
                 <div className="flex flex-wrap gap-2">
                   {ROLES.map((r) => (
                     <button
@@ -311,7 +312,7 @@ export default function PlatformMenusPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => { setCreateOpen(false); setEditId(null); }}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => { setCreateOpen(false); setEditId(null); }}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={handleSave} disabled={savePending}>
                 {savePending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {editId ? 'Enregistrer' : 'Créer'}

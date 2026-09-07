@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { Shield, Check, X, Loader2, Save, Plus, Copy, Pencil, Trash2, BadgeCheck, Eye, Pencil as PencilIcon, Trash, ChevronDown, ChevronRight } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface PermissionEntry {
   role: string;
   permission: string;
@@ -76,9 +77,9 @@ export default function PermissionsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
-      toast.success('Permission mise à jour');
+      toast.success(tText('Permission mise à jour'));
     },
-    onError: () => toast.error('Erreur lors de la mise à jour'),
+    onError: () => toast.error(tText('Erreur lors de la mise à jour')),
   });
 
   const updateRwdMutation = useMutation({
@@ -89,9 +90,9 @@ export default function PermissionsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
-      toast.success('Permission mise à jour');
+      toast.success(tText('Permission mise à jour'));
     },
-    onError: () => toast.error('Erreur lors de la mise à jour'),
+    onError: () => toast.error(tText('Erreur lors de la mise à jour')),
   });
 
   const invalidateRoles = () => {
@@ -103,30 +104,30 @@ export default function PermissionsPage() {
     mutationFn: async (body: { key: string; label: string; description?: string }) => {
       await api.post('/permissions/roles', body);
     },
-    onSuccess: () => { invalidateRoles(); toast.success('Rôle créé'); },
-    onError: (e: unknown) => toast.error((e as { response?: { data?: { error?: string } } }).response?.data?.error || 'Erreur'),
+    onSuccess: () => { invalidateRoles(); toast.success(tText('Rôle créé')); },
+    onError: (e: unknown) => toast.error((e as { response?: { data?: { error?: string } } }).response?.data?.error || tText('Erreur')),
   });
 
   const renameRoleMutation = useMutation({
     mutationFn: async ({ key, label }: { key: string; label: string }) => {
       await api.put(`/permissions/roles/${key}`, { label });
     },
-    onSuccess: () => { invalidateRoles(); toast.success('Rôle renommé'); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { invalidateRoles(); toast.success(tText('Rôle renommé')); },
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const duplicateRoleMutation = useMutation({
     mutationFn: async ({ sourceKey, newKey, label }: { sourceKey: string; newKey: string; label: string }) => {
       await api.post('/permissions/roles/duplicate', { sourceKey, newKey, label });
     },
-    onSuccess: () => { invalidateRoles(); toast.success('Rôle dupliqué'); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { invalidateRoles(); toast.success(tText('Rôle dupliqué')); },
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const deleteRoleMutation = useMutation({
     mutationFn: async (key: string) => { await api.delete(`/permissions/roles/${key}`); },
-    onSuccess: () => { invalidateRoles(); toast.success('Rôle supprimé'); },
-    onError: (e: unknown) => toast.error((e as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Erreur'),
+    onSuccess: () => { invalidateRoles(); toast.success(tText('Rôle supprimé')); },
+    onError: (e: unknown) => toast.error((e as { response?: { data?: { detail?: string } } }).response?.data?.detail || tText('Erreur')),
   });
 
   // Modal state
@@ -282,14 +283,14 @@ export default function PermissionsPage() {
             {rwdMode ? 'Mode R/W/D ✓' : 'Mode simple'}
           </button>
           <button className="btn-primary btn-sm" onClick={() => { setCreateForm({ key: '', label: '', description: '' }); setCreateOpen(true); }}>
-            <Plus className="w-4 h-4" /> Nouveau rôle
+            <Plus className="w-4 h-4" /> {tText('Nouveau rôle')}
           </button>
         </div>
       </div>
 
       {/* Rôles */}
       <div className="glass-card overflow-hidden mb-6">
-        <div className="card-header"><h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Rôles</h3></div>
+        <div className="card-header"><h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{tText('Rôles')}</h3></div>
         <div className="divide-y divide-gray-100/50 dark:divide-gray-800/30">
           {roles?.map((role) => (
             <div key={role.key} className="flex items-center gap-4 px-5 py-3">
@@ -298,7 +299,7 @@ export default function PermissionsPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{role.label}</span>
                   <span className="font-mono text-[10px] text-gray-400">({role.key})</span>
-                  {role.system && <span className="badge badge-info text-[10px]">Système</span>}
+                  {role.system && <span className="badge badge-info text-[10px]">{tText('Système')}</span>}
                 </div>
                 {role.description && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{role.description}</p>}
               </div>
@@ -378,17 +379,17 @@ export default function PermissionsPage() {
       {createOpen && (
         <div className="modal-overlay" onClick={() => setCreateOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Nouveau rôle</h3>
+            <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Nouveau rôle')}</h3>
               <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setCreateOpen(false)}>×</button></div>
             <div className="modal-body space-y-4">
               <div><label className="label">Clé (unique)</label><input className="input font-mono" value={createForm.key} onChange={(e) => setCreateForm({ ...createForm, key: e.target.value.toUpperCase() })} placeholder="NOUVEAU_ROLE" /></div>
-              <div><label className="label">Libellé</label><input className="input" value={createForm.label} onChange={(e) => setCreateForm({ ...createForm, label: e.target.value })} /></div>
+              <div><label className="label">{tText('Libellé')}</label><input className="input" value={createForm.label} onChange={(e) => setCreateForm({ ...createForm, label: e.target.value })} /></div>
               <div><label className="label">Description</label><input className="input" value={createForm.description} onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })} /></div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => { createRoleMutation.mutate(createForm); setCreateOpen(false); }} disabled={createRoleMutation.isPending}>
-                <Plus className="w-4 h-4" /> Créer
+                <Plus className="w-4 h-4" /> {tText('Créer')}
               </button>
             </div>
           </div>
@@ -402,13 +403,13 @@ export default function PermissionsPage() {
             <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Renommer {renameRole.label}</h3>
               <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setRenameRole(null)}>×</button></div>
             <div className="modal-body">
-              <div><label className="label">Nouveau libellé</label>
+              <div><label className="label">{tText('Nouveau libellé')}</label>
                 <input className="input" defaultValue={renameRole.label} id="rename-label" autoFocus
                   onKeyDown={(e) => { if (e.key === 'Enter') { renameRoleMutation.mutate({ key: renameRole.key, label: (e.target as HTMLInputElement).value }); setRenameRole(null); } }} />
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setRenameRole(null)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setRenameRole(null)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => {
                 const input = document.getElementById('rename-label') as HTMLInputElement;
                 renameRoleMutation.mutate({ key: renameRole.key, label: input?.value || renameRole.label });
@@ -426,11 +427,11 @@ export default function PermissionsPage() {
             <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Dupliquer {duplicateTarget.label}</h3>
               <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setDuplicateTarget(null)}>×</button></div>
             <div className="modal-body space-y-4">
-              <div><label className="label">Clé du nouveau rôle</label><input className="input font-mono" value={dupForm.newKey} onChange={(e) => setDupForm({ ...dupForm, newKey: e.target.value.toUpperCase() })} /></div>
-              <div><label className="label">Libellé</label><input className="input" value={dupForm.label} onChange={(e) => setDupForm({ ...dupForm, label: e.target.value })} /></div>
+              <div><label className="label">{tText('Clé du nouveau rôle')}</label><input className="input font-mono" value={dupForm.newKey} onChange={(e) => setDupForm({ ...dupForm, newKey: e.target.value.toUpperCase() })} /></div>
+              <div><label className="label">{tText('Libellé')}</label><input className="input" value={dupForm.label} onChange={(e) => setDupForm({ ...dupForm, label: e.target.value })} /></div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setDuplicateTarget(null)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setDuplicateTarget(null)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => { duplicateRoleMutation.mutate({ sourceKey: duplicateTarget.key, ...dupForm }); setDuplicateTarget(null); }}><Copy className="w-4 h-4" /> Dupliquer</button>
             </div>
           </div>

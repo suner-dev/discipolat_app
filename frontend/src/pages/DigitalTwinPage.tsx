@@ -3,6 +3,8 @@ import { useState } from 'react';
 import api from '@/lib/api';
 import { Loader2, GitBranch, TrendingUp, Users, Sparkles, ArrowRight } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface SimulationRequest {
   faiseurMultiplier: number;
   retentionGainPercent: number;
@@ -85,9 +87,9 @@ export default function DigitalTwinPage() {
       <div className="flex flex-wrap gap-2 mb-6">
         <ScenarioButton label={`Stagnation (${form.months || 12} mois)`} payload={{}} />
         <ScenarioButton label="Croissance douce" payload={{ faiseurMultiplier: 1.3, retentionGainPercent: 5, pipelineBoost: 10 }} />
-        <ScenarioButton label="Réveil des faiseurs" payload={{ faiseurMultiplier: 2, retentionGainPercent: 0, pipelineBoost: 0 }} />
-        <ScenarioButton label="Réveil + rétention" payload={{ faiseurMultiplier: 1.8, retentionGainPercent: 15, pipelineBoost: 15 }} />
-        <ScenarioButton label="Réveil spirituel" payload={{ faiseurMultiplier: 2.5, retentionGainPercent: 20, pipelineBoost: 40 }} />
+        <ScenarioButton label={tText('Réveil des faiseurs')} payload={{ faiseurMultiplier: 2, retentionGainPercent: 0, pipelineBoost: 0 }} />
+        <ScenarioButton label={tText('Réveil + rétention')} payload={{ faiseurMultiplier: 1.8, retentionGainPercent: 15, pipelineBoost: 15 }} />
+        <ScenarioButton label={tText('Réveil spirituel')} payload={{ faiseurMultiplier: 2.5, retentionGainPercent: 20, pipelineBoost: 40 }} />
       </div>
 
       {/* Formulaire personnalisé */}
@@ -139,7 +141,7 @@ export default function DigitalTwinPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-slide-up">
             <div className="stat-card bg-gradient-to-br from-blue-500 to-indigo-600">
               <TrendingUp className="w-5 h-5 opacity-80" />
-              <p className="stat-value">{result.projectedSouls.toLocaleString('fr-FR')}</p>
+              <p className="stat-value">{result.projectedSouls.toLocaleString(getI18nLocale())}</p>
               <p className="text-xs opacity-80">
                 Âmes projetées ({result.deltaSouls >= 0 ? '+' : ''}
                 {Math.round(result.deltaSouls)})
@@ -148,12 +150,12 @@ export default function DigitalTwinPage() {
             <div className="stat-card bg-gradient-to-br from-emerald-500 to-teal-600">
               <Sparkles className="w-5 h-5 opacity-80" />
               <p className="stat-value">{Math.round(result.projectedFaiseurs)}</p>
-              <p className="text-xs opacity-80">Faiseurs projetés</p>
+              <p className="text-xs opacity-80">{tText('Faiseurs projetés')}</p>
             </div>
             <div className="stat-card bg-gradient-to-br from-purple-500 to-violet-600">
               <Users className="w-5 h-5 opacity-80" />
               <p className="stat-value">{Math.round(result.projectedLeaders)}</p>
-              <p className="text-xs opacity-80">Leaders projetés</p>
+              <p className="text-xs opacity-80">{tText('Leaders projetés')}</p>
             </div>
             <div className="stat-card bg-gradient-to-br from-amber-500 to-orange-600">
               <GitBranch className="w-5 h-5 opacity-80" />

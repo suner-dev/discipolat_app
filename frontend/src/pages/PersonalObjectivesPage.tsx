@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import toast from 'react-hot-toast';
 import { Target, Plus, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Objective {
   id: string;
   titre: string;
@@ -61,7 +62,7 @@ export default function PersonalObjectivesPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <Target className="w-8 h-8 text-emerald-500" /> Objectifs Spirituels
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Définissez et suivez vos objectifs personnels</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{tText('Définissez et suivez vos objectifs personnels')}</p>
         </div>
         <button onClick={() => setShowCreate(true)}
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg flex items-center gap-2">
@@ -148,8 +149,8 @@ export default function PersonalObjectivesPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
-              <button onClick={createObjective} className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600">Créer</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
+              <button onClick={createObjective} className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600">{tText('Créer')}</button>
             </div>
           </div>
         </div>

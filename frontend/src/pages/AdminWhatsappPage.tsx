@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, getErrorMessage } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { tText } from '@/i18n';
 import {
   MessageCircle,
   Send,
@@ -83,7 +84,7 @@ export default function AdminWhatsappPage() {
     mutationFn: async () =>
       (await api.put('/whatsapp/config', form)).data as WaConfig,
     onSuccess: () => {
-      toast.success('Configuration WhatsApp enregistrée');
+      toast.success(tText('Configuration WhatsApp enregistrée'));
       qc.invalidateQueries({ queryKey: ['whatsapp-config'] });
     },
     onError: (e) => toast.error(getErrorMessage(e)),
@@ -92,7 +93,7 @@ export default function AdminWhatsappPage() {
   const testMutation = useMutation({
     mutationFn: async () => (await api.post<{ success: boolean; error?: string }>('/whatsapp/config/test')).data,
     onSuccess: (res) => {
-      if (res.success) toast.success('Connexion à l’API WhatsApp réussie');
+      if (res.success) toast.success(tText('Connexion à l’API WhatsApp réussie'));
       else toast.error(`Échec : ${res.error}`);
       qc.invalidateQueries({ queryKey: ['whatsapp-config'] });
     },
@@ -102,7 +103,7 @@ export default function AdminWhatsappPage() {
   const broadcastMutation = useMutation({
     mutationFn: async () => (await api.post('/whatsapp/broadcast', broadcast)).data,
     onSuccess: () => {
-      toast.success('Annonce diffusée aux membres opt-in');
+      toast.success(tText('Annonce diffusée aux membres opt-in'));
       setBroadcast({ titre: '', contenu: '' });
       qc.invalidateQueries({ queryKey: ['whatsapp-messages'] });
     },
@@ -164,7 +165,7 @@ export default function AdminWhatsappPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm">Numéro affiché</label>
+            <label className="mb-1 block text-sm">{tText('Numéro affiché')}</label>
             <input
               className="input"
               value={form.displayPhoneNumber ?? ''}
@@ -231,7 +232,7 @@ export default function AdminWhatsappPage() {
       {/* Diffusion */}
       <div className="glass-card mb-6 p-5">
         <h2 className="mb-4 flex items-center gap-2 font-semibold">
-          <Radio size={18} /> Diffuser une annonce
+          <Radio size={18} /> {tText('Diffuser une annonce')}
         </h2>
         <div className="space-y-3">
           <input
@@ -258,7 +259,7 @@ export default function AdminWhatsappPage() {
 
       {/* Journal */}
       <div className="glass-card p-5">
-        <h2 className="mb-4 font-semibold">Journal des messages</h2>
+        <h2 className="mb-4 font-semibold">{tText('Journal des messages')}</h2>
         {!messages?.length ? (
           <p className="py-8 text-center text-sm text-muted">
             Aucun message. Les échanges apparaîtront ici dès que le webhook sera actif.

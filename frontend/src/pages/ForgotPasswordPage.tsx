@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { Mail, Loader2, ArrowLeft, CheckCircle2, Sparkles, Shield } from 'lucide-react';
 
+import { tText } from '@/i18n';
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
@@ -34,7 +35,7 @@ export default function ForgotPasswordPage() {
                      shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40
                      flex items-center justify-center gap-2">
           <ArrowLeft className="w-4 h-4" />
-          Retour à la connexion
+          {tText('Retour à la connexion')}
         </Link>
       </div>
     );
@@ -48,10 +49,10 @@ export default function ForgotPasswordPage() {
           Mot de passe
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display animate-slide-up">
-          Mot de passe oublié
+          {tText('Mot de passe oublié')}
         </h2>
         <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
-          Recevez un lien de réinitialisation par email
+          {tText('Recevez un lien de réinitialisation par email')}
         </p>
       </div>
 
@@ -110,7 +111,7 @@ export default function ForgotPasswordPage() {
           className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors group"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
-          Retour à la connexion
+          {tText('Retour à la connexion')}
         </Link>
       </form>
     </div>

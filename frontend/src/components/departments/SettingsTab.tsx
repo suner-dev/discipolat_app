@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { tText } from '@/i18n';
 import {
   Settings, AlertTriangle, Activity, CalendarDays, Save, Loader2,
 } from 'lucide-react';
@@ -54,7 +55,7 @@ export function SettingsTab({ deptId }: { deptId: string }) {
     <div className="glass-card p-5">
       <div className="flex items-center gap-2 mb-1">
         <Settings className="w-4 h-4 text-primary-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Paramètres du département</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Paramètres du département')}</h3>
       </div>
       <p className="text-xs text-gray-400 mb-4">
         Seuils des alertes intelligentes — aucun paramètre n'est codé en dur : les règles
@@ -68,7 +69,7 @@ export function SettingsTab({ deptId }: { deptId: string }) {
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Absences répétées</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{tText('Absences répétées')}</p>
             </div>
             <p className="text-[11px] text-gray-400 mb-3">
               Alerte HAUTE quand un membre est absent au moins N fois sur la période (en semaines).
@@ -90,7 +91,7 @@ export function SettingsTab({ deptId }: { deptId: string }) {
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40">
             <div className="flex items-center gap-2 mb-1">
               <Activity className="w-4 h-4 text-emerald-500" />
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Inactivité</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{tText('Inactivité')}</p>
             </div>
             <p className="text-[11px] text-gray-400 mb-3">
               Alerte MOYENNE quand un membre n'a aucune fiche de présence depuis N mois (0 = désactivé).
@@ -119,7 +120,7 @@ export function SettingsTab({ deptId }: { deptId: string }) {
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 sm:col-span-2">
             <div className="flex items-center gap-2 mb-1">
               <CalendarDays className="w-4 h-4 text-indigo-500" />
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Rappel automatique des événements</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{tText('Rappel automatique des événements')}</p>
             </div>
             <p className="text-[11px] text-gray-400 mb-3">
               Notifie le responsable N jours avant chaque événement rattaché au département

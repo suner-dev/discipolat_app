@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import { Code, ExternalLink, Key, Copy, CheckCircle2, Shield, Globe, Zap } from 'lucide-react';
 import Toast from '@/components/shared/Toast';
 
+import { tText } from '@/i18n';
 interface ApiKey {
   id: string;
   nom: string;
@@ -146,14 +147,14 @@ export default function ApiDocsPage() {
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-medium hover:from-cyan-700 hover:to-blue-700 transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-2"
           >
             <Key className="w-4 h-4" />
-            Nouvelle clé API
+            {tText('Nouvelle clé API')}
           </button>
         </div>
       </div>
 
       {/* Quick Start */}
       <div className="p-6 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 mb-6">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">🚀 Démarrage rapide</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">{tText('🚀 Démarrage rapide')}</h2>
         <div className="space-y-3">
           <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/2 font-mono text-sm text-gray-700 dark:text-gray-300 overflow-x-auto">
             <span className="text-gray-400"># Authentification</span>{'\n'}
@@ -162,12 +163,12 @@ export default function ApiDocsPage() {
             {'  }'}-d '{'{'}"email": "votre@email.com", "password": "..."{'}'}'
           </div>
           <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/2 font-mono text-sm text-gray-700 dark:text-gray-300 overflow-x-auto">
-            <span className="text-gray-400"># Requête authentifiée</span>{'\n'}
+            <span className="text-gray-400">{tText('# Requête authentifiée')}</span>{'\n'}
             <span className="text-green-600">curl</span> https://api.discipolat.com/api/v1/souls \{'\n'}
             {'  '}-H "Authorization: Bearer VOTRE_TOKEN"
           </div>
           <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/2 font-mono text-sm text-gray-700 dark:text-gray-300 overflow-x-auto">
-            <span className="text-gray-400"># Avec clé API</span>{'\n'}
+            <span className="text-gray-400">{tText('# Avec clé API')}</span>{'\n'}
             <span className="text-green-600">curl</span> https://api.discipolat.com/api/v1/souls \{'\n'}
             {'  '}-H "X-API-Key: dk_votre_cle_api"
           </div>
@@ -184,7 +185,7 @@ export default function ApiDocsPage() {
               !filterModule ? 'bg-cyan-600 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
             }`}
           >
-            Tous
+            {tText('Tous')}
           </button>
           {MODULES.map(m => (
             <button
@@ -216,7 +217,7 @@ export default function ApiDocsPage() {
 
       {/* API Keys */}
       <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">🔑 Clés API</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('🔑 Clés API')}</h2>
         {apiKeys.length === 0 ? (
           <div className="p-6 rounded-2xl border border-dashed border-gray-300 dark:border-white/10 text-center">
             <Key className="w-8 h-8 text-gray-400 mx-auto mb-3" />
@@ -247,7 +248,7 @@ export default function ApiDocsPage() {
                   onClick={() => revokeApiKey(key.id)}
                   className="px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-all"
                 >
-                  Révoquer
+                  {tText('Révoquer')}
                 </button>
               </div>
             ))}
@@ -260,10 +261,10 @@ export default function ApiDocsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreateKey(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouvelle clé API</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouvelle clé API')}</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom de la clé</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{tText('Nom de la clé')}</label>
                 <input
                   type="text"
                   value={newKeyName}
@@ -281,10 +282,10 @@ export default function ApiDocsPage() {
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowCreateKey(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
-                Annuler
+                {tText('Annuler')}
               </button>
               <button onClick={createApiKey} className="px-4 py-2 rounded-xl bg-cyan-600 text-white text-sm font-medium hover:bg-cyan-700 transition-all">
-                Créer la clé
+                {tText('Créer la clé')}
               </button>
             </div>
           </div>
@@ -299,7 +300,7 @@ export default function ApiDocsPage() {
           Les livraisons sont signées HMAC-SHA256 avec l'en-tête <code>X-Discipolat-Signature</code>.
         </p>
         <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/2 font-mono text-sm text-gray-700 dark:text-gray-300 overflow-x-auto">
-          <span className="text-gray-400"># Exemple de vérification webhook</span>{'\n'}
+          <span className="text-gray-400">{tText('# Exemple de vérification webhook')}</span>{'\n'}
           <span className="text-green-600">const</span> signature = crypto.createHmac('sha256', SECRET){'\n'}
           {'  '}.update(req.body).digest('hex');{'\n'}
           <span className="text-green-600">if</span> (signature !== req.headers['x-discipolat-signature']) {'{'}{'\n'}
@@ -311,7 +312,7 @@ export default function ApiDocsPage() {
           className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 text-sm font-medium hover:bg-cyan-200 dark:hover:bg-cyan-500/30 transition-all"
         >
           <ExternalLink className="w-4 h-4" />
-          Gérer les webhooks
+          {tText('Gérer les webhooks')}
         </a>
       </div>
     </div>

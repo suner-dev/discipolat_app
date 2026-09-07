@@ -12,6 +12,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 interface Transfer {
   id: string; type: string; statut: string; personneNom?: string; cible?: string;
   demandeurNom?: string; dateSoumission?: string; priorite?: string;
@@ -76,19 +77,19 @@ export default function PasteurTransfersTab() {
     mutationFn: async ({ id, decision, commentaire }: { id: string; decision: string; commentaire: string }) => {
       await api.post(`/transfers/${id}/decide`, { decision, commentaire });
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['transfers'] }); toast.success('Décision enregistrée'); setShowDecision(null); setShowDetail(null); },
-    onError: () => toast.error('Erreur lors de la décision'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['transfers'] }); toast.success(tText('Décision enregistrée')); setShowDecision(null); setShowDetail(null); },
+    onError: () => toast.error(tText('Erreur lors de la décision')),
   });
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => { await api.post(`/transfers/${id}/cancel`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['transfers'] }); toast.success('Transfert annulé'); setShowDetail(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['transfers'] }); toast.success(tText('Transfert annulé')); setShowDetail(null); },
     onError: () => toast.error('Erreur lors de l\'annulation'),
   });
 
   const archiveMutation = useMutation({
     mutationFn: async (id: string) => { await api.post(`/transfers/${id}/archive`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['transfers'] }); toast.success('Transfert archivé'); setShowDetail(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['transfers'] }); toast.success(tText('Transfert archivé')); setShowDetail(null); },
     onError: () => toast.error('Erreur lors de l\'archivage'),
   });
 
@@ -140,7 +141,7 @@ export default function PasteurTransfersTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => { setShowDetail(null); }} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <div className="flex items-start justify-between mb-6">
@@ -152,7 +153,7 @@ export default function PasteurTransfersTab() {
             </div>
             <div className="flex gap-2 flex-wrap">
               {statutBadge(t.statut)}
-              {t.priorite === 'HAUTE' && <span className="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 px-2 py-0.5 rounded-full font-semibold uppercase">Priorité</span>}
+              {t.priorite === 'HAUTE' && <span className="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 px-2 py-0.5 rounded-full font-semibold uppercase">{tText('Priorité')}</span>}
             </div>
           </div>
 
@@ -231,14 +232,14 @@ export default function PasteurTransfersTab() {
           <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             {t.statut === 'EN_ATTENTE_VALIDATION' && (
               <>
-                <button onClick={() => setShowDecision({ ...t, id: t.id } as any)} className="btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700"><CheckCircle className="w-4 h-4" /> Décider</button>
-                <button onClick={() => cancelMutation.mutate(t.id)} disabled={cancelMutation.isPending} className="btn-secondary btn-sm text-red-600"><Ban className="w-4 h-4" /> Annuler</button>
+                <button onClick={() => setShowDecision({ ...t, id: t.id } as any)} className="btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700"><CheckCircle className="w-4 h-4" /> {tText('Décider')}</button>
+                <button onClick={() => cancelMutation.mutate(t.id)} disabled={cancelMutation.isPending} className="btn-secondary btn-sm text-red-600"><Ban className="w-4 h-4" /> {tText('Annuler')}</button>
               </>
             )}
             {(t.statut === 'EXECUTE' || t.statut === 'REFUSE') && (
               <button onClick={() => archiveMutation.mutate(t.id)} disabled={archiveMutation.isPending} className="btn-secondary btn-sm"><Archive className="w-4 h-4" /> Archiver</button>
             )}
-            <Link to={`/transfers/${t.id}`} className="btn-secondary btn-sm ml-auto"><Eye className="w-4 h-4" /> Vue complète</Link>
+            <Link to={`/transfers/${t.id}`} className="btn-secondary btn-sm ml-auto"><Eye className="w-4 h-4" /> {tText('Vue complète')}</Link>
           </div>
         </div>
       </div>
@@ -263,7 +264,7 @@ export default function PasteurTransfersTab() {
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
           </button>
-          <Link to="/transfers/new" className="btn-primary btn-sm"><Plus className="w-4 h-4" /> Nouveau transfert</Link>
+          <Link to="/transfers/new" className="btn-primary btn-sm"><Plus className="w-4 h-4" /> {tText('Nouveau transfert')}</Link>
           <Link to="/admin/transfers" className="btn-secondary btn-sm"><Eye className="w-4 h-4" /> Admin workflows</Link>
         </div>
       </div>
@@ -279,25 +280,25 @@ export default function PasteurTransfersTab() {
         {showFilters && (
           <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-white/20">
             <select value={statutFilter} onChange={e => { setStatutFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-              <option value="">Tous statuts</option>
+              <option value="">{tText('Tous statuts')}</option>
               <option value="SOUMIS">Soumis</option>
               <option value="EN_ATTENTE_VALIDATION">En attente</option>
-              <option value="VALIDE">Validé</option>
-              <option value="EXECUTE">Exécuté</option>
-              <option value="REFUSE">Refusé</option>
-              <option value="ANNULE">Annulé</option>
-              <option value="ARCHIVE">Archivé</option>
+              <option value="VALIDE">{tText('Validé')}</option>
+              <option value="EXECUTE">{tText('Exécuté')}</option>
+              <option value="REFUSE">{tText('Refusé')}</option>
+              <option value="ANNULE">{tText('Annulé')}</option>
+              <option value="ARCHIVE">{tText('Archivé')}</option>
             </select>
             <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-              <option value="">Tous types</option>
-              <option value="SOUL">Transfert âme</option>
+              <option value="">{tText('Tous types')}</option>
+              <option value="SOUL">{tText('Transfert âme')}</option>
               <option value="FAISEUR">Transfert faiseur</option>
               <option value="CHEF_FAMILLE">Transfert chef</option>
-              <option value="DEPARTEMENT">Transfert département</option>
-              <option value="MEMBRE_DEPARTEMENT">Transfert membre</option>
+              <option value="DEPARTEMENT">{tText('Transfert département')}</option>
+              <option value="MEMBRE_DEPARTEMENT">{tText('Transfert membre')}</option>
             </select>
             <select value={prioriteFilter} onChange={e => { setPrioriteFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-              <option value="">Toutes priorités</option>
+              <option value="">{tText('Toutes priorités')}</option>
               <option value="HAUTE">Haute</option>
               <option value="MOYENNE">Moyenne</option>
               <option value="BASSE">Basse</option>
@@ -356,13 +357,13 @@ export default function PasteurTransfersTab() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {statutBadge(t.statut)}
-                  {t.priorite === 'HAUTE' && <span className="text-[8px] bg-red-100 dark:bg-red-900/30 text-red-600 px-1.5 py-0.5 rounded-full font-semibold uppercase">Priorité</span>}
+                  {t.priorite === 'HAUTE' && <span className="text-[8px] bg-red-100 dark:bg-red-900/30 text-red-600 px-1.5 py-0.5 rounded-full font-semibold uppercase">{tText('Priorité')}</span>}
                   <ChevronRight className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
             </div>
           ))}
-          {(data?.content || []).length === 0 && <div className="glass-card p-14 text-center"><ArrowLeftRight className="w-10 h-10 text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Aucun transfert</p></div>}
+          {(data?.content || []).length === 0 && <div className="glass-card p-14 text-center"><ArrowLeftRight className="w-10 h-10 text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">{tText('Aucun transfert')}</p></div>}
         </div>
       )}
 
@@ -370,7 +371,7 @@ export default function PasteurTransfersTab() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -386,12 +387,12 @@ export default function PasteurTransfersTab() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="label">Décision *</label>
+                <label className="label">{tText('Décision *')}</label>
                 <select className="input" value={decisionForm.decision} onChange={e => setDecisionForm({ ...decisionForm, decision: e.target.value })}>
                   <option value="APPROBATION">✅ Approbation</option>
                   <option value="REFUS">❌ Refus</option>
                   <option value="DEMANDE_INFORMATIONS">❓ Demande d'informations</option>
-                  <option value="RENOI_CORRECTION">🔄 Renvoi pour correction</option>
+                  <option value="RENOI_CORRECTION">{tText('🔄 Renvoi pour correction')}</option>
                 </select>
               </div>
               <div>
@@ -400,7 +401,7 @@ export default function PasteurTransfersTab() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setShowDecision(null)} className="btn-secondary">Annuler</button>
+              <button onClick={() => setShowDecision(null)} className="btn-secondary">{tText('Annuler')}</button>
               <button onClick={() => { if (!decisionForm.commentaire.trim()) { toast.error('Ajoutez un commentaire'); return; } decideMutation.mutate({ id: showDecision.id, ...decisionForm }); }} disabled={decideMutation.isPending} className="btn-primary">
                 {decideMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />} Envoyer
               </button>

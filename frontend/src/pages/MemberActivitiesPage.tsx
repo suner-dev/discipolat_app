@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
+import { tText } from '@/i18n';
 type ActivityItem = {
   id: string;
   type: 'presence' | 'event' | 'note' | 'progression';
@@ -88,9 +89,9 @@ export default function MemberActivitiesPage() {
             </span>
           </div>
           <h1 className="page-title">
-            Mes <span className="text-gradient font-display">activités</span>
+            Mes <span className="text-gradient font-display">{tText('activités')}</span>
           </h1>
-          <p className="page-subtitle">Timeline de votre engagement communautaire</p>
+          <p className="page-subtitle">{tText('Timeline de votre engagement communautaire')}</p>
         </div>
       </div>
 
@@ -122,7 +123,7 @@ export default function MemberActivitiesPage() {
       {filtered.length === 0 ? (
         <div className="glass-card p-12 text-center animate-fade-in">
           <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Aucune activité</h2>
+          <h2 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{tText('Aucune activité')}</h2>
           <p className="text-sm text-gray-400">Vos présences, événements et notes apparaîtront ici.</p>
         </div>
       ) : (

@@ -6,6 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { tText } from '@/i18n';
 interface SuccessionPlan {
   id: string;
   candidatId: string;
@@ -33,7 +34,7 @@ export default function SuccessionPage() {
       return api.post('/succession', newPlan);
     },
     onSuccess: () => {
-      toast.success('Plan créé');
+      toast.success(tText('Plan créé'));
       setShowCreate(false);
       setNewPlan({ candidatId: '', rôleCible: '', mentorId: '', planFormation: '' });
       queryClient.invalidateQueries({ queryKey: ['succession'] });
@@ -44,13 +45,13 @@ export default function SuccessionPage() {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, statut }: { id: string; statut: string }) =>
       api.patch(`/succession/${id}/status`, { statut }),
-    onSuccess: () => { toast.success('Statut mis à jour'); queryClient.invalidateQueries({ queryKey: ['succession'] }); },
+    onSuccess: () => { toast.success(tText('Statut mis à jour')); queryClient.invalidateQueries({ queryKey: ['succession'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/succession/${id}`),
-    onSuccess: () => { toast.success('Supprimé'); queryClient.invalidateQueries({ queryKey: ['succession'] }); },
+    onSuccess: () => { toast.success(tText('Supprimé')); queryClient.invalidateQueries({ queryKey: ['succession'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
@@ -62,11 +63,11 @@ export default function SuccessionPage() {
         </div>
         <div>
           <h1 className="page-title">Plan de Succession</h1>
-          <p className="page-subtitle">Préparez les futurs leaders de votre église</p>
+          <p className="page-subtitle">{tText('Préparez les futurs leaders de votre église')}</p>
         </div>
         <button onClick={() => setShowCreate(true)}
           className="ml-auto px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 text-white text-sm font-medium hover:from-violet-600 hover:to-purple-600 transition-all shadow-lg flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouveau plan
+          <Plus className="w-4 h-4" /> {tText('Nouveau plan')}
         </button>
       </div>
 
@@ -102,7 +103,7 @@ export default function SuccessionPage() {
                   )}
                   <button onClick={() => deleteMutation.mutate(plan.id)}
                     className="px-3 py-1 rounded-lg bg-red-100 text-red-600 text-xs font-medium hover:bg-red-200 flex items-center gap-1">
-                    <Trash2 className="w-3 h-3" /> Supprimer
+                    <Trash2 className="w-3 h-3" /> {tText('Supprimer')}
                   </button>
                 </div>
               </div>
@@ -114,7 +115,7 @@ export default function SuccessionPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau plan de succession</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouveau plan de succession')}</h2>
             <div className="space-y-4">
               <input type="text" value={newPlan.candidatId} onChange={e => setNewPlan({ ...newPlan, candidatId: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
@@ -130,7 +131,7 @@ export default function SuccessionPage() {
                 placeholder="Plan de formation" />
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}
                 className="px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-medium hover:bg-violet-600 flex items-center gap-2">
                 {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

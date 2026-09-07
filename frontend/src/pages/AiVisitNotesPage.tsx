@@ -6,6 +6,7 @@ import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import { FileText, CheckCircle, AlertCircle, Smile, Frown, Meh } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface VisitNote {
   id: string;
   memberId: string;
@@ -34,7 +35,7 @@ export default function AiVisitNotesPage() {
 
   if (isLoading) return <SkeletonLoader lines={4} variant="card" />;
   if (error) return <div className="text-red-500 p-6">{getErrorMessage(error)}</div>;
-  if (notes.length === 0) return <EmptyState title="Aucune note de visite IA" message="Les notes de visites pastorales analysées par l'IA apparaîtront ici" />;
+  if (notes.length === 0) return <EmptyState title={tText('Aucune note de visite IA')} message="Les notes de visites pastorales analysées par l'IA apparaîtront ici" />;
 
   return (
     <div className="space-y-6 p-6">
@@ -49,7 +50,7 @@ export default function AiVisitNotesPage() {
               </div>
               <div className="flex items-center gap-2">
                 {sentimentIcon(note.aiSentiment)}
-                {note.isVerified ? <CheckCircle className="w-4 h-4 text-green-400" /> : <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 py-0.5 rounded-full">Non vérifié</span>}
+                {note.isVerified ? <CheckCircle className="w-4 h-4 text-green-400" /> : <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 py-0.5 rounded-full">{tText('Non vérifié')}</span>}
               </div>
             </div>
             <p className="text-sm text-gray-300 mb-3 leading-relaxed">{note.aiSummary}</p>

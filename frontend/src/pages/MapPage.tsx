@@ -14,6 +14,7 @@ import api from '@/lib/api';
 import { Map as MapIcon, Users, Home, Layers, MapPin, TrendingUp, Heart } from 'lucide-react';
 import type { MapPoint, MapPointType } from '@/types';
 
+import { tText } from '@/i18n';
 // Icônes Leaflet personnalisées (évite les images cassées des chemins par défaut)
 const soulIcon = L.divIcon({
   className: '',
@@ -87,7 +88,7 @@ export default function MapPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cartographie</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Visualisez les disciples et familles par zone géographique
+            {tText('Visualisez les disciples et familles par zone géographique')}
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl px-3 py-2 border border-gray-200 dark:border-gray-700">
@@ -157,7 +158,7 @@ export default function MapPage() {
           onChange={e => setZoneFilter(e.target.value)}
           className="input w-auto text-xs"
         >
-          <option value="ALL">Toutes les zones</option>
+          <option value="ALL">{tText('Toutes les zones')}</option>
           {zones.map(z => <option key={z} value={z}>{z}</option>)}
         </select>
       </div>
@@ -186,13 +187,13 @@ export default function MapPage() {
                   pathOptions={{ color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.25, weight: 2 }}
                 >
                   <Tooltip direction="top" offset={[0, -10]}>
-                    <span className="font-semibold">{p.nom}</span> — Famille
+                    <span className="font-semibold">{p.nom}</span> {tText('— Famille')}
                   </Tooltip>
                   <Popup>
                     <div className="text-xs space-y-1 min-w-[180px]">
                       <p className="font-bold text-sm text-gray-900">{p.nom}</p>
                       <p className="text-gray-500 flex items-center gap-1">
-                        <Home className="w-3 h-3" /> Famille de disciples
+                        <Home className="w-3 h-3" /> {tText('Famille de disciples')}
                       </p>
                       {p.statut && (
                         <span className="inline-block bg-primary-500/10 text-primary-600 font-semibold px-2 py-0.5 rounded-full text-[10px]">
@@ -247,10 +248,10 @@ export default function MapPage() {
           <span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Disciple
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-primary-500 inline-block" /> Famille
+          <span className="w-3 h-3 rounded-full bg-primary-500 inline-block" /> {tText('Famille')}
         </span>
         <span className="flex items-center gap-1.5">
-          <MapIcon className="w-3.5 h-3.5" /> Fond de carte OpenStreetMap — localisation des disciples et familles
+          <MapIcon className="w-3.5 h-3.5" /> {tText('Fond de carte OpenStreetMap — localisation des disciples et familles')}
         </span>
       </div>
     </div>

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Shield, CheckCircle2, XCircle, AlertTriangle, Eye, Clock, RefreshCw,
   Loader2, Filter, Search, Ban, Check, ChevronDown, MessageSquare,
@@ -85,9 +87,9 @@ export default function ModerationPage() {
         <div>
           <h1 className="page-title flex items-center gap-2">
             <Shield className="w-5 h-5 text-purple-500" />
-            Modération de contenu
+            {tText('Modération de contenu')}
           </h1>
-          <p className="page-subtitle">Filtre IA • Approbation/rejet du contenu signalé</p>
+          <p className="page-subtitle">{tText('Filtre IA • Approbation/rejet du contenu signalé')}</p>
         </div>
         <button onClick={() => refetch()} className="btn-ghost btn-sm">
           <RefreshCw className="w-4 h-4" /> Actualiser
@@ -140,7 +142,7 @@ export default function ModerationPage() {
       ) : filtered.length === 0 ? (
         <div className="glass-card p-12 text-center">
           <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">Aucun contenu à modérer</p>
+          <p className="text-gray-500 font-medium">{tText('Aucun contenu à modérer')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -159,7 +161,7 @@ export default function ModerationPage() {
                 <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
                   <span>👤 {item.authorName}</span>
                   <span>🚩 {item.flagReason}</span>
-                  <span>📅 {new Date(item.flaggedAt).toLocaleDateString('fr-FR')}</span>
+                  <span>📅 {new Date(item.flaggedAt).toLocaleDateString(getI18nLocale())}</span>
                 </div>
               </div>
               {item.status === 'PENDING' && (
@@ -184,7 +186,7 @@ export default function ModerationPage() {
         <div className="modal-overlay" onClick={() => setSelectedItem(null)}>
           <div className="modal-content max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Détail du contenu signalé</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Détail du contenu signalé')}</h3>
               <button className="btn-icon" onClick={() => setSelectedItem(null)}>
                 <XCircle className="w-5 h-5 text-gray-400" />
               </button>
@@ -200,8 +202,8 @@ export default function ModerationPage() {
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div><span className="text-gray-400">Auteur :</span> <span className="font-medium">{selectedItem.authorName}</span></div>
                 <div><span className="text-gray-400">Raison :</span> <span className="font-medium">{selectedItem.flagReason}</span></div>
-                <div><span className="text-gray-400">Signalé le :</span> <span className="font-medium">{new Date(selectedItem.flaggedAt).toLocaleString('fr-FR')}</span></div>
-                {selectedItem.reviewedAt && <div><span className="text-gray-400">Revu le :</span> <span className="font-medium">{new Date(selectedItem.reviewedAt).toLocaleString('fr-FR')}</span></div>}
+                <div><span className="text-gray-400">Signalé le :</span> <span className="font-medium">{new Date(selectedItem.flaggedAt).toLocaleString(getI18nLocale())}</span></div>
+                {selectedItem.reviewedAt && <div><span className="text-gray-400">Revu le :</span> <span className="font-medium">{new Date(selectedItem.reviewedAt).toLocaleString(getI18nLocale())}</span></div>}
               </div>
             </div>
             {selectedItem.status === 'PENDING' && (

@@ -23,6 +23,8 @@ import {
   ThumbsUp,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   LineChart,
   Line,
@@ -199,7 +201,7 @@ export default function DashboardPage() {
   // Données RÉELLES du backend (semaines calculées sur les rapports) —
   // jamais de valeurs dérivées arbitrairement côté client.
   const weeklyTrendData = (presenceTrend?.data ?? []).map((p) => ({
-    semaine: new Date(`${p.semaine}T00:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+    semaine: new Date(`${p.semaine}T00:00:00`).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' }),
     taux: p.taux,
   }));
 
@@ -219,7 +221,7 @@ export default function DashboardPage() {
             <span className="text-gradient font-display">Discipolat</span>
           </h1>
           <p className="page-subtitle">
-            Vision consolidée de l'état du discipolat · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            Vision consolidée de l'état du discipolat · {new Date().toLocaleDateString(getI18nLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
         {isPasteurOrAdmin && (
@@ -305,7 +307,7 @@ export default function DashboardPage() {
         <div className="glass-card p-6 animate-slide-up">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Tendance de présence
+              {tText('Tendance de présence')}
             </h3>
             <span className="badge-info text-[10px]">Hebdomadaire</span>
           </div>
@@ -341,7 +343,7 @@ export default function DashboardPage() {
         <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Présence par type de disciple
+              {tText('Présence par type de disciple')}
             </h3>
             <span className="badge-info text-[10px]">Comparaison</span>
           </div>
@@ -384,7 +386,7 @@ export default function DashboardPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Mouvements du suivi
             </h3>
-            <span className="badge-info text-[10px]">Période en cours</span>
+            <span className="badge-info text-[10px]">{tText('Période en cours')}</span>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -428,7 +430,7 @@ export default function DashboardPage() {
         <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '300ms' }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Alertes récentes
+              {tText('Alertes récentes')}
             </h3>
             <Link to="/alerts" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
               Voir tout <ChevronRight className="w-3 h-3" />
@@ -451,7 +453,7 @@ export default function DashboardPage() {
                       {alert.message}
                     </p>
                     <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-                      {new Date(alert.dateDeclenchement).toLocaleDateString('fr-FR', {
+                      {new Date(alert.dateDeclenchement).toLocaleDateString(getI18nLocale(), {
                         day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                       })}
                     </p>
@@ -465,8 +467,8 @@ export default function DashboardPage() {
               <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/20 mb-3">
                 <Bell className="w-6 h-6 text-green-500" />
               </div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Aucune alerte active</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Tout est sous contrôle</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{tText('Aucune alerte active')}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{tText('Tout est sous contrôle')}</p>
             </div>
           )}
         </div>
@@ -505,15 +507,15 @@ export default function DashboardPage() {
               {hasRole('FAISEUR') && (
                 <>
                   <div className="stat-card">
-                    <span className="stat-label">Mes âmes</span>
+                    <span className="stat-label">{tText('Mes âmes')}</span>
                     <span className="stat-value">{(myMetrics as any)?.totalAmes || 0}</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-label">Âmes actives</span>
+                    <span className="stat-label">{tText('Âmes actives')}</span>
                     <span className="stat-value">{(myMetrics as any)?.amesActives || 0}</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-label">En intégration</span>
+                    <span className="stat-label">{tText('En intégration')}</span>
                     <span className="stat-value text-amber-500">{(myMetrics as any)?.amesEnIntegration || 0}</span>
                   </div>
                   <div className="stat-card">
@@ -521,13 +523,13 @@ export default function DashboardPage() {
                     <span className="stat-value text-gray-400">{(myMetrics as any)?.amesEnVeille || 0}</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-label">Décrochées</span>
+                    <span className="stat-label">{tText('Décrochées')}</span>
                     <span className={`stat-value ${((myMetrics as any)?.amesDecrochees || 0) > 0 ? 'text-red-500' : 'text-gray-400'}`}>
                       {(myMetrics as any)?.amesDecrochees || 0}
                     </span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-label">Rapport soumis</span>
+                    <span className="stat-label">{tText('Rapport soumis')}</span>
                     <span className={`stat-value ${(myMetrics as any)?.rapportSoumisCetteSemaine ? 'text-green-500' : 'text-amber-500'}`}>
                       {(myMetrics as any)?.rapportSoumisCetteSemaine ? 'Oui' : 'Non'}
                     </span>
@@ -540,7 +542,7 @@ export default function DashboardPage() {
                   <div className="stat-card">
                     <div className="flex items-center gap-2 mb-2">
                       <ThumbsUp className="w-4 h-4 text-amber-500" />
-                      <span className="stat-label">Évaluation</span>
+                      <span className="stat-label">{tText('Évaluation')}</span>
                     </div>
                     {myEvalScores && Object.keys(myEvalScores.statistiques).length > 0 ? (
                       Object.entries(myEvalScores.statistiques).map(([cat, s]) => (
@@ -555,7 +557,7 @@ export default function DashboardPage() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-gray-400">Aucune évaluation</p>
+                      <p className="text-xs text-gray-400">{tText('Aucune évaluation')}</p>
                     )}
                   </div>
                 </>
@@ -563,7 +565,7 @@ export default function DashboardPage() {
               {hasRole('RESPONSABLE') && (
                 <>
                   <div className="stat-card">
-                    <span className="stat-label">Départements</span>
+                    <span className="stat-label">{tText('Départements')}</span>
                     <span className="stat-value">{(myMetrics as any)?.totalDepartements || 0}</span>
                   </div>
                   <div className="stat-card">
@@ -571,11 +573,11 @@ export default function DashboardPage() {
                     <span className="stat-value">{(myMetrics as any)?.totalFamilles || 0}</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-label">Âmes total</span>
+                    <span className="stat-label">{tText('Âmes total')}</span>
                     <span className="stat-value">{(myMetrics as any)?.totalAmes || 0}</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-label">Âmes actives</span>
+                    <span className="stat-label">{tText('Âmes actives')}</span>
                     <span className="stat-value">{(myMetrics as any)?.amesActives || 0}</span>
                   </div>
                   <div className="stat-card">
@@ -597,7 +599,7 @@ export default function DashboardPage() {
 
           <div className="divider-glow my-5" />
           <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-            Utilisez la navigation latérale pour accéder à vos sections
+            {tText('Utilisez la navigation latérale pour accéder à vos sections')}
           </p>
         </div>
       )}

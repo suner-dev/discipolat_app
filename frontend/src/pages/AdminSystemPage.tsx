@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
+import { tText } from '@/i18n';
 /* ============================================================================
  * ADMIN SYSTEM PAGE — Paramètres système, santé, cache et performances
  * L'admin technique gère l'infrastructure sans toucher au code.
@@ -103,9 +104,9 @@ export default function AdminSystemPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'cache-stats'] });
-      toast.success('Cache vidé');
+      toast.success(tText('Cache vidé'));
     },
-    onError: () => toast.error('Erreur lors du vidage du cache'),
+    onError: () => toast.error(tText('Erreur lors du vidage du cache')),
   });
 
   const evictAll = useMutation({
@@ -114,9 +115,9 @@ export default function AdminSystemPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'cache-stats'] });
-      toast.success('Tous les caches vidés');
+      toast.success(tText('Tous les caches vidés'));
     },
-    onError: () => toast.error('Erreur lors du vidage des caches'),
+    onError: () => toast.error(tText('Erreur lors du vidage des caches')),
   });
 
   const tabs = [
@@ -143,8 +144,8 @@ export default function AdminSystemPage() {
             <Server className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="page-title">Système</h1>
-            <p className="page-subtitle">Santé technique, cache, performances et paramètres de la plateforme</p>
+            <h1 className="page-title">{tText('Système')}</h1>
+            <p className="page-subtitle">{tText('Santé technique, cache, performances et paramètres de la plateforme')}</p>
           </div>
         </div>
         <div className="page-header-actions">
@@ -178,7 +179,7 @@ export default function AdminSystemPage() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
               <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200/40 dark:border-blue-700/30">
-                <p className="text-[10px] text-blue-500 font-semibold uppercase">Heap utilisé</p>
+                <p className="text-[10px] text-blue-500 font-semibold uppercase">{tText('Heap utilisé')}</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatBytes(health.jvm.heapUsed)}</p>
                 <ProgressBar value={health.jvm.heapUsed} max={health.jvm.heapMax} />
                 <p className="text-[10px] text-gray-400 mt-1">/ {formatBytes(health.jvm.heapMax)}</p>
@@ -248,7 +249,7 @@ export default function AdminSystemPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-500" />
-                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Résumé global</h3>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">{tText('Résumé global')}</h3>
               </div>
               <button
                 onClick={() => evictAll.mutate()}

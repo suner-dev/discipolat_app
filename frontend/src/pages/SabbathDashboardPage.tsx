@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Church, Compass } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Axis { axe: string; score: number; niveau: string; }
 interface Dashboard { totalAmes: number; amesActives: number; tauxActivite: number; faiseursActifs: number; ratioFaiseurs: number; famillesARisque: number; maturiteGlobale: number; saisonSpirituelle: string; orientationPastorale: string; axes: Axis[]; }
 
@@ -23,7 +24,7 @@ export default function SabbathDashboardPage() {
       <div className="bg-gradient-to-r from-violet-600/20 to-indigo-600/20 backdrop-blur rounded-2xl p-5 border border-violet-500/30">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs text-violet-300/80">Maturité spirituelle globale</p>
+            <p className="text-xs text-violet-300/80">{tText('Maturité spirituelle globale')}</p>
             <p className="text-4xl font-bold text-white">{data.maturiteGlobale}<span className="text-lg text-gray-400">/100</span></p>
           </div>
           <div className="text-right max-w-md">
@@ -34,15 +35,15 @@ export default function SabbathDashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Kpi label="Âmes totales" value={data.totalAmes} />
-        <Kpi label="Âmes actives" value={data.amesActives} />
+        <Kpi label={tText('Âmes totales')} value={data.totalAmes} />
+        <Kpi label={tText('Âmes actives')} value={data.amesActives} />
         <Kpi label="Taux d'activité" value={`${Math.round(data.tauxActivite)}%`} />
         <Kpi label="Faiseurs actifs" value={data.faiseursActifs} />
-        <Kpi label="Familles à risque" value={data.famillesARisque} />
+        <Kpi label={tText('Familles à risque')} value={data.famillesARisque} />
       </div>
 
       <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
-        <h2 className="text-white font-semibold mb-4">Les 12 axes de maturité</h2>
+        <h2 className="text-white font-semibold mb-4">{tText('Les 12 axes de maturité')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
           {data.axes.map((a) => (
             <div key={a.axe}>

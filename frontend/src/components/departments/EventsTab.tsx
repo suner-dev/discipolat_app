@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { STATUT_TASK_BADGE } from './types';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 function GlobalSearchResults({ results, deptId, onClear }: { results: any; deptId: string; onClear: () => void }) {
   const navigate = useNavigate();
   if (!results) {
@@ -83,8 +85,8 @@ function GlobalSearchResults({ results, deptId, onClear }: { results: any; deptI
 function formatEventDate(value: string) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) +
-    ' · ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) +
+    ' · ' + d.toLocaleTimeString(getI18nLocale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 // ============================================================
@@ -139,7 +141,7 @@ export function EventsTab({ deptId, onChanged }: { deptId: string; onChanged: ()
       });
     },
     onSuccess: () => {
-      toast.success('Événement créé ✅');
+      toast.success(tText('Événement créé ✅'));
       setTitre(''); setLieu(''); setDateDebut(''); setDescription('');
       invalidate();
     },
@@ -162,7 +164,7 @@ export function EventsTab({ deptId, onChanged }: { deptId: string; onChanged: ()
       <div className="glass-card p-5">
         <div className="flex items-center gap-2 mb-4">
           <CalendarDays className="w-4 h-4 text-primary-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouvel événement du département</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Nouvel événement du département')}</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <div>
@@ -221,7 +223,7 @@ export function EventsTab({ deptId, onChanged }: { deptId: string; onChanged: ()
                     className="btn-ghost btn-xs inline-flex cursor-pointer"
                     title="Pointer la présence des membres à cet événement"
                   >
-                    <UserCheck className="w-3.5 h-3.5" /> Présences
+                    <UserCheck className="w-3.5 h-3.5" /> {tText('Présences')}
                   </button>
                   <span className={`badge text-[10px] ${EVENT_STATUT_BADGE[e.statut] || 'badge-gray'}`}>{e.statut}</span>
                 </div>
@@ -244,7 +246,7 @@ export function EventsTab({ deptId, onChanged }: { deptId: string; onChanged: ()
                     className="btn-ghost btn-xs inline-flex cursor-pointer"
                     title="Pointer la présence des membres à cet événement"
                   >
-                    <UserCheck className="w-3.5 h-3.5" /> Présences
+                    <UserCheck className="w-3.5 h-3.5" /> {tText('Présences')}
                   </button>
                   <span className="text-[11px] text-gray-400">{formatEventDate(e.dateDebut)}</span>
                 </div>
@@ -284,7 +286,7 @@ export function EventAttendanceModal({ deptId, event, onClose }: { deptId: strin
     mutationFn: async ({ soulId, present }: { soulId: string; present: boolean }) =>
       (await api.put(`/departments/${deptId}/events/${event.id}/attendance`, { soulId, present })).data,
     onSuccess: () => {
-      toast.success('Présence enregistrée ✅');
+      toast.success(tText('Présence enregistrée ✅'));
       queryClient.invalidateQueries({ queryKey: ['department', deptId, 'events', event.id, 'attendance'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -309,7 +311,7 @@ export function EventAttendanceModal({ deptId, event, onClose }: { deptId: strin
         a.download = `feuille-presence-${event.titre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'evenement'}.csv`;
         a.click();
         URL.revokeObjectURL(url);
-        toast.success('Feuille de présence exportée 📥');
+        toast.success(tText('Feuille de présence exportée 📥'));
       })
       .catch((err) => toast.error(getErrorMessage(err)));
   };
@@ -344,7 +346,7 @@ export function EventAttendanceModal({ deptId, event, onClose }: { deptId: strin
               <span>Non pointés : <strong className="text-amber-600">{data?.nonMarques ?? 0}</strong></span>
             </div>
             {membres.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">Aucun membre dans ce département</p>
+              <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun membre dans ce département')}</p>
             ) : (
               <div className="space-y-1.5 max-h-[50vh] overflow-y-auto pr-1">
                 {membres.map((m: any) => {

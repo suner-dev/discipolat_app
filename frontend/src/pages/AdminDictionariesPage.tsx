@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 /* ----------------------------------------------------------------------------
  * Libellés humains des dictionnaires (présentation admin uniquement — les
  * données elles-mêmes sont 100 % configurables en base).
@@ -90,7 +91,7 @@ export default function AdminDictionariesPage() {
       await api.post(`/admin/dictionaries/${key}`, payload);
     },
     onSuccess: () => {
-      toast.success('Entrée créée');
+      toast.success(tText('Entrée créée'));
       queryClient.invalidateQueries({ queryKey: ['admin-dictionaries'] });
       queryClient.invalidateQueries({ queryKey: ['dictionaries'] });
       setEditingKey(null);
@@ -104,7 +105,7 @@ export default function AdminDictionariesPage() {
       await api.put(`/admin/dictionaries/${id}`, payload);
     },
     onSuccess: () => {
-      toast.success('Entrée mise à jour');
+      toast.success(tText('Entrée mise à jour'));
       queryClient.invalidateQueries({ queryKey: ['admin-dictionaries'] });
       queryClient.invalidateQueries({ queryKey: ['dictionaries'] });
       setEditingKey(null);
@@ -118,7 +119,7 @@ export default function AdminDictionariesPage() {
       await api.delete(`/admin/dictionaries/${id}`);
     },
     onSuccess: () => {
-      toast.success('Entrée supprimée');
+      toast.success(tText('Entrée supprimée'));
       queryClient.invalidateQueries({ queryKey: ['admin-dictionaries'] });
       queryClient.invalidateQueries({ queryKey: ['dictionaries'] });
       setConfirmDelete(null);
@@ -131,7 +132,7 @@ export default function AdminDictionariesPage() {
       await api.post('/admin/dictionaries/reset');
     },
     onSuccess: () => {
-      toast.success('Dictionnaires restaurés aux valeurs par défaut');
+      toast.success(tText('Dictionnaires restaurés aux valeurs par défaut'));
       queryClient.invalidateQueries({ queryKey: ['admin-dictionaries'] });
       queryClient.invalidateQueries({ queryKey: ['dictionaries'] });
     },
@@ -157,7 +158,7 @@ export default function AdminDictionariesPage() {
 
   const submit = (key: string) => {
     if (!form.label.trim()) {
-      toast.error('Le libellé est obligatoire');
+      toast.error(tText('Le libellé est obligatoire'));
       return;
     }
     const payload: EntryForm = {
@@ -171,7 +172,7 @@ export default function AdminDictionariesPage() {
     }
     // Création : un code saisi doit être unique dans le dictionnaire.
     if (data?.[key]?.some((e) => e.code === payload.code)) {
-      toast.error('Ce code existe déjà dans ce dictionnaire');
+      toast.error(tText('Ce code existe déjà dans ce dictionnaire'));
       return;
     }
     createMutation.mutate({ key, payload });
@@ -217,7 +218,7 @@ export default function AdminDictionariesPage() {
             onClick={() => resetMutation.mutate()}
             disabled={resetMutation.isPending}
           >
-            <RotateCcw className="w-4 h-4" /> Restaurer les défauts
+            <RotateCcw className="w-4 h-4" /> {tText('Restaurer les défauts')}
           </button>
         </div>
       </div>
@@ -226,9 +227,9 @@ export default function AdminDictionariesPage() {
       <div className="glass-card p-4 mb-6 text-sm text-gray-500 dark:text-gray-400 flex items-start gap-3">
         <Sparkles className="w-4 h-4 text-primary-500 mt-0.5 flex-shrink-0" />
         <p>
-          Chaque liste peut être <strong className="text-gray-700 dark:text-gray-200">renommée</strong>,
-          <strong className="text-gray-700 dark:text-gray-200"> réordonnée</strong> et
-          <strong className="text-gray-700 dark:text-gray-200"> recolorée</strong> ; les entrées peuvent être
+          {tText('Chaque liste peut être')} <strong className="text-gray-700 dark:text-gray-200">{tText('renommée')}</strong>,
+          <strong className="text-gray-700 dark:text-gray-200"> {tText('réordonnée')}</strong> et
+          <strong className="text-gray-700 dark:text-gray-200"> {tText('recolorée')}</strong> ; les entrées peuvent être
           ajoutées, désactivées ou supprimées. Les changements sont appliqués immédiatement dans toute
           l&apos;application.
         </p>
@@ -308,7 +309,7 @@ export default function AdminDictionariesPage() {
                       </div>
                     ))}
                     {entries.length === 0 && (
-                      <p className="text-sm text-gray-400 text-center py-3">Aucune entrée</p>
+                      <p className="text-sm text-gray-400 text-center py-3">{tText('Aucune entrée')}</p>
                     )}
                   </div>
 
@@ -319,7 +320,7 @@ export default function AdminDictionariesPage() {
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="label">Libellé *</label>
+                          <label className="label">{tText('Libellé *')}</label>
                           <input className="input" value={form.label}
                             onChange={(e) => setForm({ ...form, label: e.target.value })}
                             placeholder="Ex : Culte d'adoration" />
@@ -348,7 +349,7 @@ export default function AdminDictionariesPage() {
                       </div>
                       <div className="flex justify-end gap-2 mt-4">
                         <button className="btn-secondary btn-sm" onClick={() => { setEditingKey(null); setEditingId(null); setForm(emptyForm()); }}>
-                          Annuler
+                          {tText('Annuler')}
                         </button>
                         <button
                           className="btn-primary btn-sm"
@@ -367,7 +368,7 @@ export default function AdminDictionariesPage() {
                       className="btn-secondary btn-sm mt-4"
                       onClick={() => openCreate(key)}
                     >
-                      <Plus className="w-3.5 h-3.5" /> Ajouter une entrée
+                      <Plus className="w-3.5 h-3.5" /> {tText('Ajouter une entrée')}
                     </button>
                   )}
                 </div>
@@ -386,14 +387,14 @@ export default function AdminDictionariesPage() {
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Confirmer la suppression</h3>
+                <h3 className="text-lg font-semibold">{tText('Confirmer la suppression')}</h3>
                 <p className="text-sm text-gray-500">
                   « {confirmDelete.label} » ({confirmDelete.code}) sera supprimé du dictionnaire.
                 </p>
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setConfirmDelete(null)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setConfirmDelete(null)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => deleteMutation.mutate(confirmDelete.id)}
                 disabled={deleteMutation.isPending}

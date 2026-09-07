@@ -8,6 +8,8 @@ import { useDictionaries } from '@/hooks/useDictionaries';
 import type { TransferRequest, TransferStatus, TransferType } from '@/types';
 import { TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS, PRIORITE_LABELS } from '@/types';
 import type { ReactNode } from 'react';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   ArrowLeftRight, Plus, Loader2, Send, XCircle, Search, Clock, AlertTriangle, ShieldCheck, FileText,
 } from 'lucide-react';
@@ -87,7 +89,7 @@ export default function TransfersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transfers'] });
-      toast.success('Demande annulée');
+      toast.success(tText('Demande annulée'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -109,20 +111,20 @@ export default function TransfersPage() {
           <div>
             <h1 className="page-title">Demandes de transfert</h1>
             <p className="page-subtitle">
-              Workflow intelligent et configurable — validations, historiques et exécution automatique
+              {tText('Workflow intelligent et configurable — validations, historiques et exécution automatique')}
             </p>
           </div>
         </div>
         <Link to="/transfers/new" className="btn-primary btn-sm">
           <Plus className="w-4 h-4" />
-          Nouvelle demande
+          {tText('Nouvelle demande')}
         </Link>
       </div>
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-2 mb-6">
         <select value={statut} onChange={(e) => { setStatut(e.target.value); setPage(0); }} className="input w-auto">
-          <option value="">Tous les statuts</option>
+          <option value="">{tText('Tous les statuts')}</option>
           {(dictionaries.options('TRANSFER_STATUS').length > 0
             ? dictionaries.options('TRANSFER_STATUS')
             : Object.entries(TRANSFER_STATUS_LABELS).map(([value, label]) => ({ code: value, label }))
@@ -131,7 +133,7 @@ export default function TransfersPage() {
           ))}
         </select>
         <select value={type} onChange={(e) => { setType(e.target.value); setPage(0); }} className="input w-auto">
-          <option value="">Tous les types</option>
+          <option value="">{tText('Tous les types')}</option>
           {(dictionaries.options('TRANSFER_TYPE').length > 0
             ? dictionaries.options('TRANSFER_TYPE')
             : Object.entries(TRANSFER_TYPE_LABELS).map(([value, label]) => ({ code: value, label }))
@@ -146,8 +148,8 @@ export default function TransfersPage() {
       ) : !data || data.content.length === 0 ? (
         <div className="glass-card p-14 text-center">
           <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Aucune demande</h3>
-          <p className="text-sm text-gray-500">Créez une demande de transfert pour démarrer un circuit de validation</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{tText('Aucune demande')}</h3>
+          <p className="text-sm text-gray-500">{tText('Créez une demande de transfert pour démarrer un circuit de validation')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -163,7 +165,7 @@ export default function TransfersPage() {
                       <AlertTriangle className="w-3 h-3" /> {dictionaries.label('TRANSFER_PRIORITE', t.priorite) || PRIORITE_LABELS[t.priorite] || t.priorite}
                     </span>
                     <span className="text-xs text-gray-400">
-                      {new Date(t.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(t.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -194,7 +196,7 @@ export default function TransfersPage() {
                 </Link>
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
                   <Link to={`/transfers/${t.id}`} className="btn-secondary btn-sm">
-                    Détail
+                    {tText('Détail')}
                   </Link>
                   {canSubmit(t) && (
                     <button
@@ -211,7 +213,7 @@ export default function TransfersPage() {
                       onClick={() => { if (confirm('Annuler cette demande ?')) cancelMutation.mutate(t.id); }}
                       className="btn-secondary btn-sm text-red-600 border-red-200 hover:bg-red-50"
                     >
-                      <XCircle className="w-4 h-4" /> Annuler
+                      <XCircle className="w-4 h-4" /> {tText('Annuler')}
                     </button>
                   )}
                 </div>
@@ -225,7 +227,7 @@ export default function TransfersPage() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">Page {data.page + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.page === 0} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.page === 0} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.page >= data.totalPages - 1} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>

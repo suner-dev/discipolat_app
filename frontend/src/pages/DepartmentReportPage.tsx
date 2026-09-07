@@ -6,6 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import toast from 'react-hot-toast';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
+import { tText } from '@/i18n';
 import {
   ArrowLeft, BarChart3, FileText, Users, Loader2, CheckCircle2,
   XCircle, TrendingUp, TrendingDown, Minus, Sparkles, Download, Trash2, Save, CalendarRange, Pencil, X,
@@ -22,12 +23,12 @@ export default function DepartmentReportPage() {
     return (
       <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
         <FileText className="w-10 h-10 text-gray-300 mb-3" />
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Rapports de département désactivés</h1>
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Rapports de département désactivés')}</h1>
         <p className="text-sm text-gray-400 mt-1">
           L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
         </p>
         <Link to="/departments" className="btn-ghost btn-sm mt-4">
-          <ArrowLeft className="w-4 h-4" /> Retour aux départements
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour aux départements')}
         </Link>
       </div>
     );
@@ -72,7 +73,7 @@ export default function DepartmentReportPage() {
     <div className="page-container">
       <div className="page-header">
         <Link to={`/departments/${id}`} className="btn-ghost btn-sm mb-2 inline-flex">
-          <ArrowLeft className="w-4 h-4" /> Retour au département
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour au département')}
         </Link>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -80,7 +81,7 @@ export default function DepartmentReportPage() {
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="page-title">Rapport du département</h1>
+              <h1 className="page-title">{tText('Rapport du département')}</h1>
               <p className="page-subtitle">{dept?.nom || 'Chargement...'}</p>
             </div>
           </div>
@@ -145,17 +146,17 @@ export default function DepartmentReportPage() {
             <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '200ms' }}>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-primary-500" />
-                Détail par famille
+                {tText('Détail par famille')}
               </h2>
               <div className="overflow-x-auto">
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Famille</th>
+                      <th>{tText('Famille')}</th>
                       <th>Statut</th>
-                      <th>Pièces</th>
-                      <th>Présence</th>
-                      <th>Présents</th>
+                      <th>{tText('Pièces')}</th>
+                      <th>{tText('Présence')}</th>
+                      <th>{tText('Présents')}</th>
                       <th>Absents</th>
                       <th>Sorties</th>
                       <th>Maintenus</th>
@@ -197,7 +198,7 @@ export default function DepartmentReportPage() {
       {!report && !isLoading && (
         <div className="glass-card p-10 text-center">
           <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-500">Aucun rapport disponible pour cette semaine</p>
+          <p className="text-gray-500">{tText('Aucun rapport disponible pour cette semaine')}</p>
         </div>
       )}
 
@@ -217,7 +218,7 @@ export default function DepartmentReportPage() {
               </div>
             </div>
             <div>
-              <span className="text-xs text-gray-500">Taux de présence</span>
+              <span className="text-xs text-gray-500">{tText('Taux de présence')}</span>
               <p className="text-lg font-bold">{kpi.tauxPresence}%</p>
               <div className="progress-bar mt-1">
                 <div className="progress-bar-fill bg-green-500" style={{ width: `${kpi.tauxPresence}%` }} />
@@ -288,14 +289,14 @@ export function SavedReportsSection({ departmentId }: { departmentId: string }) 
 
   const deleteMutation = useMutation({
     mutationFn: async (reportId: string) => api.delete(`/departments/${departmentId}/reports/saved/${reportId}`),
-    onSuccess: () => { toast.success('Rapport supprimé'); invalidate(); },
+    onSuccess: () => { toast.success(tText('Rapport supprimé')); invalidate(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ reportId, data }: { reportId: string; data: any }) =>
       (await api.put(`/departments/${departmentId}/reports/saved/${reportId}`, data)).data,
-    onSuccess: () => { toast.success('Rapport modifié ✅'); invalidate(); },
+    onSuccess: () => { toast.success(tText('Rapport modifié ✅')); invalidate(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -308,7 +309,7 @@ export function SavedReportsSection({ departmentId }: { departmentId: string }) 
         a.download = 'rapport-departement.csv';
         a.click();
         URL.revokeObjectURL(url);
-        toast.success('Export CSV téléchargé 📥');
+        toast.success(tText('Export CSV téléchargé 📥'));
       })
       .catch((err) => toast.error(getErrorMessage(err)));
   }
@@ -317,7 +318,7 @@ export function SavedReportsSection({ departmentId }: { departmentId: string }) 
     <div className="glass-card p-6 mt-6 animate-slide-up">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
         <Sparkles className="w-5 h-5 text-primary-500" />
-        Synthèses sauvegardées
+        {tText('Synthèses sauvegardées')}
       </h2>
 
       {/* Génération */}
@@ -348,7 +349,7 @@ export function SavedReportsSection({ departmentId }: { departmentId: string }) 
       ) : saved.length === 0 ? (
         <div className="text-center py-8">
           <FileText className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm text-gray-400">Aucune synthèse sauvegardée — générez la première ci-dessus</p>
+          <p className="text-sm text-gray-400">{tText('Aucune synthèse sauvegardée — générez la première ci-dessus')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -421,7 +422,7 @@ function EditReportModal({ report, onSave }: { report: SavedReport; onSave: (dat
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
       <div className="glass-card p-5 w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Modifier le rapport</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Modifier le rapport')}</h3>
           <button onClick={() => setOpen(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
@@ -439,7 +440,7 @@ function EditReportModal({ report, onSave }: { report: SavedReport; onSave: (dat
         <select id="edit-report-statut" className="input mb-4" value={statut} onChange={(e) => setStatut(e.target.value)}>
           <option value="BROUILLON">Brouillon</option>
           <option value="SOUMIS">Soumis</option>
-          <option value="ARCHIVE">Archivé</option>
+          <option value="ARCHIVE">{tText('Archivé')}</option>
         </select>
         <button
           onClick={() => { onSave({ titre, contenu, statut }); setOpen(false); }}

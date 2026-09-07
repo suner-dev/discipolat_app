@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
 import { LifeBuoy, Plus, Search, Filter, Clock, CheckCircle2, AlertCircle, MessageSquare } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Ticket {
   id: string;
   titre: string;
@@ -141,7 +142,7 @@ export default function TicketsPage() {
             Tickets & Support
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Système de tickets interne — créez et suivez vos demandes
+            {tText('Système de tickets interne — créez et suivez vos demandes')}
           </p>
         </div>
         <button
@@ -149,7 +150,7 @@ export default function TicketsPage() {
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Nouveau ticket
+          {tText('Nouveau ticket')}
         </button>
       </div>
 
@@ -170,7 +171,7 @@ export default function TicketsPage() {
           onChange={e => { setFilterStatus(e.target.value); }}
           className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">Tous les statuts</option>
+          <option value="">{tText('Tous les statuts')}</option>
           {STATUTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
         </select>
         <select
@@ -178,7 +179,7 @@ export default function TicketsPage() {
           onChange={e => { setFilterCategory(e.target.value); }}
           className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">Toutes les catégories</option>
+          <option value="">{tText('Toutes les catégories')}</option>
           {CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
         </select>
       </div>
@@ -290,7 +291,7 @@ export default function TicketsPage() {
               {/* Messages */}
               <div className="border-t border-gray-200 dark:border-white/10 pt-4 mb-4 max-h-64 overflow-y-auto space-y-3">
                 {selectedTicket.messages?.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">Aucun message</p>
+                  <p className="text-sm text-gray-400 text-center py-4">{tText('Aucun message')}</p>
                 ) : (
                   selectedTicket.messages?.map(msg => (
                     <div key={msg.id} className="bg-gray-50 dark:bg-white/5 rounded-lg p-3">
@@ -335,7 +336,7 @@ export default function TicketsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau ticket</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouveau ticket')}</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre</label>
@@ -359,7 +360,7 @@ export default function TicketsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{tText('Catégorie')}</label>
                   <select
                     value={newTicket.categorie}
                     onChange={e => setNewTicket({ ...newTicket, categorie: e.target.value })}
@@ -369,7 +370,7 @@ export default function TicketsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priorité</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{tText('Priorité')}</label>
                   <select
                     value={newTicket.priorite}
                     onChange={e => setNewTicket({ ...newTicket, priorite: e.target.value })}
@@ -385,13 +386,13 @@ export default function TicketsPage() {
                 onClick={() => setShowCreate(false)}
                 className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all text-sm"
               >
-                Annuler
+                {tText('Annuler')}
               </button>
               <button
                 onClick={createTicket}
                 className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-all"
               >
-                Créer le ticket
+                {tText('Créer le ticket')}
               </button>
             </div>
           </div>

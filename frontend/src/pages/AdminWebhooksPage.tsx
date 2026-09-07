@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Loader2, Webhook, Plus, Trash2, Send, KeyRound, CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Webhook {
   id: string;
   name: string;
@@ -84,7 +86,7 @@ export default function AdminWebhooksPage() {
       await api.delete(`/admin/webhooks/${id}`);
     },
     onSuccess: () => {
-      toast.success('Webhook supprimé');
+      toast.success(tText('Webhook supprimé'));
       invalidate();
     },
     onError: (e) => toast.error(getErrorMessage(e)),
@@ -111,7 +113,7 @@ export default function AdminWebhooksPage() {
       await api.delete(`/admin/webhooks/api-keys/${id}`);
     },
     onSuccess: () => {
-      toast.success('Clé révoquée');
+      toast.success(tText('Clé révoquée'));
       invalidate();
     },
   });
@@ -123,11 +125,11 @@ export default function AdminWebhooksPage() {
           <Webhook className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Connecteur Écosystème</h1>
+          <h1 className="page-title">{tText('Connecteur Écosystème')}</h1>
           <p className="page-subtitle">Webhooks signés HMAC-SHA256 & clés API pour intégrations externes</p>
         </div>
         <button onClick={() => setShowCreate(!showCreate)} className="btn-primary btn-sm ml-auto flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouveau webhook
+          <Plus className="w-4 h-4" /> {tText('Nouveau webhook')}
         </button>
       </div>
 
@@ -188,7 +190,7 @@ export default function AdminWebhooksPage() {
       {/* Clés API */}
       <div className="glass-card p-6 mb-6">
         <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-          <KeyRound className="w-5 h-5 text-primary-500" /> Clés API publiques
+          <KeyRound className="w-5 h-5 text-primary-500" /> {tText('Clés API publiques')}
         </h2>
         <div className="flex gap-2 mb-4">
           <input placeholder="Nom de l'intégration" className="input flex-1"
@@ -209,7 +211,7 @@ export default function AdminWebhooksPage() {
             <button
               onClick={() => {
                 navigator.clipboard?.writeText(revealedKey);
-                toast.success('Clé copiée');
+                toast.success(tText('Clé copiée'));
               }}
               className="ml-3 text-xs underline text-amber-700 dark:text-amber-400"
             >
@@ -229,12 +231,12 @@ export default function AdminWebhooksPage() {
                 {k.active ? (
                   <span className="badge badge-success">Active</span>
                 ) : (
-                  <span className="badge badge-danger">Révoquée</span>
+                  <span className="badge badge-danger">{tText('Révoquée')}</span>
                 )}
                 {k.active && (
                   <button onClick={() => revokeKeyMutation.mutate(k.id)}
                     className="text-xs text-red-500 hover:underline">
-                    Révoquer
+                    {tText('Révoquer')}
                   </button>
                 )}
               </div>
@@ -257,7 +259,7 @@ export default function AdminWebhooksPage() {
               <p className="text-sm font-mono text-gray-700 dark:text-gray-300">{l.eventType}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {l.errorMessage ?? `HTTP ${l.responseCode}`} ·{' '}
-                {new Date(l.createdAt).toLocaleString('fr-FR')}
+                {new Date(l.createdAt).toLocaleString(getI18nLocale())}
               </p>
             </div>
             {l.success ? (

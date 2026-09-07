@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Shield, Download, Trash2, Loader2, Clock, CheckCircle2, FileText,
   AlertTriangle, Search, Eye, ExternalLink,
@@ -58,7 +59,7 @@ export default function ComplianceExportsPage() {
       await api.post(`/compliance/gdpr/${id}/process`);
     },
     onSuccess: () => {
-      toast.success('Demande traitée');
+      toast.success(tText('Demande traitée'));
       qc.invalidateQueries({ queryKey: ['compliance'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -69,7 +70,7 @@ export default function ComplianceExportsPage() {
       await api.post('/gdpr/delete', { userId: deleteUserId });
     },
     onSuccess: () => {
-      toast.success('Demande de suppression envoyée');
+      toast.success(tText('Demande de suppression envoyée'));
       setDeleteUserId('');
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -88,7 +89,7 @@ export default function ComplianceExportsPage() {
       a.download = `gdpr-export-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Export téléchargé');
+      toast.success(tText('Export téléchargé'));
       setExportUserId('');
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -120,7 +121,7 @@ export default function ComplianceExportsPage() {
             <Shield className="w-5 h-5 text-emerald-500" />
             <h1 className="page-title">Exports & Conformité RGPD</h1>
           </div>
-          <p className="page-subtitle">Exports de données, demandes RGPD et suppression</p>
+          <p className="page-subtitle">{tText('Exports de données, demandes RGPD et suppression')}</p>
         </div>
       </div>
 
@@ -198,7 +199,7 @@ export default function ComplianceExportsPage() {
           {/* Exports list */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Historique des exports</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{tText('Historique des exports')}</h3>
               <button onClick={() => qc.invalidateQueries({ queryKey: ['compliance'] })} className="btn-ghost btn-sm">
                 <Loader2 className="w-4 h-4" />
               </button>

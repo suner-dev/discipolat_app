@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import toast from 'react-hot-toast';
 import { Calendar, Plus, Download, ExternalLink, Clock } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface CalEvent {
   id: string;
   titre: string;
@@ -39,7 +40,7 @@ export default function CalendarIntegrationPage() {
     if (!newEvent.titre.trim()) { toast('Titre requis', { icon: '⚠️' }); return; }
     try {
       await api.post('/calendar', { ...newEvent, source: 'INTERNE' });
-      toast.success('Événement ajouté au calendrier');
+      toast.success(tText('Événement ajouté au calendrier'));
       setShowCreate(false);
       setNewEvent({ titre: '', description: '', début: '', fin: '', lieu: '' });
       loadEvents();
@@ -53,7 +54,7 @@ export default function CalendarIntegrationPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'event.ics'; a.click();
-      toast.success('Fichier iCal téléchargé');
+      toast.success(tText('Fichier iCal téléchargé'));
     } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
@@ -65,7 +66,7 @@ export default function CalendarIntegrationPage() {
             <Calendar className="w-8 h-8 text-blue-500" />
             {t('calendar.title')}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Intégrez vos événements avec Google Calendar, Outlook et iCal</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{tText('Intégrez vos événements avec Google Calendar, Outlook et iCal')}</p>
         </div>
         <button onClick={() => setShowCreate(true)}
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-medium hover:from-blue-600 hover:to-indigo-600 transition-all shadow-lg flex items-center gap-2">
@@ -100,7 +101,7 @@ export default function CalendarIntegrationPage() {
                     <span className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600">{ev.source}</span>
                   </div>
                 </div>
-                <button onClick={() => downloadICal(ev.id)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400" title="Télécharger iCal">
+                <button onClick={() => downloadICal(ev.id)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400" title={tText('Télécharger iCal')}>
                   <Download className="w-4 h-4" />
                 </button>
               </div>
@@ -112,14 +113,14 @@ export default function CalendarIntegrationPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouvel événement</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouvel événement')}</h2>
             <div className="space-y-4">
               <input type="text" value={newEvent.titre} onChange={e => setNewEvent({ ...newEvent, titre: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" placeholder="Titre" />
               <textarea value={newEvent.description} onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
                 rows={2} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none" placeholder="Description" />
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs text-gray-500 mb-1">Début</label>
+                <div><label className="block text-xs text-gray-500 mb-1">{tText('Début')}</label>
                   <input type="datetime-local" value={newEvent.début} onChange={e => setNewEvent({ ...newEvent, début: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" /></div>
                 <div><label className="block text-xs text-gray-500 mb-1">Fin</label>
@@ -130,8 +131,8 @@ export default function CalendarIntegrationPage() {
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" placeholder="Lieu" />
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
-              <button onClick={createEvent} className="px-4 py-2 rounded-xl bg-blue-500 text-white text-sm font-medium hover:bg-blue-600">Créer</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
+              <button onClick={createEvent} className="px-4 py-2 rounded-xl bg-blue-500 text-white text-sm font-medium hover:bg-blue-600">{tText('Créer')}</button>
             </div>
           </div>
         </div>

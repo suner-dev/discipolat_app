@@ -10,6 +10,7 @@ import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import StreamingChat from '@/pages/StreamingChat';
 
+import { tText } from '@/i18n';
 interface Stream {
   id: string;
   title: string;
@@ -43,13 +44,13 @@ export default function StreamingPage() {
 
   const goLiveMutation = useMutation({
     mutationFn: async (id: string) => (await api.post(`/streams/${id}/go-live`)).data,
-    onSuccess: () => { toast.success('Stream lancé en direct'); queryClient.invalidateQueries({ queryKey: ['streams'] }); },
+    onSuccess: () => { toast.success(tText('Stream lancé en direct')); queryClient.invalidateQueries({ queryKey: ['streams'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
   const endMutation = useMutation({
     mutationFn: async (id: string) => (await api.post(`/streams/${id}/end`)).data,
-    onSuccess: () => { toast.success('Stream terminé'); queryClient.invalidateQueries({ queryKey: ['streams'] }); },
+    onSuccess: () => { toast.success(tText('Stream terminé')); queryClient.invalidateQueries({ queryKey: ['streams'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
@@ -77,7 +78,7 @@ export default function StreamingPage() {
             <Video className="w-7 h-7 text-purple-500" />
             {t('nav.streaming') ?? 'Streaming & Diffusion'}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Gérez vos cultes en direct et replay</p>
+          <p className="text-sm text-gray-500 mt-1">{tText('Gérez vos cultes en direct et replay')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => refetch()} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 text-gray-500 text-sm hover:bg-white/10 transition">
@@ -85,7 +86,7 @@ export default function StreamingPage() {
           </button>
           <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white font-medium text-sm hover:bg-purple-600 transition">
             <Plus className="w-4 h-4" />
-            Nouveau stream
+            {tText('Nouveau stream')}
           </button>
         </div>
       </div>
@@ -130,7 +131,7 @@ export default function StreamingPage() {
         {(['all', 'live', 'scheduled', 'ended'] as const).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition ${filter === f ? 'bg-purple-500 text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10 dark:bg-white/5 dark:text-gray-400'}`}>
-            {f === 'all' ? 'Tous' : f === 'live' ? '🔴 En direct' : f === 'scheduled' ? 'Planifiés' : 'Terminés'}
+            {f === 'all' ? tText('Tous') : f === 'live' ? '🔴 En direct' : f === 'scheduled' ? 'Planifiés' : tText('Terminés')}
           </button>
         ))}
       </div>
@@ -178,7 +179,7 @@ export default function StreamingPage() {
                     <button onClick={() => endMutation.mutate(stream.id)}
                       disabled={endMutation.isPending}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition disabled:opacity-50">
-                      <Square className="w-3 h-3" /> Arrêter
+                      <Square className="w-3 h-3" /> {tText('Arrêter')}
                     </button>
                   ) : stream.status === 'scheduled' ? (
                     <button onClick={() => goLiveMutation.mutate(stream.id)}

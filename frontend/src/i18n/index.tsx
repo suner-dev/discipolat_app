@@ -12,6 +12,14 @@ const dictionaries: Record<Locale, Record<string, string>> = { fr, en, pt, es, s
 
 const frDict: Record<string, string> = fr;
 
+/** Locale active courante, partagée avec les helpers hors composants. */
+let activeLocale: Locale = 'fr';
+
+/** Accès synchrone à la locale réelle pour les appels à Intl (formatDate…). */
+export function getI18nLocale(): Locale {
+  return activeLocale;
+}
+
 interface I18nContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
@@ -44,6 +52,29 @@ const FALLBACK: I18nContextValue = {
 
 const STORAGE_KEY = 'discipolat-locale';
 
+/** Index inversé : valeur FR → clé, pour traduire des chaînes en français
+ * directement (source du gettext-style). Construit une fois à partir de fr. */
+const REVERSE_FR: Map<string, string> = new Map();
+for (const [key, value] of Object.entries(frDict)) {
+  REVERSE_FR.set(value, key);
+}
+
+/**
+ * Traduit une chaîne saisie en français (source) vers la locale active.
+ * Les valeurs non encore traduites retombent sur le texte français fourni.
+ */
+export function tText(text: string): string {
+  if (!text) return text;
+  const dict = dictionaries[activeLocale] as Record<string, string>;
+  const exact = REVERSE_FR.get(text);
+  if (exact !== undefined) return dict[exact] ?? text;
+  const lower = text.toLowerCase();
+  for (const [frValue, key] of REVERSE_FR) {
+    if (frValue.toLowerCase() === lower) return dict[key] ?? text;
+  }
+  return text;
+}
+
 function getInitialLocale(): Locale {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -56,6 +87,7 @@ const RTL_LOCALES: Locale[] = ['ar'];
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+  activeLocale = locale;
 
   // Initialize document direction on mount
   useEffect(() => {

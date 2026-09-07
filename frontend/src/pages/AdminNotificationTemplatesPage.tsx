@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import type { CanalNotification, NotificationEventInfo, NotificationTemplateAdmin } from '@/types';
 
+import { tText } from '@/i18n';
 const CANAL_OPTIONS: { value: CanalNotification; label: string }[] = [
   { value: 'IN_APP', label: 'In-app' },
   { value: 'PUSH', label: 'Push' },
@@ -85,13 +86,13 @@ export default function AdminNotificationTemplatesPage() {
   const toggleMutation = useMutation({
     mutationFn: async ({ id, actif }: { id: string; actif: boolean }) =>
       api.patch(`/admin/notifications/templates/${id}/toggle`, { actif }),
-    onSuccess: () => { invalidate(); toast.success('Statut du modèle mis à jour'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Statut du modèle mis à jour')); },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/admin/notifications/templates/${id}`),
-    onSuccess: () => { invalidate(); toast.success('Modèle supprimé'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Modèle supprimé')); },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
@@ -160,7 +161,7 @@ export default function AdminNotificationTemplatesPage() {
         </div>
         <div className="page-header-actions">
           <button className="btn-primary btn-sm" onClick={openCreate} disabled={availableEvents.length === 0}>
-            <Plus className="w-4 h-4" /> Nouveau modèle
+            <Plus className="w-4 h-4" /> {tText('Nouveau modèle')}
           </button>
         </div>
       </div>
@@ -168,15 +169,15 @@ export default function AdminNotificationTemplatesPage() {
       {/* Stats bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
         <div className="stat-card p-4 text-center">
-          <span className="stat-label text-[10px]">Modèles actifs</span>
+          <span className="stat-label text-[10px]">{tText('Modèles actifs')}</span>
           <p className="stat-value text-xl">{activeCount}</p>
         </div>
         <div className="stat-card p-4 text-center">
-          <span className="stat-label text-[10px]">Modèles configurés</span>
+          <span className="stat-label text-[10px]">{tText('Modèles configurés')}</span>
           <p className="stat-value text-xl">{templates.length}</p>
         </div>
         <div className="stat-card p-4 text-center">
-          <span className="stat-label text-[10px]">Événements couverts</span>
+          <span className="stat-label text-[10px]">{tText('Événements couverts')}</span>
           <p className="stat-value text-xl">{configuredEvents.size} / {catalog.length}</p>
         </div>
       </div>
@@ -185,7 +186,7 @@ export default function AdminNotificationTemplatesPage() {
         <div className="glass-card p-10 text-center">
           <Inbox className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            Aucun modèle configuré
+            {tText('Aucun modèle configuré')}
           </h3>
           <p className="text-sm text-gray-400 mb-4">
             Sans modèle, les notifications utilisent les textes par défaut de la plateforme.
@@ -193,7 +194,7 @@ export default function AdminNotificationTemplatesPage() {
           </p>
           {availableEvents.length > 0 ? (
             <button className="btn-primary btn-sm" onClick={openCreate}>
-              <Plus className="w-4 h-4" /> Créer un modèle
+              <Plus className="w-4 h-4" /> {tText('Créer un modèle')}
             </button>
           ) : (
             <p className="text-xs text-gray-400">Tous les événements sont déjà configurés.</p>
@@ -282,7 +283,7 @@ export default function AdminNotificationTemplatesPage() {
             </div>
             <div className="modal-body space-y-4">
               <div>
-                <label className="label">Événement</label>
+                <label className="label">{tText('Événement')}</label>
                 <select
                   className="input"
                   value={form.event}
@@ -290,7 +291,7 @@ export default function AdminNotificationTemplatesPage() {
                   aria-label="Événement"
                   onChange={(e) => onSelectEvent(e.target.value)}
                 >
-                  <option value="">— Choisir un événement —</option>
+                  <option value="">{tText('— Choisir un événement —')}</option>
                   {(editId ? catalog : availableEvents).map((e) => (
                     <option key={e.event} value={e.event}>{e.label} ({e.event})</option>
                   ))}
@@ -341,7 +342,7 @@ export default function AdminNotificationTemplatesPage() {
               </div>
 
               <div>
-                <label className="label">Rôles destinataires</label>
+                <label className="label">{tText('Rôles destinataires')}</label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {ROLE_OPTIONS.map((r) => {
                     const selected = form.roles.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean).includes(r);
@@ -388,7 +389,7 @@ export default function AdminNotificationTemplatesPage() {
               </label>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setModalOpen(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setModalOpen(false)}>{tText('Annuler')}</button>
               <button
                 className="btn-primary btn-sm"
                 onClick={() => saveMutation.mutate()}

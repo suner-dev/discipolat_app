@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { tText } from '@/i18n';
 import type {
   Objective,
   ObjectiveProgress,
@@ -82,7 +83,7 @@ export default function ObjectivesPage() {
       return res.data as Objective;
     },
     onSuccess: () => {
-      toast.success('Objectif créé');
+      toast.success(tText('Objectif créé'));
       setShowCreate(false);
       queryClient.invalidateQueries({ queryKey: ['objectives'] });
     },
@@ -94,7 +95,7 @@ export default function ObjectivesPage() {
       await api.delete(`/objectives/${id}`);
     },
     onSuccess: () => {
-      toast.success('Objectif supprimé');
+      toast.success(tText('Objectif supprimé'));
       queryClient.invalidateQueries({ queryKey: ['objectives'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -108,7 +109,7 @@ export default function ObjectivesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Système d'objectifs</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Objectifs chiffrés par rôle, mesurés automatiquement sur votre périmètre réel
+            {tText('Objectifs chiffrés par rôle, mesurés automatiquement sur votre périmètre réel')}
           </p>
         </div>
         {isAdmin && (
@@ -120,10 +121,10 @@ export default function ObjectivesPage() {
 
       {showCreate && isAdmin && (
         <div className="glass-card p-4 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Créer un objectif</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Créer un objectif')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Rôle</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">{tText('Rôle')}</label>
               <select
                 value={form.role}
                 onChange={e => setForm({ ...form, role: e.target.value as UserRole })}
@@ -153,7 +154,7 @@ export default function ObjectivesPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Période</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">{tText('Période')}</label>
               <select
                 value={form.periode}
                 onChange={e => setForm({ ...form, periode: e.target.value as ObjectivePeriode })}
@@ -169,9 +170,9 @@ export default function ObjectivesPage() {
               disabled={form.cible < 1}
               className="btn btn-primary text-sm"
             >
-              Créer
+              {tText('Créer')}
             </button>
-            <button onClick={() => setShowCreate(false)} className="btn text-sm">Annuler</button>
+            <button onClick={() => setShowCreate(false)} className="btn text-sm">{tText('Annuler')}</button>
           </div>
         </div>
       )}
@@ -233,7 +234,7 @@ export default function ObjectivesPage() {
         <div className="glass-card divide-y divide-gray-100 dark:divide-gray-800">
           <div className="px-4 py-3 flex items-center gap-2">
             <Target className="w-4 h-4 text-primary-500" />
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tous les objectifs</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Tous les objectifs')}</h2>
           </div>
           {allQuery.data.map(o => (
             <div key={o.id} className="px-4 py-3 flex items-center justify-between gap-3">

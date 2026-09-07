@@ -12,6 +12,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const STATUT_FALLBACK: Record<string, string> = {
   BROUILLON: 'Brouillon',
@@ -83,9 +84,9 @@ export default function FamilyDetailPage() {
       setShowChiefModal(false);
       setNewChiefId('');
       if (data.statut === 'EXECUTE') {
-        toast.success('Chef de famille mis à jour');
+        toast.success(tText('Chef de famille mis à jour'));
       } else {
-        toast.success('Demande de changement de chef soumise pour validation');
+        toast.success(tText('Demande de changement de chef soumise pour validation'));
       }
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -123,7 +124,7 @@ export default function FamilyDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['families'] });
       setShowRiskModal(false);
       setRiskRaison('');
-      toast.success('Niveau de risque mis à jour');
+      toast.success(tText('Niveau de risque mis à jour'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -144,8 +145,8 @@ export default function FamilyDetailPage() {
       <div className="page-container">
         <div className="glass-card p-12 text-center animate-scale-in">
           <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-500">Famille non trouvée</p>
-          <Link to="/families" className="btn-primary btn-sm mt-4 inline-flex">Retour aux familles</Link>
+          <p className="text-gray-500">{tText('Famille non trouvée')}</p>
+          <Link to="/families" className="btn-primary btn-sm mt-4 inline-flex">{tText('Retour aux familles')}</Link>
         </div>
       </div>
     );
@@ -155,7 +156,7 @@ export default function FamilyDetailPage() {
     <div className="page-container">
       {/* Back button */}
       <Link to="/families" className="btn-ghost btn-sm mb-4 inline-flex animate-fade-in">
-        <ArrowLeft className="w-4 h-4" /> Retour aux familles
+        <ArrowLeft className="w-4 h-4" /> {tText('Retour aux familles')}
       </Link>
 
       {/* Header */}
@@ -193,7 +194,7 @@ export default function FamilyDetailPage() {
           <div className="flex gap-2 self-start flex-wrap">
             {canAddSoul && (
               <Link to={`/souls/new?familleId=${family.id}&familleNom=${encodeURIComponent(family.nom)}`} className="btn-primary btn-sm">
-                <Heart className="w-4 h-4" /> Ajouter une âme
+                <Heart className="w-4 h-4" /> {tText('Ajouter une âme')}
               </Link>
             )}
             {canViewFaiseurPerf && (
@@ -203,7 +204,7 @@ export default function FamilyDetailPage() {
             )}
             {canChangeChief && (
               <button onClick={() => setShowChiefModal(true)} className="btn-secondary btn-sm">
-                <UserCog className="w-4 h-4" /> Changer chef
+                <UserCog className="w-4 h-4" /> {tText('Changer chef')}
               </button>
             )}
           </div>
@@ -220,7 +221,7 @@ export default function FamilyDetailPage() {
                   <Crown className="w-5 h-5 text-gold-600 dark:text-gold-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Changer le chef de famille</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Changer le chef de famille')}</h3>
                   <p className="text-xs text-gray-500">Sélectionnez un nouveau chef (US-07)</p>
                 </div>
               </div>
@@ -242,7 +243,7 @@ export default function FamilyDetailPage() {
               </select>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setShowChiefModal(false)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setShowChiefModal(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button onClick={() => reassignMutation.mutate(newChiefId)} disabled={!newChiefId || reassignMutation.isPending} className="btn-primary btn-sm">
                 {reassignMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                 Confirmer
@@ -311,7 +312,7 @@ export default function FamilyDetailPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setShowRiskModal(false)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setShowRiskModal(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => setRiskMutation.mutate({ niveauRisque: riskLevel, raison: riskRaison })}
                 disabled={setRiskMutation.isPending}
@@ -338,7 +339,7 @@ export default function FamilyDetailPage() {
               <p className="stat-value text-2xl">{souls?.length || 0}</p>
               <div className="flex items-center gap-1 mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
-                <span className="text-[10px] text-gray-400">Disciples dans la famille</span>
+                <span className="text-[10px] text-gray-400">{tText('Disciples dans la famille')}</span>
               </div>
             </div>
 
@@ -396,7 +397,7 @@ export default function FamilyDetailPage() {
             <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '160ms' }}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-primary-500" /> Évaluation de risque
+                  <ShieldCheck className="w-4 h-4 text-primary-500" /> {tText('Évaluation de risque')}
                 </h3>
                 {canSetRisk && (
                   <button
@@ -404,7 +405,7 @@ export default function FamilyDetailPage() {
                     className="btn-secondary btn-sm"
                   >
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    Définir le niveau
+                    {tText('Définir le niveau')}
                   </button>
                 )}
               </div>
@@ -439,11 +440,11 @@ export default function FamilyDetailPage() {
               {/* Indicators grid */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-2.5 rounded-xl bg-white/30 dark:bg-gray-800/30">
-                  <p className="text-[10px] text-gray-400">Taux de présence</p>
+                  <p className="text-[10px] text-gray-400">{tText('Taux de présence')}</p>
                   <p className={`text-sm font-semibold ${risk.tauxPresence < 65 ? 'text-red-500' : risk.tauxPresence < 80 ? 'text-amber-500' : 'text-green-600'}`}>{risk.tauxPresence}%</p>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white/30 dark:bg-gray-800/30">
-                  <p className="text-[10px] text-gray-400">Âmes perdues</p>
+                  <p className="text-[10px] text-gray-400">{tText('Âmes perdues')}</p>
                   <p className={`text-sm font-semibold ${risk.amesPerdues > 0 ? 'text-red-500' : 'text-green-600'}`}>{risk.amesPerdues}</p>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white/30 dark:bg-gray-800/30">
@@ -501,7 +502,7 @@ export default function FamilyDetailPage() {
             ) : (
               <div className="text-center py-8">
                 <Heart className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Aucun membre dans cette famille</p>
+                <p className="text-sm text-gray-500">{tText('Aucun membre dans cette famille')}</p>
               </div>
             )}
           </div>
@@ -510,7 +511,7 @@ export default function FamilyDetailPage() {
           {reports && reports.length > 0 && (
             <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '120ms' }}>
               <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-primary-500" /> Rapports récents
+                <FileText className="w-4 h-4 text-primary-500" /> {tText('Rapports récents')}
               </h3>
               <div className="space-y-2">
                 {reports.map((report, i) => (

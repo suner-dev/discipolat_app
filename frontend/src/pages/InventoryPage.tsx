@@ -7,6 +7,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import toast from 'react-hot-toast';
 import { Package, Plus, Search, Edit2, Trash2, AlertTriangle, BarChart3, Eye, UserCheck, UserX, Wrench, X, Loader2 } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface InventoryItem {
   id: string;
   name: string;
@@ -111,19 +112,19 @@ export default function InventoryPage() {
     mutationFn: async () => {
       await api.post(`/inventory/${assignId}/assign`, { memberId: assignMemberId });
     },
-    onSuccess: () => { toast.success('Article affecté à un membre'); setAssignId(null); setAssignMemberId(''); invalidateInventory(); },
+    onSuccess: () => { toast.success(tText('Article affecté à un membre')); setAssignId(null); setAssignMemberId(''); invalidateInventory(); },
     onError: () => toast.error('Erreur lors de l\'affectation'),
   });
 
   const unassignMutation = useMutation({
     mutationFn: async (id: string) => { await api.post(`/inventory/${id}/unassign`); },
-    onSuccess: () => { toast.success('Article désaffecté'); invalidateInventory(); },
-    onError: () => toast.error('Erreur lors de la désaffectation'),
+    onSuccess: () => { toast.success(tText('Article désaffecté')); invalidateInventory(); },
+    onError: () => toast.error(tText('Erreur lors de la désaffectation')),
   });
 
   const maintenanceMutation = useMutation({
     mutationFn: async (id: string) => { await api.post(`/inventory/${id}/maintenance`); },
-    onSuccess: () => { toast.success('Article envoyé en maintenance'); invalidateInventory(); },
+    onSuccess: () => { toast.success(tText('Article envoyé en maintenance')); invalidateInventory(); },
     onError: () => toast.error('Erreur lors de l\'envoi en maintenance'),
   });
 
@@ -134,13 +135,13 @@ export default function InventoryPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/inventory/${id}`); },
-    onSuccess: () => { toast.success('Article supprimé'); queryClient.invalidateQueries({ queryKey: ['inventory'] }); },
-    onError: () => toast.error('Erreur suppression'),
+    onSuccess: () => { toast.success(tText('Article supprimé')); queryClient.invalidateQueries({ queryKey: ['inventory'] }); },
+    onError: () => toast.error(tText('Erreur suppression')),
   });
 
   if (isLoading) return <SkeletonLoader lines={6} variant="card" />;
   if (error) return <div className="text-red-500 p-6">{getErrorMessage(error)}</div>;
-  if (!items || items.length === 0) return <EmptyState title="Aucun article" message="L'inventaire est vide pour le moment." />;
+  if (!items || items.length === 0) return <EmptyState title={tText('Aucun article')} message="L'inventaire est vide pour le moment." />;
 
   return (
     <div className="space-y-6">
@@ -188,7 +189,7 @@ export default function InventoryPage() {
             <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <BarChart3 className="w-5 h-5 text-red-500" />
             </div>
-            <div><p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.affectes ?? 0}</p><p className="text-xs text-gray-500">Affectés</p></div>
+            <div><p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.affectes ?? 0}</p><p className="text-xs text-gray-500">{tText('Affectés')}</p></div>
           </div>
         </div>
       </div>
@@ -254,8 +255,8 @@ export default function InventoryPage() {
           <thead>
             <tr className="border-b border-gray-100 dark:border-white/[0.06]">
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Article</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Catégorie</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Quantité</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">{tText('Catégorie')}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">{tText('Quantité')}</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Emplacement</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Actions</th>
             </tr>
@@ -275,13 +276,13 @@ export default function InventoryPage() {
                 <td className="px-4 py-3 text-sm text-gray-500">{item.location}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button onClick={() => setSelectedId(item.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-indigo-500 transition" title="Détails">
+                    <button onClick={() => setSelectedId(item.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-indigo-500 transition" title={tText('Détails')}>
                       <Eye className="w-4 h-4" />
                     </button>
-                                        <button onClick={() => { setAssignId(item.id); setAssignMemberId(''); }} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-green-500 transition" title="Affecter à un membre">
+                                        <button onClick={() => { setAssignId(item.id); setAssignMemberId(''); }} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-green-500 transition" title={tText('Affecter à un membre')}>
                       <UserCheck className="w-4 h-4" />
                     </button>
-                    <button onClick={() => unassignMutation.mutate(item.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-gray-600 transition" title="Désaffecter">
+                    <button onClick={() => unassignMutation.mutate(item.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-gray-600 transition" title={tText('Désaffecter')}>
                       <UserX className="w-4 h-4" />
                     </button>
                     <button onClick={() => maintenanceMutation.mutate(item.id)} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-amber-500 transition" title="Envoyer en maintenance">
@@ -320,12 +321,12 @@ export default function InventoryPage() {
             ) : (
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-500">Nom</span><span className="font-medium text-gray-900 dark:text-white">{String(detail['nom'] ?? '')}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Catégorie</span><span className="font-medium text-gray-900 dark:text-white">{String(detail['categorie'] ?? '')}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{tText('Catégorie')}</span><span className="font-medium text-gray-900 dark:text-white">{String(detail['categorie'] ?? '')}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Statut</span><span className="font-medium text-gray-900 dark:text-white">{String(detail['statut'] ?? '')}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Quantité</span><span className="font-medium text-gray-900 dark:text-white">{String(detail['quantite'] ?? '')} ({String(detail['quantiteDisponible'] ?? '')} disponibles)</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{tText('Quantité')}</span><span className="font-medium text-gray-900 dark:text-white">{String(detail['quantite'] ?? '')} ({String(detail['quantiteDisponible'] ?? '')} disponibles)</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Emplacement</span><span className="font-medium text-gray-900 dark:text-white">{String(detail['lieuStockage'] ?? '-')}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">N° de série</span><span className="font-medium text-gray-900 dark:text-white">{String(detail['numeroSerie'] ?? '-')}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Dernière maintenance</span><span className="font-medium text-gray-900 dark:text-white">
+                <div className="flex justify-between"><span className="text-gray-500">{tText('N° de série')}</span><span className="font-medium text-gray-900 dark:text-white">{String(detail['numeroSerie'] ?? '-')}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{tText('Dernière maintenance')}</span><span className="font-medium text-gray-900 dark:text-white">
                   {detail['derniereMaintenance'] ? new Date(String(detail['derniereMaintenance'])).toLocaleDateString('fr-FR') : '-'}
                 </span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Prochaine maintenance</span><span className="font-medium text-gray-900 dark:text-white">
@@ -354,7 +355,7 @@ export default function InventoryPage() {
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
               placeholder="ID du membre (UUID)" />
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setAssignId(null)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setAssignId(null)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={() => assignMutation.mutate()} disabled={!assignMemberId || assignMutation.isPending}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-medium">
                 {assignMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   BookOpen, Plus, Loader2, RefreshCw, Play, Clock, BarChart3,
   Users, FileText, CheckCircle, Mic, Search, X,
@@ -53,7 +55,7 @@ export default function SermonsPage() {
       await api.post('/sermons', newSermon);
     },
     onSuccess: () => {
-      toast.success('Sermon créé');
+      toast.success(tText('Sermon créé'));
       qc.invalidateQueries({ queryKey: ['sermons'] });
       setShowCreate(false);
       setNewSermon({ title: '', speaker: '', date: '', category: 'PREACHING', description: '' });
@@ -66,7 +68,7 @@ export default function SermonsPage() {
       await api.post(`/sermons/${id}/transcribe`);
     },
     onSuccess: () => {
-      toast.success('Transcription lancée');
+      toast.success(tText('Transcription lancée'));
       qc.invalidateQueries({ queryKey: ['sermons'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -93,14 +95,14 @@ export default function SermonsPage() {
             <BookOpen className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Sermons</h1>
           </div>
-          <p className="page-subtitle">Gestion des sermons, transcription et bibliothèque</p>
+          <p className="page-subtitle">{tText('Gestion des sermons, transcription et bibliothèque')}</p>
         </div>
         <div className="page-header-actions">
           <button onClick={() => qc.invalidateQueries({ queryKey: ['sermons'] })} className="btn-ghost btn-sm">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm">
-            <Plus className="w-4 h-4" /> Nouveau sermon
+            <Plus className="w-4 h-4" /> {tText('Nouveau sermon')}
           </button>
         </div>
       </div>
@@ -163,7 +165,7 @@ export default function SermonsPage() {
                 </div>
                 <div className="flex items-center gap-3 text-[10px] text-gray-400">
                   <span>{sermon.speaker}</span>
-                  <span>{new Date(sermon.date).toLocaleDateString('fr-FR')}</span>
+                  <span>{new Date(sermon.date).toLocaleDateString(getI18nLocale())}</span>
                   {sermon.duration && <span>{sermon.duration}</span>}
                   {sermon.category && <span className="badge text-[9px]">{sermon.category}</span>}
                 </div>
@@ -193,7 +195,7 @@ export default function SermonsPage() {
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Nouveau sermon</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Nouveau sermon')}</h3>
               <button className="btn-icon" onClick={() => setShowCreate(false)}><X className="w-5 h-5" /></button>
             </div>
             <div className="modal-body space-y-4">
@@ -202,8 +204,8 @@ export default function SermonsPage() {
                 <input className="input" value={newSermon.title} onChange={(e) => setNewSermon({ ...newSermon, title: e.target.value })} placeholder="Titre du sermon" />
               </div>
               <div>
-                <label className="label">Prédicateur</label>
-                <input className="input" value={newSermon.speaker} onChange={(e) => setNewSermon({ ...newSermon, speaker: e.target.value })} placeholder="Nom du prédicateur" />
+                <label className="label">{tText('Prédicateur')}</label>
+                <input className="input" value={newSermon.speaker} onChange={(e) => setNewSermon({ ...newSermon, speaker: e.target.value })} placeholder={tText('Nom du prédicateur')} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -211,11 +213,11 @@ export default function SermonsPage() {
                   <input type="date" className="input" value={newSermon.date} onChange={(e) => setNewSermon({ ...newSermon, date: e.target.value })} />
                 </div>
                 <div>
-                  <label className="label">Catégorie</label>
+                  <label className="label">{tText('Catégorie')}</label>
                   <select className="input" value={newSermon.category} onChange={(e) => setNewSermon({ ...newSermon, category: e.target.value })}>
-                    <option value="PREACHING">Prédication</option>
+                    <option value="PREACHING">{tText('Prédication')}</option>
                     <option value="TEACHING">Enseignement</option>
-                    <option value="TESTIMONY">Témoignage</option>
+                    <option value="TESTIMONY">{tText('Témoignage')}</option>
                     <option value="OTHER">Autre</option>
                   </select>
                 </div>
@@ -226,7 +228,7 @@ export default function SermonsPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setShowCreate(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setShowCreate(false)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => createMutation.mutate()} disabled={!newSermon.title || createMutation.isPending}>
                 {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                 Créer

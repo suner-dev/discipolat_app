@@ -5,6 +5,8 @@ import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
 import { FolderOpen, Plus, FileText, Video, Link, Download } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Resource {
   id: string;
   familleId: string;
@@ -43,7 +45,7 @@ export default function FamilyResourcesPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <FolderOpen className="w-8 h-8 text-amber-500" /> Banque de Ressources
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Partagez documents, vidéos et études au sein de la famille</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{tText('Partagez documents, vidéos et études au sein de la famille')}</p>
         </div>
       </div>
 
@@ -73,7 +75,7 @@ export default function FamilyResourcesPage() {
                   </div>
                   {r.description && <p className="text-xs text-gray-500 mb-2 line-clamp-2">{r.description}</p>}
                   <div className="flex items-center justify-between text-xs text-gray-400">
-                    <span>{new Date(r.createdAt).toLocaleDateString('fr-FR')}</span>
+                    <span>{new Date(r.createdAt).toLocaleDateString(getI18nLocale())}</span>
                     <span className="flex items-center gap-1"><Download className="w-3 h-3" />{r.téléchargements}</span>
                   </div>
                 </div>

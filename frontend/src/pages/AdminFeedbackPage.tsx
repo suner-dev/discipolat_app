@@ -10,6 +10,8 @@ import {
 import type { Feedback, FeedbackStats, FeedbackStatus } from '@/types';
 import { useDictionaries } from '@/hooks/useDictionaries';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const CATEGORY_FALLBACK: Record<string, string> = {
   BUG: 'Bug',
@@ -52,7 +54,7 @@ const PRIORITY_STYLES: Record<string, string> = {
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleDateString(getI18nLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   } catch {
     return iso;
   }
@@ -128,9 +130,9 @@ export default function AdminFeedbackPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-feedback'] });
       queryClient.invalidateQueries({ queryKey: ['admin-feedback', 'stats'] });
-      toast.success('Statut mis à jour');
+      toast.success(tText('Statut mis à jour'));
     },
-    onError: () => toast.error('Erreur lors de la mise à jour du statut'),
+    onError: () => toast.error(tText('Erreur lors de la mise à jour du statut')),
   });
 
   const filtered = useMemo(
@@ -160,7 +162,7 @@ export default function AdminFeedbackPage() {
             className="btn-ghost btn-sm"
             onClick={() => {
               queryClient.invalidateQueries({ queryKey: ['admin-feedback'] });
-              toast.success('Liste actualisée');
+              toast.success(tText('Liste actualisée'));
             }}
           >
             <RefreshCw className="w-4 h-4" /> Actualiser
@@ -173,8 +175,8 @@ export default function AdminFeedbackPage() {
         <StatCard icon={Inbox} label="Total" value={stats?.total ?? 0} gradient="from-primary-500 to-primary-700" />
         <StatCard icon={MessageSquareText} label="Nouveaux" value={stats?.nouveaux ?? 0} gradient="from-sky-500 to-blue-600" />
         <StatCard icon={Clock} label="En cours" value={stats?.enCours ?? 0} gradient="from-amber-500 to-orange-600" />
-        <StatCard icon={CheckCircle2} label="Résolus" value={stats?.resolus ?? 0} gradient="from-emerald-500 to-teal-600" />
-        <StatCard icon={XCircle} label="Rejetés" value={stats?.rejetes ?? 0} gradient="from-gray-500 to-slate-600" />
+        <StatCard icon={CheckCircle2} label={tText('Résolus')} value={stats?.resolus ?? 0} gradient="from-emerald-500 to-teal-600" />
+        <StatCard icon={XCircle} label={tText('Rejetés')} value={stats?.rejetes ?? 0} gradient="from-gray-500 to-slate-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -288,7 +290,7 @@ export default function AdminFeedbackPage() {
         <div className="space-y-3">
           <div className="glass-card p-5">
             <div className="flex items-center gap-2 mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              <AlertTriangle className="w-4 h-4" /> Répartition par catégorie
+              <AlertTriangle className="w-4 h-4" /> {tText('Répartition par catégorie')}
             </div>
             {categoryBreakdown.length === 0 ? (
               <p className="text-xs text-gray-400 dark:text-gray-500">Aucune donnée pour le moment.</p>
@@ -372,7 +374,7 @@ export default function AdminFeedbackPage() {
                   avec un compte de démonstration.
                 </p>
                 <div className="flex items-center justify-end gap-2">
-                  <button className="btn-ghost btn-sm" onClick={() => setResetConfirmOpen(false)}>Annuler</button>
+                  <button className="btn-ghost btn-sm" onClick={() => setResetConfirmOpen(false)}>{tText('Annuler')}</button>
                   <button
                     className="btn-primary btn-sm !bg-red-600 hover:!bg-red-500 border-red-600"
                     disabled={resetMutation.isPending}
@@ -391,14 +393,14 @@ export default function AdminFeedbackPage() {
               <MessageSquareText className="w-4 h-4" /> Conseil
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              Passez chaque retour en <span className="text-gray-700 dark:text-gray-200 font-medium">En cours</span> dès
-              qu'il est pris en charge, puis <span className="text-gray-700 dark:text-gray-200 font-medium">Résolu</span>
-              une fois corrigé. Un retour <span className="text-gray-700 dark:text-gray-200 font-medium">Rejeté</span> reste
+              {tText('Passez chaque retour en')} <span className="text-gray-700 dark:text-gray-200 font-medium">En cours</span> dès
+              qu'il est pris en charge, puis <span className="text-gray-700 dark:text-gray-200 font-medium">{tText('Résolu')}</span>
+              une fois corrigé. Un retour <span className="text-gray-700 dark:text-gray-200 font-medium">{tText('Rejeté')}</span> reste
               consultable dans les statistiques.
             </p>
             {statusMutation.isPending && (
               <div className="flex items-center gap-2 mt-3 text-xs text-gray-400">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Mise à jour…
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> {tText('Mise à jour…')}
               </div>
             )}
           </div>

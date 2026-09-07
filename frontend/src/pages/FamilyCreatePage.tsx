@@ -10,6 +10,7 @@ import type { User } from '@/types';
 import { ArrowLeft, Loader2, Save, Users, UserPlus, UserCheck, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 const createFamilySchema = z.object({
   nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères').max(100, 'Nom trop long'),
   // Cas 1 : chef existant
@@ -70,7 +71,7 @@ export default function FamilyCreatePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['families'] });
-      toast.success('Famille créée avec succès');
+      toast.success(tText('Famille créée avec succès'));
       navigate('/families');
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -79,15 +80,15 @@ export default function FamilyCreatePage() {
   const onSubmit = async (data: CreateFamilyForm) => {
     // Validation selon le mode
     if (mode === 'self' && !user?.id) {
-      toast.error('Impossible de récupérer votre identité de chef de famille');
+      toast.error(tText('Impossible de récupérer votre identité de chef de famille'));
       return;
     }
     if (mode === 'existing' && !data.chefFamilleId) {
-      toast.error('Sélectionnez un chef existant ou basculez en mode « créer un chef »');
+      toast.error(tText('Sélectionnez un chef existant ou basculez en mode « créer un chef »'));
       return;
     }
     if (mode === 'new' && (!data.newChefFirstName || !data.newChefLastName || !data.newChefEmail)) {
-      toast.error('Renseignez nom, prénom et email du nouveau chef');
+      toast.error(tText('Renseignez nom, prénom et email du nouveau chef'));
       return;
     }
     createMutation.mutate(data);
@@ -101,7 +102,7 @@ export default function FamilyCreatePage() {
     <div className="page-container max-w-2xl mx-auto">
       <Link to="/families" className="btn-ghost btn-sm mb-4">
         <ArrowLeft className="w-4 h-4" />
-        Retour aux familles
+        {tText('Retour aux familles')}
       </Link>
 
       <div className="page-header">
@@ -110,9 +111,9 @@ export default function FamilyCreatePage() {
             <Users className="w-6 h-6 text-primary-600" />
           </div>
           <div>
-            <h1 className="page-title">Nouvelle famille de disciples</h1>
+            <h1 className="page-title">{tText('Nouvelle famille de disciples')}</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Créer une famille avec un chef existant ou créer directement un nouveau chef
+              {tText('Créer une famille avec un chef existant ou créer directement un nouveau chef')}
             </p>
           </div>
         </div>
@@ -121,7 +122,7 @@ export default function FamilyCreatePage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Nom */}
         <div className="card p-6">
-          <label htmlFor="nom" className="label">Nom de la famille</label>
+          <label htmlFor="nom" className="label">{tText('Nom de la famille')}</label>
           <input
             id="nom"
             className={`input ${errors.nom ? 'input-error' : ''}`}
@@ -133,7 +134,7 @@ export default function FamilyCreatePage() {
 
         {/* Mode selection */}
         <div className="card p-6">
-          <label className="label">Chef de famille</label>
+          <label className="label">{tText('Chef de famille')}</label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
             <button
               type="button"
@@ -144,7 +145,7 @@ export default function FamilyCreatePage() {
                   : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300'}`}
             >
               <UserCheck className="w-4 h-4 inline mr-1.5 -mt-0.5" />
-              Me désigner chef
+              {tText('Me désigner chef')}
             </button>
             <button
               type="button"
@@ -155,7 +156,7 @@ export default function FamilyCreatePage() {
                   : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300'}`}
             >
               <CheckCircle2 className="w-4 h-4 inline mr-1.5 -mt-0.5" />
-              Sélectionner un chef
+              {tText('Sélectionner un chef')}
             </button>
             <button
               type="button"
@@ -166,7 +167,7 @@ export default function FamilyCreatePage() {
                   : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300'}`}
             >
               <UserPlus className="w-4 h-4 inline mr-1.5 -mt-0.5" />
-              Créer un nouveau chef
+              {tText('Créer un nouveau chef')}
             </button>
           </div>
 
@@ -211,8 +212,8 @@ export default function FamilyCreatePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="label">Prénom *</label>
-                <input className={`input ${errors.newChefFirstName ? 'input-error' : ''}`} placeholder="Prénom du chef"
+                <label className="label">{tText('Prénom *')}</label>
+                <input className={`input ${errors.newChefFirstName ? 'input-error' : ''}`} placeholder={tText('Prénom du chef')}
                   {...register('newChefFirstName')} />
               </div>
               <div>
@@ -227,15 +228,15 @@ export default function FamilyCreatePage() {
                 {errors.newChefEmail && <p className="mt-1 text-xs text-red-500">{errors.newChefEmail.message}</p>}
               </div>
               <div>
-                <label className="label">Téléphone</label>
+                <label className="label">{tText('Téléphone')}</label>
                 <input className="input" placeholder="+241 ..." {...register('newChefPhone')} />
               </div>
               <div>
                 <label className="label">Sexe</label>
                 <select className="input" {...register('newChefSexe')}>
-                  <option value="">Non précisé</option>
+                  <option value="">{tText('Non précisé')}</option>
                   <option value="M">Masculin</option>
-                  <option value="F">Féminin</option>
+                  <option value="F">{tText('Féminin')}</option>
                 </select>
               </div>
               <div className="flex items-end">
@@ -249,7 +250,7 @@ export default function FamilyCreatePage() {
 
         {/* Submit */}
         <div className="flex justify-end gap-3">
-          <Link to="/families" className="btn-secondary">Annuler</Link>
+          <Link to="/families" className="btn-secondary">{tText('Annuler')}</Link>
           <button
             type="submit"
             disabled={createMutation.isPending || isSubmitting}

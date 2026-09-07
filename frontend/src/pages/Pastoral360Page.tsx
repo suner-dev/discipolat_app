@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
-import type { Pastoral360Data } from '@/types';
+import type { Pastoral360Data, SpiritualScorePoint } from '@/types';
 import {
   ArrowLeft, Heart, Activity, Clock, AlertTriangle, Star,
   MessageSquare, TrendingUp, TrendingDown, Sparkles, Users,
@@ -20,6 +20,7 @@ import {
 import { useI18n } from '@/i18n';
 
 
+import { tText } from '@/i18n';
 const INDICE_LABELS: Record<string, string> = {
   santeSpirituelle: 'Santé spirituelle',
   fidelite: 'Fidélité',
@@ -119,8 +120,8 @@ export default function Pastoral360Page() {
       <div className="page-container">
         <div className="glass-card p-12 text-center animate-scale-in">
           <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">Membre non trouvé</p>
-          <Link to="/souls" className="btn-primary btn-sm mt-4 inline-flex">Retour</Link>
+          <p className="text-gray-500">{tText('Membre non trouvé')}</p>
+          <Link to="/souls" className="btn-primary btn-sm mt-4 inline-flex">{tText('Retour')}</Link>
         </div>
       </div>
     );
@@ -149,7 +150,7 @@ export default function Pastoral360Page() {
       {/* Back + Header */}
       <div className="page-header">
         <Link to={`/souls/${id}`} className="btn-ghost btn-sm mb-2 inline-flex animate-fade-in">
-          <ArrowLeft className="w-4 h-4" /> Retour à la fiche
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la fiche')}
         </Link>
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
@@ -194,7 +195,7 @@ export default function Pastoral360Page() {
       <div className="glass-card p-6 mb-6 animate-slide-up">
         <div className="flex items-center gap-2 mb-6">
           <Activity className="w-5 h-5 text-primary-500" />
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Indices de santé</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">{tText('Indices de santé')}</h2>
         </div>
         <div className="grid grid-cols-5 gap-4 mb-6">
           {Object.entries(INDICE_LABELS).map(([key, label]) => (
@@ -227,7 +228,7 @@ export default function Pastoral360Page() {
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-4 h-4 text-primary-500" />
               <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Évolution du parcours
+                {tText('Évolution du parcours')}
               </h3>
             </div>
             <div className="h-48">
@@ -281,7 +282,7 @@ export default function Pastoral360Page() {
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-4 h-4 text-blue-500" />
               <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Évolution du score spirituel
+                {tText('Évolution du score spirituel')}
               </h3>
             </div>
             <div className="h-56">
@@ -334,7 +335,7 @@ export default function Pastoral360Page() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="glass-card p-5 animate-slide-up">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary-500" /> Coordonnées
+            <Sparkles className="w-4 h-4 text-primary-500" /> {tText('Coordonnées')}
           </h3>
           <div className="space-y-3">
             {[
@@ -374,7 +375,7 @@ export default function Pastoral360Page() {
               </span>
             </div>
             <div className="flex justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-              <span className="text-xs text-gray-400">État spirituel</span>
+              <span className="text-xs text-gray-400">{tText('État spirituel')}</span>
               <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                 {dictionaries.label('SPIRITUAL_LEVEL', spirituel.etatSpirituel) || SPIRITUAL_FALLBACK[spirituel.etatSpirituel] || spirituel.etatSpirituel}
               </span>
@@ -389,7 +390,7 @@ export default function Pastoral360Page() {
             </div>
             {spirituel.dateIntegration && (
               <div className="flex justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                <span className="text-xs text-gray-400">Intégré le</span>
+                <span className="text-xs text-gray-400">{tText('Intégré le')}</span>
                 <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                   {new Date(spirituel.dateIntegration).toLocaleDateString(locale)}
                 </span>
@@ -425,7 +426,7 @@ export default function Pastoral360Page() {
               <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{encadrement.faiseurNom || encadrement.faiseurId || '—'}</span>
             </div>
             <div className="flex justify-between p-2.5 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-              <span className="text-xs text-gray-400">Famille</span>
+              <span className="text-xs text-gray-400">{tText('Famille')}</span>
               <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{encadrement.familleId || 'Non assigné'}</span>
             </div>
           </div>
@@ -433,7 +434,7 @@ export default function Pastoral360Page() {
 
         <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '80ms' }}>
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Star className="w-4 h-4 text-amber-500" /> Évaluations du faiseur
+            <Star className="w-4 h-4 text-amber-500" /> {tText('Évaluations du faiseur')}
           </h3>
           {Object.keys(evaluations).length > 0 ? (
             <div className="space-y-2">
@@ -455,7 +456,7 @@ export default function Pastoral360Page() {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-gray-400 text-center py-4">Aucune évaluation</p>
+            <p className="text-xs text-gray-400 text-center py-4">{tText('Aucune évaluation')}</p>
           )}
         </div>
       </div>
@@ -514,7 +515,7 @@ export default function Pastoral360Page() {
         ) : (
           <div className="text-center py-6">
             <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-xs text-gray-400">Aucun historique</p>
+            <p className="text-xs text-gray-400">{tText('Aucun historique')}</p>
           </div>
         )}
       </div>

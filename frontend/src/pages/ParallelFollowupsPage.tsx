@@ -12,6 +12,8 @@ import {
 import toast from 'react-hot-toast';
 import DataTable from '@/components/shared/DataTable';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /** Repli (dictionnaire indisponible) */
 const RAISON_FALLBACK: Record<string, string> = {
   TRANSFERT_EN_COURS: 'Transfert en cours',
@@ -108,7 +110,7 @@ export default function ParallelFollowupsPage() {
     },
     onSuccess: () => {
       invalidate();
-      toast.success('Suivi parallèle créé avec succès');
+      toast.success(tText('Suivi parallèle créé avec succès'));
       setShowModal(false);
       setFormData({ ameId: '', initiateurId: '', raison: 'AUTRE', raisonDetail: '' });
     },
@@ -121,7 +123,7 @@ export default function ParallelFollowupsPage() {
     },
     onSuccess: () => {
       invalidate();
-      toast.success('Suivi clôturé');
+      toast.success(tText('Suivi clôturé'));
       setDetailItem(null);
       setClotureForm({ motifCloture: '' });
     },
@@ -166,7 +168,7 @@ export default function ParallelFollowupsPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <Activity className="w-5 h-5 text-primary-500" />
-            <h1 className="page-title">Suivis parallèles</h1>
+            <h1 className="page-title">{tText('Suivis parallèles')}</h1>
           </div>
           <p className="page-subtitle">
             Accompagnements hors périmètre formel — {stats.total} suivi(s) au total
@@ -174,7 +176,7 @@ export default function ParallelFollowupsPage() {
         </div>
         <div className="page-header-actions">
           <button onClick={() => setShowModal(true)} className="btn-primary btn-sm animate-scale-in">
-            <Plus className="w-4 h-4" /> Nouveau suivi
+            <Plus className="w-4 h-4" /> {tText('Nouveau suivi')}
           </button>
         </div>
       </div>
@@ -221,7 +223,7 @@ export default function ParallelFollowupsPage() {
               onChange={(e) => { setRaisonFilter(e.target.value); setPage(0); }}
               className="input !w-auto"
             >
-              <option value="">Toutes les raisons</option>
+              <option value="">{tText('Toutes les raisons')}</option>
               {raisonEntries.map((o) => (
                 <option key={o.code} value={o.code}>{o.label}</option>
               ))}
@@ -249,7 +251,7 @@ export default function ParallelFollowupsPage() {
         <div className="glass-card p-4 mb-6 animate-slide-up" style={{ animationDelay: '220ms' }}>
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4 text-primary-500" />
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Répartition par raison</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{tText('Répartition par raison')}</h3>
           </div>
           <div className="flex flex-wrap gap-2">
             {Object.entries(stats.byRaison)
@@ -320,7 +322,7 @@ export default function ParallelFollowupsPage() {
             cell: (f) => (
               <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                {new Date(f.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                {new Date(f.dateDebut).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' })}
               </span>
             ),
           },
@@ -347,7 +349,7 @@ export default function ParallelFollowupsPage() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">{data.number + 1} / {data.totalPages} · {data.totalElements} suivi(s)</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -363,8 +365,8 @@ export default function ParallelFollowupsPage() {
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Nouveau suivi parallèle</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Accompagnement hors périmètre formel</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Nouveau suivi parallèle')}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{tText('Accompagnement hors périmètre formel')}</p>
                 </div>
               </div>
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
@@ -374,7 +376,7 @@ export default function ParallelFollowupsPage() {
 
             <div className="modal-body space-y-4">
               <div>
-                <label className="label">Âme concernée *</label>
+                <label className="label">{tText('Âme concernée *')}</label>
                 <select className="input" value={formData.ameId} onChange={(e) => setFormData({ ...formData, ameId: e.target.value })}>
                   <option value="">Sélectionner une âme...</option>
                   {souls?.map((s) => (
@@ -399,7 +401,7 @@ export default function ParallelFollowupsPage() {
             </div>
 
             <div className="modal-footer">
-              <button onClick={() => setShowModal(false)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setShowModal(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button onClick={() => createMutation.mutate()} disabled={!formData.ameId || createMutation.isPending} className="btn-primary btn-sm">
                 {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 Créer le suivi
@@ -419,7 +421,7 @@ export default function ParallelFollowupsPage() {
                   <Activity className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Détail du suivi</h3>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Détail du suivi')}</h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{detailItem.ameNom || detailItem.ameId}</p>
                 </div>
               </div>
@@ -448,29 +450,29 @@ export default function ParallelFollowupsPage() {
                   <p className="text-sm text-gray-900 dark:text-gray-100 mt-0.5">{detailItem.initiateurNom || '—'}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                  <p className="text-[10px] text-gray-400 uppercase font-semibold">Date de début</p>
+                  <p className="text-[10px] text-gray-400 uppercase font-semibold">{tText('Date de début')}</p>
                   <p className="text-sm text-gray-900 dark:text-gray-100 mt-0.5">
-                    {new Date(detailItem.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {new Date(detailItem.dateDebut).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
               </div>
               {detailItem.raisonDetail && (
                 <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                  <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Détail</p>
+                  <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">{tText('Détail')}</p>
                   <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{detailItem.raisonDetail}</p>
                 </div>
               )}
               {detailItem.statut === 'CLOTURE' && (
                 <>
                   <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                    <p className="text-[10px] text-gray-400 uppercase font-semibold">Date de clôture</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-semibold">{tText('Date de clôture')}</p>
                     <p className="text-sm text-gray-900 dark:text-gray-100 mt-0.5">
-                      {detailItem.dateCloture ? new Date(detailItem.dateCloture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+                      {detailItem.dateCloture ? new Date(detailItem.dateCloture).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
                     </p>
                   </div>
                   {detailItem.motifCloture && (
                     <div className="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200/40 dark:border-emerald-800/20">
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-semibold mb-1">Motif de clôture</p>
+                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-semibold mb-1">{tText('Motif de clôture')}</p>
                       <p className="text-sm text-emerald-700 dark:text-emerald-300">{detailItem.motifCloture}</p>
                     </div>
                   )}
@@ -479,7 +481,7 @@ export default function ParallelFollowupsPage() {
 
               {detailItem.statut === 'EN_COURS' && (
                 <div className="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/40 dark:border-amber-800/20">
-                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-2">Clôturer ce suivi</p>
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-2">{tText('Clôturer ce suivi')}</p>
                   <textarea
                     className="input text-sm"
                     rows={2}

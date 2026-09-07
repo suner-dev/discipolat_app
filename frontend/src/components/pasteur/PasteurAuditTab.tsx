@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { AuditRecentActivity } from '@/types';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Shield, Search, Filter, FileDown, Eye, Clock, User as UserIcon,
   Calendar, ArrowLeft, History, ChevronRight,
@@ -73,7 +75,7 @@ export default function PasteurAuditTab() {
           <a href={exportUrl} target="_blank" rel="noreferrer" className="btn-primary btn-sm">
             <FileDown className="w-4 h-4" /> Export CSV
           </a>
-          <Link to="/audit" className="btn-secondary btn-sm"><Eye className="w-4 h-4" /> Page complète</Link>
+          <Link to="/audit" className="btn-secondary btn-sm"><Eye className="w-4 h-4" /> {tText('Page complète')}</Link>
         </div>
       </div>
 
@@ -85,7 +87,7 @@ export default function PasteurAuditTab() {
             <input type="text" placeholder="Rechercher dans l'audit..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} className="input pl-10" />
           </div>
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300' : ''}`}>
-            <Filter className="w-4 h-4" /> Filtres avancés
+            <Filter className="w-4 h-4" /> {tText('Filtres avancés')}
           </button>
         </div>
         {showFilters && (
@@ -93,28 +95,28 @@ export default function PasteurAuditTab() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400 font-medium">Type</span>
               <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-                <option value="">Tous</option>
-                <option value="SOUL">Âme</option>
+                <option value="">{tText('Tous')}</option>
+                <option value="SOUL">{tText('Âme')}</option>
                 <option value="USER">Utilisateur</option>
-                <option value="FAMILY">Famille</option>
-                <option value="DEPARTMENT">Département</option>
+                <option value="FAMILY">{tText('Famille')}</option>
+                <option value="DEPARTMENT">{tText('Département')}</option>
                 <option value="TRANSFER">Transfert</option>
                 <option value="ALERT">Alerte</option>
-                <option value="REPORT">Rapport</option>
-                <option value="EVENT">Événement</option>
+                <option value="REPORT">{tText('Rapport')}</option>
+                <option value="EVENT">{tText('Événement')}</option>
                 <option value="VISIT">Visite</option>
-                <option value="PRAYER">Prière</option>
+                <option value="PRAYER">{tText('Prière')}</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400 font-medium">Action</span>
               <select value={actionFilter} onChange={e => { setActionFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-                <option value="">Toutes</option>
-                <option value="CREATE">Création</option>
+                <option value="">{tText('Toutes')}</option>
+                <option value="CREATE">{tText('Création')}</option>
                 <option value="UPDATE">Modification</option>
                 <option value="DELETE">Suppression</option>
                 <option value="TRANSFER">Transfert</option>
-                <option value="RESOLVE">Résolution</option>
+                <option value="RESOLVE">{tText('Résolution')}</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -156,7 +158,7 @@ export default function PasteurAuditTab() {
                       <span className={`badge text-[9px] ${typeInfo.color}`}>{typeInfo.emoji} {a.entiteType}</span>
                       <span>·</span>
                       <Clock className="w-3 h-3" />
-                      <span>{new Date(a.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>{new Date(a.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 mt-1" />
@@ -178,7 +180,7 @@ export default function PasteurAuditTab() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>

@@ -11,6 +11,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 interface EventItem {
   id: string; titre: string; description?: string; typeEvenement?: string;
   dateDebut: string; dateFin?: string; lieu?: string; statut?: string;
@@ -65,14 +66,14 @@ export default function PasteurEventsTab() {
       if (d.limitePlaces) payload.limitePlaces = parseInt(d.limitePlaces);
       await api.post('/events', payload);
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['events'] }); toast.success('Événement créé'); setShowCreate(false); setForm({ titre: '', description: '', typeEvenement: 'CULTE', dateDebut: '', lieu: '', limitePlaces: '' }); },
-    onError: () => toast.error('Erreur lors de la création'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['events'] }); toast.success(tText('Événement créé')); setShowCreate(false); setForm({ titre: '', description: '', typeEvenement: 'CULTE', dateDebut: '', lieu: '', limitePlaces: '' }); },
+    onError: () => toast.error(tText('Erreur lors de la création')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/events/${id}`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['events'] }); toast.success('Événement supprimé'); setShowDetail(null); },
-    onError: () => toast.error('Erreur lors de la suppression'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['events'] }); toast.success(tText('Événement supprimé')); setShowDetail(null); },
+    onError: () => toast.error(tText('Erreur lors de la suppression')),
   });
 
   const isUpcoming = (d: string) => new Date(d) > new Date();
@@ -89,13 +90,13 @@ export default function PasteurEventsTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => setShowDetail(null)} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <div className="flex items-start justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                {isUpcoming(ev.dateDebut) ? <span className="badge-success text-[10px]">À venir</span> : <span className="badge-gray text-[10px]">Terminé</span>}
+                {isUpcoming(ev.dateDebut) ? <span className="badge-success text-[10px]">{tText('À venir')}</span> : <span className="badge-gray text-[10px]">{tText('Terminé')}</span>}
                 <span className={`badge text-[10px] ${typeColors[ev.typeEvenement || ''] || 'badge-gray'}`}>{typeLabel(ev.typeEvenement)}</span>
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{ev.titre}</h2>
@@ -160,7 +161,7 @@ export default function PasteurEventsTab() {
           )}
           {registrations && registrations.length === 0 && (
             <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 text-center mb-4">
-              <p className="text-xs text-gray-400">Aucune inscription</p>
+              <p className="text-xs text-gray-400">{tText('Aucune inscription')}</p>
             </div>
           )}
 
@@ -179,7 +180,7 @@ export default function PasteurEventsTab() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <CalendarClock className="w-5 h-5 text-orange-500" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Événements</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Événements')}</h2>
           {data && <span className="text-xs text-gray-400">({data.totalElements})</span>}
         </div>
         <div className="flex gap-2">
@@ -188,7 +189,7 @@ export default function PasteurEventsTab() {
           </button>
           <Link to="/events/statistics" className="btn-secondary btn-sm"><BarChart3 className="w-4 h-4" /> Statistiques</Link>
           <Link to="/events/program" className="btn-secondary btn-sm"><CalendarDays className="w-4 h-4" /> Programme</Link>
-          <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> Nouvel événement</button>
+          <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> {tText('Nouvel événement')}</button>
         </div>
       </div>
 
@@ -196,8 +197,8 @@ export default function PasteurEventsTab() {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div className="glass-card p-3 text-center"><p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.totalEvents ?? 0}</p><p className="text-[10px] text-gray-400">Total</p></div>
-          <div className="glass-card p-3 text-center"><p className="text-xl font-bold text-blue-500">{stats.upcomingEvents ?? 0}</p><p className="text-[10px] text-gray-400">À venir</p></div>
-          <div className="glass-card p-3 text-center"><p className="text-xl font-bold text-green-500">{stats.completedEvents ?? 0}</p><p className="text-[10px] text-gray-400">Terminés</p></div>
+          <div className="glass-card p-3 text-center"><p className="text-xl font-bold text-blue-500">{stats.upcomingEvents ?? 0}</p><p className="text-[10px] text-gray-400">{tText('À venir')}</p></div>
+          <div className="glass-card p-3 text-center"><p className="text-xl font-bold text-green-500">{stats.completedEvents ?? 0}</p><p className="text-[10px] text-gray-400">{tText('Terminés')}</p></div>
           <div className="glass-card p-3 text-center"><p className="text-xl font-bold text-amber-500">{stats.totalRegistrations ?? 0}</p><p className="text-[10px] text-gray-400">Inscriptions</p></div>
         </div>
       )}
@@ -207,7 +208,7 @@ export default function PasteurEventsTab() {
         <div className="glass-card p-4 mb-4 border-l-4 border-l-blue-500">
           <div className="flex items-center gap-2 mb-3">
             <CalendarDays className="w-4 h-4 text-blue-500" />
-            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">Prochains 14 jours — Vue consolidée</h3>
+            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">{tText('Prochains 14 jours — Vue consolidée')}</h3>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {upcomingEvents.slice(0, 8).map((ev: any) => (
@@ -233,13 +234,13 @@ export default function PasteurEventsTab() {
         {showFilters && (
           <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-white/20">
             <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-              <option value="">Tous les types</option>
-              <option value="CULTE">Culte</option><option value="REUNION">Réunion</option><option value="FORMATION">Formation</option>
-              <option value="EVANGELISATION">Évangélisation</option><option value="SOCIAL">Social</option><option value="PRIERE">Prière</option>
+              <option value="">{tText('Tous les types')}</option>
+              <option value="CULTE">Culte</option><option value="REUNION">{tText('Réunion')}</option><option value="FORMATION">Formation</option>
+              <option value="EVANGELISATION">{tText('Évangélisation')}</option><option value="SOCIAL">Social</option><option value="PRIERE">{tText('Prière')}</option>
             </select>
             <select value={statutFilter} onChange={e => { setStatutFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-              <option value="">Tous statuts</option>
-              <option value="PLANIFIE">Planifié</option><option value="EN_COURS">En cours</option><option value="TERMINE">Terminé</option><option value="ANNULE">Annulé</option>
+              <option value="">{tText('Tous statuts')}</option>
+              <option value="PLANIFIE">{tText('Planifié')}</option><option value="EN_COURS">En cours</option><option value="TERMINE">{tText('Terminé')}</option><option value="ANNULE">{tText('Annulé')}</option>
             </select>
           </div>
         )}
@@ -273,13 +274,13 @@ export default function PasteurEventsTab() {
                   {ev.nbInscrits !== undefined && (
                     <span className="text-[10px] text-gray-400 flex items-center gap-1"><UsersIcon className="w-3 h-3" />{ev.nbInscrits}{ev.limitePlaces ? `/${ev.limitePlaces}` : ''}</span>
                   )}
-                  {isUpcoming(ev.dateDebut) && <span className="badge-success text-[9px]">À venir</span>}
+                  {isUpcoming(ev.dateDebut) && <span className="badge-success text-[9px]">{tText('À venir')}</span>}
                   <ChevronRight className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
             </div>
           ))}
-          {(data?.content || []).length === 0 && <div className="glass-card p-14 text-center"><CalendarClock className="w-10 h-10 text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Aucun événement</p></div>}
+          {(data?.content || []).length === 0 && <div className="glass-card p-14 text-center"><CalendarClock className="w-10 h-10 text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">{tText('Aucun événement')}</p></div>}
         </div>
       )}
 
@@ -287,7 +288,7 @@ export default function PasteurEventsTab() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -298,7 +299,7 @@ export default function PasteurEventsTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowCreate(false)}>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full animate-slide-up" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Nouvel événement</h3>
+              <h3 className="text-lg font-semibold">{tText('Nouvel événement')}</h3>
               <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
@@ -306,18 +307,18 @@ export default function PasteurEventsTab() {
               <div><label className="label">Description</label><textarea className="input" rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Description..." /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="label">Type</label><select className="input" value={form.typeEvenement} onChange={e => setForm({ ...form, typeEvenement: e.target.value })}>
-                  <option value="CULTE">Culte</option><option value="REUNION">Réunion</option><option value="FORMATION">Formation</option><option value="EVANGELISATION">Évangélisation</option><option value="SOCIAL">Social</option><option value="PRIERE">Prière</option><option value="AUTRE">Autre</option>
+                  <option value="CULTE">Culte</option><option value="REUNION">{tText('Réunion')}</option><option value="FORMATION">Formation</option><option value="EVANGELISATION">{tText('Évangélisation')}</option><option value="SOCIAL">Social</option><option value="PRIERE">{tText('Prière')}</option><option value="AUTRE">Autre</option>
                 </select></div>
                 <div><label className="label">Date *</label><input className="input" type="date" value={form.dateDebut} onChange={e => setForm({ ...form, dateDebut: e.target.value })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="label">Lieu</label><input className="input" value={form.lieu} onChange={e => setForm({ ...form, lieu: e.target.value })} placeholder="Lieu..." /></div>
-                <div><label className="label">Places max</label><input className="input" type="number" value={form.limitePlaces} onChange={e => setForm({ ...form, limitePlaces: e.target.value })} placeholder="Illimité" /></div>
+                <div><label className="label">Places max</label><input className="input" type="number" value={form.limitePlaces} onChange={e => setForm({ ...form, limitePlaces: e.target.value })} placeholder={tText('Illimité')} /></div>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setShowCreate(false)} className="btn-secondary">Annuler</button>
-              <button onClick={() => { if (!form.titre.trim() || !form.dateDebut) { toast.error('Remplissez les champs obligatoires'); return; } createMutation.mutate(form); }} disabled={createMutation.isPending} className="btn-primary">
+              <button onClick={() => setShowCreate(false)} className="btn-secondary">{tText('Annuler')}</button>
+              <button onClick={() => { if (!form.titre.trim() || !form.dateDebut) { toast.error(tText('Remplissez les champs obligatoires')); return; } createMutation.mutate(form); }} disabled={createMutation.isPending} className="btn-primary">
                 {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />} Créer
               </button>
             </div>

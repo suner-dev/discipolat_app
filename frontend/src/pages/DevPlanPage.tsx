@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   TrendingUp, Plus, Loader2, RefreshCw, Sparkles, Target, CheckCircle,
   Clock, BarChart3, User, ChevronDown, X, ArrowRight,
@@ -44,7 +46,7 @@ export default function DevPlanPage() {
 
   const autoGenMutation = useMutation({
     mutationFn: async () => { await api.post('/development-plans/auto-generate'); },
-    onSuccess: () => { toast.success('Plans auto-générés par IA'); qc.invalidateQueries({ queryKey: ['dev-plans'] }); },
+    onSuccess: () => { toast.success(tText('Plans auto-générés par IA')); qc.invalidateQueries({ queryKey: ['dev-plans'] }); },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
@@ -55,7 +57,7 @@ export default function DevPlanPage() {
   return (
     <div className="page-container max-w-6xl">
       <div className="page-header">
-        <div><h1 className="page-title flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary-500" /> Plans de développement</h1>
+        <div><h1 className="page-title flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary-500" /> {tText('Plans de développement')}</h1>
           <p className="page-subtitle">Objectifs individuels générés par IA basés sur les performances.</p></div>
         <div className="page-header-actions">
           <button onClick={() => refetch()} className="btn-ghost btn-sm"><RefreshCw className="w-4 h-4" /></button>
@@ -99,7 +101,7 @@ export default function DevPlanPage() {
                     <CheckCircle className={`w-4 h-4 ${obj.completed ? 'text-green-500' : 'text-gray-300'}`} />
                     <div className="flex-1">
                       <p className={`text-sm font-medium ${obj.completed ? 'text-green-700 dark:text-green-300 line-through' : 'text-gray-900 dark:text-gray-100'}`}>{obj.title}</p>
-                      <p className="text-[10px] text-gray-400">{obj.category} • {obj.deadline ? new Date(obj.deadline).toLocaleDateString('fr-FR') : 'Pas de deadline'}</p>
+                      <p className="text-[10px] text-gray-400">{obj.category} • {obj.deadline ? new Date(obj.deadline).toLocaleDateString(getI18nLocale()) : 'Pas de deadline'}</p>
                     </div>
                   </div>
                 ))}
@@ -116,15 +118,15 @@ export default function DevPlanPage() {
             <div className="modal-body space-y-4">
               <div><label className="label">Titre</label><input className="input" value={newObjective.title} onChange={e => setNewObjective({ ...newObjective, title: e.target.value })} placeholder="Ex: Compléter la formation leadership" /></div>
               <div><label className="label">Description</label><textarea className="input min-h-[60px]" value={newObjective.description} onChange={e => setNewObjective({ ...newObjective, description: e.target.value })} /></div>
-              <div><label className="label">Catégorie</label>
+              <div><label className="label">{tText('Catégorie')}</label>
                 <select className="input" value={newObjective.category} onChange={e => setNewObjective({ ...newObjective, category: e.target.value })}>
-                  <option value="COMPETENCE">Compétence</option><option value="FORMATION">Formation</option><option value="SERVITE">Service</option><option value="SPIRITUEL">Spirituel</option>
+                  <option value="COMPETENCE">{tText('Compétence')}</option><option value="FORMATION">Formation</option><option value="SERVITE">Service</option><option value="SPIRITUEL">Spirituel</option>
                 </select></div>
               <div><label className="label">Date limite</label><input type="date" className="input" value={newObjective.deadline} onChange={e => setNewObjective({ ...newObjective, deadline: e.target.value })} /></div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setShowCreate(false)}>Annuler</button>
-              <button className="btn-primary btn-sm" disabled={!newObjective.title}><CheckCircle className="w-4 h-4" /> Créer</button>
+              <button className="btn-ghost btn-sm" onClick={() => setShowCreate(false)}>{tText('Annuler')}</button>
+              <button className="btn-primary btn-sm" disabled={!newObjective.title}><CheckCircle className="w-4 h-4" /> {tText('Créer')}</button>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
 import { ClipboardList, Plus, BarChart3, Users, Clock, CheckCircle2 } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Survey {
   id: string;
   titre: string;
@@ -110,7 +111,7 @@ export default function SurveysPage() {
             Sondages
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Créez des sondages rapides et consultez les résultats en temps réel
+            {tText('Créez des sondages rapides et consultez les résultats en temps réel')}
           </p>
         </div>
         <button
@@ -118,7 +119,7 @@ export default function SurveysPage() {
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-500/25 flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Nouveau sondage
+          {tText('Nouveau sondage')}
         </button>
       </div>
 
@@ -182,7 +183,7 @@ export default function SurveysPage() {
             {selectedSurvey.results && Object.keys(selectedSurvey.results).length > 0 && (
               <div className="mb-6 space-y-3">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" /> Résultats
+                  <BarChart3 className="w-4 h-4" /> {tText('Résultats')}
                 </h3>
                 {Object.entries(selectedSurvey.results).map(([option, count]) => (
                   <div key={option}>
@@ -205,7 +206,7 @@ export default function SurveysPage() {
             {/* Vote form */}
             {selectedSurvey.statut === 'ACTIF' && (
               <div className="border-t border-gray-200 dark:border-white/10 pt-4">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Votre réponse</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{tText('Votre réponse')}</h3>
                 {selectedSurvey.type === 'TEXTE_LIBRE' ? (
                   <textarea
                     value={textAnswer}
@@ -245,7 +246,7 @@ export default function SurveysPage() {
                   disabled={selectedSurvey.type === 'TEXTE_LIBRE' ? !textAnswer.trim() : voteSelection.length === 0}
                   className="w-full mt-4 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Soumettre ma réponse
+                  {tText('Soumettre ma réponse')}
                 </button>
               </div>
             )}
@@ -258,7 +259,7 @@ export default function SurveysPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau sondage</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouveau sondage')}</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
@@ -331,7 +332,7 @@ export default function SurveysPage() {
                     onClick={() => setNewSurvey({ ...newSurvey, options: [...newSurvey.options, ''] })}
                     className="text-sm text-indigo-600 hover:text-indigo-700"
                   >
-                    + Ajouter une option
+                    {tText('+ Ajouter une option')}
                   </button>
                 </div>
               )}
@@ -342,15 +343,15 @@ export default function SurveysPage() {
                   onChange={e => setNewSurvey({ ...newSurvey, anonyme: e.target.checked })}
                   className="w-4 h-4 text-indigo-600 rounded"
                 />
-                Réponses anonymes
+                {tText('Réponses anonymes')}
               </label>
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
-                Annuler
+                {tText('Annuler')}
               </button>
               <button onClick={createSurvey} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-all">
-                Créer
+                {tText('Créer')}
               </button>
             </div>
           </div>

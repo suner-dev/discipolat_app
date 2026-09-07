@@ -5,6 +5,8 @@ import { Loader2, CheckCircle2, XCircle, MessageSquare, AlertTriangle, Send, Sea
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface RetractionRequest {
   id: string;
   ameId: string;
@@ -49,7 +51,7 @@ export default function SoulRetractionsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['soul-retractions'] });
-      toast.success('Demande traitée avec succès');
+      toast.success(tText('Demande traitée avec succès'));
       setAction(null);
       setSelectedRequest(null);
       setCommentaire('');
@@ -74,7 +76,7 @@ export default function SoulRetractionsPage() {
       <div className="page-header">
         <Link to="/souls" className="btn-ghost btn-sm mb-2">
           <ArrowLeft className="w-4 h-4" />
-          Retour aux âmes
+          {tText('Retour aux âmes')}
         </Link>
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-lg">
@@ -108,7 +110,7 @@ export default function SoulRetractionsPage() {
       ) : !data || data.content.length === 0 ? (
         <div className="glass-card p-10 text-center">
           <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500">Aucune demande de retrait</p>
+          <p className="text-gray-500">{tText('Aucune demande de retrait')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -118,7 +120,7 @@ export default function SoulRetractionsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={statutColors[req.statut]}>{statutLabels[req.statut]}</span>
-                    <span className="text-xs text-gray-400">{new Date(req.createdAt).toLocaleDateString('fr-FR')}</span>
+                    <span className="text-xs text-gray-400">{new Date(req.createdAt).toLocaleDateString(getI18nLocale())}</span>
                   </div>
                   <p className="text-sm text-gray-800 dark:text-gray-200 mt-2">{req.justification}</p>
                   {req.commentaireReponse && (
@@ -154,7 +156,7 @@ export default function SoulRetractionsPage() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">{data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -184,7 +186,7 @@ export default function SoulRetractionsPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => { setAction(null); setSelectedRequest(null); setCommentaire(''); }} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => { setAction(null); setSelectedRequest(null); setCommentaire(''); }} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => processMutation.mutate({ id: selectedRequest.id, action, commentaire })}
                 disabled={processMutation.isPending}

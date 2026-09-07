@@ -14,6 +14,8 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface MakerReportItem {
   id: string; semaine: string; faiseurId: string; faiseurNom?: string;
   familleId?: string; familleNom?: string; statut?: string;
@@ -77,8 +79,8 @@ export default function PasteurReportsTab() {
     mutationFn: async ({ id, type }: { id: string; type: string }) => {
       await api.patch(`/reports/family-weekly/${id}/validate`, { validationType: type });
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['reports'] }); toast.success('Rapport validé'); },
-    onError: () => toast.error('Erreur lors de la validation'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['reports'] }); toast.success(tText('Rapport validé')); },
+    onError: () => toast.error(tText('Erreur lors de la validation')),
   });
 
   const rapports = dashboard?.rapports ?? { soumis: 0, enAttente: 0, tauxCompletion: 0, totalFaiseurs: 0, faiseursAyantRapporte: 0 };
@@ -107,7 +109,7 @@ export default function PasteurReportsTab() {
           <button onClick={() => exportReport({ endpoint: '/reports/export/consolidated-pdf', filename: `rapport-${new Date().toISOString().split('T')[0]}.html` })} disabled={isExporting} className="btn-secondary btn-sm">
             {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} Exporter
           </button>
-          <Link to="/reports" className="btn-primary btn-sm"><Eye className="w-4 h-4" /> Page complète</Link>
+          <Link to="/reports" className="btn-primary btn-sm"><Eye className="w-4 h-4" /> {tText('Page complète')}</Link>
         </div>
       </div>
 
@@ -147,13 +149,13 @@ export default function PasteurReportsTab() {
                 <BarChart3 className="w-8 h-8 text-blue-500" />
               </div>
               <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{completion}%</p>
-              <p className="text-xs text-gray-400 mt-1">Taux de complétion</p>
+              <p className="text-xs text-gray-400 mt-1">{tText('Taux de complétion')}</p>
             </div>
           </div>
 
           {/* Progression */}
           <div className="glass-card p-6 mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Progression des rapports</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">{tText('Progression des rapports')}</h3>
             <div className="flex items-center gap-3 mb-2">
               <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                 <div className="h-3 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-500" style={{ width: `${Math.min(completion, 100)}%` }} />
@@ -166,7 +168,7 @@ export default function PasteurReportsTab() {
           {/* Pie chart */}
           {(rapports.soumis + rapports.enAttente) > 0 && (
             <div className="glass-card p-6 mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Répartition</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">{tText('Répartition')}</h3>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -197,8 +199,8 @@ export default function PasteurReportsTab() {
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-blue-500" />
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Rapports famille</p>
-                  <p className="text-[10px] text-gray-400">Synthèse familiale</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Rapports famille')}</p>
+                  <p className="text-[10px] text-gray-400">{tText('Synthèse familiale')}</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
@@ -250,7 +252,7 @@ export default function PasteurReportsTab() {
                           <span>Semaine: {r.semaine}</span>
                           {r.nbPresents !== undefined && <span>· {r.nbPresents} présents</span>}
                           {r.nbCultes !== undefined && <span>· {r.nbCultes} cultes</span>}
-                          <span>· {new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                          <span>· {new Date(r.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' })}</span>
                         </div>
                       </div>
                     </div>
@@ -264,7 +266,7 @@ export default function PasteurReportsTab() {
               {(!makerData?.content || makerData.content.length === 0) && (
                 <div className="glass-card p-14 text-center">
                   <FileText className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">Aucun rapport faiseur</p>
+                  <p className="text-sm text-gray-400">{tText('Aucun rapport faiseur')}</p>
                 </div>
               )}
             </div>
@@ -274,7 +276,7 @@ export default function PasteurReportsTab() {
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-gray-500">Page {makerData.number + 1} / {makerData.totalPages}</p>
               <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={makerData.first} className="btn-secondary btn-sm">← Précédent</button>
+                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={makerData.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
                 <button onClick={() => setPage(p => p + 1)} disabled={makerData.last} className="btn-primary btn-sm">Suivant →</button>
               </div>
             </div>
@@ -315,14 +317,14 @@ export default function PasteurReportsTab() {
                           <span>Semaine: {r.semaine}</span>
                           {r.nombreAmes && <span>· {r.nombreAmes} âmes</span>}
                           {r.nombrePresents && <span>· {r.nombrePresents} présents</span>}
-                          <span>· {new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                          <span>· {new Date(r.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' })}</span>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {reportTypeBadge(r.statut)}
                       {r.statut !== 'VALIDE' && (
-                        <button onClick={(e) => { e.stopPropagation(); validateMutation.mutate({ id: r.id, type: 'APPROUVE' }); }} className="btn-secondary btn-xs" title="Valider">
+                        <button onClick={(e) => { e.stopPropagation(); validateMutation.mutate({ id: r.id, type: 'APPROUVE' }); }} className="btn-secondary btn-xs" title={tText('Valider')}>
                           <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
                         </button>
                       )}
@@ -334,7 +336,7 @@ export default function PasteurReportsTab() {
               {(!familyData?.content || familyData.content.length === 0) && (
                 <div className="glass-card p-14 text-center">
                   <FileText className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">Aucun rapport famille</p>
+                  <p className="text-sm text-gray-400">{tText('Aucun rapport famille')}</p>
                 </div>
               )}
             </div>
@@ -344,7 +346,7 @@ export default function PasteurReportsTab() {
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-gray-500">Page {familyData.number + 1} / {familyData.totalPages}</p>
               <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={familyData.first} className="btn-secondary btn-sm">← Précédent</button>
+                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={familyData.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
                 <button onClick={() => setPage(p => p + 1)} disabled={familyData.last} className="btn-primary btn-sm">Suivant →</button>
               </div>
             </div>
@@ -357,7 +359,7 @@ export default function PasteurReportsTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDetail(null)}>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full animate-slide-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Détail du rapport</h3>
+              <h3 className="text-lg font-semibold">{tText('Détail du rapport')}</h3>
               <button onClick={() => setShowDetail(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
@@ -368,7 +370,7 @@ export default function PasteurReportsTab() {
                 <div className="flex justify-between text-sm"><span className="text-gray-500">Faiseur</span><span className="font-medium">{(showDetail as MakerReportItem).faiseurNom || '—'}</span></div>
               )}
               {'familleNom' in showDetail && (
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Famille</span><span className="font-medium">{(showDetail as FamilyReportItem).familleNom || '—'}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">{tText('Famille')}</span><span className="font-medium">{(showDetail as FamilyReportItem).familleNom || '—'}</span></div>
               )}
               {'statut' in showDetail && (
                 <div className="flex justify-between text-sm"><span className="text-gray-500">Statut</span>{reportTypeBadge(showDetail.statut)}</div>
@@ -381,7 +383,7 @@ export default function PasteurReportsTab() {
               )}
               {'themesAbordes' in showDetail && (showDetail as FamilyReportItem).themesAbordes && (
                 <div className="mt-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Thèmes abordés</p>
+                  <p className="text-xs font-medium text-gray-500 mb-1">{tText('Thèmes abordés')}</p>
                   <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{(showDetail as FamilyReportItem).themesAbordes}</p>
                 </div>
               )}
@@ -392,7 +394,7 @@ export default function PasteurReportsTab() {
                 </div>
               )}
               <div className="flex justify-between text-xs text-gray-400 mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                <span>Créé le {new Date(showDetail.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                <span>Créé le {new Date(showDetail.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}</span>
               </div>
             </div>
           </div>

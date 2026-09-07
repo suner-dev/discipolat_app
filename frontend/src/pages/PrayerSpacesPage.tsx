@@ -5,6 +5,8 @@ import { useDictionaries } from '@/hooks/useDictionaries';
 import DataTable from '@/components/shared/DataTable';
 import type { Prayer, PageResponse, CategoriePriere, PrioritePriere, VisibilitePriere } from '@/types';
 import type { ColumnDef } from '@/types/table';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Eye, EyeOff, Heart, Clock, Flame, Star, Tag, MessageSquare,
   Loader2, CheckCircle2, Lock, Globe, Shield, Users, BookOpen,
@@ -208,7 +210,7 @@ export default function PrayerSpacesPage() {
     },
     {
       header: 'Date',
-      cell: (prayer) => new Date(prayer.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+      cell: (prayer) => new Date(prayer.dateCreation).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' }),
     },
   ];
 
@@ -221,8 +223,8 @@ export default function PrayerSpacesPage() {
             <Heart className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="page-title">Espaces de prière</h1>
-            <p className="page-subtitle">Vue complète de toutes les prières organisées par niveau de visibilité</p>
+            <h1 className="page-title">{tText('Espaces de prière')}</h1>
+            <p className="page-subtitle">{tText('Vue complète de toutes les prières organisées par niveau de visibilité')}</p>
           </div>
         </div>
       </div>
@@ -235,7 +237,7 @@ export default function PrayerSpacesPage() {
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalPrayers}</p>
-            <p className="text-xs text-gray-400">Total prières</p>
+            <p className="text-xs text-gray-400">{tText('Total prières')}</p>
           </div>
         </div>
         <div className="glass-card p-4 flex items-center gap-3">
@@ -253,7 +255,7 @@ export default function PrayerSpacesPage() {
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{answeredCount}</p>
-            <p className="text-xs text-gray-400">Exaucées</p>
+            <p className="text-xs text-gray-400">{tText('Exaucées')}</p>
           </div>
         </div>
       </div>
@@ -320,7 +322,7 @@ export default function PrayerSpacesPage() {
                   disabled={allPrayers.first}
                   className="btn-secondary btn-sm"
                 >
-                  Précédent
+                  {tText('Précédent')}
                 </button>
                 <button
                   onClick={() => setPage(p => p + 1)}

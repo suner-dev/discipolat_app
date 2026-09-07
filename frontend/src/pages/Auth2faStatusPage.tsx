@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { ShieldCheck, Loader2, CheckCircle2, XCircle, Smartphone } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface TwoFAStatus {
   enabled: boolean;
   method?: string;
@@ -22,8 +24,8 @@ export default function Auth2faStatusPage() {
           <ShieldCheck className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Authentification à deux facteurs</h1>
-          <p className="page-subtitle">État de la sécurité de votre compte</p>
+          <h1 className="page-title">{tText('Authentification à deux facteurs')}</h1>
+          <p className="page-subtitle">{tText('État de la sécurité de votre compte')}</p>
         </div>
       </div>
 
@@ -32,7 +34,7 @@ export default function Auth2faStatusPage() {
       ) : error ? (
         <div className="glass-card p-6 text-red-400">{getErrorMessage(error)}</div>
       ) : !status ? (
-        <div className="glass-card p-10 text-center text-gray-500">Impossible de récupérer le statut 2FA</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Impossible de récupérer le statut 2FA')}</div>
       ) : (
         <div className="max-w-lg mx-auto space-y-6">
           <div className="glass-card p-6 text-center">
@@ -50,9 +52,9 @@ export default function Auth2faStatusPage() {
           </div>
 
           <div className="glass-card p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Détails</h3>
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{tText('Détails')}</h3>
             <div className="flex items-center justify-between py-2 border-b border-white/10">
-              <span className="text-sm text-gray-500 flex items-center gap-2"><Smartphone className="w-4 h-4" /> Méthode</span>
+              <span className="text-sm text-gray-500 flex items-center gap-2"><Smartphone className="w-4 h-4" /> {tText('Méthode')}</span>
               <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{status.method ?? 'Non configuré'}</span>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-white/10">
@@ -61,8 +63,8 @@ export default function Auth2faStatusPage() {
             </div>
             {status.lastVerified && (
               <div className="flex items-center justify-between py-2 border-b border-white/10">
-                <span className="text-sm text-gray-500">Dernière vérification</span>
-                <span className="text-sm text-gray-800 dark:text-gray-200">{new Date(status.lastVerified).toLocaleDateString('fr-FR')}</span>
+                <span className="text-sm text-gray-500">{tText('Dernière vérification')}</span>
+                <span className="text-sm text-gray-800 dark:text-gray-200">{new Date(status.lastVerified).toLocaleDateString(getI18nLocale())}</span>
               </div>
             )}
             {status.backupCodesCount != null && (

@@ -4,6 +4,7 @@ import { PlaneTakeoff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 interface LeaveRequest {
   id: string;
   requesterName?: string;
@@ -33,7 +34,7 @@ export default function LeaveRequestsPage() {
   const updateMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) =>
       api.patch(`/leave-requests/${id}/${status === 'APPROVED' ? 'approve' : 'reject'}`),
-    onSuccess: () => { toast.success('Demande mise à jour'); qc.invalidateQueries({ queryKey: ['leave-requests'] }); },
+    onSuccess: () => { toast.success(tText('Demande mise à jour')); qc.invalidateQueries({ queryKey: ['leave-requests'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -47,8 +48,8 @@ export default function LeaveRequestsPage() {
           <PlaneTakeoff className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Demandes de congé</h1>
-          <p className="page-subtitle">Gestion des absences et congés du personnel</p>
+          <h1 className="page-title">{tText('Demandes de congé')}</h1>
+          <p className="page-subtitle">{tText('Gestion des absences et congés du personnel')}</p>
         </div>
       </div>
 
@@ -68,7 +69,7 @@ export default function LeaveRequestsPage() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : requests.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucune demande de congé</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucune demande de congé')}</div>
       ) : (
         <div className="space-y-3">
           {pending.length > 0 && (

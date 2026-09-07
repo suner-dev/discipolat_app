@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface FamilyTreeNode {
   id: string;
   name: string;
@@ -87,13 +89,13 @@ export default function FamilyTreePage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <GitBranch className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Arbre & historique familial</h1>
           </div>
-          <p className="page-subtitle">Structure familiale, historique et suivi des risques</p>
+          <p className="page-subtitle">{tText('Structure familiale, historique et suivi des risques')}</p>
         </div>
       </div>
 
@@ -136,7 +138,7 @@ export default function FamilyTreePage() {
                   <p className="text-[10px] text-gray-400 mt-0.5">{entry.action}</p>
                 </div>
                 <span className="text-[10px] text-gray-400 shrink-0">
-                  {new Date(entry.timestamp).toLocaleDateString('fr-FR')}
+                  {new Date(entry.timestamp).toLocaleDateString(getI18nLocale())}
                 </span>
               </div>
             ))}
@@ -148,7 +150,7 @@ export default function FamilyTreePage() {
       <div>
         <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-red-500" />
-          Historique des risques
+          {tText('Historique des risques')}
         </h3>
         {riskHistory.length === 0 ? (
           <div className="glass-card p-8 text-center">
@@ -167,7 +169,7 @@ export default function FamilyTreePage() {
                     <p className="text-[10px] text-gray-400">{risk.reason}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] text-gray-400">{new Date(risk.recordedAt).toLocaleDateString('fr-FR')}</p>
+                    <p className="text-[10px] text-gray-400">{new Date(risk.recordedAt).toLocaleDateString(getI18nLocale())}</p>
                     <p className="text-[10px] text-gray-400">par {risk.recordedBy}</p>
                   </div>
                 </div>

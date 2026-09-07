@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { MapPin, HeartPulse, Users } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Zone { zone: string; total: number; couverts: number; actifs: number; contactsRecents: number; tauxCouverture: number; healthScore: number; status: string; actionRecommandee?: string; latitude?: number; longitude?: number; }
 interface HealthData { zones: Zone[]; zonesFaibles?: number; genereLe?: string; }
 
@@ -15,13 +16,13 @@ const STATUS_STYLE: Record<string, { bar: string; badge: string }> = {
 /** P3 #104 — Analyse de santé spirituelle par quartier (heatmap + zones de couverture faible). */
 export default function NeighborhoodHealthPage() {
   const { data, isLoading } = useQuery({ queryKey: ['neighborhood-health'], queryFn: async () => (await api.get('/neighborhood-health')).data as HealthData });
-  if (isLoading) return <div className="p-6 text-gray-400">Chargement de la santé par quartier…</div>;
+  if (isLoading) return <div className="p-6 text-gray-400">{tText('Chargement de la santé par quartier…')}</div>;
   const zones = data?.zones ?? [];
   const faibles = zones.filter((z) => z.status === 'FAIBLE').length;
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><HeartPulse className="text-rose-400" /> Santé spirituelle par quartier</h1>
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><HeartPulse className="text-rose-400" /> {tText('Santé spirituelle par quartier')}</h1>
       <p className="text-sm text-gray-400 flex items-center gap-2">
         <MapPin className="w-4 h-4 text-rose-400" /> {zones.length} zone(s) analysée(s)
         {faibles > 0 && <span className="text-red-400 font-medium">— {faibles} zone(s) en couverture faible nécessitent une intervention pastorale</span>}

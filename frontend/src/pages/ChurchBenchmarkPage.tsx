@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { BarChart3, Plus, Loader2, Trash2, Users2, TrendingUp } from 'lucide-react';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 interface Comparison { id: string; nomEglise: string; effectif: number; tauxPresence: number; tauxConversion: number; tauxRetention: number; scoreSpirituelMoyen: number; generositeMoyenne: number; nbDepartements: number; nbFamilles: number; categorie?: string; pays?: string; denomination?: string; }
 
 interface BenchmarkResponse {
@@ -71,10 +72,10 @@ export default function ChurchBenchmarkPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><BarChart3 className="text-sky-400" /> Benchmark inter-églises</h1>
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><BarChart3 className="text-sky-400" /> {tText('Benchmark inter-églises')}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Kpi label="Églises comparées" value={churches.length} />
+        <Kpi label={tText('Églises comparées')} value={churches.length} />
         <Kpi label="Présence moy." value={`${avg((c) => c.tauxPresence)}%`} />
         <Kpi label="Rétention moy." value={`${avg((c) => c.tauxRetention)}%`} />
         <Kpi label="Score spirituel moy." value={avg((c) => c.scoreSpirituelMoyen)} />
@@ -88,7 +89,7 @@ export default function ChurchBenchmarkPage() {
       ) : benchmarkQ.data && (
         <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
           <h2 className="text-white font-semibold mb-1 flex items-center gap-2">
-            <TrendingUp className="text-sky-400 w-5 h-5" /> Mon église face au secteur
+            <TrendingUp className="text-sky-400 w-5 h-5" /> {tText('Mon église face au secteur')}
           </h2>
           <p className="text-xs text-gray-400 mb-4">{benchmarkQ.data.note}</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -152,7 +153,7 @@ export default function ChurchBenchmarkPage() {
       <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <select value={category} onChange={(e) => setCategory(e.target.value)} className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200">
-            <option value="">Comparer par catégorie…</option>
+            <option value="">{tText('Comparer par catégorie…')}</option>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
           <button onClick={() => create.mutate()} disabled={create.isPending} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 text-white text-sm font-medium hover:opacity-90 disabled:opacity-50">
@@ -168,7 +169,7 @@ export default function ChurchBenchmarkPage() {
                 <>
                   {d.rang != null && <span>🏆 Rang : <strong>{d.rang}</strong>{d.total != null ? ` / ${d.total}` : ''}</span>}
                   {d.effectifMoyen != null && <span>Effectif moyen : <strong>{Math.round(d.effectifMoyen)}</strong></span>}
-                  {d.rang == null && d.total != null && <span>Catégorie de <strong>{d.total}</strong> église(s)</span>}
+                  {d.rang == null && d.total != null && <span>{tText('Catégorie de')} <strong>{d.total}</strong> église(s)</span>}
                 </>
               );
             })()}

@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 interface Ticket {
   id: string;
   titre: string;
@@ -71,13 +72,13 @@ export default function TicketDetailPage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <LifeBuoy className="w-5 h-5 text-blue-500" />
             <h1 className="page-title">{ticket.titre}</h1>
           </div>
-          <p className="page-subtitle">Détail du ticket de support</p>
+          <p className="page-subtitle">{tText('Détail du ticket de support')}</p>
         </div>
       </div>
 
@@ -101,7 +102,7 @@ export default function TicketDetailPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <User className="w-4 h-4 text-gray-400 shrink-0" />
-              <span className="text-xs text-gray-400 min-w-[100px]">Créé par</span>
+              <span className="text-xs text-gray-400 min-w-[100px]">{tText('Créé par')}</span>
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {ticket.creePar.firstName} {ticket.creePar.lastName} ({ticket.creePar.email})
               </span>
@@ -109,7 +110,7 @@ export default function TicketDetailPage() {
             {ticket.assigneA && (
               <div className="flex items-center gap-3">
                 <User className="w-4 h-4 text-gray-400 shrink-0" />
-                <span className="text-xs text-gray-400 min-w-[100px]">Assigné à</span>
+                <span className="text-xs text-gray-400 min-w-[100px]">{tText('Assigné à')}</span>
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {ticket.assigneA.firstName} {ticket.assigneA.lastName}
                 </span>
@@ -117,14 +118,14 @@ export default function TicketDetailPage() {
             )}
             <div className="flex items-center gap-3">
               <Clock className="w-4 h-4 text-gray-400 shrink-0" />
-              <span className="text-xs text-gray-400 min-w-[100px]">Créé le</span>
+              <span className="text-xs text-gray-400 min-w-[100px]">{tText('Créé le')}</span>
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {new Date(ticket.createdAt).toLocaleString(locale)}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <Clock className="w-4 h-4 text-gray-400 shrink-0" />
-              <span className="text-xs text-gray-400 min-w-[100px]">Mis à jour</span>
+              <span className="text-xs text-gray-400 min-w-[100px]">{tText('Mis à jour')}</span>
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {new Date(ticket.updatedAt).toLocaleString(locale)}
               </span>
@@ -139,7 +140,7 @@ export default function TicketDetailPage() {
             Messages ({ticket.messages?.length || 0})
           </h3>
           {!ticket.messages || ticket.messages.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">Aucun message</p>
+            <p className="text-sm text-gray-400 text-center py-4">{tText('Aucun message')}</p>
           ) : (
             <div className="space-y-3">
               {ticket.messages.map((msg) => (

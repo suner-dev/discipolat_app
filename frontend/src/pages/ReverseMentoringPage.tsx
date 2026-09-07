@@ -8,6 +8,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 
+import { tText } from '@/i18n';
 interface ReverseRequest {
   id: string;
   requesterId?: string;
@@ -49,7 +50,7 @@ export default function ReverseMentoringPage() {
       if (!hasCurrentId) throw new Error('Identifiant mentor manquant (userId).');
       return (await api.post(`/reverse-mentoring/${id}/accept`, { mentorId: currentId })).data;
     },
-    onSuccess: () => { toast.success('Demande acceptée'); queryClient.invalidateQueries({ queryKey: ['reverse-mentoring'] }); },
+    onSuccess: () => { toast.success(tText('Demande acceptée')); queryClient.invalidateQueries({ queryKey: ['reverse-mentoring'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 

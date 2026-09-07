@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
 import { BookOpen, Plus, CheckCircle2, Clock, Calendar, Users } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface ReadingPlan {
   id: string;
   titre: string;
@@ -61,16 +62,16 @@ export default function BibleReadingPlanPage() {
             <BookOpen className="w-8 h-8 text-amber-600" />
             Plans de Lecture Biblique
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Créez et partagez des parcours de lecture avec votre famille</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{tText('Créez et partagez des parcours de lecture avec votre famille')}</p>
         </div>
         <button onClick={() => setShowCreate(true)}
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-medium hover:from-amber-700 hover:to-orange-700 transition-all shadow-lg shadow-amber-500/25 flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouveau plan
+          <Plus className="w-4 h-4" /> {tText('Nouveau plan')}
         </button>
       </div>
 
       {loading ? <SkeletonLoader lines={4} variant="card" /> : plans.length === 0 ? (
-        <EmptyState icon={<BookOpen className="w-8 h-8 text-gray-400" />} title="Aucun plan de lecture"
+        <EmptyState icon={<BookOpen className="w-8 h-8 text-gray-400" />} title={tText('Aucun plan de lecture')}
           message="Créez votre premier plan pour guider la lecture de votre famille"
           action={{ label: 'Créer un plan', onClick: () => setShowCreate(true) }} />
       ) : (
@@ -111,7 +112,7 @@ export default function BibleReadingPlanPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau plan de lecture</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouveau plan de lecture')}</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre *</label>
@@ -139,8 +140,8 @@ export default function BibleReadingPlanPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm">Annuler</button>
-              <button onClick={createPlan} className="px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-all">Créer</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm">{tText('Annuler')}</button>
+              <button onClick={createPlan} className="px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-all">{tText('Créer')}</button>
             </div>
           </div>
         </div>

@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Document {
   id: string;
   title: string;
@@ -48,7 +50,7 @@ export default function DocumentDetailPage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <FileText className="w-5 h-5 text-primary-500" />
@@ -67,7 +69,7 @@ export default function DocumentDetailPage() {
               { icon: Tag, label: 'Catégorie', value: document.category || '—' },
               { icon: Download, label: 'Taille', value: formatSize(document.fileSize) },
               { icon: User, label: 'Ajouté par', value: document.uploadedByName || document.uploadedBy || '—' },
-              { icon: Calendar, label: 'Ajouté le', value: new Date(document.uploadedAt).toLocaleString('fr-FR') },
+              { icon: Calendar, label: 'Ajouté le', value: new Date(document.uploadedAt).toLocaleString(getI18nLocale()) },
             ].filter((item) => item.value && item.value !== '—').map((item) => (
               <div key={item.label} className="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
                 <item.icon className="w-4 h-4 text-gray-400 shrink-0" />
@@ -102,7 +104,7 @@ export default function DocumentDetailPage() {
         {/* Download action */}
         <div className="flex gap-3">
           <button className="btn-primary btn-sm">
-            <Download className="w-4 h-4" /> Télécharger
+            <Download className="w-4 h-4" /> {tText('Télécharger')}
           </button>
         </div>
       </div>

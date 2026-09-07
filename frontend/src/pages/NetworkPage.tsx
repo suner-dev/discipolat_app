@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /* ====================================================================
  * DISCIPOLAT NETWORK — Réseau inter-églises
  * Tabs : Ressources | Événements | Annuaire
@@ -199,9 +201,9 @@ export default function NetworkPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['network', 'events'] });
-      toast.success('Désinscription effectuée');
+      toast.success(tText('Désinscription effectuée'));
     },
-    onError: () => toast.error('Impossible de se désinscrire'),
+    onError: () => toast.error(tText('Impossible de se désinscrire')),
   });
 
   const deleteResourceMutation = useMutation({
@@ -210,9 +212,9 @@ export default function NetworkPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['network', 'resources'] });
-      toast.success('Ressource supprimée');
+      toast.success(tText('Ressource supprimée'));
     },
-    onError: () => toast.error('Impossible de supprimer la ressource'),
+    onError: () => toast.error(tText('Impossible de supprimer la ressource')),
   });
 
   const deleteEventMutation = useMutation({
@@ -221,7 +223,7 @@ export default function NetworkPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['network', 'events'] });
-      toast.success('Événement supprimé');
+      toast.success(tText('Événement supprimé'));
     },
     onError: () => toast.error('Impossible de supprimer l\'événement'),
   });
@@ -237,7 +239,7 @@ export default function NetworkPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['network', 'directory'] });
-      toast.success('Profil annuaire mis à jour');
+      toast.success(tText('Profil annuaire mis à jour'));
     },
   });
 
@@ -328,7 +330,7 @@ export default function NetworkPage() {
       {activeTab === 'resources' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ressources partagées</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Ressources partagées')}</h2>
             <button onClick={() => setShowCreateResource(true)} className="btn-primary text-sm flex items-center gap-1">
               <Plus className="w-4 h-4" /> Partager
             </button>
@@ -338,7 +340,7 @@ export default function NetworkPage() {
             <div className="flex items-center gap-1">
               <Filter className="w-3 h-3 text-gray-400" />
               <select value={resourceCategory} onChange={(e) => setResourceCategory(e.target.value)} className="text-xs border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white/5 text-gray-900 dark:text-gray-100">
-                <option value="">Toutes les catégories</option>
+                <option value="">{tText('Toutes les catégories')}</option>
                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
@@ -379,7 +381,7 @@ export default function NetworkPage() {
                         onClick={() => downloadMutation.mutate(r.id)}
                         className="btn-ghost text-xs px-2 py-1"
                       >
-                        <Download className="w-3 h-3 mr-1" /> Télécharger
+                        <Download className="w-3 h-3 mr-1" /> {tText('Télécharger')}
                       </button>
                       <button
                         onClick={() => { if (confirm('Supprimer cette ressource ?')) deleteResourceMutation.mutate(r.id); }}
@@ -408,9 +410,9 @@ export default function NetworkPage() {
       {activeTab === 'events' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Événements inter-églises</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Événements inter-églises')}</h2>
             <button onClick={() => setShowCreateEvent(true)} className="btn-primary text-sm flex items-center gap-1">
-              <Plus className="w-4 h-4" /> Créer
+              <Plus className="w-4 h-4" /> {tText('Créer')}
             </button>
           </div>
 
@@ -437,7 +439,7 @@ export default function NetworkPage() {
                       )}
                       <div className="flex items-center gap-4 text-xs text-gray-400">
                         {e.city && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {e.city}{e.country ? `, ${e.country}` : ''}</span>}
-                        <span>📅 {new Date(e.startsAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        <span>📅 {new Date(e.startsAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                         <span>👥 {e.currentParticipants}{e.maxParticipants ? ` / ${e.maxParticipants}` : ''}</span>
                       </div>
                     </div>
@@ -468,17 +470,17 @@ export default function NetworkPage() {
       {activeTab === 'directory' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Annuaire des églises</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Annuaire des églises')}</h2>
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
               className="text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white/5 text-gray-900 dark:text-gray-100"
             >
-              <option value="">Tous les pays</option>
+              <option value="">{tText('Tous les pays')}</option>
               <option value="Côte d'Ivoire">Côte d'Ivoire</option>
               <option value="France">France</option>
               <option value="Cameroun">Cameroun</option>
-              <option value="Sénégal">Sénégal</option>
+              <option value="Sénégal">{tText('Sénégal')}</option>
               <option value="Congo">Congo</option>
               <option value="Belgique">Belgique</option>
               <option value="Canada">Canada</option>
@@ -533,7 +535,7 @@ function CreateResourceModal({ onClose, onSubmit }: { onClose: () => void; onSub
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
       <div className="glass-card p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-gray-900 dark:text-gray-100">Partager une ressource</h3>
+          <h3 className="font-bold text-gray-900 dark:text-gray-100">{tText('Partager une ressource')}</h3>
           <button onClick={onClose}><X className="w-5 h-5 text-gray-400" /></button>
         </div>
         <div className="space-y-3">
@@ -547,12 +549,12 @@ function CreateResourceModal({ onClose, onSubmit }: { onClose: () => void; onSub
             <option value="TEMPLATE">Template</option>
             <option value="COURSE">Cours</option>
             <option value="DOCUMENT">Document</option>
-            <option value="VIDEO">Vidéo</option>
+            <option value="VIDEO">{tText('Vidéo')}</option>
             <option value="LINK">Lien</option>
           </select>
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="btn-ghost text-sm">Annuler</button>
+          <button onClick={onClose} className="btn-ghost text-sm">{tText('Annuler')}</button>
           <button onClick={() => onSubmit(form)} disabled={!form.title} className="btn-primary text-sm">Partager</button>
         </div>
       </div>
@@ -570,7 +572,7 @@ function CreateEventModal({ onClose, onSubmit }: { onClose: () => void; onSubmit
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
       <div className="glass-card p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-gray-900 dark:text-gray-100">Créer un événement</h3>
+          <h3 className="font-bold text-gray-900 dark:text-gray-100">{tText('Créer un événement')}</h3>
           <button onClick={onClose}><X className="w-5 h-5 text-gray-400" /></button>
         </div>
         <div className="space-y-3">
@@ -586,7 +588,7 @@ function CreateEventModal({ onClose, onSubmit }: { onClose: () => void; onSubmit
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Début</label>
+              <label className="text-xs text-gray-500 mb-1 block">{tText('Début')}</label>
               <input type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} className="w-full p-2.5 rounded-lg bg-white/5 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100" />
             </div>
             <div>
@@ -596,7 +598,7 @@ function CreateEventModal({ onClose, onSubmit }: { onClose: () => void; onSubmit
           </div>
           <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
             <input type="checkbox" checked={form.isVirtual} onChange={(e) => setForm({ ...form, isVirtual: e.target.checked })} className="rounded" />
-            Événement virtuel
+            {tText('Événement virtuel')}
           </label>
           {form.isVirtual && (
             <input placeholder="Lien de connexion" value={form.virtualLink} onChange={(e) => setForm({ ...form, virtualLink: e.target.value })} className="w-full p-2.5 rounded-lg bg-white/5 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100" />
@@ -604,8 +606,8 @@ function CreateEventModal({ onClose, onSubmit }: { onClose: () => void; onSubmit
           <input type="number" placeholder="Nombre max de participants (optionnel)" value={form.maxParticipants} onChange={(e) => setForm({ ...form, maxParticipants: e.target.value })} className="w-full p-2.5 rounded-lg bg-white/5 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100" />
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="btn-ghost text-sm">Annuler</button>
-          <button onClick={() => onSubmit({ ...form, startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : undefined, endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : undefined, maxParticipants: form.maxParticipants ? parseInt(form.maxParticipants) : undefined })} disabled={!form.title || !form.startsAt} className="btn-primary text-sm">Créer</button>
+          <button onClick={onClose} className="btn-ghost text-sm">{tText('Annuler')}</button>
+          <button onClick={() => onSubmit({ ...form, startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : undefined, endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : undefined, maxParticipants: form.maxParticipants ? parseInt(form.maxParticipants) : undefined })} disabled={!form.title || !form.startsAt} className="btn-primary text-sm">{tText('Créer')}</button>
         </div>
       </div>
     </div>

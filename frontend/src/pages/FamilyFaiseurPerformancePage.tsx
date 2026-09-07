@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import api from '@/lib/api';
+import { tText } from '@/i18n';
 import {
   ArrowLeft, Users, BarChart3, FileText, Loader2,
   CheckCircle2, Clock, AlertCircle,
@@ -45,7 +46,7 @@ export default function FamilyFaiseurPerformancePage() {
     <div className="page-container">
       <div className="page-header">
         <Link to={`/families/${id}`} className="btn-ghost btn-sm mb-2 inline-flex">
-          <ArrowLeft className="w-4 h-4" /> Retour à la famille
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la famille')}
         </Link>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -53,7 +54,7 @@ export default function FamilyFaiseurPerformancePage() {
               <BarChart3 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="page-title">Performance des faiseurs</h1>
+              <h1 className="page-title">{tText('Performance des faiseurs')}</h1>
               <p className="page-subtitle">{family?.nom || 'Chargement...'}</p>
             </div>
           </div>
@@ -80,7 +81,7 @@ export default function FamilyFaiseurPerformancePage() {
               </div>
             </div>
             <div className="stat-card">
-              <span className="stat-label">Âmes suivies</span>
+              <span className="stat-label">{tText('Âmes suivies')}</span>
               <div className="flex items-center gap-2 mt-1">
                 <Users className="w-5 h-5 text-rose-500" />
                 <p className="stat-value text-2xl">{totalAmes}</p>
@@ -98,7 +99,7 @@ export default function FamilyFaiseurPerformancePage() {
           <div className="glass-card p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
               <Users className="w-5 h-5 text-violet-500" />
-              Détail par faiseur
+              {tText('Détail par faiseur')}
             </h2>
             {performance.length > 0 ? (
               <div className="space-y-4">
@@ -129,7 +130,7 @@ export default function FamilyFaiseurPerformancePage() {
                         <p className="text-sm font-semibold text-green-600">{p.actifs}</p>
                       </div>
                       <div className="p-2 rounded-lg bg-white/30 dark:bg-gray-800/30">
-                        <span className="text-[10px] text-gray-500">En intégration</span>
+                        <span className="text-[10px] text-gray-500">{tText('En intégration')}</span>
                         <p className="text-sm font-semibold text-blue-600">{p.enIntegration}</p>
                       </div>
                       <div className="p-2 rounded-lg bg-white/30 dark:bg-gray-800/30">
@@ -137,7 +138,7 @@ export default function FamilyFaiseurPerformancePage() {
                         <p className="text-sm font-semibold text-amber-600">{p.enVeille}</p>
                       </div>
                       <div className="p-2 rounded-lg bg-white/30 dark:bg-gray-800/30">
-                        <span className="text-[10px] text-gray-500">Présents</span>
+                        <span className="text-[10px] text-gray-500">{tText('Présents')}</span>
                         <p className="text-sm font-semibold text-primary-600">{p.totalPresents}</p>
                       </div>
                     </div>
@@ -150,7 +151,7 @@ export default function FamilyFaiseurPerformancePage() {
                         <span className="text-[10px] font-medium">{p.tauxSoumission}%</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-gray-500 w-28">Présence</span>
+                        <span className="text-[10px] text-gray-500 w-28">{tText('Présence')}</span>
                         <div className="progress-bar flex-1">
                           <div className="progress-bar-fill bg-green-500" style={{ width: `${p.tauxPresence}%` }} />
                         </div>
@@ -163,7 +164,7 @@ export default function FamilyFaiseurPerformancePage() {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                <p>Aucun faiseur dans cette famille</p>
+                <p>{tText('Aucun faiseur dans cette famille')}</p>
               </div>
             )}
           </div>
@@ -173,7 +174,7 @@ export default function FamilyFaiseurPerformancePage() {
       {!performance && !isLoading && (
         <div className="glass-card p-10 text-center">
           <BarChart3 className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-500">Aucune donnée de performance disponible</p>
+          <p className="text-gray-500">{tText('Aucune donnée de performance disponible')}</p>
         </div>
       )}
     </div>

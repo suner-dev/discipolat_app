@@ -6,6 +6,7 @@ import {
 import { useI18n } from '@/i18n';
 import { useReducedMotion } from '@/components/ui/UXComponents';
 
+import { tText } from '@/i18n';
 interface HeroProps { onNavigate: (id: string) => void; onDemo: () => void; }
 
 const STATS_MINI = [
@@ -163,8 +164,8 @@ function HeroVisual({ tilt, reduced }: { tilt: { rx: number; ry: number }; reduc
       <div className="absolute right-0 bottom-[38%] glass-strong rounded-xl px-3 py-2 flex items-center gap-2 shadow-lg animate-float" style={{ animationDelay: '1.2s' }}>
         <span className="w-7 h-7 rounded-lg bg-rose-500/15 flex items-center justify-center"><BellRing className="w-3.5 h-3.5 text-rose-500" /></span>
         <div>
-          <p className="text-[10px] font-medium text-gray-800 dark:text-gray-100">Alerte · Décrochage</p>
-          <p className="text-[9px] text-gray-400 dark:text-gray-500">Famille Bethel</p>
+          <p className="text-[10px] font-medium text-gray-800 dark:text-gray-100">{tText('Alerte · Décrochage')}</p>
+          <p className="text-[9px] text-gray-400 dark:text-gray-500">{tText('Famille Bethel')}</p>
         </div>
       </div>
 

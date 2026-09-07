@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import { Bell, Mail, Smartphone, MessageSquare, Inbox, Moon } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Pref {
   emailEnabled: boolean; pushEnabled: boolean; smsEnabled: boolean;
   whatsappEnabled: boolean; inAppEnabled: boolean;
@@ -34,10 +35,10 @@ export default function NotificationPreferencesPage() {
 
   return (
     <div className="space-y-6 p-6 max-w-2xl">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Bell className="text-amber-400" /> Préférences de notification</h1>
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Bell className="text-amber-400" /> {tText('Préférences de notification')}</h1>
       <p className="text-sm text-gray-400">Choisissez les canaux par lesquels vous acceptez d'être notifié. Les canaux refusés sont automatiquement redirigés vers la messagerie intégrée.</p>
       <div className="space-y-3">
-        <ToggleRow icon={Inbox} label="Notifications intégrées" checked={prefs.inAppEnabled} onChange={() => toggle('inAppEnabled')} />
+        <ToggleRow icon={Inbox} label={tText('Notifications intégrées')} checked={prefs.inAppEnabled} onChange={() => toggle('inAppEnabled')} />
         <ToggleRow icon={Mail} label="Email" checked={prefs.emailEnabled} onChange={() => toggle('emailEnabled')} />
         <ToggleRow icon={Smartphone} label="Notifications push" checked={prefs.pushEnabled} onChange={() => toggle('pushEnabled')} />
         <ToggleRow icon={MessageSquare} label="SMS (opérateur — coûts pouvant s'appliquer)" checked={prefs.smsEnabled} onChange={() => toggle('smsEnabled')} />
@@ -46,7 +47,7 @@ export default function NotificationPreferencesPage() {
       <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
         <h2 className="text-white font-semibold flex items-center gap-2 mb-3"><Moon className="w-4 h-4 text-indigo-400" /> Heures de silence</h2>
         <div className="grid grid-cols-2 gap-4">
-          <label className="block text-xs text-gray-400">Début
+          <label className="block text-xs text-gray-400">{tText('Début')}
             <select value={prefs.quietHoursStart ?? 22} onChange={(e) => setLocal({ ...prefs, quietHoursStart: Number(e.target.value) })}
               className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200 mt-1">
               {Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{h}:00</option>)}

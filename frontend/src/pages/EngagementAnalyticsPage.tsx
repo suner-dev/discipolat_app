@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   BarChart3, TrendingUp, TrendingDown, Users, Activity, Eye, Heart,
   Loader2, Search,
@@ -92,7 +94,7 @@ export default function EngagementAnalyticsPage() {
             !category ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-400' : 'bg-white/5 text-gray-400 hover:bg-white/10'
           }`}
         >
-          Toutes
+          {tText('Toutes')}
         </button>
         {Object.keys(grouped).map((cat) => (
           <button
@@ -132,7 +134,7 @@ export default function EngagementAnalyticsPage() {
                     </div>
                     <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{m.metricValue.toLocaleString()}</p>
                     <p className="text-[10px] text-gray-400 mt-1">
-                      {new Date(m.recordedAt).toLocaleString('fr-FR')}
+                      {new Date(m.recordedAt).toLocaleString(getI18nLocale())}
                     </p>
                   </div>
                 ))}

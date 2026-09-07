@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { tText } from '@/i18n';
 import {
   Globe, Mail, Cloud, Key, Link2, Webhook, CheckCircle2, AlertTriangle,
   Loader2, Save, Settings, Shield, Database, Send, TestTube, RefreshCw,
@@ -213,7 +214,7 @@ export default function AdminIntegrationsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'integrations'] });
-      toast.success('Configuration enregistrée');
+      toast.success(tText('Configuration enregistrée'));
     },
     onError: () => toast.error('Erreur lors de l\'enregistrement'),
   });
@@ -230,7 +231,7 @@ export default function AdminIntegrationsPage() {
         toast.error(data.message || 'Échec de la connexion');
       }
     },
-    onError: () => toast.error('Erreur lors du test'),
+    onError: () => toast.error(tText('Erreur lors du test')),
   });
 
   const getConfig = (key: string) => configs[key] || serverConfigs?.[key] || {};
@@ -258,7 +259,7 @@ export default function AdminIntegrationsPage() {
             <Globe className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="page-title">Intégrations</h1>
+            <h1 className="page-title">{tText('Intégrations')}</h1>
             <p className="page-subtitle">
               Configurez les services externes : email, stockage, sécurité et protection — sans écrire de code.
             </p>
@@ -272,7 +273,7 @@ export default function AdminIntegrationsPage() {
                 saveMutation.mutate({ key, data });
               });
               if (Object.keys(configs).length === 0) {
-                toast.success('Aucune modification à enregistrer');
+                toast.success(tText('Aucune modification à enregistrer'));
               }
             }}
             disabled={saveMutation.isPending || Object.keys(configs).length === 0}

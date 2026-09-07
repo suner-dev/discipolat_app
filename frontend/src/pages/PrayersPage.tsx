@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const CATEGORIE_FALLBACK: Record<string, string> = {
   SANTE: 'Santé',
@@ -107,30 +109,30 @@ function createPrayerForm(
           />
         </div>
         <div>
-          <label className="label">Catégorie</label>
+          <label className="label">{tText('Catégorie')}</label>
           <select className="input" value={form.categorie} onChange={(e) => update({ categorie: e.target.value as CategoriePriere })}>
             {categorieOptions.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
           </select>
         </div>
         <div>
-          <label className="label">Priorité</label>
+          <label className="label">{tText('Priorité')}</label>
           <select className="input" value={form.priorite} onChange={(e) => update({ priorite: e.target.value as PrioritePriere })}>
             {prioriteOptions.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
           </select>
         </div>
         <div>
-          <label className="label">Visibilité</label>
+          <label className="label">{tText('Visibilité')}</label>
           <select className="input" value={form.visibilite} onChange={(e) => update({ visibilite: e.target.value as VisibilitePriere })}>
             <option value="GENERALE">Général (tous)</option>
             <option value="PASTEUR_RESPONSABLE">Pasteur + Responsables</option>
-            <option value="FAISEUR">Chefs de famille + Faiseurs</option>
-            <option value="PARTAGEE">Famille</option>
+            <option value="FAISEUR">{tText('Chefs de famille + Faiseurs')}</option>
+            <option value="PARTAGEE">{tText('Famille')}</option>
             <option value="PRIVEE">Privé (moi uniquement)</option>
           </select>
         </div>
       </div>
       <div className="flex justify-end gap-3 mt-4">
-        {onCancel && <button onClick={onCancel} className="btn-secondary btn-sm">Annuler</button>}
+        {onCancel && <button onClick={onCancel} className="btn-secondary btn-sm">{tText('Annuler')}</button>}
         <button
           onClick={onSubmit}
           disabled={!form.titre || isPending}
@@ -221,7 +223,7 @@ export default function PrayersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prayers'] });
-      toast.success('Sujet de prière créé');
+      toast.success(tText('Sujet de prière créé'));
       setShowCreate(false);
       setNewPrayer({ titre: '', contenu: '', categorie: 'AUTRE', priorite: 'MOYENNE', visibilite: 'PARTAGEE' });
     },
@@ -234,7 +236,7 @@ export default function PrayersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prayers'] });
-      toast.success('Sujet marqué comme exaucé');
+      toast.success(tText('Sujet marqué comme exaucé'));
       setShowAnswerForm(null);
       setTemoignageText('');
     },
@@ -253,7 +255,7 @@ export default function PrayersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prayers'] });
-      toast.success('Sujet de prière mis à jour');
+      toast.success(tText('Sujet de prière mis à jour'));
       setShowEdit(false);
       setEditingPrayer(null);
     },
@@ -266,7 +268,7 @@ export default function PrayersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prayers'] });
-      toast.success('Sujet de prière supprimé');
+      toast.success(tText('Sujet de prière supprimé'));
       setShowDeleteConfirm(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -362,7 +364,7 @@ export default function PrayersPage() {
     },
     {
       header: 'Date',
-      cell: (prayer) => new Date(prayer.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+      cell: (prayer) => new Date(prayer.dateCreation).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' }),
     },
     {
       header: 'Actions',
@@ -416,7 +418,7 @@ export default function PrayersPage() {
         prioriteLabel(p.priorite),
         p.visibilite,
         p.statut === 'EXAUCEE' ? 'Exaucé' : 'En cours',
-        new Date(p.dateCreation).toLocaleDateString('fr-FR'),
+        new Date(p.dateCreation).toLocaleDateString(getI18nLocale()),
       ]);
     });
     const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
@@ -451,7 +453,7 @@ export default function PrayersPage() {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Prières</h1>
+          <h1 className="page-title">{tText('Prières')}</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             Suivi des sujets de prière de la famille — {stats.total} sujet(s)
           </p>
@@ -467,7 +469,7 @@ export default function PrayersPage() {
             <Filter className="w-4 h-4" /> Filtres
           </button>
           <button onClick={() => setShowCreate(!showCreate)} className="btn-primary btn-sm">
-            <Plus className="w-4 h-4" /> Nouveau sujet
+            <Plus className="w-4 h-4" /> {tText('Nouveau sujet')}
           </button>
         </div>
       </div>
@@ -504,7 +506,7 @@ export default function PrayersPage() {
         <div className="card p-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4 text-gray-400" />
-            <p className="text-xs font-semibold text-gray-500 uppercase">Répartition par catégorie</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase">{tText('Répartition par catégorie')}</p>
           </div>
           <div className="flex flex-wrap gap-3">
             {catDistribution.map(([cat, count]) => {
@@ -538,7 +540,7 @@ export default function PrayersPage() {
           <div className="card p-6 w-full max-w-md mx-4 animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Marquer comme exaucé
+                {tText('Marquer comme exaucé')}
               </h3>
               <button onClick={() => { setShowAnswerForm(null); setTemoignageText(''); }} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="w-5 h-5 text-gray-500" />
@@ -555,7 +557,7 @@ export default function PrayersPage() {
               placeholder="Témoignage (optionnel)..."
             />
             <div className="flex justify-end gap-2">
-              <button onClick={() => { setShowAnswerForm(null); setTemoignageText(''); }} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => { setShowAnswerForm(null); setTemoignageText(''); }} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => answerMutation.mutate({ id: showAnswerForm, temoignage: temoignageText || undefined })}
                 disabled={answerMutation.isPending}
@@ -578,12 +580,12 @@ export default function PrayersPage() {
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Confirmer la suppression</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Confirmer la suppression')}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Cette action est irréversible.</p>
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => deleteMutation.mutate(showDeleteConfirm)}
                 disabled={deleteMutation.isPending}
@@ -614,21 +616,21 @@ export default function PrayersPage() {
         {showFilters && (
           <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value as CategoriePriere | ''); setPage(0); }} className="input w-auto">
-              <option value="">Toutes catégories</option>
+              <option value="">{tText('Toutes catégories')}</option>
               {categorieEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
             </select>
             <select value={statutFilter} onChange={(e) => { setStatutFilter(e.target.value); setPage(0); }} className="input w-auto">
-              <option value="">Tous statuts</option>
+              <option value="">{tText('Tous statuts')}</option>
               <option value="EN_COURS">En cours</option>
-              <option value="EXAUCEE">Exaucé</option>
+              <option value="EXAUCEE">{tText('Exaucé')}</option>
             </select>
             <select value={visibiliteFilter} onChange={(e) => { setVisibiliteFilter(e.target.value as VisibilitePriere | ''); setPage(0); }} className="input w-auto">
-              <option value="">Toutes visibilités</option>
-              <option value="GENERALE">Général</option>
+              <option value="">{tText('Toutes visibilités')}</option>
+              <option value="GENERALE">{tText('Général')}</option>
               <option value="PASTEUR_RESPONSABLE">Pasteur + Responsables</option>
               <option value="FAISEUR">Chefs + Faiseurs</option>
-              <option value="PARTAGEE">Famille</option>
-              <option value="PRIVEE">Privé</option>
+              <option value="PARTAGEE">{tText('Famille')}</option>
+              <option value="PRIVEE">{tText('Privé')}</option>
             </select>
           </div>
         )}
@@ -660,8 +662,8 @@ export default function PrayersPage() {
           ) : (
             <div className="card p-10 text-center">
               <CheckCircle2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">Aucune prière exaucée pour le moment</p>
-              <p className="text-xs text-gray-400 mt-1">Marquez une prière comme exaucée pour voir les actions de grâce</p>
+              <p className="text-gray-500">{tText('Aucune prière exaucée pour le moment')}</p>
+              <p className="text-xs text-gray-400 mt-1">{tText('Marquez une prière comme exaucée pour voir les actions de grâce')}</p>
             </div>
           )}
         </div>
@@ -682,7 +684,7 @@ export default function PrayersPage() {
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
               <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">Précédent</button>
+                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('Précédent')}</button>
                 <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-secondary btn-sm">Suivant</button>
               </div>
             </div>

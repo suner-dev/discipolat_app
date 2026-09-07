@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 export default function PasteurAlertsTab() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
@@ -48,32 +50,32 @@ export default function PasteurAlertsTab() {
 
   const resolveMutation = useMutation({
     mutationFn: async (id: string) => { await api.patch(`/alerts/${id}/resolve`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Alerte résolue'); setShowDetail(null); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success(tText('Alerte résolue')); setShowDetail(null); },
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const acknowledgeMutation = useMutation({
     mutationFn: async (id: string) => { await api.post(`/alerts/${id}/acknowledge`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Alerte accusée de réception'); setShowDetail(null); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success(tText('Alerte accusée de réception')); setShowDetail(null); },
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const batchResolveMutation = useMutation({
     mutationFn: async (ids: string[]) => { const res = await api.post('/alerts/resolve-batch', ids); return res.data; },
     onSuccess: (data: any) => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success(`${data.resolved} alerte(s) résolue(s)`); setSelectedIds(new Set()); setSelectAll(false); },
-    onError: () => toast.error('Erreur lors de la résolution en lot'),
+    onError: () => toast.error(tText('Erreur lors de la résolution en lot')),
   });
 
   const batchAcknowledgeMutation = useMutation({
     mutationFn: async (ids: string[]) => { await Promise.all(ids.map(id => api.post(`/alerts/${id}/acknowledge`))); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Accusés de réception envoyés'); setSelectedIds(new Set()); setSelectAll(false); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success(tText('Accusés de réception envoyés')); setSelectedIds(new Set()); setSelectAll(false); },
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const createMutation = useMutation({
     mutationFn: async (d: typeof form) => { await api.post('/alerts', { ...d, typeAlerteManuel: d.typeAlerteManuel || d.titre }); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success('Alerte créée'); setShowCreate(false); setForm({ titre: '', message: '', typeAlerteManuel: '', priorite: 'MOYENNE', cible: 'EGLISE' }); },
-    onError: () => toast.error('Erreur lors de la création'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['alerts'] }); toast.success(tText('Alerte créée')); setShowCreate(false); setForm({ titre: '', message: '', typeAlerteManuel: '', priorite: 'MOYENNE', cible: 'EGLISE' }); },
+    onError: () => toast.error(tText('Erreur lors de la création')),
   });
 
   const toggleSelect = (id: string) => { setSelectedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; }); };
@@ -90,8 +92,8 @@ export default function PasteurAlertsTab() {
 
   const statutBadge = (s: string) => {
     if (s === 'ACTIVE') return <span className="badge-error text-[10px]"><AlertTriangle className="w-3 h-3 inline mr-1" />Active</span>;
-    if (s === 'TRAITEE') return <span className="badge-warning text-[10px]"><Clock className="w-3 h-3 inline mr-1" />Traitée</span>;
-    return <span className="badge-success text-[10px]"><CheckCircle2 className="w-3 h-3 inline mr-1" />Résolue</span>;
+    if (s === 'TRAITEE') return <span className="badge-warning text-[10px]"><Clock className="w-3 h-3 inline mr-1" />{tText('Traitée')}</span>;
+    return <span className="badge-success text-[10px]"><CheckCircle2 className="w-3 h-3 inline mr-1" />{tText('Résolue')}</span>;
   };
 
   const cibleIcon = (c: string) => {
@@ -106,7 +108,7 @@ export default function PasteurAlertsTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => setShowDetail(null)} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <div className="flex items-start justify-between mb-6">
@@ -130,12 +132,12 @@ export default function PasteurAlertsTab() {
               </div>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
-              <p className="text-xs text-gray-400">Déclenchée le</p>
-              <p className="font-semibold text-sm">{new Date(a.dateDeclenchement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+              <p className="text-xs text-gray-400">{tText('Déclenchée le')}</p>
+              <p className="font-semibold text-sm">{new Date(a.dateDeclenchement).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
-              <p className="text-xs text-gray-400">Déclenchée le</p>
-              <p className="font-semibold text-sm">{new Date(a.dateDeclenchement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+              <p className="text-xs text-gray-400">{tText('Déclenchée le')}</p>
+              <p className="font-semibold text-sm">{new Date(a.dateDeclenchement).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
             </div>
           </div>
           {a.statut === 'ACTIVE' && (
@@ -178,8 +180,8 @@ export default function PasteurAlertsTab() {
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
           </button>
-          <Link to="/alerts" className="btn-secondary btn-sm"><Eye className="w-4 h-4" /> Page complète</Link>
-          <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> Nouvelle alerte</button>
+          <Link to="/alerts" className="btn-secondary btn-sm"><Eye className="w-4 h-4" /> {tText('Page complète')}</Link>
+          <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> {tText('Nouvelle alerte')}</button>
         </div>
       </div>
 
@@ -192,11 +194,11 @@ export default function PasteurAlertsTab() {
           </div>
           <div className="glass-card p-4 text-center cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setFilter(filter === 'TRAITEE' ? '' : 'TRAITEE'); setPage(0); }}>
             <p className={`text-2xl font-bold ${filter === 'TRAITEE' ? 'text-amber-600' : 'text-amber-500'}`}>{alertStats.traitees}</p>
-            <p className="text-[10px] text-gray-400">Traitées</p>
+            <p className="text-[10px] text-gray-400">{tText('Traitées')}</p>
           </div>
           <div className="glass-card p-4 text-center cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setFilter(filter === 'RESOLUE' ? '' : 'RESOLUE'); setPage(0); }}>
             <p className={`text-2xl font-bold ${filter === 'RESOLUE' ? 'text-green-600' : 'text-green-500'}`}>{alertStats.resolues}</p>
-            <p className="text-[10px] text-gray-400">Résolues</p>
+            <p className="text-[10px] text-gray-400">{tText('Résolues')}</p>
           </div>
         </div>
       )}
@@ -205,26 +207,26 @@ export default function PasteurAlertsTab() {
       <div className="glass-card p-4 mb-4">
         <div className="flex gap-3 flex-wrap">
           <select value={filter} onChange={e => { setFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-            <option value="">Toutes</option>
+            <option value="">{tText('Toutes')}</option>
             <option value="ACTIVE">Actives</option>
-            <option value="TRAITEE">Traitées</option>
-            <option value="RESOLUE">Résolues</option>
+            <option value="TRAITEE">{tText('Traitées')}</option>
+            <option value="RESOLUE">{tText('Résolues')}</option>
           </select>
           {showFilters && (
             <>
               <select value={priorityFilter} onChange={e => { setPriorityFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-                <option value="">Toutes priorités</option>
+                <option value="">{tText('Toutes priorités')}</option>
                 <option value="URGENTE">Urgente</option>
                 <option value="HAUTE">Haute</option>
                 <option value="MOYENNE">Moyenne</option>
                 <option value="BASSE">Basse</option>
               </select>
               <select value={cibleFilter} onChange={e => { setCibleFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-                <option value="">Toutes cibles</option>
-                <option value="EGLISE">Église</option>
+                <option value="">{tText('Toutes cibles')}</option>
+                <option value="EGLISE">{tText('Église')}</option>
                 <option value="PERSONNE">Personne</option>
-                <option value="FAMILLE">Famille</option>
-                <option value="DEPARTEMENT">Département</option>
+                <option value="FAMILLE">{tText('Famille')}</option>
+                <option value="DEPARTEMENT">{tText('Département')}</option>
               </select>
             </>
           )}
@@ -269,7 +271,7 @@ export default function PasteurAlertsTab() {
                     </div>
                     <p className="text-sm text-gray-900 dark:text-gray-100 line-clamp-2">{a.message}</p>
                     <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
-                      <span>{new Date(a.dateDeclenchement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>{new Date(a.dateDeclenchement).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </div>
                 </div>
@@ -292,7 +294,7 @@ export default function PasteurAlertsTab() {
               </div>
             </div>
           ))}
-          {(data?.content || []).length === 0 && <div className="glass-card p-14 text-center"><Bell className="w-10 h-10 text-green-500 mx-auto mb-2" /><p className="text-sm text-gray-400">Aucune alerte</p></div>}
+          {(data?.content || []).length === 0 && <div className="glass-card p-14 text-center"><Bell className="w-10 h-10 text-green-500 mx-auto mb-2" /><p className="text-sm text-gray-400">{tText('Aucune alerte')}</p></div>}
         </div>
       )}
 
@@ -300,7 +302,7 @@ export default function PasteurAlertsTab() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -311,25 +313,25 @@ export default function PasteurAlertsTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowCreate(false)}>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full animate-slide-up" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Nouvelle alerte</h3>
+              <h3 className="text-lg font-semibold">{tText('Nouvelle alerte')}</h3>
               <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
               <div><label className="label">Titre *</label><input className="input" value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} placeholder="Titre de l'alerte" /></div>
               <div><label className="label">Message *</label><textarea className="input" rows={3} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="Détail..." /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="label">Priorité</label><select className="input" value={form.priorite} onChange={e => setForm({ ...form, priorite: e.target.value })}>
+                <div><label className="label">{tText('Priorité')}</label><select className="input" value={form.priorite} onChange={e => setForm({ ...form, priorite: e.target.value })}>
                   <option value="BASSE">Basse</option><option value="MOYENNE">Moyenne</option><option value="HAUTE">Haute</option><option value="URGENTE">Urgente</option>
                 </select></div>
                 <div><label className="label">Cible</label><select className="input" value={form.cible} onChange={e => setForm({ ...form, cible: e.target.value })}>
-                  <option value="EGLISE">Église</option><option value="PERSONNE">Personne</option><option value="FAMILLE">Famille</option><option value="DEPARTEMENT">Département</option>
+                  <option value="EGLISE">{tText('Église')}</option><option value="PERSONNE">Personne</option><option value="FAMILLE">{tText('Famille')}</option><option value="DEPARTEMENT">{tText('Département')}</option>
                 </select></div>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setShowCreate(false)} className="btn-secondary">Annuler</button>
-              <button onClick={() => { if (!form.titre.trim() || !form.message.trim()) { toast.error('Remplissez les champs'); return; } createMutation.mutate(form); }} disabled={createMutation.isPending} className="btn-primary">
-                {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />} <Send className="w-4 h-4" /> Créer
+              <button onClick={() => setShowCreate(false)} className="btn-secondary">{tText('Annuler')}</button>
+              <button onClick={() => { if (!form.titre.trim() || !form.message.trim()) { toast.error(tText('Remplissez les champs')); return; } createMutation.mutate(form); }} disabled={createMutation.isPending} className="btn-primary">
+                {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />} <Send className="w-4 h-4" /> {tText('Créer')}
               </button>
             </div>
           </div>

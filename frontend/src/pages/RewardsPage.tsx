@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Gift, Award, Lock } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface RewardItem { id: number; name: string; description?: string; pointsRequired?: number; rewardType?: string; isActive?: boolean; }
 
 const TYPE_EMOJI: Record<string, string> = { BADGE: '🏅', CERTIFICATE: '📜', MENTION: '⭐', GIFT: '🎁' };
@@ -25,7 +26,7 @@ export default function RewardsPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Gift className="text-yellow-400" /> Récompenses</h1>
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Gift className="text-yellow-400" /> {tText('Récompenses')}</h1>
       {!canList && (
         <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-yellow-500/30 flex items-start gap-3">
           <Lock className="w-5 h-5 text-yellow-400 mt-0.5 shrink-0" />

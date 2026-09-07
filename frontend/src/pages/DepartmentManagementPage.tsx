@@ -15,6 +15,7 @@ import {
 import { SavedReportsSection } from '@/pages/DepartmentReportPage';
 import type { Team, Position, Assignment, ActivityItem } from '@/components/departments/types';
 
+import { tText } from '@/i18n';
 /**
  * Onglets principaux de gestion de département.
  * L'ordre reflète le workflow RH d'un Responsable : d'abord les gens (membres,
@@ -114,7 +115,7 @@ export default function DepartmentManagementPage() {
     <div className="page-container">
       <div className="page-header">
         <button onClick={() => navigate(`/departments/${id}`)} className="btn-ghost btn-sm mb-2">
-          <ArrowLeft className="w-4 h-4" /> Retour au département
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour au département')}
         </button>
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg">
@@ -122,7 +123,7 @@ export default function DepartmentManagementPage() {
           </div>
           <div className="flex-1">
             <h1 className="page-title">Gestion de {dept?.nom || 'département'}</h1>
-            <p className="page-subtitle">Membres · équipes · tâches · postes · affectations · outils · rapports</p>
+            <p className="page-subtitle">{tText('Membres · équipes · tâches · postes · affectations · outils · rapports')}</p>
           </div>
         </div>
         <div className="relative mt-3 w-full sm:w-80 sm:mt-0">
@@ -157,7 +158,7 @@ export default function DepartmentManagementPage() {
               )}
               {(searchResults.equipes ?? []).length > 0 && (
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Équipes</p>
+                  <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">{tText('Équipes')}</p>
                   {(searchResults.equipes ?? []).map((t: any) => (
                     <div key={t.id} className="px-3 py-2 text-sm">{t.nom}</div>
                   ))}
@@ -175,7 +176,7 @@ export default function DepartmentManagementPage() {
           <p className="stat-value text-xl">{members.length}</p>
         </div>
         <div className="stat-card p-3 text-center">
-          <span className="stat-label text-[10px]">Équipes actives</span>
+          <span className="stat-label text-[10px]">{tText('Équipes actives')}</span>
           <p className="stat-value text-xl">{org.equipesActives ?? teams.filter((t) => t.statut === 'ACTIVE').length}</p>
         </div>
         <div className="stat-card p-3 text-center">
@@ -183,7 +184,7 @@ export default function DepartmentManagementPage() {
           <p className="stat-value text-xl">{org.postesActifs ?? positions.filter((p) => p.statut === 'ACTIVE').length}</p>
         </div>
         <div className="stat-card p-3 text-center">
-          <span className="stat-label text-[10px]">Tâches en retard</span>
+          <span className="stat-label text-[10px]">{tText('Tâches en retard')}</span>
           <p className="stat-value text-xl text-red-500">{taskStats.enRetard ?? 0}</p>
         </div>
       </div>

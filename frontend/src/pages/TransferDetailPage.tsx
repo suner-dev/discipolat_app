@@ -10,6 +10,7 @@ import { useDictionaries } from '@/hooks/useDictionaries';
 import { useI18n } from '@/i18n';
 import type { TransferDetail, TransferHistoryEntry, DecisionType, TransferStatus } from '@/types';
 import { TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS, DECISION_LABELS, PRIORITE_LABELS } from '@/types';
+import { tText } from '@/i18n';
 import {
   ArrowLeft, ArrowLeftRight, Loader2, Send, XCircle, CheckCircle2, MessageSquare,
   RefreshCcw, AlertTriangle, Archive, Clock, ShieldCheck, History, Paperclip, User,
@@ -75,7 +76,7 @@ export default function TransferDetailPage() {
     },
     onSuccess: () => {
       invalidate();
-      toast.success('Opération effectuée avec succès');
+      toast.success(tText('Opération effectuée avec succès'));
       setModal(null);
       setMotivation('');
     },
@@ -88,7 +89,7 @@ export default function TransferDetailPage() {
     },
     onSuccess: () => {
       invalidate();
-      toast.success('Pièces jointes mises à jour');
+      toast.success(tText('Pièces jointes mises à jour'));
       setEditingPieces(false);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -125,7 +126,7 @@ export default function TransferDetailPage() {
       <div className="page-header">
         <Link to="/transfers" className="btn-ghost btn-sm mb-2">
           <ArrowLeft className="w-4 h-4" />
-          Retour aux transferts
+          {tText('Retour aux transferts')}
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -148,7 +149,7 @@ export default function TransferDetailPage() {
             )}
             {peutAnnuler && (
               <button onClick={() => { if (confirm('Annuler cette demande ?')) actionMutation.mutate({ action: 'cancel' }); }} className="btn-secondary btn-sm text-red-600 border-red-200 hover:bg-red-50">
-                <XCircle className="w-4 h-4" /> Annuler
+                <XCircle className="w-4 h-4" /> {tText('Annuler')}
               </button>
             )}
             {peutArchiver && (
@@ -166,15 +167,15 @@ export default function TransferDetailPage() {
           {/* Détails */}
           <div className="glass-card p-6 space-y-4">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <ArrowLeftRight className="w-4 h-4 text-emerald-500" /> Détails du transfert
+              <ArrowLeftRight className="w-4 h-4 text-emerald-500" /> {tText('Détails du transfert')}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Personne concernée</p>
+                <p className="text-xs text-gray-400 mb-1">{tText('Personne concernée')}</p>
                 <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{t.personneNom}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Priorité</p>
+                <p className="text-xs text-gray-400 mb-1">{tText('Priorité')}</p>
                 <span className={`badge ${t.priorite === 'URGENTE' ? 'badge-danger' : t.priorite === 'HAUTE' ? 'badge-warning' : 'badge-gray'}`}>
                   {dictionaries.label('TRANSFER_PRIORITE', t.priorite) || PRIORITE_LABELS[t.priorite] || t.priorite}
                 </span>
@@ -186,7 +187,7 @@ export default function TransferDetailPage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Nouvelle affectation</p>
+                <p className="text-xs text-gray-400 mb-1">{tText('Nouvelle affectation')}</p>
                 <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{t.nouvelleAffectation.nom}</p>
               </div>
             </div>
@@ -225,7 +226,7 @@ export default function TransferDetailPage() {
                 <div className="space-y-3">
                   <AttachmentPicker value={pieceIds} onChange={setPieceIds} />
                   <div className="flex justify-end gap-2">
-                    <button onClick={() => setEditingPieces(false)} className="btn-secondary btn-sm">Annuler</button>
+                    <button onClick={() => setEditingPieces(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
                     <button
                       onClick={() => piecesMutation.mutate(pieceIds)}
                       disabled={piecesMutation.isPending}
@@ -248,7 +249,7 @@ export default function TransferDetailPage() {
           {data.decisions.length > 0 && (
             <div className="glass-card p-6">
               <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" /> Décisions des validateurs
+                <ShieldCheck className="w-4 h-4 text-emerald-500" /> {tText('Décisions des validateurs')}
               </h3>
               <ul className="space-y-3">
                 {data.decisions.map(d => (
@@ -333,7 +334,7 @@ export default function TransferDetailPage() {
               <History className="w-4 h-4 text-blue-500" /> Historique
             </h3>
             {!history || history.length === 0 ? (
-              <p className="text-sm text-gray-500">Aucun événement</p>
+              <p className="text-sm text-gray-500">{tText('Aucun événement')}</p>
             ) : (
               <ol className="space-y-3">
                 {[...history].reverse().map(h => {
@@ -396,7 +397,7 @@ export default function TransferDetailPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => { setModal(null); setMotivation(''); }} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => { setModal(null); setMotivation(''); }} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => actionMutation.mutate({ action: 'decide', body: { decision: modal, motivation: motivation || undefined } })}
                 disabled={actionMutation.isPending || (modal !== 'APPROBATION' && !motivation.trim())}

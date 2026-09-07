@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Gauge, AlertTriangle, CalendarClock } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface WeekPred { semaine: number; debut: string; fin: string; evenementsPlanifies: number; joursDePics: string[]; chargeEstimee: number; niveau: string; recommandation: string; }
 interface Prediction { baselineChargeHebdo: number; moyenneInscriptionsHebdo: number; moyenneRapportsHebdo: number; joursForts: string[]; semainesCritiques: number; semaines: WeekPred[]; }
 
@@ -16,14 +17,14 @@ const LEVEL_STYLE: Record<string, string> = {
 export default function LoadPredictionPage() {
   const { data, isLoading } = useQuery({ queryKey: ['load-prediction'], queryFn: async () => (await api.get('/load-prediction')).data as Prediction });
 
-  if (isLoading) return <div className="p-6 text-gray-400">Chargement de la prédiction de charge…</div>;
+  if (isLoading) return <div className="p-6 text-gray-400">{tText('Chargement de la prédiction de charge…')}</div>;
   if (!data) return <div className="p-6 text-gray-400">Prédiction indisponible.</div>;
 
   const maxLoad = Math.max(...data.semaines.map((w) => w.chargeEstimee), 1);
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Gauge className="text-cyan-400" /> Prédiction de charge — 8 prochaines semaines</h1>
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Gauge className="text-cyan-400" /> {tText('Prédiction de charge — 8 prochaines semaines')}</h1>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Kpi label="Charge de base hebdo" value={data.baselineChargeHebdo} />
         <Kpi label="Inscriptions / semaine" value={data.moyenneInscriptionsHebdo} />

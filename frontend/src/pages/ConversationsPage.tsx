@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { MessageSquare, Send, Loader2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Conversation {
   id: string;
   participantName: string;
@@ -53,7 +55,7 @@ export default function ConversationsPage() {
         </div>
         <div>
           <h1 className="page-title">Conversations</h1>
-          <p className="page-subtitle">Messagerie privée</p>
+          <p className="page-subtitle">{tText('Messagerie privée')}</p>
         </div>
       </div>
 
@@ -62,7 +64,7 @@ export default function ConversationsPage() {
           {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
           ) : conversations.length === 0 ? (
-            <div className="glass-card p-6 text-center text-gray-500">Aucune conversation</div>
+            <div className="glass-card p-6 text-center text-gray-500">{tText('Aucune conversation')}</div>
           ) : (
             conversations.map((c) => (
               <button
@@ -93,7 +95,7 @@ export default function ConversationsPage() {
                     <div key={m.id} className="bg-white/5 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{m.senderName}</span>
-                        <span className="text-xs text-gray-400">{new Date(m.createdAt).toLocaleString('fr-FR')}</span>
+                        <span className="text-xs text-gray-400">{new Date(m.createdAt).toLocaleString(getI18nLocale())}</span>
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-300">{m.content}</p>
                     </div>
@@ -115,7 +117,7 @@ export default function ConversationsPage() {
             </div>
           ) : (
             <div className="glass-card p-12 text-center text-gray-500">
-              Sélectionnez une conversation
+              {tText('Sélectionnez une conversation')}
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
 import { Brain, Sparkles, AlertTriangle, CheckCircle2, BookOpen, UserCheck, Eye, Archive } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Suggestion {
   id: string;
   faiseurId: string;
@@ -84,7 +85,7 @@ export default function MentoratIAPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <Brain className="w-8 h-8 text-violet-500" />
-            Mentorat IA — Chefs de Famille
+            {tText('Mentorat IA — Chefs de Famille')}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Suggestions intelligentes d'accompagnement pour vos faiseurs</p>
         </div>
@@ -103,7 +104,7 @@ export default function MentoratIAPage() {
         </div>
         <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10 text-center">
           <div className="text-2xl font-bold text-green-600">{stats.lues}</div>
-          <div className="text-xs text-gray-500">Consultées</div>
+          <div className="text-xs text-gray-500">{tText('Consultées')}</div>
         </div>
       </div>
 
@@ -133,7 +134,7 @@ export default function MentoratIAPage() {
                 {selectedSug?.id === sug.id && (
                   <div className="mt-3 space-y-2 border-t border-gray-200 dark:border-white/10 pt-3">
                     <div className="bg-green-50 dark:bg-green-500/10 rounded-lg p-3">
-                      <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">🎯 Action recommandée</div>
+                      <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">{tText('🎯 Action recommandée')}</div>
                       <p className="text-sm text-green-800 dark:text-green-300">{sug.actionRecommandée}</p>
                     </div>
                     <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3">

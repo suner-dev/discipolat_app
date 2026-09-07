@@ -6,6 +6,7 @@ import { Users2, UserPlus, X } from 'lucide-react';
 import type { Assignment, Team, Position } from './types';
 import { ROLE_LABELS } from './types';
 
+import { tText } from '@/i18n';
 export function AssignmentsTab({ assignments, teams, positions, members, deptId, onChanged }: {
   assignments: Assignment[]; teams: Team[]; positions: Position[]; members: any[]; deptId: string; onChanged: () => void;
 }) {
@@ -22,12 +23,12 @@ export function AssignmentsTab({ assignments, teams, positions, members, deptId,
         memberId, teamId: teamId || null, positionId: positionId || null, role, dateDebut: dateDebut || null,
       });
     },
-    onSuccess: () => { toast.success('Membre affecté ✅'); setMemberId(''); setTeamId(''); setPositionId(''); setRole('MEMBRE'); setDateDebut(''); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
+    onSuccess: () => { toast.success(tText('Membre affecté ✅')); setMemberId(''); setTeamId(''); setPositionId(''); setRole('MEMBRE'); setDateDebut(''); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
   const endMutation = useMutation({
     mutationFn: async (assignmentId: string) => api.delete(`/departments/${deptId}/assignments/${assignmentId}`),
-    onSuccess: () => { toast.success('Affectation terminée'); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
+    onSuccess: () => { toast.success(tText('Affectation terminée')); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -38,21 +39,21 @@ export function AssignmentsTab({ assignments, teams, positions, members, deptId,
     <div className="glass-card p-5">
       <div className="flex items-center gap-2 mb-4">
         <Users2 className="w-4 h-4 text-primary-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Affectations membres → équipes / postes</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Affectations membres → équipes / postes')}</h3>
         <span className="badge text-[10px] badge-info">{activeAssignments.length} actives</span>
       </div>
 
       <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
-            <label className="label">Membre *</label>
+            <label className="label">{tText('Membre *')}</label>
             <select className="input" value={memberId} onChange={(e) => setMemberId(e.target.value)}>
               <option value="">— Choisir —</option>
               {members.map((m) => <option key={m.id} value={m.id}>{m.nom}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Équipe *</label>
+            <label className="label">{tText('Équipe *')}</label>
             <select className="input" value={teamId} onChange={(e) => setTeamId(e.target.value)}>
               <option value="">— Choisir —</option>
               {teams.filter((t) => t.statut === 'ACTIVE').map((t) => <option key={t.id} value={t.id}>{t.nom}</option>)}
@@ -61,18 +62,18 @@ export function AssignmentsTab({ assignments, teams, positions, members, deptId,
           <div>
             <label className="label">Poste</label>
             <select className="input" value={positionId} onChange={(e) => setPositionId(e.target.value)}>
-              <option value="">— Aucun —</option>
+              <option value="">{tText('— Aucun —')}</option>
               {positions.filter((p) => p.statut === 'ACTIVE').map((p) => <option key={p.id} value={p.id}>{p.nom}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Rôle</label>
+            <label className="label">{tText('Rôle')}</label>
             <select className="input" value={role} onChange={(e) => setRole(e.target.value)}>
               {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Début</label>
+            <label className="label">{tText('Début')}</label>
             <input type="date" className="input" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
           </div>
         </div>
@@ -84,14 +85,14 @@ export function AssignmentsTab({ assignments, teams, positions, members, deptId,
       {activeAssignments.length === 0 ? (
         <div className="text-center py-8">
           <Users2 className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm text-gray-400">Aucune affectation active</p>
+          <p className="text-sm text-gray-400">{tText('Aucune affectation active')}</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Membre</th><th>Équipe</th><th>Poste</th><th>Rôle</th><th>Début</th><th>Fin</th><th></th>
+                <th>{tText('Membre')}</th><th>{tText('Équipe')}</th><th>Poste</th><th>{tText('Rôle')}</th><th>{tText('Début')}</th><th>Fin</th><th></th>
               </tr>
             </thead>
             <tbody>

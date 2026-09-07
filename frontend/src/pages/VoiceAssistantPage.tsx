@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface VoiceMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -94,7 +96,7 @@ export default function VoiceAssistantPage() {
       setMessages((prev) => [...prev, assistantMsg]);
     },
     onError: () => {
-      toast.error('Erreur lors du traitement vocal');
+      toast.error(tText('Erreur lors du traitement vocal'));
     },
   });
 
@@ -266,7 +268,7 @@ export default function VoiceAssistantPage() {
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-[10px] opacity-50">
-                    {new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(msg.timestamp).toLocaleTimeString(getI18nLocale(), { hour: '2-digit', minute: '2-digit' })}
                   </span>
                   {msg.intent && (
                     <span className="text-[10px] opacity-50 bg-white/10 px-1.5 py-0.5 rounded">

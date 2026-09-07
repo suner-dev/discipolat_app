@@ -6,6 +6,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface GeofencePing {
   id: string;
   userId: string;
@@ -44,14 +46,14 @@ export default function GeofencingPage() {
     mutationFn: async (coords: { latitude: number; longitude: number; accuracy: number }) =>
       (await api.post('/geofencing/auto-check-in', { ...coords, powerMode: 'NORMAL' })).data,
     onSuccess: (data: any) => {
-      if (data.inZone) toast.success(data.message || 'Présence enregistrée');
+      if (data.inZone) toast.success(data.message || tText('Présence enregistrée'));
       else toast(data.message || 'Hors zone', { icon: '📍' });
     },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
   const startTracking = () => {
-    if (!navigator.geolocation) { toast.error('Géolocalisation non supportée'); return; }
+    if (!navigator.geolocation) { toast.error(tText('Géolocalisation non supportée')); return; }
     setTracking(true);
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
@@ -73,7 +75,7 @@ export default function GeofencingPage() {
           <MapPin className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Géorepérage</h1>
+          <h1 className="page-title">{tText('Géorepérage')}</h1>
           <p className="page-subtitle">Pointage automatique par GPS</p>
         </div>
         <div className="ml-auto flex gap-2">
@@ -92,7 +94,7 @@ export default function GeofencingPage() {
         <div className="glass-card p-4 mb-6 flex flex-wrap gap-6 text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-2"><MapPin className="w-4 h-4" /> {config.churchName}</div>
           <div>Rayon: {config.radiusMeters}m</div>
-          <div>Statut: {config.enabled ? <span className="text-green-600">Activé</span> : <span className="text-red-600">Désactivé</span>}</div>
+          <div>Statut: {config.enabled ? <span className="text-green-600">{tText('Activé')}</span> : <span className="text-red-600">{tText('Désactivé')}</span>}</div>
           {location && <div>Position: {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}</div>}
         </div>
       )}
@@ -115,7 +117,7 @@ export default function GeofencingPage() {
                 </div>
                 <div className="text-xs text-gray-400 flex items-center gap-1 flex-shrink-0">
                   <Clock className="w-3 h-3" />
-                  {new Date(ping.createdAt).toLocaleString('fr-FR')}
+                  {new Date(ping.createdAt).toLocaleString(getI18nLocale())}
                 </div>
               </div>
             ))}

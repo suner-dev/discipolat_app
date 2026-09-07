@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Trophy, Medal, Target, Flame, Award, TrendingUp, Crown,
   RefreshCw, Loader2, Star, CheckCircle, Users, Zap,
@@ -57,7 +59,7 @@ export default function QuestPage() {
       await api.post('/quest/award', { userId: awardUserId, points: awardPoints, reason: awardReason });
     },
     onSuccess: () => {
-      toast.success('Points attribués');
+      toast.success(tText('Points attribués'));
       qc.invalidateQueries({ queryKey: ['quest'] });
       setAwardUserId(''); setAwardPoints(0); setAwardReason('');
     },
@@ -79,7 +81,7 @@ export default function QuestPage() {
             <Trophy className="w-5 h-5 text-yellow-500" />
             <h1 className="page-title">Quête & Gamification</h1>
           </div>
-          <p className="page-subtitle">Classement, badges, défis hebdomadaires et récompenses</p>
+          <p className="page-subtitle">{tText('Classement, badges, défis hebdomadaires et récompenses')}</p>
         </div>
         <button onClick={() => qc.invalidateQueries({ queryKey: ['quest'] })} className="btn-ghost btn-sm">
           <RefreshCw className="w-4 h-4" />
@@ -196,7 +198,7 @@ export default function QuestPage() {
                   </div>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-2">
-                  Se termine le {new Date(c.endsAt).toLocaleDateString('fr-FR')}
+                  Se termine le {new Date(c.endsAt).toLocaleDateString(getI18nLocale())}
                 </p>
               </div>
             ))
@@ -220,7 +222,7 @@ export default function QuestPage() {
                 <p className="text-[10px] text-gray-400">{b.description}</p>
                 {b.unlockedAt && (
                   <p className="text-[10px] text-yellow-500 mt-1">
-                    Débloqué le {new Date(b.unlockedAt).toLocaleDateString('fr-FR')}
+                    Débloqué le {new Date(b.unlockedAt).toLocaleDateString(getI18nLocale())}
                   </p>
                 )}
               </div>
@@ -234,7 +236,7 @@ export default function QuestPage() {
         <div className="glass-card p-6 max-w-lg animate-slide-up">
           <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <Zap className="w-4 h-4 text-yellow-500" />
-            Attribuer des points
+            {tText('Attribuer des points')}
           </h3>
           <div className="space-y-4">
             <div>

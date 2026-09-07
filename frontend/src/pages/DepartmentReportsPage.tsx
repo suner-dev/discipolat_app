@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface DepartmentReport {
   id: string;
   title: string;
@@ -54,13 +56,13 @@ export default function DepartmentReportsPage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <FileText className="w-5 h-5 text-primary-500" />
-            <h1 className="page-title">Rapports du département</h1>
+            <h1 className="page-title">{tText('Rapports du département')}</h1>
           </div>
-          <p className="page-subtitle">Rapports générés et activité récente</p>
+          <p className="page-subtitle">{tText('Rapports générés et activité récente')}</p>
         </div>
       </div>
 
@@ -89,7 +91,7 @@ export default function DepartmentReportsPage() {
                 <div className="flex items-center gap-3 text-[10px] text-gray-400 mt-2">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {new Date(report.generatedAt).toLocaleString('fr-FR')}
+                    {new Date(report.generatedAt).toLocaleString(getI18nLocale())}
                   </span>
                   {report.generatedBy && <span>Généré par {report.generatedBy}</span>}
                 </div>
@@ -103,7 +105,7 @@ export default function DepartmentReportsPage() {
       <div>
         <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
           <Activity className="w-4 h-4 text-green-500" />
-          Activité récente
+          {tText('Activité récente')}
         </h3>
         {activity.length === 0 ? (
           <div className="glass-card p-8 text-center">
@@ -125,7 +127,7 @@ export default function DepartmentReportsPage() {
                   {act.details && <p className="text-[10px] text-gray-400 mt-0.5">{act.details}</p>}
                 </div>
                 <span className="text-[10px] text-gray-400 shrink-0">
-                  {new Date(act.timestamp).toLocaleDateString('fr-FR')}
+                  {new Date(act.timestamp).toLocaleDateString(getI18nLocale())}
                 </span>
               </div>
             ))}

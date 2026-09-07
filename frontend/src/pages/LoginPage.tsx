@@ -10,6 +10,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Shield, RotateCw, ShieldCheck, FlaskConical, Wand2, MailCheck } from 'lucide-react';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 const loginSchema = z.object({
   email: z.string().email('Email invalide').min(1, 'Email requis'),
   password: z.string().min(1, 'Mot de passe requis'),
@@ -163,7 +164,7 @@ export default function LoginPage() {
         <div className="text-center">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-400 text-xs font-medium mb-4 animate-fade-in">
             <RotateCw className="w-3 h-3" />
-            Choisissez un rôle
+            {tText('Choisissez un rôle')}
           </div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display animate-slide-up">
             Bienvenue, {user.firstName} 🙌
@@ -205,7 +206,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-          Vous pourrez changer de rôle à tout moment depuis le menu
+          {tText('Vous pourrez changer de rôle à tout moment depuis le menu')}
         </p>
       </div>
     );
@@ -218,7 +219,7 @@ export default function LoginPage() {
         <div className="inline-flex items-center gap-2.5 mb-4 animate-fade-in">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-xs font-medium">
             <Shield className="w-3 h-3" />
-            Espace sécurisé
+            {tText('Espace sécurisé')}
           </span>
           <BetaBadge />
         </div>
@@ -226,7 +227,7 @@ export default function LoginPage() {
           Connexion
         </h2>
         <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
-          Accédez à votre espace de gestion
+          {tText('Accédez à votre espace de gestion')}
         </p>
       </div>
 
@@ -495,7 +496,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-200 dark:border-white/5" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 text-xs text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900">Démonstration</span>
+              <span className="px-3 text-xs text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900">{tText('Démonstration')}</span>
             </div>
           </div>
 

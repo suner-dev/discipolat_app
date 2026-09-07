@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 const COLORS = ['#22c55e', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'];
 
 const getGreeting = () => {
@@ -112,7 +113,7 @@ export default function CrmFaiseurPage() {
                 </div>
               </div>
               <span className="stat-value">{stats.totalDisciples ?? 0}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour voir la liste</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">{tText('Cliquer pour voir la liste')}</span>
             </button>
             <button
               type="button"
@@ -129,7 +130,7 @@ export default function CrmFaiseurPage() {
                 </div>
               </div>
               <span className="stat-value text-emerald-500">{stats.actifs ?? 0}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour filtrer</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">{tText('Cliquer pour filtrer')}</span>
             </button>
             <button
               type="button"
@@ -149,7 +150,7 @@ export default function CrmFaiseurPage() {
                 {stats.rapportsSoumisSemaine ?? 0}
                 <span className="text-xs text-gray-400 ml-1">/ {stats.totalDisciples ?? 0}</span>
               </span>
-              <span className="text-[10px] text-gray-400 mt-1 block">Rapport hebdomadaire</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">{tText('Rapport hebdomadaire')}</span>
             </button>
             <button
               type="button"
@@ -160,7 +161,7 @@ export default function CrmFaiseurPage() {
             >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-rose-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
-                <span className="stat-label">En difficulté</span>
+                <span className="stat-label">{tText('En difficulté')}</span>
                 <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-rose-500 text-white shadow-lg">
                   <AlertTriangle className="w-4 h-4" />
                 </div>
@@ -168,7 +169,7 @@ export default function CrmFaiseurPage() {
               <span className={`stat-value ${(stats.enDifficulte ?? 0) > 0 ? 'text-red-500' : 'text-green-500'}`}>
                 {stats.enDifficulte ?? 0}
               </span>
-              <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour filtrer</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">{tText('Cliquer pour filtrer')}</span>
             </button>
           </div>
 
@@ -176,7 +177,7 @@ export default function CrmFaiseurPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Pie chart */}
             <div className="glass-card p-6 animate-slide-up">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Répartition</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">{tText('Répartition')}</h3>
               <div className="h-48">
                 {pieData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -192,7 +193,7 @@ export default function CrmFaiseurPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">Aucune donnée</div>
+                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">{tText('Aucune donnée')}</div>
                 )}
               </div>
             </div>
@@ -227,7 +228,7 @@ export default function CrmFaiseurPage() {
               ) : (
                 <div className="text-center py-8">
                   <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-xs text-gray-400">Aucune alerte</p>
+                  <p className="text-xs text-gray-400">{tText('Aucune alerte')}</p>
                 </div>
               )}
             </div>
@@ -238,17 +239,17 @@ export default function CrmFaiseurPage() {
               <div className="space-y-2">
                 <Link to="/reports/maker" className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors">
                   <FileText className="w-4 h-4 text-primary-500" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Rapport hebdomadaire</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{tText('Rapport hebdomadaire')}</span>
                   <ChevronRight className="w-3 h-3 text-gray-400 ml-auto" />
                 </Link>
                 <Link to="/souls/new" className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors">
                   <Heart className="w-4 h-4 text-emerald-500" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Nouveau disciple</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{tText('Nouveau disciple')}</span>
                   <ChevronRight className="w-3 h-3 text-gray-400 ml-auto" />
                 </Link>
                 <Link to="/prayers" className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors">
                   <BookOpen className="w-4 h-4 text-violet-500" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Demande de prière</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{tText('Demande de prière')}</span>
                   <ChevronRight className="w-3 h-3 text-gray-400 ml-auto" />
                 </Link>
               </div>
@@ -279,7 +280,7 @@ export default function CrmFaiseurPage() {
             {filteredDisciples.length === 0 ? (
               <div className="glass-card p-12 text-center animate-fade-in">
                 <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-sm text-gray-500">Aucun disciple trouvé</p>
+                <p className="text-sm text-gray-500">{tText('Aucun disciple trouvé')}</p>
               </div>
             ) : (
               filteredDisciples.map((disciple: any, i: number) => (
@@ -432,16 +433,16 @@ export default function CrmFaiseurPage() {
             <div className="glass-card p-6 mt-6 animate-slide-up" style={{ animationDelay: '70ms' }}>
               <div className="flex items-center gap-2 mb-3">
                 <CheckCircle className="w-4 h-4 text-blue-500" />
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Présence de mes disciples</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Présence de mes disciples')}</h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 text-center">
                   <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{crm.presence.tauxPresence ?? 0}%</p>
-                  <p className="text-[10px] text-gray-400">Taux de présence</p>
+                  <p className="text-[10px] text-gray-400">{tText('Taux de présence')}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-green-50/50 dark:bg-green-900/10 text-center">
                   <p className="text-xl font-bold text-green-600 dark:text-green-400">{crm.presence.presents ?? 0}</p>
-                  <p className="text-[10px] text-gray-400">Présents cette semaine</p>
+                  <p className="text-[10px] text-gray-400">{tText('Présents cette semaine')}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-red-50/50 dark:bg-red-900/10 text-center">
                   <p className="text-xl font-bold text-red-600 dark:text-red-400">{crm.presence.absents ?? 0}</p>
@@ -449,7 +450,7 @@ export default function CrmFaiseurPage() {
                 </div>
                 <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 text-center">
                   <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{crm.presence.nonRenseignes ?? 0}</p>
-                  <p className="text-[10px] text-gray-400">Non renseignés</p>
+                  <p className="text-[10px] text-gray-400">{tText('Non renseignés')}</p>
                 </div>
               </div>
             </div>
@@ -465,11 +466,11 @@ export default function CrmFaiseurPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 text-center">
                   <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{crm.progression.totalNotes ?? 0}</p>
-                  <p className="text-[10px] text-gray-400">Notes ajoutées</p>
+                  <p className="text-[10px] text-gray-400">{tText('Notes ajoutées')}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 text-center">
                   <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{crm.progression.visitesRealisees ?? 0}</p>
-                  <p className="text-[10px] text-gray-400">Visites réalisées</p>
+                  <p className="text-[10px] text-gray-400">{tText('Visites réalisées')}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-green-50/50 dark:bg-green-900/10 text-center">
                   <p className="text-xl font-bold text-green-600 dark:text-green-400">{crm.progression.rapportsSoumis ?? 0}</p>
@@ -477,7 +478,7 @@ export default function CrmFaiseurPage() {
                 </div>
                 <div className="p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/10 text-center">
                   <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{crm.progression.prieres ?? 0}</p>
-                  <p className="text-[10px] text-gray-400">Prières actives</p>
+                  <p className="text-[10px] text-gray-400">{tText('Prières actives')}</p>
                 </div>
               </div>
             </div>

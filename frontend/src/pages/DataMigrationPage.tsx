@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Database, Upload, Play, XCircle, CheckCircle, Loader2, FileSpreadsheet } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface MigrationJob { id: string; targetType: string; status: string; totalRows?: number; importedRows?: number; }
 interface Analysis { suggestions?: Array<{ sourceColumn?: string; targetField?: string; confidence?: number }>; summary?: string; }
 
@@ -51,7 +52,7 @@ export default function DataMigrationPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Database className="text-purple-400" /> Assistant de migration de données</h1>
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Database className="text-purple-400" /> {tText('Assistant de migration de données')}</h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
           <h2 className="text-white font-semibold flex items-center gap-2 mb-3"><FileSpreadsheet className="w-4 h-4 text-purple-400" /> 1. Collez vos données (CSV / Excel)</h2>
@@ -89,7 +90,7 @@ export default function DataMigrationPage() {
         </div>
       </div>
       <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
-        <h2 className="text-white font-semibold mb-3">Historique des migrations</h2>
+        <h2 className="text-white font-semibold mb-3">{tText('Historique des migrations')}</h2>
         {(jobsQ.data ?? []).length === 0 ? <p className="text-sm text-gray-500">Aucune migration enregistrée.</p> : (
           <div className="space-y-2">
             {(jobsQ.data ?? []).map((j) => (
@@ -97,7 +98,7 @@ export default function DataMigrationPage() {
                 <div><span className="text-white font-medium">{j.targetType}</span><span className="text-gray-500 ml-2">{j.importedRows ?? 0}/{j.totalRows ?? 0} lignes</span></div>
                 <div className="flex items-center gap-3">
                   <span className={`px-2 py-0.5 rounded-full text-xs ${badge(j.status)}`}>{formatEnum(j.status)}</span>
-                  {['PENDING', 'RUNNING'].includes(j.status) && <button onClick={() => cancel.mutate(j.id)} aria-label="Annuler la migration" className="text-red-400 hover:text-red-300"><XCircle className="w-4 h-4" /></button>}
+                  {['PENDING', 'RUNNING'].includes(j.status) && <button onClick={() => cancel.mutate(j.id)} aria-label={tText('Annuler la migration')} className="text-red-400 hover:text-red-300"><XCircle className="w-4 h-4" /></button>}
                   {['COMPLETED', 'TERMINE'].includes(j.status) && <CheckCircle className="w-4 h-4 text-green-400" />}
                 </div>
               </div>

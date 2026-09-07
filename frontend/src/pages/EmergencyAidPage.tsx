@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { AlertTriangle, Loader2, Plus, CheckCircle2, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Emergency {
   id: string;
   title: string;
@@ -34,19 +36,19 @@ export default function EmergencyAidPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => api.post('/aid/emergency', form),
-    onSuccess: () => { toast.success('Urgence créée'); setShowForm(false); setForm({ title: '', description: '', severity: 'HIGH', location: '', contactName: '', contactPhone: '' }); qc.invalidateQueries({ queryKey: ['emergency-aid'] }); },
+    onSuccess: () => { toast.success(tText('Urgence créée')); setShowForm(false); setForm({ title: '', description: '', severity: 'HIGH', location: '', contactName: '', contactPhone: '' }); qc.invalidateQueries({ queryKey: ['emergency-aid'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
   const collectMutation = useMutation({
     mutationFn: async (id: string) => api.post(`/aid/emergency/${id}/collect`),
-    onSuccess: () => { toast.success('Collecte lancée'); qc.invalidateQueries({ queryKey: ['emergency-aid'] }); },
+    onSuccess: () => { toast.success(tText('Collecte lancée')); qc.invalidateQueries({ queryKey: ['emergency-aid'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
   const resolveMutation = useMutation({
     mutationFn: async (id: string) => api.post(`/aid/emergency/${id}/resolve`),
-    onSuccess: () => { toast.success('Urgence résolue'); qc.invalidateQueries({ queryKey: ['emergency-aid'] }); },
+    onSuccess: () => { toast.success(tText('Urgence résolue')); qc.invalidateQueries({ queryKey: ['emergency-aid'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -61,7 +63,7 @@ export default function EmergencyAidPage() {
           <p className="page-subtitle">Gestion des situations d'urgence et collectes</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm ml-auto inline-flex items-center gap-1">
-          <Plus className="w-4 h-4" /> Nouvelle urgence
+          <Plus className="w-4 h-4" /> {tText('Nouvelle urgence')}
         </button>
       </div>
 
@@ -73,11 +75,11 @@ export default function EmergencyAidPage() {
               <input className="input w-full" placeholder="Titre de l'urgence" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Sévérité</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">{tText('Sévérité')}</label>
               <select className="input w-full" value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })}>
                 <option value="LOW">Faible</option>
                 <option value="MEDIUM">Moyen</option>
-                <option value="HIGH">Élevé</option>
+                <option value="HIGH">{tText('Élevé')}</option>
                 <option value="CRITICAL">Critique</option>
               </select>
             </div>
@@ -96,12 +98,12 @@ export default function EmergencyAidPage() {
               <input className="input w-full" placeholder="Nom du contact" value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Téléphone</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">{tText('Téléphone')}</label>
               <input className="input w-full" placeholder="+225..." value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} />
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <button onClick={() => setShowForm(false)} className="btn-sm px-4 py-2 rounded-lg glass-card">Annuler</button>
+            <button onClick={() => setShowForm(false)} className="btn-sm px-4 py-2 rounded-lg glass-card">{tText('Annuler')}</button>
             <button onClick={() => createMutation.mutate()} disabled={!form.title.trim() || createMutation.isPending}
               className="btn-primary btn-sm inline-flex items-center gap-1">
               {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Créer
@@ -113,7 +115,7 @@ export default function EmergencyAidPage() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : emergencies.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucune urgence ouverte</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucune urgence ouverte')}</div>
       ) : (
         <div className="space-y-3">
           {emergencies.map((e) => (
@@ -129,7 +131,7 @@ export default function EmergencyAidPage() {
                   <div className="flex gap-4 mt-2 text-[11px] text-gray-500">
                     {e.location && <span>{e.location}</span>}
                     {e.contactName && <span>Contact: {e.contactName}</span>}
-                    <span>{new Date(e.createdAt).toLocaleDateString('fr-FR')}</span>
+                    <span>{new Date(e.createdAt).toLocaleDateString(getI18nLocale())}</span>
                   </div>
                 </div>
                 <div className="flex gap-2 ml-4">

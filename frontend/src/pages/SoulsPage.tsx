@@ -24,6 +24,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 /** Replis */
 const TYPE_FALLBACK: Record<string, string> = {
   NOUVEL_ARRIVANT: 'Nouvel arrivant',
@@ -137,7 +138,7 @@ export default function SoulsPage() {
       return res.data as { favorite: boolean };
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorites', 'souls'] }),
-    onError: () => toast.error("Impossible de mettre à jour le favori"),
+    onError: () => toast.error(tText('Impossible de mettre à jour le favori')),
   });
 
   const restoreMutation = useMutation({
@@ -145,10 +146,10 @@ export default function SoulsPage() {
       await api.patch(`/souls/${soulId}/restore`);
     },
     onSuccess: () => {
-      toast.success('Âme restaurée avec succès ✨');
+      toast.success(tText('Âme restaurée avec succès ✨'));
       queryClient.invalidateQueries({ queryKey: ['souls'] });
     },
-    onError: () => toast.error("Erreur lors de la restauration"),
+    onError: () => toast.error(tText('Erreur lors de la restauration')),
   });
 
   const columns: ColumnDef<Soul>[] = [
@@ -242,7 +243,7 @@ export default function SoulsPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <Heart className="w-5 h-5 text-rose-500" />
-            <h1 className="page-title">Âmes</h1>
+            <h1 className="page-title">{tText('Âmes')}</h1>
           </div>
           <p className="page-subtitle">Gestion des disciples suivis par les faiseurs — {allSoulsStats?.total ?? data?.totalElements ?? 0} âme(s) au total</p>
         </div>
@@ -264,7 +265,7 @@ export default function SoulsPage() {
           {view !== 'corbeille' && (
             <Link to="/souls/new" className="btn-primary btn-sm">
               <Plus className="w-4 h-4" />
-              Nouvelle âme
+              {tText('Nouvelle âme')}
             </Link>
           )}
         </div>
@@ -332,7 +333,7 @@ export default function SoulsPage() {
                 onChange={(e) => { const v = e.target.value as TypeDisciple | ''; setTypeFilter(v); setPage(0); syncUrl({ typeDisciple: v }); }}
                 className="input w-auto text-sm"
               >
-                <option value="">Tous</option>
+                <option value="">{tText('Tous')}</option>
                 {typeEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
               </select>
             </div>
@@ -343,7 +344,7 @@ export default function SoulsPage() {
                 onChange={(e) => { const v = e.target.value as StatutAme | ''; setStatutFilter(v); setPage(0); syncUrl({ statut: v }); }}
                 className="input w-auto text-sm"
               >
-                <option value="">Tous</option>
+                <option value="">{tText('Tous')}</option>
                 {statusEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
               </select>
             </div>
@@ -352,7 +353,7 @@ export default function SoulsPage() {
                 onClick={() => { setSearch(''); setTypeFilter(''); setStatutFilter(''); setPage(0); syncUrl({ search: '', typeDisciple: '', statut: '' }); }}
                 className="btn-ghost btn-sm"
               >
-                <X className="w-3.5 h-3.5" /> Réinitialiser
+                <X className="w-3.5 h-3.5" /> {tText('Réinitialiser')}
               </button>
             )}
           </div>
@@ -382,7 +383,7 @@ export default function SoulsPage() {
                     <th>Nom</th>
                     <th>Type</th>
                     <th>Email</th>
-                    <th>Téléphone</th>
+                    <th>{tText('Téléphone')}</th>
                     <th className="text-right">Action</th>
                   </tr>
                 </thead>
@@ -429,7 +430,7 @@ export default function SoulsPage() {
             {' '}à{' '}
             <span className="font-medium">{Math.min((data.number + 1) * data.size, data.totalElements)}</span>
             {' '}sur{' '}
-            <span className="font-medium">{data.totalElements}</span> résultats
+            <span className="font-medium">{data.totalElements}</span> {tText('résultats')}
           </p>
           <div className="flex gap-2">
             <button
@@ -437,7 +438,7 @@ export default function SoulsPage() {
               disabled={data.first}
               className="btn-secondary btn-sm"
             >
-              ← Précédent
+              {tText('← Précédent')}
             </button>
             <button
               onClick={() => setPage(p => p + 1)}

@@ -4,6 +4,8 @@ import { api } from '@/lib/api';
 import { Users, Heart, Send } from 'lucide-react';
 import { useModalFocus } from '@/hooks/useModalFocus';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface TeamMember { soulId?: string; userId?: string; nom?: string; prenom?: string; etatSpirituel?: string; familleNom?: string; encouragementsRecus?: number; estMoi?: boolean; }
 interface Encouragement { id?: string; message: string; kind?: string; createdAt?: string; }
 
@@ -24,7 +26,7 @@ export default function MyTeamFamilyPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Users className="text-blue-400" /> Mon équipe / ma famille</h1>
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Users className="text-blue-400" /> {tText('Mon équipe / ma famille')}</h1>
 
       {(teamQ.data ?? []).length === 0 ? (
         <p className="text-sm text-gray-500">Vous n'êtes rattaché à aucune famille spirituelle pour le moment.</p>
@@ -52,12 +54,12 @@ export default function MyTeamFamilyPage() {
 
       {(receivedQ.data ?? []).length > 0 && (
         <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
-          <h2 className="text-white font-semibold mb-3">Encouragements reçus</h2>
+          <h2 className="text-white font-semibold mb-3">{tText('Encouragements reçus')}</h2>
           <div className="space-y-2 max-h-60 overflow-auto">
             {(receivedQ.data ?? []).map((e, i) => (
               <div key={e.id ?? i} className="bg-black/20 rounded-lg px-3 py-2 text-sm">
                 <p className="text-gray-200">{e.message}</p>
-                {e.createdAt && <p className="text-[11px] text-gray-500 mt-0.5">{new Date(e.createdAt).toLocaleDateString('fr-FR')}</p>}
+                {e.createdAt && <p className="text-[11px] text-gray-500 mt-0.5">{new Date(e.createdAt).toLocaleDateString(getI18nLocale())}</p>}
               </div>
             ))}
           </div>
@@ -71,7 +73,7 @@ export default function MyTeamFamilyPage() {
             <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Un mot d'encouragement…" rows={4}
               className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-pink-500/50" />
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setSelected(null)} className="px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-white">Annuler</button>
+              <button onClick={() => setSelected(null)} className="px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-white">{tText('Annuler')}</button>
               <button onClick={() => send.mutate()} disabled={send.isPending || !message.trim()}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 text-white text-sm font-medium disabled:opacity-50">
                 <Send className="w-4 h-4" /> Envoyer

@@ -14,6 +14,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 type RiskFilter = 'NORMAL' | 'SOUS_SURVEILLANCE' | 'A_RISQUE' | '';
 type StatutFilter = 'ACTIVE' | 'INACTIVE' | '';
 
@@ -91,7 +92,7 @@ export default function FamiliesPage() {
       await api.patch(`/families/${id}/restore`);
     },
     onSuccess: () => {
-      toast.success('Famille restaurée');
+      toast.success(tText('Famille restaurée'));
       queryClient.invalidateQueries({ queryKey: ['families'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -259,7 +260,7 @@ export default function FamiliesPage() {
           {(user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR' || user?.activeRole === 'CHEF_DE_FAMILLE') && (
             <Link to="/families/new" className="btn-primary btn-sm">
               <Plus className="w-4 h-4" />
-              Nouvelle famille
+              {tText('Nouvelle famille')}
             </Link>
           )}
         </div>
@@ -328,10 +329,10 @@ export default function FamiliesPage() {
                 onChange={(e) => { setRiskFilter(toRiskFilter(e.target.value)); setPage(0); syncUrl({ risk: e.target.value }); }}
                 className="input w-auto text-sm"
               >
-                <option value="">Tous</option>
+                <option value="">{tText('Tous')}</option>
                 <option value="NORMAL">Normale</option>
                 <option value="SOUS_SURVEILLANCE">Sous surveillance</option>
-                <option value="A_RISQUE">À risque</option>
+                <option value="A_RISQUE">{tText('À risque')}</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -341,7 +342,7 @@ export default function FamiliesPage() {
                 onChange={(e) => { setStatutFilter(toStatutFilter(e.target.value)); setPage(0); syncUrl({ statut: e.target.value }); }}
                 className="input w-auto text-sm"
               >
-                <option value="">Tous</option>
+                <option value="">{tText('Tous')}</option>
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
               </select>
@@ -370,8 +371,8 @@ export default function FamiliesPage() {
               <table className="table w-full min-w-[560px]">
                 <thead>
                   <tr>
-                    <th>Famille</th>
-                    <th>Date création</th>
+                    <th>{tText('Famille')}</th>
+                    <th>{tText('Date création')}</th>
                     <th className="text-right">Action</th>
                   </tr>
                 </thead>
@@ -423,11 +424,11 @@ export default function FamiliesPage() {
             {' '}à{' '}
             <span className="font-medium">{Math.min((data.number + 1) * data.size, data.totalElements)}</span>
             {' '}sur{' '}
-            <span className="font-medium">{data.totalElements}</span> résultats
+            <span className="font-medium">{data.totalElements}</span> {tText('résultats')}
           </p>
           <div className="flex gap-2">
             <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">
-              ← Précédent
+              {tText('← Précédent')}
             </button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">
               Suivant →

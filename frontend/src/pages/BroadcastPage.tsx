@@ -7,6 +7,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
 import { Megaphone, Plus, Send, Eye, Clock, Users } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface BroadcastMsg {
   id: string;
   titre: string;
@@ -76,7 +77,7 @@ export default function BroadcastPage() {
             <Megaphone className="w-8 h-8 text-rose-500" />
             {t('nav.broadcast')}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Envoi ciblé de messages avec accusé de lecture</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{tText('Envoi ciblé de messages avec accusé de lecture')}</p>
         </div>
         <button onClick={() => setShowCreate(true)}
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-medium hover:from-rose-600 hover:to-pink-600 transition-all shadow-lg flex items-center gap-2">
@@ -123,7 +124,7 @@ export default function BroadcastPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau broadcast</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouveau broadcast')}</h2>
             <div className="space-y-4">
               <input type="text" value={newMsg.titre} onChange={e => setNewMsg({ ...newMsg, titre: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" placeholder="Titre" />
@@ -131,15 +132,15 @@ export default function BroadcastPage() {
                 rows={4} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none" placeholder="Message à envoyer..." />
               <select value={newMsg.cible} onChange={e => setNewMsg({ ...newMsg, cible: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm">
-                <option value="TOUS">Tous les membres</option>
-                <option value="DÉPARTEMENT">Par département</option>
-                <option value="FAMILLE">Par famille</option>
-                <option value="RÔLE">Par rôle</option>
-                <option value="SEGMENT">Segment personnalisé</option>
+                <option value="TOUS">{tText('Tous les membres')}</option>
+                <option value="DÉPARTEMENT">{tText('Par département')}</option>
+                <option value="FAMILLE">{tText('Par famille')}</option>
+                <option value="RÔLE">{tText('Par rôle')}</option>
+                <option value="SEGMENT">{tText('Segment personnalisé')}</option>
               </select>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={saveDraft} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-sm text-gray-600">{t('broadcast.draft')}</button>
               <button onClick={createAndSend} className="px-4 py-2 rounded-xl bg-rose-500 text-white text-sm font-medium hover:bg-rose-600 flex items-center gap-2">
                 <Send className="w-4 h-4" /> {t('broadcast.send')}

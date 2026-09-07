@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface FamilyResource {
   id: string;
   title: string;
@@ -58,13 +60,13 @@ export default function FamilyResourcesDetailPage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <FolderOpen className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">{resource.title}</h1>
           </div>
-          <p className="page-subtitle">Détail de la ressource familiale</p>
+          <p className="page-subtitle">{tText('Détail de la ressource familiale')}</p>
         </div>
       </div>
 
@@ -84,7 +86,7 @@ export default function FamilyResourcesDetailPage() {
         <div className="space-y-3 border-t border-gray-200/60 dark:border-gray-700/60 pt-4">
           {([
             { Icon: FileText, label: 'Type', value: resource.resourceType },
-            { Icon: Calendar, label: 'Ajouté le', value: new Date(resource.uploadedAt).toLocaleString('fr-FR') },
+            { Icon: Calendar, label: 'Ajouté le', value: new Date(resource.uploadedAt).toLocaleString(getI18nLocale()) },
             { Icon: User, label: 'Ajouté par', value: resource.uploadedBy || '—' },
             resource.fileSize ? { Icon: Download, label: 'Taille', value: formatSize(resource.fileSize) } : null,
             resource.mimeType ? { Icon: FileText, label: 'Format', value: resource.mimeType } : null,

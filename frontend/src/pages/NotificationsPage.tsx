@@ -10,6 +10,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 /** Replis */
 const TYPE_FALLBACK: Record<string, string> = {
   RAPPORT_NON_SOUMIS: 'Rapport non soumis', ABSENCE_48H: 'Absence 48h',
@@ -66,7 +67,7 @@ export default function NotificationsPage() {
 
   const markAllMutation = useMutation({
     mutationFn: async () => { await api.post('/notifications/mark-all-read'); },
-    onSuccess: () => { invalidate(); toast.success('Toutes les notifications ont été marquées comme lues'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Toutes les notifications ont été marquées comme lues')); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -158,14 +159,14 @@ export default function NotificationsPage() {
             <Filter className="w-4 h-4 text-gray-400" />
             <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(0); }}
               className="input !w-auto text-xs">
-              <option value="">Tous les types</option>
+              <option value="">{tText('Tous les types')}</option>
               {typeEntries.map(([type, count]) => (
                 <option key={type} value={type}>{TYPE_FALLBACK[type] || type} ({count})</option>
               ))}
             </select>
             <select value={canalFilter} onChange={(e) => { setCanalFilter(e.target.value); setPage(0); }}
               className="input !w-auto text-xs">
-              <option value="">Tous les canaux</option>
+              <option value="">{tText('Tous les canaux')}</option>
               <option value="IN_APP">📱 Dans l'application</option>
               <option value="EMAIL">✉️ E-mail</option>
               <option value="PUSH">🔔 Push</option>
@@ -174,7 +175,7 @@ export default function NotificationsPage() {
           {hasActiveFilters && (
             <button onClick={() => { setSearchTerm(''); setTypeFilter(''); setCanalFilter(''); setPage(0); }}
               className="btn-ghost btn-sm">
-              <X className="w-3.5 h-3.5" /> Réinitialiser
+              <X className="w-3.5 h-3.5" /> {tText('Réinitialiser')}
             </button>
           )}
         </div>
@@ -184,7 +185,7 @@ export default function NotificationsPage() {
       <div className="glass-card p-4 mb-6 text-sm text-gray-500 dark:text-gray-400 flex items-start gap-3 animate-slide-up" style={{ animationDelay: '180ms' }}>
         <Sparkles className="w-4 h-4 text-primary-500 mt-0.5 flex-shrink-0" />
         <p>
-          Les libellés et couleurs de chaque type de notification sont
+          {tText('Les libellés et couleurs de chaque type de notification sont')}
           <strong className="text-gray-700 dark:text-gray-200"> configurables</strong> depuis{' '}
           <span className="font-mono text-[11px]">Administration → Dictionnaires</span> — adaptez-les au
           vocabulaire de votre église.
@@ -241,7 +242,7 @@ export default function NotificationsPage() {
                     <span className="inline-flex items-center gap-1 badge text-[10px] badge-gray">
                       {canalIcon(n.canal)} {dictionaries.label('NOTIFICATION_CANAL', n.canal) || CANAL_FALLBACK[n.canal] || n.canal}
                     </span>
-                    {!n.lu && <span className="badge text-[10px] badge-primary">Nouveau</span>}
+                    {!n.lu && <span className="badge text-[10px] badge-primary">{tText('Nouveau')}</span>}
                   </div>
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{n.titre}</p>
                   {n.message && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>}
@@ -264,7 +265,7 @@ export default function NotificationsPage() {
         <div className="flex items-center justify-between mt-6 animate-fade-in">
           <p className="text-sm text-gray-500 dark:text-gray-400">Page {data.number + 1} / {data.totalPages} · {data.totalElements} notification(s)</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>

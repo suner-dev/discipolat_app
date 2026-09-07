@@ -11,6 +11,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   PASTEUR: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
@@ -57,16 +58,16 @@ export default function PasteurUsersTab() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/users/${id}/hard-delete`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); toast.success('Utilisateur supprimé'); setShowDeleteConfirm(null); },
-    onError: () => toast.error('Erreur lors de la suppression'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); toast.success(tText('Utilisateur supprimé')); setShowDeleteConfirm(null); },
+    onError: () => toast.error(tText('Erreur lors de la suppression')),
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: typeof form }) => {
       await api.put(`/users/${id}`, data);
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); toast.success('Utilisateur mis à jour'); setView('liste'); setSelectedUser(null); },
-    onError: () => toast.error('Erreur lors de la mise à jour'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); toast.success(tText('Utilisateur mis à jour')); setView('liste'); setSelectedUser(null); },
+    onError: () => toast.error(tText('Erreur lors de la mise à jour')),
   });
 
   const handleEdit = useCallback((user: User) => {
@@ -95,7 +96,7 @@ export default function PasteurUsersTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => { setView('liste'); setSelectedUser(null); }} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <div className="flex items-center gap-4 mb-6">
@@ -109,7 +110,7 @@ export default function PasteurUsersTab() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="label">Prénom *</label>
+              <label className="label">{tText('Prénom *')}</label>
               <input className="input" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
             </div>
             <div>
@@ -121,11 +122,11 @@ export default function PasteurUsersTab() {
               <input className="input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
             </div>
             <div>
-              <label className="label">Téléphone</label>
+              <label className="label">{tText('Téléphone')}</label>
               <input className="input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+243..." />
             </div>
             <div>
-              <label className="label">Rôle</label>
+              <label className="label">{tText('Rôle')}</label>
               <select className="input" value={form.role} onChange={e => setForm({ ...form, role: e.target.value as UserRole })}>
                 {Object.keys(ROLE_COLORS).map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
               </select>
@@ -133,8 +134,8 @@ export default function PasteurUsersTab() {
             <div>
               <label className="label">Situation familiale</label>
               <select className="input" value={form.situationFamiliale} onChange={e => setForm({ ...form, situationFamiliale: e.target.value })}>
-                <option value="">Non spécifié</option>
-                <option value="CELIBATAIRE">Célibataire</option>
+                <option value="">{tText('Non spécifié')}</option>
+                <option value="CELIBATAIRE">{tText('Célibataire')}</option>
                 <option value="MARIE">Marié(e)</option>
                 <option value="DIVORCE">Divorcé(e)</option>
                 <option value="VEUF">Veuf/VEuve</option>
@@ -142,8 +143,8 @@ export default function PasteurUsersTab() {
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button onClick={() => { setView('liste'); setSelectedUser(null); }} className="btn-secondary">Annuler</button>
-            <button onClick={() => { if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) { toast.error('Remplissez les champs obligatoires'); return; } updateMutation.mutate({ id: selectedUser.id, data: form }); }} disabled={updateMutation.isPending} className="btn-primary">
+            <button onClick={() => { setView('liste'); setSelectedUser(null); }} className="btn-secondary">{tText('Annuler')}</button>
+            <button onClick={() => { if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) { toast.error(tText('Remplissez les champs obligatoires')); return; } updateMutation.mutate({ id: selectedUser.id, data: form }); }} disabled={updateMutation.isPending} className="btn-primary">
               {updateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />} Enregistrer
             </button>
           </div>
@@ -158,7 +159,7 @@ export default function PasteurUsersTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => { setView('liste'); setSelectedUser(null); }} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <div className="flex items-start justify-between mb-6">
@@ -178,14 +179,14 @@ export default function PasteurUsersTab() {
             </div>
             <div className="flex gap-2">
               <button onClick={() => handleEdit(u)} className="btn-secondary btn-sm"><Edit3 className="w-4 h-4" /> Modifier</button>
-              <Link to="/users" className="btn-primary btn-sm"><Eye className="w-4 h-4" /> Gestion complète</Link>
+              <Link to="/users" className="btn-primary btn-sm"><Eye className="w-4 h-4" /> {tText('Gestion complète')}</Link>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Phone className="w-4 h-4 mx-auto text-gray-400 mb-1" />
-              <p className="text-xs text-gray-400">Téléphone</p>
+              <p className="text-xs text-gray-400">{tText('Téléphone')}</p>
               <p className="font-semibold text-sm">{u.phone || '—'}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
@@ -204,7 +205,7 @@ export default function PasteurUsersTab() {
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Key className="w-4 h-4 mx-auto text-gray-400 mb-1" />
               <p className="text-xs text-gray-400">2FA</p>
-              <p className={`font-semibold text-sm ${u.twoFactorEnabled ? 'text-green-500' : 'text-gray-400'}`}>{u.twoFactorEnabled ? 'Activé' : 'Désactivé'}</p>
+              <p className={`font-semibold text-sm ${u.twoFactorEnabled ? 'text-green-500' : 'text-gray-400'}`}>{u.twoFactorEnabled ? tText('Activé') : tText('Désactivé')}</p>
             </div>
           </div>
 
@@ -213,16 +214,16 @@ export default function PasteurUsersTab() {
               <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase">Informations</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-500">Email</span><span>{u.email}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Téléphone</span><span>{u.phone || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{tText('Téléphone')}</span><span>{u.phone || '—'}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Situation</span><span>{u.situationFamiliale || '—'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Chef de famille</span><span>{u.estChefDeFamille ? 'Oui' : 'Non'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{tText('Chef de famille')}</span><span>{u.estChefDeFamille ? 'Oui' : 'Non'}</span></div>
               </div>
             </div>
             <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
               <h4 className="text-xs font-semibold text-gray-500 mb-2 uppercase">Dates</h4>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-gray-500">Créé le</span><span>{new Date(u.createdAt).toLocaleDateString(locale)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Modifié le</span><span>{new Date(u.updatedAt).toLocaleDateString(locale)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{tText('Créé le')}</span><span>{new Date(u.createdAt).toLocaleDateString(locale)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{tText('Modifié le')}</span><span>{new Date(u.updatedAt).toLocaleDateString(locale)}</span></div>
               </div>
             </div>
           </div>
@@ -244,7 +245,7 @@ export default function PasteurUsersTab() {
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
           </button>
-          <Link to="/users" className="btn-primary btn-sm"><Plus className="w-4 h-4" /> Gérer les utilisateurs</Link>
+          <Link to="/users" className="btn-primary btn-sm"><Plus className="w-4 h-4" /> {tText('Gérer les utilisateurs')}</Link>
         </div>
       </div>
 
@@ -258,15 +259,15 @@ export default function PasteurUsersTab() {
         {showFilters && (
           <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-white/20">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 font-medium">Rôle</span>
+              <span className="text-xs text-gray-400 font-medium">{tText('Rôle')}</span>
               <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value as UserRole | ''); setPage(0); }} className="input w-auto text-sm">
-                <option value="">Tous</option>
+                <option value="">{tText('Tous')}</option>
                 <option value="ADMIN">Administrateur</option>
                 <option value="PASTEUR">Pasteur</option>
                 <option value="RESPONSABLE">Responsable</option>
-                <option value="CHEF_DE_FAMILLE">Chef de famille</option>
+                <option value="CHEF_DE_FAMILLE">{tText('Chef de famille')}</option>
                 <option value="FAISEUR">Faiseur</option>
-                <option value="MEMBRE">Membre</option>
+                <option value="MEMBRE">{tText('Membre')}</option>
               </select>
             </div>
           </div>
@@ -283,10 +284,10 @@ export default function PasteurUsersTab() {
                 <tr>
                   <th>Nom</th>
                   <th>Email</th>
-                  <th>Rôle</th>
+                  <th>{tText('Rôle')}</th>
                   <th>Statut</th>
                   <th>2FA</th>
-                  <th>Créé le</th>
+                  <th>{tText('Créé le')}</th>
                   <th className="text-right">Actions</th>
                 </tr>
               </thead>
@@ -314,14 +315,14 @@ export default function PasteurUsersTab() {
                         <button onClick={() => handleEdit(u)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Modifier">
                           <Edit3 className="w-3.5 h-3.5 text-gray-500" />
                         </button>
-                        <button onClick={() => setShowDeleteConfirm(u.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Supprimer">
+                        <button onClick={() => setShowDeleteConfirm(u.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title={tText('Supprimer')}>
                           <Trash2 className="w-3.5 h-3.5 text-red-400" />
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {(data?.content || []).length === 0 && <tr><td colSpan={7} className="py-12 text-center text-gray-400">Aucun utilisateur trouvé</td></tr>}
+                {(data?.content || []).length === 0 && <tr><td colSpan={7} className="py-12 text-center text-gray-400">{tText('Aucun utilisateur trouvé')}</td></tr>}
               </tbody>
             </table>
           </div>
@@ -332,7 +333,7 @@ export default function PasteurUsersTab() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">{data.number * data.size + 1} à {Math.min((data.number + 1) * data.size, data.totalElements)} sur {data.totalElements}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -344,8 +345,8 @@ export default function PasteurUsersTab() {
             <h3 className="text-lg font-semibold mb-2">Supprimer cet utilisateur ?</h3>
             <p className="text-sm text-gray-500 mb-4">Cette action est irréversible.</p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary">Annuler</button>
-              <button onClick={() => deleteMutation.mutate(showDeleteConfirm)} className="btn-primary bg-red-600 hover:bg-red-700"><Trash2 className="w-4 h-4" /> Supprimer</button>
+              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary">{tText('Annuler')}</button>
+              <button onClick={() => deleteMutation.mutate(showDeleteConfirm)} className="btn-primary bg-red-600 hover:bg-red-700"><Trash2 className="w-4 h-4" /> {tText('Supprimer')}</button>
             </div>
           </div>
         </div>

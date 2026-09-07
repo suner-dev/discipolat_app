@@ -6,6 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 
+import { tText } from '@/i18n';
 interface KpiData {
   id: string;
   name: string;
@@ -47,7 +48,7 @@ export default function IntelligenceCenterPage() {
 
   const initializeMutation = useMutation({
     mutationFn: async () => api.post('/intelligence/initialize'),
-    onSuccess: () => { toast.success('KPIs initialisés'); queryClient.invalidateQueries({ queryKey: ['intelligence-kpis'] }); },
+    onSuccess: () => { toast.success(tText('KPIs initialisés')); queryClient.invalidateQueries({ queryKey: ['intelligence-kpis'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 

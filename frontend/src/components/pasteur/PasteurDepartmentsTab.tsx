@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 const COLORS = ['#22c55e', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#ef4444'];
 
 type ViewMode = 'liste' | 'detail' | 'create' | 'edit';
@@ -108,24 +109,24 @@ export default function PasteurDepartmentsTab() {
   // Mutations
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/departments/${id}`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); toast.success('Département supprimé'); setShowDeleteConfirm(null); },
-    onError: () => toast.error('Erreur lors de la suppression'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); toast.success(tText('Département supprimé')); setShowDeleteConfirm(null); },
+    onError: () => toast.error(tText('Erreur lors de la suppression')),
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof form) => {
       await api.post('/departments', { ...data, responsableId: data.responsableId || undefined });
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); toast.success('Département créé'); setView('liste'); setForm(emptyForm); },
-    onError: () => toast.error('Erreur lors de la création'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); toast.success(tText('Département créé')); setView('liste'); setForm(emptyForm); },
+    onError: () => toast.error(tText('Erreur lors de la création')),
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: typeof form }) => {
       await api.put(`/departments/${id}`, { ...data, responsableId: data.responsableId || undefined });
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); toast.success('Département mis à jour'); setView('liste'); setEditingId(null); setForm(emptyForm); },
-    onError: () => toast.error('Erreur lors de la mise à jour'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['departments'] }); toast.success(tText('Département mis à jour')); setView('liste'); setEditingId(null); setForm(emptyForm); },
+    onError: () => toast.error(tText('Erreur lors de la mise à jour')),
   });
 
   const handleEdit = useCallback((dept: DepartmentItem) => {
@@ -147,7 +148,7 @@ export default function PasteurDepartmentsTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => { setView('liste'); setSelectedDept(null); }} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <div className="flex items-start justify-between mb-6">
@@ -160,7 +161,7 @@ export default function PasteurDepartmentsTab() {
             </div>
             <div className="flex gap-2">
               <button onClick={() => handleEdit(selectedDept)} className="btn-secondary btn-sm"><Edit3 className="w-4 h-4" /> Modifier</button>
-              <Link to={`/departments/${selectedDept.id}/manage`} className="btn-primary btn-sm"><Settings className="w-4 h-4" /> Gestion avancée</Link>
+              <Link to={`/departments/${selectedDept.id}/manage`} className="btn-primary btn-sm"><Settings className="w-4 h-4" /> {tText('Gestion avancée')}</Link>
             </div>
           </div>
 
@@ -174,12 +175,12 @@ export default function PasteurDepartmentsTab() {
               </div>
               <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
                 <Hammer className="w-4 h-4 mx-auto text-amber-500 mb-1" />
-                <p className="text-xs text-gray-400">Équipes</p>
+                <p className="text-xs text-gray-400">{tText('Équipes')}</p>
                 <p className="font-bold text-sm">{deptKpi.totalTeams ?? deptTeams?.length ?? 0}</p>
               </div>
               <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
                 <Target className="w-4 h-4 mx-auto text-emerald-500 mb-1" />
-                <p className="text-xs text-gray-400">Tâches</p>
+                <p className="text-xs text-gray-400">{tText('Tâches')}</p>
                 <p className="font-bold text-sm">{deptKpi.totalTasks ?? deptTasks?.length ?? 0}</p>
               </div>
               <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
@@ -275,7 +276,7 @@ export default function PasteurDepartmentsTab() {
             <Link to={`/departments/${selectedDept.id}/manage`} className="glass-card p-3 hover:shadow-lg transition-all group">
               <div className="flex items-center gap-2">
                 <History className="w-4 h-4 text-violet-500" />
-                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Activité</span>
+                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{tText('Activité')}</span>
                 <ChevronRight className="w-3 h-3 text-gray-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </Link>
@@ -290,13 +291,13 @@ export default function PasteurDepartmentsTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => { setView('liste'); setEditingId(null); setForm(emptyForm); }} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{editingId ? 'Modifier le département' : 'Nouveau département'}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="label">Nom du département *</label>
+              <label className="label">{tText('Nom du département *')}</label>
               <input className="input" value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} placeholder="Ex: Louange, Jeunesse, Évangélisation..." />
             </div>
             <div>
@@ -312,7 +313,7 @@ export default function PasteurDepartmentsTab() {
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button onClick={() => { setView('liste'); setEditingId(null); setForm(emptyForm); }} className="btn-secondary">Annuler</button>
+            <button onClick={() => { setView('liste'); setEditingId(null); setForm(emptyForm); }} className="btn-secondary">{tText('Annuler')}</button>
             <button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="btn-primary">
               {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="w-4 h-4 animate-spin" />}
               {editingId ? 'Enregistrer' : 'Créer'}
@@ -329,13 +330,13 @@ export default function PasteurDepartmentsTab() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Building2 className="w-5 h-5 text-amber-500" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Départements</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Départements')}</h2>
           {data && <span className="text-xs text-gray-400">({data.totalElements} résultats)</span>}
         </div>
         <div className="flex gap-2">
-          <Link to="/departments" className="btn-secondary btn-sm"><Eye className="w-4 h-4" /> Page complète</Link>
+          <Link to="/departments" className="btn-secondary btn-sm"><Eye className="w-4 h-4" /> {tText('Page complète')}</Link>
           <button onClick={() => { setForm(emptyForm); setEditingId(null); setView('create'); }} className="btn-primary btn-sm">
-            <Plus className="w-4 h-4" /> Nouveau département
+            <Plus className="w-4 h-4" /> {tText('Nouveau département')}
           </button>
         </div>
       </div>
@@ -351,7 +352,7 @@ export default function PasteurDepartmentsTab() {
       {/* Chart répartition */}
       {data && data.content && data.content.length > 0 && (
         <div className="glass-card p-6 mb-6">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Répartition des âmes par département</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">{tText('Répartition des âmes par département')}</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.content.filter(d => (d.totalAmes ?? 0) > 0)}>
@@ -379,10 +380,10 @@ export default function PasteurDepartmentsTab() {
             <table className="table w-full">
               <thead>
                 <tr>
-                  <th>Département</th>
+                  <th>{tText('Département')}</th>
                   <th>Responsable</th>
                   <th className="text-right">Familles</th>
-                  <th className="text-right">Âmes</th>
+                  <th className="text-right">{tText('Âmes')}</th>
                   <th>Statut</th>
                   <th className="text-right">Actions</th>
                 </tr>
@@ -414,10 +415,10 @@ export default function PasteurDepartmentsTab() {
                         <button onClick={() => handleEdit(dept)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Modifier">
                           <Edit3 className="w-3.5 h-3.5 text-gray-500" />
                         </button>
-                        <Link to={`/departments/${dept.id}/manage`} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Gestion avancée">
+                        <Link to={`/departments/${dept.id}/manage`} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title={tText('Gestion avancée')}>
                           <Settings className="w-3.5 h-3.5 text-gray-500" />
                         </Link>
-                        <button onClick={() => setShowDeleteConfirm(dept.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Supprimer">
+                        <button onClick={() => setShowDeleteConfirm(dept.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title={tText('Supprimer')}>
                           <Trash2 className="w-3.5 h-3.5 text-red-400" />
                         </button>
                       </div>
@@ -425,7 +426,7 @@ export default function PasteurDepartmentsTab() {
                   </tr>
                 ))}
                 {(data?.content || []).length === 0 && (
-                  <tr><td colSpan={6} className="py-12 text-center text-gray-400">Aucun département trouvé</td></tr>
+                  <tr><td colSpan={6} className="py-12 text-center text-gray-400">{tText('Aucun département trouvé')}</td></tr>
                 )}
               </tbody>
             </table>
@@ -440,7 +441,7 @@ export default function PasteurDepartmentsTab() {
             {data.number * data.size + 1} à {Math.min((data.number + 1) * data.size, data.totalElements)} sur {data.totalElements}
           </p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -453,9 +454,9 @@ export default function PasteurDepartmentsTab() {
             <h3 className="text-lg font-semibold mb-2">Supprimer ce département ?</h3>
             <p className="text-sm text-gray-500 mb-4">Les membres ne seront pas supprimés mais seront détachés.</p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary">Annuler</button>
+              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary">{tText('Annuler')}</button>
               <button onClick={() => deleteMutation.mutate(showDeleteConfirm)} className="btn-primary bg-red-600 hover:bg-red-700">
-                <Trash2 className="w-4 h-4" /> Supprimer
+                <Trash2 className="w-4 h-4" /> {tText('Supprimer')}
               </button>
             </div>
           </div>

@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const CATEGORIE_FALLBACK: Record<string, string> = {
   COMPTE_RENDU: 'Compte rendu',
@@ -79,7 +81,7 @@ export default function DocumentsPage() {
         f.description || '',
         categorieLabel(f.categorie),
         formatFileSize(f.taille),
-        new Date(f.dateCreation).toLocaleDateString('fr-FR'),
+        new Date(f.dateCreation).toLocaleDateString(getI18nLocale()),
       ]);
     });
     const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
@@ -98,7 +100,7 @@ export default function DocumentsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
-      toast.success('Document enregistré avec succès');
+      toast.success(tText('Document enregistré avec succès'));
       setShowCreate(false);
       setNewFile(INITIAL_FORM);
     },
@@ -111,7 +113,7 @@ export default function DocumentsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
-      toast.success('Document supprimé');
+      toast.success(tText('Document supprimé'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -156,7 +158,7 @@ export default function DocumentsPage() {
       header: 'Ajouté le',
       cell: (file) => (
         <span className="text-sm text-gray-500">
-          {new Date(file.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+          {new Date(file.dateCreation).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' })}
         </span>
       ),
     },
@@ -187,7 +189,7 @@ export default function DocumentsPage() {
             <FolderOpen className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Documents</h1>
           </div>
-          <p className="page-subtitle">Gestion documentaire de la famille</p>
+          <p className="page-subtitle">{tText('Gestion documentaire de la famille')}</p>
         </div>
         <div className="flex gap-2 animate-fade-in">
           <button onClick={exportCsv} className="btn-secondary btn-sm">
@@ -224,7 +226,7 @@ export default function DocumentsPage() {
         <div className="card p-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4 text-gray-400" />
-            <p className="text-xs font-semibold text-gray-500 uppercase">Répartition par catégorie</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase">{tText('Répartition par catégorie')}</p>
           </div>
           <div className="flex flex-wrap gap-3">
             {Object.entries(docStats.categories).sort((a, b) => b[1] - a[1]).map(([cat, count]) => {
@@ -252,7 +254,7 @@ export default function DocumentsPage() {
                 <Upload className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Nouveau document</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Nouveau document')}</h3>
                 <p className="text-xs text-gray-500">Ajoutez un lien vers un document</p>
               </div>
             </div>
@@ -278,7 +280,7 @@ export default function DocumentsPage() {
               </div>
             </div>
             <div>
-              <label className="label">Catégorie</label>
+              <label className="label">{tText('Catégorie')}</label>
               <select className="input" value={newFile.categorie} onChange={(e) => setNewFile({ ...newFile, categorie: e.target.value as CategorieDocument })}>
                 {categorieEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
               </select>
@@ -294,7 +296,7 @@ export default function DocumentsPage() {
           </div>
 
           <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/20 dark:border-white/[0.06]">
-            <button onClick={() => setShowCreate(false)} className="btn-secondary btn-sm">Annuler</button>
+            <button onClick={() => setShowCreate(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
             <button onClick={() => createMutation.mutate(newFile)} disabled={!newFile.nom || !newFile.chemin || createMutation.isPending} className="btn-primary btn-sm">
               {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               Enregistrer
@@ -315,7 +317,7 @@ export default function DocumentsPage() {
         {showFilters && (
           <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-white/20 dark:border-white/[0.06] animate-slide-up">
             <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value as CategorieDocument | ''); setPage(0); }} className="input w-auto">
-              <option value="">Toutes catégories</option>
+              <option value="">{tText('Toutes catégories')}</option>
               {categorieEntries.map((o) => (<option key={o.code} value={o.code}>{o.label}</option>))}
             </select>
           </div>
@@ -334,7 +336,7 @@ export default function DocumentsPage() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">{data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>

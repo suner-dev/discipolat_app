@@ -3,6 +3,8 @@ import { useState } from 'react';
 import api from '@/lib/api';
 import { Loader2, Eye, Plus, Link2, Moon, Sun, Flame, CloudRainWind, HeartHandshake, Sparkles, Lightbulb, Globe2, Lock } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface PropheticEntry {
   id: string;
   authorId: string;
@@ -98,9 +100,9 @@ export default function PropheticJournalPage() {
                 {meta.label}
               </span>
               {e.isPublic ? (
-                <span title="Partagé"><Globe2 className="w-3.5 h-3.5 text-emerald-500" /></span>
+                <span title={tText('Partagé')}><Globe2 className="w-3.5 h-3.5 text-emerald-500" /></span>
               ) : (
-                <span title="Privé"><Lock className="w-3.5 h-3.5 text-gray-400" /></span>
+                <span title={tText('Privé')}><Lock className="w-3.5 h-3.5 text-gray-400" /></span>
               )}
             </div>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap line-clamp-4">
@@ -113,7 +115,7 @@ export default function PropheticJournalPage() {
                 </span>
               ))}
               <span className="ml-auto text-[11px] text-gray-400">
-                {new Date(e.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {new Date(e.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' })}
               </span>
             </div>
 
@@ -124,7 +126,7 @@ export default function PropheticJournalPage() {
                   className="btn-sm mt-3 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg glass-card text-xs hover:shadow-md"
                 >
                   <Link2 className="w-3.5 h-3.5" />
-                  Veille de corrélation
+                  {tText('Veille de corrélation')}
                 </button>
                 {correlating === e.id && (
                   <div className="mt-3 border-l-2 border-primary-400 pl-3 space-y-2">
@@ -137,7 +139,7 @@ export default function PropheticJournalPage() {
                       return (
                         <p key={c.id} className="text-xs text-gray-600 dark:text-gray-400">
                           <span className="font-medium text-gray-800 dark:text-gray-200">{cm.label} — {c.title}</span>{' '}
-                          ({new Date(c.createdAt).toLocaleDateString('fr-FR')})
+                          ({new Date(c.createdAt).toLocaleDateString(getI18nLocale())})
                         </p>
                       );
                     })}
@@ -158,7 +160,7 @@ export default function PropheticJournalPage() {
           <Eye className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Journal Prophétique</h1>
+          <h1 className="page-title">{tText('Journal Prophétique')}</h1>
           <p className="page-subtitle">Visions, rêves & révélations — corrélés automatiquement par IA</p>
         </div>
         <button onClick={() => setShowForm((v) => !v)} className="btn-primary btn-sm ml-auto inline-flex items-center gap-1">
@@ -178,7 +180,7 @@ export default function PropheticJournalPage() {
           ].map(({ key, label, cls }) => (
             <div key={key} className={`stat-card bg-gradient-to-br ${cls}`}>
               <Eye className="w-5 h-5 opacity-80" />
-              <p className="stat-value">{(statsQuery.data?.[key] ?? 0).toLocaleString('fr-FR')}</p>
+              <p className="stat-value">{(statsQuery.data?.[key] ?? 0).toLocaleString(getI18nLocale())}</p>
               <p className="text-xs opacity-80">{label}</p>
             </div>
           ))}
@@ -206,7 +208,7 @@ export default function PropheticJournalPage() {
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Contenu</label>
-            <textarea className="input w-full min-h-[110px]" placeholder="Décrivez la vision, le rêve ou la révélation…"
+            <textarea className="input w-full min-h-[110px]" placeholder={tText('Décrivez la vision, le rêve ou la révélation…')}
               value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
           </div>
           <div className="flex gap-4 items-end flex-wrap">
@@ -214,7 +216,7 @@ export default function PropheticJournalPage() {
               <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">
                 Tags (séparés par des virgules)
               </label>
-              <input className="input w-full" placeholder="famille, décrochage, jeunesse"
+              <input className="input w-full" placeholder={tText('famille, décrochage, jeunesse')}
                 value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
             </div>
             <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 pb-2">
@@ -237,7 +239,7 @@ export default function PropheticJournalPage() {
       <div className="flex gap-2 mb-6">
         <button onClick={() => setTab('mine')}
           className={`btn-sm px-4 py-2 rounded-lg ${tab === 'mine' ? 'bg-gradient-to-r from-violet-500 to-indigo-600 text-white shadow-md' : 'glass-card hover:shadow-md'}`}>
-          Mes entrées
+          {tText('Mes entrées')}
         </button>
         <button onClick={() => setTab('public')}
           className={`btn-sm px-4 py-2 rounded-lg ${tab === 'public' ? 'bg-gradient-to-r from-violet-500 to-indigo-600 text-white shadow-md' : 'glass-card hover:shadow-md'}`}>

@@ -4,6 +4,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Wrench, Plus, Trash2, Loader2, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 interface Equipment {
   id: string;
   name: string;
@@ -27,13 +28,13 @@ export default function EquipmentPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => api.post('/equipment', form),
-    onSuccess: () => { toast.success('Équipement ajouté'); setShowForm(false); qc.invalidateQueries({ queryKey: ['equipment'] }); },
+    onSuccess: () => { toast.success(tText('Équipement ajouté')); setShowForm(false); qc.invalidateQueries({ queryKey: ['equipment'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/equipment/${id}`),
-    onSuccess: () => { toast.success('Supprimé'); qc.invalidateQueries({ queryKey: ['equipment'] }); },
+    onSuccess: () => { toast.success(tText('Supprimé')); qc.invalidateQueries({ queryKey: ['equipment'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -44,8 +45,8 @@ export default function EquipmentPage() {
           <Wrench className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Équipement</h1>
-          <p className="page-subtitle">Gestion du matériel</p>
+          <h1 className="page-title">{tText('Équipement')}</h1>
+          <p className="page-subtitle">{tText('Gestion du matériel')}</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm ml-auto inline-flex items-center gap-1">
           <Plus className="w-4 h-4" /> Ajouter
@@ -60,11 +61,11 @@ export default function EquipmentPage() {
               <input className="input w-full" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Catégorie</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">{tText('Catégorie')}</label>
               <input className="input w-full" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Quantité</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">{tText('Quantité')}</label>
               <input type="number" className="input w-full" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} />
             </div>
             <div>
@@ -73,8 +74,8 @@ export default function EquipmentPage() {
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <button onClick={() => setShowForm(false)} className="btn-sm px-4 py-2 rounded-lg glass-card">Annuler</button>
-            <button onClick={() => createMutation.mutate()} disabled={!form.name.trim()} className="btn-primary btn-sm">Créer</button>
+            <button onClick={() => setShowForm(false)} className="btn-sm px-4 py-2 rounded-lg glass-card">{tText('Annuler')}</button>
+            <button onClick={() => createMutation.mutate()} disabled={!form.name.trim()} className="btn-primary btn-sm">{tText('Créer')}</button>
           </div>
         </div>
       )}
@@ -82,7 +83,7 @@ export default function EquipmentPage() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : equipment.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucun équipement</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucun équipement')}</div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {equipment.map((item) => (

@@ -3,6 +3,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Flame, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface SpiritualChallenge {
   id: string;
   title: string;
@@ -34,7 +36,7 @@ export default function SpiritualChallengesPage() {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) =>
       api.post(`/spiritual-challenges/${id}/status`, { status }),
-    onSuccess: () => { toast.success('Statut mis à jour'); qc.invalidateQueries({ queryKey: ['spiritual-challenges'] }); },
+    onSuccess: () => { toast.success(tText('Statut mis à jour')); qc.invalidateQueries({ queryKey: ['spiritual-challenges'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -48,8 +50,8 @@ export default function SpiritualChallengesPage() {
           <Flame className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Défis spirituels</h1>
-          <p className="page-subtitle">Défis de croissance spirituelle et défis communautaires</p>
+          <h1 className="page-title">{tText('Défis spirituels')}</h1>
+          <p className="page-subtitle">{tText('Défis de croissance spirituelle et défis communautaires')}</p>
         </div>
       </div>
 
@@ -70,7 +72,7 @@ export default function SpiritualChallengesPage() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : challenges.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucun défi spirituel</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucun défi spirituel')}</div>
       ) : (
         <div className="space-y-3">
           {challenges.map((c) => (
@@ -86,7 +88,7 @@ export default function SpiritualChallengesPage() {
                   {c.description && <p className="text-xs text-gray-500 mt-1">{c.description}</p>}
                   <div className="flex gap-3 mt-2 text-[11px] text-gray-500">
                     {c.soulName && <span>Participant: {c.soulName}</span>}
-                    {c.deadline && <span>Échéance: {new Date(c.deadline).toLocaleDateString('fr-FR')}</span>}
+                    {c.deadline && <span>Échéance: {new Date(c.deadline).toLocaleDateString(getI18nLocale())}</span>}
                   </div>
                 </div>
                 {c.status === 'ACTIVE' && (
@@ -97,7 +99,7 @@ export default function SpiritualChallengesPage() {
                     </button>
                     <button onClick={() => updateStatusMutation.mutate({ id: c.id, status: 'FAILED' })} disabled={updateStatusMutation.isPending}
                       className="btn-sm px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs hover:bg-red-700 flex items-center gap-1">
-                      <XCircle className="w-3 h-3" /> Échoué
+                      <XCircle className="w-3 h-3" /> {tText('Échoué')}
                     </button>
                   </div>
                 )}

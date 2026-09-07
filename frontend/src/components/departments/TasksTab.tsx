@@ -9,6 +9,7 @@ import {
 import type { Team, Task } from './types';
 import { STATUT_TASK_BADGE, PRIORITE_COLORS } from './types';
 
+import { tText } from '@/i18n';
 export function TasksTab({ taskStats, teams, members, deptId, onChanged }: {
   taskStats: any; teams: Team[]; members: any[]; deptId: string; onChanged: () => void;
 }) {
@@ -31,7 +32,7 @@ export function TasksTab({ taskStats, teams, members, deptId, onChanged }: {
         titre, teamId: teamId || null, assignedTo: assignedTo || null, priorite, echeance: echeance || null,
       });
     },
-    onSuccess: () => { toast.success('Tâche créée ✅'); setTitre(''); setTeamId(''); setAssignedTo(''); setPriorite('MOYENNE'); setEcheance(''); setShowCreate(false); invalidateAll(); },
+    onSuccess: () => { toast.success(tText('Tâche créée ✅')); setTitre(''); setTeamId(''); setAssignedTo(''); setPriorite('MOYENNE'); setEcheance(''); setShowCreate(false); invalidateAll(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -43,7 +44,7 @@ export function TasksTab({ taskStats, teams, members, deptId, onChanged }: {
   });
   const deleteMutation = useMutation({
     mutationFn: async (taskId: string) => api.delete(`/departments/${deptId}/tasks/${taskId}`),
-    onSuccess: () => { toast.success('Tâche supprimée'); invalidateAll(); },
+    onSuccess: () => { toast.success(tText('Tâche supprimée')); invalidateAll(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -99,22 +100,22 @@ export function TasksTab({ taskStats, teams, members, deptId, onChanged }: {
                 <input className="input" value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ex : Préparer la console son…" />
               </div>
               <div>
-                <label className="label">Assignée à</label>
+                <label className="label">{tText('Assignée à')}</label>
                 <select className="input" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
-                  <option value="">— Non assignée —</option>
+                  <option value="">{tText('— Non assignée —')}</option>
                   {members.map((m) => <option key={m.id} value={m.id}>{m.nom}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">Équipe</label>
+                <label className="label">{tText('Équipe')}</label>
                 <select className="input" value={teamId} onChange={(e) => setTeamId(e.target.value)}>
-                  <option value="">— Aucune —</option>
+                  <option value="">{tText('— Aucune —')}</option>
                   {teams.filter((t) => t.statut === 'ACTIVE').map((t) => <option key={t.id} value={t.id}>{t.nom}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="label">Priorité</label>
+                  <label className="label">{tText('Priorité')}</label>
                   <select className="input" value={priorite} onChange={(e) => setPriorite(e.target.value)}>
                     <option value="BASSE">Basse</option>
                     <option value="MOYENNE">Moyenne</option>
@@ -122,13 +123,13 @@ export function TasksTab({ taskStats, teams, members, deptId, onChanged }: {
                   </select>
                 </div>
                 <div>
-                  <label className="label">Échéance</label>
+                  <label className="label">{tText('Échéance')}</label>
                   <input type="date" className="input" value={echeance} onChange={(e) => setEcheance(e.target.value)} />
                 </div>
               </div>
             </div>
             <button onClick={() => createMutation.mutate()} disabled={!titre.trim() || createMutation.isPending} className="btn-primary btn-sm mt-3 cursor-pointer">
-              <Plus className="w-4 h-4" /> Créer la tâche
+              <Plus className="w-4 h-4" /> {tText('Créer la tâche')}
             </button>
           </div>
         )}
@@ -136,7 +137,7 @@ export function TasksTab({ taskStats, teams, members, deptId, onChanged }: {
         {tasks.length === 0 ? (
           <div className="text-center py-8">
             <ListTodo className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm text-gray-400">Aucune tâche</p>
+            <p className="text-sm text-gray-400">{tText('Aucune tâche')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -173,7 +174,7 @@ export function TasksTab({ taskStats, teams, members, deptId, onChanged }: {
                       <option key={k} value={k}>{k.replace('_', ' ').toLowerCase()}</option>
                     ))}
                   </select>
-                  <button onClick={() => deleteMutation.mutate(t.id)} title="Supprimer" className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-500/10 transition-all cursor-pointer">
+                  <button onClick={() => deleteMutation.mutate(t.id)} title={tText('Supprimer')} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-500/10 transition-all cursor-pointer">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>

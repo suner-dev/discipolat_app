@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { FileText, Loader2, CheckCircle, AlertCircle, Smile, Frown, Meh } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface VisitNote {
   id: string;
   memberId: string;
@@ -25,7 +27,7 @@ export default function VisitNotesVerifyPage() {
 
   const verifyMutation = useMutation({
     mutationFn: async (id: string) => api.post(`/ai-visit-notes/${id}/verify`),
-    onSuccess: () => { toast.success('Note vérifiée'); qc.invalidateQueries({ queryKey: ['ai-visit-notes-verify'] }); },
+    onSuccess: () => { toast.success(tText('Note vérifiée')); qc.invalidateQueries({ queryKey: ['ai-visit-notes-verify'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -45,7 +47,7 @@ export default function VisitNotesVerifyPage() {
           <FileText className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Vérification des notes IA</h1>
+          <h1 className="page-title">{tText('Vérification des notes IA')}</h1>
           <p className="page-subtitle">Vérifiez les notes de visites générées par l'IA</p>
         </div>
       </div>
@@ -68,7 +70,7 @@ export default function VisitNotesVerifyPage() {
       ) : error ? (
         <div className="glass-card p-6 text-red-400">{getErrorMessage(error)}</div>
       ) : notes.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucune note de visite IA</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucune note de visite IA')}</div>
       ) : (
         <div className="space-y-4">
           {unverified.map((note) => (
@@ -76,7 +78,7 @@ export default function VisitNotesVerifyPage() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   {sentimentIcon(note.aiSentiment)}
-                  <span className="px-2 py-0.5 rounded-full text-xs text-yellow-400 bg-yellow-500/20">Non vérifié</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs text-yellow-400 bg-yellow-500/20">{tText('Non vérifié')}</span>
                   <span className="text-xs text-gray-400">{note.memberId?.slice(0, 8)}...</span>
                 </div>
                 <button onClick={() => verifyMutation.mutate(note.id)} disabled={verifyMutation.isPending}
@@ -95,7 +97,7 @@ export default function VisitNotesVerifyPage() {
                   </ul>
                 </div>
               )}
-              <p className="text-[11px] text-gray-500 mt-2">{new Date(note.createdAt).toLocaleDateString('fr-FR')}</p>
+              <p className="text-[11px] text-gray-500 mt-2">{new Date(note.createdAt).toLocaleDateString(getI18nLocale())}</p>
             </div>
           ))}
 
@@ -108,7 +110,7 @@ export default function VisitNotesVerifyPage() {
                     {sentimentIcon(note.aiSentiment)}
                     <CheckCircle className="w-4 h-4 text-green-400" />
                     <span className="text-xs text-gray-400">{note.memberId?.slice(0, 8)}...</span>
-                    <span className="text-[11px] text-gray-500 ml-auto">{new Date(note.createdAt).toLocaleDateString('fr-FR')}</span>
+                    <span className="text-[11px] text-gray-500 ml-auto">{new Date(note.createdAt).toLocaleDateString(getI18nLocale())}</span>
                   </div>
                   <p className="text-sm text-gray-500 line-clamp-2">{note.aiSummary}</p>
                 </div>

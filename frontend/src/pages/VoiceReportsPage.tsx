@@ -6,6 +6,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface VoiceReport {
   id: string;
   authorId: string;
@@ -68,7 +70,7 @@ export default function VoiceReportsPage() {
       const res = await api.get(`/voice-reports/${id}/structured`);
       setStructured(res.data ?? {});
       setOpenStructured(id);
-    } catch { toast.error('Impossible de générer le rapport structuré'); }
+    } catch { toast.error(tText('Impossible de générer le rapport structuré')); }
     finally { setStructuredLoading(null); }
   };
 
@@ -90,7 +92,7 @@ export default function VoiceReportsPage() {
           <div className="flex rounded-xl bg-white/5 border border-white/10 p-1">
             <button onClick={() => setTab('all')}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === 'all' ? 'bg-pink-500 text-white' : 'text-gray-400 hover:text-white'}`}>
-              Tous
+              {tText('Tous')}
             </button>
             <button onClick={() => setTab('mine')}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === 'mine' ? 'bg-pink-500 text-white' : 'text-gray-400 hover:text-white'}`}>
@@ -107,7 +109,7 @@ export default function VoiceReportsPage() {
       {actionItemsQuery.data && actionItemsQuery.data.length > 0 && (
         <div className="glass-card p-5 mb-6">
           <h2 className="flex items-center gap-2 font-semibold mb-3">
-            <ClipboardList className="w-5 h-5 text-amber-500" /> Actions à suivre
+            <ClipboardList className="w-5 h-5 text-amber-500" /> {tText('Actions à suivre')}
           </h2>
           <ul className="space-y-2">
             {actionItemsQuery.data.map(a => (
@@ -130,7 +132,7 @@ export default function VoiceReportsPage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <UserRound className="w-4 h-4" />
-                  {r.authorName ? `${r.authorName} — ` : ''}{new Date(r.createdAt).toLocaleString('fr-FR')}
+                  {r.authorName ? `${r.authorName} — ` : ''}{new Date(r.createdAt).toLocaleString(getI18nLocale())}
                 </div>
                 <span className={`flex items-center gap-1 text-xs font-medium ${mood.cls}`}>
                   <mood.icon className="w-4 h-4" /> {mood.label}
@@ -153,7 +155,7 @@ export default function VoiceReportsPage() {
                   )}
                   {a.besoinPriere && (
                     <span className="badge badge-warning inline-flex items-center gap-1">
-                      <Heart className="w-3 h-3" /> Besoin de prière
+                      <Heart className="w-3 h-3" /> {tText('Besoin de prière')}
                     </span>
                   )}
                 </div>

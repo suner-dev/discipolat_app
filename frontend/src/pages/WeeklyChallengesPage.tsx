@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Flame, Trophy, CheckCircle, Zap, Loader2 } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Challenge { id: string; title: string; description?: string; category?: string; difficulty?: string; xpReward?: number; progress?: number; status?: string; }
 
 const diffColor = (d?: string) => d === 'HARD' ? 'text-red-400 bg-red-500/20' : d === 'MEDIUM' ? 'text-yellow-400 bg-yellow-500/20' : 'text-green-400 bg-green-500/20';
@@ -29,7 +30,7 @@ export default function WeeklyChallengesPage() {
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Flame className="text-orange-400" /> Défis hebdomadaires</h1>
+        <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Flame className="text-orange-400" /> {tText('Défis hebdomadaires')}</h1>
         <button onClick={() => generate.mutate()} disabled={generate.isPending} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 text-white text-sm font-medium hover:opacity-90 disabled:opacity-50">
           {generate.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} Générer les défis de la semaine
         </button>

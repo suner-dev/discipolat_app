@@ -6,6 +6,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface KpiNarrative {
   id: string;
   typeKPI: string;
@@ -50,7 +52,7 @@ export default function KpiNarrativePage() {
       return (await api.post('/kpi-narrative/generate-all', payload)).data;
     },
     onSuccess: () => {
-      toast.success('Narratifs générés');
+      toast.success(tText('Narratifs générés'));
       setShowGenerate(false);
       setKpiData({});
       queryClient.invalidateQueries({ queryKey: ['kpi-narrative'] });
@@ -66,12 +68,12 @@ export default function KpiNarrativePage() {
         </div>
         <div>
           <h1 className="page-title">Narratifs KPI</h1>
-          <p className="page-subtitle">Génération automatique de narratifs pour vos indicateurs</p>
+          <p className="page-subtitle">{tText('Génération automatique de narratifs pour vos indicateurs')}</p>
         </div>
         <div className="ml-auto flex gap-2">
           <button onClick={() => setShowGenerate(true)}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg flex items-center gap-2">
-            <Sparkles className="w-4 h-4" /> Générer
+            <Sparkles className="w-4 h-4" /> {tText('Générer')}
           </button>
         </div>
       </div>
@@ -80,7 +82,7 @@ export default function KpiNarrativePage() {
       <div className="flex gap-3 mb-6 flex-wrap">
         <select value={selectedType} onChange={e => setSelectedType(e.target.value)}
           className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm">
-          <option value="">Tous les types</option>
+          <option value="">{tText('Tous les types')}</option>
           {KPI_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
         <input type="text" value={selectedPeriode} onChange={e => setSelectedPeriode(e.target.value)}
@@ -107,7 +109,7 @@ export default function KpiNarrativePage() {
                   </div>
                 </div>
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{n.narratif}</p>
-                <div className="text-xs text-gray-400 mt-2">{new Date(n.createdAt).toLocaleString('fr-FR')}</div>
+                <div className="text-xs text-gray-400 mt-2">{new Date(n.createdAt).toLocaleString(getI18nLocale())}</div>
               </div>
             ))}
           </div>
@@ -118,7 +120,7 @@ export default function KpiNarrativePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowGenerate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Générer tous les narratifs</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Générer tous les narratifs')}</h2>
             <p className="text-xs text-gray-500 mb-4">Entrez les valeurs actuelles et précédentes (séparées par une virgule)</p>
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {KPI_TYPES.map(type => (
@@ -131,7 +133,7 @@ export default function KpiNarrativePage() {
               ))}
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowGenerate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowGenerate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={() => generateAllMutation.mutate()} disabled={generateAllMutation.isPending}
                 className="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 flex items-center gap-2">
                 {generateAllMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

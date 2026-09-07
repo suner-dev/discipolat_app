@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { tText } from '@/i18n';
 import {
   Users, UserPlus, UserMinus, Search, ChevronRight, Mail, Phone,
   CheckCircle, Clock, UserX, Heart, Download, Upload, Loader2, Filter,
@@ -64,7 +65,7 @@ export function MembresTab({ deptId, members, onChanged }: { deptId: string; mem
       await api.post(`/departments/${deptId}/members`, { soulId });
     },
     onSuccess: () => {
-      toast.success('Membre ajouté au département ✅');
+      toast.success(tText('Membre ajouté au département ✅'));
       queryClient.invalidateQueries({ queryKey: ['department', deptId, 'members'] });
       onChanged();
     },
@@ -74,7 +75,7 @@ export function MembresTab({ deptId, members, onChanged }: { deptId: string; mem
   const removeMutation = useMutation({
     mutationFn: async (memberId: string) => api.delete(`/departments/${deptId}/members/${memberId}`),
     onSuccess: () => {
-      toast.success('Membre retiré du département');
+      toast.success(tText('Membre retiré du département'));
       queryClient.invalidateQueries({ queryKey: ['department', deptId, 'members'] });
       onChanged();
     },
@@ -109,7 +110,7 @@ export function MembresTab({ deptId, members, onChanged }: { deptId: string; mem
       a.download = `membres-departement.csv`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Export CSV téléchargé 📥');
+      toast.success(tText('Export CSV téléchargé 📥'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -132,7 +133,7 @@ export function MembresTab({ deptId, members, onChanged }: { deptId: string; mem
         <div className="stat-card p-3 text-center">
           <Clock className="w-4 h-4 mx-auto mb-1 text-blue-500" />
           <p className="stat-value text-xl text-blue-500">{stats.integration}</p>
-          <span className="stat-label text-[10px]">En intégration</span>
+          <span className="stat-label text-[10px]">{tText('En intégration')}</span>
         </div>
         <div className="stat-card p-3 text-center">
           <Heart className="w-4 h-4 mx-auto mb-1 text-amber-500" />
@@ -160,7 +161,7 @@ export function MembresTab({ deptId, members, onChanged }: { deptId: string; mem
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as MemberStatus)}
             >
-              <option value="ALL">Tous les statuts</option>
+              <option value="ALL">{tText('Tous les statuts')}</option>
               {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
               ))}
@@ -204,7 +205,7 @@ export function MembresTab({ deptId, members, onChanged }: { deptId: string; mem
             ) : search.trim().length >= 2 ? (
               <p className="text-xs text-gray-400 text-center py-3">Aucun résultat pour « {search} »</p>
             ) : (
-              <p className="text-xs text-gray-400 text-center py-3">Tapez au moins 2 caractères pour rechercher</p>
+              <p className="text-xs text-gray-400 text-center py-3">{tText('Tapez au moins 2 caractères pour rechercher')}</p>
             )}
           </div>
         )}
@@ -214,7 +215,7 @@ export function MembresTab({ deptId, members, onChanged }: { deptId: string; mem
       <div className="glass-card p-5">
         <div className="flex items-center gap-2 mb-4">
           <Users className="w-4 h-4 text-primary-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Membres du département</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Membres du département')}</h3>
           <span className="badge text-[10px] badge-info">{filtered.length}</span>
         </div>
 

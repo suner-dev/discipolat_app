@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 interface SubTypeForm {
   id?: string;
   label: string;
@@ -50,7 +51,7 @@ export default function ProgramTypesPage() {
       await api.post('/programs', payload);
     },
     onSuccess: () => {
-      toast.success('Type de programme créé');
+      toast.success(tText('Type de programme créé'));
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       setShowModal(false);
       setForm(emptyForm());
@@ -63,7 +64,7 @@ export default function ProgramTypesPage() {
       await api.put(`/programs/${id}`, payload);
     },
     onSuccess: () => {
-      toast.success('Type de programme mis à jour');
+      toast.success(tText('Type de programme mis à jour'));
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       setShowModal(false);
       setEditing(null);
@@ -77,7 +78,7 @@ export default function ProgramTypesPage() {
       await api.delete(`/programs/${id}`);
     },
     onSuccess: () => {
-      toast.success('Type de programme supprimé');
+      toast.success(tText('Type de programme supprimé'));
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       setConfirmDelete(null);
     },
@@ -156,7 +157,7 @@ export default function ProgramTypesPage() {
           </p>
         </div>
         <button onClick={openCreate} className="btn-primary btn-sm animate-scale-in">
-          <Plus className="w-4 h-4" /> Nouveau type
+          <Plus className="w-4 h-4" /> {tText('Nouveau type')}
         </button>
       </div>
 
@@ -232,8 +233,8 @@ export default function ProgramTypesPage() {
       ) : (
         <div className="glass-card p-12 text-center">
           <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">Aucun type de programme configuré</p>
-          <p className="text-sm text-gray-400 mt-1">Cliquez sur « Nouveau type » pour commencer</p>
+          <p className="text-gray-500 dark:text-gray-400">{tText('Aucun type de programme configuré')}</p>
+          <p className="text-sm text-gray-400 mt-1">{tText('Cliquez sur « Nouveau type » pour commencer')}</p>
         </div>
       )}
 
@@ -328,7 +329,7 @@ export default function ProgramTypesPage() {
               )}
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button onClick={() => setShowModal(false)} className="btn-secondary btn-sm">Annuler</button>
+                <button onClick={() => setShowModal(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
                 <button onClick={handleSubmit} disabled={isPending || !form.label.trim()} className="btn-primary btn-sm">
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : editing ? <Pencil className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                   {editing ? 'Enregistrer' : 'Créer'}
@@ -348,12 +349,12 @@ export default function ProgramTypesPage() {
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Confirmer la suppression</h3>
+                <h3 className="text-lg font-semibold">{tText('Confirmer la suppression')}</h3>
                 <p className="text-sm text-gray-500">Ce type de programme sera définitivement supprimé.</p>
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setConfirmDelete(null)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setConfirmDelete(null)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => deleteMutation.mutate(confirmDelete)}
                 disabled={deleteMutation.isPending}

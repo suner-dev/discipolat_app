@@ -8,6 +8,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import toast from 'react-hot-toast';
 import { Megaphone, Clock, CheckCircle, Calendar, Plus, Trash2 } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Announcement { id: string; title: string; status: string; target: string; scheduledAt?: string; publishedAt?: string; expiresAt?: string; pinToTop: boolean; }
 
 export default function ScheduledAnnouncementsPage() {
@@ -30,18 +31,18 @@ export default function ScheduledAnnouncementsPage() {
 
   const publishMutation = useMutation({
     mutationFn: async (id: string) => { await api.post(`/announcements/${id}/publish`); },
-    onSuccess: () => { toast.success('Annonce publiée'); refetch(); },
-    onError: () => toast.error('Erreur publication'),
+    onSuccess: () => { toast.success(tText('Annonce publiée')); refetch(); },
+    onError: () => toast.error(tText('Erreur publication')),
   });
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => { await api.post(`/announcements/${id}/cancel`); },
-    onSuccess: () => { toast.success('Annonce annulée'); refetch(); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { toast.success(tText('Annonce annulée')); refetch(); },
+    onError: () => toast.error(tText('Erreur')),
   });
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/announcements/${id}`); },
-    onSuccess: () => { toast.success('Annonce supprimée'); refetch(); },
-    onError: () => toast.error('Erreur suppression'),
+    onSuccess: () => { toast.success(tText('Annonce supprimée')); refetch(); },
+    onError: () => toast.error(tText('Erreur suppression')),
   });
 
   const filtered = filter === 'all' ? announcements : announcements.filter(a => a.status === filter);
@@ -49,7 +50,7 @@ export default function ScheduledAnnouncementsPage() {
 
   if (isLoading) return <SkeletonLoader lines={4} variant="card" />;
   if (error) return <div className="text-red-500 p-6">{getErrorMessage(error)}</div>;
-  if (announcements.length === 0) return <EmptyState title="Aucune annonce" message="Aucune annonce programmée pour le moment." />
+  if (announcements.length === 0) return <EmptyState title={tText('Aucune annonce')} message="Aucune annonce programmée pour le moment." />
 
   return (
     <div className="space-y-6 p-6">
@@ -74,7 +75,7 @@ export default function ScheduledAnnouncementsPage() {
             </div>
                         <div className="flex gap-2">
               {a.status === 'DRAFT' && <button onClick={() => publishMutation.mutate(a.id)} className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded-lg text-white text-xs">Publier</button>}
-              {a.status === 'SCHEDULED' && <button onClick={() => cancelMutation.mutate(a.id)} className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white text-xs">Annuler</button>}
+              {a.status === 'SCHEDULED' && <button onClick={() => cancelMutation.mutate(a.id)} className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white text-xs">{tText('Annuler')}</button>}
               <button onClick={() => deleteMutation.mutate(a.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>

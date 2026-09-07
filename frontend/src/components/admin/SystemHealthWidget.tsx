@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Server, Database, HardDrive, Activity, Clock, Loader2, AlertTriangle } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface SystemHealth {
   jvm: {
     heapUsed: string;
@@ -40,7 +42,7 @@ export default function SystemHealthWidget() {
     return (
       <div className="glass-card p-5 animate-fade-in">
         <div className="flex items-center justify-center gap-2 py-4 text-xs text-gray-400">
-          <Loader2 className="w-4 h-4 animate-spin" /> Chargement de la santé système…
+          <Loader2 className="w-4 h-4 animate-spin" /> {tText('Chargement de la santé système…')}
         </div>
       </div>
     );
@@ -66,7 +68,7 @@ export default function SystemHealthWidget() {
       <div className="flex items-center gap-2 mb-4">
         <Server className="w-4 h-4 text-primary-500" />
         <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-          Santé système
+          {tText('Santé système')}
         </h3>
         <span className={`badge text-[9px] ${dbUp ? 'badge-success' : 'badge-warning'}`}>
           {dbUp ? 'Opérationnel' : 'Attention'}
@@ -78,7 +80,7 @@ export default function SystemHealthWidget() {
         <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
           <div className="flex items-center gap-1.5 mb-2">
             <Database className={`w-3.5 h-3.5 ${dbUp ? 'text-emerald-500' : 'text-red-500'}`} />
-            <p className="text-[10px] text-gray-400 uppercase">Base de données</p>
+            <p className="text-[10px] text-gray-400 uppercase">{tText('Base de données')}</p>
           </div>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{dbUp ? 'UP' : 'DOWN'}</p>
           <p className="text-[9px] text-gray-400 mt-1">
@@ -93,7 +95,7 @@ export default function SystemHealthWidget() {
         <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
           <div className="flex items-center gap-1.5 mb-2">
             <HardDrive className="w-3.5 h-3.5 text-indigo-500" />
-            <p className="text-[10px] text-gray-400 uppercase">Mémoire JVM</p>
+            <p className="text-[10px] text-gray-400 uppercase">{tText('Mémoire JVM')}</p>
           </div>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             {data.jvm.heapUsedPercent}%
@@ -114,7 +116,7 @@ export default function SystemHealthWidget() {
           </div>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{data.uptime.formatted}</p>
           <p className="text-[9px] text-gray-400 mt-1">
-            Démarrage {new Date(data.uptime.startTime).toLocaleString('fr-FR')}
+            Démarrage {new Date(data.uptime.startTime).toLocaleString(getI18nLocale())}
           </p>
         </div>
 

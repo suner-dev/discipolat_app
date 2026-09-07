@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import { Loader2, BookOpen, Sparkles, Copy, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 interface Outline {
   title: string;
   hook: string;
@@ -42,7 +43,7 @@ export default function SermonAssistantPage() {
     onSuccess: (r) => {
       setOutlines(r.outlines);
     },
-    onError: () => toast.error("Impossible de générer les plans — vérifiez votre connexion"),
+    onError: () => toast.error(tText('Impossible de générer les plans — vérifiez votre connexion')),
   });
 
   const copyOutline = (o: Outline) => {
@@ -57,7 +58,7 @@ export default function SermonAssistantPage() {
       `APPLICATION : ${o.application}`,
     ].join('\n');
     navigator.clipboard?.writeText(text);
-    toast.success('Plan copié');
+    toast.success(tText('Plan copié'));
   };
 
   return (
@@ -67,8 +68,8 @@ export default function SermonAssistantPage() {
           <BookOpen className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Prédicateur IA</h1>
-          <p className="page-subtitle">Générez des plans de sermons adaptés à chaque audience</p>
+          <h1 className="page-title">{tText('Prédicateur IA')}</h1>
+          <p className="page-subtitle">{tText('Générez des plans de sermons adaptés à chaque audience')}</p>
         </div>
       </div>
 
@@ -81,7 +82,7 @@ export default function SermonAssistantPage() {
         className="glass-card p-6 mb-6 animate-slide-up"
       >
         <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">
-          Thème du sermon
+          {tText('Thème du sermon')}
         </label>
         <input
           className="input w-full mb-4"

@@ -12,6 +12,7 @@ import { MENU_ICON_KEYS } from '@/lib/menuIcons';
 import ConfigRevisionHistory from '@/components/ConfigRevisionHistory';
 import PageBlockRenderer, { BLOCK_TYPE_LABELS } from '@/components/pages/PageBlockRenderer';
 
+import { tText } from '@/i18n';
 const ALL_ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
 const LAYOUTS = ['STACK', 'GRID_2', 'GRID_3'];
 const KPI_COLORS = ['primary', 'emerald', 'amber', 'violet', 'rose', 'sky'];
@@ -91,7 +92,7 @@ function BlockEditor({
         <button type="button" className="btn-icon btn-icon-sm text-gray-400 hover:text-gray-600" onClick={() => onMove(1)} aria-label="Descendre le bloc">
           <ArrowDown className="w-4 h-4" />
         </button>
-        <button type="button" className="btn-icon btn-icon-sm text-gray-400 hover:text-red-500" onClick={onRemove} aria-label="Supprimer le bloc">
+        <button type="button" className="btn-icon btn-icon-sm text-gray-400 hover:text-red-500" onClick={onRemove} aria-label={tText('Supprimer le bloc')}>
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
@@ -99,17 +100,17 @@ function BlockEditor({
       {block.type === 'KPI' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="label">Libellé</label>
+            <label className="label">{tText('Libellé')}</label>
             <input className="input" value={(block.config.label as string) || ''} onChange={(e) => set({ label: e.target.value })} />
           </div>
           <div>
-            <label className="label">Source de données</label>
+            <label className="label">{tText('Source de données')}</label>
             <select className="input" value={(block.config.source as string) || ''} onChange={(e) => set({ source: e.target.value })}>
               {sourceOptions.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Icône</label>
+            <label className="label">{tText('Icône')}</label>
             <select className="input" value={(block.config.icon as string) || 'BarChart3'} onChange={(e) => set({ icon: e.target.value })}>
               {MENU_ICON_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
             </select>
@@ -130,7 +131,7 @@ function BlockEditor({
             <input className="input" value={(block.config.title as string) || ''} onChange={(e) => set({ title: e.target.value })} />
           </div>
           <div>
-            <label className="label">Source de données</label>
+            <label className="label">{tText('Source de données')}</label>
             <select className="input" value={(block.config.source as string) || ''} onChange={(e) => set({ source: e.target.value })}>
               {sourceOptions.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
@@ -161,7 +162,7 @@ function BlockEditor({
             <input className="input" value={(block.config.placeholder as string) || ''} onChange={(e) => set({ placeholder: e.target.value })} />
           </div>
           <div>
-            <label className="label">Libellé du bouton</label>
+            <label className="label">{tText('Libellé du bouton')}</label>
             <input className="input" value={(block.config.buttonLabel as string) || ''} onChange={(e) => set({ buttonLabel: e.target.value })} />
           </div>
           <div>
@@ -178,7 +179,7 @@ function BlockEditor({
             <input className="input" value={(block.config.title as string) || ''} onChange={(e) => set({ title: e.target.value })} />
           </div>
           <div>
-            <label className="label">Source de données</label>
+            <label className="label">{tText('Source de données')}</label>
             <select className="input" value={(block.config.source as string) || ''} onChange={(e) => set({ source: e.target.value })}>
               {sourceOptions.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
@@ -217,7 +218,7 @@ function BlockEditor({
             <input className="input font-mono text-xs" value={(block.config.url as string) || ''} onChange={(e) => set({ url: e.target.value })} />
           </div>
           <div>
-            <label className="label">Légende</label>
+            <label className="label">{tText('Légende')}</label>
             <input className="input" value={(block.config.caption as string) || ''} onChange={(e) => set({ caption: e.target.value })} />
           </div>
         </div>
@@ -241,7 +242,7 @@ function ChecklistEditor({ block, set }: { block: CustomPageBlock; set: (p: Reco
         <label className="label">Titre</label>
         <input className="input" value={(block.config.title as string) || ''} onChange={(e) => set({ title: e.target.value })} />
       </div>
-      <label className="label">Éléments à cocher</label>
+      <label className="label">{tText('Éléments à cocher')}</label>
       {items.map((item, i) => (
         <div key={i} className="flex items-center gap-2">
           <input
@@ -260,7 +261,7 @@ function ChecklistEditor({ block, set }: { block: CustomPageBlock; set: (p: Reco
         className="btn-ghost btn-sm"
         onClick={() => set({ items: [...items, 'Nouvel élément'] })}
       >
-        <Plus className="w-4 h-4" /> Ajouter un élément
+        <Plus className="w-4 h-4" /> {tText('Ajouter un élément')}
       </button>
     </div>
   );
@@ -341,8 +342,8 @@ export default function PlatformPagesPage() {
     mutationFn: async ({ id, published }: { id: string; published: boolean }) => {
       await api.post(`/pages/${id}/publish`, { published });
     },
-    onSuccess: () => { invalidate(); toast.success('Publication mise à jour'); },
-    onError: () => toast.error('Erreur lors de la publication'),
+    onSuccess: () => { invalidate(); toast.success(tText('Publication mise à jour')); },
+    onError: () => toast.error(tText('Erreur lors de la publication')),
   });
 
   const saveMutation = useMutation({
@@ -367,7 +368,7 @@ export default function PlatformPagesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/pages/${id}`); },
-    onSuccess: () => { invalidate(); toast.success('Page supprimée'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Page supprimée')); },
     onError: (e: unknown) => {
       const msg = (e as { response?: { data?: { detail?: string } } }).response?.data?.detail;
       toast.error(msg || 'Impossible de supprimer cette page');
@@ -446,7 +447,7 @@ export default function PlatformPagesPage() {
     <div className="page-container max-w-5xl">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Pages personnalisées</h1>
+          <h1 className="page-title">{tText('Pages personnalisées')}</h1>
           <p className="page-subtitle">
             Créez des pages métier avec des blocs (KPI, tableaux, listes, textes, liens…).
             Toutes les données sont résolues côté serveur sur les entités réelles, scopées
@@ -455,13 +456,13 @@ export default function PlatformPagesPage() {
         </div>
         <div className="page-header-actions">
           <button className="btn-primary btn-sm" onClick={openCreate}>
-            <Plus className="w-4 h-4" /> Nouvelle page
+            <Plus className="w-4 h-4" /> {tText('Nouvelle page')}
           </button>
         </div>
       </div>
 
       <div className="mb-6">
-        <ConfigRevisionHistory entityType="CUSTOM_PAGE" title="Historique des pages" />
+        <ConfigRevisionHistory entityType="CUSTOM_PAGE" title={tText('Historique des pages')} />
       </div>
 
       {pages.length === 0 && (
@@ -483,7 +484,7 @@ export default function PlatformPagesPage() {
                 {p.published
                   ? <span className="badge badge-emerald">Publiée · v{p.version}</span>
                   : <span className="badge badge-gray">Brouillon</span>}
-                {!p.enabled && <span className="badge badge-rose">Désactivée</span>}
+                {!p.enabled && <span className="badge badge-rose">{tText('Désactivée')}</span>}
               </div>
               <p className="text-xs text-gray-400 mt-0.5 font-mono">/pages/{p.slug}</p>
               {p.roles.length > 0 && (
@@ -649,7 +650,7 @@ export default function PlatformPagesPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <LayoutTemplate className="w-4 h-4" />}
                 {editing ? 'Enregistrer' : 'Créer'}

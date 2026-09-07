@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Megaphone, Bell, Loader2, Plus, Send, Trash2, AlertTriangle, Clock,
   UserPlus, Target, CheckCircle2, Users2,
@@ -75,7 +77,7 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Annonce publiée ✅');
+      toast.success(tText('Annonce publiée ✅'));
       setTitre(''); setMessage(''); setCible('TOUS'); setTeamId(''); setPositionId(''); setMemberIds([]);
       invalidate();
     },
@@ -85,7 +87,7 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
   const deleteMutation = useMutation({
     mutationFn: async (announcementId: string) => api.delete(`/departments/${deptId}/announcements/${announcementId}`),
     onSuccess: () => {
-      toast.success('Annonce supprimée');
+      toast.success(tText('Annonce supprimée'));
       invalidate();
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -117,7 +119,7 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
             </div>
             {cible === 'EQUIPE' && (
               <div>
-                <label className="label" htmlFor="annonce-equipe">Équipe *</label>
+                <label className="label" htmlFor="annonce-equipe">{tText('Équipe *')}</label>
                 <select id="annonce-equipe" className="input" value={teamId} onChange={(e) => setTeamId(e.target.value)}>
                   <option value="">— Choisir —</option>
                   {teams.filter((t) => t.statut === 'ACTIVE').map((t) => (
@@ -142,7 +144,7 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
             <div className="mt-3">
               <label className="label">Membres ciblés ({memberIds.length} sélectionné{memberIds.length > 1 ? 's' : ''}) *</label>
               {members.length === 0 ? (
-                <p className="text-xs text-gray-400">Chargement des membres…</p>
+                <p className="text-xs text-gray-400">{tText('Chargement des membres…')}</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto p-2 rounded-xl bg-white/60 dark:bg-gray-900/40 border border-gray-200/60 dark:border-gray-700/40">
                   {members.map((m) => (
@@ -167,7 +169,7 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
         </div>
 
         {announcements.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Aucune annonce — publiez la première</p>
+          <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune annonce — publiez la première')}</p>
         ) : (
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {announcements.map((a) => (
@@ -180,7 +182,7 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">{a.message}</p>
                     <p className="text-[10px] text-gray-400 mt-1">
-                      {a.auteurNom || ''} · {new Date(a.createdAt).toLocaleDateString('fr-FR')}
+                      {a.auteurNom || ''} · {new Date(a.createdAt).toLocaleDateString(getI18nLocale())}
                       {a.teamNom ? ` · ${a.teamNom}` : ''}{a.positionNom ? ` · ${a.positionNom}` : ''}
                       {a.cible === 'MEMBRES' ? ` · ${a.nbMembres ?? 0} membre${(a.nbMembres ?? 0) > 1 ? 's' : ''} ciblé${(a.nbMembres ?? 0) > 1 ? 's' : ''}` : ''}
                     </p>
@@ -210,7 +212,7 @@ export default function AnnouncementsAlertsSection({ deptId }: { deptId: string 
         {alerts.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-6">
             <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-500" />
-            Aucune alerte en cours — tout est sous contrôle
+            {tText('Aucune alerte en cours — tout est sous contrôle')}
           </p>
         ) : (
           <div className="space-y-2 max-h-80 overflow-y-auto">

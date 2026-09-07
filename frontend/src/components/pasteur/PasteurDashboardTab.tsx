@@ -19,6 +19,8 @@ import {
 } from 'recharts';
 import { useState } from 'react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 const COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 const getGreeting = () => {
@@ -156,7 +158,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
         <div className="flex items-center gap-2 mb-4">
           <Zap className="w-4 h-4 text-primary-500" />
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-            Accès rapide aux modules
+            {tText('Accès rapide aux modules')}
           </h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
@@ -225,7 +227,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                       </div>
                     </div>
                     <span className="stat-value animate-count-up">{stat.value}</span>
-                    <span className="text-[10px] text-gray-400 mt-1 block">Cliquer pour explorer</span>
+                    <span className="text-[10px] text-gray-400 mt-1 block">{tText('Cliquer pour explorer')}</span>
                   </button>
                 );
               })}
@@ -238,13 +240,13 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
               <div className="flex items-center gap-2 mb-4">
                 <Target className="w-4 h-4 text-primary-500" />
                 <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                  Indicateurs de Santé
+                  {tText('Indicateurs de Santé')}
                 </h2>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Health Score Ring */}
                 <div className="glass-card p-6 animate-slide-up">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Score de santé global</h3>
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">{tText('Score de santé global')}</h3>
                   <div className="flex items-center justify-center">
                     <div className="relative w-36 h-36">
                       <svg className="w-36 h-36 -rotate-90" viewBox="0 0 120 120">
@@ -308,11 +310,11 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                   </div>
                   <div className="mt-3">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-500">Fidélisation</span>
+                      <span className="text-gray-500">{tText('Fidélisation')}</span>
                       <span className="font-semibold text-emerald-500">{kpis.health.tauxFidelisation}%</span>
                     </div>
                     <div className="flex items-center justify-between text-xs mt-1">
-                      <span className="text-gray-500">Présence globale</span>
+                      <span className="text-gray-500">{tText('Présence globale')}</span>
                       <span className="font-semibold text-blue-500">{kpis.health.tauxPresence}%</span>
                     </div>
                   </div>
@@ -346,13 +348,13 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                           </div>
                         </div>
                         {w.rapportSoumis ? (
-                          <span title="Rapport soumis"><CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" /></span>
+                          <span title={tText('Rapport soumis')}><CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" /></span>
                         ) : (
-                          <span title="Rapport non soumis"><XCircle className="w-4 h-4 text-red-500 flex-shrink-0" /></span>
+                          <span title={tText('Rapport non soumis')}><XCircle className="w-4 h-4 text-red-500 flex-shrink-0" /></span>
                         )}
                       </div>
                     ))}
-                    {kpis.workload.length === 0 && <p className="text-xs text-gray-400 text-center py-4">Aucun faiseur</p>}
+                    {kpis.workload.length === 0 && <p className="text-xs text-gray-400 text-center py-4">{tText('Aucun faiseur')}</p>}
                   </div>
                 </div>
               </div>
@@ -365,7 +367,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <CalendarClock className="w-4 h-4 text-blue-500" />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Événements à venir</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Événements à venir')}</h3>
                 </div>
                 <button onClick={() => onNavigateToTab('evenements')} className="text-[10px] font-medium text-primary-600">Voir tout</button>
               </div>
@@ -379,7 +381,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{ev.titre}</p>
                         <p className="text-[10px] text-gray-400">
-                          {new Date(ev.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                          {new Date(ev.dateDebut).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' })}
                           {ev.lieu ? ` · ${ev.lieu}` : ''}
                         </p>
                       </div>
@@ -388,7 +390,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                   </div>
                 ))}
                 {(!kpis?.upcomingEvents || kpis.upcomingEvents.length === 0) && (
-                  <p className="text-xs text-gray-400 text-center py-4">Aucun événement à venir</p>
+                  <p className="text-xs text-gray-400 text-center py-4">{tText('Aucun événement à venir')}</p>
                 )}
               </div>
             </div>
@@ -433,7 +435,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="glass-card p-6 animate-slide-up">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Taux de présence</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Taux de présence')}</h3>
                 <span className="badge-info text-[10px]">Semaine en cours</span>
               </div>
               <div className="grid grid-cols-3 gap-3 mb-4">
@@ -545,20 +547,20 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-primary-500" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Départements</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Départements')}</h3>
               </div>
               <button onClick={() => onNavigateToTab('departements')} className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
-                Gérer <ChevronRight className="w-3 h-3" />
+                {tText('Gérer')} <ChevronRight className="w-3 h-3" />
               </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700/30">
-                    <th className="pb-2 font-medium">Département</th>
+                    <th className="pb-2 font-medium">{tText('Département')}</th>
                     <th className="pb-2 font-medium">Responsable</th>
                     <th className="pb-2 font-medium text-right">Familles</th>
-                    <th className="pb-2 font-medium text-right">Âmes</th>
+                    <th className="pb-2 font-medium text-right">{tText('Âmes')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -574,7 +576,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                     </tr>
                   ))}
                   {departements.length === 0 && (
-                    <tr><td colSpan={4} className="py-6 text-center text-gray-400">Aucun département</td></tr>
+                    <tr><td colSpan={4} className="py-6 text-center text-gray-400">{tText('Aucun département')}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -596,11 +598,11 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700/30">
-                    <th className="pb-2 font-medium">Famille</th>
+                    <th className="pb-2 font-medium">{tText('Famille')}</th>
                     <th className="pb-2 font-medium">Chef</th>
-                    <th className="pb-2 font-medium text-right">Âmes</th>
+                    <th className="pb-2 font-medium text-right">{tText('Âmes')}</th>
                     <th className="pb-2 font-medium text-right">Actifs</th>
-                    <th className="pb-2 font-medium text-right">Présence</th>
+                    <th className="pb-2 font-medium text-right">{tText('Présence')}</th>
                     <th className="pb-2 font-medium text-right">Statut</th>
                   </tr>
                 </thead>
@@ -619,7 +621,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                       </td>
                       <td className="py-3 text-right">
                         {fam.aRisque ? (
-                          <span className="badge-error text-[10px]">À risque</span>
+                          <span className="badge-error text-[10px]">{tText('À risque')}</span>
                         ) : (
                           <span className="badge-success text-[10px]">OK</span>
                         )}
@@ -627,7 +629,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                     </tr>
                   ))}
                   {familles.length === 0 && (
-                    <tr><td colSpan={6} className="py-6 text-center text-gray-400">Aucune famille</td></tr>
+                    <tr><td colSpan={6} className="py-6 text-center text-gray-400">{tText('Aucune famille')}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -640,7 +642,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <ArrowLeftRight className="w-4 h-4 text-amber-500" />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Transferts à traiter</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Transferts à traiter')}</h3>
                   <span className="badge-warning text-[10px]">{transfertsEnAttente.length} en attente</span>
                 </div>
                 <button onClick={() => onNavigateToTab('transferts')} className="text-[10px] font-medium text-primary-600">Voir tout</button>
@@ -660,12 +662,12 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                         </p>
                         <p className="text-[9px] text-gray-400">
                           {t.type === 'SOUL_TRANSFERT' ? 'Âme' : t.type === 'FAISEUR_TRANSFERT' ? 'Faiseur' : t.type === 'CHEF_FAMILLE_TRANSFERT' ? 'Chef' : t.type}
-                          {t.dateSoumission ? ` · ${new Date(t.dateSoumission).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
+                          {t.dateSoumission ? ` · ${new Date(t.dateSoumission).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' })}` : ''}
                         </p>
                       </div>
                     </div>
                     {t.priorite === 'HAUTE' && (
-                      <span className="text-[8px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full font-semibold uppercase flex-shrink-0">Priorité</span>
+                      <span className="text-[8px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full font-semibold uppercase flex-shrink-0">{tText('Priorité')}</span>
                     )}
                   </div>
                 ))}
@@ -700,7 +702,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                     )}
                   </div>
                 ))}
-                {faiseurs.length === 0 && <p className="text-xs text-gray-400 text-center py-4">Aucun faiseur</p>}
+                {faiseurs.length === 0 && <p className="text-xs text-gray-400 text-center py-4">{tText('Aucun faiseur')}</p>}
               </div>
             </div>
 
@@ -745,7 +747,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
               </div>
               <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/30">
                 <div className="flex items-center justify-between text-[10px] text-gray-400">
-                  <span>Suivis parallèles actifs</span>
+                  <span>{tText('Suivis parallèles actifs')}</span>
                   <span className="font-semibold text-primary-500">{dashboard?.suivisParallelesActifs ?? 0}</span>
                 </div>
               </div>
@@ -755,7 +757,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <History className="w-4 h-4 text-blue-500" />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activité récente</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Activité récente')}</h3>
                 </div>
                 <button onClick={() => onNavigateToTab('audit')} className="text-[10px] font-medium text-primary-600">Voir tout</button>
               </div>
@@ -772,13 +774,13 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                         {' '}{a.action?.toLowerCase().replace(/_/g, ' ')}
                       </p>
                       <p className="text-[9px] text-gray-400">
-                        {a.entiteType} · {new Date(a.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {a.entiteType} · {new Date(a.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
                 ))}
                 {(!recentActivity || recentActivity.length === 0) && (
-                  <p className="text-xs text-gray-400 text-center py-4">Aucune activité récente</p>
+                  <p className="text-xs text-gray-400 text-center py-4">{tText('Aucune activité récente')}</p>
                 )}
               </div>
             </div>

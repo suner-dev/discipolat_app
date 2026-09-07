@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { TrendingUp, Sparkles, Loader2, Trash2 } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Projection { id: string; typeProjection: string; nom: string; effectifActuel: number; effectifProjete: number; tauxCroissanceAnnuel: number; moisProjection: number; recommandations?: string; }
 interface Prophecy { croissanceAnnuellePct?: number; effectifProjete12Mois?: number; message?: string; besoinsLeaders?: number; [k: string]: unknown; }
 
@@ -26,15 +27,15 @@ export default function GrowthProjectionPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><TrendingUp className="text-emerald-400" /> Prophétie de croissance</h1>
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><TrendingUp className="text-emerald-400" /> {tText('Prophétie de croissance')}</h1>
 
       {prophecyQ.data && (
         <div className="bg-gradient-to-r from-emerald-600/20 to-teal-600/20 backdrop-blur rounded-2xl p-5 border border-emerald-500/30">
           <h2 className="text-white font-semibold flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-emerald-300" /> Analyse prédictive (données réelles)</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Stat label="Croissance annuelle projetée" value={`${prophecyQ.data.croissanceAnnuellePct ?? '—'} %`} />
+            <Stat label={tText('Croissance annuelle projetée')} value={`${prophecyQ.data.croissanceAnnuellePct ?? '—'} %`} />
             <Stat label="Effectif dans 12 mois" value={String(prophecyQ.data.effectifProjete12Mois ?? '—')} />
-            <Stat label="Nouveaux leaders nécessaires" value={String(prophecyQ.data.besoinsLeaders ?? '—')} />
+            <Stat label={tText('Nouveaux leaders nécessaires')} value={String(prophecyQ.data.besoinsLeaders ?? '—')} />
           </div>
           {prophecyQ.data.message && <p className="text-sm text-emerald-200 mt-3 italic">{prophecyQ.data.message}</p>}
         </div>
@@ -63,7 +64,7 @@ export default function GrowthProjectionPage() {
       </div>
 
       <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
-        <h2 className="text-white font-semibold mb-3">Projections enregistrées</h2>
+        <h2 className="text-white font-semibold mb-3">{tText('Projections enregistrées')}</h2>
         {(listQ.data ?? []).length === 0 ? <p className="text-sm text-gray-500">Aucune projection enregistrée.</p> : (
           <div className="space-y-2">
             {(listQ.data ?? []).map((p) => (
@@ -71,7 +72,7 @@ export default function GrowthProjectionPage() {
                 <div><span className="text-white font-medium">{p.nom}</span><span className="text-gray-500 ml-2">{p.typeProjection}</span></div>
                 <div className="flex items-center gap-4">
                   <span className="text-gray-300">{p.effectifActuel} → <span className="text-emerald-400 font-bold">{p.effectifProjete}</span></span>
-                  <button onClick={() => remove.mutate(p.id)} aria-label="Supprimer la projection" className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => remove.mutate(p.id)} aria-label={tText('Supprimer la projection')} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
             ))}

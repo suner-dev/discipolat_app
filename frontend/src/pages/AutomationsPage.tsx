@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import toast from 'react-hot-toast';
 import { Zap, Plus, Play, Pause, Trash2, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface AutomationRule {
   id: string;
   titre: string;
@@ -75,12 +76,12 @@ export default function AutomationsPage() {
   };
 
   const toggleRule = async (id: string) => {
-    try { await api.patch(`/automations/${id}/toggle`); toast.success('Statut mis à jour'); loadRules(); loadStats(); }
+    try { await api.patch(`/automations/${id}/toggle`); toast.success(tText('Statut mis à jour')); loadRules(); loadStats(); }
     catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const deleteRule = async (id: string) => {
-    try { await api.delete(`/automations/${id}`); toast.success('Supprimée'); loadRules(); loadStats(); }
+    try { await api.delete(`/automations/${id}`); toast.success(tText('Supprimée')); loadRules(); loadStats(); }
     catch (e) { toast.error(getErrorMessage(e)); }
   };
 
@@ -170,7 +171,7 @@ export default function AutomationsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouvelle automatisation</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouvelle automatisation')}</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre</label>
@@ -215,9 +216,9 @@ export default function AutomationsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={createRule} className="px-4 py-2 rounded-xl bg-yellow-500 text-white text-sm font-medium hover:bg-yellow-600 flex items-center gap-2">
-                <Zap className="w-4 h-4" /> Créer
+                <Zap className="w-4 h-4" /> {tText('Créer')}
               </button>
             </div>
           </div>

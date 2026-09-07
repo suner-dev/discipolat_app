@@ -10,6 +10,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrateur',
   PASTEUR: 'Pasteur',
@@ -150,7 +151,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                   {user.statut === 'ACTIVE' ? 'Actif' : 'Inactif'}
                 </span>
                 {user.estChefDeFamille && (
-                  <span className="badge text-[10px] bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400">Chef de famille</span>
+                  <span className="badge text-[10px] bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400">{tText('Chef de famille')}</span>
                 )}
               </div>
               <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
@@ -160,7 +161,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <button onClick={() => refetch()} className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" title="Rafraîchir">
+            <button onClick={() => refetch()} className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" title={tText('Rafraîchir')}>
               <RefreshCw className="w-4 h-4" />
             </button>
             <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">
@@ -175,7 +176,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
           {ame && (
             <div className="rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 p-4">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <UserRound className="w-3.5 h-3.5" /> Fiche âme liée au compte
+                <UserRound className="w-3.5 h-3.5" /> {tText('Fiche âme liée au compte')}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                 {[
@@ -204,13 +205,13 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
           <div className="rounded-2xl bg-gradient-to-br from-amber-50/60 to-orange-50/40 dark:from-amber-900/10 dark:to-orange-900/5 border border-amber-200/40 dark:border-amber-800/30 p-4">
             <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
               <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                <Star className="w-3.5 h-3.5 text-amber-500" /> Évaluation
+                <Star className="w-3.5 h-3.5 text-amber-500" /> {tText('Évaluation')}
               </p>
               <div className="flex items-center gap-2">
                 {hasMyEval ? (
-                  <span className="badge text-[10px] badge-success">Vous avez évalué</span>
+                  <span className="badge text-[10px] badge-success">{tText('Vous avez évalué')}</span>
                 ) : (
-                  <span className="badge text-[10px] badge-gray">Pas encore évalué</span>
+                  <span className="badge text-[10px] badge-gray">{tText('Pas encore évalué')}</span>
                 )}
               </div>
             </div>
@@ -274,12 +275,12 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Heart className="w-3.5 h-3.5 text-emerald-500" /> Âmes suivies
+                  <Heart className="w-3.5 h-3.5 text-emerald-500" /> {tText('Âmes suivies')}
                 </p>
                 <span className="badge text-[10px] badge-success">{detail.nombreAmesSuivies ?? detail.amesSuivies.length}</span>
               </div>
               {detail.amesSuivies.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-4 rounded-xl bg-gray-50 dark:bg-gray-800/40">Aucune âme suivie</p>
+                <p className="text-xs text-gray-400 text-center py-4 rounded-xl bg-gray-50 dark:bg-gray-800/40">{tText('Aucune âme suivie')}</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-1">
                   {detail.amesSuivies.map((s: any) => (
@@ -330,7 +331,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-amber-500" /> Départements dirigés
+                  <Building2 className="w-3.5 h-3.5 text-amber-500" /> {tText('Départements dirigés')}
                 </p>
                 <span className="badge text-[10px] badge-warning">{detail.departements.length}</span>
               </div>
@@ -346,7 +347,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                       </span>
                     </div>
                     {dept.membres.length === 0 ? (
-                      <p className="text-xs text-gray-400 text-center py-3">Aucun membre</p>
+                      <p className="text-xs text-gray-400 text-center py-3">{tText('Aucun membre')}</p>
                     ) : (
                       <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                         {dept.membres.map((m: any) => (
@@ -388,13 +389,13 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Home className="w-3.5 h-3.5 text-gold-500" /> Famille gérée
+                  <Home className="w-3.5 h-3.5 text-gold-500" /> {tText('Famille gérée')}
                 </p>
                 <span className="badge text-[10px] bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400">{detail.familleGeree.nom}</span>
               </div>
               <div className="rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 p-3.5">
                 {detail.familleGeree.membres.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-3">Aucun membre dans cette famille</p>
+                  <p className="text-xs text-gray-400 text-center py-3">{tText('Aucun membre dans cette famille')}</p>
                 ) : (
                   <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                     {detail.familleGeree.membres.map((m: any) => (
@@ -424,7 +425,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-primary-500" /> Dossier du membre
+                  <FileText className="w-3.5 h-3.5 text-primary-500" /> {tText('Dossier du membre')}
                 </p>
                 {detail?.dossier?.length > 0 && (
                   <span className="badge text-[10px] badge-primary">{detail.dossier.length} département{detail.dossier.length > 1 ? 's' : ''}</span>
@@ -447,7 +448,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                       <span className="badge text-[10px] badge-success">{dept.objectifs?.length ?? 0}</span>
                     </div>
                     {(dept.objectifs ?? []).length === 0 ? (
-                      <p className="text-xs text-gray-400 py-2">Aucun objectif défini</p>
+                      <p className="text-xs text-gray-400 py-2">{tText('Aucun objectif défini')}</p>
                     ) : (
                       <div className="space-y-1.5">
                         {dept.objectifs.map((o: any) => (
@@ -495,7 +496,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                       <span className="badge text-[10px] badge-info">{dept.rapportsResponsable?.length ?? 0}</span>
                     </div>
                     {(dept.rapportsResponsable ?? []).length === 0 ? (
-                      <p className="text-xs text-gray-400 py-2">Aucun rapport du responsable</p>
+                      <p className="text-xs text-gray-400 py-2">{tText('Aucun rapport du responsable')}</p>
                     ) : (
                       <div className="space-y-1.5">
                         {dept.rapportsResponsable.map((r: any) => (

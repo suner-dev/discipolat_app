@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { PackageX, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 
+import { tText } from '@/i18n';
 /**
  * Page affichée proprement lorsqu'un utilisateur tente d'accéder à un module
  * désactivé par l'administration : pas de bouton mort, pas de page vide,
@@ -21,7 +22,7 @@ export default function ModuleUnavailablePage() {
         </div>
 
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 font-display">
-          Module désactivé
+          {tText('Module désactivé')}
         </h1>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
           Cette fonctionnalité n'est pas active pour votre église.
@@ -30,10 +31,10 @@ export default function ModuleUnavailablePage() {
 
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
           <Link to="/dashboard" className="btn-primary btn-sm">
-            <LayoutDashboard className="w-4 h-4" /> Retour au tableau de bord
+            <LayoutDashboard className="w-4 h-4" /> {tText('Retour au tableau de bord')}
           </Link>
           <button onClick={() => window.history.back()} className="btn-ghost btn-sm">
-            <ArrowLeft className="w-4 h-4" /> Page précédente
+            <ArrowLeft className="w-4 h-4" /> {tText('Page précédente')}
           </button>
         </div>
       </div>

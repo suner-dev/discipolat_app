@@ -32,6 +32,7 @@ import {
 } from 'recharts';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 interface AuditEntry {
   id: string;
   utilisateurId: string;
@@ -198,7 +199,7 @@ export default function AuditPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('Journal d’audit exporté en CSV');
+      toast.success(tText('Journal d’audit exporté en CSV'));
     } catch {
       toast.error("Erreur lors de l'export du journal");
     } finally {
@@ -219,7 +220,7 @@ export default function AuditPage() {
               Journal d'audit
               <span className="badge-info text-[10px]"><Shield className="w-3 h-3" /> Immuable</span>
             </h1>
-            <p className="page-subtitle">Traçabilité de toutes les actions sensibles</p>
+            <p className="page-subtitle">{tText('Traçabilité de toutes les actions sensibles')}</p>
           </div>
         </div>
         <div className="page-header-actions">
@@ -229,7 +230,7 @@ export default function AuditPage() {
           </button>
           {hasFilters && (
             <button onClick={resetFilters} className="btn-ghost btn-sm">
-              <RotateCcw className="w-4 h-4" /> Réinitialiser
+              <RotateCcw className="w-4 h-4" /> {tText('Réinitialiser')}
             </button>
           )}
         </div>
@@ -274,7 +275,7 @@ export default function AuditPage() {
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-4 h-4 text-primary-500" />
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Répartition par action
+                {tText('Répartition par action')}
               </h3>
               <span className="ml-auto text-[10px] text-gray-400">{trend.totalActions} actions · {trend.jours} jours</span>
             </div>
@@ -306,7 +307,7 @@ export default function AuditPage() {
             <div className="flex items-center gap-2 mb-4">
               <FileText className="w-4 h-4 text-primary-500" />
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Entités les plus touchées
+                {tText('Entités les plus touchées')}
               </h3>
             </div>
             <div className="space-y-3">
@@ -356,7 +357,7 @@ export default function AuditPage() {
               onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
               className="input pl-9 appearance-none"
             >
-              <option value="">Toutes les entités</option>
+              <option value="">{tText('Toutes les entités')}</option>
               {(dictionaries.options('AUDIT_ENTITY').length > 0
                 ? dictionaries.options('AUDIT_ENTITY')
                 : Object.entries(ENTITY_FALLBACK).map(([code, label]) => ({ code, label }))
@@ -373,8 +374,8 @@ export default function AuditPage() {
               className="input pl-9 appearance-none"
               aria-label="Filtrer par type d'action"
             >
-              <option value="">Toutes les actions</option>
-              <option value="CREATE">Créations</option>
+              <option value="">{tText('Toutes les actions')}</option>
+              <option value="CREATE">{tText('Créations')}</option>
               <option value="UPDATE">Modifications</option>
               <option value="DELETE">Suppressions</option>
               <option value="TRANSFER">Transferts</option>
@@ -388,7 +389,7 @@ export default function AuditPage() {
               onChange={(e) => { setUserFilter(e.target.value); setPage(0); }}
               className="input pl-9 appearance-none"
             >
-              <option value="">Tous les utilisateurs</option>
+              <option value="">{tText('Tous les utilisateurs')}</option>
               {(users ?? []).map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.firstName} {u.lastName} · {u.email}
@@ -435,8 +436,8 @@ export default function AuditPage() {
                   <th>Date</th>
                   <th>Utilisateur</th>
                   <th>Action</th>
-                  <th>Entité</th>
-                  <th>Détails</th>
+                  <th>{tText('Entité')}</th>
+                  <th>{tText('Détails')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -445,7 +446,7 @@ export default function AuditPage() {
                     <td colSpan={5} className="py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Sparkles className="w-8 h-8 text-gray-300 dark:text-gray-600" />
-                        <p className="text-sm text-gray-400">Aucune entrée ne correspond à la recherche</p>
+                        <p className="text-sm text-gray-400">{tText('Aucune entrée ne correspond à la recherche')}</p>
                       </div>
                     </td>
                   </tr>
@@ -508,7 +509,7 @@ export default function AuditPage() {
                   disabled={page === 0}
                   className="btn-ghost btn-sm"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" /> Précédent
+                  <ChevronLeft className="w-3.5 h-3.5" /> {tText('Précédent')}
                 </button>
                 <button
                   onClick={() => setPage(p => p + 1)}

@@ -10,6 +10,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 
+import { tText } from '@/i18n';
 interface ModerationItem {
   id: string;
   source: string;
@@ -42,7 +43,7 @@ export default function ContentModerationPage() {
     mutationFn: async ({ id, decision }: { id: string; decision: 'APPROVED' | 'REJECTED' }) =>
       (await api.put(`/moderation/${id}/review`, { decision })).data,
     onSuccess: () => {
-      toast.success('Décision enregistrée');
+      toast.success(tText('Décision enregistrée'));
       queryClient.invalidateQueries({ queryKey: ['content-moderation'] });
     },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),

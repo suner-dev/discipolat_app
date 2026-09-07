@@ -1,4 +1,4 @@
-import { useI18n } from '@/i18n';
+import { tText, useI18n } from '@/i18n';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
@@ -52,7 +52,7 @@ export default function CommunityPage() {
           <Users className="w-7 h-7 text-pink-500" />
           {t('nav.community') ?? 'Communauté'}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">Partagez, témoignez et encouragez-vous mutuellement</p>
+        <p className="text-sm text-gray-500 mt-1">{tText('Partagez, témoignez et encouragez-vous mutuellement')}</p>
       </div>
 
       {/* Compose */}
@@ -72,9 +72,9 @@ export default function CommunityPage() {
 
       {/* Posts */}
       {isLoading ? <SkeletonLoader lines={4} variant="card" /> :
-       error ? <EmptyState icon={<Users className="w-8 h-8 text-gray-400" />} title="Erreur de chargement" message="Impossible de charger les posts" /> :
+       error ? <EmptyState icon={<Users className="w-8 h-8 text-gray-400" />} title={tText('Erreur de chargement')} message={tText('Impossible de charger les posts')} /> :
        posts.length === 0 ? (
-        <EmptyState icon={<Users className="w-8 h-8 text-gray-400" />} title="Aucun post" message="Soyez le premier à partager un témoignage ou une prière" />
+        <EmptyState icon={<Users className="w-8 h-8 text-gray-400" />} title={tText('Aucun post')} message={tText('Soyez le premier à partager un témoignage ou une prière')} />
       ) : (
         <div className="space-y-4">
           {posts.map((post) => {

@@ -13,6 +13,8 @@ import {
 import { resolveIcon } from '@/lib/menuIcons';
 import type { ResolvedBlock } from '@/types';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /** Couleurs disponibles pour les cartes KPI. */
 const CHART_COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
 const FR_MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
@@ -40,7 +42,7 @@ function KpiBlock({ block }: { block: ResolvedBlock }) {
       </div>
       <div className="min-w-0">
         <p className="text-2xl font-bold text-gray-900 dark:text-gray-50 leading-none">
-          {value === null ? '—' : new Intl.NumberFormat('fr-FR').format(value)}
+          {value === null ? '—' : new Intl.NumberFormat(getI18nLocale()).format(value)}
         </p>
         <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1 truncate">{label}</p>
       </div>
@@ -127,7 +129,7 @@ function ChartBlock({ block }: { block: ResolvedBlock }) {
     <div className="glass-card p-5">
       <div className="card-header">
         <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h3>
-        {chartData.length === 0 && <span className="text-xs text-gray-400">Aucune donnée</span>}
+        {chartData.length === 0 && <span className="text-xs text-gray-400">{tText('Aucune donnée')}</span>}
       </div>
       {chartData.length === 0 ? (
         <p className="py-6 text-sm text-gray-400 text-center">Aucune donnée dans votre périmètre.</p>
@@ -224,7 +226,7 @@ function CalendarBlock({ block }: { block: ResolvedBlock }) {
           <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h3>
         </div>
         <div className="flex items-center gap-1">
-          <button type="button" className="btn-icon btn-icon-sm text-gray-400" onClick={() => setMonthOffset((m) => m - 1)} aria-label="Mois précédent">
+          <button type="button" className="btn-icon btn-icon-sm text-gray-400" onClick={() => setMonthOffset((m) => m - 1)} aria-label={tText('Mois précédent')}>
             <ChevronLeft className="w-4 h-4" />
           </button>
           <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 min-w-[110px] text-center capitalize">

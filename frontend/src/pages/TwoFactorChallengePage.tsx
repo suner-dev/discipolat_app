@@ -6,6 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Shield, Loader2, LogOut, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 export default function TwoFactorChallengePage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -52,10 +53,10 @@ export default function TwoFactorChallengePage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-medium mb-4 animate-fade-in">
             <Shield className="w-3 h-3" />
-            Vérification en deux étapes
+            {tText('Vérification en deux étapes')}
           </div>
           <h2 className="text-2xl font-bold text-white font-display animate-slide-up">
-            Authentification à deux facteurs
+            {tText('Authentification à deux facteurs')}
           </h2>
           <p className="mt-1.5 text-sm text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
             Entrez le code à 6 chiffres généré par votre application d'authentification
@@ -97,7 +98,7 @@ export default function TwoFactorChallengePage() {
               {verifyMutation.isPending ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Vérification...</>
               ) : (
-                <><Shield className="w-4 h-4" /> Vérifier</>
+                <><Shield className="w-4 h-4" /> {tText('Vérifier')}</>
               )}
             </button>
 
@@ -107,7 +108,7 @@ export default function TwoFactorChallengePage() {
                 className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                Retour à la connexion
+                {tText('Retour à la connexion')}
               </button>
             </div>
           </div>

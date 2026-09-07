@@ -6,6 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { tText } from '@/i18n';
 interface Automation {
   id: string;
   nom: string;
@@ -54,7 +55,7 @@ export default function WorkflowPage() {
       return api.post('/workflow/automations', newAuto);
     },
     onSuccess: () => {
-      toast.success('Automatisation créée');
+      toast.success(tText('Automatisation créée'));
       setShowCreate(false);
       setNewAuto({ nom: '', description: '', triggerType: 'MEMBER_ABSENT', triggerConfig: '{}', actionType: 'SEND_NOTIFICATION', actionConfig: '{}' });
       queryClient.invalidateQueries({ queryKey: ['workflow-automations'] });
@@ -64,13 +65,13 @@ export default function WorkflowPage() {
 
   const toggleMutation = useMutation({
     mutationFn: async (id: string) => api.patch(`/workflow/automations/${id}/toggle`),
-    onSuccess: () => { toast.success('Statut mis à jour'); queryClient.invalidateQueries({ queryKey: ['workflow-automations'] }); },
+    onSuccess: () => { toast.success(tText('Statut mis à jour')); queryClient.invalidateQueries({ queryKey: ['workflow-automations'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/workflow/automations/${id}`),
-    onSuccess: () => { toast.success('Supprimé'); queryClient.invalidateQueries({ queryKey: ['workflow-automations'] }); },
+    onSuccess: () => { toast.success(tText('Supprimé')); queryClient.invalidateQueries({ queryKey: ['workflow-automations'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
@@ -105,7 +106,7 @@ export default function WorkflowPage() {
       });
     },
     onSuccess: () => {
-      toast.success('Configuration mise à jour');
+      toast.success(tText('Configuration mise à jour'));
       configsInvalidate();
       setEditingKey(null);
     },
@@ -114,7 +115,7 @@ export default function WorkflowPage() {
 
   const toggleConfigMutation = useMutation({
     mutationFn: async (key: string) => api.post(`/workflows/${key}/toggle`),
-    onSuccess: () => { toast.success('Statut mis à jour'); configsInvalidate(); },
+    onSuccess: () => { toast.success(tText('Statut mis à jour')); configsInvalidate(); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
@@ -140,12 +141,12 @@ export default function WorkflowPage() {
         </div>
         <div>
           <h1 className="page-title">Automatisations Workflow</h1>
-          <p className="page-subtitle">Déclencheurs et actions automatiques</p>
+          <p className="page-subtitle">{tText('Déclencheurs et actions automatiques')}</p>
         </div>
         <div className="ml-auto">
           <button onClick={() => setShowCreate(true)}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-medium hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Nouvelle automatisation
+            <Plus className="w-4 h-4" /> {tText('Nouvelle automatisation')}
           </button>
         </div>
       </div>
@@ -231,7 +232,7 @@ export default function WorkflowPage() {
                           value={draft.rules} onChange={(e) => setDraft({ ...draft, rules: e.target.value })} />
                       </div>
                       <div className="flex justify-end gap-3">
-                        <button onClick={closeEditConfig} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+                        <button onClick={closeEditConfig} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
                         <button onClick={() => saveConfigMutation.mutate()} disabled={saveConfigMutation.isPending}
                           className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 flex items-center gap-2">
                           {saveConfigMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -250,7 +251,7 @@ export default function WorkflowPage() {
                             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{c.label || c.key}</h3>
                             <span className="font-mono text-[10px] text-gray-400">{c.key}</span>
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${c.enabled ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-500/20'}`}>
-                              {c.enabled ? 'Activé' : 'Désactivé'}
+                              {c.enabled ? tText('Activé') : tText('Désactivé')}
                             </span>
                           </div>
                           {c.description && <p className="text-xs text-gray-500 mt-0.5">{c.description}</p>}
@@ -277,14 +278,14 @@ export default function WorkflowPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouvelle automatisation</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouvelle automatisation')}</h2>
             <div className="space-y-4">
               <input type="text" value={newAuto.nom} onChange={e => setNewAuto({ ...newAuto, nom: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" placeholder="Nom" />
               <textarea value={newAuto.description} onChange={e => setNewAuto({ ...newAuto, description: e.target.value })}
                 rows={2} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none" placeholder="Description" />
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Déclencheur</label>
+                <label className="block text-xs text-gray-500 mb-1">{tText('Déclencheur')}</label>
                 <select value={newAuto.triggerType} onChange={e => setNewAuto({ ...newAuto, triggerType: e.target.value })}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm">
                   {TRIGGER_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -299,7 +300,7 @@ export default function WorkflowPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}
                 className="px-4 py-2 rounded-xl bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 flex items-center gap-2">
                 {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

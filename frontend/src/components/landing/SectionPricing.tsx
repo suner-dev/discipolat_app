@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useI18n } from '@/i18n';
 import Reveal from '@/components/shared/Reveal';
 
+import { tText } from '@/i18n';
 const TIERS = [
   { name: 'Essentiel', tagline: 'Pour démarrer votre suivi', featured: false },
   { name: 'Pro', tagline: 'Pour piloter votre église', featured: true },
@@ -21,7 +22,7 @@ export default function Pricing() {
             <span className="w-1.5 h-1.5 rounded-full bg-gold-500" /> {t('landing.nav.pricing')}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white font-display tracking-tight">
-            Un modèle <span className="text-gradient-gold">pensé pour les églises</span>
+            {tText('Un modèle')} <span className="text-gradient-gold">{tText('pensé pour les églises')}</span>
           </h2>
           <p className="mt-4 text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             Tarification transparente, adaptée à la taille de votre communauté. Contactez-nous pour un devis personnalisé.

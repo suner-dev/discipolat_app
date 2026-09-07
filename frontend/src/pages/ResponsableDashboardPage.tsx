@@ -13,6 +13,8 @@ import toast from 'react-hot-toast';
 import type { DepartmentPresenceRecord, ProgramType } from '@/types';
 import { EventAttendanceModal } from '@/components/departments';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 const currentWeekMonday = () => {
   const d = new Date();
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
@@ -28,7 +30,7 @@ const getGreeting = () => {
 
 const formatDate = (d?: string) => {
   if (!d) return '—';
-  return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  return new Date(d + 'T00:00:00').toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' });
 };
 
 export default function ResponsableDashboardPage() {
@@ -88,7 +90,7 @@ export default function ResponsableDashboardPage() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Présences enregistrées ✅');
+      toast.success(tText('Présences enregistrées ✅'));
       queryClient.invalidateQueries({ queryKey: ['members', 'departments', activeDeptId, 'presences'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'responsable'] });
     },
@@ -167,7 +169,7 @@ export default function ResponsableDashboardPage() {
             <span className="text-gradient font-display">Responsable</span>
           </h1>
           <p className="page-subtitle">
-            Gestion des membres de votre département · {new Date().toLocaleDateString('fr-FR', {
+            Gestion des membres de votre département · {new Date().toLocaleDateString(getI18nLocale(), {
               weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             })}
           </p>
@@ -222,12 +224,12 @@ export default function ResponsableDashboardPage() {
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider">Département actif</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider">{tText('Département actif')}</p>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{dashboard?.selectedDeptNom}</h2>
               </div>
             </div>
             <Link to={`/departments/${activeDeptId}`} className="btn-ghost btn-xs">
-              Voir le détail <ChevronRight className="w-3 h-3 ml-1" />
+              {tText('Voir le détail')} <ChevronRight className="w-3 h-3 ml-1" />
             </Link>
           </div>
 
@@ -264,7 +266,7 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value text-emerald-500">{stats.totalActifs ?? 0}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">cliquer pour gérer</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">{tText('cliquer pour gérer')}</span>
             </button>
             <button
               type="button"
@@ -281,7 +283,7 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value text-blue-500">{stats.nouveauxMembres ?? 0}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">30 derniers jours · cliquer pour voir</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">{tText('30 derniers jours · cliquer pour voir')}</span>
             </button>
             {canManage && (
               <button
@@ -293,13 +295,13 @@ export default function ResponsableDashboardPage() {
               >
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-purple-500 opacity-60" />
                 <div className="flex items-start justify-between mb-3">
-                  <span className="stat-label">Taux de présence</span>
+                  <span className="stat-label">{tText('Taux de présence')}</span>
                   <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 text-white shadow-lg">
                     <Activity className="w-4 h-4" />
                   </div>
                 </div>
                 <span className="stat-value text-violet-500">{stats.tauxPresence ?? 0}%</span>
-                <span className="text-[10px] text-gray-400 mt-1 block">cliquer pour pointer</span>
+                <span className="text-[10px] text-gray-400 mt-1 block">{tText('cliquer pour pointer')}</span>
               </button>
             )}
             <button
@@ -311,7 +313,7 @@ export default function ResponsableDashboardPage() {
             >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
-                <span className="stat-label">Rapports reçus</span>
+                <span className="stat-label">{tText('Rapports reçus')}</span>
                 <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg">
                   <FileText className="w-4 h-4" />
                 </div>
@@ -335,7 +337,7 @@ export default function ResponsableDashboardPage() {
                 </div>
               </div>
               <span className="stat-value text-pink-500">{anniversaires.length}</span>
-              <span className="text-[10px] text-gray-400 mt-1 block">ce mois-ci · cliquer pour la liste</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">{tText('ce mois-ci · cliquer pour la liste')}</span>
             </button>
             )}
             {canManage && (
@@ -348,7 +350,7 @@ export default function ResponsableDashboardPage() {
             >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
-                <span className="stat-label">Équipes</span>
+                <span className="stat-label">{tText('Équipes')}</span>
                 <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg">
                   <Network className="w-4 h-4" />
                 </div>
@@ -367,7 +369,7 @@ export default function ResponsableDashboardPage() {
             >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-rose-500 opacity-60" />
               <div className="flex items-start justify-between mb-3">
-                <span className="stat-label">Tâches en retard</span>
+                <span className="stat-label">{tText('Tâches en retard')}</span>
                 <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-rose-500 text-white shadow-lg">
                   <AlertCircle className="w-4 h-4" />
                 </div>
@@ -381,7 +383,7 @@ export default function ResponsableDashboardPage() {
           {/* Reports progress */}
           <div className="glass-card p-4 mb-6 animate-slide-up" style={{ animationDelay: '360ms' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Progression des rapports</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{tText('Progression des rapports')}</span>
               <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                 {stats.rapportsSoumis ?? 0} / {stats.rapportsAttendus ?? 0}
               </span>
@@ -406,7 +408,7 @@ export default function ResponsableDashboardPage() {
                   <ClipboardCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Saisie des présences</h3>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{tText('Saisie des présences')}</h3>
                   <p className="text-xs text-gray-400">Marquez la présence des membres de {dashboard?.selectedDeptNom} pour la semaine</p>
                 </div>
               </div>
@@ -431,7 +433,7 @@ export default function ResponsableDashboardPage() {
                   value={presenceType}
                   onChange={(e) => { setPresenceType(e.target.value); setPresenceSousType(''); }}
                 >
-                  <option value="">Général</option>
+                  <option value="">{tText('Général')}</option>
                   {programTypes.map((pt) => (
                     <option key={pt.id} value={pt.code}>{pt.label}</option>
                   ))}
@@ -476,7 +478,7 @@ export default function ResponsableDashboardPage() {
             ) : presenceSheet.length === 0 ? (
               <div className="text-center py-6">
                 <ClipboardCheck className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">Aucun membre à pointer pour cette semaine</p>
+                <p className="text-sm text-gray-400">{tText('Aucun membre à pointer pour cette semaine')}</p>
               </div>
             ) : (
               <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
@@ -506,7 +508,7 @@ export default function ResponsableDashboardPage() {
                         </p>
                       </div>
                       {!m.userId && (
-                        <span className="badge text-[10px] badge-gray" title="Sans compte utilisateur lié">Pas de compte</span>
+                        <span className="badge text-[10px] badge-gray" title={tText('Sans compte utilisateur lié')}>Pas de compte</span>
                       )}
                       <input
                         className="input w-28 hidden sm:block"
@@ -557,14 +559,14 @@ export default function ResponsableDashboardPage() {
                   <CalendarDays className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Présence aux événements</h3>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{tText('Présence aux événements')}</h3>
                   <p className="text-xs text-gray-400">Pointez les membres de {dashboard?.selectedDeptNom} à chaque événement du département</p>
                 </div>
               </div>
               <span className="badge text-[10px] badge-info">{deptEvents.length} événement{deptEvents.length > 1 ? 's' : ''}</span>
             </div>
             {deptEvents.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">Aucun événement rattaché à ce département</p>
+              <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun événement rattaché à ce département')}</p>
             ) : (
               <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
                 {deptEvents.map((e: any) => (
@@ -576,7 +578,7 @@ export default function ResponsableDashboardPage() {
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{e.titre}</p>
                         <p className="text-[10px] text-gray-400">
-                          {e.dateDebut ? new Date(e.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                          {e.dateDebut ? new Date(e.dateDebut).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
                           {e.statut ? ` · ${e.statut.replace('_', ' ').toLowerCase()}` : ''}
                         </p>
                       </div>
@@ -586,7 +588,7 @@ export default function ResponsableDashboardPage() {
                       className="btn-ghost btn-xs inline-flex cursor-pointer shrink-0"
                       title="Pointer la présence des membres"
                     >
-                      <UserCheck className="w-3.5 h-3.5" /> Présences
+                      <UserCheck className="w-3.5 h-3.5" /> {tText('Présences')}
                     </button>
                   </div>
                 ))}
@@ -603,11 +605,11 @@ export default function ResponsableDashboardPage() {
                   <Users className="w-4 h-4 text-primary-500" />
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Fiches membres</h3>
-                    <p className="text-[10px] text-gray-400">fiche · présence · rapport</p>
+                    <p className="text-[10px] text-gray-400">{tText('fiche · présence · rapport')}</p>
                   </div>
                 </div>
                 <Link to={`/departments/${activeDeptId}`} className="text-[10px] font-medium text-primary-600">
-                  Gérer les membres
+                  {tText('Gérer les membres')}
                 </Link>
               </div>
               <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -665,7 +667,7 @@ export default function ResponsableDashboardPage() {
                 {(deptDetail?.membres ?? []).length === 0 && (
                   <div className="text-center py-8">
                     <UserX className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-400">Aucun membre dans ce département</p>
+                    <p className="text-sm text-gray-400">{tText('Aucun membre dans ce département')}</p>
                   </div>
                 )}
               </div>
@@ -680,7 +682,7 @@ export default function ResponsableDashboardPage() {
                 </div>
                 <div className="space-y-2">
                   {anniversaires.length === 0 && (
-                    <p className="text-sm text-gray-400 text-center py-4">Aucun anniversaire ce mois-ci</p>
+                    <p className="text-sm text-gray-400 text-center py-4">{tText('Aucun anniversaire ce mois-ci')}</p>
                   )}
                   {anniversaires.map((a: any) => (
                     <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
@@ -700,7 +702,7 @@ export default function ResponsableDashboardPage() {
               <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '150ms' }}>
                 <div className="flex items-center gap-2 mb-4">
                   <Activity className="w-4 h-4 text-primary-500" />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Répartition des membres</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Répartition des membres')}</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -728,7 +730,7 @@ export default function ResponsableDashboardPage() {
               className="glass-card p-4 text-center cursor-pointer hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200"
             >
               <ClipboardCheck className="w-5 h-5 text-sky-500 mx-auto mb-1" />
-              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Saisie des présences</span>
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">{tText('Saisie des présences')}</span>
             </button>
             <Link to={`/departments/${activeDeptId}`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <Users className="w-5 h-5 text-amber-500 mx-auto mb-1" />
@@ -740,11 +742,11 @@ export default function ResponsableDashboardPage() {
             </Link>
             <Link to={`/departments/${activeDeptId}/report`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <FileText className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Rapport</span>
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">{tText('Rapport')}</span>
             </Link>
             <Link to={`/events`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <Calendar className="w-5 h-5 text-primary-500 mx-auto mb-1" />
-              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Événements</span>
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">{tText('Événements')}</span>
             </Link>
             <Link to={`/departments/${activeDeptId}/stats`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <Activity className="w-5 h-5 text-violet-500 mx-auto mb-1" />
@@ -752,7 +754,7 @@ export default function ResponsableDashboardPage() {
             </Link>
             <Link to={`/evaluations`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <Star className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">Évaluations</span>
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">{tText('Évaluations')}</span>
             </Link>
             <Link to={`/departments/${activeDeptId}/manage`} className="glass-card p-4 text-center hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-200">
               <ListTodo className="w-5 h-5 text-red-500 mx-auto mb-1" />
@@ -768,12 +770,12 @@ export default function ResponsableDashboardPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-red-500" />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Alertes à traiter</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Alertes à traiter')}</h3>
                 </div>
                 <span className="badge text-[10px] badge-danger">{alertes.length}</span>
               </div>
               {alertes.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-6">Aucune alerte active 🎉</p>
+                <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune alerte active 🎉')}</p>
               ) : (
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                   {alertes.map((a: any) => (
@@ -794,7 +796,7 @@ export default function ResponsableDashboardPage() {
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouveaux membres (30 jours)</h3>
                 </div>
                 {nouveauxRecents.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">Aucun nouveau membre récent</p>
+                  <p className="text-sm text-gray-400 text-center py-4">{tText('Aucun nouveau membre récent')}</p>
                 ) : (
                   <div className="space-y-1.5">
                     {nouveauxRecents.map((m: any) => (
@@ -824,12 +826,12 @@ export default function ResponsableDashboardPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <UserX className="w-4 h-4 text-amber-500" />
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">À suivre cette semaine</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('À suivre cette semaine')}</h3>
                   </div>
                   <span className="badge text-[10px] badge-warning">{stats.membresSuivi ?? 0}</span>
                 </div>
                 {membresSuivi.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">Tous les membres ont un rapport cette semaine ✅</p>
+                  <p className="text-sm text-gray-400 text-center py-4">{tText('Tous les membres ont un rapport cette semaine ✅')}</p>
                 ) : (
                   <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                     {membresSuivi.map((m: any) => (
@@ -853,7 +855,7 @@ export default function ResponsableDashboardPage() {
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Événements à venir (30 jours)</h3>
               </div>
               {evenementsAvenir.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">Aucun événement à venir</p>
+                <p className="text-sm text-gray-400 text-center py-4">{tText('Aucun événement à venir')}</p>
               ) : (
                 <div className="space-y-1.5">
                   {evenementsAvenir.map((ev: any) => (
@@ -884,7 +886,7 @@ export default function ResponsableDashboardPage() {
                   : 'Aucune demande de transfert en attente.'}
               </p>
               <Link to="/transfers" className="btn-ghost btn-xs">
-                Voir les demandes <ChevronRight className="w-3 h-3 ml-1" />
+                {tText('Voir les demandes')} <ChevronRight className="w-3 h-3 ml-1" />
               </Link>
             </div>
           </div>
@@ -912,7 +914,7 @@ export default function ResponsableDashboardPage() {
                   </button>
                 </div>
                 {anniversaires.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-6">Aucun anniversaire ce mois-ci 🎂</p>
+                  <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun anniversaire ce mois-ci 🎂')}</p>
                 ) : (
                   <div className="space-y-2">
                     {anniversaires.map((a: any) => (

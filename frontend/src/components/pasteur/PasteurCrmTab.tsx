@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { PasteurKpis } from '@/types';
+import { tText } from '@/i18n';
 import {
   Target, Eye, CheckCircle, XCircle, Users, Heart,
   TrendingUp, AlertTriangle, ArrowRight, ChevronDown, ChevronUp,
@@ -40,7 +41,7 @@ export default function PasteurCrmTab() {
           <Target className="w-5 h-5 text-pink-500" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">CRM Faiseur</h2>
         </div>
-        <Link to="/crm/faiseur" className="btn-primary btn-sm"><Eye className="w-4 h-4" /> Page complète</Link>
+        <Link to="/crm/faiseur" className="btn-primary btn-sm"><Eye className="w-4 h-4" /> {tText('Page complète')}</Link>
       </div>
 
       {isLoading ? (
@@ -52,7 +53,7 @@ export default function PasteurCrmTab() {
             <Link to="/souls" className="glass-card p-4 text-center hover:shadow-lg hover:-translate-y-0.5 transition-all group">
               <Heart className="w-6 h-6 text-rose-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{kpis?.resume?.totalAmes || 0}</p>
-              <p className="text-[10px] text-gray-400">Total âmes</p>
+              <p className="text-[10px] text-gray-400">{tText('Total âmes')}</p>
               <ArrowRight className="w-3 h-3 text-gray-400 mx-auto mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
             <Link to="/souls?statut=ACTIF" className="glass-card p-4 text-center hover:shadow-lg hover:-translate-y-0.5 transition-all group">
@@ -124,9 +125,9 @@ export default function PasteurCrmTab() {
                       </div>
                     </div>
                     {w.rapportSoumis ? (
-                      <span title="Rapport soumis"><CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" /></span>
+                      <span title={tText('Rapport soumis')}><CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" /></span>
                     ) : (
-                      <span title="Rapport non soumis"><XCircle className="w-4 h-4 text-red-500 flex-shrink-0" /></span>
+                      <span title={tText('Rapport non soumis')}><XCircle className="w-4 h-4 text-red-500 flex-shrink-0" /></span>
                     )}
                   </div>
                 ))}

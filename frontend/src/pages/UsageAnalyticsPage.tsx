@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { tText } from '@/i18n';
 import {
   BarChart3, TrendingUp, Users, Clock, RefreshCw, Loader2, Eye, MousePointer,
   Smartphone, Monitor, Globe, Calendar, ArrowUpRight, ArrowDownRight,
@@ -37,7 +38,7 @@ export default function UsageAnalyticsPage() {
         metadata: { manual: true },
       });
     },
-    onSuccess: () => toast.success('Événement tracké'),
+    onSuccess: () => toast.success(tText('Événement tracké')),
   });
 
   const maxHourlyCount = summary ? Math.max(...summary.byHour.map(h => h.count), 1) : 1;
@@ -94,7 +95,7 @@ export default function UsageAnalyticsPage() {
           {/* Hourly Heatmap */}
           <div className="glass-card p-6">
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-cyan-500" /> Activité par heure
+              <Clock className="w-4 h-4 text-cyan-500" /> {tText('Activité par heure')}
             </h3>
             <div className="flex items-end gap-1 h-32">
               {summary.byHour.map(h => (
@@ -111,7 +112,7 @@ export default function UsageAnalyticsPage() {
             {/* Top Pages */}
             <div className="glass-card p-6">
               <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <Eye className="w-4 h-4 text-cyan-500" /> Pages les plus vues
+                <Eye className="w-4 h-4 text-cyan-500" /> {tText('Pages les plus vues')}
               </h3>
               <div className="space-y-2">
                 {summary.topPages.slice(0, 10).map((p, i) => (
@@ -128,7 +129,7 @@ export default function UsageAnalyticsPage() {
             {/* Top Actions */}
             <div className="glass-card p-6">
               <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <MousePointer className="w-4 h-4 text-cyan-500" /> Actions les plus fréquentes
+                <MousePointer className="w-4 h-4 text-cyan-500" /> {tText('Actions les plus fréquentes')}
               </h3>
               <div className="space-y-2">
                 {summary.topActions.slice(0, 10).map((a, i) => (

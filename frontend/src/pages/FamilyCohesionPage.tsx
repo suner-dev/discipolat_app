@@ -4,6 +4,7 @@ import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import Toast from '@/components/shared/Toast';
 import { Heart, TrendingUp, Users, BarChart3 } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Cohesion {
   familleId: string;
   tauxParticipation: number;
@@ -37,7 +38,7 @@ export default function FamilyCohesionPage() {
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
       <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-8">
-        <Heart className="w-8 h-8 text-pink-500" /> Cohésion Familiale
+        <Heart className="w-8 h-8 text-pink-500" /> {tText('Cohésion Familiale')}
       </h1>
 
       <div className="flex gap-4 mb-6">
@@ -56,7 +57,7 @@ export default function FamilyCohesionPage() {
             {/* Score */}
             <div className="bg-white dark:bg-white/5 rounded-2xl p-8 border border-gray-200 dark:border-white/10 text-center">
               <div className="text-6xl font-bold text-pink-600 mb-2">{(cohesion.scoreCohésion * 100).toFixed(0)}%</div>
-              <div className="text-gray-500 text-sm">Score de cohésion</div>
+              <div className="text-gray-500 text-sm">{tText('Score de cohésion')}</div>
               <div className="mt-4 h-3 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden max-w-md mx-auto">
                 <div className="h-full bg-gradient-to-r from-pink-400 to-rose-400 rounded-full"
                   style={{ width: `${cohesion.scoreCohésion * 100}%` }} />
@@ -73,12 +74,12 @@ export default function FamilyCohesionPage() {
               <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10 text-center">
                 <BarChart3 className="w-5 h-5 mx-auto mb-1 text-green-500" />
                 <div className="text-2xl font-bold text-green-600">{cohesion.diversitéÂmes}</div>
-                <div className="text-xs text-gray-500">Diversité</div>
+                <div className="text-xs text-gray-500">{tText('Diversité')}</div>
               </div>
               <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10 text-center">
                 <TrendingUp className="w-5 h-5 mx-auto mb-1 text-purple-500" />
                 <div className="text-2xl font-bold text-purple-600">{cohesion.équilibreCharges}</div>
-                <div className="text-xs text-gray-500">Équilibre charges</div>
+                <div className="text-xs text-gray-500">{tText('Équilibre charges')}</div>
               </div>
             </div>
 

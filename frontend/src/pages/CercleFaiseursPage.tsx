@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
 import { Users, Send, Heart, MessageCircle, Plus, Shield } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface CerclePost {
   id: string;
   contenu: string;
@@ -82,7 +83,7 @@ export default function CercleFaiseursPage() {
       <div className="flex gap-2 mb-6 flex-wrap">
         <button onClick={() => setFilterCategory('')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${!filterCategory ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400'}`}>
-          Tous
+          {tText('Tous')}
         </button>
         {CATEGORIES.map(c => (
           <button key={c.key} onClick={() => setFilterCategory(c.key)}
@@ -137,7 +138,7 @@ export default function CercleFaiseursPage() {
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Partager au cercle</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Catégorie</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{tText('Catégorie')}</label>
                 <div className="flex gap-2 flex-wrap">
                   {CATEGORIES.map(c => (
                     <button key={c.key} onClick={() => setNewPost({ ...newPost, categorie: c.key })}
@@ -156,7 +157,7 @@ export default function CercleFaiseursPage() {
               </label>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm">Annuler</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm">{tText('Annuler')}</button>
               <button onClick={createPost} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-all flex items-center gap-2">
                 <Send className="w-4 h-4" /> Partager
               </button>

@@ -5,6 +5,7 @@ import { LayoutTemplate, ArrowLeft, Loader2 } from 'lucide-react';
 import PageBlockRenderer from '@/components/pages/PageBlockRenderer';
 import type { ResolvedPage } from '@/types';
 
+import { tText } from '@/i18n';
 const LAYOUT_CLASSES: Record<string, string> = {
   GRID_2: 'grid grid-cols-1 md:grid-cols-2 gap-4',
   GRID_3: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4',
@@ -49,7 +50,7 @@ export default function CustomPageView() {
           <LayoutTemplate className="empty-state-icon" />
           <p className="text-gray-500 dark:text-gray-400">{message}</p>
           <Link to="/dashboard" className="btn-primary btn-sm mt-4">
-            <ArrowLeft className="w-4 h-4" /> Retour au tableau de bord
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour au tableau de bord')}
           </Link>
         </div>
       </div>

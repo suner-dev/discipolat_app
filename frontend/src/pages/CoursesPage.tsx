@@ -4,6 +4,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { GraduationCap, Loader2, BookOpen, CheckCircle, PlayCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 interface Course {
   id: string;
   title: string;
@@ -62,7 +63,7 @@ export default function CoursesPage() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : courses.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucun cours disponible</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucun cours disponible')}</div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => (

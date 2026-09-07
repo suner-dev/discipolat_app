@@ -6,6 +6,7 @@ import { Plus, Pencil, Trash2, Loader2, Save, GripVertical, Search, Eye, EyeOff,
 import type { CustomFieldDefinition } from '@/types';
 import { useDictionaries } from '@/hooks/useDictionaries';
 
+import { tText } from '@/i18n';
 const ENTITY_TYPES = ['SOUL', 'USER', 'DEPARTMENT', 'FAMILY'];
 const ENTITY_LABELS: Record<string, string> = { SOUL: 'Âmes', USER: 'Utilisateurs', DEPARTMENT: 'Départements', FAMILY: 'Familles' };
 const ENTITY_ICONS: Record<string, string> = { SOUL: '💕', USER: '👤', DEPARTMENT: '🏢', FAMILY: '👨‍👩‍👧‍👦' };
@@ -62,22 +63,22 @@ export default function AdminCustomFieldsPage() {
         await api.post('/custom-fields/definitions', payload);
       }
     },
-    onSuccess: () => { invalidate(); setCreateOpen(false); setEditId(null); toast.success('Champ enregistré'); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { invalidate(); setCreateOpen(false); setEditId(null); toast.success(tText('Champ enregistré')); },
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/custom-fields/definitions/${id}`); },
-    onSuccess: () => { invalidate(); toast.success('Champ supprimé'); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { invalidate(); toast.success(tText('Champ supprimé')); },
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const toggleActiveMutation = useMutation({
     mutationFn: async (def: CustomFieldDefinition) => {
       await api.put(`/custom-fields/definitions/${def.id}`, { ...def, actif: !def.actif });
     },
-    onSuccess: () => { invalidate(); toast.success('Statut mis à jour'); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { invalidate(); toast.success(tText('Statut mis à jour')); },
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const openCreate = () => { setEditId(null); setForm(EMPTY_FORM); setCreateOpen(true); };
@@ -127,12 +128,12 @@ export default function AdminCustomFieldsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            Champs personnalisés
+            {tText('Champs personnalisés')}
           </h1>
           <p className="page-subtitle">Ajoutez des champs supplémentaires aux entités — {definitions.length} champ(s) configuré(s) sur l'entité {ENTITY_LABELS[entityType]}</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn-primary btn-sm" onClick={openCreate}><Plus className="w-4 h-4" /> Nouveau champ</button>
+          <button className="btn-primary btn-sm" onClick={openCreate}><Plus className="w-4 h-4" /> {tText('Nouveau champ')}</button>
         </div>
       </div>
 
@@ -206,7 +207,7 @@ export default function AdminCustomFieldsPage() {
                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{def.label}</span>
                 <span className="badge badge-gray text-[10px]">{def.type}</span>
                 {def.obligatoire && <span className="text-[10px] font-semibold text-red-500">* Obligatoire</span>}
-                {!def.actif && <span className="badge badge-gray">Désactivé</span>}
+                {!def.actif && <span className="badge badge-gray">{tText('Désactivé')}</span>}
               </div>
               <div className="text-xs text-gray-400 font-mono mt-0.5">{def.code}</div>
               {def.rolesLecture.length > 0 && (
@@ -237,7 +238,7 @@ export default function AdminCustomFieldsPage() {
               <button className="btn-icon text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100/70" onClick={() => openEdit(def)} title="Modifier">
                 <Pencil className="w-4 h-4" />
               </button>
-              <button className="btn-icon text-gray-400 hover:text-red-500 hover:bg-red-50/50" onClick={() => { if (confirm('Supprimer ce champ ?')) deleteMutation.mutate(def.id); }} title="Supprimer">
+              <button className="btn-icon text-gray-400 hover:text-red-500 hover:bg-red-50/50" onClick={() => { if (confirm('Supprimer ce champ ?')) deleteMutation.mutate(def.id); }} title={tText('Supprimer')}>
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -315,7 +316,7 @@ export default function AdminCustomFieldsPage() {
             <div className="modal-body space-y-4 max-h-[60vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="label">Code</label><input className="input font-mono" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s/g, '_') })} disabled={!!editId} placeholder="MON_CHAMP" /></div>
-                <div><label className="label">Libellé</label><input className="input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Mon champ" /></div>
+                <div><label className="label">{tText('Libellé')}</label><input className="input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Mon champ" /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="label">Type</label>
@@ -326,7 +327,7 @@ export default function AdminCustomFieldsPage() {
                 <div><label className="label">Ordre</label><input className="input" type="number" value={form.ordre} onChange={(e) => setForm({ ...form, ordre: Number(e.target.value) })} /></div>
               </div>
               <div><label className="label">Placeholder</label><input className="input" value={form.placeholder} onChange={(e) => setForm({ ...form, placeholder: e.target.value })} /></div>
-              <div><label className="label">Valeur par défaut</label><input className="input" value={form.defaultValue} onChange={(e) => setForm({ ...form, defaultValue: e.target.value })} /></div>
+              <div><label className="label">{tText('Valeur par défaut')}</label><input className="input" value={form.defaultValue} onChange={(e) => setForm({ ...form, defaultValue: e.target.value })} /></div>
 
               {(form.type === 'SELECTION' || form.type === 'SELECTION_MULTIPLE') && (
                 <div>
@@ -358,7 +359,7 @@ export default function AdminCustomFieldsPage() {
               )}
 
               <div>
-                <label className="label">Rôles pouvant lire</label>
+                <label className="label">{tText('Rôles pouvant lire')}</label>
                 <div className="flex flex-wrap gap-1.5">
                   {ROLES.map((r) => (
                     <button key={r} onClick={() => setForm({ ...form, rolesLecture: form.rolesLecture.includes(r) ? form.rolesLecture.filter((x) => x !== r) : [...form.rolesLecture, r] })}
@@ -369,7 +370,7 @@ export default function AdminCustomFieldsPage() {
                 </div>
               </div>
               <div>
-                <label className="label">Rôles pouvant modifier</label>
+                <label className="label">{tText('Rôles pouvant modifier')}</label>
                 <div className="flex flex-wrap gap-1.5">
                   {ROLES.map((r) => (
                     <button key={r} onClick={() => setForm({ ...form, rolesEcriture: form.rolesEcriture.includes(r) ? form.rolesEcriture.filter((x) => x !== r) : [...form.rolesEcriture, r] })}
@@ -398,7 +399,7 @@ export default function AdminCustomFieldsPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {editId ? 'Enregistrer' : 'Créer'}

@@ -4,6 +4,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 
+import { tText } from '@/i18n';
 interface NetworkStats {
   totalChurches: number;
   totalMembers: number;
@@ -29,7 +30,7 @@ export default function NetworkStatsPage() {
           <Globe className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Statistiques du Réseau</h1>
+          <h1 className="page-title">{tText('Statistiques du Réseau')}</h1>
           <p className="page-subtitle">Vue d'ensemble du réseau Discipolat</p>
         </div>
         <button onClick={() => refetch()} className="ml-auto p-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
@@ -47,7 +48,7 @@ export default function NetworkStatsPage() {
             <div className="bg-white dark:bg-white/5 rounded-xl p-5 border border-gray-200 dark:border-white/10 text-center">
               <MapPin className="w-6 h-6 text-blue-500 mx-auto mb-2" />
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalChurches}</div>
-              <div className="text-xs text-gray-500">Églises</div>
+              <div className="text-xs text-gray-500">{tText('Églises')}</div>
             </div>
             <div className="bg-white dark:bg-white/5 rounded-xl p-5 border border-gray-200 dark:border-white/10 text-center">
               <Users className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
@@ -57,7 +58,7 @@ export default function NetworkStatsPage() {
             <div className="bg-white dark:bg-white/5 rounded-xl p-5 border border-gray-200 dark:border-white/10 text-center">
               <Calendar className="w-6 h-6 text-purple-500 mx-auto mb-2" />
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalEvents}</div>
-              <div className="text-xs text-gray-500">Événements</div>
+              <div className="text-xs text-gray-500">{tText('Événements')}</div>
             </div>
             <div className="bg-white dark:bg-white/5 rounded-xl p-5 border border-gray-200 dark:border-white/10 text-center">
               <BookOpen className="w-6 h-6 text-amber-500 mx-auto mb-2" />
@@ -81,7 +82,7 @@ export default function NetworkStatsPage() {
 
           {stats.recentActivity && (
             <div className="bg-white dark:bg-white/5 rounded-xl p-5 border border-gray-200 dark:border-white/10">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Activité récente</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{tText('Activité récente')}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">{stats.recentActivity}</p>
             </div>
           )}

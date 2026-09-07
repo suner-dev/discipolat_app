@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { AlertTriangle, Loader2, Filter } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface RiskPrediction {
   id: string;
   soulId: string;
@@ -45,8 +47,8 @@ export default function PredictionsRiskPage() {
           <AlertTriangle className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Prédictions de risques</h1>
-          <p className="page-subtitle">Analyse prédictive des risques pastoraux</p>
+          <h1 className="page-title">{tText('Prédictions de risques')}</h1>
+          <p className="page-subtitle">{tText('Analyse prédictive des risques pastoraux')}</p>
         </div>
       </div>
 
@@ -55,7 +57,7 @@ export default function PredictionsRiskPage() {
           <Filter className="w-4 h-4 text-gray-400" />
           <button onClick={() => setType('')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${!type ? 'bg-primary-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-            Tous
+            {tText('Tous')}
           </button>
           {TYPES.map((t) => (
             <button key={t} onClick={() => setType(t)}
@@ -82,7 +84,7 @@ export default function PredictionsRiskPage() {
       {(isLoading || loadingType) ? (
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : risks.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucune prédiction de risque</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucune prédiction de risque')}</div>
       ) : (
         <div className="space-y-3">
           {risks.map((r) => (
@@ -96,7 +98,7 @@ export default function PredictionsRiskPage() {
                   </div>
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.soulName ?? `Membre #${r.soulId.slice(0, 8)}`}</p>
                   <p className="text-xs text-gray-500 mt-1">{r.reason}</p>
-                  <p className="text-[11px] text-gray-500 mt-1">{new Date(r.createdAt).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{new Date(r.createdAt).toLocaleDateString(getI18nLocale())}</p>
                 </div>
                 <div className="w-16 h-16 relative ml-4">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">

@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Languages, Loader2, Play, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Translation {
   id: string;
   sermonId: string;
@@ -49,7 +51,7 @@ export default function SermonTranslationsPage() {
   const transcribeMutation = useMutation({
     mutationFn: async (sermonId: string) => api.post(`/sermons/${sermonId}/transcribe`),
     onSuccess: () => {
-      toast.success('Transcription lancée');
+      toast.success(tText('Transcription lancée'));
       qc.invalidateQueries({ queryKey: ['sermon-translations', selectedSermonId] });
     },
     onError: (e) => toast.error(getErrorMessage(e)),
@@ -65,7 +67,7 @@ export default function SermonTranslationsPage() {
         </div>
         <div>
           <h1 className="page-title">Traductions de sermons</h1>
-          <p className="page-subtitle">Transcription et traduction automatique des sermons</p>
+          <p className="page-subtitle">{tText('Transcription et traduction automatique des sermons')}</p>
         </div>
       </div>
 
@@ -78,7 +80,7 @@ export default function SermonTranslationsPage() {
             value={selectedSermonId}
             onChange={(e) => setSelectedSermonId(e.target.value)}
           >
-            <option value="">Tous les sermons</option>
+            <option value="">{tText('Tous les sermons')}</option>
             {sermons.map((s) => (
               <option key={s.id} value={s.id}>{s.title}</option>
             ))}
@@ -123,7 +125,7 @@ export default function SermonTranslationsPage() {
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span>Cible : {t.langueCible}</span>
                   <span>• Confiance : {Math.round(t.confiance * 100)}%</span>
-                  <span>• {new Date(t.creeLe).toLocaleDateString('fr-FR')}</span>
+                  <span>• {new Date(t.creeLe).toLocaleDateString(getI18nLocale())}</span>
                 </div>
               </div>
               {t.statut === 'EN_COURS' && (

@@ -3,6 +3,7 @@ import { useI18n } from '@/i18n';
 import api from '@/lib/api';
 import { Church, MapPin, Phone, Mail, Globe, Calendar, Heart, ExternalLink, Clock, Users, Send } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface ChurchSettings {
   churchName: string;
   description?: string;
@@ -108,7 +109,7 @@ export default function PublicPortalPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
               <Calendar className="w-6 h-6" style={{ color: primaryColor }} />
-              Événements à venir
+              {tText('Événements à venir')}
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
               {events.map(event => (
@@ -226,7 +227,7 @@ export default function PublicPortalPage() {
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-white/10 py-8 text-center text-sm text-gray-400">
         <p>© {new Date().getFullYear()} {settings?.churchName || 'Discipolat'}. Tous droits réservés.</p>
-        <p className="mt-1">Propulsé par <a href="https://discipolat.com" className="underline hover:text-gray-600">Discipolat</a></p>
+        <p className="mt-1">{tText('Propulsé par')} <a href="https://discipolat.com" className="underline hover:text-gray-600">Discipolat</a></p>
       </footer>
     </div>
   );

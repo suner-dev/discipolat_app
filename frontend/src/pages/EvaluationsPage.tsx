@@ -10,6 +10,8 @@ import {
 import toast from 'react-hot-toast';
 import { useDictionaries } from '@/hooks/useDictionaries';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface PersonToEvaluate {
   id: string;
   nom: string;
@@ -245,7 +247,7 @@ export default function EvaluationsPage() {
           )}
         </>
       ) : (
-        <p className="text-sm text-gray-400">Aucune évaluation reçue</p>
+        <p className="text-sm text-gray-400">{tText('Aucune évaluation reçue')}</p>
       )}
     </div>
   );
@@ -259,8 +261,8 @@ export default function EvaluationsPage() {
             <ThumbsUp className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="page-title">Évaluations</h1>
-            <p className="page-subtitle">Évaluations anonymes des responsables, chefs de famille et faiseurs</p>
+            <h1 className="page-title">{tText('Évaluations')}</h1>
+            <p className="page-subtitle">{tText('Évaluations anonymes des responsables, chefs de famille et faiseurs')}</p>
           </div>
         </div>
       </div>
@@ -299,7 +301,7 @@ export default function EvaluationsPage() {
                 activeTab === 'evaluate' ? 'bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-gray-100' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
-              <Star className="w-4 h-4" /> Évaluer
+              <Star className="w-4 h-4" /> {tText('Évaluer')}
             </button>
           )}
           <button
@@ -308,7 +310,7 @@ export default function EvaluationsPage() {
               activeTab === 'my-results' ? 'bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-gray-100' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            <BarChart3 className="w-4 h-4" /> Mes résultats
+            <BarChart3 className="w-4 h-4" /> {tText('Mes résultats')}
           </button>
           {isPasteurOrAdmin && (
             <button
@@ -337,10 +339,10 @@ export default function EvaluationsPage() {
                     {categorieLabel(selectedPerson.categorie)}
                   </span>
                 </div>
-                <button onClick={() => { setSelectedPerson(null); setNote(0); setCommentaire(''); }} className="text-sm text-gray-400 hover:text-gray-600">Retour</button>
+                <button onClick={() => { setSelectedPerson(null); setNote(0); setCommentaire(''); }} className="text-sm text-gray-400 hover:text-gray-600">{tText('Retour')}</button>
               </div>
               <p className="text-xs text-gray-400 mb-4 flex items-center gap-1">
-                <Eye className="w-3 h-3" /> Votre évaluation est entièrement anonyme
+                <Eye className="w-3 h-3" /> {tText('Votre évaluation est entièrement anonyme')}
               </p>
               <div className="space-y-4">
                 <div>
@@ -399,8 +401,8 @@ export default function EvaluationsPage() {
               ) : (
                 <div className="glass-card p-10 text-center">
                   <Star className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">Aucune personne à évaluer pour le moment</p>
-                  <p className="text-xs text-gray-400 mt-1">Les personnes que vous pouvez évaluer apparaîtront ici</p>
+                  <p className="text-gray-500">{tText('Aucune personne à évaluer pour le moment')}</p>
+                  <p className="text-xs text-gray-400 mt-1">{tText('Les personnes que vous pouvez évaluer apparaîtront ici')}</p>
                 </div>
               )}
             </>
@@ -435,10 +437,10 @@ export default function EvaluationsPage() {
               {/* Paginated list */}
               <div className="glass-card p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Détail des évaluations</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Détail des évaluations')}</h3>
                   <select className="input w-auto text-xs" value={evalCategorieFilter}
                     onChange={(e) => { setEvalCategorieFilter(e.target.value); setEvalPage(0); }}>
-                    <option value="">Toutes les catégories</option>
+                    <option value="">{tText('Toutes les catégories')}</option>
                     {(dictionaries.options('EVALUATION_CATEGORIE').length > 0
                       ? dictionaries.options('EVALUATION_CATEGORIE')
                       : Object.entries(CATEGORIE_FALLBACK).map(([value, label]) => ({ code: value, label }))
@@ -461,7 +463,7 @@ export default function EvaluationsPage() {
                             {categorieLabel(ev.categorie)}
                           </span>
                           {ev.commentaire && <p className="flex-1 text-xs text-gray-500 dark:text-gray-400 truncate">"{ev.commentaire}"</p>}
-                          <span className="text-[10px] text-gray-400 whitespace-nowrap">{new Date(ev.date).toLocaleDateString('fr-FR')}</span>
+                          <span className="text-[10px] text-gray-400 whitespace-nowrap">{new Date(ev.date).toLocaleDateString(getI18nLocale())}</span>
                         </div>
                       ))}
                     </div>
@@ -469,19 +471,19 @@ export default function EvaluationsPage() {
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                         <p className="text-xs text-gray-400">{evalList.totalElements} évaluation{evalList.totalElements > 1 ? 's' : ''}</p>
                         <div className="flex gap-2">
-                          <button onClick={() => setEvalPage(p => Math.max(0, p - 1))} disabled={evalList.first} className="btn-ghost btn-xs text-xs">Précédent</button>
+                          <button onClick={() => setEvalPage(p => Math.max(0, p - 1))} disabled={evalList.first} className="btn-ghost btn-xs text-xs">{tText('Précédent')}</button>
                           <button onClick={() => setEvalPage(p => p + 1)} disabled={evalList.last} className="btn-ghost btn-xs text-xs">Suivant</button>
                         </div>
                       </div>
                     )}
                   </>
-                ) : <p className="text-sm text-gray-400 text-center py-4">Aucune évaluation détaillée</p>}
+                ) : <p className="text-sm text-gray-400 text-center py-4">{tText('Aucune évaluation détaillée')}</p>}
               </div>
             </div>
           ) : (
             <div className="glass-card p-10 text-center">
               <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">Aucune évaluation reçue pour le moment</p>
+              <p className="text-gray-500">{tText('Aucune évaluation reçue pour le moment')}</p>
               <p className="text-xs text-gray-400 mt-1">Les résultats apparaîtront après que d'autres utilisateurs vous aient évalué</p>
             </div>
           )}
@@ -493,7 +495,7 @@ export default function EvaluationsPage() {
         <div className="animate-slide-up">
           {selectedUserForPasteur && userDetail ? (
             <div>
-              <button onClick={() => setSelectedUserForPasteur(null)} className="btn-ghost btn-sm mb-4">← Retour à la vue globale</button>
+              <button onClick={() => setSelectedUserForPasteur(null)} className="btn-ghost btn-sm mb-4">{tText('← Retour à la vue globale')}</button>
               <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
                 {userDetail.firstName} {userDetail.lastName} — {userDetail.role}
               </h2>
@@ -503,7 +505,7 @@ export default function EvaluationsPage() {
                     <div key={cat}>{renderStatsCard(categorieLabel(cat), stats, '')}</div>
                   ))}
                 </div>
-              ) : <p className="text-sm text-gray-400">Aucune évaluation pour cet utilisateur</p>}
+              ) : <p className="text-sm text-gray-400">{tText('Aucune évaluation pour cet utilisateur')}</p>}
             </div>
           ) : allLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>
@@ -519,7 +521,7 @@ export default function EvaluationsPage() {
                 <div className="flex items-center gap-1.5">
                   <Filter className="w-4 h-4 text-gray-400" />
                   <select value={allCategorieFilter} onChange={(e) => setAllCategorieFilter(e.target.value)} className="input !w-auto text-xs">
-                    <option value="">Toutes catégories</option>
+                    <option value="">{tText('Toutes catégories')}</option>
                     {Object.keys(allEvals).map((cat) => (
                       <option key={cat} value={cat}>{categorieLabel(cat)}</option>
                     ))}
@@ -527,7 +529,7 @@ export default function EvaluationsPage() {
                 </div>
                 {(allSearchTerm || allCategorieFilter) && (
                   <button onClick={() => { setAllSearchTerm(''); setAllCategorieFilter(''); }} className="btn-ghost btn-xs">
-                    <X className="w-3 h-3" /> Réinitialiser
+                    <X className="w-3 h-3" /> {tText('Réinitialiser')}
                   </button>
                 )}
               </div>
@@ -572,7 +574,7 @@ export default function EvaluationsPage() {
           ) : (
             <div className="glass-card p-10 text-center">
               <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">Aucune évaluation dans le système</p>
+              <p className="text-gray-500">{tText('Aucune évaluation dans le système')}</p>
             </div>
           )}
         </div>

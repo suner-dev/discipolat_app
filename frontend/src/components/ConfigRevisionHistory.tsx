@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { History, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
 interface ConfigRevision {
   id: string;
   entityType: string;
@@ -30,7 +31,7 @@ function actionLabel(action: string): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
+  return new Date(iso).toLocaleString(getI18nLocale(), {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }

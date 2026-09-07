@@ -6,6 +6,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface DiscipleshipPath {
   id: string;
   memberId: string;
@@ -59,7 +61,7 @@ export default function DiscipleshipPathsPage() {
       return api.post('/discipleship-paths/member/' + newPath.memberId);
     },
     onSuccess: () => {
-      toast.success('Parcours créé');
+      toast.success(tText('Parcours créé'));
       setShowCreate(false);
       setNewPath({ memberId: '', currentStage: 'DISCOVERY' });
       queryClient.invalidateQueries({ queryKey: ['discipleship-paths'] });
@@ -75,12 +77,12 @@ export default function DiscipleshipPathsPage() {
         </div>
         <div>
           <h1 className="page-title">Parcours de Discipolat</h1>
-          <p className="page-subtitle">Gestion des parcours spirituels des membres</p>
+          <p className="page-subtitle">{tText('Gestion des parcours spirituels des membres')}</p>
         </div>
         <div className="ml-auto">
           <button onClick={() => setShowCreate(true)}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-medium hover:from-blue-600 hover:to-indigo-600 transition-all shadow-lg flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Nouveau parcours
+            <Plus className="w-4 h-4" /> {tText('Nouveau parcours')}
           </button>
         </div>
       </div>
@@ -129,7 +131,7 @@ export default function DiscipleshipPathsPage() {
                 </div>
                 <div className="flex justify-between text-xs text-gray-400">
                   <span>{p.progressPercent ?? 0}% complété</span>
-                  <span>{new Date(p.createdAt).toLocaleDateString('fr-FR')}</span>
+                  <span>{new Date(p.createdAt).toLocaleDateString(getI18nLocale())}</span>
                 </div>
                 {p.recommendedNextStep && (
                   <div className="mt-3 p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg text-xs text-indigo-700 dark:text-indigo-400 flex items-start gap-1">
@@ -146,7 +148,7 @@ export default function DiscipleshipPathsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouveau parcours</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouveau parcours')}</h2>
             <div className="space-y-4">
               <input type="text" value={newPath.memberId} onChange={e => setNewPath({ ...newPath, memberId: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
@@ -157,7 +159,7 @@ export default function DiscipleshipPathsPage() {
               </select>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}
                 className="px-4 py-2 rounded-xl bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 flex items-center gap-2">
                 {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

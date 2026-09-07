@@ -9,6 +9,7 @@ import {
 import type { Team } from './types';
 import { TYPE_LABELS, TYPE_COLORS } from './types';
 
+import { tText } from '@/i18n';
 function TeamNode({ team, teams, depth = 0, deptId }: { team: Team; teams: Team[]; depth?: number; deptId: string }) {
   const children = teams.filter((t) => t.parentId === team.id);
   const [open, setOpen] = useState(depth < 1);
@@ -35,7 +36,7 @@ function TeamNode({ team, teams, depth = 0, deptId }: { team: Team; teams: Team[
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{team.nom}</span>
             <span className={`badge text-[9px] ${TYPE_COLORS[team.type] || 'badge-gray'}`}>{TYPE_LABELS[team.type] || team.type}</span>
-            {team.statut === 'ARCHIVED' && <span className="badge text-[9px] badge-inactive">Archivée</span>}
+            {team.statut === 'ARCHIVED' && <span className="badge text-[9px] badge-inactive">{tText('Archivée')}</span>}
           </div>
           {(team.objectif || team.description) && (
             <p className="text-[10px] text-gray-400 truncate max-w-md">{team.objectif || team.description}</p>
@@ -67,7 +68,7 @@ function TeamActions({ team, teams, deptId, members, onChanged }: { team: Team; 
     mutationFn: async () => {
       await api.delete(`/departments/${deptId}/teams/${team.id}`);
     },
-    onSuccess: () => { toast.success('Équipe archivée'); invalidate(); },
+    onSuccess: () => { toast.success(tText('Équipe archivée')); invalidate(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -114,7 +115,7 @@ function EditTeamForm({ team, teams, deptId, members, onDone }: { team: Team; te
         chefId: chefId || null, adjointId: adjointId || null,
       });
     },
-    onSuccess: () => { toast.success('Équipe modifiée ✅'); queryClient.invalidateQueries({ queryKey: ['department'] }); onDone(); },
+    onSuccess: () => { toast.success(tText('Équipe modifiée ✅')); queryClient.invalidateQueries({ queryKey: ['department'] }); onDone(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -134,14 +135,14 @@ function EditTeamForm({ team, teams, deptId, members, onDone }: { team: Team; te
         <div>
           <label className="label text-[10px]">Chef d'équipe</label>
           <select className="input py-1.5 text-xs" value={chefId} onChange={(e) => setChefId(e.target.value)}>
-            <option value="">— Aucun —</option>
+            <option value="">{tText('— Aucun —')}</option>
             {members.map((m) => <option key={m.id} value={m.id}>{m.nom}</option>)}
           </select>
         </div>
         <div>
           <label className="label text-[10px]">Adjoint(e)</label>
           <select className="input py-1.5 text-xs" value={adjointId} onChange={(e) => setAdjointId(e.target.value)}>
-            <option value="">— Aucun —</option>
+            <option value="">{tText('— Aucun —')}</option>
             {members.map((m) => <option key={m.id} value={m.id}>{m.nom}</option>)}
           </select>
         </div>
@@ -154,7 +155,7 @@ function EditTeamForm({ team, teams, deptId, members, onDone }: { team: Team; te
         <button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="btn-primary btn-xs cursor-pointer">
           <Save className="w-3 h-3" /> Enregistrer
         </button>
-        <button onClick={onDone} className="btn-ghost btn-xs cursor-pointer"><X className="w-3 h-3" /> Annuler</button>
+        <button onClick={onDone} className="btn-ghost btn-xs cursor-pointer"><X className="w-3 h-3" /> {tText('Annuler')}</button>
       </div>
     </div>
   );
@@ -167,7 +168,7 @@ export function OrganisationTab({ teams, rootTeams, members, deptId, onChanged }
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Network className="w-4 h-4 text-primary-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Organigramme du département</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Organigramme du département')}</h3>
         </div>
         <button onClick={() => setShowCreate(!showCreate)} className="btn-primary btn-sm cursor-pointer">
           <Plus className="w-4 h-4" /> {showCreate ? 'Fermer' : 'Nouvelle équipe'}
@@ -180,7 +181,7 @@ export function OrganisationTab({ teams, rootTeams, members, deptId, onChanged }
         {rootTeams.length === 0 && (
           <div className="text-center py-10">
             <Network className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm text-gray-400">Aucune équipe — créez votre premier sous-département ou équipe</p>
+            <p className="text-sm text-gray-400">{tText('Aucune équipe — créez votre premier sous-département ou équipe')}</p>
           </div>
         )}
         {rootTeams.map((t) => <TeamNode key={t.id} team={t} teams={teams} deptId={deptId} />)}
@@ -215,7 +216,7 @@ function CreateTeamForm({ teams, members, deptId, onDone }: { teams: Team[]; mem
         chefId: chefId || null, adjointId: adjointId || null,
       });
     },
-    onSuccess: () => { toast.success('Équipe créée ✅'); queryClient.invalidateQueries({ queryKey: ['department'] }); onDone(); },
+    onSuccess: () => { toast.success(tText('Équipe créée ✅')); queryClient.invalidateQueries({ queryKey: ['department'] }); onDone(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -239,7 +240,7 @@ function CreateTeamForm({ teams, members, deptId, onDone }: { teams: Team[]; mem
           </select>
         </div>
         <div>
-          <label className="label" htmlFor="team-parent">Équipe parente</label>
+          <label className="label" htmlFor="team-parent">{tText('Équipe parente')}</label>
           <select id="team-parent" className="input" value={parentId} onChange={(e) => setParentId(e.target.value)}>
             <option value="">— Aucune (racine) —</option>
             {teams.map((t) => <option key={t.id} value={t.id}>{t.nom}</option>)}
@@ -250,7 +251,7 @@ function CreateTeamForm({ teams, members, deptId, onDone }: { teams: Team[]; mem
             <div>
               <label className="label" htmlFor="team-event">Événement lié (optionnel)</label>
               <select id="team-event" className="input" value={eventId} onChange={(e) => selectEvent(e.target.value)}>
-                <option value="">— Aucun événement —</option>
+                <option value="">{tText('— Aucun événement —')}</option>
                 {deptEvents.map((ev: any) => (
                   <option key={ev.id} value={ev.id}>{ev.titre}</option>
                 ))}
@@ -258,7 +259,7 @@ function CreateTeamForm({ teams, members, deptId, onDone }: { teams: Team[]; mem
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="label">Début</label>
+                <label className="label">{tText('Début')}</label>
                 <input type="date" className="input" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
               </div>
               <div>
@@ -271,14 +272,14 @@ function CreateTeamForm({ teams, members, deptId, onDone }: { teams: Team[]; mem
         <div>
           <label className="label">Chef d'équipe</label>
           <select className="input" value={chefId} onChange={(e) => setChefId(e.target.value)}>
-            <option value="">— Aucun —</option>
+            <option value="">{tText('— Aucun —')}</option>
             {members.map((m) => <option key={m.id} value={m.id}>{m.nom}</option>)}
           </select>
         </div>
         <div>
           <label className="label">Adjoint(e)</label>
           <select className="input" value={adjointId} onChange={(e) => setAdjointId(e.target.value)}>
-            <option value="">— Aucun —</option>
+            <option value="">{tText('— Aucun —')}</option>
             {members.map((m) => <option key={m.id} value={m.id}>{m.nom}</option>)}
           </select>
         </div>

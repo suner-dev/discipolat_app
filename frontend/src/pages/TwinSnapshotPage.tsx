@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface TwinSnapshot {
   totalSouls: number;
   faiseurs: number;
@@ -32,8 +34,8 @@ export default function TwinSnapshotPage() {
           <GitBranch className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Snapshot du Jumeau Numérique</h1>
-          <p className="page-subtitle">État actuel de votre église en temps réel</p>
+          <h1 className="page-title">{tText('Snapshot du Jumeau Numérique')}</h1>
+          <p className="page-subtitle">{tText('État actuel de votre église en temps réel')}</p>
         </div>
         <button onClick={() => refetch()} className="ml-auto p-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
           <RefreshCw className="w-4 h-4 text-gray-500" />
@@ -50,7 +52,7 @@ export default function TwinSnapshotPage() {
             <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-5 text-white">
               <TrendingUp className="w-5 h-5 opacity-80 mb-2" />
               <div className="text-2xl font-bold">{snapshot.totalSouls}</div>
-              <div className="text-xs opacity-80">Total âmes</div>
+              <div className="text-xs opacity-80">{tText('Total âmes')}</div>
             </div>
             <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-5 text-white">
               <Sparkles className="w-5 h-5 opacity-80 mb-2" />
@@ -80,16 +82,16 @@ export default function TwinSnapshotPage() {
             </div>
             <div className="glass-card p-5 text-center">
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{snapshot.scoreSante || Math.round(100 - (snapshot.avgRisk || 0) * 10)}/100</div>
-              <div className="text-xs text-gray-500">Score santé</div>
+              <div className="text-xs text-gray-500">{tText('Score santé')}</div>
             </div>
           </div>
 
           <div className="glass-card p-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Détails</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{tText('Détails')}</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Dernière mise à jour</span>
-                <span className="text-gray-900 dark:text-white">{snapshot.lastUpdated ? new Date(snapshot.lastUpdated).toLocaleString('fr-FR') : '—'}</span>
+                <span className="text-gray-500">{tText('Dernière mise à jour')}</span>
+                <span className="text-gray-900 dark:text-white">{snapshot.lastUpdated ? new Date(snapshot.lastUpdated).toLocaleString(getI18nLocale()) : '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Score de risque moyen</span>

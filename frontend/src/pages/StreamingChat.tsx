@@ -3,6 +3,8 @@ import { Send, MessageCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface ChatMessage {
   id: string;
   senderName: string;
@@ -95,7 +97,7 @@ export default function StreamingChat({ streamId }: StreamingChatProps) {
   const formatTime = (iso: string) => {
     try {
       const d = new Date(iso);
-      return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleTimeString(getI18nLocale(), { hour: '2-digit', minute: '2-digit' });
     } catch {
       return '';
     }
@@ -105,7 +107,7 @@ export default function StreamingChat({ streamId }: StreamingChatProps) {
     return (
       <div className="flex flex-col h-[600px] glass rounded-2xl border border-white/20 dark:border-white/[0.06] overflow-hidden items-center justify-center">
         <MessageCircle className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-        <p className="text-sm text-gray-400">Sélectionnez un stream pour accéder au chat</p>
+        <p className="text-sm text-gray-400">{tText('Sélectionnez un stream pour accéder au chat')}</p>
       </div>
     );
   }

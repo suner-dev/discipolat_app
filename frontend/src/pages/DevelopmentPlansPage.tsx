@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface DevPlan {
   id: string;
   title: string;
@@ -64,7 +66,7 @@ export default function DevelopmentPlansPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <Layers className="w-5 h-5 text-primary-500" />
-            <h1 className="page-title">Plans de développement</h1>
+            <h1 className="page-title">{tText('Plans de développement')}</h1>
           </div>
           <p className="page-subtitle">Plans de croissance personnelle et objectifs</p>
         </div>
@@ -117,8 +119,8 @@ export default function DevelopmentPlansPage() {
                   {plan.departmentName && (
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {plan.departmentName}</span>
                   )}
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(plan.startDate).toLocaleDateString('fr-FR')}</span>
-                  {plan.endDate && <span>→ {new Date(plan.endDate).toLocaleDateString('fr-FR')}</span>}
+                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(plan.startDate).toLocaleDateString(getI18nLocale())}</span>
+                  {plan.endDate && <span>→ {new Date(plan.endDate).toLocaleDateString(getI18nLocale())}</span>}
                   <span>{plan.completedObjectives}/{plan.objectives} objectifs</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden mt-3">

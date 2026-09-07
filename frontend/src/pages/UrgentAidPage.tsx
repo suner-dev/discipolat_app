@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Loader2, AlertTriangle, CheckCircle2, Search, Clock, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface AidRequest {
   reportId: string;
   faiseurId: string;
@@ -34,7 +36,7 @@ export default function UrgentAidPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['urgent-aid'] });
-      toast.success('Demande marquée comme traitée');
+      toast.success(tText('Demande marquée comme traitée'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -98,7 +100,7 @@ export default function UrgentAidPage() {
           onClick={() => setShowTreated(true)}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${showTreated ? 'bg-primary-500 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'}`}
         >
-          Traitées
+          {tText('Traitées')}
         </button>
       </div>
 
@@ -119,12 +121,12 @@ export default function UrgentAidPage() {
                     {!req.traite ? (
                       <span className="badge-danger text-xs">Urgent</span>
                     ) : (
-                      <span className="badge-success text-xs">Traité</span>
+                      <span className="badge-success text-xs">{tText('Traité')}</span>
                     )}
                     {req.dateSoumission && (
                       <span className="flex items-center gap-1 text-xs text-gray-400">
                         <Clock className="w-3 h-3" />
-                        {new Date(req.dateSoumission).toLocaleDateString('fr-FR')}
+                        {new Date(req.dateSoumission).toLocaleDateString(getI18nLocale())}
                       </span>
                     )}
                   </div>

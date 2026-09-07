@@ -10,6 +10,7 @@ import type { Soul, TypeDisciple, StatutAme } from '@/types';
 import { ArrowLeft, Loader2, Save, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 const editSoulSchema = z.object({
   nom: z.string().min(1, 'Le nom est requis'),
   prenom: z.string().optional(),
@@ -93,7 +94,7 @@ export default function SoulEditPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['soul', id] });
       queryClient.invalidateQueries({ queryKey: ['souls'] });
-      toast.success('Âme mise à jour avec succès');
+      toast.success(tText('Âme mise à jour avec succès'));
       navigate(`/souls/${id}`);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -117,7 +118,7 @@ export default function SoulEditPage() {
   if (!soul) {
     return (
       <div className="page-container">
-        <p className="text-gray-500">Âme non trouvée</p>
+        <p className="text-gray-500">{tText('Âme non trouvée')}</p>
       </div>
     );
   }
@@ -126,7 +127,7 @@ export default function SoulEditPage() {
     <div className="page-container max-w-2xl mx-auto">
       <Link to={`/souls/${id}`} className="btn-ghost btn-sm mb-4">
         <ArrowLeft className="w-4 h-4" />
-        Retour au détail
+        {tText('Retour au détail')}
       </Link>
 
       <div className="page-header">
@@ -146,7 +147,7 @@ export default function SoulEditPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Identité */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Identité</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{tText('Identité')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Nom *</label>
@@ -154,7 +155,7 @@ export default function SoulEditPage() {
               {errors.nom && <p className="mt-1 text-xs text-red-500">{errors.nom.message}</p>}
             </div>
             <div>
-              <label className="label">Prénom</label>
+              <label className="label">{tText('Prénom')}</label>
               <input className="input" {...register('prenom')} />
             </div>
           </div>
@@ -170,7 +171,7 @@ export default function SoulEditPage() {
               {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
             </div>
             <div>
-              <label className="label">Téléphone</label>
+              <label className="label">{tText('Téléphone')}</label>
               <input className="input" {...register('telephone')} />
             </div>
             <div className="sm:col-span-2">
@@ -182,7 +183,7 @@ export default function SoulEditPage() {
 
         {/* Infos supplémentaires */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Informations supplémentaires</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{tText('Informations supplémentaires')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Date de naissance</label>
@@ -206,7 +207,7 @@ export default function SoulEditPage() {
               </select>
             </div>
             <div>
-              <label className="label">État spirituel</label>
+              <label className="label">{tText('État spirituel')}</label>
               <select className="input" {...register('statut')}>
                 {statutEntries.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -234,7 +235,7 @@ export default function SoulEditPage() {
         {/* Submit */}
         <div className="flex justify-end gap-3">
           <Link to={`/souls/${id}`} className="btn-secondary">
-            Annuler
+            {tText('Annuler')}
           </Link>
           <button
             type="submit"

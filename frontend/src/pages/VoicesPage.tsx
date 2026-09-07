@@ -4,6 +4,7 @@ import { Mic, Upload, Loader2, CheckCircle, Activity, AlertCircle } from 'lucide
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 
+import { tText } from '@/i18n';
 interface HealthStatus {
   status: string;
   sttProvider: string;
@@ -46,7 +47,7 @@ export default function VoicesPage() {
     },
     onSuccess: (data) => {
       setTranscribeResult(data);
-      toast.success('Transcription terminée');
+      toast.success(tText('Transcription terminée'));
     },
     onError: (e: unknown) => { if ((e as Error).message !== 'empty') toast.error(getErrorMessage(e)); },
   });
@@ -59,7 +60,7 @@ export default function VoicesPage() {
         </div>
         <div>
           <h1 className="page-title">Voice Assistant</h1>
-          <p className="page-subtitle">Transcription et santé du système vocal</p>
+          <p className="page-subtitle">{tText('Transcription et santé du système vocal')}</p>
         </div>
       </div>
 
@@ -67,7 +68,7 @@ export default function VoicesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="bg-white dark:bg-white/5 rounded-xl p-5 border border-gray-200 dark:border-white/10">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <Activity className="w-4 h-4" /> État du service
+            <Activity className="w-4 h-4" /> {tText('État du service')}
           </h3>
           {healthLoading ? (
             <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
@@ -89,7 +90,7 @@ export default function VoicesPage() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-400">Impossible de vérifier le statut</p>
+            <p className="text-sm text-gray-400">{tText('Impossible de vérifier le statut')}</p>
           )}
         </div>
 
@@ -123,9 +124,9 @@ export default function VoicesPage() {
             </button>
             <select value={language} onChange={e => setLanguage(e.target.value)}
               className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm">
-              <option value="fr">Français</option>
+              <option value="fr">{tText('Français')}</option>
               <option value="en">English</option>
-              <option value="es">Español</option>
+              <option value="es">{tText('Español')}</option>
             </select>
             <button onClick={() => transcribeMutation.mutate()} disabled={transcribeMutation.isPending || !selectedFile}
               className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-600 flex items-center gap-2 disabled:opacity-50">

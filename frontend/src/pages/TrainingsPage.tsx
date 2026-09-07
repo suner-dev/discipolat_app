@@ -20,6 +20,7 @@ import {
   BookMarked,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { tText } from '@/i18n';
 import type {
   Course,
   CourseModule,
@@ -71,11 +72,11 @@ export default function TrainingsPage() {
     return (
       <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
         <BookOpen className="w-10 h-10 text-gray-300 mb-3" />
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Module Formations désactivé</h1>
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Module Formations désactivé')}</h1>
         <p className="text-sm text-gray-400 mt-1">
           L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
         </p>
-        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">Retour au tableau de bord</Link>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
       </div>
     );
   }
@@ -165,7 +166,7 @@ export default function TrainingsPage() {
       return res.data as Course;
     },
     onSuccess: () => {
-      toast.success('Cours créé');
+      toast.success(tText('Cours créé'));
       setShowCreate(false);
       setCourseForm({ titre: '', description: '', categorie: 'DISCIPOLAT', niveau: 'DEBUTANT', dureeMinutes: 60 });
       queryClient.invalidateQueries({ queryKey: ['trainings'] });
@@ -179,7 +180,7 @@ export default function TrainingsPage() {
       return res.data as CourseModule;
     },
     onSuccess: () => {
-      toast.success('Module ajouté');
+      toast.success(tText('Module ajouté'));
       setModuleForm({ titre: '', contenu: '', ordre: (modulesQuery.data?.length ?? 0) + 1 });
       setShowModuleForm(false);
       queryClient.invalidateQueries({ queryKey: ['trainings'] });
@@ -193,7 +194,7 @@ export default function TrainingsPage() {
       return res.data as CourseEnrollment;
     },
     onSuccess: () => {
-      toast.success('Module marqué comme lu');
+      toast.success(tText('Module marqué comme lu'));
       queryClient.invalidateQueries({ queryKey: ['trainings'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -205,7 +206,7 @@ export default function TrainingsPage() {
       return res.data as QuizQuestion;
     },
     onSuccess: () => {
-      toast.success('Question ajoutée au quiz');
+      toast.success(tText('Question ajoutée au quiz'));
       setQuestionForm({ question: '', propositions: '["Vrai","Faux"]', reponseIndex: 0, ordre: 0 });
       queryClient.invalidateQueries({ queryKey: ['trainings'] });
     },
@@ -242,7 +243,7 @@ export default function TrainingsPage() {
     return (
       <div className="animate-fade-in space-y-6">
         <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Retour au catalogue
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour au catalogue')}
         </button>
 
         <div className="glass-card p-6">
@@ -337,9 +338,9 @@ export default function TrainingsPage() {
                   disabled={!moduleForm.titre}
                   className="btn btn-primary text-xs"
                 >
-                  Créer le module
+                  {tText('Créer le module')}
                 </button>
-                <button onClick={() => setShowModuleForm(false)} className="btn text-xs">Annuler</button>
+                <button onClick={() => setShowModuleForm(false)} className="btn text-xs">{tText('Annuler')}</button>
               </div>
             </div>
           )}
@@ -420,7 +421,7 @@ export default function TrainingsPage() {
                   <p className="text-sm text-gray-400">Aucune question pour ce module.</p>
                   {isAdmin && (
                     <div className="text-left space-y-2 border-t border-gray-100 dark:border-gray-800 pt-4">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ajouter une question</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{tText('Ajouter une question')}</p>
                       <input
                         type="text"
                         placeholder="Question"
@@ -491,12 +492,12 @@ export default function TrainingsPage() {
                     disabled={Object.keys(quizAnswers).length < quizQuestions.length}
                     className="btn btn-primary w-full"
                   >
-                    Valider le quiz
+                    {tText('Valider le quiz')}
                   </button>
 
                   {isAdmin && activeModule && (
                     <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-2">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ajouter une question</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{tText('Ajouter une question')}</p>
                       <input
                         type="text"
                         placeholder="Question"
@@ -553,7 +554,7 @@ export default function TrainingsPage() {
         </div>
         {isAdmin && (
           <button onClick={() => setShowCreate(v => !v)} className="btn btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Nouveau cours
+            <Plus className="w-4 h-4" /> {tText('Nouveau cours')}
           </button>
         )}
       </div>
@@ -599,7 +600,7 @@ export default function TrainingsPage() {
 
       {showCreate && isAdmin && (
         <div className="glass-card p-4 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouveau cours</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Nouveau cours')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">Titre</label>
@@ -612,20 +613,20 @@ export default function TrainingsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Catégorie</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">{tText('Catégorie')}</label>
               <select value={courseForm.categorie} onChange={e => setCourseForm({ ...courseForm, categorie: e.target.value })} className="input w-full">
                 <option value="DISCIPOLAT">Discipolat</option>
                 <option value="SPIRITUEL">Spirituel</option>
-                <option value="MINISTERE">Ministère</option>
+                <option value="MINISTERE">{tText('Ministère')}</option>
                 <option value="LEADERSHIP">Leadership</option>
               </select>
             </div>
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">Niveau</label>
               <select value={courseForm.niveau} onChange={e => setCourseForm({ ...courseForm, niveau: e.target.value as Course['niveau'] })} className="input w-full">
-                <option value="DEBUTANT">Débutant</option>
-                <option value="INTERMEDIAIRE">Intermédiaire</option>
-                <option value="AVANCE">Avancé</option>
+                <option value="DEBUTANT">{tText('Débutant')}</option>
+                <option value="INTERMEDIAIRE">{tText('Intermédiaire')}</option>
+                <option value="AVANCE">{tText('Avancé')}</option>
               </select>
             </div>
           </div>
@@ -645,9 +646,9 @@ export default function TrainingsPage() {
               disabled={!courseForm.titre}
               className="btn btn-primary text-sm"
             >
-              Créer
+              {tText('Créer')}
             </button>
-            <button onClick={() => setShowCreate(false)} className="btn text-sm">Annuler</button>
+            <button onClick={() => setShowCreate(false)} className="btn text-sm">{tText('Annuler')}</button>
           </div>
         </div>
       )}

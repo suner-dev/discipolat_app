@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import type { Tenant, TenantStatus } from '@/types';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 const STATUS_OPTIONS: { value: TenantStatus; label: string; color: string; dot: string }[] = [
   { value: 'ACTIVE', label: 'Active', color: 'badge-success', dot: 'bg-green-500' },
   { value: 'SUSPENDED', label: 'Suspendue', color: 'badge-warning', dot: 'bg-amber-500' },
@@ -85,7 +87,7 @@ export default function AdminTenantsPage() {
     onSuccess: () => {
       invalidate();
       setDetailTenant(null);
-      toast.success('Église supprimée');
+      toast.success(tText('Église supprimée'));
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
@@ -150,7 +152,7 @@ export default function AdminTenantsPage() {
             <RefreshCw className="w-4 h-4" /> Actualiser
           </button>
           <button className="btn-primary btn-sm" onClick={openCreate}>
-            <Plus className="w-4 h-4" /> Nouvelle église
+            <Plus className="w-4 h-4" /> {tText('Nouvelle église')}
           </button>
         </div>
       </div>
@@ -181,7 +183,7 @@ export default function AdminTenantsPage() {
       <div className="glass-card p-4 mb-6 animate-slide-up" style={{ animationDelay: '120ms' }}>
         <div className="flex items-center gap-2 mb-3">
           <BarChart3 className="w-4 h-4 text-primary-500" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Répartition par plan</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{tText('Répartition par plan')}</h3>
         </div>
         <div className="flex items-center gap-3">
           {statsByPlan.map((p) => {
@@ -223,7 +225,7 @@ export default function AdminTenantsPage() {
               onClick={() => { setSearchTerm(''); setStatusFilter(''); setPlanFilter(''); }}
               className="btn-ghost btn-sm"
             >
-              <X className="w-3.5 h-3.5" /> Réinitialiser
+              <X className="w-3.5 h-3.5" /> {tText('Réinitialiser')}
             </button>
           )}
         </div>
@@ -256,11 +258,11 @@ export default function AdminTenantsPage() {
           </p>
           {tenants.length === 0 ? (
             <button className="text-primary-500 hover:underline text-sm mt-2" onClick={openCreate}>
-              Créer la première église
+              {tText('Créer la première église')}
             </button>
           ) : (
             <button className="text-primary-500 hover:underline text-sm mt-2" onClick={() => { setSearchTerm(''); setStatusFilter(''); setPlanFilter(''); }}>
-              Réinitialiser les filtres
+              {tText('Réinitialiser les filtres')}
             </button>
           )}
         </div>
@@ -293,7 +295,7 @@ export default function AdminTenantsPage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      Créée le {new Date(t.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      Créée le {new Date(t.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}
                     </span>
                   </div>
                 </div>
@@ -396,7 +398,7 @@ export default function AdminTenantsPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setModalOpen(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setModalOpen(false)}>{tText('Annuler')}</button>
               <button
                 className="btn-primary btn-sm"
                 onClick={() => saveMutation.mutate()}
@@ -447,10 +449,10 @@ export default function AdminTenantsPage() {
                 <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/40">
                   <div className="flex items-center gap-2 mb-1">
                     <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-[10px] text-gray-400 uppercase font-semibold">Créée le</span>
+                    <span className="text-[10px] text-gray-400 uppercase font-semibold">{tText('Créée le')}</span>
                   </div>
                   <p className="text-sm text-gray-900 dark:text-gray-100">
-                    {new Date(detailTenant.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {new Date(detailTenant.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
               </div>

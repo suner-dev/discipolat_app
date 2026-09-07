@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { FileText, Users, BarChart3, Clock, CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface FormResponse {
   id: string;
   respondentName?: string;
@@ -48,13 +50,13 @@ export default function FormResponsesPage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <FileText className="w-5 h-5 text-primary-500" />
-            <h1 className="page-title">Réponses du formulaire</h1>
+            <h1 className="page-title">{tText('Réponses du formulaire')}</h1>
           </div>
-          <p className="page-subtitle">Consultez les réponses soumises et les statistiques</p>
+          <p className="page-subtitle">{tText('Consultez les réponses soumises et les statistiques')}</p>
         </div>
       </div>
 
@@ -94,7 +96,7 @@ export default function FormResponsesPage() {
                   </p>
                   <p className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
                     <Clock className="w-3 h-3" />
-                    {new Date(r.submittedAt).toLocaleString('fr-FR')}
+                    {new Date(r.submittedAt).toLocaleString(getI18nLocale())}
                   </p>
                 </div>
               </div>

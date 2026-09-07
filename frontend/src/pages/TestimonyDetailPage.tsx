@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Testimony {
   id: string;
   titre: string;
@@ -39,7 +41,7 @@ export default function TestimonyDetailPage() {
       await api.post(`/testimonies/${id}/approve`);
     },
     onSuccess: () => {
-      toast.success('Témoignage approuvé');
+      toast.success(tText('Témoignage approuvé'));
       qc.invalidateQueries({ queryKey: ['testimonies'] });
       navigate(-1);
     },
@@ -51,7 +53,7 @@ export default function TestimonyDetailPage() {
       await api.post(`/testimonies/${id}/reject`);
     },
     onSuccess: () => {
-      toast.success('Témoignage rejeté');
+      toast.success(tText('Témoignage rejeté'));
       qc.invalidateQueries({ queryKey: ['testimonies'] });
       navigate(-1);
     },
@@ -81,13 +83,13 @@ export default function TestimonyDetailPage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <Heart className="w-5 h-5 text-rose-500" />
             <h1 className="page-title">{testimony.titre}</h1>
           </div>
-          <p className="page-subtitle">Détail du témoignage et modération</p>
+          <p className="page-subtitle">{tText('Détail du témoignage et modération')}</p>
         </div>
       </div>
 
@@ -102,7 +104,7 @@ export default function TestimonyDetailPage() {
             <ThumbsUp className="w-3 h-3" /> {testimony.likes}
           </span>
           <span className="text-[10px] text-gray-400 flex items-center gap-1">
-            <Clock className="w-3 h-3" /> {new Date(testimony.createdAt).toLocaleString('fr-FR')}
+            <Clock className="w-3 h-3" /> {new Date(testimony.createdAt).toLocaleString(getI18nLocale())}
           </span>
         </div>
 
@@ -130,7 +132,7 @@ export default function TestimonyDetailPage() {
           <div className="glass-card p-6">
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-primary-500" />
-              Modération
+              {tText('Modération')}
             </h3>
             <p className="text-xs text-gray-400 mb-4">Approuvez ou rejetez ce témoignage.</p>
             <div className="flex gap-3">

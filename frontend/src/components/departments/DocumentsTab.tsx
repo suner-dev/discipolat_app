@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { DOC_TYPES, DOC_TYPE_LABELS, DOC_TYPE_BADGES } from './types';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 type DeptDocument = {
   id: string; titre: string; type: string; description?: string;
   url?: string; statut: string; createdAt?: string;
@@ -43,7 +45,7 @@ export function DocumentsTab({ deptId, onChanged }: { deptId: string; onChanged:
       });
     },
     onSuccess: () => {
-      toast.success('Document ajouté ✅');
+      toast.success(tText('Document ajouté ✅'));
       setTitre(''); setDescription(''); setUrl(''); setType('DOCUMENT'); setShowCreate(false);
       invalidate();
     },
@@ -57,13 +59,13 @@ export function DocumentsTab({ deptId, onChanged }: { deptId: string; onChanged:
         url: doc.url || null, statut,
       });
     },
-    onSuccess: () => { toast.success('Statut mis à jour'); invalidate(); },
+    onSuccess: () => { toast.success(tText('Statut mis à jour')); invalidate(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (docId: string) => api.delete(`/departments/${deptId}/documents/${docId}`),
-    onSuccess: () => { toast.success('Document supprimé'); invalidate(); },
+    onSuccess: () => { toast.success(tText('Document supprimé')); invalidate(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -91,7 +93,7 @@ export function DocumentsTab({ deptId, onChanged }: { deptId: string; onChanged:
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-primary-500" />
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Bibliothèque du département</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Bibliothèque du département')}</h3>
           </div>
           <button onClick={() => setShowCreate(!showCreate)} className="btn-primary btn-sm cursor-pointer">
             <Plus className="w-4 h-4" /> {showCreate ? 'Fermer' : 'Ajouter un document'}
@@ -148,7 +150,7 @@ export function DocumentsTab({ deptId, onChanged }: { deptId: string; onChanged:
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{d.titre}</span>
                     <span className={`badge text-[9px] ${DOC_TYPE_BADGES[d.type] || 'badge-gray'}`}>{DOC_TYPE_LABELS[d.type] || d.type}</span>
-                    {d.statut === 'ARCHIVE' && <span className="badge text-[9px] badge-inactive">Archivé</span>}
+                    {d.statut === 'ARCHIVE' && <span className="badge text-[9px] badge-inactive">{tText('Archivé')}</span>}
                   </div>
                   {d.description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{d.description}</p>}
                   <div className="flex items-center gap-3 mt-1">
@@ -159,7 +161,7 @@ export function DocumentsTab({ deptId, onChanged }: { deptId: string; onChanged:
                       </a>
                     )}
                     <span className="text-[10px] text-gray-400">
-                      {d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : ''}
+                      {d.createdAt ? new Date(d.createdAt).toLocaleDateString(getI18nLocale()) : ''}
                     </span>
                   </div>
                 </div>

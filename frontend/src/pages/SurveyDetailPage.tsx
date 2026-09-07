@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Survey {
   id: string;
   title: string;
@@ -74,7 +76,7 @@ export default function SurveyDetailPage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <ClipboardList className="w-5 h-5 text-primary-500" />
@@ -93,7 +95,7 @@ export default function SurveyDetailPage() {
               Enquête {status.isOpen ? 'ouverte' : 'fermée'} — {status.responseCount} réponse(s)
             </p>
             {status.deadline && (
-              <p className="text-xs text-gray-400">Clôture le {new Date(status.deadline).toLocaleDateString('fr-FR')}</p>
+              <p className="text-xs text-gray-400">Clôture le {new Date(status.deadline).toLocaleDateString(getI18nLocale())}</p>
             )}
           </div>
         </div>
@@ -123,7 +125,7 @@ export default function SurveyDetailPage() {
       {/* Question results */}
       {results && results.questionResults.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Résultats par question</h3>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{tText('Résultats par question')}</h3>
           {results.questionResults.map((qr) => (
             <div key={qr.questionId} className="glass-card px-5 py-4">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{qr.questionText}</h4>

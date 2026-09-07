@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Evaluation {
   id: string; evalueId: string; evalueNom?: string; evaluateurId: string; evaluateurNom?: string;
   categorie: string; note: number; commentaire?: string; anonyme: boolean; createdAt: string;
@@ -46,8 +48,8 @@ export default function PasteurEvaluationsTab() {
 
   const createMutation = useMutation({
     mutationFn: async (d: typeof form) => { await api.post('/evaluations', { ...d, evalueId: d.evalueId || undefined }); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['evaluations'] }); toast.success('Évaluation créée'); setShowCreate(false); setForm({ evalueId: '', categorie: 'MEMBRE', note: 3, commentaire: '', anonyme: true }); },
-    onError: () => toast.error('Erreur lors de la création'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['evaluations'] }); toast.success(tText('Évaluation créée')); setShowCreate(false); setForm({ evalueId: '', categorie: 'MEMBRE', note: 3, commentaire: '', anonyme: true }); },
+    onError: () => toast.error(tText('Erreur lors de la création')),
   });
 
   const catLabel = (c: string) => {
@@ -72,15 +74,15 @@ export default function PasteurEvaluationsTab() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Star className="w-5 h-5 text-yellow-500" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Évaluations</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Évaluations')}</h2>
           {data && <span className="text-xs text-gray-400">({data.totalElements})</span>}
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
           </button>
-          <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> Nouvelle évaluation</button>
-          <Link to="/evaluations" className="btn-secondary btn-sm"><Eye className="w-4 h-4" /> Page complète</Link>
+          <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> {tText('Nouvelle évaluation')}</button>
+          <Link to="/evaluations" className="btn-secondary btn-sm"><Eye className="w-4 h-4" /> {tText('Page complète')}</Link>
         </div>
       </div>
 
@@ -95,12 +97,12 @@ export default function PasteurEvaluationsTab() {
           <div className="glass-card p-4 text-center">
             <BarChart3 className="w-5 h-5 text-blue-500 mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{data?.totalElements || 0}</p>
-            <p className="text-[10px] text-gray-400">Total évaluations</p>
+            <p className="text-[10px] text-gray-400">{tText('Total évaluations')}</p>
           </div>
           <div className="glass-card p-4 text-center">
             <Users className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{Object.keys(byCategory).length}</p>
-            <p className="text-[10px] text-gray-400">Catégories</p>
+            <p className="text-[10px] text-gray-400">{tText('Catégories')}</p>
           </div>
         </div>
       )}
@@ -116,13 +118,13 @@ export default function PasteurEvaluationsTab() {
         {showFilters && (
           <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-white/20">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 font-medium">Catégorie</span>
+              <span className="text-xs text-gray-400 font-medium">{tText('Catégorie')}</span>
               <select value={catFilter} onChange={e => { setCatFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-                <option value="">Toutes</option>
+                <option value="">{tText('Toutes')}</option>
                 <option value="RESPONSABLE">Responsable</option>
-                <option value="CHEF_FAMILLE">Chef de famille</option>
+                <option value="CHEF_FAMILLE">{tText('Chef de famille')}</option>
                 <option value="FAISEUR">Faiseur</option>
-                <option value="MEMBRE">Membre</option>
+                <option value="MEMBRE">{tText('Membre')}</option>
               </select>
             </div>
           </div>
@@ -147,12 +149,12 @@ export default function PasteurEvaluationsTab() {
                     <span className="text-[10px] text-gray-400">{ev.anonyme ? 'Anonyme' : (ev.evaluateurNom || '—')}</span>
                   </div>
                 </div>
-                <span className="text-xs text-gray-400">{new Date(ev.createdAt).toLocaleDateString('fr-FR')}</span>
+                <span className="text-xs text-gray-400">{new Date(ev.createdAt).toLocaleDateString(getI18nLocale())}</span>
               </div>
               {ev.commentaire && <p className="text-xs text-gray-500 mt-2 line-clamp-2">{ev.commentaire}</p>}
             </div>
           ))}
-          {allEvals.length === 0 && <div className="glass-card p-14 text-center"><Star className="w-10 h-10 text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Aucune évaluation</p></div>}
+          {allEvals.length === 0 && <div className="glass-card p-14 text-center"><Star className="w-10 h-10 text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">{tText('Aucune évaluation')}</p></div>}
         </div>
       )}
 
@@ -161,7 +163,7 @@ export default function PasteurEvaluationsTab() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -172,7 +174,7 @@ export default function PasteurEvaluationsTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDetail(null)}>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full animate-slide-up" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Évaluation</h3>
+              <h3 className="text-lg font-semibold">{tText('Évaluation')}</h3>
               <button onClick={() => setShowDetail(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"><X className="w-5 h-5" /></button>
             </div>
             <div className="flex items-center gap-2 mb-3">
@@ -187,7 +189,7 @@ export default function PasteurEvaluationsTab() {
             {showDetail.commentaire && <p className="text-sm text-gray-700 dark:text-gray-300 mt-3 whitespace-pre-wrap bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl">{showDetail.commentaire}</p>}
             <div className="flex items-center gap-3 text-xs text-gray-400 mt-4">
               <span>{showDetail.anonyme ? 'Anonyme' : (showDetail.evaluateurNom || '—')}</span>
-              <span>{new Date(showDetail.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              <span>{new Date(showDetail.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}</span>
             </div>
           </div>
         </div>
@@ -198,23 +200,23 @@ export default function PasteurEvaluationsTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowCreate(false)}>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full animate-slide-up" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Nouvelle évaluation</h3>
+              <h3 className="text-lg font-semibold">{tText('Nouvelle évaluation')}</h3>
               <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="label">Évalué</label>
+                <label className="label">{tText('Évalué')}</label>
                 <select className="input" value={form.evalueId} onChange={e => setForm({ ...form, evalueId: e.target.value })}>
                   <option value="">Sélectionner...</option>
                   {(users || []).map(u => <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">Catégorie *</label>
+                <label className="label">{tText('Catégorie *')}</label>
                 <select className="input" value={form.categorie} onChange={e => setForm({ ...form, categorie: e.target.value })}>
-                  <option value="MEMBRE">Membre</option>
+                  <option value="MEMBRE">{tText('Membre')}</option>
                   <option value="FAISEUR">Faiseur</option>
-                  <option value="CHEF_FAMILLE">Chef de famille</option>
+                  <option value="CHEF_FAMILLE">{tText('Chef de famille')}</option>
                   <option value="RESPONSABLE">Responsable</option>
                 </select>
               </div>
@@ -231,12 +233,12 @@ export default function PasteurEvaluationsTab() {
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="anonyme" checked={form.anonyme} onChange={e => setForm({ ...form, anonyme: e.target.checked })} className="rounded" />
-                <label htmlFor="anonyme" className="text-sm text-gray-600 dark:text-gray-400">Évaluation anonyme</label>
+                <label htmlFor="anonyme" className="text-sm text-gray-600 dark:text-gray-400">{tText('Évaluation anonyme')}</label>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setShowCreate(false)} className="btn-secondary">Annuler</button>
-              <button onClick={() => { if (!form.evalueId) { toast.error('Sélectionnez une personne'); return; } createMutation.mutate(form); }} disabled={createMutation.isPending} className="btn-primary">
+              <button onClick={() => setShowCreate(false)} className="btn-secondary">{tText('Annuler')}</button>
+              <button onClick={() => { if (!form.evalueId) { toast.error(tText('Sélectionnez une personne')); return; } createMutation.mutate(form); }} disabled={createMutation.isPending} className="btn-primary">
                 {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />} Créer
               </button>
             </div>

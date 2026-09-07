@@ -12,6 +12,7 @@ import { TRANSFER_TYPE_LABELS, ROLES } from '@/types';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import ConfigRevisionHistory from '@/components/ConfigRevisionHistory';
 
+import { tText } from '@/i18n';
 interface StepDraft {
   etapeOrdre: number;
   rolesValidateurs: UserRole[];
@@ -135,7 +136,7 @@ export default function AdminWorkflowBuilderPage() {
     },
     onSuccess: () => {
       invalidate();
-      toast.success(editing ? 'Workflow mis à jour' : 'Workflow créé');
+      toast.success(editing ? tText('Workflow mis à jour') : 'Workflow créé');
       setEditing(null);
       setShowNewForm(false);
       setDraft(emptyDraft());
@@ -146,13 +147,13 @@ export default function AdminWorkflowBuilderPage() {
   const toggleMutation = useMutation({
     mutationFn: async ({ id, actif }: { id: string; actif: boolean }) =>
       api.patch(`/admin/transfers/workflows/${id}/toggle`, { actif }),
-    onSuccess: () => { invalidate(); toast.success('Workflow mis à jour'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Workflow mis à jour')); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/admin/transfers/workflows/${id}`),
-    onSuccess: () => { invalidate(); toast.success('Workflow supprimé'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Workflow supprimé')); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -260,13 +261,13 @@ export default function AdminWorkflowBuilderPage() {
             className="btn-primary btn-sm"
             onClick={() => { setEditing(null); setDraft(emptyDraft()); setShowNewForm(true); }}
           >
-            <Plus className="w-4 h-4" /> Nouveau workflow
+            <Plus className="w-4 h-4" /> {tText('Nouveau workflow')}
           </button>
         </div>
       </div>
 
       <div className="mb-6">
-        <ConfigRevisionHistory entityType="PLATFORM_WORKFLOW" title="Historique des workflows" />
+        <ConfigRevisionHistory entityType="PLATFORM_WORKFLOW" title={tText('Historique des workflows')} />
       </div>
 
       {/* Stats */}
@@ -276,7 +277,7 @@ export default function AdminWorkflowBuilderPage() {
           <p className="stat-value text-xl">{activeCount}</p>
         </div>
         <div className="stat-card p-4 text-center">
-          <span className="stat-label text-[10px]">Total configurés</span>
+          <span className="stat-label text-[10px]">{tText('Total configurés')}</span>
           <p className="stat-value text-xl">{workflows.length}</p>
         </div>
         <div className="stat-card p-4 text-center">
@@ -289,13 +290,13 @@ export default function AdminWorkflowBuilderPage() {
         <div className="glass-card p-10 text-center">
           <Workflow className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            Aucun workflow configuré
+            {tText('Aucun workflow configuré')}
           </h3>
           <p className="text-sm text-gray-400 mb-4">
             Créez votre premier workflow pour définir un circuit de validation automatisé.
           </p>
           <button className="btn-primary btn-sm" onClick={() => { setEditing(null); setDraft(emptyDraft()); setShowNewForm(true); }}>
-            <Plus className="w-4 h-4" /> Créer un workflow
+            <Plus className="w-4 h-4" /> {tText('Créer un workflow')}
           </button>
         </div>
       )}
@@ -380,7 +381,7 @@ export default function AdminWorkflowBuilderPage() {
                       <div className="flex-shrink-0 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-700/30 text-center min-w-[80px]">
                         <Zap className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
                         <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">Action</p>
-                        <p className="text-[9px] text-emerald-500">Exécution</p>
+                        <p className="text-[9px] text-emerald-500">{tText('Exécution')}</p>
                       </div>
                       {wf.notificationsAuto && (
                         <>
@@ -401,7 +402,7 @@ export default function AdminWorkflowBuilderPage() {
                         <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{MODE_VALIDATION_LABELS[wf.modeValidation]}</p>
                       </div>
                       <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                        <p className="text-[10px] text-gray-400 uppercase">Délai</p>
+                        <p className="text-[10px] text-gray-400 uppercase">{tText('Délai')}</p>
                         <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{wf.delaiTraitementHeures}h</p>
                       </div>
                       <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
@@ -452,7 +453,7 @@ export default function AdminWorkflowBuilderPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="label">Libellé</label>
+                  <label className="label">{tText('Libellé')}</label>
                   <input className="input" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} placeholder="Ex : Transfert de membre" />
                 </div>
               </div>
@@ -519,9 +520,9 @@ export default function AdminWorkflowBuilderPage() {
               {/* Steps */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="label !mb-0">Étapes de validation</label>
+                  <label className="label !mb-0">{tText('Étapes de validation')}</label>
                   <button type="button" className="btn-ghost btn-sm" onClick={addStep}>
-                    <Plus className="w-3.5 h-3.5" /> Ajouter une étape
+                    <Plus className="w-3.5 h-3.5" /> {tText('Ajouter une étape')}
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -579,7 +580,7 @@ export default function AdminWorkflowBuilderPage() {
               {/* Message templates */}
               {draft.notificationsAuto && (
                 <div className="space-y-3 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 border border-gray-200/60 dark:border-gray-700/60">
-                  <p className="text-xs font-semibold text-gray-500 uppercase">Modèles de messages</p>
+                  <p className="text-xs font-semibold text-gray-500 uppercase">{tText('Modèles de messages')}</p>
                   <div>
                     <label className="label text-[10px]">Message de demande</label>
                     <input className="input" value={draft.modeleMessageDemande} onChange={(e) => setDraft({ ...draft, modeleMessageDemande: e.target.value })} placeholder="{{demandeur}} a soumis une demande de {{type}}…" />
@@ -611,7 +612,7 @@ export default function AdminWorkflowBuilderPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => { setShowNewForm(false); setEditing(null); }}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => { setShowNewForm(false); setEditing(null); }}>{tText('Annuler')}</button>
               <button
                 className="btn-primary btn-sm"
                 onClick={() => saveMutation.mutate()}

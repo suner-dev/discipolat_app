@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 
+import { tText } from '@/i18n';
 interface Listing {
   id: string;
   title: string;
@@ -66,7 +67,7 @@ export default function MarketplacePage() {
         })
       ).data,
     onSuccess: () => {
-      toast.success('Annonce publiée');
+      toast.success(tText('Annonce publiée'));
       setShowCreate(false);
       setNewListing({ title: '', description: '', listingType: 'OFFER', category: '', priceCents: '', contactInfo: '' });
       invalidate();
@@ -86,7 +87,7 @@ export default function MarketplacePage() {
         })
       ).data,
     onSuccess: () => {
-      toast.success('Template publié');
+      toast.success(tText('Template publié'));
       setShowPublish(false);
       setNewTemplate({ title: '', description: '', listingType: 'OFFER', category: 'TEMPLATE', contactInfo: '' });
       invalidate();
@@ -98,7 +99,7 @@ export default function MarketplacePage() {
     mutationFn: async (id: string) => {
       setInstallId(id);
       const res = await api.post(`/marketplace/${id}/install`);
-      toast.success('Template installé');
+      toast.success(tText('Template installé'));
       return res.data;
     },
     onSettled: () => setInstallId(null),
@@ -107,7 +108,7 @@ export default function MarketplacePage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/marketplace/${id}`),
-    onSuccess: () => { invalidate(); toast.success('Annonce supprimée'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Annonce supprimée')); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -147,7 +148,7 @@ export default function MarketplacePage() {
             <Download className="w-4 h-4" /> Publier un template
           </button>
           <button onClick={() => setShowCreate(!showCreate)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-white font-medium text-sm hover:bg-emerald-600 transition">
-            <Plus className="w-4 h-4" /> Publier une annonce
+            <Plus className="w-4 h-4" /> {tText('Publier une annonce')}
           </button>
         </div>
       </div>
@@ -168,7 +169,7 @@ export default function MarketplacePage() {
           </select>
           <select className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
             value={newListing.category} onChange={(e) => setNewListing({ ...newListing, category: e.target.value })}>
-            <option value="">Toutes catégories</option>
+            <option value="">{tText('Toutes catégories')}</option>
             {CATEGORIES.filter(c => c !== 'TEMPLATE').map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
           <input placeholder="Description" className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm md:col-span-2"

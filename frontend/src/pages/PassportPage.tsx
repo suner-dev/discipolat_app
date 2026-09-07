@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
+import { tText } from '@/i18n';
 import {
   ShieldCheck, Loader2, Plus, Share2, RotateCcw, Ban, Baby, GraduationCap,
   HeartHandshake, BookOpen, Award, Sparkles, FileText, QrCode
@@ -103,10 +104,10 @@ export default function PassportPage() {
       return (await api.post(`/passports/member/${memberIdToIssue.trim()}`)).data as Passport;
     },
     onSuccess: () => {
-      toast.success('Passeport émis avec succès');
+      toast.success(tText('Passeport émis avec succès'));
       queryClient.invalidateQueries({ queryKey: ['my-passport'] });
     },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Émission impossible'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : tText('Émission impossible')),
   });
 
   return (
@@ -150,7 +151,7 @@ export default function PassportPage() {
           <div className="flex items-start gap-3">
             <ShieldCheck className="w-8 h-8 text-amber-500 shrink-0" />
             <div>
-              <h2 className="font-semibold text-lg">Aucun passeport émis</h2>
+              <h2 className="font-semibold text-lg">{tText('Aucun passeport émis')}</h2>
               <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
                 Vous n'avez pas encore de passeport spirituel. Un responsable de votre église peut l'émettre et
                 y ajouter votre histoire : baptême, formations, certifications, services et étapes de discipolat.
@@ -160,7 +161,7 @@ export default function PassportPage() {
           {canManage && (
             <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4">
               <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Émettre un passeport pour un membre
+                <Plus className="w-4 h-4" /> {tText('Émettre un passeport pour un membre')}
               </h3>
               <div className="flex gap-2">
                 <input
@@ -193,11 +194,11 @@ export default function PassportPage() {
               <button
                 onClick={() => {
                   navigator.clipboard?.writeText(qr.verificationUrl);
-                  toast.success('Lien de vérification copié');
+                  toast.success(tText('Lien de vérification copié'));
                 }}
                 className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
               >
-                <Share2 className="w-4 h-4" /> Copier le lien de vérification
+                <Share2 className="w-4 h-4" /> {tText('Copier le lien de vérification')}
               </button>
             </div>
           ) : (
@@ -230,7 +231,7 @@ function PassportCard({ passport, onChanged }: { passport: Passport; onChanged: 
       return (await api.post(`/passports/${passport.id}/entries`, body)).data as PassportEntry;
     },
     onSuccess: () => {
-      toast.success('Entrée ajoutée et passeport re-signé');
+      toast.success(tText('Entrée ajoutée et passeport re-signé'));
       setAdding(false);
       setEntryTitle('');
       setEntryDate('');
@@ -239,7 +240,7 @@ function PassportCard({ passport, onChanged }: { passport: Passport; onChanged: 
       queryClient.invalidateQueries({ queryKey: ['my-passport'] });
       onChanged();
     },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Ajout impossible'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : tText('Ajout impossible')),
   });
 
   const revokeMutation = useMutation({
@@ -247,11 +248,11 @@ function PassportCard({ passport, onChanged }: { passport: Passport; onChanged: 
       return (await api.post(`/passports/${passport.id}/revoke`, { reason: 'Révoqué par un responsable' })).data as Passport;
     },
     onSuccess: () => {
-      toast.success('Passeport révoqué');
+      toast.success(tText('Passeport révoqué'));
       queryClient.invalidateQueries({ queryKey: ['my-passport'] });
       onChanged();
     },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Révocation impossible'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : tText('Révocation impossible')),
   });
 
   return (
@@ -276,7 +277,7 @@ function PassportCard({ passport, onChanged }: { passport: Passport; onChanged: 
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Émis le</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{tText('Émis le')}</p>
               <p>{passport.issuedAt ? new Date(passport.issuedAt).toLocaleDateString() : '—'}</p>
             </div>
             <div>
@@ -294,7 +295,7 @@ function PassportCard({ passport, onChanged }: { passport: Passport; onChanged: 
                 onClick={() => setAdding((v) => !v)}
                 className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium"
               >
-                <Plus className="w-4 h-4" /> Ajouter une entrée
+                <Plus className="w-4 h-4" /> {tText('Ajouter une entrée')}
               </button>
               {canManageAll && (
                 <button
@@ -378,7 +379,7 @@ function PassportCard({ passport, onChanged }: { passport: Passport; onChanged: 
                     <EntryTypeBadge type={entry.entryType} />
                     {entry.verified && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
-                        ✓ Vérifié
+                        {tText('✓ Vérifié')}
                       </span>
                     )}
                   </div>

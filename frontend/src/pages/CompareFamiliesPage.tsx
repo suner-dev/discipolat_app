@@ -5,6 +5,7 @@ import type { Family } from '@/types';
 import { BarChart3, Users, Heart, TrendingUp, AlertTriangle, Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { tText } from '@/i18n';
 export default function CompareFamiliesPage() {
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([]);
 
@@ -70,15 +71,15 @@ export default function CompareFamiliesPage() {
       <div className="page-header">
         <Link to="/families" className="btn-ghost btn-sm mb-2">
           <ArrowLeft className="w-4 h-4" />
-          Retour aux familles
+          {tText('Retour aux familles')}
         </Link>
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-lg">
             <BarChart3 className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="page-title">Comparer les familles</h1>
-            <p className="page-subtitle">Sélectionnez 2 familles ou plus pour comparer leurs KPIs</p>
+            <h1 className="page-title">{tText('Comparer les familles')}</h1>
+            <p className="page-subtitle">{tText('Sélectionnez 2 familles ou plus pour comparer leurs KPIs')}</p>
           </div>
         </div>
       </div>
@@ -115,7 +116,7 @@ export default function CompareFamiliesPage() {
           <table className="data-table glass-card">
             <thead>
               <tr>
-                <th className="text-left">Métrique</th>
+                <th className="text-left">{tText('Métrique')}</th>
                 {comparison.map((fam) => (
                   <th key={fam.familyId} className="text-center">{fam.nom}</th>
                 ))}
@@ -145,7 +146,7 @@ export default function CompareFamiliesPage() {
       {selectedFamilies.length < 2 && !isLoading && (
         <div className="glass-card p-10 text-center">
           <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-          <p className="text-gray-500 dark:text-gray-400">Sélectionnez au moins 2 familles pour afficher la comparaison</p>
+          <p className="text-gray-500 dark:text-gray-400">{tText('Sélectionnez au moins 2 familles pour afficher la comparaison')}</p>
         </div>
       )}
     </div>

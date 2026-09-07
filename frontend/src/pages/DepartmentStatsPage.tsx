@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
+import { tText } from '@/i18n';
 import {
   ArrowLeft, BarChart3, Users, Activity, ListTodo, Gavel, Building2,
   Briefcase, UserCheck, Loader2, TrendingUp, CalendarRange,
@@ -60,15 +61,15 @@ export default function DepartmentStatsPage() {
     <div className="page-container">
       <div className="page-header">
         <button onClick={() => navigate(`/departments/${id}`)} className="btn-ghost btn-sm mb-2">
-          <ArrowLeft className="w-4 h-4" /> Retour au département
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour au département')}
         </button>
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg">
             <BarChart3 className="w-6 h-6" />
           </div>
           <div className="flex-1">
-            <h1 className="page-title">Statistiques du département</h1>
-            <p className="page-subtitle">Données réelles — effectif, présence, tâches, discipline, charge de travail</p>
+            <h1 className="page-title">{tText('Statistiques du département')}</h1>
+            <p className="page-subtitle">{tText('Données réelles — effectif, présence, tâches, discipline, charge de travail')}</p>
           </div>
         </div>
       </div>
@@ -77,9 +78,9 @@ export default function DepartmentStatsPage() {
       <div className="glass-card p-4 mb-5 flex flex-wrap items-end gap-3">
         <div className="flex items-center gap-2">
           <CalendarRange className="w-4 h-4 text-primary-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Période</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Période')}</h3>
         </div>
-        <select className="input w-auto" value={periode} onChange={(e) => setPeriode(e.target.value)} aria-label="Période">
+        <select className="input w-auto" value={periode} onChange={(e) => setPeriode(e.target.value)} aria-label={tText('Période')}>
           {Object.entries(PERIODES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         {periode === 'PERSONNALISEE' && (
@@ -119,17 +120,17 @@ export default function DepartmentStatsPage() {
         <div className="stat-card p-3 text-center">
           <Activity className="w-4 h-4 text-violet-500 mx-auto mb-1" />
           <p className="stat-value text-xl text-violet-500">{presence.taux ?? 0}%</p>
-          <span className="stat-label text-[10px]">Taux de présence</span>
+          <span className="stat-label text-[10px]">{tText('Taux de présence')}</span>
         </div>
         <div className="stat-card p-3 text-center">
           <ListTodo className="w-4 h-4 text-red-500 mx-auto mb-1" />
           <p className="stat-value text-xl text-red-500">{taches.enRetard ?? 0}</p>
-          <span className="stat-label text-[10px]">Tâches en retard</span>
+          <span className="stat-label text-[10px]">{tText('Tâches en retard')}</span>
         </div>
         <div className="stat-card p-3 text-center">
           <Building2 className="w-4 h-4 text-orange-500 mx-auto mb-1" />
           <p className="stat-value text-xl">{equipes.actives ?? 0}</p>
-          <span className="stat-label text-[10px]">Équipes actives</span>
+          <span className="stat-label text-[10px]">{tText('Équipes actives')}</span>
         </div>
       </div>
 
@@ -155,7 +156,7 @@ export default function DepartmentStatsPage() {
         {/* Présence mensuelle */}
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-violet-500" /> Taux de présence sur la période
+            <Activity className="w-4 h-4 text-violet-500" /> {tText('Taux de présence sur la période')}
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={stats?.evolutionPresence ?? []}>
@@ -172,7 +173,7 @@ export default function DepartmentStatsPage() {
         {/* Statuts des membres */}
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-blue-500" /> Répartition par statut
+            <Users className="w-4 h-4 text-blue-500" /> {tText('Répartition par statut')}
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
@@ -196,7 +197,7 @@ export default function DepartmentStatsPage() {
         {/* Tâches par statut */}
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <ListTodo className="w-4 h-4 text-emerald-500" /> Tâches créées sur la période
+            <ListTodo className="w-4 h-4 text-emerald-500" /> {tText('Tâches créées sur la période')}
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart
@@ -215,10 +216,10 @@ export default function DepartmentStatsPage() {
         {/* Discipline par catégorie */}
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Gavel className="w-4 h-4 text-red-500" /> Discipline par catégorie
+            <Gavel className="w-4 h-4 text-red-500" /> {tText('Discipline par catégorie')}
           </h3>
           {Object.keys(stats?.disciplineParCategorie ?? {}).length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">Aucun événement disciplinaire</p>
+            <p className="text-sm text-gray-400 text-center py-10">{tText('Aucun événement disciplinaire')}</p>
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
@@ -238,10 +239,10 @@ export default function DepartmentStatsPage() {
         {/* Charge de travail */}
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-orange-500" /> Charge de travail par membre
+            <Briefcase className="w-4 h-4 text-orange-500" /> {tText('Charge de travail par membre')}
           </h3>
           {charge.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">Aucune tâche ouverte assignée</p>
+            <p className="text-sm text-gray-400 text-center py-10">{tText('Aucune tâche ouverte assignée')}</p>
           ) : (
             <div className="space-y-2">
               {charge.map((c) => (
@@ -290,7 +291,7 @@ export default function DepartmentStatsPage() {
 
       <div className="flex justify-end">
         <Link to={`/departments/${id}`} className="btn-ghost btn-sm">
-          <ArrowLeft className="w-4 h-4" /> Retour au département
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour au département')}
         </Link>
       </div>
     </div>

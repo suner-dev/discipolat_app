@@ -8,6 +8,7 @@ import { usePlatformConfig } from '@/contexts/PlatformContext';
 import { MENU_ICON_KEYS, resolveIcon } from '@/lib/menuIcons';
 import ConfigRevisionHistory from '@/components/ConfigRevisionHistory';
 
+import { tText } from '@/i18n';
 interface ModuleForm {
   key: string;
   label: string;
@@ -44,8 +45,8 @@ export default function PlatformModulesPage() {
     mutationFn: async ({ key, enabled }: { key: string; enabled: boolean }) => {
       await api.put(`/platform/modules/${key}`, { enabled });
     },
-    onSuccess: () => { invalidate(); toast.success('Module mis à jour'); },
-    onError: () => toast.error('Erreur lors de la mise à jour'),
+    onSuccess: () => { invalidate(); toast.success(tText('Module mis à jour')); },
+    onError: () => toast.error(tText('Erreur lors de la mise à jour')),
   });
 
   const saveMutation = useMutation({
@@ -72,7 +73,7 @@ export default function PlatformModulesPage() {
     mutationFn: async (key: string) => {
       await api.delete(`/platform/modules/${key}`);
     },
-    onSuccess: () => { invalidate(); toast.success('Module supprimé'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Module supprimé')); },
     onError: (e: unknown) => {
       const msg = (e as { response?: { data?: { detail?: string } } }).response?.data?.detail;
       toast.error(msg || 'Impossible de supprimer ce module');
@@ -106,7 +107,7 @@ export default function PlatformModulesPage() {
         </div>
         <div className="page-header-actions">
           <button className="btn-primary btn-sm" onClick={openCreate}>
-            <Plus className="w-4 h-4" /> Nouveau module
+            <Plus className="w-4 h-4" /> {tText('Nouveau module')}
           </button>
         </div>
       </div>
@@ -180,7 +181,7 @@ export default function PlatformModulesPage() {
                 <input className="input font-mono" value={form.key} disabled={!!editing} onChange={(e) => setForm({ ...form, key: e.target.value.toUpperCase() })} placeholder="EXEMPLE" />
               </div>
               <div>
-                <label className="label">Libellé</label>
+                <label className="label">{tText('Libellé')}</label>
                 <input className="input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
               </div>
               <div>
@@ -189,7 +190,7 @@ export default function PlatformModulesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Icône</label>
+                  <label className="label">{tText('Icône')}</label>
                   <select className="input" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })}>
                     {MENU_ICON_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
                   </select>
@@ -218,7 +219,7 @@ export default function PlatformModulesPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Power className="w-4 h-4" />}
                 {editing ? 'Enregistrer' : 'Créer'}

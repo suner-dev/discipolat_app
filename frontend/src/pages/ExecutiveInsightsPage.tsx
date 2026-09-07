@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { tText } from '@/i18n';
 import {
   Brain, TrendingUp, Users, BarChart3, Activity, Target, Loader2,
 } from 'lucide-react';
@@ -32,9 +33,9 @@ export default function ExecutiveInsightsPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <Brain className="w-5 h-5 text-purple-500" />
-            <h1 className="page-title">Aperçu exécutif</h1>
+            <h1 className="page-title">{tText('Aperçu exécutif')}</h1>
           </div>
-          <p className="page-subtitle">Indicateurs stratégiques et synthèse de performance</p>
+          <p className="page-subtitle">{tText('Indicateurs stratégiques et synthèse de performance')}</p>
         </div>
       </div>
 

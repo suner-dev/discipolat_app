@@ -6,6 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { tText } from '@/i18n';
 interface SkillEvaluation {
   id: string;
   membreId: string;
@@ -64,7 +65,7 @@ export default function SkillsMatrixPage() {
       return api.post('/skills-matrix', newEval);
     },
     onSuccess: () => {
-      toast.success('Évaluation enregistrée');
+      toast.success(tText('Évaluation enregistrée'));
       setShowEvaluate(false);
       setNewEval({ membreId: '', compétence: 'Animation', niveau: 'DÉBUTANT', commentaire: '' });
       queryClient.invalidateQueries({ queryKey: ['skills-matrix'] });
@@ -84,8 +85,8 @@ export default function SkillsMatrixPage() {
           <Award className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Matrice de Compétences</h1>
-          <p className="page-subtitle">Évaluez et visualisez les compétences de vos membres</p>
+          <h1 className="page-title">{tText('Matrice de Compétences')}</h1>
+          <p className="page-subtitle">{tText('Évaluez et visualisez les compétences de vos membres')}</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
           <div className="flex rounded-xl bg-white/5 border border-white/10 p-1">
@@ -98,7 +99,7 @@ export default function SkillsMatrixPage() {
           </div>
           <button onClick={() => setShowEvaluate(true)}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-sm font-medium hover:from-teal-600 hover:to-cyan-600 transition-all shadow-lg flex items-center gap-2">
-            <Star className="w-4 h-4" /> Évaluer
+            <Star className="w-4 h-4" /> {tText('Évaluer')}
           </button>
         </div>
       </div>
@@ -139,7 +140,7 @@ export default function SkillsMatrixPage() {
           </div>
         ) : view === 'department' && deptMatrix ? (
           <div className="bg-white dark:bg-white/5 rounded-xl p-5 border border-gray-200 dark:border-white/10">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Matrice du département</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{tText('Matrice du département')}</h3>
             <div className="text-xs text-gray-500 mb-3">Compétences dominantes: {deptMatrix.topCompetences?.join(', ')}</div>
             <div className="space-y-3">
               {deptMatrix.members?.map(m => (
@@ -188,7 +189,7 @@ export default function SkillsMatrixPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowEvaluate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Évaluer une compétence</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Évaluer une compétence')}</h2>
             <div className="space-y-4">
               <input type="text" value={newEval.membreId} onChange={e => setNewEval({ ...newEval, membreId: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
@@ -206,7 +207,7 @@ export default function SkillsMatrixPage() {
                 placeholder="Commentaire (optionnel)" />
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowEvaluate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowEvaluate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={() => submitEvaluation.mutate()} disabled={submitEvaluation.isPending}
                 className="px-4 py-2 rounded-xl bg-teal-500 text-white text-sm font-medium hover:bg-teal-600 flex items-center gap-2">
                 {submitEvaluation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

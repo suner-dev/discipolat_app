@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { ClipboardList, Loader2, Plus, Trash2, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface TeamTask {
   id: string;
   title: string;
@@ -41,19 +43,19 @@ export default function TeamTasksPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => api.post('/team-tasks', form),
-    onSuccess: () => { toast.success('Tâche créée'); resetForm(); qc.invalidateQueries({ queryKey: ['team-tasks'] }); },
+    onSuccess: () => { toast.success(tText('Tâche créée')); resetForm(); qc.invalidateQueries({ queryKey: ['team-tasks'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
   const updateMutation = useMutation({
     mutationFn: async () => api.patch(`/team-tasks/${editId}`, form),
-    onSuccess: () => { toast.success('Tâche mise à jour'); resetForm(); qc.invalidateQueries({ queryKey: ['team-tasks'] }); },
+    onSuccess: () => { toast.success(tText('Tâche mise à jour')); resetForm(); qc.invalidateQueries({ queryKey: ['team-tasks'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/team-tasks/${id}`),
-    onSuccess: () => { toast.success('Tâche supprimée'); qc.invalidateQueries({ queryKey: ['team-tasks'] }); },
+    onSuccess: () => { toast.success(tText('Tâche supprimée')); qc.invalidateQueries({ queryKey: ['team-tasks'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -73,10 +75,10 @@ export default function TeamTasksPage() {
         </div>
         <div>
           <h1 className="page-title">Tâches d'équipe</h1>
-          <p className="page-subtitle">Gestion collaborative des tâches</p>
+          <p className="page-subtitle">{tText('Gestion collaborative des tâches')}</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-primary btn-sm ml-auto inline-flex items-center gap-1">
-          <Plus className="w-4 h-4" /> Nouvelle tâche
+          <Plus className="w-4 h-4" /> {tText('Nouvelle tâche')}
         </button>
       </div>
 
@@ -85,10 +87,10 @@ export default function TeamTasksPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Titre</label>
-              <input className="input w-full" placeholder="Titre de la tâche" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              <input className="input w-full" placeholder={tText('Titre de la tâche')} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Priorité</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">{tText('Priorité')}</label>
               <select className="input w-full" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
                 <option value="LOW">Basse</option>
                 <option value="MEDIUM">Moyenne</option>
@@ -104,19 +106,19 @@ export default function TeamTasksPage() {
             <div>
               <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Statut</label>
               <select className="input w-full" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                <option value="TODO">À faire</option>
+                <option value="TODO">{tText('À faire')}</option>
                 <option value="IN_PROGRESS">En cours</option>
-                <option value="DONE">Terminé</option>
-                <option value="BLOCKED">Bloqué</option>
+                <option value="DONE">{tText('Terminé')}</option>
+                <option value="BLOCKED">{tText('Bloqué')}</option>
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Échéance</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">{tText('Échéance')}</label>
               <input type="date" className="input w-full" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <button onClick={resetForm} className="btn-sm px-4 py-2 rounded-lg glass-card">Annuler</button>
+            <button onClick={resetForm} className="btn-sm px-4 py-2 rounded-lg glass-card">{tText('Annuler')}</button>
             <button onClick={() => editId ? updateMutation.mutate() : createMutation.mutate()} disabled={!form.title.trim() || createMutation.isPending || updateMutation.isPending}
               className="btn-primary btn-sm inline-flex items-center gap-1">
               {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
@@ -129,7 +131,7 @@ export default function TeamTasksPage() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : tasks.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucune tâche</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucune tâche')}</div>
       ) : (
         <div className="space-y-3">
           {tasks.map((task) => (
@@ -144,7 +146,7 @@ export default function TeamTasksPage() {
                   {task.description && <p className="text-xs text-gray-500 mt-1">{task.description}</p>}
                   <div className="flex gap-3 mt-2 text-[11px] text-gray-500">
                     {task.assigneeName && <span>Assigné à: {task.assigneeName}</span>}
-                    {task.dueDate && <span>Échéance: {new Date(task.dueDate).toLocaleDateString('fr-FR')}</span>}
+                    {task.dueDate && <span>Échéance: {new Date(task.dueDate).toLocaleDateString(getI18nLocale())}</span>}
                   </div>
                 </div>
                 <div className="flex gap-2 ml-4">

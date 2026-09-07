@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import Toast from '@/components/shared/Toast';
 import { Share2, Copy, Users, Gift, TrendingUp, Award, ExternalLink } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface ReferralStats {
   totalReferrals: number;
   convertedReferrals: number;
@@ -145,7 +146,7 @@ export default function ReferralPage() {
 
       {/* Referral Code */}
       <div className="p-6 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 mb-8">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Votre code de parrainage</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Votre code de parrainage')}</h2>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex-1 p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-dashed border-gray-300 dark:border-white/10">
             <div className="text-2xl font-mono font-bold text-gray-900 dark:text-white tracking-wider">
@@ -175,11 +176,11 @@ export default function ReferralPage() {
       </div>
 
       {/* Referral History */}
-      <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Historique des invitations</h2>
+      <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Historique des invitations')}</h2>
       {referrals.length === 0 ? (
         <div className="p-8 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-center">
           <Share2 className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">Aucune invitation envoyée pour le moment</p>
+          <p className="text-gray-500 dark:text-gray-400">{tText('Aucune invitation envoyée pour le moment')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -233,7 +234,7 @@ export default function ReferralPage() {
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowInvite(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
-                Annuler
+                {tText('Annuler')}
               </button>
               <button onClick={sendInvitation} className="px-4 py-2 rounded-xl bg-pink-600 text-white text-sm font-medium hover:bg-pink-700 transition-all">
                 Envoyer l'invitation

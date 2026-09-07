@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Shield,
   Loader2,
@@ -113,7 +115,7 @@ export default function AdminRequestsPage() {
       return res.data as AdminRequest;
     },
     onSuccess: () => {
-      toast.success('Demande traitée');
+      toast.success(tText('Demande traitée'));
       qc.invalidateQueries({ queryKey: ['admin-requests'] });
       qc.invalidateQueries({ queryKey: ['admin-requests-stats'] });
     },
@@ -126,7 +128,7 @@ export default function AdminRequestsPage() {
       return res.data as AdminRequest;
     },
     onSuccess: () => {
-      toast.success('Demande créée');
+      toast.success(tText('Demande créée'));
       setShowCreate(false);
       setForm({ typeDemande: 'BAPTEME', motif: '', details: '' });
       qc.invalidateQueries({ queryKey: ['admin-requests'] });
@@ -140,7 +142,7 @@ export default function AdminRequestsPage() {
       await api.delete(`/admin-requests/${id}`);
     },
     onSuccess: () => {
-      toast.success('Demande supprimée');
+      toast.success(tText('Demande supprimée'));
       qc.invalidateQueries({ queryKey: ['admin-requests'] });
       qc.invalidateQueries({ queryKey: ['admin-requests-stats'] });
     },
@@ -171,7 +173,7 @@ export default function AdminRequestsPage() {
             onClick={() => setShowCreate(true)}
             className="btn-primary btn-sm flex items-center gap-1.5"
           >
-            <Plus className="w-4 h-4" /> Nouvelle demande
+            <Plus className="w-4 h-4" /> {tText('Nouvelle demande')}
           </button>
         </div>
       </div>
@@ -203,7 +205,7 @@ export default function AdminRequestsPage() {
         isLoading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
         ) : requests.length === 0 ? (
-          <div className="glass-card p-10 text-center text-gray-500">Aucune demande administrative</div>
+          <div className="glass-card p-10 text-center text-gray-500">{tText('Aucune demande administrative')}</div>
         ) : (
           <div className="space-y-3">
             {requests.map((r) => (
@@ -216,7 +218,7 @@ export default function AdminRequestsPage() {
                     </div>
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.motif}</p>
                     {r.details && <p className="text-xs text-gray-500 mt-1">{r.details}</p>}
-                    <p className="text-[11px] text-gray-500 mt-1">{new Date(r.soumiseLe).toLocaleDateString('fr-FR')}</p>
+                    <p className="text-[11px] text-gray-500 mt-1">{new Date(r.soumiseLe).toLocaleDateString(getI18nLocale())}</p>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
                     {r.statut === 'SOUMISE' || r.statut === 'EN_EXAMEN' ? (
@@ -251,7 +253,7 @@ export default function AdminRequestsPage() {
         loadingDemo ? (
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
         ) : demoRequests.length === 0 ? (
-          <div className="glass-card p-10 text-center text-gray-500">Aucune demande de démo</div>
+          <div className="glass-card p-10 text-center text-gray-500">{tText('Aucune demande de démo')}</div>
         ) : (
           <div className="space-y-3">
             {demoRequests.map((d) => (
@@ -262,7 +264,7 @@ export default function AdminRequestsPage() {
                       <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{d.churchName}</span>
                     </div>
                     <p className="text-xs text-gray-500">{d.contactName} — {d.contactEmail}</p>
-                    <p className="text-[11px] text-gray-500 mt-1">{new Date(d.createdAt).toLocaleDateString('fr-FR')}</p>
+                    <p className="text-[11px] text-gray-500 mt-1">{new Date(d.createdAt).toLocaleDateString(getI18nLocale())}</p>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[d.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{d.status}</span>
                 </div>
@@ -276,7 +278,7 @@ export default function AdminRequestsPage() {
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Nouvelle demande</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Nouvelle demande')}</h3>
               <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="w-5 h-5 text-gray-400" />
               </button>
@@ -305,7 +307,7 @@ export default function AdminRequestsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Détails</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{tText('Détails')}</label>
                 <textarea
                   value={form.details}
                   onChange={(e) => setForm((f) => ({ ...f, details: e.target.value }))}
@@ -316,7 +318,7 @@ export default function AdminRequestsPage() {
               </div>
             </div>
             <div className="modal-footer flex gap-2">
-              <button className="btn-ghost btn-sm flex-1" onClick={() => setShowCreate(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm flex-1" onClick={() => setShowCreate(false)}>{tText('Annuler')}</button>
               <button
                 className="btn-primary btn-sm flex-1"
                 disabled={createMutation.isPending || !form.motif.trim()}

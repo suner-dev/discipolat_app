@@ -11,6 +11,8 @@ import {
   TrendingUp, PieChart as PieChartIcon, List,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
@@ -144,7 +146,7 @@ export default function ReportsPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('Export téléchargé avec succès');
+      toast.success(tText('Export téléchargé avec succès'));
     } catch {
       toast.error("Erreur lors de l'export");
     }
@@ -183,7 +185,7 @@ export default function ReportsPage() {
             <FileText className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Rapports</h1>
           </div>
-          <p className="page-subtitle">Gestion des rapports hebdomadaires — faiseurs et familles</p>
+          <p className="page-subtitle">{tText('Gestion des rapports hebdomadaires — faiseurs et familles')}</p>
         </div>
         <div className="flex flex-wrap gap-2 animate-fade-in">
           {isPasteurOrAdmin && (
@@ -192,7 +194,7 @@ export default function ReportsPage() {
                 <Download className="w-4 h-4" /> CSV faiseur
               </button>
               <button onClick={() => handleExport('family')} className="btn-secondary btn-sm">
-                <Download className="w-4 h-4" /> CSV famille
+                <Download className="w-4 h-4" /> {tText('CSV famille')}
               </button>
               <button
                 onClick={() => exportReport({ endpoint: '/reports/export/consolidated-pdf', filename: `rapport-consolide-${new Date().toISOString().split('T')[0]}.html` })}
@@ -273,7 +275,7 @@ export default function ReportsPage() {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '120ms' }}>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Statut des rapports faiseur</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">{tText('Statut des rapports faiseur')}</h3>
               <div className="h-56">
                 {makerStats.total > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -297,12 +299,12 @@ export default function ReportsPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">Aucune donnée</div>
+                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">{tText('Aucune donnée')}</div>
                 )}
               </div>
             </div>
             <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '180ms' }}>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Résumé rapide</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">{tText('Résumé rapide')}</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Rapports faiseur</span>
@@ -316,7 +318,7 @@ export default function ReportsPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Rapports famille</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{tText('Rapports famille')}</span>
                   <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{familyStats.total}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
@@ -388,7 +390,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-1.5">
                 <Filter className="w-4 h-4 text-gray-400" />
                 <select value={statutFilter} onChange={(e) => setStatutFilter(e.target.value)} className="input !w-auto">
-                  <option value="">Tous les statuts</option>
+                  <option value="">{tText('Tous les statuts')}</option>
                   <option value="SOUMIS">Soumis</option>
                   <option value="EN_ATTENTE">En attente</option>
                   <option value="EN_RETARD">En retard</option>
@@ -396,7 +398,7 @@ export default function ReportsPage() {
                 </select>
               </div>
               {(searchTerm || statutFilter) && (
-                <button onClick={clearFilters} className="btn-ghost btn-sm"><X className="w-3.5 h-3.5" /> Réinitialiser</button>
+                <button onClick={clearFilters} className="btn-ghost btn-sm"><X className="w-3.5 h-3.5" /> {tText('Réinitialiser')}</button>
               )}
             </div>
           </div>
@@ -407,7 +409,7 @@ export default function ReportsPage() {
             <div className="glass-card p-14 text-center">
               <FileSpreadsheet className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                {makerReports.length === 0 ? 'Aucun rapport faiseur' : 'Aucun résultat'}
+                {makerReports.length === 0 ? tText('Aucun rapport faiseur') : tText('Aucun résultat')}
               </h3>
               <p className="text-sm text-gray-500">
                 {makerReports.length === 0 ? 'Les rapports hebdomadaires des faiseurs apparaîtront ici.' : 'Essayez de modifier les filtres.'}
@@ -465,14 +467,14 @@ export default function ReportsPage() {
               <div className="flex items-center gap-1.5">
                 <Filter className="w-4 h-4 text-gray-400" />
                 <select value={statutFilter} onChange={(e) => setStatutFilter(e.target.value)} className="input !w-auto">
-                  <option value="">Tous les statuts</option>
+                  <option value="">{tText('Tous les statuts')}</option>
                   <option value="SOUMIS">Soumis</option>
                   <option value="EN_ATTENTE">En attente</option>
                   <option value="BROUILLON">Brouillon</option>
                 </select>
               </div>
               {(searchTerm || statutFilter) && (
-                <button onClick={clearFilters} className="btn-ghost btn-sm"><X className="w-3.5 h-3.5" /> Réinitialiser</button>
+                <button onClick={clearFilters} className="btn-ghost btn-sm"><X className="w-3.5 h-3.5" /> {tText('Réinitialiser')}</button>
               )}
             </div>
           </div>
@@ -483,7 +485,7 @@ export default function ReportsPage() {
             <div className="glass-card p-14 text-center">
               <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                {familyReports.length === 0 ? 'Aucun rapport famille' : 'Aucun résultat'}
+                {familyReports.length === 0 ? tText('Aucun rapport famille') : tText('Aucun résultat')}
               </h3>
               <p className="text-sm text-gray-500">
                 {familyReports.length === 0 ? 'Les rapports consolidés de famille apparaîtront ici.' : 'Essayez de modifier les filtres.'}
@@ -561,11 +563,11 @@ export default function ReportsPage() {
               {detailType === 'maker' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                    <p className="text-[10px] text-gray-400 uppercase font-semibold">Famille</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-semibold">{tText('Famille')}</p>
                     <p className="text-sm text-gray-900 dark:text-gray-100 mt-0.5">{(detailReport as MakerReportEntry).familleNom || '—'}</p>
                   </div>
                   <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                    <p className="text-[10px] text-gray-400 uppercase font-semibold">Taux de présence</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-semibold">{tText('Taux de présence')}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-0.5">{(detailReport as MakerReportEntry).tauxPresence ?? '—'}%</p>
                   </div>
                 </div>
@@ -582,14 +584,14 @@ export default function ReportsPage() {
                   </div>
                   <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 text-center">
                     <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(detailReport as FamilyReportEntry).tauxPresence ?? '—'}%</p>
-                    <p className="text-[10px] text-gray-400">Présence</p>
+                    <p className="text-[10px] text-gray-400">{tText('Présence')}</p>
                   </div>
                 </div>
               )}
               <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                <p className="text-[10px] text-gray-400 uppercase font-semibold">Créé le</p>
+                <p className="text-[10px] text-gray-400 uppercase font-semibold">{tText('Créé le')}</p>
                 <p className="text-sm text-gray-900 dark:text-gray-100 mt-0.5">
-                  {new Date(detailReport.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(detailReport.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
             </div>

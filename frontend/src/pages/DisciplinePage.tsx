@@ -4,6 +4,7 @@ import { Gavel, Filter, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { tText } from '@/i18n';
 type DisciplineEvent = {
   id: string;
   soulNom?: string;
@@ -90,7 +91,7 @@ export default function DisciplinePage() {
           <h1 className="page-title">
             <span className="text-gradient font-display">Discipline</span>
           </h1>
-          <p className="page-subtitle">Événements disciplinaires du département</p>
+          <p className="page-subtitle">{tText('Événements disciplinaires du département')}</p>
         </div>
       </div>
 
@@ -119,7 +120,7 @@ export default function DisciplinePage() {
           onChange={(e) => setFilterCategorie(e.target.value)}
           className="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700"
         >
-          <option value="all">Toutes catégories</option>
+          <option value="all">{tText('Toutes catégories')}</option>
           {Object.entries(CATEGORIE_LABELS).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
@@ -129,9 +130,9 @@ export default function DisciplinePage() {
           onChange={(e) => setFilterStatut(e.target.value)}
           className="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700"
         >
-          <option value="all">Tous statuts</option>
+          <option value="all">{tText('Tous statuts')}</option>
           <option value="EN_COURS">En cours</option>
-          <option value="RESOLU">Résolu</option>
+          <option value="RESOLU">{tText('Résolu')}</option>
         </select>
       </div>
 
@@ -143,7 +144,7 @@ export default function DisciplinePage() {
       ) : filtered.length === 0 ? (
         <div className="glass-card p-12 text-center animate-fade-in">
           <Gavel className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Aucun événement</h2>
+          <h2 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{tText('Aucun événement')}</h2>
           <p className="text-sm text-gray-400">Aucun événement disciplinaire ne correspond aux filtres.</p>
         </div>
       ) : (

@@ -18,6 +18,7 @@ import {
 import toast from 'react-hot-toast';
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 
+import { tText } from '@/i18n';
 type Tab = 'info' | 'history' | 'notes' | 'reports' | 'discipline' | 'interactions';
 
 /** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */
@@ -130,7 +131,7 @@ export default function SoulDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['soul', id, 'discipline', 'stats'] });
       setShowDisciplineForm(false);
       setDisciplineForm({ categorie: 'COMPORTEMENT', typeEvenement: 'REPROCHE', titre: '', description: '', gravite: 'MOYENNE', dateEvenement: new Date().toISOString().slice(0, 10) });
-      toast.success('Événement disciplinaire enregistré');
+      toast.success(tText('Événement disciplinaire enregistré'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -142,7 +143,7 @@ export default function SoulDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['soul', id, 'discipline'] });
       queryClient.invalidateQueries({ queryKey: ['soul', id, 'discipline', 'stats'] });
-      toast.success('Événement marqué comme résolu');
+      toast.success(tText('Événement marqué comme résolu'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -225,7 +226,7 @@ export default function SoulDetailPage() {
 
   const createNoteMutation = useMutation({
     mutationFn: async (contenu: string) => { await api.post(`/souls/${id}/notes`, { contenu }); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['soul', id, 'notes'] }); setNewNote(''); toast.success('Note ajoutée'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['soul', id, 'notes'] }); setNewNote(''); toast.success(tText('Note ajoutée')); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -269,7 +270,7 @@ export default function SoulDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['soul', id, 'interactions'] });
       queryClient.invalidateQueries({ queryKey: ['soul', id] });
       setInteractionForm({ type: 'APPEL', canal: undefined, objet: '', contenu: '' });
-      toast.success('Interaction enregistrée ✅');
+      toast.success(tText('Interaction enregistrée ✅'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -280,7 +281,7 @@ export default function SoulDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['soul', id, 'interactions'] });
-      toast.success('Interaction supprimée');
+      toast.success(tText('Interaction supprimée'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -365,8 +366,8 @@ export default function SoulDetailPage() {
     <div className="page-container">
       <div className="glass-card p-12 text-center animate-scale-in">
         <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500">Âme non trouvée</p>
-        <Link to="/souls" className="btn-primary btn-sm mt-4 inline-flex">Retour aux âmes</Link>
+        <p className="text-gray-500">{tText('Âme non trouvée')}</p>
+        <Link to="/souls" className="btn-primary btn-sm mt-4 inline-flex">{tText('Retour aux âmes')}</Link>
       </div>
     </div>
   );
@@ -384,7 +385,7 @@ export default function SoulDetailPage() {
     <div className="page-container">
       {/* Back */}
       <Link to="/souls" className="btn-ghost btn-sm mb-4 inline-flex animate-fade-in">
-        <ArrowLeft className="w-4 h-4" /> Retour aux âmes
+        <ArrowLeft className="w-4 h-4" /> {tText('Retour aux âmes')}
       </Link>
 
       {/* Header */}
@@ -433,11 +434,11 @@ export default function SoulDetailPage() {
         <div className="glass-card p-5 mb-6 animate-slide-up border-l-[3px] border-l-orange-500">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-xl bg-orange-100 dark:bg-orange-900/30"><AlertTriangle className="w-5 h-5 text-orange-600" /></div>
-            <div><h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Demande de retrait</h3><p className="text-xs text-gray-500">Justifiez la demande de retrait de cette âme</p></div>
+            <div><h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Demande de retrait</h3><p className="text-xs text-gray-500">{tText('Justifiez la demande de retrait de cette âme')}</p></div>
           </div>
           <textarea className="input mb-3" rows={3} value={retractionJustification} onChange={(e) => setRetractionJustification(e.target.value)} placeholder="Justification obligatoire..." />
           <div className="flex justify-end gap-2">
-            <button onClick={() => setShowRetraction(false)} className="btn-secondary btn-sm">Annuler</button>
+            <button onClick={() => setShowRetraction(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
             <button onClick={() => retractionMutation.mutate(retractionJustification)} disabled={!retractionJustification || retractionMutation.isPending} className="btn-primary btn-sm bg-orange-600 hover:bg-orange-700">
               {retractionMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Soumettre
             </button>
@@ -450,7 +451,7 @@ export default function SoulDetailPage() {
         <div className="glass-card p-5 mb-6 animate-slide-up border-l-[3px] border-l-red-500">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-xl bg-red-100 dark:bg-red-900/30"><LogOut className="w-5 h-5 text-red-600" /></div>
-            <div><h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Sortie du suivi</h3><p className="text-xs text-gray-500">Marquer cette âme comme sortie du suivi avec motif obligatoire</p></div>
+            <div><h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Sortie du suivi</h3><p className="text-xs text-gray-500">{tText('Marquer cette âme comme sortie du suivi avec motif obligatoire')}</p></div>
           </div>
           <div className="space-y-3">
             <select value={exitMotif} onChange={(e) => setExitMotif(e.target.value)} className="input">
@@ -459,15 +460,15 @@ export default function SoulDetailPage() {
             </select>
             <textarea className="input" rows={2} value={exitMotifDetail} onChange={(e) => setExitMotifDetail(e.target.value)} placeholder="Détail (optionnel)..." />
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowExitForm(false)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setShowExitForm(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button onClick={async () => {
                 try {
                   await api.post(`/souls/${id}/exit`, { motif: exitMotif, motifDetail: exitMotifDetail || undefined, peutReintegrer: true });
                   queryClient.invalidateQueries({ queryKey: ['soul', id] }); setShowExitForm(false); setExitMotif(''); setExitMotifDetail('');
-                  toast.success('Âme marquée comme sortie du suivi');
+                  toast.success(tText('Âme marquée comme sortie du suivi'));
                 } catch (err) { toast.error(getErrorMessage(err)); }
               }} disabled={!exitMotif} className="btn-primary btn-sm bg-red-600 hover:bg-red-700">
-                <LogOut className="w-4 h-4" /> Confirmer la sortie
+                <LogOut className="w-4 h-4" /> {tText('Confirmer la sortie')}
               </button>
             </div>
           </div>
@@ -480,16 +481,16 @@ export default function SoulDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-green-100 dark:bg-green-900/30"><Undo2 className="w-5 h-5 text-green-600" /></div>
-              <div><h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Réintégration possible</h3><p className="text-xs text-gray-500">Cette âme peut être réintégrée au suivi actif</p></div>
+              <div><h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{tText('Réintégration possible')}</h3><p className="text-xs text-gray-500">{tText('Cette âme peut être réintégrée au suivi actif')}</p></div>
             </div>
             <button onClick={async () => {
               try {
                 const res = await api.post(`/souls/${id}/reintegrate`, { nouveauStatut: 'ACTIF' });
                 queryClient.invalidateQueries({ queryKey: ['soul', id] }); queryClient.setQueryData(['soul', id], res.data);
-                toast.success('Âme réintégrée avec succès');
+                toast.success(tText('Âme réintégrée avec succès'));
               } catch (err) { toast.error(getErrorMessage(err)); }
             }} className="btn-primary btn-sm bg-green-600 hover:bg-green-700">
-              <Undo2 className="w-4 h-4" /> Réintégrer
+              <Undo2 className="w-4 h-4" /> {tText('Réintégrer')}
             </button>
           </div>
         </div>
@@ -516,7 +517,7 @@ export default function SoulDetailPage() {
             <>
               <div className="glass-card p-5 animate-slide-up">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary-500" /> Coordonnées
+                  <Sparkles className="w-4 h-4 text-primary-500" /> {tText('Coordonnées')}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
@@ -545,7 +546,7 @@ export default function SoulDetailPage() {
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{soul.typeDisciple === 'NOUVEAU_CONVERTI' ? 'Nouveau converti' : "Nouvel arrivant à l'église"}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
-                    <p className="text-xs text-gray-400 mb-1">État spirituel</p>
+                    <p className="text-xs text-gray-400 mb-1">{tText('État spirituel')}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{statutLabel(soul.statut)}</p>
                   </div>
                   {soul.dateConversion && <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
@@ -562,7 +563,7 @@ export default function SoulDetailPage() {
               {score && (
                 <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '140ms' }}>
                   <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-primary-500" /> Évolution du score spirituel
+                    <TrendingUp className="w-5 h-5 text-primary-500" /> {tText('Évolution du score spirituel')}
                   </h3>
                   {scoreHistory.length > 1 ? (
                     <ResponsiveContainer width="100%" height={190}>
@@ -669,7 +670,7 @@ export default function SoulDetailPage() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8"><Activity className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" /><p className="text-sm text-gray-500">Aucun historique</p></div>
+                <div className="text-center py-8"><Activity className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" /><p className="text-sm text-gray-500">{tText('Aucun historique')}</p></div>
               )}
             </div>
           )}
@@ -679,7 +680,7 @@ export default function SoulDetailPage() {
             <div className="space-y-6">
               <div className="glass-card p-5 animate-slide-up">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-primary-500" /> Ajouter une note
+                  <MessageSquare className="w-4 h-4 text-primary-500" /> {tText('Ajouter une note')}
                 </h3>
                 <textarea className="input mb-3" rows={3} value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Note libre (hors rapport hebdo)..." />
                 <div className="flex justify-end">
@@ -742,7 +743,7 @@ export default function SoulDetailPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8"><FileText className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" /><p className="text-sm text-gray-500">Aucun rapport</p></div>
+                <div className="text-center py-8"><FileText className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" /><p className="text-sm text-gray-500">{tText('Aucun rapport')}</p></div>
               )}
             </div>
           )}
@@ -769,7 +770,7 @@ export default function SoulDetailPage() {
                       <p className={`text-lg font-bold ${disciplineStats.nonResolus > 0 ? 'text-red-500' : 'text-green-500'}`}>
                         {disciplineStats.nonResolus}
                       </p>
-                      <p className="text-[10px] text-gray-400">Non résolus</p>
+                      <p className="text-[10px] text-gray-400">{tText('Non résolus')}</p>
                     </div>
                     {Object.entries(disciplineStats.parCategorie).slice(0, 4).map(([cat, count]) => (
                       <div key={cat} className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30 text-center">
@@ -785,14 +786,14 @@ export default function SoulDetailPage() {
               {showDisciplineForm ? (
                 <div className="glass-card p-5 animate-slide-up">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouvel événement disciplinaire</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Nouvel événement disciplinaire')}</h3>
                     <button onClick={() => setShowDisciplineForm(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                       <X className="w-4 h-4 text-gray-400" />
                     </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="label">Catégorie *</label>
+                      <label className="label">{tText('Catégorie *')}</label>
                       <select className="input" value={disciplineForm.categorie}
                         onChange={(e) => setDisciplineForm({ ...disciplineForm, categorie: e.target.value })}>
                         {disciplineCategorieOptions.map((o) => (
@@ -822,7 +823,7 @@ export default function SoulDetailPage() {
                         placeholder="Détails de l'événement..." />
                     </div>
                     <div>
-                      <label className="label">Gravité</label>
+                      <label className="label">{tText('Gravité')}</label>
                       <select className="input" value={disciplineForm.gravite}
                         onChange={(e) => setDisciplineForm({ ...disciplineForm, gravite: e.target.value })}>
                         {graviteOptions.map((o) => (
@@ -837,7 +838,7 @@ export default function SoulDetailPage() {
                     </div>
                   </div>
                   <div className="flex justify-end gap-2 mt-4">
-                    <button onClick={() => setShowDisciplineForm(false)} className="btn-secondary btn-sm">Annuler</button>
+                    <button onClick={() => setShowDisciplineForm(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
                     <button onClick={() => createDisciplineMutation.mutate()}
                       disabled={!disciplineForm.titre || createDisciplineMutation.isPending}
                       className="btn-primary btn-sm">
@@ -848,7 +849,7 @@ export default function SoulDetailPage() {
                 </div>
               ) : (
                 <button onClick={() => setShowDisciplineForm(true)} className="btn-primary btn-sm flex items-center gap-2">
-                  <Flag className="w-4 h-4" /> Nouvel événement
+                  <Flag className="w-4 h-4" /> {tText('Nouvel événement')}
                 </button>
               )}
 
@@ -877,10 +878,10 @@ export default function SoulDetailPage() {
                             <span>{new Date(d.dateEvenement).toLocaleDateString(locale)}</span>
                             {d.resolu ? (
                               <span className="text-green-600 flex items-center gap-0.5">
-                                <CheckCircle2 className="w-3 h-3" /> Résolu
+                                <CheckCircle2 className="w-3 h-3" /> {tText('Résolu')}
                               </span>
                             ) : (
-                              <span className="text-red-500">Non résolu</span>
+                              <span className="text-red-500">{tText('Non résolu')}</span>
                             )}
                           </div>
                           {d.description && (
@@ -904,7 +905,7 @@ export default function SoulDetailPage() {
               ) : disciplineEvents && disciplineEvents.content.length === 0 && (
                 <div className="glass-card p-8 text-center animate-fade-in">
                   <Flag className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Aucun événement disciplinaire</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{tText('Aucun événement disciplinaire')}</p>
                 </div>
               )}
 
@@ -922,7 +923,7 @@ export default function SoulDetailPage() {
               {/* Create form */}
               <div className="glass-card p-5 animate-slide-up">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                  <PhoneCall className="w-4 h-4 text-primary-500" /> Enregistrer une interaction
+                  <PhoneCall className="w-4 h-4 text-primary-500" /> {tText('Enregistrer une interaction')}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -1015,7 +1016,7 @@ export default function SoulDetailPage() {
         {/* Right sidebar */}
         <div className="space-y-6">
           <div className="glass-card p-5 animate-slide-up">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Synthèse</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{tText('Synthèse')}</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-white/10 dark:border-white/[0.04]">
                 <span className="text-xs text-gray-400">Type</span>
@@ -1026,7 +1027,7 @@ export default function SoulDetailPage() {
                 <span className={STATUT_STYLES[soul.statut] || 'badge-gray'}>{statutLabel(soul.statut)}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10 dark:border-white/[0.04]">
-                <span className="text-xs text-gray-400">Intégration</span>
+                <span className="text-xs text-gray-400">{tText('Intégration')}</span>
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{new Date(soul.dateIntegration).toLocaleDateString(locale)}</span>
               </div>
               <div className="flex justify-between items-center py-2">
@@ -1043,7 +1044,7 @@ export default function SoulDetailPage() {
                 <Edit className="w-4 h-4 text-primary-500" /> Modifier la fiche
               </Link>
               <Link to={`/reports/maker?ameId=${soul.id}`} className="flex items-center gap-2 p-2.5 rounded-lg hover:bg-white/30 dark:hover:bg-gray-800/30 transition-colors text-sm text-gray-700 dark:text-gray-300">
-                <FileText className="w-4 h-4 text-primary-500" /> Voir les rapports
+                <FileText className="w-4 h-4 text-primary-500" /> {tText('Voir les rapports')}
               </Link>
             </div>
           </div>
@@ -1058,7 +1059,7 @@ export default function SoulDetailPage() {
                 tags.map((tag) => (
                   <span key={tag} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200/50 dark:border-primary-800/40 text-[11px] font-medium text-primary-700 dark:text-primary-300">
                     #{tag}
-                    <button onClick={() => removeTagMutation.mutate(tag)} className="hover:text-red-500 transition-colors" title="Supprimer">
+                    <button onClick={() => removeTagMutation.mutate(tag)} className="hover:text-red-500 transition-colors" title={tText('Supprimer')}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -1169,7 +1170,7 @@ export default function SoulDetailPage() {
                   )}
                   {ai.suggestions.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1.5">Actions suggérées</p>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1.5">{tText('Actions suggérées')}</p>
                       <div className="space-y-1.5">
                         {ai.suggestions.map((s, i) => (
                           <div key={i} className="p-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 text-[11px] text-gray-700 dark:text-gray-300">
@@ -1207,7 +1208,7 @@ export default function SoulDetailPage() {
             return (
               <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '120ms' }}>
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  <Star className="w-3 h-3 text-amber-500" /> Évaluation du faiseur
+                  <Star className="w-3 h-3 text-amber-500" /> {tText('Évaluation du faiseur')}
                 </h3>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex">

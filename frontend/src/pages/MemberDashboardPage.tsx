@@ -28,6 +28,7 @@ import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import { canAccessFilesModule } from '@/components/shared/AttachmentPicker';
 import { useDictionaries } from '@/hooks/useDictionaries';
 
+import { tText } from '@/i18n';
 const STATUT_BADGES: Record<string, string> = {
   MEMBRE: 'badge-info',
   FAISEUR: 'badge-success',
@@ -538,8 +539,8 @@ export default function MemberDashboardPage() {
               <CalendarCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Mes présences hebdomadaires</h3>
-              <p className="text-xs text-gray-400">Visibles par votre chef de famille, votre responsable de département et le pasteur</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Mes présences hebdomadaires')}</h3>
+              <p className="text-xs text-gray-400">{tText('Visibles par votre chef de famille, votre responsable de département et le pasteur')}</p>
             </div>
           </div>
 
@@ -658,7 +659,7 @@ export default function MemberDashboardPage() {
                 <div className="flex flex-col items-center py-8 text-center">
                   <CalendarCheck className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">Aucune présence enregistrée pour l'instant</p>
-                  <p className="text-xs text-gray-400">Cochez les programmes de la semaine et enregistrez</p>
+                  <p className="text-xs text-gray-400">{tText('Cochez les programmes de la semaine et enregistrez')}</p>
                 </div>
               )}
             </div>
@@ -723,7 +724,7 @@ export default function MemberDashboardPage() {
             {canAccessFilesModule(user?.role) && (
               <div className="mt-3">
                 <label className="label flex items-center gap-1.5">
-                  <Paperclip className="w-3.5 h-3.5 text-primary-500" /> Pièces jointes
+                  <Paperclip className="w-3.5 h-3.5 text-primary-500" /> {tText('Pièces jointes')}
                 </label>
                 <AttachmentPicker
                   value={requestForm.fichierIds}
@@ -784,8 +785,8 @@ export default function MemberDashboardPage() {
             ) : (
               <div className="flex flex-col items-center py-8 text-center">
                 <MessageSquare className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
-                <p className="text-sm text-gray-500 dark:text-gray-400">Aucune demande envoyée</p>
-                <p className="text-xs text-gray-400">Vos demandes apparaîtront ici avec leur statut et la réponse</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{tText('Aucune demande envoyée')}</p>
+                <p className="text-xs text-gray-400">{tText('Vos demandes apparaîtront ici avec leur statut et la réponse')}</p>
               </div>
             )}
           </div>
@@ -855,7 +856,7 @@ export default function MemberDashboardPage() {
             </div>
           ))}
           {(!(dashboard as any)?.prieres || ((dashboard as any)).prieres.length === 0) && (
-            <div className="text-center py-6"><Church className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-xs text-gray-400">Aucune prière</p></div>
+            <div className="text-center py-6"><Church className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-xs text-gray-400">{tText('Aucune prière')}</p></div>
           )}
         </div>
       </div>
@@ -869,7 +870,7 @@ export default function MemberDashboardPage() {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ma progression</h3>
-              <p className="text-xs text-gray-400">Évolution spirituelle et engagement</p>
+              <p className="text-xs text-gray-400">{tText('Évolution spirituelle et engagement')}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -882,7 +883,7 @@ export default function MemberDashboardPage() {
             {((dashboard as any)).progression.presencesTotal !== undefined && (
               <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 text-center">
                 <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{((dashboard as any)).progression.presencesTotal}</p>
-                <p className="text-[10px] text-gray-400">Présences</p>
+                <p className="text-[10px] text-gray-400">{tText('Présences')}</p>
               </div>
             )}
             {((dashboard as any)).progression.rapportsSoumis !== undefined && (
@@ -894,7 +895,7 @@ export default function MemberDashboardPage() {
             {((dashboard as any)).progression.prieres !== undefined && (
               <div className="p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/10 text-center">
                 <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{((dashboard as any)).progression.prieres}</p>
-                <p className="text-[10px] text-gray-400">Prières</p>
+                <p className="text-[10px] text-gray-400">{tText('Prières')}</p>
               </div>
             )}
           </div>
@@ -907,7 +908,7 @@ export default function MemberDashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-blue-500" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Événements à venir</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Événements à venir')}</h3>
             </div>
             <Link to="/events" className="text-[10px] font-medium text-primary-600">Voir tout <ChevronRight className="w-3 h-3 inline" /></Link>
           </div>
@@ -984,7 +985,7 @@ export default function MemberDashboardPage() {
               </div>
 
               <div>
-                <label className="label">Téléphone</label>
+                <label className="label">{tText('Téléphone')}</label>
                 <input
                   className="input"
                   placeholder="06 00 00 00 00"
@@ -1061,7 +1062,7 @@ export default function MemberDashboardPage() {
 
             <div className="flex justify-end gap-3 mt-8 pt-5 border-t border-white/20 dark:border-white/[0.06]">
               <button onClick={() => setEditing(false)} className="btn-secondary btn-sm">
-                <X className="w-4 h-4" /> Annuler
+                <X className="w-4 h-4" /> {tText('Annuler')}
               </button>
               <button onClick={submit} disabled={mutation.isPending} className="btn-primary btn-sm">
                 {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

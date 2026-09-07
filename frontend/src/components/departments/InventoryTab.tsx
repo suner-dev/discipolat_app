@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { tText } from '@/i18n';
 import {
   Boxes, Pencil, Trash2, Save, X, Loader2,
 } from 'lucide-react';
@@ -58,7 +59,7 @@ export function InventoryTab({ deptId, onChanged }: { deptId: string; onChanged:
 
   const deleteMutation = useMutation({
     mutationFn: async (equipmentId: string) => api.delete(`/departments/${deptId}/equipment/${equipmentId}`),
-    onSuccess: () => { toast.success('Équipement supprimé'); invalidate(); },
+    onSuccess: () => { toast.success(tText('Équipement supprimé')); invalidate(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -72,7 +73,7 @@ export function InventoryTab({ deptId, onChanged }: { deptId: string; onChanged:
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="stat-card p-3 text-center">
-          <span className="stat-label text-[10px]">Équipements</span>
+          <span className="stat-label text-[10px]">{tText('Équipements')}</span>
           <p className="stat-value text-xl">{equipment.length}</p>
         </div>
         <div className="stat-card p-3 text-center">
@@ -80,7 +81,7 @@ export function InventoryTab({ deptId, onChanged }: { deptId: string; onChanged:
           <p className="stat-value text-xl">{totalItems}</p>
         </div>
         <div className="stat-card p-3 text-center">
-          <span className="stat-label text-[10px]">En réparation</span>
+          <span className="stat-label text-[10px]">{tText('En réparation')}</span>
           <p className="stat-value text-xl text-amber-500">{equipment.filter((e) => e.etat === 'REPARATION').length}</p>
         </div>
         <div className="stat-card p-3 text-center">
@@ -102,12 +103,12 @@ export function InventoryTab({ deptId, onChanged }: { deptId: string; onChanged:
             <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex : Caméra Sony A7" />
           </div>
           <div>
-            <label className="label">Quantité</label>
+            <label className="label">{tText('Quantité')}</label>
             <input type="number" min={1} className="input" value={quantite}
               onChange={(e) => setQuantite(Math.max(1, Number(e.target.value) || 1))} />
           </div>
           <div>
-            <label className="label">État</label>
+            <label className="label">{tText('État')}</label>
             <select className="input" value={etat} onChange={(e) => setEtat(e.target.value)}>
               {Object.entries(ETAT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
@@ -130,7 +131,7 @@ export function InventoryTab({ deptId, onChanged }: { deptId: string; onChanged:
           {editing && (
             <button onClick={() => { setEditing(null); setNom(''); setDescription(''); setQuantite(1); setEtat('BON'); setLocalisation(''); }}
               className="btn-ghost btn-sm cursor-pointer">
-              <X className="w-4 h-4" /> Annuler
+              <X className="w-4 h-4" /> {tText('Annuler')}
             </button>
           )}
         </div>
@@ -139,7 +140,7 @@ export function InventoryTab({ deptId, onChanged }: { deptId: string; onChanged:
       {equipment.length === 0 ? (
         <div className="text-center py-8">
           <Boxes className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm text-gray-400">Aucun équipement enregistré</p>
+          <p className="text-sm text-gray-400">{tText('Aucun équipement enregistré')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

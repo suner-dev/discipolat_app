@@ -4,6 +4,7 @@ import { Upload, FileText, AlertTriangle, CheckCircle, Loader2, Users, Home, Hea
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 
+import { tText } from '@/i18n';
 type ImportType = 'souls' | 'families' | 'users';
 
 interface ValidationError {
@@ -86,8 +87,8 @@ export default function ImportDataPage() {
           <Upload className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Import de Données</h1>
-          <p className="page-subtitle">Importez des données en masse depuis du CSV</p>
+          <h1 className="page-title">{tText('Import de Données')}</h1>
+          <p className="page-subtitle">{tText('Importez des données en masse depuis du CSV')}</p>
         </div>
       </div>
 

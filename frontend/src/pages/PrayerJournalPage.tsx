@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
 import { BookOpen, Plus, CheckCircle2, Heart, Clock, Trash2 } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface PrayerEntry {
   id: string;
   contenu: string;
@@ -96,11 +97,11 @@ export default function PrayerJournalPage() {
             <BookOpen className="w-8 h-8 text-purple-500" />
             {t('prayerJournal.title')}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Votre carnet de prières personnel</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{tText('Votre carnet de prières personnel')}</p>
         </div>
         <button onClick={() => setShowCreate(true)}
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg shadow-purple-500/25 flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouvelle prière
+          <Plus className="w-4 h-4" /> {tText('Nouvelle prière')}
         </button>
       </div>
 
@@ -145,15 +146,15 @@ export default function PrayerJournalPage() {
                     <div className="flex gap-1">
                       {entry.statut === 'EN_COURS' && (
                         <>
-                          <button onClick={() => markAnswered(entry.id)} className="p-1.5 rounded-lg hover:bg-green-50 dark:hover:bg-green-500/10 text-green-500" title="Exaucée">
+                          <button onClick={() => markAnswered(entry.id)} className="p-1.5 rounded-lg hover:bg-green-50 dark:hover:bg-green-500/10 text-green-500" title={tText('Exaucée')}>
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
-                          <button onClick={() => markRemembered(entry.id)} className="p-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-500/10 text-purple-500" title="Mémorisée">
+                          <button onClick={() => markRemembered(entry.id)} className="p-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-500/10 text-purple-500" title={tText('Mémorisée')}>
                             <Heart className="w-4 h-4" />
                           </button>
                         </>
                       )}
-                      <button onClick={() => deleteEntry(entry.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-red-400" title="Supprimer">
+                      <button onClick={() => deleteEntry(entry.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-red-400" title={tText('Supprimer')}>
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -168,7 +169,7 @@ export default function PrayerJournalPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouvelle prière</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouvelle prière')}</h2>
             <textarea value={newEntry.contenu} onChange={e => setNewEntry({ ...newEntry, contenu: e.target.value })}
               rows={4} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
               placeholder="Écrivez votre prière ici..." />
@@ -179,13 +180,13 @@ export default function PrayerJournalPage() {
               </select>
               <select value={newEntry.visibilité} onChange={e => setNewEntry({ ...newEntry, visibilité: e.target.value })}
                 className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm">
-                <option value="PRIVÉE">Privée</option>
-                <option value="FAISEUR">Avec mon faiseur</option>
-                <option value="FAMILLE">Avec ma famille</option>
+                <option value="PRIVÉE">{tText('Privée')}</option>
+                <option value="FAISEUR">{tText('Avec mon faiseur')}</option>
+                <option value="FAMILLE">{tText('Avec ma famille')}</option>
               </select>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={createEntry} className="px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-700">Ajouter</button>
             </div>
           </div>

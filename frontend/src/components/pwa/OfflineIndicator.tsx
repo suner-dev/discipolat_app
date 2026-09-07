@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 
+import { tText } from '@/i18n';
 /**
  * PWA Offline Indicator + Install Prompt.
  * Shows a banner when offline and a button to install the PWA.
@@ -62,7 +63,7 @@ export function OfflineIndicator() {
             boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
           }}
         >
-          📡 Vous êtes hors ligne — les modifications seront synchronisées à la reconnexion
+          {tText('📡 Vous êtes hors ligne — les modifications seront synchronisées à la reconnexion')}
         </div>
       )}
 

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { tText } from '@/i18n';
 // ======================== Types ========================
 
 interface SearchResult {
@@ -251,7 +252,7 @@ export default function IntelligentSearchPage() {
             <h1 className="page-title">Recherche intelligente</h1>
           </div>
           <p className="page-subtitle">
-            Trouvez un membre et affichez sa fiche complète en un clic
+            {tText('Trouvez un membre et affichez sa fiche complète en un clic')}
           </p>
         </div>
       </div>
@@ -334,7 +335,7 @@ export default function IntelligentSearchPage() {
           ) : searchQuery ? (
             <div className="glass-card p-12 text-center animate-scale-in">
               <Search className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Aucun résultat</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{tText('Aucun résultat')}</h3>
               <p className="text-sm text-gray-500">Aucun membre ne correspond à votre recherche.</p>
             </div>
           ) : (
@@ -442,7 +443,7 @@ function CompleteMemberProfile({
     <div className="space-y-6 animate-fade-in">
       {/* Back button */}
       <button onClick={onBack} className="btn-ghost btn-sm inline-flex items-center gap-1">
-        <ArrowLeft className="w-4 h-4" /> Retour aux résultats
+        <ArrowLeft className="w-4 h-4" /> {tText('Retour aux résultats')}
       </button>
 
       {/* Header card */}
@@ -507,7 +508,7 @@ function CompleteMemberProfile({
 
           <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '80ms' }}>
             <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-              <Church className="w-4 h-4 text-primary-500" /> Parcours ecclésial
+              <Church className="w-4 h-4 text-primary-500" /> {tText('Parcours ecclésial')}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30 text-center">
@@ -522,7 +523,7 @@ function CompleteMemberProfile({
                 <p className={`text-sm font-bold ${e.etatSpirituel === 'EN_DIFFICULTE' ? 'text-red-500' : 'text-green-500'}`}>
                   {dictionaries.label('SPIRITUAL_LEVEL', e.etatSpirituel) || SPIRITUAL_FALLBACK[e.etatSpirituel] || e.etatSpirituel}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">État spirituel</p>
+                <p className="text-xs text-gray-400 mt-1">{tText('État spirituel')}</p>
               </div>
               {e.dateConversion && (
                 <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
@@ -560,7 +561,7 @@ function CompleteMemberProfile({
                   <Building2 className="w-4 h-4 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Département</p>
+                  <p className="text-xs text-gray-400">{tText('Département')}</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {a.departementNom || 'Non assigné'}
                   </p>
@@ -574,7 +575,7 @@ function CompleteMemberProfile({
                   <Home className="w-4 h-4 text-primary-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Famille de disciples</p>
+                  <p className="text-xs text-gray-400">{tText('Famille de disciples')}</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {a.familleNom || 'Non assignée'}
                   </p>
@@ -614,12 +615,12 @@ function CompleteMemberProfile({
           {/* Presence Stats */}
           <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '160ms' }}>
             <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary-500" /> Statistiques de présence
+              <TrendingUp className="w-4 h-4 text-primary-500" /> {tText('Statistiques de présence')}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <div className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30 text-center">
                 <p className="text-lg font-bold text-green-500">{profile.presences.tauxPresence}%</p>
-                <p className="text-[10px] text-gray-400">Présence</p>
+                <p className="text-[10px] text-gray-400">{tText('Présence')}</p>
               </div>
               <div className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30 text-center">
                 <p className="text-lg font-bold text-blue-500">{profile.presences.totalRapports}</p>
@@ -730,10 +731,10 @@ function CompleteMemberProfile({
         <div className="space-y-6">
           {/* Quick Stats */}
           <div className="glass-card p-5 animate-slide-up">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Synthèse rapide</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">{tText('Synthèse rapide')}</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">Fidélité</span>
+                <span className="text-xs text-gray-400">{tText('Fidélité')}</span>
                 <div className="flex items-center gap-1">
                   <div className="w-16 h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                     <div
@@ -749,7 +750,7 @@ function CompleteMemberProfile({
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{profile.presences.rapportsSoumis} rapports</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">Suivis parallèles</span>
+                <span className="text-xs text-gray-400">{tText('Suivis parallèles')}</span>
                 <span className="text-xs font-medium">{profile.suivisParalleles.length}</span>
               </div>
               <div className="flex items-center justify-between">
@@ -769,7 +770,7 @@ function CompleteMemberProfile({
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">Âme depuis</span>
+                <span className="text-xs text-gray-400">{tText('Âme depuis')}</span>
                 <span className="text-xs font-medium">{e.anneesDansEglise} an{e.anneesDansEglise > 1 ? 's' : ''}</span>
               </div>
             </div>
@@ -779,7 +780,7 @@ function CompleteMemberProfile({
           {profile.evaluations && Object.keys(profile.evaluations).length > 0 && (
             <div className="glass-card p-5 animate-slide-up" style={{ animationDelay: '140ms' }}>
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Star className="w-3 h-3 text-amber-500" /> Évaluations de la chaîne
+                <Star className="w-3 h-3 text-amber-500" /> {tText('Évaluations de la chaîne')}
               </h3>
               <div className="space-y-2.5">
                 {Object.entries(profile.evaluations).map(([role, scores]) => {
@@ -916,7 +917,7 @@ function CompleteMemberProfile({
                       <span>{dictionaries.label('DISCIPLINE_CATEGORIE', d.categorie) || CATEGORIE_DISCIPLINE_FALLBACK[d.categorie] || d.categorie}</span>
                       <span>•</span>
                       <span>{new Date(d.dateEvenement).toLocaleDateString(locale)}</span>
-                      {d.resolu && <span className="text-green-600">✓ Résolu</span>}
+                      {d.resolu && <span className="text-green-600">{tText('✓ Résolu')}</span>}
                     </div>
                     {d.description && (
                       <p className="text-[10px] text-gray-500 mt-1 line-clamp-2">{d.description}</p>
@@ -945,7 +946,7 @@ function CompleteMemberProfile({
                     {exit.motifDetail && <p className="text-[10px] text-gray-500 mt-0.5">{exit.motifDetail}</p>}
                     {exit.peutReintegrer && (
                       <span className="text-[10px] text-green-600 mt-1 inline-flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Peut être réintégré
+                        <CheckCircle2 className="w-3 h-3" /> {tText('Peut être réintégré')}
                       </span>
                     )}
                   </div>

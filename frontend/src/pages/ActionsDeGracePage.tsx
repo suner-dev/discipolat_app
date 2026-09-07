@@ -5,6 +5,8 @@ import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Family } from '@/types';
 import { Heart, Sparkles, Loader2, Star, Filter, Search, X, TrendingUp, BookOpen, BarChart3 } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface AnsweredPrayer {
   id: string;
   titre: string;
@@ -78,7 +80,7 @@ export default function ActionsDeGracePage() {
             <Heart className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="page-title">Actions de grâce</h1>
+            <h1 className="page-title">{tText('Actions de grâce')}</h1>
             <p className="page-subtitle">Prières exaucées et témoignages — {stats.total} action(s) de grâce</p>
           </div>
         </div>
@@ -110,7 +112,7 @@ export default function ActionsDeGracePage() {
         <div className="glass-card p-4 mb-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4 text-primary-500" />
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Répartition par catégorie</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{tText('Répartition par catégorie')}</h3>
           </div>
           <div className="flex flex-wrap gap-2">
             {catEntries.map(([cat, count]) => {
@@ -144,14 +146,14 @@ export default function ActionsDeGracePage() {
           <div className="flex items-center gap-1.5">
             <Filter className="w-4 h-4 text-gray-400" />
             <select value={familleFilter} onChange={(e) => setFamilleFilter(e.target.value)} className="input !w-auto text-xs">
-              <option value="">Toutes les familles</option>
+              <option value="">{tText('Toutes les familles')}</option>
               {(families || []).map((f) => (<option key={f.id} value={f.id}>{f.nom}</option>))}
             </select>
           </div>
           {hasActiveFilters && (
             <button onClick={() => { setSearchTerm(''); setCategorieFilter(''); setFamilleFilter(''); }}
               className="btn-ghost btn-sm">
-              <X className="w-3.5 h-3.5" /> Réinitialiser
+              <X className="w-3.5 h-3.5" /> {tText('Réinitialiser')}
             </button>
           )}
         </div>
@@ -188,7 +190,7 @@ export default function ActionsDeGracePage() {
                   </div>
                   {prayer.dateExaucee && (
                     <span className="text-xs text-gray-400 whitespace-nowrap">
-                      {new Date(prayer.dateExaucee).toLocaleDateString('fr-FR')}
+                      {new Date(prayer.dateExaucee).toLocaleDateString(getI18nLocale())}
                     </span>
                   )}
                 </div>
@@ -199,7 +201,7 @@ export default function ActionsDeGracePage() {
                   <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
                     <div className="flex items-center gap-1 mb-1">
                       <Sparkles className="w-3 h-3 text-amber-500" />
-                      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Témoignage</span>
+                      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">{tText('Témoignage')}</span>
                     </div>
                     <p className="text-sm text-amber-800 dark:text-amber-200 italic line-clamp-4">"{prayer.temoignage}"</p>
                   </div>

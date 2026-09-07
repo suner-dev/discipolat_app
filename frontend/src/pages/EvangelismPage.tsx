@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Search,
   ChevronLeft,
@@ -123,7 +125,7 @@ export default function EvangelismPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evangelism'] });
-      toast.success('Étape du pipeline mise à jour');
+      toast.success(tText('Étape du pipeline mise à jour'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -155,7 +157,7 @@ export default function EvangelismPage() {
         t.soulNom || '',
         ETAPES[idx]?.label || t.etape,
         `${progressionPct(t.etape)}%`,
-        new Date(t.dateEtape).toLocaleDateString('fr-FR'),
+        new Date(t.dateEtape).toLocaleDateString(getI18nLocale()),
         t.note || '',
       ]);
     });
@@ -222,7 +224,7 @@ export default function EvangelismPage() {
             onChange={e => setSortBy(e.target.value as typeof sortBy)}
             className="input w-auto text-xs"
           >
-            <option value="etape">Trier par étape</option>
+            <option value="etape">{tText('Trier par étape')}</option>
             <option value="date">Trier par date</option>
             <option value="name">Trier par nom</option>
           </select>
@@ -234,7 +236,7 @@ export default function EvangelismPage() {
         <div className="glass-card p-4">
           <div className="flex items-center gap-2 text-emerald-500">
             <Target className="w-4 h-4" />
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Âmes suivies</span>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{tText('Âmes suivies')}</span>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats?.totalAmes ?? '—'}</p>
         </div>
@@ -410,7 +412,7 @@ export default function EvangelismPage() {
                         {ETAPES[idx].label}
                       </span>
                       <span className="text-[10px] text-gray-400">
-                        depuis le {new Date(track.dateEtape).toLocaleDateString('fr-FR')}
+                        depuis le {new Date(track.dateEtape).toLocaleDateString(getI18nLocale())}
                       </span>
                     </div>
                     {/* Progression bar */}
@@ -467,7 +469,7 @@ export default function EvangelismPage() {
                         <div key={i} className="flex items-center gap-2 text-xs">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                           <span className="text-gray-700 dark:text-gray-300">{ETAPES.find(e => e.etape === h.etape)?.label ?? h.etape}</span>
-                          <span className="text-gray-400">· {new Date(h.creeLe).toLocaleDateString('fr-FR')}</span>
+                          <span className="text-gray-400">· {new Date(h.creeLe).toLocaleDateString(getI18nLocale())}</span>
                         </div>
                       ))
                     )}

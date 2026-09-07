@@ -11,6 +11,8 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const ROLE_FALLBACK: Record<string, string> = {
   ADMIN: 'Administrateur',
@@ -74,7 +76,7 @@ export default function ProfilePage() {
     onSuccess: (data) => {
       updateUser(data);
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      toast.success('Profil mis à jour avec succès');
+      toast.success(tText('Profil mis à jour avec succès'));
       setIsEditing(false);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -115,7 +117,7 @@ export default function ProfilePage() {
     },
     onSuccess: (data) => {
       if (data.valid) {
-        toast.success('Code vérifié avec succès');
+        toast.success(tText('Code vérifié avec succès'));
         setTwoFAStep('done');
         updateUser({ twoFactorEnabled: true });
       } else {
@@ -130,7 +132,7 @@ export default function ProfilePage() {
       await api.post('/auth/2fa/disable');
     },
     onSuccess: () => {
-      toast.success('2FA désactivée');
+      toast.success(tText('2FA désactivée'));
       updateUser({ twoFactorEnabled: false });
       setTwoFAStep('idle');
       setTwoFAData(null);
@@ -143,7 +145,7 @@ export default function ProfilePage() {
       await api.post('/auth/change-password', data);
     },
     onSuccess: () => {
-      toast.success('Mot de passe changé avec succès');
+      toast.success(tText('Mot de passe changé avec succès'));
       setShowPasswordForm(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setPasswordErrors({});
@@ -178,7 +180,7 @@ export default function ProfilePage() {
   const infoFields = [
     { icon: Mail, label: 'Email', value: user.email, readonly: true },
     { icon: Phone, label: 'Téléphone', value: user.phone || '-', key: 'phone', readonly: false },
-    { icon: Calendar, label: 'Date de naissance', value: user.dateNaissance ? new Date(user.dateNaissance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-', key: 'dateNaissance', readonly: false, type: 'date' as const },
+    { icon: Calendar, label: 'Date de naissance', value: user.dateNaissance ? new Date(user.dateNaissance).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : '-', key: 'dateNaissance', readonly: false, type: 'date' as const },
     { icon: Heart, label: 'Situation familiale', value: situationLabel(user.situationFamiliale), key: 'situationFamiliale', readonly: false, type: 'select' as const },
     { icon: Shield, label: 'Rôle', value: dictionaries.label('USER_ROLE', user.role) || ROLE_FALLBACK[user.role] || user.role, readonly: true },
   ];
@@ -192,7 +194,7 @@ export default function ProfilePage() {
             <User className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Mon profil</h1>
           </div>
-          <p className="page-subtitle">Gérez vos informations personnelles</p>
+          <p className="page-subtitle">{tText('Gérez vos informations personnelles')}</p>
         </div>
         <div className="flex gap-2 animate-fade-in">
           {!isEditing && (
@@ -218,7 +220,7 @@ export default function ProfilePage() {
               <Smartphone className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </div>
             <div className="text-left">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Authentification à deux facteurs</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{tText('Authentification à deux facteurs')}</h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {user?.role === 'ADMIN' ? 'Obligatoire pour les administrateurs' : 'Sécurisez votre compte avec 2FA'}
               </p>
@@ -233,7 +235,7 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                   <CheckCircle className="w-5 h-5" />
-                  <span className="font-semibold">2FA activée avec succès</span>
+                  <span className="font-semibold">{tText('2FA activée avec succès')}</span>
                 </div>
                 {twoFAData && (
                   <div>
@@ -283,7 +285,7 @@ export default function ProfilePage() {
                 />
                 <div className="flex justify-end gap-3">
                   <button onClick={() => { setTwoFAStep('idle'); setTwoFAData(null); }} className="btn-secondary btn-sm">
-                    Annuler
+                    {tText('Annuler')}
                   </button>
                   <button
                     onClick={() => verify2FAMutation.mutate(verifyCode)}
@@ -313,7 +315,7 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
-                  Vous pouvez aussi saisir la clé secrète manuellement dans votre application
+                  {tText('Vous pouvez aussi saisir la clé secrète manuellement dans votre application')}
                 </p>
                 <div className="flex justify-center">
                   <button
@@ -371,8 +373,8 @@ export default function ProfilePage() {
               <Lock className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Changer le mot de passe</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Minimum 8 caractères, majuscule, minuscule, chiffre</p>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{tText('Changer le mot de passe')}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{tText('Minimum 8 caractères, majuscule, minuscule, chiffre')}</p>
             </div>
           </div>
           <div className="space-y-4">
@@ -404,7 +406,7 @@ export default function ProfilePage() {
               );
             })}
             <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => { setShowPasswordForm(false); setPasswordErrors({}); }} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => { setShowPasswordForm(false); setPasswordErrors({}); }} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button onClick={handlePasswordSubmit} disabled={changePasswordMutation.isPending} className="btn-primary btn-sm">
                 {changePasswordMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
                 Changer
@@ -431,7 +433,7 @@ export default function ProfilePage() {
           <div className="flex-1">
             {isEditing ? (
               <div className="flex gap-2">
-                <input className="input w-36" value={editData.firstName} onChange={(e) => setEditData({ ...editData, firstName: e.target.value })} placeholder="Prénom" />
+                <input className="input w-36" value={editData.firstName} onChange={(e) => setEditData({ ...editData, firstName: e.target.value })} placeholder={tText('Prénom')} />
                 <input className="input w-36" value={editData.lastName} onChange={(e) => setEditData({ ...editData, lastName: e.target.value })} placeholder="Nom" />
               </div>
             ) : (
@@ -445,7 +447,7 @@ export default function ProfilePage() {
                   </span>
                   {user.estChefDeFamille && (
                     <span className="badge text-xs bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400 border border-gold-200/50">
-                      ⭐ Chef de famille
+                      {tText('⭐ Chef de famille')}
                     </span>
                   )}
                 </div>
@@ -491,7 +493,7 @@ export default function ProfilePage() {
                 : <XCircle className="w-4 h-4 text-gray-400" />}
             </div>
             <div className="flex-1">
-              <p className="text-xs text-gray-400 font-medium">Chef de famille</p>
+              <p className="text-xs text-gray-400 font-medium">{tText('Chef de famille')}</p>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.estChefDeFamille ? 'Oui' : 'Non'}</p>
             </div>
           </div>
@@ -502,9 +504,9 @@ export default function ProfilePage() {
               <Calendar className="w-4 h-4 text-gray-400" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-gray-400 font-medium">Membre depuis</p>
+              <p className="text-xs text-gray-400 font-medium">{tText('Membre depuis')}</p>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {new Date(user.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {new Date(user.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </div>
             <div className="flex items-center gap-1">
@@ -518,7 +520,7 @@ export default function ProfilePage() {
         {isEditing && (
           <div className="flex justify-end gap-3 mt-6 pt-5 border-t border-white/20 dark:border-white/[0.06] animate-slide-up">
             <button onClick={() => { setIsEditing(false); setEditData({ firstName: user?.firstName || '', lastName: user?.lastName || '', phone: user?.phone || '', dateNaissance: user?.dateNaissance || '', situationFamiliale: user?.situationFamiliale || '' }); }} className="btn-secondary btn-sm">
-              <X className="w-4 h-4" /> Annuler
+              <X className="w-4 h-4" /> {tText('Annuler')}
             </button>
             <button onClick={() => updateProfileMutation.mutate(editData)} disabled={updateProfileMutation.isPending} className="btn-primary btn-sm">
               {updateProfileMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

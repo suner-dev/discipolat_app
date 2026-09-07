@@ -8,6 +8,8 @@ import type { ColumnDef } from '@/types/table';
 import { Building2, Plus, Pencil, Trash2, Loader2, X, Calendar, UserPlus, FolderOpen, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 export default function DepartmentsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ export default function DepartmentsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
-      toast.success('Département créé avec succès');
+      toast.success(tText('Département créé avec succès'));
       setShowModal(false);
       resetForm();
     },
@@ -58,7 +60,7 @@ export default function DepartmentsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
-      toast.success('Département mis à jour');
+      toast.success(tText('Département mis à jour'));
       setShowModal(false);
       setEditing(null);
       resetForm();
@@ -72,7 +74,7 @@ export default function DepartmentsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
-      toast.success('Département archivé');
+      toast.success(tText('Département archivé'));
       setShowDeleteConfirm(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -134,7 +136,7 @@ export default function DepartmentsPage() {
       cell: (dept) => (
         <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
           <Calendar className="w-3 h-3" />
-          {new Date(dept.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+          {new Date(dept.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' })}
         </span>
       ),
     },
@@ -142,7 +144,7 @@ export default function DepartmentsPage() {
       header: 'Actions',
       cell: (dept) => (
         <div className="flex gap-1">
-          <button onClick={() => navigate(`/departments/${dept.id}`)} className="btn-ghost btn-sm text-amber-600" title="Voir le détail">
+          <button onClick={() => navigate(`/departments/${dept.id}`)} className="btn-ghost btn-sm text-amber-600" title={tText('Voir le détail')}>
             <FolderOpen className="w-4 h-4" />
           </button>
           <button onClick={() => openEdit(dept)} className="btn-ghost btn-sm text-blue-600" title="Modifier">
@@ -171,12 +173,12 @@ export default function DepartmentsPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <Building2 className="w-5 h-5 text-primary-500" />
-            <h1 className="page-title">Départements</h1>
+            <h1 className="page-title">{tText('Départements')}</h1>
           </div>
-          <p className="page-subtitle">Gestion des départements et équipes</p>
+          <p className="page-subtitle">{tText('Gestion des départements et équipes')}</p>
         </div>
         <button onClick={openCreate} className="btn-primary btn-sm animate-scale-in">
-          <Plus className="w-4 h-4" /> Nouveau département
+          <Plus className="w-4 h-4" /> {tText('Nouveau département')}
         </button>
       </div>
 
@@ -209,7 +211,7 @@ export default function DepartmentsPage() {
             Page {data.number + 1} / {data.totalPages}
           </p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-secondary btn-sm">Suivant</button>
           </div>
         </div>
@@ -238,7 +240,7 @@ export default function DepartmentsPage() {
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="label">Nom du département *</label>
+                <label className="label">{tText('Nom du département *')}</label>
                 <input
                   className="input"
                   value={formData.nom}
@@ -284,7 +286,7 @@ export default function DepartmentsPage() {
                             ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                             : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}
                       >
-                        Sélectionner un responsable
+                        {tText('Sélectionner un responsable')}
                       </button>
                       <button
                         type="button"
@@ -295,7 +297,7 @@ export default function DepartmentsPage() {
                             : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}
                       >
                         <UserPlus className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
-                        Créer un responsable
+                        {tText('Créer un responsable')}
                       </button>
                     </div>
                     {!formData.createNewResponsable ? (
@@ -348,7 +350,7 @@ export default function DepartmentsPage() {
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
-                  Annuler
+                  {tText('Annuler')}
                 </button>
                 <button
                   type="submit"
@@ -378,14 +380,14 @@ export default function DepartmentsPage() {
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Archiver le département</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Archiver le département')}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Le département sera archivé. Cette action peut être annulée.
                 </p>
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => deleteMutation.mutate(showDeleteConfirm)}
                 disabled={deleteMutation.isPending}

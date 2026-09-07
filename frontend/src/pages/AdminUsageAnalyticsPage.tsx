@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Activity, MousePointerClick, Users, Timer, Smartphone, Monitor, Tablet } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Summary { periodeJours: number; totalEvenements: number; pagesVues: number; utilisateursUniques: number; dureeMoyenneSec: number; topPages: Array<{ page?: string; vues?: number; [k: string]: unknown }>; vuesParJour: Record<string, number> | Array<{ jour?: string; vues?: number }>; parAppareil: Record<string, number>; topFunnels?: Array<Record<string, unknown>>; }
 
 const DEVICE_ICON: Record<string, typeof Monitor> = { MOBILE: Smartphone, DESKTOP: Monitor, TABLET: Tablet };
@@ -35,18 +36,18 @@ export default function AdminUsageAnalyticsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Kpi icon={MousePointerClick} label="Pages vues" value={data.pagesVues} />
         <Kpi icon={Users} label="Utilisateurs uniques" value={data.utilisateursUniques} />
-        <Kpi icon={Timer} label="Durée moyenne" value={`${data.dureeMoyenneSec}s`} />
-        <Kpi icon={Activity} label="Événements totaux" value={data.totalEvenements} />
+        <Kpi icon={Timer} label={tText('Durée moyenne')} value={`${data.dureeMoyenneSec}s`} />
+        <Kpi icon={Activity} label={tText('Événements totaux')} value={data.totalEvenements} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Panel title="Top pages visitées">
+        <Panel title={tText('Top pages visitées')}>
           {(data.topPages ?? []).map((p, i) => (
             <Row key={i} left={String(p.page ?? '—')} right={`${p.vues ?? '—'} vues`} />
           ))}
           {(data.topPages ?? []).length === 0 && <Empty />}
         </Panel>
-        <Panel title="Répartition par appareil">
+        <Panel title={tText('Répartition par appareil')}>
           {Object.entries(data.parAppareil ?? {}).map(([dev, count]) => {
             const Icon = DEVICE_ICON[dev] ?? Monitor;
             return (

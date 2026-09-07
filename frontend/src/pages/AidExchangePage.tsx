@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { ArrowLeftRight, Loader2, TrendingUp } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Exchange {
   id: string;
   fromType: string;
@@ -49,7 +51,7 @@ export default function AidExchangePage() {
         {loadingRates ? (
           <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>
         ) : rates.length === 0 ? (
-          <div className="glass-card p-6 text-center text-gray-500 text-sm">Aucun taux disponible</div>
+          <div className="glass-card p-6 text-center text-gray-500 text-sm">{tText('Aucun taux disponible')}</div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {rates.map((r, i) => (
@@ -60,14 +62,14 @@ export default function AidExchangePage() {
                   <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.toType}</span>
                 </div>
                 <p className="text-2xl font-bold text-cyan-400 text-center">{r.rate}</p>
-                <p className="text-[11px] text-gray-500 text-center mt-1">Mis à jour: {new Date(r.lastUpdated).toLocaleDateString('fr-FR')}</p>
+                <p className="text-[11px] text-gray-500 text-center mt-1">Mis à jour: {new Date(r.lastUpdated).toLocaleDateString(getI18nLocale())}</p>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Transactions récentes</h2>
+      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">{tText('Transactions récentes')}</h2>
       {isLoading ? (
         <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>
       ) : exchanges.length === 0 ? (
@@ -82,7 +84,7 @@ export default function AidExchangePage() {
                   <ArrowLeftRight className="w-3 h-3 text-cyan-400" />
                   <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{(ex.amount * ex.rate).toFixed(2)} {ex.toType}</span>
                 </div>
-                <p className="text-[11px] text-gray-500">{new Date(ex.createdAt).toLocaleDateString('fr-FR')} — Taux: {ex.rate}</p>
+                <p className="text-[11px] text-gray-500">{new Date(ex.createdAt).toLocaleDateString(getI18nLocale())} — Taux: {ex.rate}</p>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ex.status === 'COMPLETED' ? 'text-green-400 bg-green-500/20' : ex.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/20' : 'text-gray-400 bg-gray-500/20'}`}>{ex.status}</span>
             </div>

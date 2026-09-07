@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface RewardClaim {
   id: string;
   rewardId: number;
@@ -50,7 +52,7 @@ export default function RewardsClaimsPage() {
       await api.post('/rewards/claim', { rewardId });
     },
     onSuccess: () => {
-      toast.success('Réclamation envoyée');
+      toast.success(tText('Réclamation envoyée'));
       qc.invalidateQueries({ queryKey: ['rewards'] });
       setShowClaimModal(false);
       setSelectedRewardId(null);
@@ -75,12 +77,12 @@ export default function RewardsClaimsPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <Gift className="w-5 h-5 text-yellow-500" />
-            <h1 className="page-title">Mes réclamations</h1>
+            <h1 className="page-title">{tText('Mes réclamations')}</h1>
           </div>
           <p className="page-subtitle">Réclamez vos récompenses et suivez l'état de vos demandes</p>
         </div>
         <button onClick={() => setShowClaimModal(true)} className="btn-primary btn-sm">
-          <Plus className="w-4 h-4" /> Réclamer une récompense
+          <Plus className="w-4 h-4" /> {tText('Réclamer une récompense')}
         </button>
       </div>
 
@@ -111,7 +113,7 @@ export default function RewardsClaimsPage() {
           <Gift className="w-10 h-10 text-gray-300 mb-3 mx-auto" />
           <p className="text-gray-500 font-medium">Aucune réclamation.</p>
           <button onClick={() => setShowClaimModal(true)} className="text-primary-500 hover:underline text-sm mt-2">
-            Réclamer une récompense
+            {tText('Réclamer une récompense')}
           </button>
         </div>
       ) : (
@@ -126,10 +128,10 @@ export default function RewardsClaimsPage() {
                 <div className="flex items-center gap-3 text-[10px] text-gray-400 mt-0.5">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    Réclamé le {new Date(claim.claimedAt).toLocaleDateString('fr-FR')}
+                    Réclamé le {new Date(claim.claimedAt).toLocaleDateString(getI18nLocale())}
                   </span>
                   {claim.processedAt && (
-                    <span>Traité le {new Date(claim.processedAt).toLocaleDateString('fr-FR')}</span>
+                    <span>Traité le {new Date(claim.processedAt).toLocaleDateString(getI18nLocale())}</span>
                   )}
                 </div>
               </div>
@@ -144,7 +146,7 @@ export default function RewardsClaimsPage() {
         <div className="modal-overlay" onClick={() => setShowClaimModal(false)}>
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Réclamer une récompense</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Réclamer une récompense')}</h3>
               <button className="btn-icon" onClick={() => setShowClaimModal(false)}>×</button>
             </div>
             <div className="modal-body space-y-3">
@@ -175,7 +177,7 @@ export default function RewardsClaimsPage() {
               )}
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setShowClaimModal(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setShowClaimModal(false)}>{tText('Annuler')}</button>
               <button
                 className="btn-primary btn-sm"
                 disabled={!selectedRewardId || claimMutation.isPending}

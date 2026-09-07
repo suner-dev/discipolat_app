@@ -3,6 +3,7 @@ import api from '@/lib/api';
 import { Loader2, HeartPulse, AlertTriangle, ShieldCheck, Users, TrendingUp, Building } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
+import { tText } from '@/i18n';
 interface Observatory {
   healthScore: number;
   totalSouls: number;
@@ -64,7 +65,7 @@ export default function HealthObservatoryPage() {
           <HeartPulse className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Observatoire Santé Spirituelle</h1>
+          <h1 className="page-title">{tText('Observatoire Santé Spirituelle')}</h1>
           <p className="page-subtitle">
             Prédiction de décrochage à {data.predictionHorizon} — interventions recommandées
           </p>
@@ -86,7 +87,7 @@ export default function HealthObservatoryPage() {
           </div>
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Santé pastorale globale</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Santé pastorale globale')}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {data.totalSouls} âmes suivies — score = inverse du risque moyen
           </p>
@@ -107,7 +108,7 @@ export default function HealthObservatoryPage() {
       {/* Âmes à risque */}
       <div className="glass-card mb-6 divide-y divide-gray-100 dark:divide-gray-800">
         <div className="px-5 py-4">
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100">Âmes à risque prioritaire</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{tText('Âmes à risque prioritaire')}</h3>
         </div>
         {(data.soulsAtRisk ?? []).map((s) => (
           <div key={s.soulId} className="flex flex-col md:flex-row md:items-center justify-between gap-2 px-5 py-4">
@@ -133,7 +134,7 @@ export default function HealthObservatoryPage() {
         <div className="glass-card p-6 mb-6 animate-slide-up">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-primary-500" />
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Tendance santé — 6 mois</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{tText('Tendance santé — 6 mois')}</h3>
             {trend.trend && (
               <span className={`badge ${trend.trend === 'AMÉLIORATION' ? 'badge-success' : trend.trend === 'DÉGRADATION' ? 'badge-danger' : 'badge-info'} ml-auto`}>
                 {trend.trend} ({trend.delta > 0 ? '+' : ''}{trend.delta})
@@ -160,7 +161,7 @@ export default function HealthObservatoryPage() {
         <div className="glass-card mb-6 divide-y divide-gray-100 dark:divide-gray-800">
           <div className="px-5 py-4 flex items-center gap-2">
             <Building className="w-5 h-5 text-primary-500" />
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Santé par département</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{tText('Santé par département')}</h3>
           </div>
           {deptScores.map((d: { departmentId: string; departmentName: string; healthScore: number; totalSouls: number; atRiskCount: number; label: string }) => (
             <div key={d.departmentId} className="flex items-center justify-between px-5 py-3">

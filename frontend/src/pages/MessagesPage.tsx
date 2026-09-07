@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '@/i18n';
+import { useI18n, tText, getI18nLocale } from '@/i18n';
 import {
   MessageSquare, Send, Search, Loader2, ChevronLeft, Users,
   CheckCheck, X, Mic, MicOff, Smile, Reply, Hash, Play, Pause, Volume2,
@@ -19,7 +19,7 @@ const EMOJI_REACTIONS = ['❤️', '👍', '😊', '🙏', '😂', '😮'];
 function formatTime(iso?: string) {
   if (!iso) return '';
   const d = new Date(iso);
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleTimeString(getI18nLocale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 function formatDuration(seconds?: number) {
@@ -114,7 +114,7 @@ export default function MessagesPage() {
       }
       return (await api.post(`/messages/conversations/${cId}/voice`, { audioUrl, duration })).data;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['messages'] }); toast.success('Message vocal envoyé'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['messages'] }); toast.success(tText('Message vocal envoyé')); },
   });
 
   const startMutation = useMutation({
@@ -178,7 +178,7 @@ export default function MessagesPage() {
             <MessageSquare className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Messagerie <span className="text-gradient font-display">interne</span></h1>
           </div>
-          <p className="page-subtitle">Discutez en privé ou en groupe avec les membres</p>
+          <p className="page-subtitle">{tText('Discutez en privé ou en groupe avec les membres')}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setMessageSearch(messageSearch ? '' : ' ')} className="btn-secondary btn-sm">
@@ -188,7 +188,7 @@ export default function MessagesPage() {
             <Users className="w-4 h-4" /> Groupe
           </button>
           <button onClick={() => setNewChatOpen(true)} className="btn-primary btn-sm animate-scale-in">
-            <Send className="w-4 h-4" /> Nouvelle conversation
+            <Send className="w-4 h-4" /> {tText('Nouvelle conversation')}
           </button>
         </div>
       </div>
@@ -248,7 +248,7 @@ export default function MessagesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-gray-900 truncate">{conv.otherUserName}</p>
-                      {conv.lastMessageAt && <span className="text-[10px] text-gray-400">{new Date(conv.lastMessageAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>}
+                      {conv.lastMessageAt && <span className="text-[10px] text-gray-400">{new Date(conv.lastMessageAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' })}</span>}
                     </div>
                     <p className={`text-xs truncate ${conv.unreadCount > 0 ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>{conv.lastMessage ? (conv.lastMessageSenderId === user?.id ? 'Vous : ' : '') + conv.lastMessage : 'Nouvelle conversation'}</p>
                   </div>
@@ -436,7 +436,7 @@ export default function MessagesPage() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setNewChatOpen(false)} />
           <div className="relative w-full max-w-md glass-card !bg-white/95 p-6 animate-scale-in">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Nouvelle conversation</h3>
+              <h3 className="text-lg font-bold text-gray-900">{tText('Nouvelle conversation')}</h3>
               <button onClick={() => setNewChatOpen(false)} className="p-2 rounded-xl hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button>
             </div>
             <div className="relative mb-4">
@@ -474,7 +474,7 @@ function NewGroupModal({ users, currentUser, onClose, onCreate, isLoading }: { u
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md glass-card !bg-white/95 p-6 animate-scale-in">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Nouveau groupe</h3>
+          <h3 className="text-lg font-bold text-gray-900">{tText('Nouveau groupe')}</h3>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button>
         </div>
         <input className="input mb-4" placeholder="Nom du groupe" value={name} onChange={e => setName(e.target.value)} autoFocus />

@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import EmptyState from '@/components/shared/EmptyState';
 
+import { tText } from '@/i18n';
 interface DiscipleshipPath {
   id: string;
   memberId: string;
@@ -82,7 +83,7 @@ export default function DiscipleshipPathPage() {
         <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 text-center">
           <p className="text-red-400 mb-4">{error}</p>
           <button onClick={loadPath} className="btn-glow btn-sm inline-flex items-center gap-2">
-            <RefreshCw className="w-4 h-4" /> Réessayer
+            <RefreshCw className="w-4 h-4" /> {tText('Réessayer')}
           </button>
         </div>
       </div>
@@ -121,7 +122,7 @@ export default function DiscipleshipPathPage() {
 
       {/* Stages pipeline */}
       <div className="bg-white/5 backdrop-blur rounded-2xl p-6 border border-white/10">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Sparkles className="text-purple-400" /> Étapes du parcours</h2>
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Sparkles className="text-purple-400" /> {tText('Étapes du parcours')}</h2>
         <div className="space-y-3">
           {STAGE_ORDER.map((stageKey, i) => {
             const config = STAGE_CONFIG[stageKey];
@@ -137,7 +138,7 @@ export default function DiscipleshipPathPage() {
                 </div>
                 {isCompleted && <CheckCircle className="w-6 h-6 text-green-400" />}
                 {isCurrent && <span className="px-3 py-1 bg-blue-600 rounded-full text-white text-xs font-medium">En cours</span>}
-                {isFuture && <span className="text-gray-600 text-xs">Verrouillé</span>}
+                {isFuture && <span className="text-gray-600 text-xs">{tText('Verrouillé')}</span>}
               </div>
             );
           })}

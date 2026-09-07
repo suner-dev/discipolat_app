@@ -13,6 +13,7 @@ import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
 import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
 import FormStepper from '@/components/shared/FormStepper';
 
+import { tText } from '@/i18n';
 const soulSchema = z.object({
   nom: z.string().min(1, 'Nom requis'),
   prenom: z.string().optional(),
@@ -99,7 +100,7 @@ export default function SoulCreatePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['souls'] });
       if (fieldsSavedRef.current) {
-        toast.success('Âme créée avec succès');
+        toast.success(tText('Âme créée avec succès'));
       } else {
         toast.error("Âme créée, mais les champs personnalisés n'ont pas pu être enregistrés");
       }
@@ -141,7 +142,7 @@ export default function SoulCreatePage() {
       <div className="mb-6">
         <Link to="/souls" className="btn-ghost btn-sm mb-4">
           <ArrowLeft className="w-4 h-4" />
-          Retour aux âmes
+          {tText('Retour aux âmes')}
         </Link>
         {preselectedFamilleId && (
           <div className="mb-4 flex items-center gap-3 p-3.5 rounded-xl bg-primary-50/70 dark:bg-primary-900/15 border border-primary-200/60 dark:border-primary-800/40 animate-slide-down">
@@ -153,7 +154,7 @@ export default function SoulCreatePage() {
                 Nouvelle âme dans {preselectedFamilleNom || 'la famille sélectionnée'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                La famille est déjà assignée — vous pouvez la modifier si besoin
+                {tText('La famille est déjà assignée — vous pouvez la modifier si besoin')}
               </p>
             </div>
           </div>
@@ -164,9 +165,9 @@ export default function SoulCreatePage() {
               <Heart className="w-5 h-5 text-primary-600" />
             </div>
             <div>
-              <h1 className="page-title">Nouvelle âme</h1>
+              <h1 className="page-title">{tText('Nouvelle âme')}</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Créer une nouvelle fiche de disciple
+                {tText('Créer une nouvelle fiche de disciple')}
               </p>
             </div>
           </div>
@@ -179,7 +180,7 @@ export default function SoulCreatePage() {
         {/* Identity */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Identité
+            {tText('Identité')}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -188,7 +189,7 @@ export default function SoulCreatePage() {
               {errors.nom && <p className="text-xs text-red-500 mt-1">{errors.nom.message}</p>}
             </div>
             <div>
-              <label className="label">Prénom</label>
+              <label className="label">{tText('Prénom')}</label>
               <input className="input" {...register('prenom')} />
             </div>
             <div>
@@ -197,7 +198,7 @@ export default function SoulCreatePage() {
               {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
             </div>
             <div>
-              <label className="label">Téléphone</label>
+              <label className="label">{tText('Téléphone')}</label>
               <input className="input" {...register('telephone')} />
             </div>
             <div className="sm:col-span-2">
@@ -216,7 +217,7 @@ export default function SoulCreatePage() {
               <label className="label">Situation familiale</label>
               <select className="input" {...register('situationFamiliale')}>
                 <option value="">Sélectionner...</option>
-                <option value="CELIBATAIRE">Célibataire</option>
+                <option value="CELIBATAIRE">{tText('Célibataire')}</option>
                 <option value="MARIE">Marié(e)</option>
                 <option value="DIVORCE">Divorcé(e)</option>
                 <option value="VEUF">Veuf/Veuve</option>
@@ -236,7 +237,7 @@ export default function SoulCreatePage() {
               <label className="label">Type *</label>
               <select className="input" {...register('typeDisciple')}>
                 <option value="NOUVEL_ARRIVANT">Nouvel arrivant à l'église</option>
-                <option value="NOUVEAU_CONVERTI">Nouveau converti</option>
+                <option value="NOUVEAU_CONVERTI">{tText('Nouveau converti')}</option>
               </select>
             </div>
             <div>
@@ -251,14 +252,14 @@ export default function SoulCreatePage() {
               </div>
             )}
             <div>
-              <label className="label">État spirituel</label>
+              <label className="label">{tText('État spirituel')}</label>
               <select className="input" {...register('etatSpirituel')}>
                 <option value="">Sélectionner...</option>
-                <option value="NOUVEAU_CONVERTI">Nouveau converti</option>
-                <option value="EN_INTEGRATION">En intégration</option>
+                <option value="NOUVEAU_CONVERTI">{tText('Nouveau converti')}</option>
+                <option value="EN_INTEGRATION">{tText('En intégration')}</option>
                 <option value="ACTIF">Actif</option>
                 <option value="EN_VEILLE">En veille</option>
-                <option value="DECROCHE">Décroché</option>
+                <option value="DECROCHE">{tText('Décroché')}</option>
               </select>
             </div>
             <div>
@@ -276,12 +277,12 @@ export default function SoulCreatePage() {
                 </span>
               </div>
               <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Débutant</span>
-                <span>Avancé</span>
+                <span>{tText('Débutant')}</span>
+                <span>{tText('Avancé')}</span>
               </div>
             </div>
             <div>
-              <label className="label">Faiseur assigné *</label>
+              <label className="label">{tText('Faiseur assigné *')}</label>
               <select className={`input ${errors.faiseurId ? 'input-error' : ''}`} {...register('faiseurId')}>
                 <option value="">Sélectionner...</option>
                 {faiseurs?.map((f) => (
@@ -309,10 +310,10 @@ export default function SoulCreatePage() {
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
               <ClipboardList className="w-5 h-5 text-primary-500" />
-              Informations complémentaires
+              {tText('Informations complémentaires')}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-              Champs ajoutés par votre église
+              {tText('Champs ajoutés par votre église')}
             </p>
             <CustomFieldRenderer
               definitions={customFields.definitions}
@@ -331,7 +332,7 @@ export default function SoulCreatePage() {
         {/* Submit */}
         <div className="flex justify-end gap-3">
           <Link to="/souls" className="btn-secondary">
-            Annuler
+            {tText('Annuler')}
           </Link>
           <button
             type="submit"

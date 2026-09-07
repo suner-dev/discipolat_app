@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface UserRole {
   id: string;
   role: string;
@@ -52,7 +54,7 @@ export default function UserRolesPage() {
       await api.post(`/users/${id}/roles/${role}`);
     },
     onSuccess: () => {
-      toast.success('Rôle ajouté');
+      toast.success(tText('Rôle ajouté'));
       qc.invalidateQueries({ queryKey: ['users', id, 'roles'] });
       setShowAddRole(false);
     },
@@ -64,7 +66,7 @@ export default function UserRolesPage() {
       await api.delete(`/users/${id}/roles/${role}`);
     },
     onSuccess: () => {
-      toast.success('Rôle retiré');
+      toast.success(tText('Rôle retiré'));
       qc.invalidateQueries({ queryKey: ['users', id, 'roles'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -75,7 +77,7 @@ export default function UserRolesPage() {
       await api.post(`/users/${id}/promote-chef`);
     },
     onSuccess: () => {
-      toast.success('Promu chef de famille');
+      toast.success(tText('Promu chef de famille'));
       qc.invalidateQueries({ queryKey: ['users', id, 'roles'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -86,7 +88,7 @@ export default function UserRolesPage() {
       await api.post(`/users/${id}/demote-chef`);
     },
     onSuccess: () => {
-      toast.success('Rétrogradé de chef de famille');
+      toast.success(tText('Rétrogradé de chef de famille'));
       qc.invalidateQueries({ queryKey: ['users', id, 'roles'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -103,17 +105,17 @@ export default function UserRolesPage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <X className="w-4 h-4" /> Retour
+            <X className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <Shield className="w-5 h-5 text-primary-500" />
-            <h1 className="page-title">Gestion des rôles</h1>
+            <h1 className="page-title">{tText('Gestion des rôles')}</h1>
           </div>
-          <p className="page-subtitle">Attribution et gestion des rôles utilisateur</p>
+          <p className="page-subtitle">{tText('Attribution et gestion des rôles utilisateur')}</p>
         </div>
         <div className="page-header-actions">
           <button onClick={() => setShowAddRole(true)} className="btn-primary btn-sm">
-            <Plus className="w-4 h-4" /> Ajouter un rôle
+            <Plus className="w-4 h-4" /> {tText('Ajouter un rôle')}
           </button>
         </div>
       </div>
@@ -123,7 +125,7 @@ export default function UserRolesPage() {
         <div className="glass-card p-4 mb-6 flex items-center gap-3 border-l-4 border-primary-500">
           <Shield className="w-5 h-5 text-primary-500 shrink-0" />
           <div>
-            <p className="text-xs text-gray-400">Rôle actif</p>
+            <p className="text-xs text-gray-400">{tText('Rôle actif')}</p>
             <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
               {AVAILABLE_ROLES.find((r) => r.key === activeRole.role)?.label || activeRole.role}
             </p>
@@ -137,7 +139,7 @@ export default function UserRolesPage() {
           <div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <ArrowUp className="w-4 h-4 text-amber-500" />
-              Chef de famille
+              {tText('Chef de famille')}
             </h3>
             <p className="text-xs text-gray-400 mt-0.5">
               {isChef ? 'Cet utilisateur est chef de famille' : 'Promouvoir ou rétrograder de chef de famille'}
@@ -166,7 +168,7 @@ export default function UserRolesPage() {
       </div>
 
       {/* Roles list */}
-      <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">Rôles assignés</h3>
+      <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">{tText('Rôles assignés')}</h3>
       {roles.length === 0 ? (
         <div className="glass-card p-8 text-center">
           <Shield className="w-8 h-8 text-gray-300 mb-2 mx-auto" />
@@ -187,7 +189,7 @@ export default function UserRolesPage() {
                       {roleInfo?.label || userRole.role}
                     </p>
                     <p className="text-[10px] text-gray-400">
-                      Assigné le {new Date(userRole.assignedAt).toLocaleDateString('fr-FR')}
+                      Assigné le {new Date(userRole.assignedAt).toLocaleDateString(getI18nLocale())}
                     </p>
                   </div>
                 </div>
@@ -213,7 +215,7 @@ export default function UserRolesPage() {
         <div className="modal-overlay" onClick={() => setShowAddRole(false)}>
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Ajouter un rôle</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Ajouter un rôle')}</h3>
               <button className="btn-icon" onClick={() => setShowAddRole(false)}><X className="w-5 h-5" /></button>
             </div>
             <div className="modal-body space-y-2">

@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { Shield, Loader2, CheckCircle2, Mail } from 'lucide-react';
 
+import { tText } from '@/i18n';
 export default function ActivateAccountPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -48,7 +49,7 @@ export default function ActivateAccountPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-500/10 border border-primary-500/20 mb-4">
             <Shield className="w-8 h-8 text-primary-400" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white font-display">Activation de votre compte</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white font-display">{tText('Activation de votre compte')}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">Cliquez pour activer votre compte.</p>
           {error && (
             <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
@@ -97,7 +98,7 @@ export default function ActivateAccountPage() {
             {resendMutation.isPending ? 'Envoi...' : 'Renvoyer le mail'}
           </button>
         </form>
-        <Link to="/login" className="inline-block text-sm text-primary-600 hover:text-primary-500 mt-2">← Retour à la connexion</Link>
+        <Link to="/login" className="inline-block text-sm text-primary-600 hover:text-primary-500 mt-2">{tText('← Retour à la connexion')}</Link>
       </div>
     </div>
   );

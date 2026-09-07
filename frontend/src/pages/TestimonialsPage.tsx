@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
 import { Heart, Plus, ThumbsUp, MessageCircle, Shield, Clock } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface Testimony {
   id: string;
   titre: string;
@@ -90,10 +91,10 @@ export default function TestimonialsPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <Heart className="w-8 h-8 text-rose-500" />
-            Témoignages
+            {tText('Témoignages')}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Partagez et lisez les témoignages de la communauté
+            {tText('Partagez et lisez les témoignages de la communauté')}
           </p>
         </div>
         <button
@@ -101,7 +102,7 @@ export default function TestimonialsPage() {
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-medium hover:from-rose-600 hover:to-pink-600 transition-all shadow-lg shadow-rose-500/25 flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Témoigner
+          {tText('Témoigner')}
         </button>
       </div>
 
@@ -113,7 +114,7 @@ export default function TestimonialsPage() {
             !filterCategory ? 'bg-rose-600 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
           }`}
         >
-          Tous
+          {tText('Tous')}
         </button>
         {CATEGORIES.map(c => (
           <button
@@ -198,10 +199,10 @@ export default function TestimonialsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Partager un témoignage</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Partager un témoignage')}</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catégorie</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{tText('Catégorie')}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {CATEGORIES.map(c => (
                     <button
@@ -230,7 +231,7 @@ export default function TestimonialsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Votre témoignage *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{tText('Votre témoignage *')}</label>
                 <textarea
                   value={newTestimony.contenu}
                   onChange={e => setNewTestimony({ ...newTestimony, contenu: e.target.value })}
@@ -246,7 +247,7 @@ export default function TestimonialsPage() {
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
-                Annuler
+                {tText('Annuler')}
               </button>
               <button onClick={createTestimony} className="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm font-medium hover:bg-rose-700 transition-all">
                 Soumettre

@@ -22,6 +22,7 @@ import type { ChurchSettings } from '@/types';
 import { useSettings } from '@/contexts/SettingsContext';
 import { shadeScale } from '@/lib/branding';
 
+import { tText } from '@/i18n';
 const FONT_OPTIONS = ['Inter', 'Poppins', 'Roboto', 'Open Sans', 'Montserrat', 'Playfair Display', 'Georgia'];
 
 const SOCIAL_PRESETS = [
@@ -176,9 +177,9 @@ export default function AdminSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
       setForm(null);
       apply(data);
-      toast.success('Paramètres réinitialisés aux valeurs par défaut');
+      toast.success(tText('Paramètres réinitialisés aux valeurs par défaut'));
     },
-    onError: () => toast.error('Erreur lors de la réinitialisation'),
+    onError: () => toast.error(tText('Erreur lors de la réinitialisation')),
   });
 
   if (isLoading || !form) {
@@ -208,7 +209,7 @@ export default function AdminSettingsPage() {
             onClick={() => resetMutation.mutate()}
             disabled={resetMutation.isPending}
           >
-            <RotateCcw className="w-4 h-4" /> Réinitialiser
+            <RotateCcw className="w-4 h-4" /> {tText('Réinitialiser')}
           </button>
           <button
             className="btn-primary btn-sm"
@@ -224,7 +225,7 @@ export default function AdminSettingsPage() {
       {/* Aperçu en direct */}
       <div className="glass-card p-6 mb-6">
         <div className="flex items-center gap-2 mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-          <Eye className="w-4 h-4" /> Aperçu de la marque
+          <Eye className="w-4 h-4" /> {tText('Aperçu de la marque')}
         </div>
         <div className="flex items-center gap-4 p-4 rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/50 dark:bg-gray-900/40">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md" style={{ backgroundColor: `rgb(${shadeScale(form.primaryColor)[500]})` }}>
@@ -249,7 +250,7 @@ export default function AdminSettingsPage() {
       </div>
 
       <div className="space-y-6">
-        <Section icon={Building2} title="Identité" subtitle="Nom de l'église, de la plateforme et message public">
+        <Section icon={Building2} title={tText('Identité')} subtitle="Nom de l'église, de la plateforme et message public">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Nom de l'église</label>
@@ -262,7 +263,7 @@ export default function AdminSettingsPage() {
           </div>
           <div>
             <label className="label">Slogan</label>
-            <input className="input" value={form.slogan} onChange={(e) => set('slogan', e.target.value)} placeholder="Former des disciples de Jésus-Christ" />
+            <input className="input" value={form.slogan} onChange={(e) => set('slogan', e.target.value)} placeholder={tText('Former des disciples de Jésus-Christ')} />
           </div>
           <div>
             <label className="label">Description</label>
@@ -287,7 +288,7 @@ export default function AdminSettingsPage() {
           </div>
         </Section>
 
-        <Section icon={Palette} title="Couleurs & thème" subtitle="La palette est générée automatiquement depuis chaque couleur de base">
+        <Section icon={Palette} title="Couleurs & thème" subtitle={tText('La palette est générée automatiquement depuis chaque couleur de base')}>
           <ColorField
             label="Couleur principale"
             value={form.primaryColor}
@@ -308,7 +309,7 @@ export default function AdminSettingsPage() {
           />
           <div className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/40 dark:bg-gray-900/30">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Mode sombre autorisé</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{tText('Mode sombre autorisé')}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Les utilisateurs peuvent basculer en thème sombre.</p>
             </div>
             <button
@@ -324,21 +325,21 @@ export default function AdminSettingsPage() {
 
         <Section icon={Type} title="Typographie" subtitle="Police d'écriture de toute l'application">
           <div>
-            <label className="label">Police de caractères</label>
+            <label className="label">{tText('Police de caractères')}</label>
             <select className="input" value={form.fontFamily} onChange={(e) => set('fontFamily', e.target.value)}>
               {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
             </select>
           </div>
         </Section>
 
-        <Section icon={Phone} title="Coordonnées" subtitle="Affichées sur la page d'accueil et les pages publiques">
+        <Section icon={Phone} title={tText('Coordonnées')} subtitle="Affichées sur la page d'accueil et les pages publiques">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Adresse</label>
               <input className="input" value={form.address} onChange={(e) => set('address', e.target.value)} />
             </div>
             <div>
-              <label className="label">Téléphone</label>
+              <label className="label">{tText('Téléphone')}</label>
               <input className="input" value={form.phone} onChange={(e) => set('phone', e.target.value)} />
             </div>
             <div>
@@ -356,7 +357,7 @@ export default function AdminSettingsPage() {
           </div>
         </Section>
 
-        <Section icon={Globe} title="Réseaux sociaux" subtitle="Liens affichés sur les pages publiques">
+        <Section icon={Globe} title={tText('Réseaux sociaux')} subtitle={tText('Liens affichés sur les pages publiques')}>
           {socialKeys.length === 0 && (
             <p className="text-sm text-gray-400 dark:text-gray-500">
               Aucun lien. Ajoutez un réseau social ci-dessous.

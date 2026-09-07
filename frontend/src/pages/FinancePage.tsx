@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Wallet, ArrowDownCircle, ArrowUpCircle, PiggyBank, Plus, Pencil, Trash2, Loader2,
   Download, TrendingUp, TrendingDown, Scale, X, BarChart3, Globe,
@@ -17,7 +19,7 @@ import type {
 } from '@/types';
 
 const fmt = (v: number | null | undefined) =>
-  new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(v ?? 0);
+  new Intl.NumberFormat(getI18nLocale(), { maximumFractionDigits: 2 }).format(v ?? 0);
 
 const money = (v: number | null | undefined) => `${fmt(v)} FCFA`;
 
@@ -37,11 +39,11 @@ export default function FinancePage() {
     return (
       <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
         <Wallet className="w-10 h-10 text-gray-300 mb-3" />
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Module Finances désactivé</h1>
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Module Finances désactivé')}</h1>
         <p className="text-sm text-gray-400 mt-1">
           L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
         </p>
-        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">Retour au tableau de bord</Link>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
       </div>
     );
   }
@@ -97,19 +99,19 @@ export default function FinancePage() {
 
   const deleteTxMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/finances/transactions/${id}`),
-    onSuccess: () => { invalidate(); toast.success('Transaction supprimée'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Transaction supprimée')); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
   const saveBudgetMutation = useMutation({
     mutationFn: async (payload: CreateFinanceBudgetRequest) => api.post('/finances/budgets', payload),
-    onSuccess: () => { invalidate(); toast.success('Budget enregistré'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Budget enregistré')); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
   const deleteBudgetMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/finances/budgets/${id}`),
-    onSuccess: () => { invalidate(); toast.success('Budget supprimé'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Budget supprimé')); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -126,7 +128,7 @@ export default function FinancePage() {
     a.download = `finances-${annee}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
-    toast.success('Export CSV téléchargé 📥');
+    toast.success(tText('Export CSV téléchargé 📥'));
   };
 
   const chartData = stats?.parMois || [];
@@ -148,14 +150,14 @@ export default function FinancePage() {
             <Download className="w-4 h-4" /> Export CSV
           </button>
           <button className="btn-primary btn-sm" onClick={() => setModal({})}>
-            <Plus className="w-4 h-4" /> Nouvelle transaction
+            <Plus className="w-4 h-4" /> {tText('Nouvelle transaction')}
           </button>
         </div>
       </div>
 
       {/* Sélecteur d'année */}
       <div className="flex items-center gap-2 mb-5">
-        <label className="label !mb-0">Année</label>
+        <label className="label !mb-0">{tText('Année')}</label>
         <select className="input w-36" value={annee} onChange={(e) => setAnnee(Number(e.target.value))}>
           {[year, year - 1, year - 2].map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
@@ -241,7 +243,7 @@ export default function FinancePage() {
             <PiggyBank className="w-4 h-4 text-primary-500" /> Budget {annee} par catégorie
           </h3>
           <button className="btn-ghost btn-sm" onClick={() => saveBudgetMutation.mutate({ categorie: '', annee, montant: 0 })}>
-            <Plus className="w-4 h-4" /> Nouveau budget
+            <Plus className="w-4 h-4" /> {tText('Nouveau budget')}
           </button>
         </div>
         {budgets.length === 0 ? (
@@ -256,7 +258,7 @@ export default function FinancePage() {
                     <button className="p-1 rounded text-gray-400 hover:text-amber-500" onClick={() => saveBudgetMutation.mutate({ categorie: b.categorie, annee, montant: b.montant })} title="Modifier">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
-                    <button className="p-1 rounded text-gray-400 hover:text-red-500" onClick={() => { if (confirm(`Supprimer le budget « ${b.categorie} » ?`)) deleteBudgetMutation.mutate(b.id); }} title="Supprimer">
+                    <button className="p-1 rounded text-gray-400 hover:text-red-500" onClick={() => { if (confirm(`Supprimer le budget « ${b.categorie} » ?`)) deleteBudgetMutation.mutate(b.id); }} title={tText('Supprimer')}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -284,12 +286,12 @@ export default function FinancePage() {
           <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Transactions</h3>
           <div className="flex-1" />
           <select className="input !w-auto !py-1.5 text-xs" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} aria-label="Filtrer par type">
-            <option value="">Tous les types</option>
+            <option value="">{tText('Tous les types')}</option>
             <option value="RECETTE">Recettes</option>
-            <option value="DEPENSE">Dépenses</option>
+            <option value="DEPENSE">{tText('Dépenses')}</option>
           </select>
-          <select className="input !w-auto !py-1.5 text-xs" value={categorieFilter} onChange={(e) => setCategorieFilter(e.target.value)} aria-label="Filtrer par catégorie">
-            <option value="">Toutes les catégories</option>
+          <select className="input !w-auto !py-1.5 text-xs" value={categorieFilter} onChange={(e) => setCategorieFilter(e.target.value)} aria-label={tText('Filtrer par catégorie')}>
+            <option value="">{tText('Toutes les catégories')}</option>
             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
@@ -304,7 +306,7 @@ export default function FinancePage() {
                 <tr className="text-left text-[11px] uppercase tracking-wider text-gray-400 border-b border-gray-100/60 dark:border-gray-800/40">
                   <th className="px-5 py-2.5 font-semibold">Date</th>
                   <th className="px-5 py-2.5 font-semibold">Type</th>
-                  <th className="px-5 py-2.5 font-semibold">Catégorie</th>
+                  <th className="px-5 py-2.5 font-semibold">{tText('Catégorie')}</th>
                   <th className="px-5 py-2.5 font-semibold">Description</th>
                   <th className="px-5 py-2.5 font-semibold text-right">Montant</th>
                   <th className="px-5 py-2.5 font-semibold text-right">Actions</th>
@@ -330,7 +332,7 @@ export default function FinancePage() {
                         <button className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-500/10" onClick={() => setModal({ edit: t })} title="Modifier">
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10" onClick={() => { if (confirm(`Supprimer cette transaction (${money(t.montant)}) ?`)) deleteTxMutation.mutate(t.id); }} title="Supprimer">
+                        <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10" onClick={() => { if (confirm(`Supprimer cette transaction (${money(t.montant)}) ?`)) deleteTxMutation.mutate(t.id); }} title={tText('Supprimer')}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -390,7 +392,7 @@ function TransactionModal({ edit, onClose, onSave, pending }: {
             <label className="label" htmlFor="tx-type">Type</label>
             <select id="tx-type" className="input" value={type} onChange={(e) => setType(e.target.value as FinanceTransactionType)}>
               <option value="RECETTE">Recette</option>
-              <option value="DEPENSE">Dépense</option>
+              <option value="DEPENSE">{tText('Dépense')}</option>
             </select>
           </div>
           <div>
@@ -400,8 +402,8 @@ function TransactionModal({ edit, onClose, onSave, pending }: {
         </div>
         <div className="grid grid-cols-2 gap-3 mt-3">
           <div>
-            <label className="label" htmlFor="tx-categorie">Catégorie</label>
-            <input id="tx-categorie" className="input" value={categorie} onChange={(e) => setCategorie(e.target.value)} placeholder="DÎME, LOYER…" />
+            <label className="label" htmlFor="tx-categorie">{tText('Catégorie')}</label>
+            <input id="tx-categorie" className="input" value={categorie} onChange={(e) => setCategorie(e.target.value)} placeholder={tText('DÎME, LOYER…')} />
           </div>
           <div>
             <label className="label" htmlFor="tx-montant">Montant</label>

@@ -4,6 +4,7 @@ import { Globe, Clock, DollarSign, Check, Plus, Trash2, Star, RefreshCw } from '
 import api from '@/lib/api';
 import { getErrorMessage } from '@/lib/api';
 
+import { tText } from '@/i18n';
 interface CurrencyConfig {
   id: string;
   tenantId: string;
@@ -183,7 +184,7 @@ export default function CurrencySettingsPage() {
             </div>
           ))}
           {currencies.filter(c => c.isPrimary).length === 0 && (
-            <div className="text-gray-500 text-sm col-span-full">Aucune devise principale définie</div>
+            <div className="text-gray-500 text-sm col-span-full">{tText('Aucune devise principale définie')}</div>
           )}
         </div>
       </div>
@@ -265,11 +266,11 @@ export default function CurrencySettingsPage() {
                 onChange={(e) => setNewCurrency((p) => ({ ...p, isPrimary: e.target.checked }))}
                 className="accent-blue-500"
               />
-              Définir comme devise principale
+              {tText('Définir comme devise principale')}
             </label>
             <div className="flex gap-2">
-              <button onClick={handleAdd} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-xl text-white text-sm">Créer</button>
-              <button onClick={() => setShowAdd(false)} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm">Annuler</button>
+              <button onClick={handleAdd} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-xl text-white text-sm">{tText('Créer')}</button>
+              <button onClick={() => setShowAdd(false)} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm">{tText('Annuler')}</button>
             </div>
           </div>
         )}
@@ -289,13 +290,13 @@ export default function CurrencySettingsPage() {
                   <td className="p-3 text-gray-300">{c.timezone || '-'}</td>
                   <td className="p-3">
                     {c.isPrimary ? <Check className="w-4 h-4 text-green-400" /> : (
-                      <button onClick={() => handlePrimary(c.id)} title="Définir principale" className="text-gray-500 hover:text-yellow-400">
+                      <button onClick={() => handlePrimary(c.id)} title={tText('Définir principale')} className="text-gray-500 hover:text-yellow-400">
                         <Star className="w-4 h-4" />
                       </button>
                     )}
                   </td>
                   <td className="p-3 text-right">
-                    <button onClick={() => handleDelete(c.id)} className="text-red-400 hover:text-red-300" title="Supprimer">
+                    <button onClick={() => handleDelete(c.id)} className="text-red-400 hover:text-red-300" title={tText('Supprimer')}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
@@ -354,7 +355,7 @@ export default function CurrencySettingsPage() {
               <Clock className="w-4 h-4 text-gray-500" />
             </div>
           ))}
-          {timezones.length === 0 && <div className="text-gray-500 text-sm col-span-full">Aucun fuseau horaire disponible</div>}
+          {timezones.length === 0 && <div className="text-gray-500 text-sm col-span-full">{tText('Aucun fuseau horaire disponible')}</div>}
         </div>
       </div>
     </div>

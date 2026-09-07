@@ -16,6 +16,8 @@ import {
   Download,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import type {
   Appointment,
   AppointmentMotif,
@@ -98,7 +100,7 @@ export default function AppointmentsPage() {
       return res.data as Appointment;
     },
     onSuccess: () => {
-      toast.success('Rendez-vous mis à jour');
+      toast.success(tText('Rendez-vous mis à jour'));
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -155,7 +157,7 @@ export default function AppointmentsPage() {
     u.roles.some(r => ['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'].includes(r)));
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    new Date(iso).toLocaleString(getI18nLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   const AppointmentRow = ({ a, side }: { a: Appointment; side: 'sent' | 'received' }) => {
     const st = STATUT_STYLE[a.statut];
@@ -232,9 +234,9 @@ export default function AppointmentsPage() {
     <div className="animate-fade-in space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Rendez-vous</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{tText('Rendez-vous')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Prenez rendez-vous avec le pasteur, votre chef de famille ou votre faiseur
+            {tText('Prenez rendez-vous avec le pasteur, votre chef de famille ou votre faiseur')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -242,7 +244,7 @@ export default function AppointmentsPage() {
             <Download className="w-4 h-4" /> Export
           </button>
           <button onClick={() => setShowCreate(v => !v)} className="btn btn-primary flex items-center gap-2">
-            <CalendarPlus className="w-4 h-4" /> Prendre rendez-vous
+            <CalendarPlus className="w-4 h-4" /> {tText('Prendre rendez-vous')}
           </button>
         </div>
       </div>
@@ -278,12 +280,12 @@ export default function AppointmentsPage() {
         {showFilters && (
           <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <select value={statutFilter} onChange={e => setStatutFilter(e.target.value as AppointmentStatut | '')} className="input w-auto">
-              <option value="">Tous les statuts</option>
+              <option value="">{tText('Tous les statuts')}</option>
               <option value="EN_ATTENTE">En attente</option>
-              <option value="CONFIRME">Confirmé</option>
-              <option value="REFUSE">Refusé</option>
-              <option value="ANNULE">Annulé</option>
-              <option value="TERMINE">Terminé</option>
+              <option value="CONFIRME">{tText('Confirmé')}</option>
+              <option value="REFUSE">{tText('Refusé')}</option>
+              <option value="ANNULE">{tText('Annulé')}</option>
+              <option value="TERMINE">{tText('Terminé')}</option>
             </select>
           </div>
         )}
@@ -291,10 +293,10 @@ export default function AppointmentsPage() {
 
       {showCreate && (
         <div className="glass-card p-4 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouveau rendez-vous</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Nouveau rendez-vous')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Avec</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">{tText('Avec')}</label>
               <select
                 value={form.recepteurId}
                 onChange={e => setForm({ ...form, recepteurId: e.target.value })}
@@ -363,7 +365,7 @@ export default function AppointmentsPage() {
             >
               Demander
             </button>
-            <button onClick={() => setShowCreate(false)} className="btn text-sm">Annuler</button>
+            <button onClick={() => setShowCreate(false)} className="btn text-sm">{tText('Annuler')}</button>
           </div>
         </div>
       )}
@@ -392,7 +394,7 @@ export default function AppointmentsPage() {
         <div className="glass-card divide-y divide-gray-100 dark:divide-gray-800">
           <div className="px-4 py-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <Inbox className="w-4 h-4 text-primary-500" /> Demandes reçues
+              <Inbox className="w-4 h-4 text-primary-500" /> {tText('Demandes reçues')}
             </h2>
             <span className="text-xs text-gray-400">{inbox.length}</span>
           </div>

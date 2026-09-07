@@ -6,6 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { tText } from '@/i18n';
 interface SkillMatch {
   id: string;
   memberId: string;
@@ -53,7 +54,7 @@ export default function SkillMatchingPage() {
   const respondMutation = useMutation({
     mutationFn: async ({ id, decision }: { id: string; decision: string }) =>
       api.post(`/skill-matching/${id}/respond`, null, { params: { decision } }),
-    onSuccess: () => { toast.success('Réponse enregistrée'); queryClient.invalidateQueries({ queryKey: ['skill-matching'] }); },
+    onSuccess: () => { toast.success(tText('Réponse enregistrée')); queryClient.invalidateQueries({ queryKey: ['skill-matching'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
@@ -76,8 +77,8 @@ export default function SkillMatchingPage() {
           <Target className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Matching de Compétences</h1>
-          <p className="page-subtitle">Trouvez les meilleurs membres pour chaque besoin</p>
+          <h1 className="page-title">{tText('Matching de Compétences')}</h1>
+          <p className="page-subtitle">{tText('Trouvez les meilleurs membres pour chaque besoin')}</p>
         </div>
         <div className="ml-auto flex gap-2">
           <button onClick={() => runMatchingMutation.mutate()} disabled={runMatchingMutation.isPending}
@@ -100,7 +101,7 @@ export default function SkillMatchingPage() {
           </div>
           <div className="glass-card p-4 text-center">
             <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
-            <div className="text-xs text-gray-500">Acceptés</div>
+            <div className="text-xs text-gray-500">{tText('Acceptés')}</div>
           </div>
           <div className="glass-card p-4 text-center">
             <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
@@ -108,11 +109,11 @@ export default function SkillMatchingPage() {
           </div>
           <div className="glass-card p-4 text-center">
             <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
-            <div className="text-xs text-gray-500">Refusés</div>
+            <div className="text-xs text-gray-500">{tText('Refusés')}</div>
           </div>
           <div className="glass-card p-4 text-center">
             <div className="text-2xl font-bold text-purple-600">{stats.topCompetences?.length || 0}</div>
-            <div className="text-xs text-gray-500">Compétences</div>
+            <div className="text-xs text-gray-500">{tText('Compétences')}</div>
           </div>
         </div>
       )}
@@ -157,7 +158,7 @@ export default function SkillMatchingPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Recherche de compétences</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Recherche de compétences')}</h2>
             <div className="space-y-4">
               <input type="text" value={requiredCompetences} onChange={e => setRequiredCompetences(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
@@ -171,7 +172,7 @@ export default function SkillMatchingPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={() => matchSearchMutation.mutate()} disabled={matchSearchMutation.isPending}
                 className="px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-medium hover:bg-violet-600 flex items-center gap-2">
                 {matchSearchMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

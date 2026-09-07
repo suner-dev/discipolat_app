@@ -2,6 +2,7 @@ import { History, Activity } from 'lucide-react';
 import type { ActivityItem } from './types';
 import { ACTION_LABELS } from './types';
 
+import { getI18nLocale } from '@/i18n';
 export function ActivityTab({ activity }: { activity: ActivityItem[] }) {
   return (
     <div className="glass-card p-5">
@@ -29,7 +30,7 @@ export function ActivityTab({ activity }: { activity: ActivityItem[] }) {
                   {a.details && <span className="text-gray-500 dark:text-gray-400"> — {a.details}</span>}
                 </p>
                 <p className="text-[10px] text-gray-400">
-                  {a.actorNom ? `par ${a.actorNom} · ` : ''}{new Date(a.createdAt).toLocaleString('fr-FR')}
+                  {a.actorNom ? `par ${a.actorNom} · ` : ''}{new Date(a.createdAt).toLocaleString(getI18nLocale())}
                 </p>
               </div>
             </div>

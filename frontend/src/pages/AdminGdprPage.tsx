@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import type { User as UserType } from '@/types';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface GdprRequest {
   id: string;
   type: 'EXPORT' | 'DELETE';
@@ -80,7 +82,7 @@ export default function AdminGdprPage() {
       invalidate();
       setModalOpen(false);
       setForm({ type: 'EXPORT', userSearch: '', reason: '', selectedUser: null });
-      toast.success('Demande GDPR créée');
+      toast.success(tText('Demande GDPR créée'));
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
@@ -91,7 +93,7 @@ export default function AdminGdprPage() {
     },
     onSuccess: () => {
       invalidate();
-      toast.success('Demande traitée');
+      toast.success(tText('Demande traitée'));
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
@@ -102,7 +104,7 @@ export default function AdminGdprPage() {
     },
     onSuccess: () => {
       invalidate();
-      toast.success('Demande rejetée');
+      toast.success(tText('Demande rejetée'));
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
@@ -163,7 +165,7 @@ export default function AdminGdprPage() {
             <RefreshCw className="w-4 h-4" /> Actualiser
           </button>
           <button className="btn-primary btn-sm" onClick={() => setModalOpen(true)}>
-            <FileText className="w-4 h-4" /> Nouvelle demande
+            <FileText className="w-4 h-4" /> {tText('Nouvelle demande')}
           </button>
         </div>
       </div>
@@ -202,7 +204,7 @@ export default function AdminGdprPage() {
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
           >
-            <option value="">Tous les types</option>
+            <option value="">{tText('Tous les types')}</option>
             {TYPE_OPTIONS.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
@@ -212,7 +214,7 @@ export default function AdminGdprPage() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="">Tous les statuts</option>
+            <option value="">{tText('Tous les statuts')}</option>
             {STATUS_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
@@ -222,7 +224,7 @@ export default function AdminGdprPage() {
               onClick={() => { setStatusFilter(''); setTypeFilter(''); }}
               className="btn-ghost btn-sm"
             >
-              <X className="w-3.5 h-3.5" /> Réinitialiser
+              <X className="w-3.5 h-3.5" /> {tText('Réinitialiser')}
             </button>
           )}
         </div>
@@ -237,7 +239,7 @@ export default function AdminGdprPage() {
           </p>
           {requests.length === 0 && (
             <button className="text-primary-500 hover:underline text-sm mt-2" onClick={() => setModalOpen(true)}>
-              Créer la première demande
+              {tText('Créer la première demande')}
             </button>
           )}
         </div>
@@ -273,7 +275,7 @@ export default function AdminGdprPage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(r.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                     {r.requestedByName && (
                       <span className="text-gray-500">par {r.requestedByName}</span>
@@ -330,7 +332,7 @@ export default function AdminGdprPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
-                    Nouvelle demande GDPR
+                    {tText('Nouvelle demande GDPR')}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Créez une demande d'export ou de suppression de données
@@ -441,7 +443,7 @@ export default function AdminGdprPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setModalOpen(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setModalOpen(false)}>{tText('Annuler')}</button>
               <button
                 className="btn-primary btn-sm"
                 onClick={() => createMutation.mutate()}
@@ -490,10 +492,10 @@ export default function AdminGdprPage() {
                 <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/40">
                   <div className="flex items-center gap-2 mb-1">
                     <Clock className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-[10px] text-gray-400 uppercase font-semibold">Demandé le</span>
+                    <span className="text-[10px] text-gray-400 uppercase font-semibold">{tText('Demandé le')}</span>
                   </div>
                   <p className="text-sm text-gray-900 dark:text-gray-100">
-                    {new Date(detailRequest.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(detailRequest.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>
@@ -508,13 +510,13 @@ export default function AdminGdprPage() {
               {detailRequest.processedAt && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/40">
-                    <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Traité par</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">{tText('Traité par')}</p>
                     <p className="text-sm text-gray-900 dark:text-gray-100">{detailRequest.processedByName}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/40">
-                    <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Traité le</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">{tText('Traité le')}</p>
                     <p className="text-sm text-gray-900 dark:text-gray-100">
-                      {new Date(detailRequest.processedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      {new Date(detailRequest.processedAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                   </div>
                 </div>

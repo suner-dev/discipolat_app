@@ -8,6 +8,7 @@ import { usePlatformMeta } from '@/contexts/MetaContext';
 import { MessageSquareText, X, Loader2, Send } from 'lucide-react';
 import type { CreateFeedbackRequest, FeedbackCategory, FeedbackPriority } from '@/types';
 
+import { tText } from '@/i18n';
 /**
  * Widget de feedback testeur — bouton flottant (bas droite) + modale.
  *
@@ -161,7 +162,7 @@ export default function FeedbackWidget() {
               <div>
                 <h3 className="text-base font-bold text-gray-900 dark:text-white font-display flex items-center gap-2">
                   <MessageSquareText className="w-4 h-4 text-primary-500" />
-                  Envoyer un retour
+                  {tText('Envoyer un retour')}
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   {meta.betaMode ? 'Aidez-nous à améliorer la version bêta.' : 'Aidez-nous à améliorer la plateforme.'}
@@ -186,7 +187,7 @@ export default function FeedbackWidget() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="label !mb-1.5">Catégorie</label>
+                  <label className="label !mb-1.5">{tText('Catégorie')}</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
@@ -198,7 +199,7 @@ export default function FeedbackWidget() {
                   </select>
                 </div>
                 <div>
-                  <label className="label !mb-1.5">Priorité</label>
+                  <label className="label !mb-1.5">{tText('Priorité')}</label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as FeedbackPriority)}
@@ -242,7 +243,7 @@ export default function FeedbackWidget() {
             {/* Footer */}
             <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-white/10 dark:border-white/[0.06] flex-shrink-0">
               <button className="btn-ghost btn-sm" onClick={() => setOpen(false)}>
-                Annuler
+                {tText('Annuler')}
               </button>
               <button
                 className="btn-primary btn-sm"

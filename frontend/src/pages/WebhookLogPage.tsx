@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '@/lib/api';
 import { useI18n } from '@/i18n/index';
+import { tText } from '@/i18n';
 import {
   Loader2,
   Activity,
@@ -97,7 +98,7 @@ export default function WebhookLogPage() {
         </div>
         <div className="flex-1">
           <h1 className="page-title">Webhook Logs</h1>
-          <p className="page-subtitle">Historique des callbacks opérateurs reçus</p>
+          <p className="page-subtitle">{tText('Historique des callbacks opérateurs reçus')}</p>
         </div>
         <button onClick={() => refetch()} className="btn-secondary flex items-center gap-2">
           <RefreshCw className="w-4 h-4" /> Actualiser
@@ -127,13 +128,13 @@ export default function WebhookLogPage() {
       <div className="glass-card p-4 mb-4 flex flex-wrap gap-3 items-center animate-slide-up">
         <Filter className="w-4 h-4 text-gray-400" />
         <select className="input text-sm" value={provider} onChange={(e) => { setProvider(e.target.value); setPage(0); }}>
-          <option value="">Tous les opérateurs</option>
+          <option value="">{tText('Tous les opérateurs')}</option>
           {PROVIDERS.filter(Boolean).map((p) => (
             <option key={p} value={p}>{PROVIDER_LABELS[p] ?? p}</option>
           ))}
         </select>
         <select className="input text-sm" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
-          <option value="">Tous les statuts</option>
+          <option value="">{tText('Tous les statuts')}</option>
           {STATUSES.filter(Boolean).map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
@@ -147,7 +148,7 @@ export default function WebhookLogPage() {
       ) : logs.length === 0 ? (
         <div className="glass-card p-12 text-center text-gray-400">
           <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>Aucun log webhook trouvé</p>
+          <p>{tText('Aucun log webhook trouvé')}</p>
         </div>
       ) : (
         <div className="space-y-2 mb-6">

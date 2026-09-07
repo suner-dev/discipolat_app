@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const STATUT_FALLBACK: Record<string, string> = {
   BROUILLON: 'Brouillon',
@@ -82,7 +84,7 @@ export default function FamilyReportPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['family-report'] });
-      toast.success('Rapport de famille soumis avec succès');
+      toast.success(tText('Rapport de famille soumis avec succès'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -144,11 +146,11 @@ export default function FamilyReportPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <Users className="w-5 h-5 text-primary-500" />
-            <h1 className="page-title">Rapport de famille</h1>
+            <h1 className="page-title">{tText('Rapport de famille')}</h1>
           </div>
           <p className="page-subtitle">
             <Clock className="w-3.5 h-3.5 inline mr-1" />
-            Semaine du {new Date(semaine).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            Semaine du {new Date(semaine).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
       </div>
@@ -157,7 +159,7 @@ export default function FamilyReportPage() {
       <div className="glass-card p-4 mb-6 animate-slide-up">
         <label className="label flex items-center gap-1.5">
           <Users className="w-4 h-4 text-gray-400" />
-          Sélectionner une famille
+          {tText('Sélectionner une famille')}
         </label>
         <select value={selectedFamilyId} onChange={(e) => setSelectedFamilyId(e.target.value)} className="input mt-1">
           <option value="">Choisir une famille...</option>
@@ -196,7 +198,7 @@ export default function FamilyReportPage() {
               <div className="px-5 py-4 border-b border-white/20 dark:border-white/[0.06]">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-primary-500" />
-                  Rapports des faiseurs
+                  {tText('Rapports des faiseurs')}
                 </h3>
               </div>
               <div className="p-5">
@@ -204,10 +206,10 @@ export default function FamilyReportPage() {
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Âme</th>
+                        <th>{tText('Âme')}</th>
                         <th>Statut</th>
-                        <th>Présences</th>
-                        <th>Difficultés</th>
+                        <th>{tText('Présences')}</th>
+                        <th>{tText('Difficultés')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -248,7 +250,7 @@ export default function FamilyReportPage() {
           <div className="glass-card p-5 mb-6 animate-slide-up" style={{ animationDelay: '250ms' }}>
             <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              Commentaire de synthèse
+              {tText('Commentaire de synthèse')}
             </h3>
             <textarea value={familyReport?.commentaireSynthese || commentaire}
               onChange={(e) => setCommentaire(e.target.value)}
@@ -256,7 +258,7 @@ export default function FamilyReportPage() {
               placeholder="Appréciation qualitative globale de l'état de la famille..." />
             <div className="mt-3">
               <label className="label flex items-center gap-1.5">
-                <Paperclip className="w-3.5 h-3.5 text-primary-500" /> Pièces jointes
+                <Paperclip className="w-3.5 h-3.5 text-primary-500" /> {tText('Pièces jointes')}
               </label>
               {familyReport?.statutValidation && ['SOUMIS', 'VU_PAR_RESPONSABLE', 'VU_PAR_PASTEUR'].includes(familyReport.statutValidation) ? (
                 <AttachmentLinks pieces={familyReport?.piecesJointes} />

@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/i18n';
 import toast from 'react-hot-toast';
+import { tText } from '@/i18n';
 import {
   ArrowLeft, UserRound, Building2, Users2, ListTodo, ClipboardCheck, Gavel,
   FileText, Star, Calendar, StickyNote, Megaphone, ArrowLeftRight, History,
@@ -60,7 +61,7 @@ export default function DepartmentMemberDossierPage() {
   const removeMutation = useMutation({
     mutationFn: async () => api.delete(`/departments/${id}/members/${memberId}`),
     onSuccess: () => {
-      toast.success('Membre retiré du département');
+      toast.success(tText('Membre retiré du département'));
       queryClient.invalidateQueries({ queryKey: ['department', id, 'members'] });
       navigate(`/departments/${id}`);
     },
@@ -80,7 +81,7 @@ export default function DepartmentMemberDossierPage() {
       <div className="page-container">
         <div className="glass-card p-10 text-center">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Dossier introuvable</h2>
-          <Link to={`/departments/${id}`} className="btn-primary btn-sm mt-4 inline-flex">Retour au département</Link>
+          <Link to={`/departments/${id}`} className="btn-primary btn-sm mt-4 inline-flex">{tText('Retour au département')}</Link>
         </div>
       </div>
     );
@@ -93,7 +94,7 @@ export default function DepartmentMemberDossierPage() {
     <div className="page-container">
       <div className="page-header">
         <button onClick={() => navigate(`/departments/${id}`)} className="btn-ghost btn-sm mb-2">
-          <ArrowLeft className="w-4 h-4" /> Retour au département
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour au département')}
         </button>
         <div className="flex flex-wrap items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
@@ -113,7 +114,7 @@ export default function DepartmentMemberDossierPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to={`/souls/${p.id}`} className="btn-ghost btn-sm">
-              <ExternalLink className="w-4 h-4" /> Fiche âme
+              <ExternalLink className="w-4 h-4" /> {tText('Fiche âme')}
             </Link>
             <Link to="/transfers/new" className="btn-primary btn-sm">
               <ArrowLeftRight className="w-4 h-4" /> Demander un transfert
@@ -126,7 +127,7 @@ export default function DepartmentMemberDossierPage() {
                 disabled={removeMutation.isPending}
                 className="btn-ghost btn-sm text-red-500 hover:bg-red-500/10 cursor-pointer"
               >
-                <Trash2 className="w-4 h-4" /> Retirer du département
+                <Trash2 className="w-4 h-4" /> {tText('Retirer du département')}
               </button>
             )}
           </div>
@@ -215,7 +216,7 @@ function ProfilTab({ p, alertes }: { p: any; alertes: any[] }) {
       <div className="space-y-4">
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-            <History className="w-4 h-4 text-amber-500" /> Traçabilité du rattachement
+            <History className="w-4 h-4 text-amber-500" /> {tText('Traçabilité du rattachement')}
           </h3>
           <div className="space-y-2 text-sm">
             <p className="text-gray-600 dark:text-gray-300"><span className="text-gray-400">Ajouté par :</span> <b>{p.ajoutePar || '—'}</b></p>
@@ -239,7 +240,7 @@ function ProfilTab({ p, alertes }: { p: any; alertes: any[] }) {
 }
 
 function AlertsList({ items }: { items: any[] }) {
-  if (!items || items.length === 0) return <p className="text-sm text-gray-400">Aucune alerte active</p>;
+  if (!items || items.length === 0) return <p className="text-sm text-gray-400">{tText('Aucune alerte active')}</p>;
   return (
     <div className="space-y-2">
       {items.map((a) => (
@@ -258,9 +259,9 @@ function AlertsList({ items }: { items: any[] }) {
 function AppartenanceTab({ items }: { items: any[] }) {
   return (
     <div className="glass-card p-5">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Départements du membre</h3>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">{tText('Départements du membre')}</h3>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucun département</p>
+        <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun département')}</p>
       ) : (
         <div className="space-y-2">
           {items.map((d, i) => (
@@ -297,7 +298,7 @@ function AffectationsTab({ items }: { items: any[] }) {
         Affectations ({active.length} actives)
       </h3>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucune affectation</p>
+        <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune affectation')}</p>
       ) : (
         <div className="space-y-2">
           {active.map((a) => (
@@ -351,7 +352,7 @@ function TachesTab({ data }: { data: any }) {
       </div>
       <div className="glass-card p-5">
         {(data.liste || []).length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Aucune tâche assignée</p>
+          <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune tâche assignée')}</p>
         ) : (
           <div className="space-y-2">
             {(data.liste as any[]).map((t) => (
@@ -389,7 +390,7 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
     mutationFn: async ({ eventId, present }: { eventId: string; present: boolean }) =>
       (await api.put(`/departments/${id}/events/${eventId}/attendance`, { soulId: memberId, present })).data,
     onSuccess: () => {
-      toast.success('Présence enregistrée ✅');
+      toast.success(tText('Présence enregistrée ✅'));
       queryClient.invalidateQueries({ queryKey: ['department', id, 'dossier', memberId, 'event-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['department', id, 'dossier', memberId] });
     },
@@ -415,7 +416,7 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
         a.download = 'presence-membre-evenements.csv';
         a.click();
         URL.revokeObjectURL(url);
-        toast.success('Présences exportées 📥');
+        toast.success(tText('Présences exportées 📥'));
       })
       .catch((err) => toast.error(getErrorMessage(err)));
   };
@@ -439,7 +440,7 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
       </div>
       <div className="glass-card p-5">
         {(data.liste || []).length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Aucune fiche de présence</p>
+          <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune fiche de présence')}</p>
         ) : (
           <div className="space-y-1.5">
             {(data.liste as any[]).map((r) => (
@@ -463,7 +464,7 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
       <div className="glass-card p-5">
         <div className="flex items-center gap-2 mb-1">
           <CalendarDays className="w-4 h-4 text-primary-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Présence aux événements du département</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Présence aux événements du département')}</h3>
         </div>
         <p className="text-[11px] text-gray-400 mb-4">
           Marquez ce membre présent ou absent à chaque événement rattaché au département.
@@ -471,7 +472,7 @@ function PresencesTab({ id, memberId, data }: { id: string; memberId: string; da
         {loadingEvents ? (
           <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary-500" /></div>
         ) : events.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Aucun événement rattaché à ce département</p>
+          <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun événement rattaché à ce département')}</p>
         ) : (
           <>
             <div className="flex flex-wrap gap-3 mb-3 text-xs text-gray-500">
@@ -557,11 +558,11 @@ function DisciplineTab({ data, memberId }: { data: any; memberId: string }) {
           {data.nonResolus > 0 && <span className="badge text-[9px] badge-danger ml-2">{data.nonResolus} non résolus</span>}
         </h3>
         <Link to={`/souls/${memberId}`} className="btn-ghost btn-xs">
-          <Gavel className="w-3 h-3" /> Gérer sur la fiche
+          <Gavel className="w-3 h-3" /> {tText('Gérer sur la fiche')}
         </Link>
       </div>
       {(data.liste || []).length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucun événement disciplinaire</p>
+        <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun événement disciplinaire')}</p>
       ) : (
         <div className="space-y-2">
           {(data.liste as any[]).map((e) => (
@@ -570,7 +571,7 @@ function DisciplineTab({ data, memberId }: { data: any; memberId: string }) {
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{e.titre}</span>
                 <span className="badge text-[9px] badge-gray">{e.categorie?.replace('_', ' ')}</span>
                 {e.gravite && <span className="badge text-[9px] badge-warning">{e.gravite}</span>}
-                {!e.resolu && <span className="badge text-[9px] badge-danger">Non résolu</span>}
+                {!e.resolu && <span className="badge text-[9px] badge-danger">{tText('Non résolu')}</span>}
               </div>
               {e.description && <p className="text-[10px] text-gray-400 mt-1">{e.description}</p>}
               <p className="text-[10px] text-gray-400 mt-0.5">{e.dateEvenement || ''}</p>
@@ -602,7 +603,7 @@ function RapportsTab({ id, memberId, data, items }: { id: string; memberId: stri
       type, contenu: contenu.trim(),
     })).data,
     onSuccess: () => {
-      toast.success('Rapport ajouté ✅');
+      toast.success(tText('Rapport ajouté ✅'));
       setContenu('');
       invalidate();
     },
@@ -612,7 +613,7 @@ function RapportsTab({ id, memberId, data, items }: { id: string; memberId: stri
   const deleteMutation = useMutation({
     mutationFn: async (reportId: string) => api.delete(`/departments/${id}/reports/${reportId}`),
     onSuccess: () => {
-      toast.success('Rapport supprimé');
+      toast.success(tText('Rapport supprimé'));
       invalidate();
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -625,7 +626,7 @@ function RapportsTab({ id, memberId, data, items }: { id: string; memberId: stri
           Rapports du faiseur ({data.soumis ?? 0} soumis / {data.total ?? 0})
         </h3>
         {(data.liste || []).length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Aucun rapport</p>
+          <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun rapport')}</p>
         ) : (
           <div className="space-y-2">
             {(data.liste as any[]).map((r) => (
@@ -652,7 +653,7 @@ function RapportsTab({ id, memberId, data, items }: { id: string; memberId: stri
                 <option key={k} value={k}>{v}</option>
               ))}
             </select>
-            <input className="input flex-1" value={contenu} onChange={(e) => setContenu(e.target.value)} placeholder="Point de situation sur ce membre…" />
+            <input className="input flex-1" value={contenu} onChange={(e) => setContenu(e.target.value)} placeholder={tText('Point de situation sur ce membre…')} />
           </div>
           <button
             onClick={() => addMutation.mutate()}
@@ -663,7 +664,7 @@ function RapportsTab({ id, memberId, data, items }: { id: string; memberId: stri
           </button>
         </div>
         {items.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Aucun rapport rédigé par un responsable</p>
+          <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun rapport rédigé par un responsable')}</p>
         ) : (
           <div className="space-y-2">
             {items.map((r) => (
@@ -702,7 +703,7 @@ function EvaluationsTab({ data }: { data: any }) {
         Évaluations ({data.total ?? 0}){avg !== null && <span className="badge text-[10px] badge-info ml-2">Moyenne : {avg}/5</span>}
       </h3>
       {(data.liste || []).length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucune évaluation</p>
+        <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune évaluation')}</p>
       ) : (
         <div className="space-y-2">
           {(data.liste as any[]).map((e) => (
@@ -734,7 +735,7 @@ function EvenementsTab({ data }: { data: any }) {
     <div className="glass-card p-5">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Événements ({data.total ?? 0})</h3>
       {(data.liste || []).length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucune inscription à un événement</p>
+        <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune inscription à un événement')}</p>
       ) : (
         <div className="space-y-2">
           {(data.liste as any[]).map((e) => (
@@ -761,10 +762,10 @@ function AnnoncesTab({ items }: { items: any[] }) {
   return (
     <div className="glass-card p-5">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-        <Megaphone className="w-4 h-4 text-amber-500" /> Annonces du département pour ce membre
+        <Megaphone className="w-4 h-4 text-amber-500" /> {tText('Annonces du département pour ce membre')}
       </h3>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucune annonce ciblée</p>
+        <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune annonce ciblée')}</p>
       ) : (
         <div className="space-y-2">
           {items.map((a) => (
@@ -793,7 +794,7 @@ function NotesTab({ id, memberId, items }: { id: string; memberId: string; items
   const addMutation = useMutation({
     mutationFn: async () => (await api.post(`/departments/${id}/members/${memberId}/notes`, { contenu })).data,
     onSuccess: () => {
-      toast.success('Note ajoutée ✅');
+      toast.success(tText('Note ajoutée ✅'));
       setContenu('');
       queryClient.invalidateQueries({ queryKey: ['department', id, 'dossier', memberId] });
     },
@@ -802,7 +803,7 @@ function NotesTab({ id, memberId, items }: { id: string; memberId: string; items
   const deleteMutation = useMutation({
     mutationFn: async (noteId: string) => api.delete(`/departments/${id}/notes/${noteId}`),
     onSuccess: () => {
-      toast.success('Note supprimée');
+      toast.success(tText('Note supprimée'));
       queryClient.invalidateQueries({ queryKey: ['department', id, 'dossier', memberId] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -828,7 +829,7 @@ function NotesTab({ id, memberId, items }: { id: string; memberId: string; items
         </button>
       </div>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucune note pour ce membre</p>
+        <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune note pour ce membre')}</p>
       ) : (
         <div className="space-y-2">
           {items.map((n) => (
@@ -871,7 +872,7 @@ function ObjectifsTab({ id, memberId, items }: { id: string; memberId: string; i
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Objectif créé ✅');
+      toast.success(tText('Objectif créé ✅'));
       setTitre(''); setDescription(''); setEcheance('');
       invalidate();
     },
@@ -888,7 +889,7 @@ function ObjectifsTab({ id, memberId, items }: { id: string; memberId: string; i
   const deleteMutation = useMutation({
     mutationFn: async (objectiveId: string) => api.delete(`/departments/${id}/objectives/${objectiveId}`),
     onSuccess: () => {
-      toast.success('Objectif supprimé');
+      toast.success(tText('Objectif supprimé'));
       invalidate();
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -938,10 +939,10 @@ function ObjectifsTab({ id, memberId, items }: { id: string; memberId: string; i
             </div>
             <div>
               <label className="label">Description</label>
-              <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Étapes, critères…" />
+              <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tText('Étapes, critères…')} />
             </div>
             <div>
-              <label className="label">Échéance</label>
+              <label className="label">{tText('Échéance')}</label>
               <input type="date" className="input" value={echeance} onChange={(e) => setEcheance(e.target.value)} />
             </div>
           </div>
@@ -955,7 +956,7 @@ function ObjectifsTab({ id, memberId, items }: { id: string; memberId: string; i
         </div>
 
         {items.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Aucun objectif fixé pour ce membre</p>
+          <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun objectif fixé pour ce membre')}</p>
         ) : (
           <div className="space-y-2">
             {items.map((o) => (
@@ -963,7 +964,7 @@ function ObjectifsTab({ id, memberId, items }: { id: string; memberId: string; i
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{o.titre}</span>
                   <span className={`badge text-[9px] ${OBJECTIVE_BADGE[o.statut] || 'badge-gray'}`}>{o.statut?.replace('_', ' ')}</span>
-                  {o.enRetard && <span className="badge text-[9px] badge-danger">Échéance dépassée</span>}
+                  {o.enRetard && <span className="badge text-[9px] badge-danger">{tText('Échéance dépassée')}</span>}
                 </div>
                 {o.description && <p className="text-[10px] text-gray-400 mt-0.5">{o.description}</p>}
                 <p className="text-[10px] text-gray-400 mt-0.5">
@@ -1017,7 +1018,7 @@ function DocumentsTab({ documents, notesDisciple }: { documents: any[]; notesDis
           <FolderOpen className="w-4 h-4 text-amber-500" /> Documents du dossier ({documents.length})
         </h3>
         {documents.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Aucun document joint</p>
+          <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun document joint')}</p>
         ) : (
           <div className="space-y-2">
             {documents.map((d) => (
@@ -1041,7 +1042,7 @@ function DocumentsTab({ documents, notesDisciple }: { documents: any[]; notesDis
           <StickyNote className="w-4 h-4 text-amber-500" /> Notes de la fiche âme ({notesDisciple.length})
         </h3>
         {notesDisciple.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Aucune note sur la fiche âme</p>
+          <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune note sur la fiche âme')}</p>
         ) : (
           <div className="space-y-2">
             {notesDisciple.map((n) => (
@@ -1072,7 +1073,7 @@ function TransfertsTab({ items }: { items: any[] }) {
         <ArrowLeftRight className="w-4 h-4 text-amber-500" /> Historique des mouvements ({items.length})
       </h3>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucun transfert enregistré</p>
+        <p className="text-sm text-gray-400 text-center py-6">{tText('Aucun transfert enregistré')}</p>
       ) : (
         <div className="space-y-2">
           {items.map((t) => (
@@ -1113,7 +1114,7 @@ function ActiviteTab({ items }: { items: any[] }) {
         <History className="w-4 h-4 text-amber-500" /> Journal d'activité du département pour ce membre
       </h3>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucune activité enregistrée</p>
+        <p className="text-sm text-gray-400 text-center py-6">{tText('Aucune activité enregistrée')}</p>
       ) : (
         <div className="space-y-0">
           {items.map((a, i) => (

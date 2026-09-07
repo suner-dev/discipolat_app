@@ -19,6 +19,7 @@ import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 /** Repli */
 const TYPE_FALLBACK: Record<string, { label: string; icon: typeof Lightbulb; color: string }> = {
   SUGGESTION: { label: 'Suggestion', icon: Lightbulb, color: 'from-blue-500 to-indigo-500' },
@@ -87,7 +88,7 @@ export default function MemberRequestsPage() {
       return res.data as MemberRequest;
     },
     onSuccess: () => {
-      toast.success('Demande mise à jour ✅');
+      toast.success(tText('Demande mise à jour ✅'));
       queryClient.invalidateQueries({ queryKey: ['members', 'requests', 'inbox'] });
       setDetailItem(null);
     },
@@ -152,7 +153,7 @@ export default function MemberRequestsPage() {
             </span>
           </div>
           <h1 className="page-title">
-            Demandes <span className="text-gradient font-display">des membres</span>
+            Demandes <span className="text-gradient font-display">{tText('des membres')}</span>
           </h1>
           <p className="page-subtitle">
             Suggestions, rendez-vous et signalements — {requests.length} demande(s) au total
@@ -243,17 +244,17 @@ export default function MemberRequestsPage() {
               <div className="flex items-center gap-1.5">
                 <Filter className="w-4 h-4 text-gray-400" />
                 <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="input !w-auto">
-                  <option value="">Tous les types</option>
+                  <option value="">{tText('Tous les types')}</option>
                   <option value="SUGGESTION">💡 Suggestion</option>
-                  <option value="RENDEZ_VOUS">📅 Rendez-vous</option>
+                  <option value="RENDEZ_VOUS">{tText('📅 Rendez-vous')}</option>
                   <option value="SIGNALEMENT">⚠️ Signalement</option>
                 </select>
                 <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input !w-auto">
-                  <option value="">Tous les statuts</option>
+                  <option value="">{tText('Tous les statuts')}</option>
                   <option value="OUVERT">Ouvert</option>
                   <option value="EN_COURS">En cours</option>
-                  <option value="RESOLU">Résolu</option>
-                  <option value="REJETE">Rejeté</option>
+                  <option value="RESOLU">{tText('Résolu')}</option>
+                  <option value="REJETE">{tText('Rejeté')}</option>
                 </select>
               </div>
             </div>
@@ -276,7 +277,7 @@ export default function MemberRequestsPage() {
                 <Inbox className="w-6 h-6 text-green-500" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                {requests.length === 0 ? 'Aucune demande' : 'Aucun résultat'}
+                {requests.length === 0 ? tText('Aucune demande') : tText('Aucun résultat')}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {requests.length === 0
@@ -382,7 +383,7 @@ export default function MemberRequestsPage() {
               <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/20 w-fit mx-auto mb-4">
                 <CalendarCheck className="w-6 h-6 text-green-500" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Aucune présence saisie</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{tText('Aucune présence saisie')}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Les membres de votre périmètre n'ont pas encore renseigné leur présence hebdomadaire.
               </p>
@@ -392,9 +393,9 @@ export default function MemberRequestsPage() {
               <table className="table w-full min-w-[560px]">
                 <thead>
                   <tr>
-                    <th>Membre</th>
+                    <th>{tText('Membre')}</th>
                     <th>Semaine</th>
-                    <th>Présence</th>
+                    <th>{tText('Présence')}</th>
                     <th>Taux</th>
                     <th>Notes</th>
                   </tr>
@@ -437,7 +438,7 @@ export default function MemberRequestsPage() {
                 </tbody>
               </table>
               <p className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-3">
-                <ChevronRight className="w-3 h-3" /> Semaine la plus récente par membre · les données se mettent à jour dès la saisie du membre
+                <ChevronRight className="w-3 h-3" /> {tText('Semaine la plus récente par membre · les données se mettent à jour dès la saisie du membre')}
               </p>
             </div>
           )}
@@ -487,7 +488,7 @@ export default function MemberRequestsPage() {
               </div>
               {detailItem.piecesJointes && detailItem.piecesJointes.length > 0 && (
                 <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30">
-                  <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Pièces jointes</p>
+                  <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">{tText('Pièces jointes')}</p>
                   <AttachmentLinks pieces={detailItem.piecesJointes} />
                 </div>
               )}
@@ -499,18 +500,18 @@ export default function MemberRequestsPage() {
                 </div>
                 <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 text-center">
                   <Building2 className="w-4 h-4 text-gray-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-gray-400">Département</p>
+                  <p className="text-[10px] text-gray-400">{tText('Département')}</p>
                   <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{detailItem.departmentNom || '—'}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 text-center">
                   <Users className="w-4 h-4 text-gray-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-gray-400">Famille</p>
+                  <p className="text-[10px] text-gray-400">{tText('Famille')}</p>
                   <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{detailItem.familyNom || '—'}</p>
                 </div>
               </div>
               {detailItem.reponse && (
                 <div className="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-900/10 border border-emerald-200/50">
-                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-semibold mb-1">Réponse</p>
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-semibold mb-1">{tText('Réponse')}</p>
                   <p className="text-sm text-emerald-700 dark:text-emerald-300">{detailItem.reponse}</p>
                   {detailItem.traiteParNom && <p className="text-[10px] text-emerald-500 mt-1">— {detailItem.traiteParNom}</p>}
                 </div>

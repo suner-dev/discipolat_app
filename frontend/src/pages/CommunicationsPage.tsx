@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Megaphone, Plus, Pencil, Trash2, Loader2, Send, X, Users, Globe, Home, Building2,
 } from 'lucide-react';
@@ -39,11 +41,11 @@ export default function CommunicationsPage() {
     return (
       <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
         <Megaphone className="w-10 h-10 text-gray-300 mb-3" />
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Communication désactivée</h1>
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Communication désactivée')}</h1>
         <p className="text-sm text-gray-400 mt-1">
           L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
         </p>
-        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">Retour au tableau de bord</Link>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
       </div>
     );
   }
@@ -78,7 +80,7 @@ export default function CommunicationsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/communications/admin/${id}`),
-    onSuccess: () => { invalidate(); toast.success('Annonce supprimée'); },
+    onSuccess: () => { invalidate(); toast.success(tText('Annonce supprimée')); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -107,7 +109,7 @@ export default function CommunicationsPage() {
         {canManage && (
           <div className="page-header-actions">
             <button className="btn-primary btn-sm" onClick={() => setModal({})}>
-              <Plus className="w-4 h-4" /> Nouvelle annonce
+              <Plus className="w-4 h-4" /> {tText('Nouvelle annonce')}
             </button>
           </div>
         )}
@@ -117,7 +119,7 @@ export default function CommunicationsPage() {
       {canManage && (
         <div className="glass-card p-5 mb-6">
           <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-            <Megaphone className="w-4 h-4 text-primary-500" /> Gestion des annonces
+            <Megaphone className="w-4 h-4 text-primary-500" /> {tText('Gestion des annonces')}
           </h3>
           {all.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4">Aucune annonce. Créez la première ci-dessus.</p>
@@ -144,7 +146,7 @@ export default function CommunicationsPage() {
                     <button className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-500/10" title="Modifier" onClick={() => setModal({ edit: c })}>
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10" title="Supprimer" onClick={() => { if (confirm(`Supprimer « ${c.titre} » ?`)) deleteMutation.mutate(c.id); }}>
+                    <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10" title={tText('Supprimer')} onClick={() => { if (confirm(`Supprimer « ${c.titre} » ?`)) deleteMutation.mutate(c.id); }}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -172,7 +174,7 @@ export default function CommunicationsPage() {
                 {cibleBadge(c)}
               </div>
               {c.datePublication && (
-                <p className="text-[11px] text-gray-400 mb-2">{new Date(c.datePublication).toLocaleDateString('fr-FR')}</p>
+                <p className="text-[11px] text-gray-400 mb-2">{new Date(c.datePublication).toLocaleDateString(getI18nLocale())}</p>
               )}
               <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{c.contenu}</p>
             </div>
@@ -257,7 +259,7 @@ function CommunicationModal({ edit, onClose, onSave, pending }: {
         </div>
         {cible === 'ROLE' && (
           <div className="mb-3">
-            <label className="label">Rôles destinataires</label>
+            <label className="label">{tText('Rôles destinataires')}</label>
             <div className="flex flex-wrap gap-2">
               {ALL_ROLES.map((r) => (
                 <button key={r} type="button" onClick={() => toggleRole(r)}
@@ -270,18 +272,18 @@ function CommunicationModal({ edit, onClose, onSave, pending }: {
         )}
         {cible === 'FAMILLE' && (
           <div className="mb-3">
-            <label className="label" htmlFor="comm-famille">Famille</label>
+            <label className="label" htmlFor="comm-famille">{tText('Famille')}</label>
             <select id="comm-famille" className="input" value={familleId} onChange={(e) => setFamilleId(e.target.value)}>
-              <option value="">— Choisir une famille —</option>
+              <option value="">{tText('— Choisir une famille —')}</option>
               {families.map((f) => <option key={f.id} value={f.id}>{f.nom}</option>)}
             </select>
           </div>
         )}
         {cible === 'DEPARTEMENT' && (
           <div className="mb-3">
-            <label className="label" htmlFor="comm-departement">Département</label>
+            <label className="label" htmlFor="comm-departement">{tText('Département')}</label>
             <select id="comm-departement" className="input" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
-              <option value="">— Choisir un département —</option>
+              <option value="">{tText('— Choisir un département —')}</option>
               {departments.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}
             </select>
           </div>

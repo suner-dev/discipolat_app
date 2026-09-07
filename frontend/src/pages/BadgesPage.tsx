@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { BadgeProfile, LeaderboardEntry, BadgeNiveau } from '@/types';
 
+import { tText } from '@/i18n';
 const NIVEAU_STYLE: Record<BadgeNiveau, { cls: string; icon: React.ReactNode }> = {
   BRONZE: { cls: 'text-amber-700 bg-amber-700/10', icon: <Medal className="w-5 h-5" /> },
   ARGENT: { cls: 'text-slate-500 bg-slate-500/10', icon: <Medal className="w-5 h-5" /> },
@@ -101,7 +102,7 @@ export default function BadgesPage() {
           title="Vérifier les nouveaux badges gagnés"
         >
           <RefreshCw className={`w-4 h-4 ${evaluateMutation.isPending ? 'animate-spin' : ''}`} />
-          Vérifier mes badges
+          {tText('Vérifier mes badges')}
         </button>
       </div>
 
@@ -115,7 +116,7 @@ export default function BadgesPage() {
               <span className="p-3 rounded-xl bg-primary-500/10 text-primary-500"><Trophy className="w-6 h-6" /></span>
               <div>
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{profile?.totalBadges ?? 0}</p>
-                <p className="text-xs text-gray-400">Badges débloqués</p>
+                <p className="text-xs text-gray-400">{tText('Badges débloqués')}</p>
               </div>
             </div>
             <div className="glass-card p-5 flex items-center gap-4">
@@ -131,7 +132,7 @@ export default function BadgesPage() {
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {profile ? Math.round((profile.totalBadges / Math.max(1, profile.badges.length)) * 100) : 0}%
                 </p>
-                <p className="text-xs text-gray-400">Collection complétée</p>
+                <p className="text-xs text-gray-400">{tText('Collection complétée')}</p>
               </div>
             </div>
           </div>
@@ -158,7 +159,7 @@ export default function BadgesPage() {
 
           {/* All badges with progress */}
           <div className="glass-card p-4">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Tous les badges</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{tText('Tous les badges')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {(profile?.badges ?? []).map(b => {
                 const nv = NIVEAU_STYLE[b.niveau];
@@ -200,7 +201,7 @@ export default function BadgesPage() {
       <div className="glass-card divide-y divide-gray-100 dark:divide-gray-800">
         <div className="px-4 py-3 flex items-center gap-2">
           <Trophy className="w-4 h-4 text-primary-500" />
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Classement des faiseurs</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Classement des faiseurs')}</h2>
         </div>
         {leaderboardQuery.isLoading ? (
           <div className="p-6 text-center text-sm text-gray-400">Chargement…</div>

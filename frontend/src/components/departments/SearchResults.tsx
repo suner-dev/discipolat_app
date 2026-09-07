@@ -2,11 +2,12 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, X, Users2, Network, Briefcase, ListTodo, CalendarDays } from 'lucide-react';
 import { STATUT_TASK_BADGE } from './types';
 
+import { getI18nLocale } from '@/i18n';
 function formatEventDate(value: string) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) +
-    ' · ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) +
+    ' · ' + d.toLocaleTimeString(getI18nLocale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 /**

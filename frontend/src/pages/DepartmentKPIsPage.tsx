@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Target, BarChart3, TrendingUp, TrendingDown, Users, Award, Loader2,
 } from 'lucide-react';
@@ -40,9 +42,9 @@ export default function DepartmentKpisPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <Target className="w-5 h-5 text-primary-500" />
-            <h1 className="page-title">KPIs par département</h1>
+            <h1 className="page-title">{tText('KPIs par département')}</h1>
           </div>
-          <p className="page-subtitle">Indicateurs de performance clés par département</p>
+          <p className="page-subtitle">{tText('Indicateurs de performance clés par département')}</p>
         </div>
       </div>
 
@@ -82,7 +84,7 @@ export default function DepartmentKpisPage() {
                         />
                       </div>
                       <p className="text-[10px] text-gray-400 mt-2">
-                        Mis à jour le {new Date(kpi.lastUpdated).toLocaleDateString('fr-FR')}
+                        Mis à jour le {new Date(kpi.lastUpdated).toLocaleDateString(getI18nLocale())}
                       </p>
                     </div>
                   );

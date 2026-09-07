@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import api from '@/lib/api';
+import { tText } from '@/i18n';
 import {
   ShieldCheck, ShieldX, Clock, Building2, User, Loader2, CalendarDays,
   CheckCircle2, AlertTriangle, HelpCircle
@@ -86,13 +87,13 @@ export default function PassportVerifyPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-xl mb-6 text-center">
         <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-4 py-1.5 text-sm text-emerald-300 mb-6">
-          <ShieldCheck className="w-4 h-4" /> Vérification officielle Discipolat
+          <ShieldCheck className="w-4 h-4" /> {tText('Vérification officielle Discipolat')}
         </div>
 
         {isPending && (
           <div className="flex flex-col items-center gap-3 text-white/60">
             <Loader2 className="w-8 h-8 animate-spin" />
-            <p>Vérification en cours…</p>
+            <p>{tText('Vérification en cours…')}</p>
           </div>
         )}
 
@@ -103,7 +104,7 @@ export default function PassportVerifyPage() {
               onClick={() => refetch()}
               className="mt-3 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm"
             >
-              Réessayer
+              {tText('Réessayer')}
             </button>
           </div>
         )}
@@ -113,7 +114,7 @@ export default function PassportVerifyPage() {
             <VerdictBanner result={data} />
 
             <div className="w-full max-w-xl rounded-2xl bg-white/5 border border-white/10 p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-white/90">Détails du passeport</h2>
+              <h2 className="text-lg font-semibold text-white/90">{tText('Détails du passeport')}</h2>
               <div className="grid gap-3 sm:grid-cols-2 text-sm">
                 <div className="flex items-center gap-2 text-white/70">
                   <User className="w-4 h-4 text-emerald-400" />

@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import type { ReactNode } from 'react';
 
+import { tText } from '@/i18n';
 interface Props {
   children: ReactNode;
 }
@@ -37,7 +38,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               </svg>
             </div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 font-display">
-              Une erreur est survenue
+              {tText('Une erreur est survenue')}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
               La page n'a pas pu être chargée. Cela peut arriver avec une
@@ -47,7 +48,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               onClick={this.retry}
               className="btn-primary btn-sm mt-6"
             >
-              Réessayer
+              {tText('Réessayer')}
             </button>
           </div>
         </div>

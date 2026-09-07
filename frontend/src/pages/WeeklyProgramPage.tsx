@@ -13,6 +13,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 const JOUR_LABELS: Record<JourSemaine, string> = {
   LUNDI: 'Lundi', MARDI: 'Mardi', MERCREDI: 'Mercredi',
   JEUDI: 'Jeudi', VENDREDI: 'Vendredi', SAMEDI: 'Samedi', DIMANCHE: 'Dimanche',
@@ -97,7 +98,7 @@ export default function WeeklyProgramPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', 'templates'] });
-      toast.success('Template créé');
+      toast.success(tText('Template créé'));
       setShowCreateTemplate(false);
       resetForm();
     },
@@ -110,7 +111,7 @@ export default function WeeklyProgramPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', 'templates'] });
-      toast.success('Template mis à jour');
+      toast.success(tText('Template mis à jour'));
       setEditingTemplate(null);
       resetForm();
     },
@@ -123,7 +124,7 @@ export default function WeeklyProgramPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', 'templates'] });
-      toast.success('Template supprimé');
+      toast.success(tText('Template supprimé'));
       setShowConfirmDelete(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -226,7 +227,7 @@ export default function WeeklyProgramPage() {
             <Calendar className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Programme hebdomadaire</h1>
           </div>
-          <p className="page-subtitle">Définissez les événements récurrents et générez le programme</p>
+          <p className="page-subtitle">{tText('Définissez les événements récurrents et générez le programme')}</p>
         </div>
         <div className="flex gap-2 animate-fade-in">
           {user?.role === 'PASTEUR' && (
@@ -256,7 +257,7 @@ export default function WeeklyProgramPage() {
       <div className="glass-card p-4 mb-6 animate-slide-up">
         <div className="flex items-center justify-between">
           <button onClick={() => navigateWeek(-1)} className="btn-ghost btn-sm">
-            <ChevronLeft className="w-4 h-4" /> Semaine précédente
+            <ChevronLeft className="w-4 h-4" /> {tText('Semaine précédente')}
           </button>
           <div className="text-center">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{weekLabel}</p>
@@ -328,7 +329,7 @@ export default function WeeklyProgramPage() {
               onClick={() => { setEditingTemplate(null); resetForm(); setShowCreateTemplate(true); }}
               className="btn-primary btn-sm"
             >
-              <Plus className="w-4 h-4" /> Nouveau template
+              <Plus className="w-4 h-4" /> {tText('Nouveau template')}
             </button>
           </div>
 
@@ -384,7 +385,7 @@ export default function WeeklyProgramPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="label">Heure début</label>
+                      <label className="label">{tText('Heure début')}</label>
                       <input type="time" className="input" value={templateForm.heureDebut}
                         onChange={(e) => setTemplateForm({ ...templateForm, heureDebut: e.target.value })} />
                     </div>
@@ -413,7 +414,7 @@ export default function WeeklyProgramPage() {
                       onChange={(e) => setTemplateForm({ ...templateForm, couleur: e.target.value })} />
                   </div>
                   <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <button onClick={() => setShowCreateTemplate(false)} className="btn-secondary btn-sm">Annuler</button>
+                    <button onClick={() => setShowCreateTemplate(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
                     <button onClick={handleSubmitTemplate}
                       disabled={!templateForm.titre || createTemplateMutation.isPending || updateTemplateMutation.isPending}
                       className="btn-primary btn-sm">
@@ -511,12 +512,12 @@ export default function WeeklyProgramPage() {
                     <Trash2 className="w-5 h-5 text-red-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">Confirmer la suppression</h3>
+                    <h3 className="text-lg font-semibold">{tText('Confirmer la suppression')}</h3>
                     <p className="text-sm text-gray-500">Ce template sera définitivement supprimé.</p>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => setShowConfirmDelete(null)} className="btn-secondary btn-sm">Annuler</button>
+                  <button onClick={() => setShowConfirmDelete(null)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
                   <button
                     onClick={() => deleteTemplateMutation.mutate(showConfirmDelete)}
                     disabled={deleteTemplateMutation.isPending}

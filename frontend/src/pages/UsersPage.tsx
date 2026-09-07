@@ -12,6 +12,8 @@ import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import { UserDetailModal } from '@/components/users/UserDetailModal';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /** Repli (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const ROLE_FALLBACK: Record<string, string> = {
   ADMIN: 'Administrateur',
@@ -144,7 +146,7 @@ export default function UsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       if (fieldsSavedRef.current) {
-        toast.success('Compte créé avec succès');
+        toast.success(tText('Compte créé avec succès'));
       } else {
         toast.error("Compte créé, mais les champs personnalisés n'ont pas pu être enregistrés");
       }
@@ -174,7 +176,7 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Faiseur rétrogradé');
+      toast.success(tText('Faiseur rétrogradé'));
       setActionModal('');
       setSelectedUser(null);
     },
@@ -189,9 +191,9 @@ export default function UsersPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       if (data.statut === 'EXECUTE') {
-        toast.success('Faiseur transféré');
+        toast.success(tText('Faiseur transféré'));
       } else {
-        toast.success('Demande de transfert soumise pour validation');
+        toast.success(tText('Demande de transfert soumise pour validation'));
       }
       setActionModal('');
       setSelectedUser(null);
@@ -209,7 +211,7 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Rôles mis à jour');
+      toast.success(tText('Rôles mis à jour'));
       // Re-fetch the selected user to refresh its roles list
       const u = data?.content.find((x) => x.id === selectedUser?.id);
       if (u) setSelectedUser({ ...u });
@@ -223,7 +225,7 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Rôle actif mis à jour');
+      toast.success(tText('Rôle actif mis à jour'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -234,7 +236,7 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Utilisateur supprimé définitivement');
+      toast.success(tText('Utilisateur supprimé définitivement'));
       setActionModal('');
       setSelectedUser(null);
     },
@@ -247,7 +249,7 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Utilisateur restauré');
+      toast.success(tText('Utilisateur restauré'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -258,7 +260,7 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Compte verrouillé');
+      toast.success(tText('Compte verrouillé'));
       setAccountModal('');
       setSelectedUser(null);
     },
@@ -271,7 +273,7 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Compte déverrouillé');
+      toast.success(tText('Compte déverrouillé'));
       setAccountModal('');
       setSelectedUser(null);
     },
@@ -283,7 +285,7 @@ export default function UsersPage() {
       await api.post(`/auth/forgot-password`, { userId: id });
     },
     onSuccess: () => {
-      toast.success('Email de réinitialisation envoyé');
+      toast.success(tText('Email de réinitialisation envoyé'));
       setAccountModal('');
       setSelectedUser(null);
     },
@@ -422,7 +424,7 @@ export default function UsersPage() {
             {/* Tooltip détail par catégorie */}
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
               <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-xl px-3 py-2.5 min-w-[180px]">
-                <p className="font-semibold text-[11px] text-gray-300 mb-1.5 border-b border-gray-700 pb-1">Détail par catégorie</p>
+                <p className="font-semibold text-[11px] text-gray-300 mb-1.5 border-b border-gray-700 pb-1">{tText('Détail par catégorie')}</p>
                 <div className="space-y-1">
                   {Object.entries(scores).map(([cat, s]) => (
                     <div key={cat} className="flex items-center justify-between gap-3">
@@ -543,7 +545,7 @@ export default function UsersPage() {
             <UserCog className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Utilisateurs</h1>
           </div>
-          <p className="page-subtitle">Gestion des comptes, rôles et sécurité</p>
+          <p className="page-subtitle">{tText('Gestion des comptes, rôles et sécurité')}</p>
         </div>
         <button
           onClick={() => { customFields.reset(); const pw = generatePassword(); setFormData(prev => ({ ...prev, password: pw })); setShowModal(true); }}
@@ -574,7 +576,7 @@ export default function UsersPage() {
               onChange={(e) => { setStatusFilter(e.target.value as '' | 'ACTIVE' | 'INACTIVE'); setPage(0); }}
               className="input !w-auto"
             >
-              <option value="">Tous les statuts</option>
+              <option value="">{tText('Tous les statuts')}</option>
               <option value="ACTIVE">Actifs</option>
               <option value="INACTIVE">Inactifs</option>
             </select>
@@ -583,7 +585,7 @@ export default function UsersPage() {
               onChange={(e) => { setRoleFilter(e.target.value); setPage(0); }}
               className="input !w-auto"
             >
-              <option value="">Tous les rôles</option>
+              <option value="">{tText('Tous les rôles')}</option>
               {Object.entries(ROLE_FALLBACK).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
@@ -641,7 +643,7 @@ export default function UsersPage() {
               <div key={w.faiseurId} className="p-3 rounded-xl bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-800/30 border border-gray-100 dark:border-gray-700/50">
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={w.faiseurName}>{w.faiseurName}</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{w.soulCount}</p>
-                <p className="text-[10px] text-gray-400">âmes suivies</p>
+                <p className="text-[10px] text-gray-400">{tText('âmes suivies')}</p>
                 {w.charge && (
                   <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold border mt-1 ${CHARGE_STYLES[w.charge] || CHARGE_STYLES.NORMAL}`}>
                     {dictionaries.label('USER_CHARGE', w.charge) || CHARGE_FALLBACK[w.charge] || w.charge}
@@ -665,7 +667,7 @@ export default function UsersPage() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">{data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -682,7 +684,7 @@ export default function UsersPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Nouvel utilisateur</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Créer un compte pour un nouveau membre</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{tText('Créer un compte pour un nouveau membre')}</p>
                 </div>
               </div>
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
@@ -693,7 +695,7 @@ export default function UsersPage() {
             <div className="modal-body space-y-4 max-h-[65vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Prénom</label>
+                  <label className="label">{tText('Prénom')}</label>
                   <div className="relative">
                     <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input className="input pl-10" placeholder="Jean" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} />
@@ -714,7 +716,7 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="label">Rôle</label>
+                <label className="label">{tText('Rôle')}</label>
                 <div className="relative">
                   <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
                   <select className="input pl-10" value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })}>
@@ -735,7 +737,7 @@ export default function UsersPage() {
                 <div className="space-y-3 p-3.5 rounded-xl bg-white/50 dark:bg-gray-800/30 border border-gray-200/60 dark:border-gray-700/60">
                   <div className="flex items-center gap-2">
                     <ClipboardList className="w-4 h-4 text-primary-500" />
-                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Informations complémentaires</p>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{tText('Informations complémentaires')}</p>
                   </div>
                   <CustomFieldRenderer
                     definitions={customFields.definitions}
@@ -762,7 +764,7 @@ export default function UsersPage() {
             </div>
 
             <div className="modal-footer">
-              <button onClick={() => setShowModal(false)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setShowModal(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => {
                   if (customFields.missingRequired.length > 0) {
@@ -810,7 +812,7 @@ export default function UsersPage() {
               </p>
             </div>
             <div className="modal-footer">
-              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button onClick={() => promoteMutation.mutate(selectedUser.id)} disabled={promoteMutation.isPending} className="btn-primary btn-sm">
                 {promoteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
                 Promouvoir
@@ -825,22 +827,22 @@ export default function UsersPage() {
         <div className="modal-overlay" onClick={() => { setActionModal(''); setSelectedUser(null); }}>
           <div className="modal-content max-w-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Rétrograder</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Rétrograder')}</h3>
               <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
             <div className="modal-body space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Rétrograder <strong>{selectedUser.firstName} {selectedUser.lastName}</strong> vers un autre rôle :
+                {tText('Rétrograder')} <strong>{selectedUser.firstName} {selectedUser.lastName}</strong> vers un autre rôle :
               </p>
               <select className="input" value={demoteRole} onChange={(e) => setDemoteRole(e.target.value)}>
-                <option value="RESPONSABLE">Responsable de département</option>
+                <option value="RESPONSABLE">{tText('Responsable de département')}</option>
                 <option value="FAISEUR">Faiseur de disciples</option>
               </select>
             </div>
             <div className="modal-footer">
-              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button onClick={() => demoteMutation.mutate({ id: selectedUser.id, newRole: demoteRole })} disabled={demoteMutation.isPending} className="btn-primary btn-sm">
                 {demoteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDown className="w-4 h-4" />}
                 Rétrograder
@@ -856,7 +858,7 @@ export default function UsersPage() {
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Gérer les rôles</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Gérer les rôles')}</h3>
                 <p className="text-xs text-gray-500 mt-0.5">{selectedUser.firstName} {selectedUser.lastName} — {selectedUser.email}</p>
               </div>
               <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
@@ -865,7 +867,7 @@ export default function UsersPage() {
             </div>
             <div className="modal-body space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Attribuez ou retirez des rôles. Tout compte démarre en <strong>Membre</strong> ; un
+                Attribuez ou retirez des rôles. Tout compte démarre en <strong>{tText('Membre')}</strong> ; un
                 pasteur ou administrateur peut promouvoir puis rétrograder à tout moment.
               </p>
 
@@ -907,7 +909,7 @@ export default function UsersPage() {
 
               {/* Add role */}
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attribuer un rôle</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{tText('Attribuer un rôle')}</p>
                 <div className="flex flex-wrap gap-2">
                   {((['MEMBRE', 'FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE', 'PASTEUR']) as import('@/types').UserRole[]).map((r) => {
                     const has = (selectedUser.roles && selectedUser.roles.length > 0 ? selectedUser.roles : [selectedUser.role]).includes(r);
@@ -939,14 +941,14 @@ export default function UsersPage() {
         <div className="modal-overlay" onClick={() => { setActionModal(''); setSelectedUser(null); }}>
           <div className="modal-content max-w-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Transférer le Faiseur</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Transférer le Faiseur')}</h3>
               <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
             <div className="modal-body space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Transférer <strong>{selectedUser.firstName} {selectedUser.lastName}</strong> vers une nouvelle famille :
+                {tText('Transférer')} <strong>{selectedUser.firstName} {selectedUser.lastName}</strong> vers une nouvelle famille :
               </p>
               <select className="input" value={transferFamilleId} onChange={(e) => setTransferFamilleId(e.target.value)}>
                 <option value="">Sélectionner une famille...</option>
@@ -956,11 +958,11 @@ export default function UsersPage() {
               </select>
               <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <input type="checkbox" checked={transferAmes} onChange={(e) => setTransferAmes(e.target.checked)} className="rounded" />
-                Transférer également les âmes suivies
+                {tText('Transférer également les âmes suivies')}
               </label>
             </div>
             <div className="modal-footer">
-              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => transferMutation.mutate({ id: selectedUser.id, nouvelleFamilleId: transferFamilleId, transfererAmes: transferAmes })}
                 disabled={!transferFamilleId || transferMutation.isPending}
@@ -1000,19 +1002,19 @@ export default function UsersPage() {
                   {/* Résumé */}
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/10 border border-purple-200/40 dark:border-purple-700/30">
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Rôle</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{tText('Rôle')}</p>
                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {ROLE_FALLBACK[userHistory.role] || userHistory.role || '—'}
                       </p>
                     </div>
                     {userHistory.estChef && (
-                      <span className="badge text-[10px] bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400">Chef de famille</span>
+                      <span className="badge text-[10px] bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400">{tText('Chef de famille')}</span>
                     )}
                     <div className="text-right">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Membre depuis</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{tText('Membre depuis')}</p>
                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {userHistory.dateCreation
-                          ? new Date(userHistory.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+                          ? new Date(userHistory.dateCreation).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' })
                           : '—'}
                       </p>
                     </div>
@@ -1023,13 +1025,13 @@ export default function UsersPage() {
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
                         <Heart className="w-3.5 h-3.5 text-emerald-500" />
-                        Âmes actuellement suivies
+                        {tText('Âmes actuellement suivies')}
                       </p>
                       <span className="badge text-[10px] badge-success">{userHistory.nombreAmesActuelles ?? (userHistory.amesActuelles || []).length}</span>
                     </div>
                     {(userHistory.amesActuelles || []).length === 0 ? (
                       <div className="p-4 text-center rounded-xl bg-gray-50 dark:bg-gray-800/40">
-                        <p className="text-xs text-gray-400">Aucune âme suivie actuellement</p>
+                        <p className="text-xs text-gray-400">{tText('Aucune âme suivie actuellement')}</p>
                       </div>
                     ) : (
                       <div className="space-y-1.5">
@@ -1070,7 +1072,7 @@ export default function UsersPage() {
                               <span className="truncate">{ex.motif || 'Sortie du suivi'}</span>
                             </p>
                             <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                              {ex.dateSortie ? new Date(ex.dateSortie).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                              {ex.dateSortie ? new Date(ex.dateSortie).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                             </span>
                           </div>
                         ))}
@@ -1096,19 +1098,19 @@ export default function UsersPage() {
         <div className="modal-overlay" onClick={() => { setActionModal(''); setSelectedUser(null); }}>
           <div className="modal-content max-w-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-lg font-semibold text-red-600">Suppression définitive</h3>
+              <h3 className="text-lg font-semibold text-red-600">{tText('Suppression définitive')}</h3>
               <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
             <div className="modal-body">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Êtes-vous sûr de vouloir supprimer définitivement <strong>{selectedUser.firstName} {selectedUser.lastName}</strong> ?
+                {tText('Êtes-vous sûr de vouloir supprimer définitivement')} <strong>{selectedUser.firstName} {selectedUser.lastName}</strong> ?
                 Cette action est irréversible (RGPD).
               </p>
             </div>
             <div className="modal-footer">
-              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => { setActionModal(''); setSelectedUser(null); }} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button onClick={() => hardDeleteMutation.mutate(selectedUser.id)} disabled={hardDeleteMutation.isPending} className="btn-danger btn-sm">
                 {hardDeleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 Supprimer

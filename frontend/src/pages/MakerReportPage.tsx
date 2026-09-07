@@ -12,6 +12,8 @@ import toast from 'react-hot-toast';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const RAISON_ABSENCE_FALLBACK: { value: RaisonAbsence; label: string }[] = [
   { value: 'MALADIE', label: 'Maladie' },
@@ -131,7 +133,7 @@ export default function MakerReportPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maker-reports'] });
-      toast.success('Rapport soumis avec succès');
+      toast.success(tText('Rapport soumis avec succès'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -143,9 +145,9 @@ export default function MakerReportPage() {
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(reports));
       setLastSaved(new Date());
-      toast.success('Brouillon sauvegardé', { duration: 1500 });
+      toast.success(tText('Brouillon sauvegardé'), { duration: 1500 });
     } catch {
-      toast.error('Erreur lors de la sauvegarde du brouillon');
+      toast.error(tText('Erreur lors de la sauvegarde du brouillon'));
     }
   };
 
@@ -236,14 +238,14 @@ export default function MakerReportPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <FileText className="w-5 h-5 text-emerald-500" />
-            <h1 className="page-title">Rapport hebdomadaire</h1>
+            <h1 className="page-title">{tText('Rapport hebdomadaire')}</h1>
           </div>
           <p className="page-subtitle flex items-center gap-2">
             <Clock className="w-3.5 h-3.5" />
-            Semaine du {new Date(semaine).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            Semaine du {new Date(semaine).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}
             {lastSaved && (
               <span className="text-[10px] text-gray-400 ml-2">
-                · Dernière sauvegarde : {lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                · Dernière sauvegarde : {lastSaved.toLocaleTimeString(getI18nLocale(), { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
           </p>
@@ -264,7 +266,7 @@ export default function MakerReportPage() {
           <div className="inline-flex p-4 rounded-2xl bg-gray-100 dark:bg-gray-800/50 mb-4">
             <Heart className="w-10 h-10 text-gray-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Aucune âme assignée</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{tText('Aucune âme assignée')}</h3>
           <p className="text-sm text-gray-500">Vous n'avez pas d'âmes à suivre pour le moment.</p>
         </div>
       ) : (
@@ -315,7 +317,7 @@ export default function MakerReportPage() {
                   {/* Présence par culte */}
                   <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                     <label className="label flex items-center gap-1.5">
-                      <UserCheck className="w-3.5 h-3.5 text-primary-500" /> Présence par culte
+                      <UserCheck className="w-3.5 h-3.5 text-primary-500" /> {tText('Présence par culte')}
                     </label>
                     <div className="space-y-2 mt-2">
                       {cultes.map((culte) => (
@@ -340,7 +342,7 @@ export default function MakerReportPage() {
                   {/* Difficultés */}
                   <div className="p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                     <label className="label flex items-center gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5 text-amber-500" /> Difficultés / Challenges
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-500" /> {tText('Difficultés / Challenges')}
                     </label>
                     <select value={report.difficultesCategorie || ''}
                       onChange={(e) => updateReport(soul.id, { difficultesCategorie: e.target.value })}
@@ -392,7 +394,7 @@ export default function MakerReportPage() {
 
                 {/* Notes complémentaires */}
                 <div className="mt-4 p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
-                  <label className="label">Notes complémentaires</label>
+                  <label className="label">{tText('Notes complémentaires')}</label>
                   <textarea value={report.notesComplementaires || ''}
                     onChange={(e) => updateReport(soul.id, { notesComplementaires: e.target.value })}
                     className="input" rows={2} placeholder="Notes additionnelles..." />
@@ -401,7 +403,7 @@ export default function MakerReportPage() {
                 {/* Pièces jointes — lien en lecture seule si déjà soumis, sinon sélecteur */}
                 <div className="mt-4 p-4 rounded-xl bg-white/30 dark:bg-gray-800/30">
                   <label className="label flex items-center gap-1.5">
-                    <Paperclip className="w-3.5 h-3.5 text-primary-500" /> Pièces jointes
+                    <Paperclip className="w-3.5 h-3.5 text-primary-500" /> {tText('Pièces jointes')}
                   </label>
                   <div className="mt-2">
                     {soumis ? (

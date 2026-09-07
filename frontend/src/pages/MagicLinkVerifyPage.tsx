@@ -4,6 +4,7 @@ import { Loader2, CheckCircle2, AlertTriangle, LogIn } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { tText } from '@/i18n';
 /**
  * Vérification d'un Magic Link (connexion sans mot de passe).
  * Le lien reçu par email pointe ici avec ?token=… ; le backend valide,
@@ -64,7 +65,7 @@ export default function MagicLinkVerifyPage() {
         <div className="animate-fade-in py-8 flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary-500" />
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Vérification de votre lien sécurisé…
+            {tText('Vérification de votre lien sécurisé…')}
           </p>
         </div>
       )}
@@ -74,7 +75,7 @@ export default function MagicLinkVerifyPage() {
           <CheckCircle2 className="w-12 h-12 text-green-500" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Connecté !</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Redirection vers votre tableau de bord…
+            {tText('Redirection vers votre tableau de bord…')}
           </p>
         </div>
       )}
@@ -94,7 +95,7 @@ export default function MagicLinkVerifyPage() {
             to="/login"
             className="block w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-medium text-sm hover:from-primary-500 hover:to-primary-400 transition-all shadow-lg shadow-primary-500/25 text-center"
           >
-            Retour à la connexion
+            {tText('Retour à la connexion')}
           </Link>
         </div>
       )}

@@ -4,6 +4,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Share2, Loader2, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Referral {
   id: string;
   referrerName?: string;
@@ -33,7 +35,7 @@ export default function ReferralsStatusPage() {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) =>
       api.patch(`/referrals/${id}/status`, { status }),
-    onSuccess: () => { toast.success('Statut mis à jour'); setUpdatingId(null); qc.invalidateQueries({ queryKey: ['referrals'] }); },
+    onSuccess: () => { toast.success(tText('Statut mis à jour')); setUpdatingId(null); qc.invalidateQueries({ queryKey: ['referrals'] }); },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
@@ -46,8 +48,8 @@ export default function ReferralsStatusPage() {
           <Share2 className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Statut des parrainages</h1>
-          <p className="page-subtitle">Suivi des invitations et parrainages</p>
+          <h1 className="page-title">{tText('Statut des parrainages')}</h1>
+          <p className="page-subtitle">{tText('Suivi des invitations et parrainages')}</p>
         </div>
       </div>
 
@@ -63,7 +65,7 @@ export default function ReferralsStatusPage() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : referrals.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucun parrainage</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucun parrainage')}</div>
       ) : (
         <div className="space-y-3">
           {referrals.map((r) => (
@@ -80,7 +82,7 @@ export default function ReferralsStatusPage() {
                     Parrainé par {r.referrerName ?? 'Inconnu'}
                     {r.message && ` — "${r.message}"`}
                   </p>
-                  <p className="text-[11px] text-gray-500 mt-1">{new Date(r.createdAt).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{new Date(r.createdAt).toLocaleDateString(getI18nLocale())}</p>
                 </div>
                 <div className="ml-4">
                   {updatingId === r.id ? (

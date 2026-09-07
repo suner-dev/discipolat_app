@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import toast from 'react-hot-toast';
 import { BookUser, Search, Phone, Mail, Eye, EyeOff } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface DirEntry {
   id: string;
   membreId: string;
@@ -44,14 +45,14 @@ export default function ChurchDirectoryPage() {
   const updateMyEntry = async () => {
     try {
       await api.put('/directory/me', editData);
-      toast.success('Profil mis à jour');
+      toast.success(tText('Profil mis à jour'));
       setEditing(false);
       loadMyEntry();
     } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const togglePublic = async () => {
-    try { await api.patch('/directory/me/toggle');       toast.success('Visibilité mise à jour'); loadMyEntry(); } catch (e) { toast.error(getErrorMessage(e)); }
+    try { await api.patch('/directory/me/toggle');       toast.success(tText('Visibilité mise à jour')); loadMyEntry(); } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
   const filtered = entries.filter(e =>
@@ -66,7 +67,7 @@ export default function ChurchDirectoryPage() {
             <BookUser className="w-8 h-8 text-indigo-500" />
             {t('directory.title')}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Annuaire des membres de votre église</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{tText('Annuaire des membres de votre église')}</p>
         </div>
         <button onClick={() => setEditing(true)}
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg flex items-center gap-2">
@@ -129,7 +130,7 @@ export default function ChurchDirectoryPage() {
               </label>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setEditing(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setEditing(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={updateMyEntry} className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-600">Enregistrer</button>
             </div>
           </div>

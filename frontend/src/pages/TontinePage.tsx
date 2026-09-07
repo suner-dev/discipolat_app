@@ -6,6 +6,7 @@ import { Loader2, HandCoins, Plus, CheckCircle2, ArrowRightCircle, Users, Landma
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 interface TontineGroup {
   id: string;
   name: string;
@@ -113,7 +114,7 @@ export default function TontinePage() {
         periodicite: newGroup.periodicite,
       })).data,
     onSuccess: () => {
-      toast.success('Tontine créée');
+      toast.success(tText('Tontine créée'));
       setShowCreate(false);
       setNewGroup({ name: '', montantParTour: '', periodicite: 'MENSUELLE' });
       invalidate();
@@ -127,7 +128,7 @@ export default function TontinePage() {
         await api.post(`/tontines/${selectedId}/members`, { nom: newMemberName })
       ).data,
     onSuccess: () => {
-      toast.success('Membre ajouté');
+      toast.success(tText('Membre ajouté'));
       setNewMemberName('');
       invalidate();
       if (selectedId) queryClient.invalidateQueries({ queryKey: ['tontines', selectedId] });
@@ -139,7 +140,7 @@ export default function TontinePage() {
     mutationFn: async (memberId: string) =>
       (await api.post(`/tontines/${selectedId}/contributions/${memberId}/pay`)).data,
     onSuccess: () => {
-      toast.success('Versement enregistré');
+      toast.success(tText('Versement enregistré'));
       invalidate();
       if (selectedId) queryClient.invalidateQueries({ queryKey: ['tontines', selectedId] });
     },
@@ -168,7 +169,7 @@ export default function TontinePage() {
         </div>
         {canManage && (
           <button onClick={() => setShowCreate(!showCreate)} className="btn-primary btn-sm ml-auto flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Nouvelle tontine
+            <Plus className="w-4 h-4" /> {tText('Nouvelle tontine')}
           </button>
         )}
       </div>
@@ -299,7 +300,7 @@ export default function TontinePage() {
                         disabled={payMutation.isPending}
                         className="btn-success btn-sm"
                       >
-                        Marquer payé
+                        {tText('Marquer payé')}
                       </button>
                     ) : (
                       <span className="text-xs text-gray-400 dark:text-gray-500">En attente</span>
@@ -325,10 +326,10 @@ export default function TontinePage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-left text-[10px] uppercase text-gray-400 border-b border-gray-100 dark:border-gray-800">
-                          <th className="py-2 pr-2">Membre</th>
+                          <th className="py-2 pr-2">{tText('Membre')}</th>
                           <th className="py-2 pr-2">Ordre</th>
                           <th className="py-2 pr-2">Tour</th>
-                          <th className="py-2">Montant dû</th>
+                          <th className="py-2">{tText('Montant dû')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -351,7 +352,7 @@ export default function TontinePage() {
                   onSubmit={(e) => { e.preventDefault(); addMemberMutation.mutate(); }}
                   className="flex gap-2 mt-4"
                 >
-                  <input required placeholder="Nom du nouveau membre" className="input flex-1"
+                  <input required placeholder={tText('Nom du nouveau membre')} className="input flex-1"
                     value={newMemberName}
                     onChange={(e) => setNewMemberName(e.target.value)} />
                   <button type="submit" disabled={addMemberMutation.isPending} className="btn-primary btn-sm flex items-center gap-1">

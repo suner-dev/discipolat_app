@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Calendar, RefreshCw, Loader2, CheckCircle, Plus, ExternalLink,
   Clock, Trash2, X,
@@ -36,7 +38,7 @@ export default function CalendrierPage() {
       await api.post('/calendar/events', newEvent);
     },
     onSuccess: () => {
-      toast.success('Événement créé');
+      toast.success(tText('Événement créé'));
       qc.invalidateQueries({ queryKey: ['calendar'] });
       setShowCreate(false);
       setNewEvent({ title: '', description: '', start: '', end: '', location: '' });
@@ -49,7 +51,7 @@ export default function CalendrierPage() {
       await api.put(`/calendar/${id}/status`, { status });
     },
     onSuccess: () => {
-      toast.success('Statut mis à jour');
+      toast.success(tText('Statut mis à jour'));
       qc.invalidateQueries({ queryKey: ['calendar'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -64,9 +66,9 @@ export default function CalendrierPage() {
       a.download = 'calendrier.ics';
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Fichier iCal téléchargé');
+      toast.success(tText('Fichier iCal téléchargé'));
     } catch {
-      toast.error('Erreur lors du téléchargement');
+      toast.error(tText('Erreur lors du téléchargement'));
     }
   };
 
@@ -87,14 +89,14 @@ export default function CalendrierPage() {
             <Calendar className="w-5 h-5 text-primary-500" />
             <h1 className="page-title">Calendrier</h1>
           </div>
-          <p className="page-subtitle">Événements, agenda partagé et synchronisation iCal</p>
+          <p className="page-subtitle">{tText('Événements, agenda partagé et synchronisation iCal')}</p>
         </div>
         <div className="page-header-actions">
           <button onClick={downloadFeed} className="btn-secondary btn-sm">
             <ExternalLink className="w-4 h-4" /> Exporter iCal
           </button>
           <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm">
-            <Plus className="w-4 h-4" /> Nouvel événement
+            <Plus className="w-4 h-4" /> {tText('Nouvel événement')}
           </button>
         </div>
       </div>
@@ -121,7 +123,7 @@ export default function CalendrierPage() {
                 <div className="flex items-center gap-3 text-[10px] text-gray-400">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {new Date(event.start).toLocaleString('fr-FR')}
+                    {new Date(event.start).toLocaleString(getI18nLocale())}
                   </span>
                   {event.location && <span>{event.location}</span>}
                   {event.recurrence && <span className="badge text-[9px]">{event.recurrence}</span>}
@@ -157,7 +159,7 @@ export default function CalendrierPage() {
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Nouvel événement</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Nouvel événement')}</h3>
               <button className="btn-icon" onClick={() => setShowCreate(false)}><X className="w-5 h-5" /></button>
             </div>
             <div className="modal-body space-y-4">
@@ -171,7 +173,7 @@ export default function CalendrierPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Début *</label>
+                  <label className="label">{tText('Début *')}</label>
                   <input type="datetime-local" className="input" value={newEvent.start} onChange={(e) => setNewEvent({ ...newEvent, start: e.target.value })} />
                 </div>
                 <div>
@@ -185,7 +187,7 @@ export default function CalendrierPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setShowCreate(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setShowCreate(false)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => createMutation.mutate()} disabled={!newEvent.title || !newEvent.start || createMutation.isPending}>
                 {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                 Créer

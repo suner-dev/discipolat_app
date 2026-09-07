@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 /** Repli (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
 const TYPE_LABELS: Record<string, string> = {
   SORTIE: 'Sortie',
@@ -121,7 +122,7 @@ function eventForm(
           <input className="input" value={form.lieu} onChange={(e) => update({ lieu: e.target.value })} placeholder="Ex: Salle paroissiale" />
         </div>
         <div>
-          <label className="label">Date de début *</label>
+          <label className="label">{tText('Date de début *')}</label>
           <input type="datetime-local" className="input" value={form.dateDebut} onChange={(e) => update({ dateDebut: e.target.value })} />
         </div>
         <div>
@@ -130,7 +131,7 @@ function eventForm(
         </div>
         <div>
           <label className="label">Limite de places</label>
-          <input type="number" min={1} className="input" value={form.limitePlaces || ''} onChange={(e) => update({ limitePlaces: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="Illimité si vide" />
+          <input type="number" min={1} className="input" value={form.limitePlaces || ''} onChange={(e) => update({ limitePlaces: e.target.value ? parseInt(e.target.value) : undefined })} placeholder={tText('Illimité si vide')} />
         </div>
         {isEdit && form.statut && (
           <div>
@@ -145,12 +146,12 @@ function eventForm(
       </div>
       <div className="mt-4">
         <label className="label flex items-center gap-1.5">
-          <Paperclip className="w-3.5 h-3.5 text-gray-400" /> Pièces jointes
+          <Paperclip className="w-3.5 h-3.5 text-gray-400" /> {tText('Pièces jointes')}
         </label>
         <AttachmentPicker value={form.fichierIds} onChange={(ids) => update({ fichierIds: ids })} />
       </div>
       <div className="flex justify-end gap-3 mt-4">
-        {onCancel && <button onClick={onCancel} className="btn-secondary btn-sm">Annuler</button>}
+        {onCancel && <button onClick={onCancel} className="btn-secondary btn-sm">{tText('Annuler')}</button>}
         <button onClick={onSubmit} disabled={!form.titre || isPending} className="btn-primary btn-sm">
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : isEdit ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           {submitLabel}
@@ -229,11 +230,11 @@ export default function EventsPage() {
     return (
       <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
         <Calendar className="w-10 h-10 text-gray-300 mb-3" />
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Module Événements désactivé</h1>
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Module Événements désactivé')}</h1>
         <p className="text-sm text-gray-400 mt-1">
           L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
         </p>
-        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">Retour au tableau de bord</Link>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
       </div>
     );
   }
@@ -262,7 +263,7 @@ export default function EventsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast.success('Événement créé');
+      toast.success(tText('Événement créé'));
       setShowCreate(false);
       setNewEvent({ titre: '', description: '', typeEvenement: 'REUNION', dateDebut: new Date().toISOString().slice(0, 16), dateFin: '', lieu: '', limitePlaces: undefined, fichierIds: [] });
     },
@@ -275,7 +276,7 @@ export default function EventsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast.success('Inscription confirmée');
+      toast.success(tText('Inscription confirmée'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -296,7 +297,7 @@ export default function EventsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast.success('Événement mis à jour');
+      toast.success(tText('Événement mis à jour'));
       setShowEdit(false);
       setEditingEvent(null);
     },
@@ -309,7 +310,7 @@ export default function EventsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast.success('Événement supprimé');
+      toast.success(tText('Événement supprimé'));
       setShowDeleteConfirm(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -370,7 +371,7 @@ export default function EventsPage() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['events', variables.eventId, 'registrations'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast.success('Présence enregistrée');
+      toast.success(tText('Présence enregistrée'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -572,7 +573,7 @@ export default function EventsPage() {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Événements</h1>
+          <h1 className="page-title">{tText('Événements')}</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Gestion des événements de famille — {evtStats.total} événement(s)</p>
         </div>
         <div className="flex gap-2">
@@ -588,7 +589,7 @@ export default function EventsPage() {
                 onClick={() => setView('consolidated')}
                 className={view === 'consolidated' ? 'tab-active text-xs px-3 py-1.5' : 'tab text-xs px-3 py-1.5'}
               >
-                <LayoutDashboard className="w-3.5 h-3.5" /> Vue consolidée
+                <LayoutDashboard className="w-3.5 h-3.5" /> {tText('Vue consolidée')}
               </button>
             </div>
           )}
@@ -607,7 +608,7 @@ export default function EventsPage() {
             <Filter className="w-4 h-4" /> Filtres
           </button>
           <button onClick={() => setShowCreate(!showCreate)} className="btn-primary btn-sm">
-            <Plus className="w-4 h-4" /> Nouvel événement
+            <Plus className="w-4 h-4" /> {tText('Nouvel événement')}
           </button>
         </div>
       </div>
@@ -748,7 +749,7 @@ export default function EventsPage() {
             ) : (
               <div className="text-center py-8">
                 <Users className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-500 dark:text-gray-400">Aucune inscription pour le moment</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{tText('Aucune inscription pour le moment')}</p>
               </div>
             )}
             <div className="flex justify-end mt-4">
@@ -767,12 +768,12 @@ export default function EventsPage() {
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Confirmer la suppression</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Confirmer la suppression')}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Cette action est irréversible.</p>
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary btn-sm">Annuler</button>
+              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
               <button
                 onClick={() => deleteEventMutation.mutate(showDeleteConfirm)}
                 disabled={deleteEventMutation.isPending}
@@ -794,13 +795,13 @@ export default function EventsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="glass-card p-5 animate-slide-up">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="stat-label">Total à venir</span>
+                  <span className="stat-label">{tText('Total à venir')}</span>
                   <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-lg">
                     <Calendar className="w-4 h-4" />
                   </div>
                 </div>
                 <span className="stat-value">{consolidatedStats.total}</span>
-                <p className="text-[10px] text-gray-400 mt-1">dans les 14 prochains jours</p>
+                <p className="text-[10px] text-gray-400 mt-1">{tText('dans les 14 prochains jours')}</p>
               </div>
               {Object.entries(consolidatedStats.parType).slice(0, 3).map(([type, count], i) => (
                 <div key={type} className="glass-card p-5 animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
@@ -882,7 +883,7 @@ export default function EventsPage() {
             ) : (
               <div className="text-center py-10">
                 <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                <p className="text-sm text-gray-500 dark:text-gray-400">Aucun événement à venir dans les 14 prochains jours</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{tText('Aucun événement à venir dans les 14 prochains jours')}</p>
               </div>
             )}
           </div>
@@ -900,13 +901,13 @@ export default function EventsPage() {
             {showFilters && (
               <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                 <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value as TypeEvenement | ''); setPage(0); }} className="input w-auto">
-                  <option value="">Tous les types</option>
+                  <option value="">{tText('Tous les types')}</option>
                   {typeEntries.map((o) => (
                     <option key={o.code} value={o.code}>{o.label}</option>
                   ))}
                 </select>
                 <select value={statutFilter} onChange={(e) => { setStatutFilter(e.target.value as StatutEvenement | ''); setPage(0); }} className="input w-auto">
-                  <option value="">Tous les statuts</option>
+                  <option value="">{tText('Tous les statuts')}</option>
                   {statusEntries.map((o) => (
                     <option key={o.code} value={o.code}>{o.label}</option>
                   ))}
@@ -948,7 +949,7 @@ export default function EventsPage() {
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-gray-400 mt-2 text-center">Calendrier du mois en cours — cliquez sur un événement pour voir les détails</p>
+              <p className="text-[10px] text-gray-400 mt-2 text-center">{tText('Calendrier du mois en cours — cliquez sur un événement pour voir les détails')}</p>
             </div>
           ) : (
             <>
@@ -964,7 +965,7 @@ export default function EventsPage() {
                 <div className="flex items-center justify-between mt-4">
                   <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
                   <div className="flex gap-2">
-                    <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">Précédent</button>
+                    <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('Précédent')}</button>
                     <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-secondary btn-sm">Suivant</button>
                   </div>
                 </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, getErrorMessage } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { tText } from '@/i18n';
 import {
   Plug,
   Zap,
@@ -69,7 +70,7 @@ export default function AdminConnectorsPage() {
       })).data;
     },
     onSuccess: () => {
-      toast.success('Connecteur enregistré');
+      toast.success(tText('Connecteur enregistré'));
       qc.invalidateQueries({ queryKey: ['connectors'] });
     },
     onError: (e) => toast.error(getErrorMessage(e)),

@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import type { Visit, CreateVisitRequest, UpdateVisitRequest, Soul } from '@/types';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 const STATUT_STYLE: Record<string, { label: string; cls: string; dot: string }> = {
   PLANIFIEE: { label: 'Planifiée', cls: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-200/50 dark:border-sky-800/30', dot: 'bg-sky-500' },
   REALISEE: { label: 'Réalisée', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/30', dot: 'bg-emerald-500' },
@@ -80,7 +82,7 @@ export default function VisitsPage() {
       return res.data as Visit;
     },
     onSuccess: () => {
-      toast.success('Visite planifiée');
+      toast.success(tText('Visite planifiée'));
       setShowCreate(false);
       queryClient.invalidateQueries({ queryKey: ['visits'] });
     },
@@ -93,7 +95,7 @@ export default function VisitsPage() {
       return res.data as Visit;
     },
     onSuccess: () => {
-      toast.success('Visite mise à jour');
+      toast.success(tText('Visite mise à jour'));
       setEditForm(null);
       queryClient.invalidateQueries({ queryKey: ['visits'] });
     },
@@ -142,7 +144,7 @@ export default function VisitsPage() {
             <Filter className="w-4 h-4" /> Filtres
           </button>
           <button onClick={() => setShowCreate(v => !v)} className="btn-primary btn-sm">
-            <Plus className="w-4 h-4" /> Planifier une visite
+            <Plus className="w-4 h-4" /> {tText('Planifier une visite')}
           </button>
         </div>
       </div>
@@ -197,11 +199,11 @@ export default function VisitsPage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="input w-auto text-sm"
               >
-                <option value="">Tous</option>
-                <option value="PLANIFIEE">Planifiée</option>
-                <option value="REALISEE">Réalisée</option>
-                <option value="ANNULEE">Annulée</option>
-                <option value="REPORTEE">Reportée</option>
+                <option value="">{tText('Tous')}</option>
+                <option value="PLANIFIEE">{tText('Planifiée')}</option>
+                <option value="REALISEE">{tText('Réalisée')}</option>
+                <option value="ANNULEE">{tText('Annulée')}</option>
+                <option value="REPORTEE">{tText('Reportée')}</option>
               </select>
             </div>
           </div>
@@ -211,10 +213,10 @@ export default function VisitsPage() {
       {/* Create form */}
       {showCreate && (
         <div className="glass-card p-4 mb-6 animate-slide-up">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Nouvelle visite</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{tText('Nouvelle visite')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="label">Âme à visiter</label>
+              <label className="label">{tText('Âme à visiter')}</label>
               <select
                 value={form.soulId}
                 onChange={e => setForm({ ...form, soulId: e.target.value })}
@@ -229,7 +231,7 @@ export default function VisitsPage() {
               </select>
             </div>
             <div>
-              <label className="label">Date prévue</label>
+              <label className="label">{tText('Date prévue')}</label>
               <input
                 type="date"
                 value={form.datePrevue}
@@ -269,7 +271,7 @@ export default function VisitsPage() {
               {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Créer
             </button>
-            <button onClick={() => setShowCreate(false)} className="btn-secondary btn-sm">Annuler</button>
+            <button onClick={() => setShowCreate(false)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
           </div>
         </div>
       )}
@@ -289,7 +291,7 @@ export default function VisitsPage() {
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{v.soulNom}</p>
                   <p className="text-xs text-gray-400">
-                    {new Date(v.datePrevue).toLocaleDateString('fr-FR')} · {v.visiteurNom}
+                    {new Date(v.datePrevue).toLocaleDateString(getI18nLocale())} · {v.visiteurNom}
                   </p>
                 </div>
               </div>
@@ -335,14 +337,14 @@ export default function VisitsPage() {
                           value={editForm.statut}
                           onChange={e => setEditForm({ ...editForm, statut: e.target.value as Visit['statut'] })}
                         >
-                          <option value="PLANIFIEE">Planifiée</option>
-                          <option value="REALISEE">Réalisée</option>
-                          <option value="ANNULEE">Annulée</option>
-                          <option value="REPORTEE">Reportée</option>
+                          <option value="PLANIFIEE">{tText('Planifiée')}</option>
+                          <option value="REALISEE">{tText('Réalisée')}</option>
+                          <option value="ANNULEE">{tText('Annulée')}</option>
+                          <option value="REPORTEE">{tText('Reportée')}</option>
                         </select>
                         <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                           <input type="checkbox" checked={editForm.present} onChange={e => setEditForm({ ...editForm, present: e.target.checked })} className="rounded" />
-                          Présent
+                          {tText('Présent')}
                         </label>
                       </div>
                       <textarea
@@ -361,7 +363,7 @@ export default function VisitsPage() {
                           {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                           Sauvegarder
                         </button>
-                        <button onClick={() => setEditForm(null)} className="btn-secondary btn-xs">Annuler</button>
+                        <button onClick={() => setEditForm(null)} className="btn-secondary btn-xs">{tText('Annuler')}</button>
                       </div>
                     </div>
                   ) : (
@@ -379,7 +381,7 @@ export default function VisitsPage() {
                           <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              {new Date(v.datePrevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {new Date(v.datePrevue).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
                             <span>{(v.motif && MOTIF_LABELS[v.motif]) || v.motif || '—'}</span>
                             {v.visiteurNom && <span>par {v.visiteurNom}</span>}

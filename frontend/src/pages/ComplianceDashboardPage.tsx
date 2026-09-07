@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 import {
   Shield, Download, Trash2, Clock, FileText, CheckCircle2, AlertTriangle,
   Plus, RefreshCw, Eye, X, Lock, Users, Hash, ChevronDown, Search, Filter,
@@ -117,12 +119,12 @@ export default function ComplianceDashboardPage() {
       await api.post('/compliance/retention-policies', newPolicy);
     },
     onSuccess: () => {
-      toast.success('Politique de rétention créée');
+      toast.success(tText('Politique de rétention créée'));
       refetchPolicies();
       setShowAddPolicy(false);
       setNewPolicy({ dataCategory: 'SOULS', retentionDays: 365, actionOnExpiry: 'ANONYMIZE' });
     },
-    onError: () => toast.error('Erreur lors de la création'),
+    onError: () => toast.error(tText('Erreur lors de la création')),
   });
 
   const deletePolicyMutation = useMutation({
@@ -130,10 +132,10 @@ export default function ComplianceDashboardPage() {
       await api.delete(`/compliance/retention-policies/${id}`);
     },
     onSuccess: () => {
-      toast.success('Politique désactivée');
+      toast.success(tText('Politique désactivée'));
       refetchPolicies();
     },
-    onError: () => toast.error('Erreur lors de la suppression'),
+    onError: () => toast.error(tText('Erreur lors de la suppression')),
   });
 
   const executePurgeMutation = useMutation({
@@ -141,10 +143,10 @@ export default function ComplianceDashboardPage() {
       await api.post(`/compliance/retention-policies/${id}/execute`);
     },
     onSuccess: () => {
-      toast.success('Purge exécutée');
+      toast.success(tText('Purge exécutée'));
       refetchPolicies();
     },
-    onError: () => toast.error('Erreur lors de la purge'),
+    onError: () => toast.error(tText('Erreur lors de la purge')),
   });
 
   const grantConsentMutation = useMutation({
@@ -152,7 +154,7 @@ export default function ComplianceDashboardPage() {
       await api.post('/compliance/consent', newConsent);
     },
     onSuccess: () => {
-      toast.success('Consentement enregistré');
+      toast.success(tText('Consentement enregistré'));
       setShowGrantConsent(false);
       setNewConsent({ userId: '', consentType: 'DATA_PROCESSING', policyVersion: '2.0' });
     },
@@ -172,7 +174,7 @@ export default function ComplianceDashboardPage() {
       }
       queryClient.invalidateQueries({ queryKey: ['compliance', 'overview'] });
     },
-    onError: () => toast.error('Vérification impossible'),
+    onError: () => toast.error(tText('Vérification impossible')),
   });
 
   const portabilityMutation = useMutation({
@@ -189,7 +191,7 @@ export default function ComplianceDashboardPage() {
       a.download = `portability-export-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Export de portabilité téléchargé');
+      toast.success(tText('Export de portabilité téléchargé'));
     },
     onError: () => toast.error('Erreur lors de l\'export'),
   });
@@ -213,7 +215,7 @@ export default function ComplianceDashboardPage() {
             Compliance Manager RGPD/CCPA
           </h1>
           <p className="page-subtitle">
-            Rétention configurable • Consentements • Audit trail immuable • Portabilité 1-clic
+            {tText('Rétention configurable • Consentements • Audit trail immuable • Portabilité 1-clic')}
           </p>
         </div>
         <div className="page-header-actions">
@@ -302,14 +304,14 @@ export default function ComplianceDashboardPage() {
             </div>
             {overview?.lastAuditActivity && (
               <p className="text-xs text-gray-400">
-                Dernière activité d'audit : {new Date(overview.lastAuditActivity).toLocaleString('fr-FR')}
+                Dernière activité d'audit : {new Date(overview.lastAuditActivity).toLocaleString(getI18nLocale())}
               </p>
             )}
           </div>
 
           {/* Compliance Checklist */}
           <div className="glass-card p-6 animate-slide-up">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">Checklist de conformité</h3>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">{tText('Checklist de conformité')}</h3>
             <div className="space-y-3">
               {[
                 { label: 'Politique de rétention des données configurée', done: (overview?.activeRetentionPolicies ?? 0) > 0 },
@@ -339,9 +341,9 @@ export default function ComplianceDashboardPage() {
       {activeTab === 'retention' && (
         <div className="space-y-4 animate-slide-up">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Politiques de rétention</h2>
+            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">{tText('Politiques de rétention')}</h2>
             <button onClick={() => setShowAddPolicy(true)} className="btn-primary btn-sm">
-              <Plus className="w-4 h-4" /> Nouvelle politique
+              <Plus className="w-4 h-4" /> {tText('Nouvelle politique')}
             </button>
           </div>
 
@@ -350,7 +352,7 @@ export default function ComplianceDashboardPage() {
               <Clock className="w-10 h-10 text-gray-300 mb-3 mx-auto" />
               <p className="text-gray-500 font-medium">Aucune politique de rétention configurée.</p>
               <button onClick={() => setShowAddPolicy(true)} className="text-primary-500 hover:underline text-sm mt-2">
-                Créer la première politique
+                {tText('Créer la première politique')}
               </button>
             </div>
           ) : (
@@ -375,7 +377,7 @@ export default function ComplianceDashboardPage() {
                         <span>📅 {p.retentionDays} jours</span>
                         <span>⚡ {p.actionOnExpiry === 'ANONYMIZE' ? 'Anonymiser' : p.actionOnExpiry === 'DELETE' ? 'Supprimer' : 'Archiver'}</span>
                         {p.lastPurgeAt && (
-                          <span>Dernière purge : {new Date(p.lastPurgeAt).toLocaleDateString('fr-FR')} ({p.lastPurgeCount} records)</span>
+                          <span>Dernière purge : {new Date(p.lastPurgeAt).toLocaleDateString(getI18nLocale())} ({p.lastPurgeCount} records)</span>
                         )}
                       </div>
                     </div>
@@ -403,7 +405,7 @@ export default function ComplianceDashboardPage() {
 
           {/* Suggested policies */}
           <div className="glass-card p-5 animate-slide-up">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Durées de rétention suggérées</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{tText('Durées de rétention suggérées')}</h3>
             <div className="grid md:grid-cols-2 gap-2">
               {[
                 { type: 'SOULS', days: 1095, note: '3 ans' },
@@ -437,7 +439,7 @@ export default function ComplianceDashboardPage() {
       {activeTab === 'consents' && (
         <div className="space-y-4 animate-slide-up">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Gestion des consentements</h2>
+            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">{tText('Gestion des consentements')}</h2>
             <button onClick={() => setShowGrantConsent(true)} className="btn-primary btn-sm">
               <Plus className="w-4 h-4" /> Enregistrer un consentement
             </button>
@@ -479,10 +481,10 @@ export default function ComplianceDashboardPage() {
                 value={auditLimit}
                 onChange={(e) => setAuditLimit(Number(e.target.value))}
               >
-                <option value={25}>25 entrées</option>
-                <option value={50}>50 entrées</option>
-                <option value={100}>100 entrées</option>
-                <option value={250}>250 entrées</option>
+                <option value={25}>{tText('25 entrées')}</option>
+                <option value={50}>{tText('50 entrées')}</option>
+                <option value={100}>{tText('100 entrées')}</option>
+                <option value={250}>{tText('250 entrées')}</option>
               </select>
               <button onClick={() => refetchAudit()} className="btn-ghost btn-sm">
                 <RefreshCw className="w-4 h-4" />
@@ -509,7 +511,7 @@ export default function ComplianceDashboardPage() {
                     </div>
                     <div className="flex items-center gap-3 mt-0.5 text-[10px] text-gray-400">
                       <span>👤 {entry.actorEmail || entry.actorId.slice(0, 8)}</span>
-                      <span>📅 {new Date(entry.createdAt).toLocaleString('fr-FR')}</span>
+                      <span>📅 {new Date(entry.createdAt).toLocaleString(getI18nLocale())}</span>
                       {entry.resourceId && <span>🔗 {entry.resourceId.slice(0, 8)}...</span>}
                     </div>
                   </div>
@@ -588,14 +590,14 @@ export default function ComplianceDashboardPage() {
         <div className="modal-overlay" onClick={() => setShowAddPolicy(false)}>
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Nouvelle politique de rétention</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Nouvelle politique de rétention')}</h3>
               <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setShowAddPolicy(false)}>
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="modal-body space-y-4">
               <div>
-                <label className="label">Catégorie de données</label>
+                <label className="label">{tText('Catégorie de données')}</label>
                 <select
                   className="input"
                   value={newPolicy.dataCategory}
@@ -626,14 +628,14 @@ export default function ComplianceDashboardPage() {
                   value={newPolicy.actionOnExpiry}
                   onChange={(e) => setNewPolicy({ ...newPolicy, actionOnExpiry: e.target.value })}
                 >
-                  <option value="ANONYMIZE">Anonymiser les données</option>
-                  <option value="DELETE">Supprimer définitivement</option>
+                  <option value="ANONYMIZE">{tText('Anonymiser les données')}</option>
+                  <option value="DELETE">{tText('Supprimer définitivement')}</option>
                   <option value="ARCHIVE">Archiver</option>
                 </select>
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setShowAddPolicy(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setShowAddPolicy(false)}>{tText('Annuler')}</button>
               <button
                 className="btn-primary btn-sm"
                 onClick={() => createPolicyMutation.mutate()}
@@ -691,7 +693,7 @@ export default function ComplianceDashboardPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setShowGrantConsent(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setShowGrantConsent(false)}>{tText('Annuler')}</button>
               <button
                 className="btn-primary btn-sm"
                 onClick={() => grantConsentMutation.mutate()}

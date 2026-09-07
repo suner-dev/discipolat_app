@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { Activity, Loader2, CheckCircle2, XCircle, Clock, Cpu } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface AiHealth {
   status: string;
   uptime?: number;
@@ -29,7 +31,7 @@ export default function AiHealthPage() {
           <Activity className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Santé IA</h1>
+          <h1 className="page-title">{tText('Santé IA')}</h1>
           <p className="page-subtitle">Tableau de bord de l'état du système IA</p>
         </div>
       </div>
@@ -69,7 +71,7 @@ export default function AiHealthPage() {
             <div className="glass-card p-5 mb-6">
               <div className="flex justify-between text-sm">
                 {health.modelVersion && <span className="text-gray-500">Modèle: <span className="text-gray-800 dark:text-gray-200 font-medium">{health.modelVersion}</span></span>}
-                {health.lastCheck && <span className="text-gray-500">Dernière vérif: <span className="text-gray-800 dark:text-gray-200">{new Date(health.lastCheck).toLocaleString('fr-FR')}</span></span>}
+                {health.lastCheck && <span className="text-gray-500">Dernière vérif: <span className="text-gray-800 dark:text-gray-200">{new Date(health.lastCheck).toLocaleString(getI18nLocale())}</span></span>}
               </div>
             </div>
           )}

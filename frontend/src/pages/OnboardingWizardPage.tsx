@@ -3,6 +3,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Rocket, Loader2, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface OnboardingStep {
   id: string;
   title: string;
@@ -39,7 +41,7 @@ export default function OnboardingWizardPage() {
         </div>
         <div>
           <h1 className="page-title">Assistant de configuration</h1>
-          <p className="page-subtitle">Complétez les étapes pour démarrer sur la plateforme</p>
+          <p className="page-subtitle">{tText('Complétez les étapes pour démarrer sur la plateforme')}</p>
         </div>
       </div>
 
@@ -48,7 +50,7 @@ export default function OnboardingWizardPage() {
       ) : error ? (
         <div className="glass-card p-6 text-red-400">{getErrorMessage(error)}</div>
       ) : steps.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucune étape de configuration</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucune étape de configuration')}</div>
       ) : (
         <>
           <div className="glass-card p-6 mb-6">
@@ -73,7 +75,7 @@ export default function OnboardingWizardPage() {
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{step.title}</p>
                   </div>
                   {step.description && <p className="text-xs text-gray-500 mt-1">{step.description}</p>}
-                  {step.completedAt && <p className="text-[11px] text-green-400 mt-1">Complété le {new Date(step.completedAt).toLocaleDateString('fr-FR')}</p>}
+                  {step.completedAt && <p className="text-[11px] text-green-400 mt-1">Complété le {new Date(step.completedAt).toLocaleDateString(getI18nLocale())}</p>}
                 </div>
                 {!step.isCompleted && (
                   <ArrowRight className="w-4 h-4 text-violet-400 shrink-0" />

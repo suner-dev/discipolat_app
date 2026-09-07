@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface SmartAlertSummary {
   totalActive: number;
   criticalActive: number;
@@ -108,7 +110,7 @@ export default function AlertsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
-      toast.success('Alerte résolue avec succès');
+      toast.success(tText('Alerte résolue avec succès'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -121,7 +123,7 @@ export default function AlertsPage() {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
       setSelectedIds(new Set());
       setBulkMode(false);
-      toast.success('Alertes résolues avec succès');
+      toast.success(tText('Alertes résolues avec succès'));
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -176,7 +178,7 @@ export default function AlertsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
-      toast.success('Alerte créée avec succès');
+      toast.success(tText('Alerte créée avec succès'));
       setShowCreate(false);
       setAlertForm({ typeAlerteManuel: '', titre: '', message: '', cible: 'PERSONNE', priorite: 'MOYENNE', ameId: '', familleId: '', departmentId: '', faiseurId: '' });
     },
@@ -269,7 +271,7 @@ export default function AlertsPage() {
             onChange={(e) => { setFilter(e.target.value); setPage(0); }}
             className="input w-auto"
           >
-            <option value="">Toutes les alertes</option>
+            <option value="">{tText('Toutes les alertes')}</option>
             {statutFilters.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
@@ -296,7 +298,7 @@ export default function AlertsPage() {
           )}
           <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm">
             <Plus className="w-4 h-4" />
-            Nouvelle alerte
+            {tText('Nouvelle alerte')}
           </button>
           <button
             onClick={() => smartScanMutation.mutate()}
@@ -337,7 +339,7 @@ export default function AlertsPage() {
             </div>
             {smartSummaryQuery.data?.lastScan && (
               <span className="text-[10px] text-gray-400">
-                Dernier scan : {new Date(smartSummaryQuery.data.lastScan).toLocaleString('fr-FR')}
+                Dernier scan : {new Date(smartSummaryQuery.data.lastScan).toLocaleString(getI18nLocale())}
               </span>
             )}
           </div>
@@ -364,7 +366,7 @@ export default function AlertsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 font-mono">{resolvedAlerts.length}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Alertes résolues</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{tText('Alertes résolues')}</p>
             </div>
           </div>
         </div>
@@ -401,8 +403,8 @@ export default function AlertsPage() {
           <div className="inline-flex p-4 rounded-2xl bg-green-100 dark:bg-green-900/20 mb-4">
             <Bell className="w-10 h-10 text-green-500" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Aucune alerte</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Toutes les alertes ont été traitées</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{tText('Aucune alerte')}</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{tText('Toutes les alertes ont été traitées')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -482,7 +484,7 @@ export default function AlertsPage() {
                   <div className="flex items-center gap-2 mt-1.5">
                     <Clock className="w-3 h-3 text-gray-400" />
                     <span className="text-xs text-gray-400">
-                      {new Date(alert.dateDeclenchement).toLocaleDateString('fr-FR', {
+                      {new Date(alert.dateDeclenchement).toLocaleDateString(getI18nLocale(), {
                         day: 'numeric', month: 'short', year: 'numeric',
                         hour: '2-digit', minute: '2-digit',
                       })}
@@ -525,7 +527,7 @@ export default function AlertsPage() {
               disabled={data.first}
               className="btn-secondary btn-sm"
             >
-              ← Précédent
+              {tText('← Précédent')}
             </button>
             <button
               onClick={() => setPage(p => p + 1)}
@@ -548,7 +550,7 @@ export default function AlertsPage() {
                   <BellRing className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Nouvelle alerte</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Nouvelle alerte')}</h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Alerte, rappel, urgence ou convocation</p>
                 </div>
               </div>
@@ -575,7 +577,7 @@ export default function AlertsPage() {
                   />
                 </div>
                 <div>
-                  <label className="label">Priorité</label>
+                  <label className="label">{tText('Priorité')}</label>
                   <select
                     className="input"
                     value={alertForm.priorite}
@@ -670,7 +672,7 @@ export default function AlertsPage() {
                 </p>
               )}
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button type="button" onClick={() => setShowCreate(false)} className="btn-secondary">Annuler</button>
+                <button type="button" onClick={() => setShowCreate(false)} className="btn-secondary">{tText('Annuler')}</button>
                 <button type="submit" disabled={createMutation.isPending} className="btn-primary">
                   {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   Créer l'alerte

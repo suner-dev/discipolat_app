@@ -9,6 +9,7 @@ import {
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 /** Aligné sur VisitResponse (backend) : soulId/soulNom, datePrevue, dateRealisee, statut, motif, objectif, compteRendu, present. */
 interface Visit {
   id: string; soulId: string; soulNom?: string; visiteurId: string; visiteurNom?: string;
@@ -70,8 +71,8 @@ export default function PasteurVisitsTab() {
       // CreateVisitRequest : soulId, datePrevue, motif, objectif (statut PLANIFIEE par défaut côté backend)
       await api.post('/visits', { soulId: data.soulId, datePrevue: data.datePrevue, motif: data.motif, objectif: data.objectif });
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['visits'] }); toast.success('Visite créée'); setView('liste'); setForm(emptyForm); },
-    onError: () => toast.error('Erreur lors de la création'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['visits'] }); toast.success(tText('Visite créée')); setView('liste'); setForm(emptyForm); },
+    onError: () => toast.error(tText('Erreur lors de la création')),
   });
 
   const updateMutation = useMutation({
@@ -83,14 +84,14 @@ export default function PasteurVisitsTab() {
       if (data.statut === 'REALISEE') payload.dateRealisee = new Date().toISOString().slice(0, 10);
       await api.patch(`/visits/${id}`, payload);
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['visits'] }); toast.success('Visite mise à jour'); setView('liste'); setEditingId(null); setForm(emptyForm); },
-    onError: () => toast.error('Erreur lors de la mise à jour'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['visits'] }); toast.success(tText('Visite mise à jour')); setView('liste'); setEditingId(null); setForm(emptyForm); },
+    onError: () => toast.error(tText('Erreur lors de la mise à jour')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/visits/${id}`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['visits'] }); toast.success('Visite supprimée'); setShowDeleteConfirm(null); },
-    onError: () => toast.error('Erreur lors de la suppression'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['visits'] }); toast.success(tText('Visite supprimée')); setShowDeleteConfirm(null); },
+    onError: () => toast.error(tText('Erreur lors de la suppression')),
   });
 
   const handleEdit = useCallback((v: Visit) => {
@@ -107,8 +108,8 @@ export default function PasteurVisitsTab() {
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (!form.soulId) { toast.error('Sélectionnez une âme'); return; }
-    if (!form.datePrevue) { toast.error('Sélectionnez une date prévue'); return; }
+    if (!form.soulId) { toast.error(tText('Sélectionnez une âme')); return; }
+    if (!form.datePrevue) { toast.error(tText('Sélectionnez une date prévue')); return; }
     if (editingId) { updateMutation.mutate({ id: editingId, data: form }); }
     else { createMutation.mutate(form); }
   }, [form, editingId, createMutation, updateMutation]);
@@ -128,7 +129,7 @@ export default function PasteurVisitsTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => { setView('liste'); setSelectedVisit(null); }} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <div className="flex items-start justify-between mb-6">
@@ -144,17 +145,17 @@ export default function PasteurVisitsTab() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Calendar className="w-4 h-4 mx-auto text-gray-400 mb-1" />
-              <p className="text-xs text-gray-400">Date prévue</p>
+              <p className="text-xs text-gray-400">{tText('Date prévue')}</p>
               <p className="font-semibold text-sm">{v.datePrevue ? new Date(v.datePrevue).toLocaleDateString(locale) : '—'}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <CheckCircle className="w-4 h-4 mx-auto text-gray-400 mb-1" />
-              <p className="text-xs text-gray-400">Réalisée le</p>
+              <p className="text-xs text-gray-400">{tText('Réalisée le')}</p>
               <p className="font-semibold text-sm">{v.dateRealisee ? new Date(v.dateRealisee).toLocaleDateString(locale) : '—'}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
               <Eye className="w-4 h-4 mx-auto text-gray-400 mb-1" />
-              <p className="text-xs text-gray-400">Présence</p>
+              <p className="text-xs text-gray-400">{tText('Présence')}</p>
               <p className="font-semibold text-sm">{v.present == null ? '—' : (v.present ? 'Oui' : 'Non')}</p>
             </div>
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-center">
@@ -185,20 +186,20 @@ export default function PasteurVisitsTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => { setView('liste'); setEditingId(null); setForm(emptyForm); }} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{editingId ? 'Modifier la visite' : 'Nouvelle visite'}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="label">Âme *</label>
+              <label className="label">{tText('Âme *')}</label>
               <select className="input" value={form.soulId} onChange={e => setForm({ ...form, soulId: e.target.value })}>
                 <option value="">Sélectionner...</option>
                 {(souls || []).map(s => <option key={s.id} value={s.id}>{s.prenom} {s.nom}</option>)}
               </select>
             </div>
             <div>
-              <label className="label">Date prévue *</label>
+              <label className="label">{tText('Date prévue *')}</label>
               <input className="input" type="date" value={form.datePrevue} onChange={e => setForm({ ...form, datePrevue: e.target.value })} />
             </div>
             {editingId && (
@@ -225,7 +226,7 @@ export default function PasteurVisitsTab() {
             )}
           </div>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button onClick={() => { setView('liste'); setEditingId(null); setForm(emptyForm); }} className="btn-secondary">Annuler</button>
+            <button onClick={() => { setView('liste'); setEditingId(null); setForm(emptyForm); }} className="btn-secondary">{tText('Annuler')}</button>
             <button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="btn-primary">
               {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="w-4 h-4 animate-spin" />}
               {editingId ? 'Enregistrer' : 'Créer'}
@@ -249,7 +250,7 @@ export default function PasteurVisitsTab() {
           <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300' : ''}`}>
             <Filter className="w-4 h-4" /> Filtres
           </button>
-          <button onClick={() => { setForm(emptyForm); setEditingId(null); setView('create'); }} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> Nouvelle visite</button>
+          <button onClick={() => { setForm(emptyForm); setEditingId(null); setView('create'); }} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> {tText('Nouvelle visite')}</button>
         </div>
       </div>
 
@@ -280,7 +281,7 @@ export default function PasteurVisitsTab() {
         {showFilters && (
           <div className="flex gap-3 mt-4 pt-4 border-t border-white/20">
             <select value={statutFilter} onChange={e => { setStatutFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-              <option value="">Tous statuts</option>
+              <option value="">{tText('Tous statuts')}</option>
               {Object.entries(STATUTS).map(([value, { label }]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </div>
@@ -296,10 +297,10 @@ export default function PasteurVisitsTab() {
             <table className="table w-full">
               <thead>
                 <tr>
-                  <th>Âme</th>
+                  <th>{tText('Âme')}</th>
                   <th>Visiteur</th>
-                  <th>Date prévue</th>
-                  <th>Réalisée</th>
+                  <th>{tText('Date prévue')}</th>
+                  <th>{tText('Réalisée')}</th>
                   <th>Statut</th>
                   <th className="text-right">Actions</th>
                 </tr>
@@ -320,12 +321,12 @@ export default function PasteurVisitsTab() {
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => { setSelectedVisit(v); setView('detail'); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Voir"><Eye className="w-3.5 h-3.5 text-gray-500" /></button>
                         <button onClick={() => handleEdit(v)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Modifier"><Edit3 className="w-3.5 h-3.5 text-gray-500" /></button>
-                        <button onClick={() => setShowDeleteConfirm(v.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Supprimer"><Trash2 className="w-3.5 h-3.5 text-red-400" /></button>
+                        <button onClick={() => setShowDeleteConfirm(v.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title={tText('Supprimer')}><Trash2 className="w-3.5 h-3.5 text-red-400" /></button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {(data?.content || []).length === 0 && <tr><td colSpan={6} className="py-12 text-center text-gray-400">Aucune visite</td></tr>}
+                {(data?.content || []).length === 0 && <tr><td colSpan={6} className="py-12 text-center text-gray-400">{tText('Aucune visite')}</td></tr>}
               </tbody>
             </table>
           </div>
@@ -336,7 +337,7 @@ export default function PasteurVisitsTab() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>
@@ -348,8 +349,8 @@ export default function PasteurVisitsTab() {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full animate-slide-up" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-2">Supprimer cette visite ?</h3>
             <div className="flex justify-end gap-3 mt-4">
-              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary">Annuler</button>
-              <button onClick={() => deleteMutation.mutate(showDeleteConfirm)} className="btn-primary bg-red-600 hover:bg-red-700"><Trash2 className="w-4 h-4" /> Supprimer</button>
+              <button onClick={() => setShowDeleteConfirm(null)} className="btn-secondary">{tText('Annuler')}</button>
+              <button onClick={() => deleteMutation.mutate(showDeleteConfirm)} className="btn-primary bg-red-600 hover:bg-red-700"><Trash2 className="w-4 h-4" /> {tText('Supprimer')}</button>
             </div>
           </div>
         </div>

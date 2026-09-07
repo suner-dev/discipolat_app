@@ -7,6 +7,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import { Brain, TrendingUp, TrendingDown, AlertTriangle, Sparkles, BarChart3, RefreshCw, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 interface Prediction {
   id: string | number;
   predictionType: string;
@@ -48,7 +49,7 @@ export default function AiPredictionsPage() {
 
   const generateMutation = useMutation({
     mutationFn: async () => (await api.post('/ai-predictions/generate')).data,
-    onSuccess: () => { toast.success('Prédictions régénérées'); queryClient.invalidateQueries({ queryKey: ['ai-predictions'] }); },
+    onSuccess: () => { toast.success(tText('Prédictions régénérées')); queryClient.invalidateQueries({ queryKey: ['ai-predictions'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
@@ -73,7 +74,7 @@ export default function AiPredictionsPage() {
 
   if (isLoading) return <SkeletonLoader lines={6} variant="card" />;
   if (error) return <div className="text-red-500 p-6">{getErrorMessage(error)}</div>;
-  if (!predictions || predictions.length === 0) return <EmptyState title="Aucune prédiction disponible" message="Générez des prédictions IA pour analyser la croissance de votre église" />;
+  if (!predictions || predictions.length === 0) return <EmptyState title={tText('Aucune prédiction disponible')} message={tText('Générez des prédictions IA pour analyser la croissance de votre église')} />;
 
   return (
     <div className="space-y-6">
@@ -83,7 +84,7 @@ export default function AiPredictionsPage() {
             <Brain className="w-7 h-7 text-violet-500" />
             {t('aiPredictions.title') ?? 'Prédictions & Analyse IA'}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Modèles prédictifs pour la croissance et la gestion pastorale</p>
+          <p className="text-sm text-gray-500 mt-1">{tText('Modèles prédictifs pour la croissance et la gestion pastorale')}</p>
         </div>
         <button onClick={() => generateMutation.mutate()}
           disabled={generateMutation.isPending}
@@ -97,19 +98,19 @@ export default function AiPredictionsPage() {
         <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center"><TrendingUp className="w-5 h-5 text-green-500" /></div>
-            <div><p className="text-2xl font-bold text-green-500">+{predictions.filter(p => p.type === 'growth').length}</p><p className="text-xs text-gray-500">Croissance prévue</p></div>
+            <div><p className="text-2xl font-bold text-green-500">+{predictions.filter(p => p.type === 'growth').length}</p><p className="text-xs text-gray-500">{tText('Croissance prévue')}</p></div>
           </div>
         </div>
         <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center"><AlertTriangle className="w-5 h-5 text-red-500" /></div>
-            <div><p className="text-2xl font-bold text-red-500">{predictions.filter(p => p.risk === 'high' || p.risk === 'critical').length}</p><p className="text-xs text-gray-500">À risque</p></div>
+            <div><p className="text-2xl font-bold text-red-500">{predictions.filter(p => p.risk === 'high' || p.risk === 'critical').length}</p><p className="text-xs text-gray-500">{tText('À risque')}</p></div>
           </div>
         </div>
         <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"><BarChart3 className="w-5 h-5 text-blue-500" /></div>
-            <div><p className="text-2xl font-bold text-blue-500">{predictions.filter(p => p.type === 'attendance').length}</p><p className="text-xs text-gray-500">Présence</p></div>
+            <div><p className="text-2xl font-bold text-blue-500">{predictions.filter(p => p.type === 'attendance').length}</p><p className="text-xs text-gray-500">{tText('Présence')}</p></div>
           </div>
         </div>
         <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
@@ -121,8 +122,8 @@ export default function AiPredictionsPage() {
       </div>
 
       <div className="flex gap-2">
-        <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-xl text-sm font-medium transition ${filter === 'all' ? 'bg-violet-500 text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`}>Toutes</button>
-        <button onClick={() => setFilter('high')} className={`px-4 py-2 rounded-xl text-sm font-medium transition ${filter === 'high' ? 'bg-red-500 text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`}>Risques élevés</button>
+        <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-xl text-sm font-medium transition ${filter === 'all' ? 'bg-violet-500 text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`}>{tText('Toutes')}</button>
+        <button onClick={() => setFilter('high')} className={`px-4 py-2 rounded-xl text-sm font-medium transition ${filter === 'high' ? 'bg-red-500 text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`}>{tText('Risques élevés')}</button>
         <button onClick={() => setFilter('growth')} className={`px-4 py-2 rounded-xl text-sm font-medium transition ${filter === 'growth' ? 'bg-green-500 text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`}>Croissance</button>
       </div>
 

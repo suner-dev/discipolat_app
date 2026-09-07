@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { FileEntity } from '@/types';
 import { Paperclip, X, FileText, Plus, Loader2 } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface AttachmentPickerProps {
   /** IDs des fichiers sélectionnés (contrôlé par le parent). */
   value: string[];
@@ -96,7 +97,7 @@ export default function AttachmentPicker({ value, onChange }: AttachmentPickerPr
       // Ajoute le document créé à la sélection courante.
       onChange(value.includes(id) ? value : [...value, id]);
       queryClient.invalidateQueries({ queryKey: FILES_QUERY_KEY });
-      toast.success('Document créé et ajouté aux pièces jointes');
+      toast.success(tText('Document créé et ajouté aux pièces jointes'));
       closeCreate();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -132,7 +133,7 @@ export default function AttachmentPicker({ value, onChange }: AttachmentPickerPr
           {showCreate && (
             <div className="mb-3 p-3 rounded-xl bg-white/60 dark:bg-gray-800/50 border border-emerald-200/60 dark:border-emerald-700/30 space-y-2.5 animate-slide-up">
               <p className="text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-emerald-500" /> Nouveau document
+                <Plus className="w-4 h-4 text-emerald-500" /> {tText('Nouveau document')}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <input
@@ -169,7 +170,7 @@ export default function AttachmentPicker({ value, onChange }: AttachmentPickerPr
                 </select>
               </div>
               <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={closeCreate} className="btn-secondary btn-sm">Annuler</button>
+                <button type="button" onClick={closeCreate} className="btn-secondary btn-sm">{tText('Annuler')}</button>
                 <button type="button" onClick={handleCreate} disabled={creating} className="btn-primary btn-sm">
                   {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   Créer
@@ -186,7 +187,7 @@ export default function AttachmentPicker({ value, onChange }: AttachmentPickerPr
                 onClick={() => setShowCreate(true)}
                 className="btn-ghost btn-sm text-emerald-600 hover:text-emerald-700"
               >
-                <Plus className="w-4 h-4" /> Créer un document
+                <Plus className="w-4 h-4" /> {tText('Créer un document')}
               </button>
             )}
           </div>
@@ -231,7 +232,7 @@ export default function AttachmentPicker({ value, onChange }: AttachmentPickerPr
             onClick={() => { setOpen(true); setShowCreate(true); }}
             className="btn-ghost btn-sm text-emerald-600 hover:text-emerald-700"
           >
-            <Plus className="w-4 h-4" /> Créer un document
+            <Plus className="w-4 h-4" /> {tText('Créer un document')}
           </button>
         </div>
       )}

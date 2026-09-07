@@ -5,6 +5,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Bot, Send, Loader2, Sparkles, User, RefreshCw, Trash2, Copy, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -100,7 +102,7 @@ export default function AiAssistantPage() {
     },
     onSuccess: () => {
       setMessages([]);
-      toast.success('Historique effacé');
+      toast.success(tText('Historique effacé'));
     },
   });
 
@@ -140,7 +142,7 @@ export default function AiAssistantPage() {
               Assistant IA Pastoral
             </h1>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              IA locale • Ollama • Aucune donnée envoyée externe
+              {tText('IA locale • Ollama • Aucune donnée envoyée externe')}
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -205,7 +207,7 @@ export default function AiAssistantPage() {
               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-[10px] opacity-50">
-                  {new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(msg.timestamp).toLocaleTimeString(getI18nLocale(), { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 {msg.role === 'assistant' && (
                   <button

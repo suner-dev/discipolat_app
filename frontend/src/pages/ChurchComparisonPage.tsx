@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { tText } from '@/i18n';
 import {
   BarChart3, Users, Globe, Layers, RefreshCw, Loader2, TrendingUp, Search,
   Target, Award, ChevronDown, Info,
@@ -84,9 +85,9 @@ export default function ChurchComparisonPage() {
         <div>
           <h1 className="page-title flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-indigo-500" />
-            Comparaison inter-églises
+            {tText('Comparaison inter-églises')}
           </h1>
-          <p className="page-subtitle">Benchmark anonyme • Clustering par taille • Analyse par pays/dénomination</p>
+          <p className="page-subtitle">{tText('Benchmark anonyme • Clustering par taille • Analyse par pays/dénomination')}</p>
         </div>
       </div>
 
@@ -95,7 +96,7 @@ export default function ChurchComparisonPage() {
         <Target className="w-5 h-5 text-indigo-500" />
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Notre église :</span>
         <select className="input text-sm flex-1" value={ourId} onChange={e => setOurId(e.target.value)}>
-          <option value="">Sélectionnez votre église</option>
+          <option value="">{tText('Sélectionnez votre église')}</option>
           {churches.map(c => <option key={c.id} value={c.id}>{c.nomEglise} ({c.pays})</option>)}
         </select>
       </div>
@@ -127,7 +128,7 @@ export default function ChurchComparisonPage() {
           ) : !benchmark ? (
             <div className="glass-card p-12 text-center">
               <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">Sélectionnez votre église pour voir le benchmark</p>
+              <p className="text-gray-500">{tText('Sélectionnez votre église pour voir le benchmark')}</p>
             </div>
           ) : (
             <>
@@ -136,7 +137,7 @@ export default function ChurchComparisonPage() {
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                   Rang {benchmark.rang} / {benchmark.total}
                 </p>
-                <p className="text-xs text-gray-400">parmi les églises comparables</p>
+                <p className="text-xs text-gray-400">{tText('parmi les églises comparables')}</p>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -177,10 +178,10 @@ export default function ChurchComparisonPage() {
                 </div>
                 <p className="text-xs text-gray-400 mb-3">{c.seuilEffectif} membres</p>
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between"><span className="text-gray-500">Églises</span><span className="font-medium">{c.nbEglises}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">{tText('Églises')}</span><span className="font-medium">{c.nbEglises}</span></div>
                   <div className="flex justify-between"><span className="text-gray-500">Effectif moyen</span><span className="font-medium">{c.effectifMoyen}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Présence</span><span className="font-medium">{c.tauxPresenceMoyen}%</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Rétention</span><span className="font-medium">{c.tauxRetentionMoyen}%</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">{tText('Présence')}</span><span className="font-medium">{c.tauxPresenceMoyen}%</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">{tText('Rétention')}</span><span className="font-medium">{c.tauxRetentionMoyen}%</span></div>
                   <div className="flex justify-between"><span className="text-gray-500">Score spirituel</span><span className="font-medium">{c.scoreSpirituelMoyen}</span></div>
                 </div>
               </div>

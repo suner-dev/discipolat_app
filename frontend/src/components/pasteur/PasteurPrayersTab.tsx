@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Prayer {
   id: string; titre: string; description?: string; message?: string; auteurId: string; auteurNom?: string;
   statut: string; priorite: string; visibilite: string; categorie?: string;
@@ -53,26 +55,26 @@ export default function PasteurPrayersTab() {
 
   const createMutation = useMutation({
     mutationFn: async (d: typeof form) => { await api.post('/prayers', { ...d, description: d.message }); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['prayers'] }); toast.success('Demande de prière créée'); setView('liste'); setForm(emptyForm); },
-    onError: () => toast.error('Erreur lors de la création'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['prayers'] }); toast.success(tText('Demande de prière créée')); setView('liste'); setForm(emptyForm); },
+    onError: () => toast.error(tText('Erreur lors de la création')),
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: typeof form }) => { await api.put(`/prayers/${id}`, { ...data, description: data.message }); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['prayers'] }); toast.success('Prière mise à jour'); setView('liste'); setEditingId(null); setForm(emptyForm); },
-    onError: () => toast.error('Erreur lors de la mise à jour'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['prayers'] }); toast.success(tText('Prière mise à jour')); setView('liste'); setEditingId(null); setForm(emptyForm); },
+    onError: () => toast.error(tText('Erreur lors de la mise à jour')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await api.delete(`/prayers/${id}`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['prayers'] }); toast.success('Supprimé'); },
-    onError: () => toast.error('Erreur lors de la suppression'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['prayers'] }); toast.success(tText('Supprimé')); },
+    onError: () => toast.error(tText('Erreur lors de la suppression')),
   });
 
   const answerMutation = useMutation({
     mutationFn: async ({ id, temoignage }: { id: string; temoignage: string }) => { await api.patch(`/prayers/${id}/answer`, { temoignage }); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['prayers'] }); toast.success('Prière marquée comme exaucée 🙏'); setView('liste'); setSelectedPrayer(null); setAnswerForm(''); },
-    onError: () => toast.error('Erreur'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['prayers'] }); toast.success(tText('Prière marquée comme exaucée 🙏')); setView('liste'); setSelectedPrayer(null); setAnswerForm(''); },
+    onError: () => toast.error(tText('Erreur')),
   });
 
   const prioriteBadge = (p: string) => {
@@ -107,7 +109,7 @@ export default function PasteurPrayersTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => { setView('liste'); setSelectedPrayer(null); }} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <div className="flex items-start justify-between mb-4">
@@ -126,23 +128,23 @@ export default function PasteurPrayersTab() {
           <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 whitespace-pre-wrap">{selectedPrayer.description || selectedPrayer.message}</p>
           {selectedPrayer.reponse && (
             <div className="p-3 rounded-xl bg-green-50/50 dark:bg-green-900/10 border border-green-200/30 mb-4">
-              <p className="text-xs font-medium text-green-600 mb-1">Réponse</p>
+              <p className="text-xs font-medium text-green-600 mb-1">{tText('Réponse')}</p>
               <p className="text-sm">{selectedPrayer.reponse}</p>
             </div>
           )}
           {selectedPrayer.temoignage && (
             <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/30 mb-4">
-              <p className="text-xs font-medium text-amber-600 mb-1">Témoignage</p>
+              <p className="text-xs font-medium text-amber-600 mb-1">{tText('Témoignage')}</p>
               <p className="text-sm">{selectedPrayer.temoignage}</p>
             </div>
           )}
           <div className="flex items-center gap-3 text-xs text-gray-400 mt-4">
             <span>Par {selectedPrayer.auteurNom || '—'}</span>
-            <span>{new Date(selectedPrayer.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <span>{new Date(selectedPrayer.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
           {selectedPrayer.statut !== 'EXAUCEE' && selectedPrayer.statut !== 'RESOLUE' && (
             <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Marquer comme exaucée</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{tText('Marquer comme exaucée')}</h4>
               <textarea className="input mb-2" rows={2} value={answerForm} onChange={e => setAnswerForm(e.target.value)} placeholder="Témoignage (optionnel)..." />
               <button onClick={() => answerMutation.mutate({ id: selectedPrayer.id, temoignage: answerForm })} disabled={answerMutation.isPending}
                 className="btn-primary bg-emerald-600 hover:bg-emerald-700">
@@ -161,7 +163,7 @@ export default function PasteurPrayersTab() {
     return (
       <div className="animate-slide-up">
         <button onClick={() => { setView('liste'); setEditingId(null); setForm(emptyForm); }} className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour à la liste
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour à la liste')}
         </button>
         <div className="glass-card p-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{editingId ? 'Modifier la prière' : 'Nouvelle demande de prière'}</h2>
@@ -169,19 +171,19 @@ export default function PasteurPrayersTab() {
             <div><label className="label">Titre *</label><input className="input" value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} placeholder="Titre de la demande" /></div>
             <div><label className="label">Message *</label><textarea className="input" rows={4} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="Détail de la prière..." /></div>
             <div className="grid grid-cols-3 gap-3">
-              <div><label className="label">Priorité</label><select className="input" value={form.priorite} onChange={e => setForm({ ...form, priorite: e.target.value })}>
+              <div><label className="label">{tText('Priorité')}</label><select className="input" value={form.priorite} onChange={e => setForm({ ...form, priorite: e.target.value })}>
                 <option value="BASSE">Basse</option><option value="MOYENNE">Moyenne</option><option value="HAUTE">Haute</option><option value="URGENTE">Urgente</option>
               </select></div>
-              <div><label className="label">Visibilité</label><select className="input" value={form.visibilite} onChange={e => setForm({ ...form, visibilite: e.target.value })}>
-                <option value="EGLISE">Église</option><option value="EQUIPE">Équipe</option><option value="PRIVE">Privé</option><option value="PARTAGEE">Partagée</option>
+              <div><label className="label">{tText('Visibilité')}</label><select className="input" value={form.visibilite} onChange={e => setForm({ ...form, visibilite: e.target.value })}>
+                <option value="EGLISE">{tText('Église')}</option><option value="EQUIPE">{tText('Équipe')}</option><option value="PRIVE">{tText('Privé')}</option><option value="PARTAGEE">{tText('Partagée')}</option>
               </select></div>
-              <div><label className="label">Catégorie</label><select className="input" value={form.categorie} onChange={e => setForm({ ...form, categorie: e.target.value })}>
-                <option value="">—</option><option value="SANTE">Santé</option><option value="FAMILLE">Famille</option><option value="SPIRITUEL">Spirituel</option><option value="MATÉRIEL">Matériel</option><option value="AUTRE">Autre</option>
+              <div><label className="label">{tText('Catégorie')}</label><select className="input" value={form.categorie} onChange={e => setForm({ ...form, categorie: e.target.value })}>
+                <option value="">—</option><option value="SANTE">{tText('Santé')}</option><option value="FAMILLE">{tText('Famille')}</option><option value="SPIRITUEL">Spirituel</option><option value="MATÉRIEL">{tText('Matériel')}</option><option value="AUTRE">Autre</option>
               </select></div>
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button onClick={() => { setView('liste'); setEditingId(null); setForm(emptyForm); }} className="btn-secondary">Annuler</button>
+            <button onClick={() => { setView('liste'); setEditingId(null); setForm(emptyForm); }} className="btn-secondary">{tText('Annuler')}</button>
             <button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="btn-primary">
               {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="w-4 h-4 animate-spin" />}
               {editingId ? 'Enregistrer' : 'Créer'}
@@ -206,14 +208,14 @@ export default function PasteurPrayersTab() {
         <div className="flex gap-2">
           <button onClick={() => { setView(view === 'grace' ? 'liste' : 'grace'); setPage(0); }}
             className={`btn-secondary btn-sm ${view === 'grace' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300' : ''}`}>
-            <Star className="w-4 h-4" /> {view === 'grace' ? 'Prières' : 'Actions de grâce'}
+            <Star className="w-4 h-4" /> {view === 'grace' ? tText('Prières') : tText('Actions de grâce')}
           </button>
           {view !== 'grace' && (
             <button onClick={() => setShowFilters(!showFilters)} className={`btn-secondary btn-sm ${showFilters ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300' : ''}`}>
               <Filter className="w-4 h-4" /> Filtres
             </button>
           )}
-          <button onClick={() => { setForm(emptyForm); setEditingId(null); setView('create'); }} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> Nouvelle prière</button>
+          <button onClick={() => { setForm(emptyForm); setEditingId(null); setView('create'); }} className="btn-primary btn-sm"><Plus className="w-4 h-4" /> {tText('Nouvelle prière')}</button>
         </div>
       </div>
 
@@ -227,23 +229,23 @@ export default function PasteurPrayersTab() {
           {showFilters && (
             <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-white/20">
               <select value={statutFilter} onChange={e => { setStatutFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-                <option value="">Tous statuts</option>
+                <option value="">{tText('Tous statuts')}</option>
                 <option value="ACTIVE">Active</option>
                 <option value="EN_COURS">En cours</option>
-                <option value="EXAUCEE">Exaucée</option>
+                <option value="EXAUCEE">{tText('Exaucée')}</option>
               </select>
               <select value={prioriteFilter} onChange={e => { setPrioriteFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-                <option value="">Toutes priorités</option>
+                <option value="">{tText('Toutes priorités')}</option>
                 <option value="URGENTE">Urgente</option>
                 <option value="HAUTE">Haute</option>
                 <option value="MOYENNE">Moyenne</option>
                 <option value="BASSE">Basse</option>
               </select>
               <select value={visibiliteFilter} onChange={e => { setVisibiliteFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
-                <option value="">Toutes visibilités</option>
-                <option value="EGLISE">Église</option>
-                <option value="EQUIPE">Équipe</option>
-                <option value="PRIVE">Privé</option>
+                <option value="">{tText('Toutes visibilités')}</option>
+                <option value="EGLISE">{tText('Église')}</option>
+                <option value="EQUIPE">{tText('Équipe')}</option>
+                <option value="PRIVE">{tText('Privé')}</option>
               </select>
             </div>
           )}
@@ -273,7 +275,7 @@ export default function PasteurPrayersTab() {
                   <p className="text-xs text-gray-500 line-clamp-2">{p.description || p.message}</p>
                   <div className="flex items-center gap-3 mt-2 text-[10px] text-gray-400">
                     <span>Par {p.auteurNom || '—'}</span>
-                    <span>{new Date(p.createdAt).toLocaleDateString('fr-FR')}</span>
+                    <span>{new Date(p.createdAt).toLocaleDateString(getI18nLocale())}</span>
                     {p.nbPrieres > 0 && <span>{p.nbPrieres} prières</span>}
                   </div>
                 </div>
@@ -296,7 +298,7 @@ export default function PasteurPrayersTab() {
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-gray-500">Page {data.number + 1} / {data.totalPages}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">← Précédent</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.first} className="btn-secondary btn-sm">{tText('← Précédent')}</button>
             <button onClick={() => setPage(p => p + 1)} disabled={data.last} className="btn-primary btn-sm">Suivant →</button>
           </div>
         </div>

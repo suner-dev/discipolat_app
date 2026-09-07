@@ -6,6 +6,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface FaceTemplate {
   id: string;
   userId: string;
@@ -60,7 +62,7 @@ export default function FaceRecognitionPage() {
       });
     },
     onSuccess: () => {
-      toast.success('Visage enrôlé');
+      toast.success(tText('Visage enrôlé'));
       setEnrollForm({ userId: '', soulId: '', displayName: '', imageBase64: '' });
       queryClient.invalidateQueries({ queryKey: ['face-templates'] });
     },
@@ -81,7 +83,7 @@ export default function FaceRecognitionPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/face/templates/${id}`),
-    onSuccess: () => { toast.success('Gabarit supprimé'); queryClient.invalidateQueries({ queryKey: ['face-templates'] }); },
+    onSuccess: () => { toast.success(tText('Gabarit supprimé')); queryClient.invalidateQueries({ queryKey: ['face-templates'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
@@ -98,7 +100,7 @@ export default function FaceRecognitionPage() {
         </div>
         <div>
           <h1 className="page-title">Reconnaissance Faciale</h1>
-          <p className="page-subtitle">Enrôlement et identification des membres</p>
+          <p className="page-subtitle">{tText('Enrôlement et identification des membres')}</p>
         </div>
         <div className="ml-auto flex rounded-xl bg-white/5 border border-white/10 p-1">
           {(['templates', 'enroll', 'identify'] as const).map(t => (
@@ -125,8 +127,8 @@ export default function FaceRecognitionPage() {
             <div className="text-xs text-gray-500">Inactifs</div>
           </div>
           <div className="glass-card p-4 text-center">
-            <div className="text-sm font-bold text-gray-900 dark:text-white">{stats.lastEnrollment ? new Date(stats.lastEnrollment).toLocaleDateString('fr-FR') : '—'}</div>
-            <div className="text-xs text-gray-500">Dernier enrôlement</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-white">{stats.lastEnrollment ? new Date(stats.lastEnrollment).toLocaleDateString(getI18nLocale()) : '—'}</div>
+            <div className="text-xs text-gray-500">{tText('Dernier enrôlement')}</div>
           </div>
         </div>
       )}
@@ -159,7 +161,7 @@ export default function FaceRecognitionPage() {
 
       {tab === 'enroll' && (
         <div className="bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-white/10 max-w-lg">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Enrôler un visage</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{tText('Enrôler un visage')}</h3>
           <div className="space-y-4">
             <input type="text" value={enrollForm.displayName} onChange={e => setEnrollForm({ ...enrollForm, displayName: e.target.value })}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"

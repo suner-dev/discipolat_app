@@ -5,6 +5,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import toast from 'react-hot-toast';
 import AnnouncementsAlertsSection from '@/components/departments/AnnouncementsAlertsSection';
+import { tText } from '@/i18n';
 import {
   Building2, Users, Heart, ArrowLeft, Mail, UserCog,
   ChevronRight, Loader2, AlertTriangle, BarChart3, FileText,
@@ -81,7 +82,7 @@ export default function DepartmentDetailPage() {
       return res.data as any;
     },
     onSuccess: () => {
-      toast.success('Membre créé et ajouté au département ✅');
+      toast.success(tText('Membre créé et ajouté au département ✅'));
       setShowAddMember(false);
       invalidateMembers();
     },
@@ -94,7 +95,7 @@ export default function DepartmentDetailPage() {
       return res.data as any;
     },
     onSuccess: () => {
-      toast.success('Personne ajoutée au département ✅');
+      toast.success(tText('Personne ajoutée au département ✅'));
       setShowAddMember(false);
       invalidateMembers();
     },
@@ -104,7 +105,7 @@ export default function DepartmentDetailPage() {
   const removeMemberMutation = useMutation({
     mutationFn: async (memberId: string) => api.delete(`/departments/${id}/members/${memberId}`),
     onSuccess: () => {
-      toast.success('Membre retiré du département');
+      toast.success(tText('Membre retiré du département'));
       invalidateMembers();
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -189,8 +190,8 @@ export default function DepartmentDetailPage() {
     return (
       <div className="page-container">
         <div className="glass-card p-10 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Département non trouvé</h2>
-          <Link to="/departments" className="btn-glow btn-sm mt-4 inline-flex">Retour</Link>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{tText('Département non trouvé')}</h2>
+          <Link to="/departments" className="btn-glow btn-sm mt-4 inline-flex">{tText('Retour')}</Link>
         </div>
       </div>
     );
@@ -199,9 +200,9 @@ export default function DepartmentDetailPage() {
   const statutBadge = (statut: string) => {
     switch (statut) {
       case 'ACTIF': return <span className="badge-success text-xs"><CheckCircle2 className="w-3 h-3 mr-1" />Actif</span>;
-      case 'EN_INTEGRATION': return <span className="badge-info text-xs"><Clock className="w-3 h-3 mr-1" />En intégration</span>;
+      case 'EN_INTEGRATION': return <span className="badge-info text-xs"><Clock className="w-3 h-3 mr-1" />{tText('En intégration')}</span>;
       case 'EN_VEILLE': return <span className="badge-warning text-xs"><AlertCircle className="w-3 h-3 mr-1" />En veille</span>;
-      case 'DECROCHE': return <span className="badge-inactive text-xs"><XCircle className="w-3 h-3 mr-1" />Décroché</span>;
+      case 'DECROCHE': return <span className="badge-inactive text-xs"><XCircle className="w-3 h-3 mr-1" />{tText('Décroché')}</span>;
       default: return <span className="text-xs text-gray-400">{statut}</span>;
     }
   };
@@ -210,7 +211,7 @@ export default function DepartmentDetailPage() {
     <div className="page-container">
       <div className="page-header">
         <button onClick={() => navigate('/departments')} className="btn-ghost btn-sm mb-2">
-          <ArrowLeft className="w-4 h-4" /> Retour aux départements
+          <ArrowLeft className="w-4 h-4" /> {tText('Retour aux départements')}
         </button>
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg">
@@ -253,7 +254,7 @@ export default function DepartmentDetailPage() {
           <span className="stat-label">Gestion & rapport</span>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <Link to={`/departments/${id}/manage`} className="btn-primary btn-sm inline-flex">
-              <Users className="w-4 h-4" /> Gérer
+              <Users className="w-4 h-4" /> {tText('Gérer')}
             </Link>
             {moduleEnabled('DEPT_INVENTORY') || moduleEnabled('DEPT_CHECKLISTS') || moduleEnabled('DEPT_REPORTS') ? (
               <Link to={`/departments/${id}/manage`} className="btn-ghost btn-sm inline-flex">
@@ -265,7 +266,7 @@ export default function DepartmentDetailPage() {
             </Link>
             {moduleEnabled('DEPT_REPORTS') && (
               <Link to={`/departments/${id}/report`} className="btn-ghost btn-sm inline-flex">
-                <FileText className="w-4 h-4" /> Rapport
+                <FileText className="w-4 h-4" /> {tText('Rapport')}
               </Link>
             )}
           </div>
@@ -310,7 +311,7 @@ export default function DepartmentDetailPage() {
           </div>
           <div className="stat-card">
             <div className="flex items-center justify-between mb-2">
-              <span className="stat-label">Présence moyenne</span>
+              <span className="stat-label">{tText('Présence moyenne')}</span>
               <BarChart3 className="w-4 h-4 text-green-500" />
             </div>
             <p className="stat-value text-2xl">{kpi.tauxPresence || 0}%</p>
@@ -321,11 +322,11 @@ export default function DepartmentDetailPage() {
           </div>
           <div className="stat-card">
             <div className="flex items-center justify-between mb-2">
-              <span className="stat-label">Rapports famille soumis</span>
+              <span className="stat-label">{tText('Rapports famille soumis')}</span>
               <FileText className="w-4 h-4 text-violet-500" />
             </div>
             <p className="stat-value text-2xl">{kpi.familyReportsSoumis}/{kpi.totalFamilles}</p>
-            <p className="text-xs text-gray-500 mt-1">cette semaine</p>
+            <p className="text-xs text-gray-500 mt-1">{tText('cette semaine')}</p>
           </div>
         </div>
       )}
@@ -381,7 +382,7 @@ export default function DepartmentDetailPage() {
               className="btn-primary btn-sm cursor-pointer"
               title="Créer un nouveau membre ou ajouter une personne déjà inscrite"
             >
-              <UserPlus className="w-4 h-4" /> Ajouter un membre
+              <UserPlus className="w-4 h-4" /> {tText('Ajouter un membre')}
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -436,7 +437,7 @@ export default function DepartmentDetailPage() {
               ))}
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => { setImportPreview(null); setImportCounts(null); }} className="btn-ghost btn-xs cursor-pointer">Annuler</button>
+              <button onClick={() => { setImportPreview(null); setImportCounts(null); }} className="btn-ghost btn-xs cursor-pointer">{tText('Annuler')}</button>
               <button
                 onClick={() => importMutation.mutate({ rows: importPreview.filter((r) => r.statut === 'CREER').map((r) => ({ nom: r.nom, prenom: r.prenom, email: r.email, telephone: r.telephone, equipe: r.equipe, poste: r.poste })), preview: false })}
                 disabled={importMutation.isPending || (importCounts?.cree ?? 0) === 0}
@@ -452,8 +453,8 @@ export default function DepartmentDetailPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Membre</th>
-                  <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Famille</th>
+                  <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">{tText('Membre')}</th>
+                  <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">{tText('Famille')}</th>
                   <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Faiseur</th>
                   <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Statut</th>
                   <th className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Type</th>
@@ -481,7 +482,7 @@ export default function DepartmentDetailPage() {
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
-                          <AlertTriangle className="w-3 h-3" /> Non assigné
+                          <AlertTriangle className="w-3 h-3" /> {tText('Non assigné')}
                         </span>
                       )}
                     </td>
@@ -533,7 +534,7 @@ export default function DepartmentDetailPage() {
         ) : (
           <div className="text-center py-8 text-gray-500">
             <Heart className="w-12 h-12 mx-auto mb-3 opacity-40" />
-            <p>{memberSearch ? 'Aucun résultat' : 'Aucun membre dans ce département'}</p>
+            <p>{memberSearch ? tText('Aucun résultat') : tText('Aucun membre dans ce département')}</p>
           </div>
         )}
       </div>
@@ -561,7 +562,7 @@ export default function DepartmentDetailPage() {
               <thead>
                 <tr>
                   <th>Nom</th>
-                  <th>Chef de famille</th>
+                  <th>{tText('Chef de famille')}</th>
                   <th>Membres</th>
                   <th>Actifs</th>
                   <th>Statut</th>
@@ -589,7 +590,7 @@ export default function DepartmentDetailPage() {
         ) : (
           <div className="text-center py-8 text-gray-500">
             <Building2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
-            <p>Aucune famille dans ce département</p>
+            <p>{tText('Aucune famille dans ce département')}</p>
           </div>
         )}
       </div>
@@ -643,8 +644,8 @@ function AddMemberModal({ deptId, onCreate, onAdd, onClose, pending }: {
               <UserPlus className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ajouter un membre</h3>
-              <p className="text-xs text-gray-500">Créez un nouveau membre ou rattachez une personne déjà inscrite</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Ajouter un membre')}</h3>
+              <p className="text-xs text-gray-500">{tText('Créez un nouveau membre ou rattachez une personne déjà inscrite')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
@@ -662,7 +663,7 @@ function AddMemberModal({ deptId, onCreate, onAdd, onClose, pending }: {
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              <UserPlus className="w-4 h-4 inline mr-1" /> Nouveau membre
+              <UserPlus className="w-4 h-4 inline mr-1" /> {tText('Nouveau membre')}
             </button>
             <button
               onClick={() => { setMode('existing'); }}
@@ -672,7 +673,7 @@ function AddMemberModal({ deptId, onCreate, onAdd, onClose, pending }: {
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              <Search className="w-4 h-4 inline mr-1" /> Personne déjà inscrite
+              <Search className="w-4 h-4 inline mr-1" /> {tText('Personne déjà inscrite')}
             </button>
           </div>
 
@@ -681,18 +682,18 @@ function AddMemberModal({ deptId, onCreate, onAdd, onClose, pending }: {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">Nom *</label>
-                  <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Nom de famille" />
+                  <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} placeholder={tText('Nom de famille')} />
                 </div>
                 <div>
-                  <label className="label">Prénom</label>
-                  <input className="input" value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Prénom" />
+                  <label className="label">{tText('Prénom')}</label>
+                  <input className="input" value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder={tText('Prénom')} />
                 </div>
                 <div>
                   <label className="label">Email</label>
                   <input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" />
                 </div>
                 <div>
-                  <label className="label">Téléphone</label>
+                  <label className="label">{tText('Téléphone')}</label>
                   <input className="input" value={telephone} onChange={(e) => setTelephone(e.target.value)} placeholder="+243…" />
                 </div>
                 <div>
@@ -707,18 +708,18 @@ function AddMemberModal({ deptId, onCreate, onAdd, onClose, pending }: {
                   <label className="label">Type de disciple</label>
                   <select className="input" value={typeDisciple} onChange={(e) => setTypeDisciple(e.target.value)}>
                     <option value="NOUVEL_ARRIVANT">Nouvel arrivant</option>
-                    <option value="NOUVEAU_CONVERTI">Nouveau converti</option>
+                    <option value="NOUVEAU_CONVERTI">{tText('Nouveau converti')}</option>
                   </select>
                 </div>
                 <div>
                   <label className="label">Statut</label>
                   <select className="input" value={statut} onChange={(e) => setStatut(e.target.value)}>
                     <option value="NOUVEL_ARRIVANT">Nouvel arrivant</option>
-                    <option value="NOUVEAU_CONVERTI">Nouveau converti</option>
-                    <option value="EN_INTEGRATION">En intégration</option>
+                    <option value="NOUVEAU_CONVERTI">{tText('Nouveau converti')}</option>
+                    <option value="EN_INTEGRATION">{tText('En intégration')}</option>
                     <option value="ACTIF">Actif</option>
                     <option value="EN_VEILLE">En veille</option>
-                    <option value="DECROCHE">Décroché</option>
+                    <option value="DECROCHE">{tText('Décroché')}</option>
                   </select>
                 </div>
                 <div>

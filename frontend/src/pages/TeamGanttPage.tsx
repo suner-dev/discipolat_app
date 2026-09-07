@@ -6,6 +6,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface TeamAssignment {
   id: string;
   equipeId: string;
@@ -42,7 +44,7 @@ export default function TeamGanttPage() {
       return api.post('/team-gantt', { ...newAssignment, debut: newAssignment.debut + 'T00:00:00', fin: newAssignment.fin + 'T23:59:59' });
     },
     onSuccess: () => {
-      toast.success('Affectation créée');
+      toast.success(tText('Affectation créée'));
       setShowCreate(false);
       setNewAssignment({ equipeId: '', role: '', membreId: '', debut: '', fin: '', notes: '' });
       queryClient.invalidateQueries({ queryKey: ['team-gantt'] });
@@ -52,7 +54,7 @@ export default function TeamGanttPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/team-gantt/${id}`),
-    onSuccess: () => { toast.success('Supprimé'); queryClient.invalidateQueries({ queryKey: ['team-gantt'] }); },
+    onSuccess: () => { toast.success(tText('Supprimé')); queryClient.invalidateQueries({ queryKey: ['team-gantt'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
@@ -68,7 +70,7 @@ export default function TeamGanttPage() {
         </div>
         <button onClick={() => setShowCreate(true)}
           className="ml-auto px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouvelle affectation
+          <Plus className="w-4 h-4" /> {tText('Nouvelle affectation')}
         </button>
       </div>
 
@@ -99,7 +101,7 @@ export default function TeamGanttPage() {
                   {Array.from({ length: 7 }).map((_, i) => {
                     const d = new Date(start);
                     d.setDate(d.getDate() + i);
-                    return <div key={i} className="flex-1 text-center">{d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</div>;
+                    return <div key={i} className="flex-1 text-center">{d.toLocaleDateString(getI18nLocale(), { weekday: 'short', day: 'numeric' })}</div>;
                   })}
                 </div>
                 {assignments.map(a => (
@@ -126,7 +128,7 @@ export default function TeamGanttPage() {
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUT_COLORS[a.statut] || 'bg-gray-100 text-gray-700'}`}>{a.statut}</span>
                     </div>
                     <div className="text-xs text-gray-500 space-y-1">
-                      <div>{new Date(a.debut).toLocaleDateString('fr-FR')} → {new Date(a.fin).toLocaleDateString('fr-FR')}</div>
+                      <div>{new Date(a.debut).toLocaleDateString(getI18nLocale())} → {new Date(a.fin).toLocaleDateString(getI18nLocale())}</div>
                       {a.membreId && <div>Membre: {a.membreId.slice(0, 8)}...</div>}
                       {a.notes && <div>{a.notes}</div>}
                     </div>
@@ -144,7 +146,7 @@ export default function TeamGanttPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouvelle affectation</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Nouvelle affectation')}</h2>
             <div className="space-y-4">
               <input type="text" value={newAssignment.equipeId} onChange={e => setNewAssignment({ ...newAssignment, equipeId: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
@@ -157,7 +159,7 @@ export default function TeamGanttPage() {
                 placeholder="ID du membre (optionnel)" />
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="block text-xs text-gray-500 mb-1">Début</label>
+                  <label className="block text-xs text-gray-500 mb-1">{tText('Début')}</label>
                   <input type="date" value={newAssignment.debut} onChange={e => setNewAssignment({ ...newAssignment, debut: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm" />
                 </div>
@@ -172,7 +174,7 @@ export default function TeamGanttPage() {
                 placeholder="Notes (optionnel)" />
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}
                 className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-600 flex items-center gap-2">
                 {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

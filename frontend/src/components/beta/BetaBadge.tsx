@@ -1,6 +1,7 @@
 import { FlaskConical } from 'lucide-react';
 import { usePlatformMeta } from '@/contexts/MetaContext';
 
+import { tText } from '@/i18n';
 /**
  * Badge "BÊTA" — affiché uniquement lorsque le serveur déclare le mode bêta
  * (profil Spring `beta`). Aucun affichage en production.
@@ -16,7 +17,7 @@ export default function BetaBadge({ className = '' }: { className?: string }) {
       title={`Version ${meta.version || 'bêta'} — environnement de test`}
     >
       <FlaskConical className="w-3 h-3" />
-      Bêta
+      {tText('Bêta')}
     </span>
   );
 }

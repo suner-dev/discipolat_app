@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import type { Family } from '@/types';
 import { BarChart3, Calendar, Users, TrendingUp, Loader2, Filter, X, Clock, CheckCircle2 } from 'lucide-react';
 
+import { tText } from '@/i18n';
 const PERIODS = [
   { value: '3', label: '3 mois' },
   { value: '6', label: '6 mois' },
@@ -63,8 +64,8 @@ export default function EventStatisticsPage() {
             <BarChart3 className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="page-title">Statistiques des événements</h1>
-            <p className="page-subtitle">Indicateurs de participation et répartition par type</p>
+            <h1 className="page-title">{tText('Statistiques des événements')}</h1>
+            <p className="page-subtitle">{tText('Indicateurs de participation et répartition par type')}</p>
           </div>
         </div>
       </div>
@@ -74,7 +75,7 @@ export default function EventStatisticsPage() {
         <div className="flex items-center gap-1.5">
           <Filter className="w-4 h-4 text-gray-400" />
           <select className="input !w-auto text-xs" value={familleFilter} onChange={(e) => setFamilleFilter(e.target.value)}>
-            <option value="">Toutes les familles</option>
+            <option value="">{tText('Toutes les familles')}</option>
             {(families || []).map((f) => (<option key={f.id} value={f.id}>{f.nom}</option>))}
           </select>
         </div>
@@ -94,7 +95,7 @@ export default function EventStatisticsPage() {
         </div>
         {hasFilter && (
           <button onClick={() => setFamilleFilter('')} className="btn-ghost btn-xs">
-            <X className="w-3 h-3" /> Réinitialiser
+            <X className="w-3 h-3" /> {tText('Réinitialiser')}
           </button>
         )}
       </div>
@@ -104,7 +105,7 @@ export default function EventStatisticsPage() {
       ) : !stats ? (
         <div className="glass-card p-10 text-center">
           <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500 font-medium">Aucune statistique disponible</p>
+          <p className="text-gray-500 font-medium">{tText('Aucune statistique disponible')}</p>
         </div>
       ) : (
         <>
@@ -132,7 +133,7 @@ export default function EventStatisticsPage() {
           {/* Attendance bars */}
           {(stats.totalInscrits > 0 || stats.totalPresents > 0) && (
             <div className="glass-card p-5 mb-6 animate-slide-up" style={{ animationDelay: '200ms' }}>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Présence vs inscriptions</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">{tText('Présence vs inscriptions')}</h3>
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-xs mb-1">
@@ -145,7 +146,7 @@ export default function EventStatisticsPage() {
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-500">Présents</span>
+                    <span className="text-gray-500">{tText('Présents')}</span>
                     <span className="font-semibold text-gray-900 dark:text-gray-100">{stats.totalPresents}</span>
                   </div>
                   <div className="h-3 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">

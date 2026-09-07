@@ -4,6 +4,7 @@ import { QrCode, Loader2, CheckCircle, XCircle, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 
+import { tText } from '@/i18n';
 interface CheckinResult {
   success: boolean;
   message: string;
@@ -21,7 +22,7 @@ export default function QrCheckinPage() {
     },
     onSuccess: (data) => {
       setLastResult(data);
-      toast.success(data.message || 'Présence enregistrée');
+      toast.success(data.message || tText('Présence enregistrée'));
       setSoulId('');
     },
     onError: (e: unknown) => { if ((e as Error).message !== 'empty') toast.error(getErrorMessage(e)); },
@@ -75,12 +76,12 @@ export default function QrCheckinPage() {
 
       <div className="glass-card p-6 mt-6">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <Camera className="w-4 h-4" /> Comment ça marche
+          <Camera className="w-4 h-4" /> {tText('Comment ça marche')}
         </h3>
         <ul className="text-sm text-gray-500 dark:text-gray-400 space-y-2">
-          <li className="flex items-start gap-2"><span className="text-emerald-500 mt-1">1.</span> Le responsable scanne le QR code du membre</li>
+          <li className="flex items-start gap-2"><span className="text-emerald-500 mt-1">1.</span> {tText('Le responsable scanne le QR code du membre')}</li>
           <li className="flex items-start gap-2"><span className="text-emerald-500 mt-1">2.</span> Ou saisit manuellement l'identifiant de l'âme</li>
-          <li className="flex items-start gap-2"><span className="text-emerald-500 mt-1">3.</span> La présence est enregistrée automatiquement</li>
+          <li className="flex items-start gap-2"><span className="text-emerald-500 mt-1">3.</span> {tText('La présence est enregistrée automatiquement')}</li>
         </ul>
       </div>
     </div>

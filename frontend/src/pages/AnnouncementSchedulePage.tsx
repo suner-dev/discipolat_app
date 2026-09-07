@@ -8,6 +8,8 @@ import {
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Announcement {
   id: string;
   title: string;
@@ -38,7 +40,7 @@ export default function AnnouncementSchedulePage() {
       await api.post(`/announcements/${id}/schedule`, { scheduledAt });
     },
     onSuccess: () => {
-      toast.success('Annonce programmée');
+      toast.success(tText('Annonce programmée'));
       qc.invalidateQueries({ queryKey: ['announcements'] });
       navigate(-1);
     },
@@ -53,7 +55,7 @@ export default function AnnouncementSchedulePage() {
       <div className="page-header">
         <div className="animate-fade-in">
           <button onClick={() => navigate(-1)} className="btn-ghost btn-sm mb-2 -ml-2">
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {tText('Retour')}
           </button>
           <div className="flex items-center gap-2 mb-1">
             <Megaphone className="w-5 h-5 text-orange-500" />
@@ -66,7 +68,7 @@ export default function AnnouncementSchedulePage() {
       <div className="glass-card p-6 animate-slide-up">
         {/* Preview */}
         <div className="mb-6 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/60">
-          <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Aperçu</p>
+          <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide">{tText('Aperçu')}</p>
           <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">{announcement.title}</h4>
           <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-3">{announcement.content}</p>
           <div className="flex items-center gap-2 mt-3">
@@ -75,7 +77,7 @@ export default function AnnouncementSchedulePage() {
             </span>
             {announcement.scheduledAt && (
               <span className="text-[10px] text-gray-400">
-                Déjà programmé : {new Date(announcement.scheduledAt).toLocaleString('fr-FR')}
+                Déjà programmé : {new Date(announcement.scheduledAt).toLocaleString(getI18nLocale())}
               </span>
             )}
           </div>
@@ -101,7 +103,7 @@ export default function AnnouncementSchedulePage() {
             <div className="p-3 rounded-xl bg-orange-50/50 dark:bg-orange-900/10 border border-orange-200/50 dark:border-orange-800/30">
               <p className="text-xs text-orange-700 dark:text-orange-400 flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                Publication prévue le {new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString('fr-FR')}
+                Publication prévue le {new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString(getI18nLocale())}
               </p>
             </div>
           )}

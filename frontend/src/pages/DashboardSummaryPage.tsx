@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { tText } from '@/i18n';
 import {
   LayoutDashboard, Users, AlertTriangle, TrendingUp, Activity,
   Heart, BarChart3, Loader2, Clock,
@@ -48,7 +49,7 @@ export default function DashboardSummaryPage() {
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-1">
             <LayoutDashboard className="w-5 h-5 text-primary-500" />
-            <h1 className="page-title">Résumé du tableau de bord</h1>
+            <h1 className="page-title">{tText('Résumé du tableau de bord')}</h1>
           </div>
           <p className="page-subtitle">Vue d'ensemble rapide de l'activité de l'organisation</p>
         </div>

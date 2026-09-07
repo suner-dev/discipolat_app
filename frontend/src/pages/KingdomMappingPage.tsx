@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import api from '@/lib/api';
 import { Loader2, Flame, MapPin, Compass, Filter } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface HeatCell {
   lat: number;
   lng: number;
@@ -170,7 +171,7 @@ export default function KingdomMappingPage() {
                         <>
                           <strong>Cluster de {cl.points.length} points</strong> — {cl.count} âme(s) total
                           <br />Densité moyenne : {(cl.intensity * 100).toFixed(0)}%
-                          <br /><em className="text-xs">Zoomez pour détailler</em>
+                          <br /><em className="text-xs">{tText('Zoomez pour détailler')}</em>
                         </>
                       ) : (
                         <>

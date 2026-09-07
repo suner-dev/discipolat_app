@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useI18n } from '@/i18n';
 
+import { tText } from '@/i18n';
 interface SystemHealth {
   jvm: { heapUsed: number; heapMax: number; nonHeapUsed: number; threads: number; };
   database: { status: string; totalUsers: number; totalSouls: number; tableCount: number; };
@@ -152,10 +153,10 @@ export default function AdminDashboardPage() {
         <div className="glass-card p-4 mb-6 animate-slide-up">
           <div className="flex items-center gap-2 mb-3">
             <Gauge className="w-4 h-4 text-primary-500" />
-            <h2 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Santé du système</h2>
+            <h2 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">{tText('Santé du système')}</h2>
             <div className="ml-auto flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-              <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">Opérationnel</span>
+              <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">{tText('Opérationnel')}</span>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -208,7 +209,7 @@ export default function AdminDashboardPage() {
             <div className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700/50"><Activity className="w-5 h-5 text-gray-500" /></div>
             <div>
               <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{recentAudit?.length ?? 0}</p>
-              <p className="text-[10px] text-gray-400">Actions récentes</p>
+              <p className="text-[10px] text-gray-400">{tText('Actions récentes')}</p>
             </div>
             <ArrowRight className="w-4 h-4 text-gray-300 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
@@ -242,7 +243,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activité récente</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Activité récente')}</h3>
             </div>
             <Link to="/audit" className="text-[10px] font-medium text-primary-600 hover:underline">Voir tout</Link>
           </div>
@@ -263,7 +264,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             )) : (
-              <div className="text-center py-6"><Activity className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-xs text-gray-400">Aucune activité récente</p></div>
+              <div className="text-center py-6"><Activity className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-xs text-gray-400">{tText('Aucune activité récente')}</p></div>
             )}
           </div>
         </div>

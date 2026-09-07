@@ -3,6 +3,7 @@ import type { User, LoginRequest, AuthResponse, UserRole } from '@/types';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -148,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('user');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
-    toast.success('Déconnexion réussie');
+    toast.success(tText('Déconnexion réussie'));
   }, []);
 
   // Auto-logout when JWT expires
@@ -242,7 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.success(`Rôle actif : ${roleLabels[newRole] || newRole}`);
       // React state update triggers automatic re-render with new role
     } catch (err: any) {
-      toast.error('Échec du changement de rôle');
+      toast.error(tText('Échec du changement de rôle'));
     }
   }, []);
 

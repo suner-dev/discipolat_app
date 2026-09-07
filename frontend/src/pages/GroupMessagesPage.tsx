@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface GroupMsg {
   id: string;
   groupId: string;
@@ -99,7 +101,7 @@ export default function GroupMessagesPage() {
     },
     onSuccess: () => {
       setNewMsg('');
-      toast.success('Message envoyé');
+      toast.success(tText('Message envoyé'));
       queryClient.invalidateQueries({ queryKey: ['group-messages', selectedGroup] });
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Erreur lors de l\'envoi'),
@@ -109,7 +111,7 @@ export default function GroupMessagesPage() {
   const isLoading = isLoadingMsgs || isLoadingDepts;
   const error = msgsError || deptsError;
   const senderName = (m: GroupMsg) => (m.senderId ? `#${m.senderId.slice(0, 6)}` : 'Membre');
-  const timeLabel = (m: GroupMsg) => new Date(m.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const timeLabel = (m: GroupMsg) => new Date(m.createdAt).toLocaleTimeString(getI18nLocale(), { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="flex h-[calc(100vh-120px)] gap-4 p-6">
@@ -121,13 +123,13 @@ export default function GroupMessagesPage() {
             <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>
           ) : deptsError ? (
             <div className="p-3 text-center">
-              <p className="text-xs text-red-400 mb-2">Erreur de chargement</p>
+              <p className="text-xs text-red-400 mb-2">{tText('Erreur de chargement')}</p>
               <button onClick={() => queryClient.invalidateQueries({ queryKey: ['departments-for-messages'] })} className="text-xs text-blue-400 hover:underline flex items-center gap-1 mx-auto">
-                <RefreshCw className="w-3 h-3" /> Réessayer
+                <RefreshCw className="w-3 h-3" /> {tText('Réessayer')}
               </button>
             </div>
           ) : departments.length === 0 ? (
-            <div className="p-3 text-center text-xs text-gray-400">Aucun département</div>
+            <div className="p-3 text-center text-xs text-gray-400">{tText('Aucun département')}</div>
           ) : (
             departments.map(g => (
               <button key={g.id} onClick={() => { setSelectedGroup(g.id); setQuery(''); }}
@@ -162,7 +164,7 @@ export default function GroupMessagesPage() {
             <div className="grid grid-cols-4 gap-4 text-center">
               <div><div className="text-lg font-bold text-white">{stats.totalMessages}</div><div className="text-xs text-gray-400">Messages</div></div>
               <div><div className="text-lg font-bold text-white">{stats.activeMembers}</div><div className="text-xs text-gray-400">Membres actifs</div></div>
-              <div><div className="text-lg font-bold text-white">{stats.messagesThisWeek}</div><div className="text-xs text-gray-400">Cette semaine</div></div>
+              <div><div className="text-lg font-bold text-white">{stats.messagesThisWeek}</div><div className="text-xs text-gray-400">{tText('Cette semaine')}</div></div>
               {stats.topSender && <div><div className="text-lg font-bold text-white truncate">{stats.topSender}</div><div className="text-xs text-gray-400">Top envoyeur</div></div>}
             </div>
           </div>
@@ -172,7 +174,7 @@ export default function GroupMessagesPage() {
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-400" /></div>
           ) : error ? (
-            <div className="text-center text-red-400 py-10 text-sm">Erreur de chargement des messages</div>
+            <div className="text-center text-red-400 py-10 text-sm">{tText('Erreur de chargement des messages')}</div>
           ) : displayed.length === 0 ? (
             <EmptyState icon={<MessageCircle className="w-6 h-6 text-blue-400" />}
               title={query ? 'Aucun résultat' : 'Aucun message dans ce groupe'}

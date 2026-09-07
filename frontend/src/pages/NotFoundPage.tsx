@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
+import { tText } from '@/i18n';
 import {
   Home, Search, ArrowLeft, Heart, Users, Building2,
   LayoutDashboard, BookOpen, Calendar, FileText, Church,
@@ -115,7 +116,7 @@ export default function NotFoundPage() {
               className="btn-secondary btn-sm"
             >
               <ArrowLeft className="w-4 h-4" />
-              Page précédente
+              {tText('Page précédente')}
             </button>
             <Link
               to="/dashboard"

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { Briefcase, Plus, Archive } from 'lucide-react';
 import type { Position } from './types';
 
+import { tText } from '@/i18n';
 export function PositionsTab({ positions, deptId, onChanged }: { positions: Position[]; deptId: string; onChanged: () => void }) {
   const queryClient = useQueryClient();
   const [nom, setNom] = useState('');
@@ -15,12 +16,12 @@ export function PositionsTab({ positions, deptId, onChanged }: { positions: Posi
     mutationFn: async () => {
       await api.post(`/departments/${deptId}/positions`, { nom, description: description || null, competencesRequises: competences || null });
     },
-    onSuccess: () => { toast.success('Poste créé ✅'); setNom(''); setDescription(''); setCompetences(''); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
+    onSuccess: () => { toast.success(tText('Poste créé ✅')); setNom(''); setDescription(''); setCompetences(''); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
   const archiveMutation = useMutation({
     mutationFn: async (positionId: string) => api.delete(`/departments/${deptId}/positions/${positionId}`),
-    onSuccess: () => { toast.success('Poste archivé'); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
+    onSuccess: () => { toast.success(tText('Poste archivé')); queryClient.invalidateQueries({ queryKey: ['department'] }); onChanged(); },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -28,7 +29,7 @@ export function PositionsTab({ positions, deptId, onChanged }: { positions: Posi
     <div className="glass-card p-5">
       <div className="flex items-center gap-2 mb-4">
         <Briefcase className="w-4 h-4 text-primary-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Postes du département</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tText('Postes du département')}</h3>
       </div>
       <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/40 mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -38,21 +39,21 @@ export function PositionsTab({ positions, deptId, onChanged }: { positions: Posi
           </div>
           <div>
             <label className="label">Description</label>
-            <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Rôle, responsabilités…" />
+            <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tText('Rôle, responsabilités…')} />
           </div>
           <div>
-            <label className="label">Compétences requises</label>
+            <label className="label">{tText('Compétences requises')}</label>
             <input className="input" value={competences} onChange={(e) => setCompetences(e.target.value)} placeholder="Ex : mixage, éclairage…" />
           </div>
         </div>
         <button onClick={() => createMutation.mutate()} disabled={!nom.trim() || createMutation.isPending} className="btn-primary btn-sm mt-3 cursor-pointer">
-          <Plus className="w-4 h-4" /> Créer le poste
+          <Plus className="w-4 h-4" /> {tText('Créer le poste')}
         </button>
       </div>
       {positions.length === 0 ? (
         <div className="text-center py-8">
           <Briefcase className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm text-gray-400">Aucun poste défini</p>
+          <p className="text-sm text-gray-400">{tText('Aucun poste défini')}</p>
         </div>
       ) : (
         <div className="space-y-2">

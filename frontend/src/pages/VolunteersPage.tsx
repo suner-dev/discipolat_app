@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
+import { tText } from '@/i18n';
 import {
   Users, Plus, Loader2, RefreshCw, Search, Star, Calendar, Wrench,
   BarChart3, UserPlus, CheckCircle, X, Filter, ChevronDown, Clock,
@@ -57,7 +58,7 @@ export default function VolunteersPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => { await api.post('/volunteers', newVolunteer); },
-    onSuccess: () => { toast.success('Bénévole ajouté'); qc.invalidateQueries({ queryKey: ['volunteers'] }); setShowAdd(false); },
+    onSuccess: () => { toast.success(tText('Bénévole ajouté')); qc.invalidateQueries({ queryKey: ['volunteers'] }); setShowAdd(false); },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
@@ -74,7 +75,7 @@ export default function VolunteersPage() {
   return (
     <div className="page-container max-w-6xl">
       <div className="page-header">
-        <div><h1 className="page-title flex items-center gap-2"><Users className="w-5 h-5 text-primary-500" /> Bénévoles</h1>
+        <div><h1 className="page-title flex items-center gap-2"><Users className="w-5 h-5 text-primary-500" /> {tText('Bénévoles')}</h1>
           <p className="page-subtitle">Compétences, disponibilité et matching événements→bénévoles.</p></div>
         <div className="page-header-actions">
           <button onClick={() => refetch()} className="btn-ghost btn-sm"><RefreshCw className="w-4 h-4" /></button>
@@ -104,7 +105,7 @@ export default function VolunteersPage() {
 
       {/* Skills matching */}
       <div className="glass-card p-4 mb-6 animate-slide-up">
-        <div className="flex items-center gap-2 mb-3"><Wrench className="w-4 h-4 text-primary-500" /><span className="text-sm font-semibold">Recherche par compétences</span></div>
+        <div className="flex items-center gap-2 mb-3"><Wrench className="w-4 h-4 text-primary-500" /><span className="text-sm font-semibold">{tText('Recherche par compétences')}</span></div>
         <div className="flex flex-wrap gap-2">
           {SKILLS.map(skill => (
             <button key={skill} onClick={() => toggleSkill(skill)}
@@ -158,13 +159,13 @@ export default function VolunteersPage() {
       {showAdd && (
         <div className="modal-overlay" onClick={() => setShowAdd(false)}>
           <div className="modal-content max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="modal-header"><h3 className="text-base font-bold">Ajouter un bénévole</h3><button onClick={() => setShowAdd(false)} className="btn-icon"><X className="w-5 h-5" /></button></div>
+            <div className="modal-header"><h3 className="text-base font-bold">{tText('Ajouter un bénévole')}</h3><button onClick={() => setShowAdd(false)} className="btn-icon"><X className="w-5 h-5" /></button></div>
             <div className="modal-body space-y-4">
               <div><label className="label">Nom</label><input className="input" value={newVolunteer.userName} onChange={e => setNewVolunteer({ ...newVolunteer, userName: e.target.value })} /></div>
               <div><label className="label">Heures max/semaine</label><input type="number" className="input" value={newVolunteer.maxHoursPerWeek} onChange={e => setNewVolunteer({ ...newVolunteer, maxHoursPerWeek: Number(e.target.value) })} /></div>
             </div>
             <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setShowAdd(false)}>Annuler</button>
+              <button className="btn-ghost btn-sm" onClick={() => setShowAdd(false)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !newVolunteer.userName}>
                 {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} Ajouter
               </button>

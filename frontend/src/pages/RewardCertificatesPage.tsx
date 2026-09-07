@@ -6,6 +6,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Certificate {
   id: string;
   memberId: string;
@@ -46,7 +48,7 @@ export default function RewardCertificatesPage() {
       return api.post('/reward-certificates', newCert);
     },
     onSuccess: () => {
-      toast.success('Certificat émis');
+      toast.success(tText('Certificat émis'));
       setShowIssue(false);
       setNewCert({ memberId: '', titre: '', description: '', category: 'PARTICIPATION' });
       queryClient.invalidateQueries({ queryKey: ['reward-certificates'] });
@@ -67,7 +69,7 @@ export default function RewardCertificatesPage() {
           <Award className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="page-title">Certificats de Récompense</h1>
+          <h1 className="page-title">{tText('Certificats de Récompense')}</h1>
           <p className="page-subtitle">Récompensez l'engagement de vos membres</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
@@ -83,7 +85,7 @@ export default function RewardCertificatesPage() {
           </div>
           <button onClick={() => setShowIssue(true)}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-sm font-medium hover:from-yellow-600 hover:to-amber-600 transition-all shadow-lg flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Émettre
+            <Plus className="w-4 h-4" /> {tText('Émettre')}
           </button>
         </div>
       </div>
@@ -109,7 +111,7 @@ export default function RewardCertificatesPage() {
                   <p className="text-xs text-gray-500 mb-2">{c.description}</p>
                   <div className="text-xs text-gray-400">
                     <div>{c.memberName || c.memberId.slice(0, 8)}...</div>
-                    <div>{new Date(c.issuedAt).toLocaleDateString('fr-FR')}</div>
+                    <div>{new Date(c.issuedAt).toLocaleDateString(getI18nLocale())}</div>
                   </div>
                 </div>
               ))}
@@ -145,7 +147,7 @@ export default function RewardCertificatesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowIssue(false)} />
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Émettre un certificat</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Émettre un certificat')}</h2>
             <div className="space-y-4">
               <input type="text" value={newCert.memberId} onChange={e => setNewCert({ ...newCert, memberId: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm"
@@ -160,13 +162,13 @@ export default function RewardCertificatesPage() {
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm">
                 <option value="PARTICIPATION">Participation</option>
                 <option value="EXCELLENCE">Excellence</option>
-                <option value="FIDÉLITÉ">Fidélité</option>
+                <option value="FIDÉLITÉ">{tText('Fidélité')}</option>
                 <option value="SERVICE">Service</option>
-                <option value="ÉVANGÉLISATION">Évangélisation</option>
+                <option value="ÉVANGÉLISATION">{tText('Évangélisation')}</option>
               </select>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowIssue(false)} className="px-4 py-2 rounded-xl border text-sm">Annuler</button>
+              <button onClick={() => setShowIssue(false)} className="px-4 py-2 rounded-xl border text-sm">{tText('Annuler')}</button>
               <button onClick={() => issueMutation.mutate()} disabled={issueMutation.isPending}
                 className="px-4 py-2 rounded-xl bg-yellow-500 text-white text-sm font-medium hover:bg-yellow-600 flex items-center gap-2">
                 {issueMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

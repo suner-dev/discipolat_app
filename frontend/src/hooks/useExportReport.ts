@@ -2,6 +2,7 @@ import { useState } from 'react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
+import { tText } from '@/i18n';
 type ExportFormat = 'html' | 'csv';
 
 interface ExportOptions {
@@ -31,7 +32,7 @@ export function useExportReport() {
         const newWindow = window.open(url, '_blank');
         if (newWindow) {
           window.URL.revokeObjectURL(url);
-          toast.success('Rapport ouvert dans un nouvel onglet — utilisez Ctrl+P pour exporter en PDF');
+          toast.success(tText('Rapport ouvert dans un nouvel onglet — utilisez Ctrl+P pour exporter en PDF'));
           setIsExporting(false);
           return;
         }
@@ -45,7 +46,7 @@ export function useExportReport() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('Fichier téléchargé');
+      toast.success(tText('Fichier téléchargé'));
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     } finally {

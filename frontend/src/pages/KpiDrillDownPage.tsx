@@ -5,6 +5,7 @@ import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import toast from 'react-hot-toast';
 import { BarChart3, TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle2, Lightbulb } from 'lucide-react';
 
+import { tText } from '@/i18n';
 interface KpiNarrative {
   id: string;
   typeKPI: string;
@@ -89,7 +90,7 @@ export default function KpiDrillDownPage() {
             <BarChart3 className="w-8 h-8 text-blue-500" />
             Drill-down Narratif KPI
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Cliquez sur un KPI pour obtenir une analyse narrative automatique</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{tText('Cliquez sur un KPI pour obtenir une analyse narrative automatique')}</p>
         </div>
       </div>
 
@@ -100,7 +101,7 @@ export default function KpiDrillDownPage() {
             className={`relative overflow-hidden rounded-xl p-4 bg-gradient-to-br ${kpi.color} text-white text-left transition-all hover:scale-[1.02] hover:shadow-lg disabled:opacity-50`}>
             <div className="text-2xl mb-2">{kpi.icon}</div>
             <div className="text-sm font-semibold">{kpi.label}</div>
-            <div className="text-xs opacity-80 mt-1">Cliquez pour analyser</div>
+            <div className="text-xs opacity-80 mt-1">{tText('Cliquez pour analyser')}</div>
             {generating && selectedKpi === kpi.key && (
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -111,12 +112,12 @@ export default function KpiDrillDownPage() {
       </div>
 
       {/* Narratives */}
-      <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Analyses récentes</h2>
+      <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{tText('Analyses récentes')}</h2>
       {loading ? <SkeletonLoader lines={4} variant="card" /> :
         narratives.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>Cliquez sur un KPI ci-dessus pour générer une analyse narrative</p>
+            <p>{tText('Cliquez sur un KPI ci-dessus pour générer une analyse narrative')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -147,7 +148,7 @@ export default function KpiDrillDownPage() {
                       <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <AlertTriangle className="w-4 h-4 text-amber-500" />
-                          <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">Causes identifiées</span>
+                          <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">{tText('Causes identifiées')}</span>
                         </div>
                         <div className="text-sm text-amber-800 dark:text-amber-300 space-y-1">
                           {n.causes.split(' | ').map((cause, i) => (

@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { Heart, Loader2, Sparkles } from 'lucide-react';
 
+import { getI18nLocale } from '@/i18n';
+import { tText } from '@/i18n';
 interface Encouragement {
   soulId: string;
   soulName?: string;
@@ -37,7 +39,7 @@ export default function EncouragementsPage() {
       {loadingSouls ? (
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>
       ) : souls.length === 0 ? (
-        <div className="glass-card p-10 text-center text-gray-500">Aucun membre trouvé</div>
+        <div className="glass-card p-10 text-center text-gray-500">{tText('Aucun membre trouvé')}</div>
       ) : (
         <div className="space-y-4">
           {souls.map((soul) => (
@@ -73,10 +75,10 @@ function EncouragementCard({ soul }: { soul: Soul }) {
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-300 italic leading-relaxed">"{data.message}"</p>
           {data.verse && <p className="text-xs text-primary-500 mt-2">📖 {data.verse}</p>}
-          <p className="text-[11px] text-gray-500 mt-2">{new Date(data.generatedAt).toLocaleDateString('fr-FR')}</p>
+          <p className="text-[11px] text-gray-500 mt-2">{new Date(data.generatedAt).toLocaleDateString(getI18nLocale())}</p>
         </div>
       ) : (
-        <p className="text-xs text-gray-500">Aucun encouragement disponible</p>
+        <p className="text-xs text-gray-500">{tText('Aucun encouragement disponible')}</p>
       )}
     </div>
   );
