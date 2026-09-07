@@ -5,6 +5,7 @@ import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.departments.domain.Department;
+import com.discipolat.modules.departments.domain.DepartmentAssignmentRepository;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.domain.EventRepository;
@@ -37,6 +38,7 @@ public class BenchmarkController {
     private final SoulRepository soulRepository;
     private final AlertRepository alertRepository;
     private final DepartmentRepository departmentRepository;
+    private final DepartmentAssignmentRepository departmentAssignmentRepository;
     private final FamilyRepository familyRepository;
     private final EventRepository eventRepository;
     private final com.discipolat.modules.events.domain.EventRegistrationRepository eventRegistrationRepository;
@@ -56,19 +58,23 @@ public class BenchmarkController {
                 .count();
 
         long disciplesActive = souls.stream()
-                .filter(s -> s.getStatut() == StatutAme.DISCIPLE || s.getStatut() == StatutAme.AME)
+                .filter(s -> s.getStatut() == StatutAme.ACTIF)
                 .count();
 
+        long volunteers = departmentAssignmentRepository.findAll().stream()
+                .filter(com.discipolat.modules.departments.domain.DepartmentAssignment::isActif)
+                .map(com.discipolat.modules.departments.domain.DepartmentAssignment::getMemberId)
+                .distinct().count();
         double volunteerRate = totalMembers > 0
-                ? Math.round((double) departments.stream().mapToInt(d -> d.getMembers() != null ? d.getMembers().size() : 0).sum() / totalMembers * 1000.0) / 10.0
+                ? Math.round((double) volunteers / totalMembers * 1000.0) / 10.0
                 : 0.0;
 
         double attendanceRate = computeAttendanceRate();
 
-        List<Event> recentEvents = eventRepository.findByDateDebutBetween(
+        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
                 LocalDateTime.now().minusMonths(3), LocalDateTime.now());
         int reportsSubmitted = (int) recentEvents.stream()
-                .filter(e -> Boolean.TRUE.equals(e.getCompteRenduGenere()))
+                .filter(e -> e.getCompteRendu() != null && !e.getCompteRendu().isBlank())
                 .count();
 
         double growthRate = computeGrowthRate(souls);
@@ -125,7 +131,7 @@ public class BenchmarkController {
     public ResponseEntity<Map<String, Object>> getTrends() {
         List<Soul> souls = soulRepository.findByDeletedFalse();
         List<Department> departments = departmentRepository.findAll();
-        List<Event> allEvents = eventRepository.findByDateDebutBetween(
+        List<Event> allEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
                 LocalDateTime.now().minusMonths(6), LocalDateTime.now());
 
         YearMonth current = YearMonth.now();
@@ -177,7 +183,7 @@ public class BenchmarkController {
     }
 
     private double computeAttendanceRate() {
-        List<Event> recentEvents = eventRepository.findByDateDebutBetween(
+        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
                 LocalDateTime.now().minusMonths(2), LocalDateTime.now());
         if (recentEvents.isEmpty()) return 50.0;
         long totalRegistered = recentEvents.stream()

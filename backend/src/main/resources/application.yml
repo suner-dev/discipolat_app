@@ -166,6 +166,13 @@ app:
     saturday-reminder-cron: "0 0 18 * * SAT"
     dashboard-metrics-cron: "0 0 2 * * *"
     transfer-delay-check-cron: "0 0 * * * *"
+  ai:
+    # Assistants IA (Ollama local). url = base Ollama (health check: GET /api/tags,
+    # chat: POST /api/chat). model = modèle utilisé (ex. llama3, mistral, qwen2.5).
+    # Si Ollama n'est pas joignable, un moteur de repli contextuel garantit
+    # que l'assistant répond toujours (aucune panne visible côté utilisateur).
+    ollama-url: ${OLLAMA_URL:http://localhost:11434}
+    model: ${AI_MODEL:llama3}
 
 springdoc:
   api-docs:

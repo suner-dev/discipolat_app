@@ -39,7 +39,7 @@ public class AdminStatsController {
         long newConverts = soulRepository.countByTypeDisciple(TypeDisciple.NOUVEAU_CONVERTI);
 
         Map<String, Object> kpi = dashboardService.getKPI(null, null, null, null);
-        double attendanceRate = (Number) kpi.getOrDefault("tauxPresenceGlobal", 0.0);
+        double attendanceRate = ((Number) kpi.getOrDefault("tauxPresenceGlobal", 0.0)).doubleValue();
         double growthRate = totalMembers > 0
                 ? Math.round((double) newConverts / totalMembers * 1000.0) / 10.0
                 : 0.0;
