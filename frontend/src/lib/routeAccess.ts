@@ -137,6 +137,13 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/passport': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/ai-predictions': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
 
+  // IA, Voice, Exports, Imports - accessibles à tous les rôles
+  '/ai-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/voice-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/exports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/import': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/admin/import': ['ADMIN', 'PASTEUR'],
+
   // Nouveaux modules issus de l'audit des endpoints orphelins
   '/admin-requests': ['ADMIN', 'PASTEUR'],
   '/emergency-aid': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -147,7 +154,6 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/ai-predictions/risks': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/team-tasks': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
   '/sermon-translations': ['ADMIN', 'PASTEUR'],
-  '/admin/import': ['ADMIN', 'PASTEUR'],
   '/kpi-narrative': ['ADMIN', 'PASTEUR'],
   '/maker-tracking': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/member-competences': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
