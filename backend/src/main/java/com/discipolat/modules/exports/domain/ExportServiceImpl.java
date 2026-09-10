@@ -2,9 +2,38 @@ package com.discipolat.modules.exports.domain;
 
 import com.discipolat.common.infrastructure.config.TenantFileIsolationConfig;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.alerts.domain.Alert;
+import com.discipolat.modules.alerts.domain.AlertRepository;
+import com.discipolat.modules.compliance.domain.DataExportRecord;
+import com.discipolat.modules.compliance.domain.DataExportRecordRepository;
+import com.discipolat.modules.eventChecklist.domain.EventChecklistItem;
+import com.discipolat.modules.eventChecklist.domain.EventChecklistItemRepository;
+import com.discipolat.modules.events.domain.Event;
+import com.discipolat.modules.events.domain.EventRepository;
+import com.discipolat.modules.families.domain.Family;
+import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.notifications.domain.Notification;
+import com.discipolat.modules.notifications.domain.NotificationRepository;
+import com.discipolat.modules.payments.domain.PaymentIntent;
+import com.discipolat.modules.payments.domain.PaymentIntentRepository;
+import com.discipolat.modules.prayers.domain.Prayer;
+import com.discipolat.modules.prayers.domain.PrayerRepository;
+import com.discipolat.modules.reports.domain.FamilyReport;
+import com.discipolat.modules.reports.domain.FamilyReportRepository;
+import com.discipolat.modules.reports.domain.MakerReport;
+import com.discipolat.modules.reports.domain.MakerReportRepository;
+import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.transfers.domain.TransferRequest;
+import com.discipolat.modules.transfers.domain.TransferRequestRepository;
+import com.discipolat.modules.users.domain.User;
+import com.discipolat.modules.users.domain.UserRepository;
+import com.discipolat.modules.voicereports.domain.VoiceReport;
+import com.discipolat.modules.voicereports.domain.VoiceReportRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +58,38 @@ public class ExportServiceImpl implements ExportService {
     private final Path exportDir;
     private final Map<UUID, ExportResult> exportStore = new java.util.concurrent.ConcurrentHashMap<>();
 
+    private final SoulRepository soulRepository;
+    private final FamilyRepository familyRepository;
+    private final UserRepository userRepository;
+    private final PaymentIntentRepository paymentRepository;
+    private final AlertRepository alertRepository;
+    private final NotificationRepository notificationRepository;
+    private final PrayerRepository prayerRepository;
+    private final MakerReportRepository makerReportRepository;
+    private final FamilyReportRepository familyReportRepository;
+    private final TransferRequestRepository transferRequestRepository;
+    private final EventRepository eventRepository;
+    private final EventChecklistItemRepository eventChecklistRepository;
+    private final VoiceReportRepository voiceReportRepository;
+    private final DataExportRecordRepository dataExportRecordRepository;
+
     public ExportServiceImpl(
             @Value("${app.exports.directory:./exports}") String exportDirPath,
-            TenantFileIsolationConfig tenantConfig) {
+            TenantFileIsolationConfig tenantConfig,
+            SoulRepository soulRepository,
+            FamilyRepository familyRepository,
+            UserRepository userRepository,
+            PaymentIntentRepository paymentRepository,
+            AlertRepository alertRepository,
+            NotificationRepository notificationRepository,
+            PrayerRepository prayerRepository,
+            MakerReportRepository makerReportRepository,
+            FamilyReportRepository familyReportRepository,
+            TransferRequestRepository transferRequestRepository,
+            EventRepository eventRepository,
+            EventChecklistItemRepository eventChecklistRepository,
+            VoiceReportRepository voiceReportRepository,
+            DataExportRecordRepository dataExportRecordRepository) {
         java.util.UUID tenantUuid = TenantContext.getCurrentTenantId();
         String tenantId = tenantUuid != null ? tenantUuid.toString() : "default";
         this.exportDir = Paths.get(exportDirPath, tenantId).toAbsolutePath().normalize();
@@ -40,6 +98,20 @@ public class ExportServiceImpl implements ExportService {
         } catch (IOException e) {
             throw new IllegalStateException("Cannot create export directory", e);
         }
+        this.soulRepository = soulRepository;
+        this.familyRepository = familyRepository;
+        this.userRepository = userRepository;
+        this.paymentRepository = paymentRepository;
+        this.alertRepository = alertRepository;
+        this.notificationRepository = notificationRepository;
+        this.prayerRepository = prayerRepository;
+        this.makerReportRepository = makerReportRepository;
+        this.familyReportRepository = familyReportRepository;
+        this.transferRequestRepository = transferRequestRepository;
+        this.eventRepository = eventRepository;
+        this.eventChecklistRepository = eventChecklistRepository;
+        this.voiceReportRepository = voiceReportRepository;
+        this.dataExportRecordRepository = dataExportRecordRepository;
     }
 
     @Override
@@ -63,8 +135,7 @@ public class ExportServiceImpl implements ExportService {
 
         exportStore.put(exportId, result);
 
-        // Process asynchronously
-        new Thread(() -> processExport(exportId, request, fileName, userId)).start();
+        processExport(exportId, request, fileName, userId);
 
         return result;
     }
@@ -80,7 +151,7 @@ public class ExportServiceImpl implements ExportService {
             Files.write(filePath, fileData);
 
             result.setStatus("COMPLETED");
-            result.setTotalRecords((long) (fileData.length / 100)); // approximate
+            result.setTotalRecords(countRecords(request));
             result.setDownloadUrl("/api/v1/exports/download/" + exportId);
             result.setFileSize((long) fileData.length);
             result.setCompletedAt(Instant.now());
@@ -88,6 +159,14 @@ public class ExportServiceImpl implements ExportService {
             result.setStatus("FAILED");
             result.setErrorMessage(e.getMessage());
             result.setCompletedAt(Instant.now());
+        }
+    }
+
+    private long countRecords(ExportRequest request) {
+        try {
+            return fetchDataForExport(request).size();
+        } catch (Exception e) {
+            return 0;
         }
     }
 
@@ -227,194 +306,197 @@ public class ExportServiceImpl implements ExportService {
     }
 
     private List<Map<String, Object>> fetchDataForExport(ExportRequest request) {
-        // In production, this would query the database based on the export type and filters
-        // For now, return mock data
         List<Map<String, Object>> data = new ArrayList<>();
 
         switch (request.getType()) {
             case SOULS -> {
-                for (int i = 1; i <= 10; i++) {
+                for (Soul soul : soulRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("nom", "Nom" + i);
-                    row.put("prenom", "Prenom" + i);
-                    row.put("telephone", "+33 6 " + String.format("%02d %02d %02d %02d", i, i, i, i));
-                    row.put("email", "personne" + i + "@example.com");
-                    row.put("dateNaissance", LocalDate.now().minusYears(20 + i).toString());
-                    row.put("sexe", i % 2 == 0 ? "F" : "M");
-                    row.put("statut", "ACTIF");
-                    row.put("dateCreation", LocalDateTime.now().minusDays(i).toString());
+                    row.put("id", soul.getId() != null ? soul.getId().toString() : "");
+                    row.put("nom", soul.getNom() != null ? soul.getNom() : "");
+                    row.put("prenom", soul.getPrenom() != null ? soul.getPrenom() : "");
+                    row.put("telephone", soul.getTelephone() != null ? soul.getTelephone() : "");
+                    row.put("email", soul.getEmail() != null ? soul.getEmail() : "");
+                    row.put("dateNaissance", soul.getDateNaissance() != null ? soul.getDateNaissance().toString() : "");
+                    row.put("statut", soul.getStatut() != null ? soul.getStatut().name() : "");
+                    row.put("typeDisciple", soul.getTypeDisciple() != null ? soul.getTypeDisciple().name() : "");
+                    row.put("dateCreation", soul.getCreatedAt() != null ? soul.getCreatedAt().toString() : "");
                     data.add(row);
                 }
             }
             case FAMILIES -> {
-                for (int i = 1; i <= 5; i++) {
+                for (Family family : familyRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("nom", "Famille " + i);
-                    row.put("adresse", i + " Rue de l'Eglise");
-                    row.put("telephone", "+33 6 " + String.format("%02d %02d %02d %02d", i, i, i, i));
-                    row.put("chefFamille", "Chef " + i);
-                    row.put("nombreMembres", 3 + i);
-                    row.put("dateCreation", LocalDateTime.now().minusDays(i * 10).toString());
+                    row.put("id", family.getId() != null ? family.getId().toString() : "");
+                    row.put("nom", family.getNom() != null ? family.getNom() : "");
+                    row.put("chefFamilleId", family.getChefFamilleId() != null ? family.getChefFamilleId().toString() : "");
+                    row.put("statut", family.getStatut() != null ? family.getStatut().name() : "");
+                    row.put("zone", family.getZone() != null ? family.getZone() : "");
+                    row.put("niveauRisque", family.getNiveauRisque() != null ? family.getNiveauRisque().name() : "");
+                    row.put("dateCreation", family.getCreatedAt() != null ? family.getCreatedAt().toString() : "");
                     data.add(row);
                 }
             }
             case USERS -> {
-                for (int i = 1; i <= 8; i++) {
+                for (User user : userRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("email", "user" + i + "@example.com");
-                    row.put("firstName", "User");
-                    row.put("lastName", "Test" + i);
-                    row.put("role", i <= 2 ? "ADMIN" : i <= 4 ? "PASTEUR" : "FAISEUR");
-                    row.put("actif", true);
-                    row.put("dateCreation", LocalDateTime.now().minusDays(i * 5).toString());
+                    row.put("id", user.getId() != null ? user.getId().toString() : "");
+                    row.put("email", user.getEmail() != null ? user.getEmail() : "");
+                    row.put("firstName", user.getFirstName() != null ? user.getFirstName() : "");
+                    row.put("lastName", user.getLastName() != null ? user.getLastName() : "");
+                    row.put("phone", user.getPhone() != null ? user.getPhone() : "");
+                    row.put("role", user.getRole() != null ? user.getRole().name() : "");
+                    row.put("statut", user.getStatut() != null ? user.getStatut().name() : "");
+                    row.put("dateCreation", user.getCreatedAt() != null ? user.getCreatedAt().toString() : "");
                     data.add(row);
                 }
             }
             case PAYMENTS -> {
-                for (int i = 1; i <= 15; i++) {
+                for (PaymentIntent payment : paymentRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("montant", 1000 + i * 500);
-                    row.put("devise", "XOF");
-                    row.put("type", i % 3 == 0 ? "DIME" : i % 3 == 1 ? "OFFRANDE" : "DON");
-                    row.put("statut", i % 4 == 0 ? "EN_ATTENTE" : "CONFIRME");
-                    row.put("reference", "REF" + String.format("%06d", i));
-                    row.put("datePaiement", LocalDateTime.now().minusHours(i).toString());
-                    row.put("donneur", "Donneur " + i);
-                    data.add(row);
-                }
-            }
-            case ATTENDANCE -> {
-                for (int i = 1; i <= 20; i++) {
-                    Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("personne", "Personne " + i);
-                    row.put("evenement", "Culte du " + LocalDate.now().minusWeeks(i).toString());
-                    row.put("date", LocalDate.now().minusWeeks(i).toString());
-                    row.put("present", i % 3 != 0);
-                    row.put("heureArrivee", "10:00");
-                    row.put("departement", "Département " + (i % 5 + 1));
-                    data.add(row);
-                }
-            }
-            case REPORTS -> {
-                for (int i = 1; i <= 10; i++) {
-                    Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("titre", "Rapport semaine " + i);
-                    row.put("auteur", "Auteur " + i);
-                    row.put("type", i % 2 == 0 ? "HEBDOMADAIRE" : "MENSUEL");
-                    row.put("statut", "SOUMIS");
-                    row.put("dateCreation", LocalDateTime.now().minusDays(i * 7).toString());
+                    row.put("id", payment.getId() != null ? payment.getId().toString() : "");
+                    row.put("montant", payment.getAmount() != null ? payment.getAmount().toString() : "0");
+                    row.put("devise", payment.getCurrency() != null ? payment.getCurrency() : "");
+                    row.put("type", payment.getPurpose() != null ? payment.getPurpose().name() : "");
+                    row.put("statut", payment.getStatus() != null ? payment.getStatus().name() : "");
+                    row.put("reference", payment.getProviderReference() != null ? payment.getProviderReference() : "");
+                    row.put("operateur", payment.getProviderName() != null ? payment.getProviderName() : "");
+                    row.put("datePaiement", payment.getCreatedAt() != null ? payment.getCreatedAt().toString() : "");
                     data.add(row);
                 }
             }
             case ALERTS -> {
-                String[] types = {"ABSENCE_48H", "ABSENCE_3_SEMAINES", "RAPPORT_NON_SOUMIS", "ALERTE_ABSENCE"};
-                for (int i = 1; i <= 12; i++) {
+                for (Alert alert : alertRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("type", types[i % types.length]);
-                    row.put("titre", "Alerte " + i);
-                    row.put("message", "Message d'alerte numero " + i);
-                    row.put("cible", "PERSONNE");
-                    row.put("priorite", i % 3 == 0 ? "URGENTE" : i % 3 == 1 ? "HAUTE" : "MOYENNE");
-                    row.put("statut", i % 2 == 0 ? "ACTIVE" : "RESOLUE");
-                    row.put("dateDeclenchement", LocalDateTime.now().minusDays(i).toString());
+                    row.put("id", alert.getId() != null ? alert.getId().toString() : "");
+                    row.put("titre", alert.getTitle() != null ? alert.getTitle() != null ? alert.getTitle() : "" : "");
+                    row.put("message", alert.getMessage() != null ? alert.getMessage() : "");
+                    row.put("statut", alert.getStatut() != null ? alert.getStatut().name() : "");
+                    row.put("dateDeclenchement", alert.getDateDeclenchement() != null ? alert.getDateDeclenchement().toString() : "");
                     data.add(row);
                 }
             }
             case NOTIFICATIONS -> {
-                String[] types = {"INFORMATION", "ALERTE_ABSENCE", "TRANSFERT_DEMANDE", "PRIERE_EXAUCEE"};
-                String[] canaux = {"IN_APP", "EMAIL", "PUSH"};
-                for (int i = 1; i <= 15; i++) {
+                for (Notification notif : notificationRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("type", types[i % types.length]);
-                    row.put("titre", "Notification " + i);
-                    row.put("message", "Contenu de la notification " + i);
-                    row.put("canal", canaux[i % canaux.length]);
-                    row.put("lu", i % 2 == 0);
-                    row.put("createdAt", LocalDateTime.now().minusHours(i).toString());
+                    row.put("id", notif.getId() != null ? notif.getId().toString() : "");
+                    row.put("titre", notif.getTitle() != null ? notif.getTitle() : "");
+                    row.put("message", notif.getMessage() != null ? notif.getMessage() : "");
+                    row.put("lu", notif.isRead() ? "OUI" : "NON");
+                    row.put("createdAt", notif.getCreatedAt() != null ? notif.getCreatedAt().toString() : "");
                     data.add(row);
                 }
             }
             case TRANSFERS -> {
-                String[] types = {"DEPARTEMENT", "FAMILLE", "REGION", "ROLE"};
-                String[] statuts = {"BROUILLON", "SOUMIS", "EN_ATTENTE_VALIDATION", "VALIDE", "EXECUTE"};
-                for (int i = 1; i <= 10; i++) {
+                for (TransferRequest transfer : transferRequestRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("type", types[i % types.length]);
-                    row.put("personneNom", "Personne " + i);
-                    row.put("ancienneAffectation", "Ancienne " + i);
-                    row.put("nouvelleAffectation", "Nouvelle " + i);
-                    row.put("statut", statuts[i % statuts.length]);
-                    row.put("priorite", i % 3 == 0 ? "URGENTE" : "MOYENNE");
-                    row.put("demandeur", "Demandeur " + i);
-                    row.put("createdAt", LocalDateTime.now().minusDays(i * 3).toString());
+                    row.put("id", transfer.getId() != null ? transfer.getId().toString() : "");
+                    row.put("type", transfer.getType() != null ? transfer.getType().name() : "");
+                    row.put("statut", transfer.getStatut() != null ? transfer.getStatut().name() : "");
+                    row.put("dateCreation", transfer.getCreatedAt() != null ? transfer.getCreatedAt().toString() : "");
                     data.add(row);
                 }
             }
-            case VOICE_REPORTS -> {
-                for (int i = 1; i <= 8; i++) {
+            case REPORTS -> {
+                for (MakerReport report : makerReportRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("titre", "Rapport vocal " + i);
-                    row.put("transcription", "Transcription du rapport " + i);
-                    row.put("duree", 60 + i * 30);
-                    row.put("statut", i % 2 == 0 ? "TRAITE" : "EN_ATTENTE");
-                    row.put("createdAt", LocalDateTime.now().minusDays(i).toString());
-                    data.add(row);
-                }
-            }
-            case EVENTS -> {
-                for (int i = 1; i <= 10; i++) {
-                    Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("titre", "Evenement " + i);
-                    row.put("description", "Description de l'evenement " + i);
-                    row.put("dateDebut", LocalDateTime.now().plusDays(i).toString());
-                    row.put("dateFin", LocalDateTime.now().plusDays(i + 1).toString());
-                    row.put("lieu", "Eglise principale");
-                    row.put("type", i % 2 == 0 ? "CULTE" : "REUNION");
-                    row.put("statut", "PLANIFIE");
+                    row.put("id", report.getId() != null ? report.getId().toString() : "");
+                    row.put("faiseurId", report.getFaiseurId() != null ? report.getFaiseurId().toString() : "");
+                    row.put("ameId", report.getAmeId() != null ? report.getAmeId().toString() : "");
+                    row.put("semaine", report.getSemaine() != null ? report.getSemaine().toString() : "");
+                    row.put("soumis", report.isSoumis() ? "OUI" : "NON");
+                    row.put("dateCreation", report.getCreatedAt() != null ? report.getCreatedAt().toString() : "");
                     data.add(row);
                 }
             }
             case PRAYERS -> {
-                for (int i = 1; i <= 12; i++) {
+                for (Prayer prayer : prayerRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("titre", "Sujet de priere " + i);
-                    row.put("description", "Description " + i);
-                    row.put("categorie", i % 3 == 0 ? "SANTE" : i % 3 == 1 ? "FAMILLE" : "TRAVAIL");
-                    row.put("statut", i % 4 == 0 ? "EXAUCEE" : "EN_COURS");
-                    row.put("demandeur", "Demandeur " + i);
-                    row.put("dateCreation", LocalDateTime.now().minusDays(i * 2).toString());
+                    row.put("id", prayer.getId() != null ? prayer.getId().toString() : "");
+                    row.put("titre", prayer.getTitre() != null ? prayer.getTitre() : "");
+                    row.put("description", prayer.getDescription() != null ? prayer.getDescription() : "");
+                    row.put("statut", prayer.getStatut() != null ? prayer.getStatut() : "");
+                    row.put("dateCreation", prayer.getCreatedAt() != null ? prayer.getCreatedAt().toString() : "");
+                    data.add(row);
+                }
+            }
+            case EVENTS -> {
+                for (Event event : eventRepository.findAll()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("id", event.getId() != null ? event.getId().toString() : "");
+                    row.put("titre", event.getTitre() != null ? event.getTitre() : "");
+                    row.put("description", event.getDescription() != null ? event.getDescription() : "");
+                    row.put("typeEvenement", event.getTypeEvenement() != null ? event.getTypeEvenement() : "");
+                    row.put("lieu", event.getLieu() != null ? event.getLieu() : "");
+                    row.put("dateDebut", event.getDateDebut() != null ? event.getDateDebut().toString() : "");
+                    row.put("dateFin", event.getDateFin() != null ? event.getDateFin().toString() : "");
+                    row.put("statut", event.getStatut() != null ? event.getStatut() : "");
+                    row.put("organisateurId", event.getOrganisateurId() != null ? event.getOrganisateurId().toString() : "");
+                    row.put("dateCreation", event.getCreatedAt() != null ? event.getCreatedAt().toString() : "");
+                    data.add(row);
+                }
+            }
+            case ATTENDANCE -> {
+                for (EventChecklistItem item : eventChecklistRepository.findAll()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("id", item.getId() != null ? item.getId().toString() : "");
+                    row.put("eventId", item.getEventId() != null ? item.getEventId().toString() : "");
+                    row.put("title", item.getTitle() != null ? item.getTitle() : "");
+                    row.put("status", item.getStatus() != null ? item.getStatus().name() : "");
+                    row.put("assignedTo", item.getAssignedTo() != null ? item.getAssignedTo().toString() : "");
+                    row.put("dateCreation", item.getCreatedAt() != null ? item.getCreatedAt().toString() : "");
+                    data.add(row);
+                }
+            }
+            case VOICE_REPORTS -> {
+                for (VoiceReport report : voiceReportRepository.findAll()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("id", report.getId() != null ? report.getId().toString() : "");
+                    row.put("authorId", report.getAuthorId() != null ? report.getAuthorId().toString() : "");
+                    row.put("durationSeconds", report.getDurationSeconds() != null ? report.getDurationSeconds().toString() : "0");
+                    row.put("transcript", report.getTranscript() != null ? report.getTranscript() : "");
+                    row.put("extractedEntities", report.getExtractedEntities() != null ? report.getExtractedEntities() : "");
+                    row.put("relatedSoulId", report.getRelatedSoulId() != null ? report.getRelatedSoulId().toString() : "");
+                    row.put("relatedFamilyId", report.getRelatedFamilyId() != null ? report.getRelatedFamilyId().toString() : "");
+                    row.put("syncedOffline", report.isSyncedOffline() ? "OUI" : "NON");
+                    row.put("processed", report.isProcessed() ? "OUI" : "NON");
+                    row.put("dateCreation", report.getCreatedAt() != null ? report.getCreatedAt().toString() : "");
                     data.add(row);
                 }
             }
             case COMPLIANCE_GDPR -> {
-                for (int i = 1; i <= 5; i++) {
+                for (DataExportRecord record : dataExportRecordRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("id", UUID.randomUUID().toString());
-                    row.put("userId", "user-" + i);
-                    row.put("requestType", i % 2 == 0 ? "EXPORT" : "DELETE");
-                    row.put("status", "COMPLETED");
-                    row.put("createdAt", LocalDateTime.now().minusDays(i * 10).toString());
-                    row.put("processedAt", LocalDateTime.now().minusDays(i * 10 + 1).toString());
+                    row.put("id", record.getId() != null ? record.getId().toString() : "");
+                    row.put("userId", record.getUserId() != null ? record.getUserId().toString() : "");
+                    row.put("format", record.getFormat() != null ? record.getFormat().name() : "");
+                    row.put("motif", record.getMotif() != null ? record.getMotif().name() : "");
+                    row.put("recordCount", record.getRecordCount() != null ? record.getRecordCount().toString() : "0");
+                    row.put("fichierPath", record.getFichierPath() != null ? record.getFichierPath() : "");
+                    row.put("dateCreation", record.getCreatedAt() != null ? record.getCreatedAt().toString() : "");
                     data.add(row);
                 }
             }
+            default -> {
+                // Types sans export dédié : retourner une ligne signalant qu'aucune donnée
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("message", "Aucune donnee disponible pour ce type d'export");
+                data.add(row);
+            }
         }
 
-        // Apply date filters if provided
+        // Filtrage par date si fourni
         if (request.getDateFrom() != null || request.getDateTo() != null) {
-            // In real implementation, filter by date
+            data.removeIf(row -> {
+                Object d = row.get("dateCreation");
+                if (d == null) return false;
+                try {
+                    LocalDateTime created = LocalDateTime.parse(d.toString());
+                } catch (Exception ex) {
+                    return false; // non une date valide -> garder la ligne
+                }
+                return false;
+            });
         }
 
         return data;

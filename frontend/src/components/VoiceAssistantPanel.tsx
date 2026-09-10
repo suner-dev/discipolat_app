@@ -63,7 +63,6 @@ export function VoiceAssistantPanel() {
               {isVoiceEnabled && ' • Voix active'}
             </p>
           </div>
-}
 
 
           <div className="p-3 border-b border-gray-100 flex gap-2">

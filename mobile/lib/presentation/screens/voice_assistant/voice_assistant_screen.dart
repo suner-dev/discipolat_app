@@ -8,6 +8,7 @@ import 'package:just_audio/just_audio.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// P0 #5 — Assistant vocal conversationnel PasteurBot (mobile).
 ///
@@ -17,6 +18,50 @@ import '../../../data/services/api_service.dart';
 /// - Réponse contextuelle de l'IA
 /// - Suggestions de commandes suivantes
 /// - Commandes vocales prédéfinies
+
+// ── Data models ──────────────────────────────────────
+
+class _ChatMessage {
+  final String role;
+  final String content;
+  final DateTime timestamp;
+  final String? intent;
+  final List<_Suggestion>? suggestions;
+
+  _ChatMessage({
+    required this.role,
+    required this.content,
+    required this.timestamp,
+    this.intent,
+    this.suggestions,
+  });
+}
+
+class _Suggestion {
+  final String command;
+  final String icon;
+
+  _Suggestion({required this.command, required this.icon});
+}
+
+/// Audio source pour jouer des bytes audio (TTS).
+class _BytesAudioSource extends StreamAudioSource {
+  final Uint8List _bytes;
+
+  _BytesAudioSource(this._bytes);
+
+  @override
+  Future<StreamAudioResponse> request([int? start, int? end]) async {
+    return StreamAudioResponse(
+      sourceLength: _bytes.length,
+      contentLength: _bytes.length,
+      offset: 0,
+      stream: Stream.value(_bytes),
+      contentType: 'audio/mpeg',
+    );
+  }
+}
+
 class VoiceAssistantScreen extends StatefulWidget {
   const VoiceAssistantScreen({super.key});
 
@@ -56,7 +101,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
     l10n.translate('voiceCmd6'),
   ];
 
-// ── API calls ──────────────────────────────────────
+  // ── API calls ──────────────────────────────────────
 
   Future<void> _processMessage(String text) async {
     if (text.trim().isEmpty || _isProcessing) return;
@@ -117,10 +162,13 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
     if (_isPlaying || text.trim().isEmpty) return;
     setState(() => _isPlaying = true);
     try {
-      final res = await _api.post('/voice/tts', data: {
+      // Endpoint backend : POST /api/v1/voice/tts (le /api/v1 est porté par
+      // ApiConfig.baseUrl — on n'ajoute donc PAS le préfixe ici).
+      final res = await _api.postBytes('/voice/tts', data: {
         'text': text,
         'language': 'fr',
-      }, headers: {'Accept': 'audio/mpeg'});
+        'voice': 'alloy',
+      });
       if (res.data != null) {
         final bytes = res.data is List<int> ? Uint8List.fromList(res.data.cast<int>()) : null;
         if (bytes != null && bytes.isNotEmpty) {
@@ -659,6 +707,8 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
   }
 
   Widget _buildCommandsPanel() {
+    final l10n = AppLocalizations.of(context);
+    final commands = _getQuickCommands(l10n);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -686,7 +736,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
             ],
           ),
           const SizedBox(height: 8),
-          ..._quickCommands.map((cmd) => Padding(
+          ...commands.map((cmd) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: GestureDetector(
                   onTap: () {
@@ -794,49 +844,6 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
           ),
         ],
       ),
-
-/// Audio source pour jouer des bytes audio (TTS).
-class _BytesAudioSource extends StreamAudioSource {
-  final Uint8List _bytes;
-
-  _BytesAudioSource(this._bytes);
-
-  @override
-  Future<StreamAudioResponse> request([int? start, int? end]) async {
-    return StreamAudioResponse(
-      sourceLength: _bytes.length,
-      contentLength: _bytes.length,
-      offset: 0,
-      stream: Stream.value(_bytes),
-      contentType: 'audio/mpeg',
     );
   }
-}
-    );
-  }
-}
-
-// ── Data models ──────────────────────────────────────
-
-class _ChatMessage {
-  final String role;
-  final String content;
-  final DateTime timestamp;
-  final String? intent;
-  final List<_Suggestion>? suggestions;
-
-  _ChatMessage({
-    required this.role,
-    required this.content,
-    required this.timestamp,
-    this.intent,
-    this.suggestions,
-  });
-}
-
-class _Suggestion {
-  final String command;
-  final String icon;
-
-  _Suggestion({required this.command, required this.icon});
 }

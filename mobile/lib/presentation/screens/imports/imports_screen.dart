@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
@@ -69,7 +70,7 @@ class _ImportsScreenState extends State<ImportsScreen> {
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.only(right: 8),
-              child: Loader2(w: 20, h: 20),
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
         ],
       ),

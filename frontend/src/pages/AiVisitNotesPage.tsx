@@ -18,6 +18,12 @@ interface VisitNote {
   createdAt: string;
 }
 
+interface MemberInfo {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 export default function AiVisitNotesPage() {
   const { t } = useI18n();
 
@@ -26,6 +32,30 @@ export default function AiVisitNotesPage() {
     queryFn: async () => (await api.get('/ai-visit-notes')).data as VisitNote[],
     retry: false,
   });
+
+  // Fetch members info to display names instead of UUIDs
+  const { data: members = [] } = useQuery({
+    queryKey: ['members', 'info'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/members/info');
+        return res.data as MemberInfo[];
+      } catch {
+        return [];
+      }
+    },
+    retry: false,
+  });
+
+  // Create a map for quick lookup: id -> full name
+  const memberNameMap = new Map<string, string>();
+  members.forEach((m) => {
+    memberNameMap.set(m.id, `${m.firstName} ${m.lastName}`.trim());
+  });
+
+  const getMemberName = (id: string): string => {
+    return memberNameMap.get(id) || id?.slice(0, 8) + '...';
+  };
 
   const sentimentIcon = (s: string) => s === 'POSITIVE' ? <Smile className="w-5 h-5 text-green-400" /> : s === 'CONCERNING' ? <Frown className="w-5 h-5 text-orange-400" /> : s === 'CRITICAL' ? <AlertCircle className="w-5 h-5 text-red-400" /> : <Meh className="w-5 h-5 text-gray-400" />;
 
@@ -45,8 +75,8 @@ export default function AiVisitNotesPage() {
           <div key={note.id} className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <h3 className="text-white font-semibold">{note.memberId?.slice(0, 8)}...</h3>
-                <p className="text-xs text-gray-400">{note.pastorId?.slice(0, 8)}... &bull; {note.createdAt}</p>
+                <h3 className="text-white font-semibold">{getMemberName(note.memberId)}</h3>
+                <p className="text-xs text-gray-400">{getMemberName(note.pastorId)} &bull; {note.createdAt}</p>
               </div>
               <div className="flex items-center gap-2">
                 {sentimentIcon(note.aiSentiment)}

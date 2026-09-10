@@ -93,6 +93,14 @@ class ApiService {
   Future<Response> getBytes(String path, {Map<String, dynamic>? params}) =>
     _dio.get(path, queryParameters: params, options: Options(responseType: ResponseType.bytes));
 
+  /// POST qui retourne des données binaires (ex: audio TTS). Utilisé pour
+  /// les endpoints qui répondent en octets (audio/mpeg, pdf, etc.).
+  Future<Response> postBytes(String path, {dynamic data, Map<String, dynamic>? params}) =>
+    _dio.post(path,
+        data: data,
+        queryParameters: params,
+        options: Options(responseType: ResponseType.bytes));
+
   Future<Response> post(String path, {dynamic data}) =>
     _dio.post(path, data: data);
 

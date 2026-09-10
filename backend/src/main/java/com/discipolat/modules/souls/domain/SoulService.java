@@ -115,9 +115,13 @@ public class SoulService {
                 .build();
         soul = soulRepository.save(soul);
         // ===== PROPAGATION CENTRALISÉE =====
-        propagationPublisher.publishCreated("SOUL", soul.getId(),
-                Map.of("nom", soul.getNom(), "prenom", soul.getPrenom(),
-                        "faiseurId", soul.getFaiseurId(), "familleId", soul.getFamilleId() != null ? soul.getFamilleId() : ""),
+        // Map.of() refuse les valeurs null → construire une map tolérante.
+        java.util.Map<String, Object> soulValues = new java.util.LinkedHashMap<>();
+        soulValues.put("nom", soul.getNom() != null ? soul.getNom() : "");
+        soulValues.put("prenom", soul.getPrenom() != null ? soul.getPrenom() : "");
+        soulValues.put("faiseurId", soul.getFaiseurId());
+        soulValues.put("familleId", soul.getFamilleId() != null ? soul.getFamilleId() : "");
+        propagationPublisher.publishCreated("SOUL", soul.getId(), soulValues,
                 "Âme créée");
         return soul;
     }

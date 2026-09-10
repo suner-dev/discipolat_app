@@ -1,9 +1,5 @@
 package com.discipolat.common.infrastructure.config;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -15,11 +11,19 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.ContentCachingResponseWrapper;
 
 /**
- * Rate limiting on /auth/login to prevent brute-force attacks.
- * Uses a simple in-memory bucket: max 5 attempts per IP in a 15-minute window.
- * For production, replace with Redis-backed Bucket4j or similar.
+ * Brute-force protection on /auth/login.
+ *
+ * <p>Counts only <strong>failed</strong> login attempts per IP (HTTP 401/403),
+ * not successful ones. After MAX_ATTEMPTS failed attempts within a 15-minute
+ * window, the IP is temporarily blocked with HTTP 429. A successful login
+ * (HTTP 2xx) resets the counter immediately, so legitimate users who mistype
+ * their password a few times are never permanently locked out.
+ *
+ * <p>This complements {@link AuthService}'s per-account lockout and
+ * {@link PerIpRateLimiter}'s Redis-based rate limiting.
  */
 @Component
 public class BruteForceProtectionFilter extends OncePerRequestFilter {
@@ -36,21 +40,43 @@ public class BruteForceProtectionFilter extends OncePerRequestFilter {
         if (path.contains("/auth/login") && "POST".equalsIgnoreCase(request.getMethod())) {
             String ip = getClientIp(request);
             long now = System.currentTimeMillis();
-            AttemptRecord record = attempts.compute(ip, (key, existing) -> {
-                if (existing == null || now - existing.windowStart > WINDOW_MS) {
-                    return new AttemptRecord(now);
-                }
-                return existing;
-            });
 
-            if (record.count.incrementAndGet() > MAX_ATTEMPTS) {
+            // --- Check if IP is already blocked ---
+            AttemptRecord existing = attempts.get(ip);
+            if (existing != null && now - existing.windowStart < WINDOW_MS
+                    && existing.count.get() >= MAX_ATTEMPTS) {
+                long remainingSec = (WINDOW_MS - (now - existing.windowStart)) / 1000;
                 response.setStatus(429);
                 response.setContentType("application/json");
-                response.getWriter().write("{\"error\":\"Trop de tentatives. Réessayez dans 15 minutes.\",\"retryAfter\":" + ((WINDOW_MS - (now - record.windowStart)) / 1000) + "}");
+                response.getWriter().write(
+                        "{\"error\":\"Trop de tentatives. Résseyez dans " + remainingSec + " secondes.\",\"retryAfter\":" + remainingSec + "}");
                 return;
             }
+
+            // --- Wrap response so we can inspect the final HTTP status ---
+            ContentCachingResponseWrapper wrapped = new ContentCachingResponseWrapper(response);
+            try {
+                filterChain.doFilter(request, wrapped);
+            } finally {
+                int status = wrapped.getStatus();
+                if (status == 200 || status == 201) {
+                    // Successful login → reset the counter for this IP
+                    attempts.remove(ip);
+                } else if (status == 401 || status == 403) {
+                    // Failed login → increment the counter
+                    AttemptRecord record = attempts.compute(ip, (key, rec) -> {
+                        if (rec == null || now - rec.windowStart > WINDOW_MS) {
+                            return new AttemptRecord(now);
+                        }
+                        return rec;
+                    });
+                    record.count.incrementAndGet();
+                }
+                wrapped.copyBodyToResponse();
+            }
+        } else {
+            filterChain.doFilter(request, response);
         }
-        filterChain.doFilter(request, response);
     }
 
     private String getClientIp(HttpServletRequest request) {

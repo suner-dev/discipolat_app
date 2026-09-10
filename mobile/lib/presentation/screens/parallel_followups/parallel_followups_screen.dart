@@ -15,19 +15,81 @@ class _ParallelFollowupsScreenState extends State<ParallelFollowupsScreen> with 
   late TabController _tabController;
   List<dynamic> _all = [];
   List<dynamic> _active = [];
+  List<dynamic> _souls = [];
   bool _isLoading = true;
+
+  // Création état
+  final _createMotifCtrl = TextEditingController();
+  final _createDescriptionCtrl = TextEditingController();
+  String? _createAmeId;
+  bool _isCreating = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadData();
+    _loadSouls();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _createMotifCtrl.dispose();
+    _createDescriptionCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSouls() async {
+    try {
+      final res = await _apiService.get('/souls', params: {'size': '100'});
+      if (mounted) {
+        setState(() {
+          _souls = (res.data is Map ? res.data['content'] : res.data) as List<dynamic>? ?? [];
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _createFollowup() async {
+    if (_createAmeId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sélectionnez une âme')),
+      );
+      return;
+    }
+    if (_createMotifCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le motif est requis')),
+      );
+      return;
+    }
+
+    setState(() => _isCreating = true);
+    try {
+      await _apiService.post('/parallel-followups', data: {
+        'ameId': _createAmeId,
+        'motif': _createMotifCtrl.text.trim(),
+        'description': _createDescriptionCtrl.text.trim(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Suivi créé avec succès'), backgroundColor: Color(0xFF2E7D32)),
+        );
+        _createMotifCtrl.clear();
+        _createDescriptionCtrl.clear();
+        _createAmeId = null;
+        _loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: const Color(0xFFC62828)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCreating = false);
+    }
   }
 
   Future<void> _loadData() async {
@@ -61,6 +123,9 @@ class _ParallelFollowupsScreenState extends State<ParallelFollowupsScreen> with 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Suivis parallèles'),
+        actions: [
+          IconButton(icon: const Icon(Icons.add), onPressed: _showCreateSheet),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
@@ -83,6 +148,92 @@ class _ParallelFollowupsScreenState extends State<ParallelFollowupsScreen> with 
                 ],
               ),
             ),
+    );
+  }
+
+  void _showCreateSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
+          height: MediaQuery.of(ctx).size.height * 0.7,
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E2A4A),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(width: 32, height: 4, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2))),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Nouveau suivi parallèle', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _createAmeId,
+                    dropdownColor: const Color(0xFF1E2A4A),
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      labelText: 'Âme (disciple) *',
+                      labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.06),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                    items: _souls.map((s) => DropdownMenuItem<String>(
+                      value: s['id'] as String,
+                      child: Text('${s['prenom'] ?? ''} ${s['nom'] ?? ''}'),
+                    )).toList(),
+                    onChanged: (v) => setSheetState(() => _createAmeId = v),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _createMotifCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Motif *',
+                      labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.06),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _createDescriptionCtrl,
+                    maxLines: 3,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.06),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      onPressed: _isCreating ? null : () { _createFollowup(); Navigator.pop(ctx); },
+                      icon: _isCreating ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.add, size: 18),
+                      label: const Text('Créer'),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

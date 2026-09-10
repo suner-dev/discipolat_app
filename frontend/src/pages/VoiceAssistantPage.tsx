@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, Send, Loader2, Bot, Volume2, HelpCircle,
   Sparkles, ArrowRight, RefreshCw, X, Copy, Check,
@@ -46,6 +47,7 @@ const QUICK_COMMANDS = [
 
 export default function VoiceAssistantPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<VoiceMessage[]>([]);
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -54,6 +56,8 @@ export default function VoiceAssistantPage() {
   const [showCommands, setShowCommands] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Load available voice commands
   const { data: commands = [] } = useQuery({
@@ -68,12 +72,40 @@ export default function VoiceAssistantPage() {
     },
   });
 
-  // Process voice message
-  const processMutation = useMutation({
-    mutationFn: async (transcription: string) => {
+  // Process voice message - text mode
+  const processTextMutation = useMutation({
+    mutationFn: async (text: string) => {
       const res = await api.post('/voice/process', {
-        transcription,
+        transcription: text,
         sessionId,
+      });
+      return res.data as {
+        intent: string;
+        reply: string;
+        suggestions?: Array<{ command: string; icon: string }>;
+      };
+    },
+    onSuccess: (data) => {
+      const assistantMsg: VoiceMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: data.reply,
+        intent: data.intent,
+        suggestions: data.suggestions,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    },
+    onError: () => {
+      toast.error(tText('Erreur lors du traitement vocal'));
+    },
+  });
+
+  // Process voice message - audio mode (multipart)
+  const processAudioMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await api.post('/voice/transcribe', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       return res.data as {
         transcription: string;
@@ -101,7 +133,7 @@ export default function VoiceAssistantPage() {
   });
 
   const handleSend = () => {
-    if (!input.trim() || processMutation.isPending) return;
+    if (!input.trim() || processTextMutation.isPending) return;
     const userMsg: VoiceMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -109,7 +141,7 @@ export default function VoiceAssistantPage() {
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, userMsg]);
-    processMutation.mutate(input.trim());
+    processTextMutation.mutate(input.trim());
     setInput('');
   };
 
@@ -131,263 +163,314 @@ export default function VoiceAssistantPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Voice recording simulation (in production: Web Speech API)
-  const toggleRecording = () => {
+  // Real voice recording using MediaRecorder
+  const toggleRecording = async () => {
     if (isRecording) {
+      // Stop recording
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
       setIsRecording(false);
-      // In production: stop recording and send to Whisper
-      toast.success('Transcription terminée (mode démo)');
     } else {
-      setIsRecording(true);
-      toast('🎙️ Enregistrement en cours... (mode démo)', { icon: '🎤' });
-      // Auto-stop after 5 seconds in demo mode
-      setTimeout(() => {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+        const recorder = new MediaRecorder(stream, { mimeType });
+        mediaRecorderRef.current = recorder;
+        audioChunksRef.current = [];
+
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) audioChunksRef.current.push(event.data);
+        };
+
+        recorder.onstop = async () => {
+          stream.getTracks().forEach(track => track.stop());
+          if (audioChunksRef.current.length > 0) {
+            const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+            const file = new File([audioBlob], `recording.${mimeType === 'audio/webm' ? 'webm' : 'mp4'}`, { type: mimeType });
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('sessionId', sessionId);
+            formData.append('language', 'fr');
+            try {
+              await processAudioMutation.mutateAsync(formData);
+              toast.success('Transcription envoyée au serveur');
+            } catch (e) {
+              toast.error(tText('Erreur lors de l\'envoi de la transcription'));
+            }
+          }
+        };
+
+        recorder.start();
+        setIsRecording(true);
+        toast('🎙️ Enregistrement en cours...', { icon: '🎤' });
+
+        // Auto-stop after 30 seconds
+        setTimeout(() => {
+          if (recorder.state !== 'inactive') {
+            recorder.stop();
+            setIsRecording(false);
+          }
+        }, 30000);
+      } catch (err) {
         setIsRecording(false);
-        const demoTranscription = QUICK_COMMANDS[Math.floor(Math.random() * QUICK_COMMANDS.length)];
-        setInput(demoTranscription);
-      }, 2000);
+        toast.error('Impossible d\'accéder au microphone : ' + (err instanceof Error ? err.message : 'Erreur inconnue'));
+        console.error('Microphone error:', err);
+      }
     }
   };
 
+  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   return (
-    <div className="page-container max-w-4xl flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="page-header mb-0 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-lg">
-            <Mic className="w-6 h-6" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Retour"
+            >
+              <X size={24} className="text-gray-600 dark:text-gray-300" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <Bot className="w-8 h-8 inline-block mr-2 text-indigo-600" />
+                PasteurBot Vocal
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {user?.activeRole || user?.role || 'Utilisateur'} - Assistant IA conversationnel
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 font-display">
-              PasteurBot Vocal
-            </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Assistant vocal conversationnel • Commandes vocales • Offline-ready
-            </p>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCommands(!showCommands)}
-              className="btn-icon text-gray-400 hover:text-cyan-500"
-              title="Commandes disponibles"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label={showCommands ? 'Masquer commandes' : 'Afficher commandes'}
             >
-              <HelpCircle className="w-4 h-4" />
+              <HelpCircle size={24} className="text-gray-600 dark:text-gray-300" />
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Commands Panel (collapsible) */}
-      {showCommands && (
-        <div className="bg-cyan-50/50 dark:bg-cyan-900/10 border border-cyan-200/50 dark:border-cyan-700/30 rounded-xl p-4 mb-4 animate-slide-up">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-cyan-700 dark:text-cyan-400">
-              🎤 Commandes vocales disponibles
-            </h3>
-            <button onClick={() => setShowCommands(false)} className="btn-icon text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {commands.map((cmd, i) => (
+      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-6">
+        {/* Commands panel */}
+        {showCommands && commands.length > 0 && (
+          <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800 animate-slide-down">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-indigo-700 dark:text-indigo-300">
+                <Sparkles className="w-5 h-5 inline mr-1" />
+                Commandes vocales disponibles
+              </h3>
               <button
-                key={i}
-                onClick={() => handleQuickCommand(cmd.command)}
-                className="text-left p-3 rounded-xl bg-white/60 dark:bg-white/5 border border-cyan-100 dark:border-cyan-800/30 hover:border-cyan-300 dark:hover:border-cyan-600 transition-all"
+                onClick={() => setShowCommands(false)}
+                className="p-1 rounded hover:bg-indigo-100 dark:hover:bg-indigo-800"
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${CATEGORY_COLORS[cmd.category] || 'bg-gray-100 text-gray-600'}`}>
-                    {cmd.category}
-                  </span>
-                </div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">"{cmd.command}"</p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{cmd.description}</p>
+                <X size={18} className="text-indigo-600 dark:text-indigo-400" />
               </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-2xl mb-6">
-              <Mic className="w-10 h-10" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              Bonjour {user?.firstName || 'Pasteur'} ! 🎙️
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-8">
-              Je suis votre assistant vocal. Dites-moi ce que vous voulez savoir
-              ou cliquez sur une commande rapide ci-dessous.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg">
-              {QUICK_COMMANDS.map((cmd, i) => (
+            <div className="flex flex-wrap gap-2">
+              {commands.map((cmd) => (
                 <button
-                  key={i}
-                  onClick={() => handleQuickCommand(cmd)}
-                  className="text-left p-3 rounded-xl border border-gray-200/50 dark:border-gray-700/50
-                    hover:border-cyan-300 dark:hover:border-cyan-600 hover:bg-cyan-50/50
-                    dark:hover:bg-cyan-900/10 transition-all text-sm text-gray-700 dark:text-gray-300"
+                  key={cmd.command}
+                  onClick={() => handleQuickCommand(cmd.command)}
+                  className="px-3 py-1.5 text-sm rounded-full bg-white dark:bg-gray-700 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
                 >
-                  🗣️ {cmd}
+                  {cmd.command}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            {msg.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-            )}
-            <div className="max-w-[75%]">
-              <div
-                className={`p-4 rounded-2xl ${
-                  msg.role === 'user'
-                    ? 'bg-primary-600 text-white rounded-br-md'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
-                }`}
+        {/* Quick commands when no API commands loaded */}
+        {showCommands && commands.length === 0 && (
+          <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800 animate-slide-down">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-indigo-700 dark:text-indigo-300">
+                <Sparkles className="w-5 h-5 inline mr-1" />
+                Commandes rapides
+              </h3>
+              <button
+                onClick={() => setShowCommands(false)}
+                className="p-1 rounded hover:bg-indigo-100 dark:hover:bg-indigo-800"
               >
-                {msg.transcription && msg.role === 'user' && (
-                  <div className="text-[10px] opacity-70 mb-1 flex items-center gap-1">
-                    <Volume2 className="w-3 h-3" /> Transcription : "{msg.transcription}"
-                  </div>
-                )}
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-[10px] opacity-50">
-                    {new Date(msg.timestamp).toLocaleTimeString(getI18nLocale(), { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                  {msg.intent && (
-                    <span className="text-[10px] opacity-50 bg-white/10 px-1.5 py-0.5 rounded">
-                      {msg.intent}
-                    </span>
-                  )}
-                  {msg.role === 'assistant' && (
-                    <button
-                      onClick={() => handleCopy(msg.id, msg.content)}
-                      className="text-[10px] opacity-50 hover:opacity-100"
-                    >
-                      {copiedId === msg.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    </button>
-                  )}
-                </div>
-              </div>
-              {/* Suggestions */}
-              {msg.suggestions && msg.suggestions.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {msg.suggestions.map((s, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleQuickCommand(s.command)}
-                      className="text-[11px] px-2.5 py-1 rounded-full bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400 border border-cyan-200/50 dark:border-cyan-700/30 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-all flex items-center gap-1"
-                    >
-                      <span>{s.icon}</span> {s.command}
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  ))}
-                </div>
-              )}
+                <X size={18} className="text-indigo-600 dark:text-indigo-400" />
+              </button>
             </div>
-            {msg.role === 'user' && (
-              <div className="w-8 h-8 rounded-xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                <Mic className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-              </div>
-            )}
-          </div>
-        ))}
-
-        {processMutation.isPending && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-white" />
-            </div>
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-md p-4">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Analyse en cours...
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_COMMANDS.map((cmd, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleQuickCommand(cmd)}
+                  className="px-3 py-1.5 text-sm rounded-full bg-white dark:bg-gray-700 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+                >
+                  {cmd}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input + Record Button */}
-      <div className="border-t border-gray-200/50 dark:border-gray-700/50 pt-4">
-        <div className="flex gap-2 items-end">
-          {/* Record Button */}
-          <button
-            onClick={toggleRecording}
-            className={`rounded-xl px-4 py-3 h-12 flex items-center justify-center transition-all ${
-              isRecording
-                ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:text-cyan-500'
-            }`}
-            title={isRecording ? 'Arrêter l\'enregistrement' : 'Enregistrer un message vocal'}
-          >
-            {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-          </button>
-
-          {/* Text Input */}
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Tapez ou dictez votre question..."
-            className="flex-1 resize-none rounded-xl border border-gray-200 dark:border-gray-700
-              bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-900 dark:text-gray-100
-              focus:ring-2 focus:ring-cyan-500 focus:border-transparent
-              placeholder:text-gray-400 dark:placeholder:text-gray-500"
-            rows={2}
-            disabled={processMutation.isPending}
-          />
-
-          {/* Send Button */}
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || processMutation.isPending}
-            className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-3 h-12 flex items-center justify-center shadow-lg shadow-cyan-500/25 hover:from-cyan-600 hover:to-blue-700 transition-all disabled:opacity-50"
-          >
-            {processMutation.isPending ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </button>
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto space-y-4 mb-6" ref={messagesEndRef}>
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
+              <Bot size={64} className="text-indigo-300 dark:text-indigo-700 mb-4 opacity-50" />
+              <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Bienvenue dans PasteurBot Vocal
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
+                Parlez ou tapez votre question. Je peux vous aider avec le suivi pastoral,
+                les statistiques, les alertes, les rapports et bien plus encore.
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {QUICK_COMMANDS.map((cmd, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleQuickCommand(cmd)}
+                    className="px-4 py-2 text-sm rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-left w-64"
+                  >
+                    <Volume2 className="w-4 h-4 inline mr-1 text-indigo-500" />
+                    {cmd}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-2xl p-4 ${
+                      msg.role === 'user'
+                        ? 'bg-indigo-600 text-white rounded-br-md'
+                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md shadow-sm border border-gray-100 dark:border-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      {msg.role === 'assistant' && (
+                        <Bot size={20} className="text-indigo-500 mt-0.5 flex-shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        {msg.transcription && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 italic">
+                            « {msg.transcription} »
+                          </p>
+                        )}
+                        {msg.intent && (
+                          <span className="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+                            Intent : {msg.intent}
+                          </span>
+                        )}
+                        {msg.suggestions && msg.suggestions.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {msg.suggestions.map((s, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => handleQuickCommand(s.command)}
+                                className="px-2 py-1 text-xs rounded bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                              >
+                                {s.icon} {s.command}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                            {new Date(msg.timestamp).toLocaleTimeString()}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(msg.id, msg.content)}
+                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            aria-label="Copier"
+                          >
+                            {copiedId === msg.id ? (
+                              <Check size={14} className="text-green-500" />
+                            ) : (
+                              <Copy size={14} className="text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(processTextMutation.isPending || processAudioMutation.isPending) && (
+                <div className="flex justify-start">
+                  <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-bl-md shadow-sm border border-gray-100 dark:border-gray-700 p-4 max-w-[80%]">
+                    <div className="flex items-center gap-2">
+                      <Bot size={20} className="text-indigo-500" />
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Status bar */}
-        <div className="flex items-center justify-between mt-2 px-1">
-          <div className="flex items-center gap-2 text-[10px] text-gray-400">
-            <Sparkles className="w-3 h-3" />
-            <span>Mode vocal : tapez ou enregistrez</span>
-            {isRecording && (
-              <span className="flex items-center gap-1 text-red-500 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                ENREGISTREMENT
-              </span>
-            )}
+        {/* Input area */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-lg">
+          <div className="flex items-end gap-3">
+            <button
+              onClick={toggleRecording}
+              disabled={processTextMutation.isPending || processAudioMutation.isPending}
+              className={`p-3 rounded-xl flex-shrink-0 transition-all ${
+                isRecording
+                  ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/25'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              aria-label={isRecording ? 'Arrêter l\'enregistrement' : 'Démarrer l\'enregistrement'}
+            >
+              {isRecording ? <MicOff size={24} /> : <Mic size={24} />}
+            </button>
+
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Tapez votre question ou utilisez le micro..."
+              className="flex-1 min-h-[48px] max-h-32 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              rows={1}
+            />
+
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || processTextMutation.isPending || processAudioMutation.isPending}
+              className={`p-3 rounded-xl flex-shrink-0 transition-all ${
+                !input.trim() || processTextMutation.isPending || processAudioMutation.isPending
+                  ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+              }`}
+              aria-label="Envoyer"
+            >
+              {processTextMutation.isPending || processAudioMutation.isPending ? (
+                <Loader2 size={24} className="animate-spin" />
+              ) : (
+                <Send size={24} />
+              )}
+            </button>
           </div>
-          <span className="text-[10px] text-gray-400">
-            {messages.length} message{messages.length !== 1 ? 's' : ''}
-          </span>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

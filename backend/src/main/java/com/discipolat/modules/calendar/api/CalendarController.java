@@ -23,6 +23,7 @@ public class CalendarController {
         this.service = service;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     @GetMapping
     public ResponseEntity<List<CalendarEvent>> list(
             @RequestParam(required = false) String start,
@@ -33,13 +34,14 @@ public class CalendarController {
         return ResponseEntity.ok(service.listAll());
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     @GetMapping("/{id}")
     public ResponseEntity<CalendarEvent> get(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<CalendarEvent> create(@RequestBody Map<String, Object> body) {
         CalendarEvent event = service.create(
                 (String) body.get("titre"),
@@ -54,11 +56,12 @@ public class CalendarController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<CalendarEvent> updateStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(service.updateStatut(id, body.get("statut")));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     @GetMapping("/{id}/ical")
     public ResponseEntity<String> getICal(@PathVariable UUID id) {
         return ResponseEntity.ok()
@@ -71,6 +74,7 @@ public class CalendarController {
      * Flux iCal complet — URL de souscription pour Google Calendar / Outlook / Apple.
      * GET /api/v1/calendar/feed.ics
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     @GetMapping(value = "/feed.ics", produces = "text/calendar")
     public ResponseEntity<String> getICalFeed() {
         return ResponseEntity.ok()
@@ -80,7 +84,7 @@ public class CalendarController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

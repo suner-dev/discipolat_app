@@ -11,11 +11,13 @@ import 'presentation/screens/dashboard/responsable_dashboard_screen.dart';
 import 'presentation/screens/dashboard/member_dashboard_screen.dart';
 import 'presentation/screens/souls/souls_list_screen.dart';
 import 'presentation/screens/souls/soul_detail_screen.dart';
+import 'presentation/screens/souls/soul_create_screen.dart';
 import 'presentation/screens/reports/maker_report_screen.dart';
 import 'presentation/screens/reports/family_report_screen.dart';
 import 'presentation/screens/reports/reports_screen.dart';
 import 'presentation/screens/reports/report_pdf_viewer_screen.dart';
 import 'presentation/screens/families/families_list_screen.dart';
+import 'presentation/screens/families/family_create_screen.dart';
 import 'presentation/screens/alerts/alerts_list_screen.dart';
 import 'presentation/screens/alerts/smart_alerts_screen.dart';
 import 'presentation/screens/notifications/notifications_screen.dart';
@@ -24,6 +26,7 @@ import 'presentation/screens/prayers/prayers_list_screen.dart';
 import 'presentation/screens/events/events_list_screen.dart';
 import 'presentation/screens/departments/departments_list_screen.dart';
 import 'presentation/screens/departments/department_detail_screen.dart';
+import 'presentation/screens/departments/department_create_screen.dart';
 import 'presentation/screens/departments/department_report_screen.dart';
 import 'presentation/screens/departments/department_management_screen.dart';
 import 'presentation/screens/departments/department_stats_screen.dart';
@@ -35,6 +38,7 @@ import 'presentation/screens/souls/crm_faiseur_screen.dart';
 import 'presentation/screens/souls/pastoral_360_screen.dart';
 import 'presentation/screens/users/users_list_screen.dart';
 import 'presentation/screens/users/user_detail_screen.dart';
+import 'presentation/screens/users/user_create_screen.dart';
 import 'presentation/screens/users/permissions_screen.dart';
 import 'presentation/screens/users/documents_screen.dart';
 import 'presentation/screens/users/audit_screen.dart';
@@ -316,7 +320,9 @@ Map<String, List<String>> _routeRoles = {
   '/dashboard/chef-famille': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE'],
   '/dashboard/responsable': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/souls': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/souls/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/families': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/families/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/reports/maker': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/reports/family': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -337,6 +343,7 @@ Map<String, List<String>> _routeRoles = {
   '/profile': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/departments/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/:id/manage': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/:id/stats': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -347,6 +354,7 @@ Map<String, List<String>> _routeRoles = {
   '/souls/:id/pastoral-360': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/search': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/users': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/users/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/permissions': ['ADMIN'],
   '/discipline': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/prayers/actions-de-grace': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -630,6 +638,14 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/souls/new',
+      name: 'soul-create',
+      builder: (context, state) => SoulCreateScreen(
+        prefilledFamilyId: state.uri.queryParameters['familleId'],
+        prefilledFamilyNom: state.uri.queryParameters['familleNom'],
+      ),
+    ),
+    GoRoute(
       path: '/souls/:id',
       name: 'soul-detail',
       builder: (context, state) => SoulDetailScreen(
@@ -665,6 +681,11 @@ final appRouter = GoRouter(
       path: '/families',
       name: 'families',
       builder: (context, state) => const FamiliesListScreen(),
+    ),
+    GoRoute(
+      path: '/families/new',
+      name: 'family-create',
+      builder: (context, state) => const FamilyCreateScreen(),
     ),
     GoRoute(
       path: '/alerts',
@@ -705,6 +726,11 @@ final appRouter = GoRouter(
       path: '/departments',
       name: 'departments',
       builder: (context, state) => const DepartmentsListScreen(),
+    ),
+    GoRoute(
+      path: '/departments/new',
+      name: 'department-create',
+      builder: (context, state) => const DepartmentCreateScreen(),
     ),
     GoRoute(
       path: '/departments/:id',
@@ -775,6 +801,11 @@ final appRouter = GoRouter(
       path: '/users',
       name: 'users',
       builder: (context, state) => const UsersListScreen(),
+    ),
+    GoRoute(
+      path: '/users/new',
+      name: 'user-create',
+      builder: (context, state) => const UserCreateScreen(),
     ),
     GoRoute(
       path: '/users/:id',

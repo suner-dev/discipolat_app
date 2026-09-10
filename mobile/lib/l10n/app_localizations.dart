@@ -1325,6 +1325,10 @@ class AppLocalizations {
   String get dataMigrationTitle => translate('dataMigrationTitle');
   String get importData => translate('importData');
   String get importDataHint => translate('importDataHint');
+  String get importsTitle => translate('importsTitle');
+  String get importsEmpty => translate('importsEmpty');
+  String get importStart => translate('importStart');
+  String get importValidate => translate('importValidate');
   String get selectFile => translate('selectFile');
   String get aiAnalysis => translate('aiAnalysis');
   String get detectedFile => translate('detectedFile');
@@ -1776,6 +1780,10 @@ class AppLocalizations {
     'dataMigrationTitle': 'Migration de données',
     'importData': 'Importer des données',
     'importDataHint': "Importez vos membres depuis Excel ou CSV. L'assistant mapping détecte automatiquement les colonnes.",
+    'importsTitle': 'Imports de données',
+    'importsEmpty': 'Aucun import trouvé',
+    'importStart': 'Démarrer',
+    'importValidate': 'Valider',
     'selectFile': 'Sélectionner un fichier',
     'aiAnalysis': 'Analyse IA',
     'detectedFile': 'Fichier détecté',
@@ -3173,6 +3181,10 @@ class AppLocalizations {
     'dataMigrationTitle': 'Data migration',
     'importData': 'Import data',
     'importDataHint': 'Import your members from Excel or CSV. The mapping assistant detects columns automatically.',
+    'importsTitle': 'Data imports',
+    'importsEmpty': 'No import found',
+    'importStart': 'Start',
+    'importValidate': 'Validate',
     'selectFile': 'Select a file',
     'aiAnalysis': 'AI analysis',
     'detectedFile': 'Detected file',

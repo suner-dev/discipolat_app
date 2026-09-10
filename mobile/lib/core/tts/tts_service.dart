@@ -29,7 +29,7 @@ class TtsService {
 
       _tts.setCompletionHandler(() {
         _isPlaying = false;
-        onComplete?.();
+        onComplete?.call();
         _processQueue();
       });
 

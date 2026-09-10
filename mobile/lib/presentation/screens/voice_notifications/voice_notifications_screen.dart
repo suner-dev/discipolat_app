@@ -27,9 +27,9 @@ class _VoiceNotificationsScreenState extends State<VoiceNotificationsScreen> {
     await _ttsService.initialize();
     final authService = AuthService();
     final user = authService.currentUser;
-    final token = authService.token;
+    final token = await authService.token;
 
-    if (user != null && token != null) {
+    if (user != null && token != null && token.isNotEmpty) {
       _stompService = StompService(
         token: token,
         userId: user.id,
@@ -87,6 +87,9 @@ class _VoiceNotificationsScreenState extends State<VoiceNotificationsScreen> {
 
   Future<void> _speakLastNotification() async {
     if (_notifications.isNotEmpty) {
+      await _ttsService.speak(_notifications.first.speakText);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -222,11 +225,6 @@ class _VoiceNotificationsScreenState extends State<VoiceNotificationsScreen> {
       return '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     } catch (_) {
       return '';
-    }
-  }
-}
-
-      await _ttsService.speak(_notifications.first.speakText);
     }
   }
 

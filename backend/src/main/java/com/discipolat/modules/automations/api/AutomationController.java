@@ -28,6 +28,7 @@ public class AutomationController {
 
     // ── Règles ────────────────────────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     @GetMapping
     public ResponseEntity<PageResponse<AutomationRule>> listRules(
             @RequestParam(defaultValue = "0") int page,
@@ -37,11 +38,13 @@ public class AutomationController {
                 rules.getTotalElements(), rules.getTotalPages()));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     @GetMapping("/active")
     public ResponseEntity<List<AutomationRule>> listActive() {
         return ResponseEntity.ok(service.listActiveRules());
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     @GetMapping("/{id}")
     public ResponseEntity<AutomationRule> getRule(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getRuleById(id));
@@ -92,6 +95,7 @@ public class AutomationController {
 
     // ── Historique ────────────────────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     @GetMapping("/{id}/executions")
     public ResponseEntity<List<AutomationExecution>> listExecutions(@PathVariable UUID id) {
         return ResponseEntity.ok(service.listExecutions(id));
@@ -99,6 +103,7 @@ public class AutomationController {
 
     // ── Stats ─────────────────────────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.getStats());
@@ -106,6 +111,7 @@ public class AutomationController {
 
     // ── Enums dispo ───────────────────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     @GetMapping("/triggers")
     public ResponseEntity<Map<String, String>> listTriggers() {
         Map<String, String> triggers = new java.util.LinkedHashMap<>();
@@ -128,6 +134,7 @@ public class AutomationController {
         return ResponseEntity.ok(triggers);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     @GetMapping("/actions")
     public ResponseEntity<Map<String, String>> listActions() {
         Map<String, String> actions = new java.util.LinkedHashMap<>();

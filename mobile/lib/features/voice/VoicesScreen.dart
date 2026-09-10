@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import '../../data/services/api_service.dart';
 import '../../../presentation/widgets/glass_theme.dart';
 import '../../../presentation/widgets/app_drawer.dart';
@@ -13,9 +17,11 @@ class VoicesScreen extends StatefulWidget {
 
 class _VoicesScreenState extends State<VoicesScreen> {
   final _apiService = ApiService();
+  final AudioRecorder _recorder = AudioRecorder();
   Map<String, dynamic>? _health;
   bool _isLoading = true;
   bool _isTranscribing = false;
+  bool _isRecording = false;
   String? _error;
   String? _transcriptionResult;
 
@@ -48,19 +54,67 @@ class _VoicesScreenState extends State<VoicesScreen> {
     }
   }
 
+  /// Enregistre réellement le micro (package `record`), puis envoie le fichier
+  /// audio en multipart à POST /api/v1/voice/transcribe (part `file`).
   Future<void> _transcribe() async {
-    setState(() {
-      _isTranscribing = true;
-      _transcriptionResult = null;
-    });
+    if (_isRecording) {
+      await _stopRecordingAndTranscribe();
+      return;
+    }
+
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission) {
+      if (mounted) {
+        setState(() => _error = 'Autorisation micro requise (paramètres système)');
+      }
+      return;
+    }
+
     try {
-      final res = await _apiService.post('/voice/transcribe', data: {});
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/voix_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: path,
+      );
       if (mounted) {
         setState(() {
-          _isTranscribing = false;
-          _transcriptionResult = res.data is Map ? (res.data['text'] ?? 'Transcription terminée') : 'Transcription terminée';
+          _isRecording = true;
+          _transcriptionResult = null;
+          _error = null;
         });
       }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _error = "Impossible de démarrer l'enregistrement";
+        });
+      }
+    }
+  }
+
+  Future<void> _stopRecordingAndTranscribe() async {
+    setState(() => _isRecording = false);
+    try {
+      final filePath = await _recorder.stop();
+      if (filePath == null || filePath.isEmpty) {
+        if (mounted) setState(() => _error = "Enregistrement vide");
+        return;
+      }
+      final file = File(filePath);
+      if (!await file.exists() || await file.length() == 0) {
+        if (mounted) setState(() => _error = "Enregistrement vide");
+        return;
+      }
+
+      if (mounted) setState(() => _isTranscribing = true);
+      final bytes = await file.readAsBytes();
+      await _uploadAndShowTranscription(Uint8List.fromList(bytes), filePath.split('/').last);
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -69,6 +123,48 @@ class _VoicesScreenState extends State<VoicesScreen> {
         });
       }
     }
+  }
+
+  /// POST /voice/transcribe (le préfixe /api/v1 est porté par ApiConfig.baseUrl)
+  /// en multipart/form-data avec le part `file` attendu par le backend.
+  Future<void> _uploadAndShowTranscription(Uint8List bytes, String filename) async {
+    try {
+      final res = await _apiService.postMultipart(
+        '/voice/transcribe',
+        fieldName: 'file',
+        fileBytes: bytes,
+        filename: filename,
+        data: {'language': 'fr'},
+      );
+      if (mounted) {
+        setState(() {
+          _isTranscribing = false;
+          final data = res.data is Map ? res.data as Map<String, dynamic> : null;
+          _transcriptionResult =
+              data?['transcription']?.toString() ?? data?['text']?.toString() ?? '';
+          if (_transcriptionResult!.isEmpty) {
+            _transcriptionResult = 'Aucune parole reconnue';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        final notConfigured = e.toString().contains('503') ||
+            e.toString().contains('STT_NOT_CONFIGURED');
+        setState(() {
+          _isTranscribing = false;
+          _error = notConfigured
+              ? 'Transcription non configurée sur le serveur'
+              : 'Erreur lors de la transcription';
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _recorder.dispose();
+    super.dispose();
   }
 
   @override
@@ -139,9 +235,15 @@ class _VoicesScreenState extends State<VoicesScreen> {
                                 onPressed: _isTranscribing ? null : _transcribe,
                                 icon: _isTranscribing
                                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                    : const Icon(Icons.mic, size: 18),
-                                label: Text(_isTranscribing ? 'Transcription en cours...' : 'Lancer la transcription'),
-                                style: FilledButton.styleFrom(backgroundColor: Colors.deepPurple),
+                                    : Icon(_isRecording ? Icons.stop : Icons.mic, size: 18),
+                                label: Text(_isTranscribing
+                                    ? 'Transcription en cours...'
+                                    : _isRecording
+                                        ? 'Arrêter et transcrire'
+                                        : 'Enregistrer et transcrire'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: _isRecording ? Colors.red : Colors.deepPurple,
+                                ),
                               ),
                             ),
                           ],

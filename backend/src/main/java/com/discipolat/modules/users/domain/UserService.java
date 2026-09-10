@@ -423,8 +423,9 @@ public class UserService {
     }
 
     /**
-     * Anti-escalation : le rôle actif limite les rôles qu'un utilisateur peut assigner.
-     * ADMIN : tout ; PASTEUR : tout sauf ADMIN ; RESPONSABLE : jamais ADMIN/PASTEUR/RESPONSABLE.
+          * Anti-escalation : le rôle actif limite les rôles qu'un utilisateur peut assigner.
+     * ADMIN : tout ; PASTEUR : tout sauf ADMIN ; RESPONSABLE : FAISEUR/MEMBRE/CHEF_DE_FAMILLE
+     *   (jamais ADMIN/PASTEUR/RESPONSABLE). Toute autre role → refus.
      */
     private void assertCanAssignRoles(UserRole primaryRole, Set<UserRole> roles) {
         if (securityUtils.hasActiveRole("ADMIN")) return;
@@ -440,6 +441,9 @@ public class UserService {
             throw new org.springframework.security.access.AccessDeniedException(
                     "Vous ne pouvez pas assigner le rôle PASTEUR ou RESPONSABLE");
         }
+        // RESPONSABLE: peut créer des utilisateurs FAISEUR/MEMBRE/CHEF_DE_FAMILLE (les rôles
+        // ADMIN/PASTEUR/RESPONSABLE sont déjà exclus ci-dessus).
+        if (securityUtils.hasActiveRole("RESPONSABLE")) return;
         throw new org.springframework.security.access.AccessDeniedException(
                 "Opération non autorisée dans votre espace métier");
     }

@@ -1,5 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useRef } from 'react';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/i18n';
@@ -76,6 +76,7 @@ interface RecurringDonation {
 export default function GivingPage() {
   const { activeRole } = useAuth();
   const { t, locale } = useI18n();
+  const queryClient = useQueryClient();
   const canManage =
     activeRole === 'ADMIN' || activeRole === 'PASTEUR' || activeRole === 'RESPONSABLE';
 
@@ -94,12 +95,38 @@ export default function GivingPage() {
   const [rcPurpose, setRcPurpose] = useState('DIME');
   const [rcFrequency, setRcFrequency] = useState('MONTHLY');
 
+  // Ref for polling interval to ensure proper cleanup
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const recentQuery = useQuery({
     queryKey: ['payments', 'recent', canManage],
     queryFn: async () =>
       (await api.get<PaymentIntent[]>(canManage ? '/payments' : '/payments/mine')).data,
-    refetchInterval: pendingRef ? 3000 : false,
   });
+
+  // Polling effect with proper cleanup
+  useEffect(() => {
+    // Clear any existing interval when effect re-runs or unmounts
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
+    // Start polling only when there's a pending payment
+    if (pendingRef) {
+      pollingIntervalRef.current = setInterval(() => {
+        queryClient.invalidateQueries({ queryKey: ['payments', 'recent'] });
+      }, 3000);
+    }
+
+    // Cleanup on unmount or when pendingRef changes
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [pendingRef, queryClient]);
 
   const statsQuery = useQuery({
     queryKey: ['payments', 'stats'],

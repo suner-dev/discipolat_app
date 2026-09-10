@@ -1,8 +1,6 @@
-import 'dart:async';
 import 'dart:convert';
-import 'package:stomp_dart_client/stomp.dart';
-import 'package:stomp_dart_client/stomp_config.dart';
-import 'package:stomp_dart_client/stomp_frame.dart';
+import 'package:stomp_dart_client/stomp_dart_client.dart';
+import '../../../../data/services/api_config.dart';
 
 /// DTO correspondant au VoiceNotificationDTO du backend.
 class VoiceNotificationDTO {
@@ -54,7 +52,7 @@ class StompService {
   final String _userId;
   final String? _activeRole;
 
-  final List<StreamSubscription> _subscriptions = [];
+  final List<StompUnsubscribe> _subscriptions = [];
   final List<VoiceNotificationCallback> _callbacks = [];
 
   bool _isConnected = false;
@@ -112,7 +110,7 @@ class StompService {
     );
     _subscriptions.add(allSub);
 
-    if (_activeRole != null && _activeRole!.isNotEmpty) {
+    if (_activeRole != null && _activeRole.isNotEmpty) {
       final roleSub = _client!.subscribe(
         destination: '/topic/voice/role/$_activeRole',
         callback: (frame) => _handleMessage(frame),
@@ -157,7 +155,7 @@ class StompService {
   void disconnect() {
     _isDisposed = true;
     for (final sub in _subscriptions) {
-      try { sub.cancel(); } catch (_) {}
+      try { sub.call(); } catch (_) {}
     }
     _subscriptions.clear();
     _client?.deactivate();
@@ -174,6 +172,15 @@ class StompService {
   }
 
   String _getBaseUrl() {
-    return 'http://localhost:8080';
+    // Utilise la même configuration que l'API REST (ApiConfig.baseUrl).
+    // Convertit le schéma HTTP → WS pour le WebSocket STOMP.
+    final apiBase = ApiConfig.baseUrl; // ex: https://discipolat-api.onrender.com/api/v1
+    final wsBase = apiBase
+        .replaceFirst(RegExp(r'^https?://'), '')
+        .replaceFirst(RegExp(r'/api/v1$'), '');
+    if (apiBase.startsWith('https')) {
+      return 'wss://$wsBase';
+    }
+    return 'ws://$wsBase';
   }
 }

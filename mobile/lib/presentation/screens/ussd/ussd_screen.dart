@@ -59,7 +59,6 @@ class _UssdScreenState extends State<UssdScreen> {
       SnackBar(content: Text(message), backgroundColor: Colors.orange),
     );
   }
-}
 
   @override
   Widget build(BuildContext context) {

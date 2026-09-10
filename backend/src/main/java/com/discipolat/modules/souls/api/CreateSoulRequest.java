@@ -17,7 +17,10 @@ public record CreateSoulRequest(
         @NotNull TypeDisciple typeDisciple,
         LocalDate dateIntegration,
         LocalDate dateConversion,
-        @NotNull UUID faiseurId,
+        // Optionnel : si absent, le faiseur courant est utilisé (SoulService.create).
+        // Gardé optionnel pour que les rôles terrain (FAISEUR, CHEF_DE_FAMILLE…)
+        // créent une âme sans connaître d'UUID par cœur.
+        UUID faiseurId,
         UUID familleId,
         String situationFamiliale,
         String etatSpirituel,

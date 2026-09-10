@@ -64,22 +64,8 @@ export default function AiAssistantPage() {
       };
       setMessages((prev) => [...prev, userMsg]);
 
-      try {
-        const res = await api.post('/ai/chat', { message: content });
-        return res.data as { reply: string; sources?: string[] };
-      } catch (err) {
-        // Fallback: call Ollama directly if backend AI endpoint not available
-        try {
-          const contextRes = await api.get('/ai/context', { params: { query: content } });
-          const context = contextRes.data;
-          return {
-            reply: generateLocalReply(content, context),
-            sources: context?.sources || [],
-          };
-        } catch {
-          return { reply: generateLocalReply(content, null), sources: [] };
-        }
-      }
+      const res = await api.post('/ai/chat', { message: content });
+      return res.data as { reply: string; sources?: string[] };
     },
     onSuccess: (data) => {
       const assistantMsg: ChatMessage = {
@@ -275,31 +261,4 @@ export default function AiAssistantPage() {
       </div>
     </div>
   );
-}
-
-/** Generate a local reply when Ollama is not available — uses context data */
-function generateLocalReply(query: string, context: unknown): string {
-  const q = query.toLowerCase();
-
-  if (q.includes('famil') && (q.includes('risque') || q.includes('danger'))) {
-    return `📊 **Analyse des familles à risque**\n\nBasé sur les données récentes, voici les familles nécessitant une attention particulière :\n\nLes familles avec un taux de présence en dessous de 50% sont identifiées comme à risque. Je recommande :\n\n1. **Contacter les chefs de famille** pour comprendre les difficultés\n2. **Planifier des visites pastorales** prioritaires\n3. **Activer les faiseurs** pour un suivi rapproché\n\n💡 Conseil : concentrez-vous sur les familles avec des nouveaux convertis — ils sont les plus vulnérables.`;
-  }
-
-  if (q.includes('présence') || q.includes('présences')) {
-    return `📈 **Analyse des présences**\n\nLe taux de présence global est un indicateur clé de la santé spirituelle de l'église.\n\nRecommandations :\n• Organiser des événements d'accueil pour les nouveaux\n• Mettre en place un système de rappel avant les cultes\n• Créer des groupes de petite taille pour favoriser l'appartenance\n• Célébrer les progrès de présence publiquement`;
-  }
-
-  if (q.includes('rapport') || q.includes('pastoral')) {
-    return `📋 **Rapport pastoral généré**\n\nVoici les éléments clés à inclure :\n\n• **Croissance** : nouveaux membres, baptêmes, intégrations\n• **Présence** : taux moyen, tendance, écarts\n• **Suivi** : disciples en difficulté, visites réalisées\n• **Prières** : demandes traitées, témoignages\n• **Engagement** : formations, services, bénévolat\n\n💡 Un bon rapport pastoral est un outil de décision, pas un simple administrative.`;
-  }
-
-  if (q.includes('faiseur') || q.includes('mentor') || q.includes('performance')) {
-    return `🏆 **Analyse des faiseurs**\n\nLes meilleurs faiseurs se distinguent par :\n1. **Régularité** des visites et contacts\n2. **Qualité** du suivi (pas juste la quantité)\n3. **Résultats** : progression des disciples suivis\n4. **Engagement** : participation aux formations\n\nRecommandation : mettez en place un système de reconnaissance mensuel pour motiver l'ensemble de l'équipe.`;
-  }
-
-  if (q.includes('nouveau') || q.includes('convertis') || q.includes('intégration')) {
-    return `🌱 **Suivi des nouveaux convertis**\n\nLes 90 premiers jours sont crucials. Voici un parcours recommandé :\n\n**Semaine 1-2** : Accueil chaleureux + RDV pasteur\n**Mois 1** : Intégration dans un groupe de maison\n**Mois 2** : Formation fondamentales (baptême, dons, prière)\n**Mois 3** : Identification des talents + engagement\n\n⚠️ Alertes automatiques si pas de contact depuis 2 semaines.`;
-  }
-
-  return `🤖 **Assistant IA Pastoral**\n\nMerci pour votre question : "${query}"\n\nJe suis en mode démo — en production avec Ollama, je pourrais :\n• Interroger toutes les données de votre église en temps réel\n• Générer des rapports personnalisés\n• Détecter les tendances et alertes\n• Suggérer des actions concrètes\n\n💡 Pour activer l'IA complète, installez Ollama (gratuit) sur votre serveur :\n\`\`\`bash\ncurl -fsSL https://ollama.com/install.sh | sh\nollama pull llama3\n\`\`\`\n\nEnsuite, configurez l'URL dans les paramètres système.`;
 }

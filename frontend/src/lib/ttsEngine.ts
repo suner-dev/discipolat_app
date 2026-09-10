@@ -14,6 +14,7 @@ export interface TTSOptions {
   pitch?: number;   // 0 to 2
   volume?: number;  // 0 to 1
   voice?: SpeechSynthesisVoice | null;
+  onComplete?: () => void;
 }
 
 interface QueueItem {
