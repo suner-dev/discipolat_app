@@ -2861,6 +2861,13 @@ class AppLocalizations {
     'userDetailNotes': 'Notes',
     'userDetailNoNotes': 'Aucune note',
     'discClearSearch': 'Effacer la recherche',
+    // Voice commands
+    'voiceCmd1': 'Montre-moi les familles en décrochement',
+    'voiceCmd2': 'Combien de nouveaux convertis ce mois ?',
+    'voiceCmd3': 'Génère un rapport de la semaine',
+    'voiceCmd4': 'Quels sont les prochains événements ?',
+    'voiceCmd5': 'Montre le taux de présence',
+    'voiceCmd6': 'Quelles sont les alertes actives ?',
   };
 
   // ==================== ENGLISH ====================
@@ -4240,6 +4247,13 @@ class AppLocalizations {
     'profileTitle': 'Profile',
     'rejectAction': 'Reject',
     'sendError': 'Send failed',
+    // Voice commands
+    'voiceCmd1': 'Show me families at risk of dropping out',
+    'voiceCmd2': 'How many new converts this month?',
+    'voiceCmd3': 'Generate a weekly report',
+    'voiceCmd4': 'What are the upcoming events?',
+    'voiceCmd5': 'Show attendance rate',
+    'voiceCmd6': 'What are the active alerts?',
   };
 
   // ==================== PORTUGUESE ====================
@@ -5618,6 +5632,13 @@ class AppLocalizations {
     'recurringNextDate': 'Próxima data',
     'recurringTotalDonated': 'Total doado',
     'recurringDonations': 'doações',
+    // Voice commands
+    'voiceCmd1': 'Mostra-me as famílias em risco de desistência',
+    'voiceCmd2': 'Quantos novos convertidos este mês?',
+    'voiceCmd3': 'Gera um relatório semanal',
+    'voiceCmd4': 'Quais são os próximos eventos?',
+    'voiceCmd5': 'Mostra a taxa de presença',
+    'voiceCmd6': 'Quais são os alertas ativos?',
   };
 }
 
@@ -6990,6 +7011,13 @@ const Map<String, String> _spanish = {
     'profileTitle': 'Perfil',
     'rejectAction': 'Rechazar',
     'sendError': 'Error al enviar',
+    // Voice commands
+    'voiceCmd1': 'Muéstrame las familias en riesgo de abandono',
+    'voiceCmd2': '¿Cuántos nuevos convertidos este mes?',
+    'voiceCmd3': 'Genera un informe semanal',
+    'voiceCmd4': '¿Cuáles son los próximos eventos?',
+    'voiceCmd5': 'Muestra la tasa de asistencia',
+    'voiceCmd6': '¿Cuáles son las alertas activas?',
   };
 
 const Map<String, String> _swahili = {
@@ -8361,6 +8389,13 @@ const Map<String, String> _swahili = {
     'profileTitle': 'Wasifu',
     'rejectAction': 'Kataa',
     'sendError': 'Hitilafu ya kutuma',
+    // Voice commands
+    'voiceCmd1': 'Nionyesha familia zilizo katika hatari ya kukatisha',
+    'voiceCmd2': 'Ni wapi watu wapya waumini mwezi huu?',
+    'voiceCmd3': 'Tengeneza ripoti ya wiki',
+    'voiceCmd4': 'Ni matukio gani yajayo?',
+    'voiceCmd5': 'Onyesha kiwango cha mahudhurio',
+    'voiceCmd6': 'Ni arifa gani zinaendelea?',
   };
 
 const Map<String, String> _arabic = {
@@ -9732,6 +9767,13 @@ const Map<String, String> _arabic = {
     'profileTitle': 'الملف الشخصي',
     'rejectAction': 'رفض',
     'sendError': 'فشل الإرسال',
+    // Voice commands
+    'voiceCmd1': 'أرني العائلات المعرضة لخطر الانسحاب',
+    'voiceCmd2': 'كم عدد المتحولين الجدد هذا الشهر؟',
+    'voiceCmd3': 'إنشاء تقرير أسبوعي',
+    'voiceCmd4': 'ما هي الأحداث القادمة؟',
+    'voiceCmd5': 'إظهار معدل الحضور',
+    'voiceCmd6': 'ما هي التنبيهات النشطة؟',
   };
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

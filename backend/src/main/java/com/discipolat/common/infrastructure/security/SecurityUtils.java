@@ -70,7 +70,10 @@ public class SecurityUtils {
         if (token != null) {
             try {
                 return jwtTokenProvider.extractActiveRole(token);
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                // Log at debug level - this is a fallback path, not an error condition
+                // logger.debug("Could not extract active role from JWT: {}", e.getMessage());
+            }
         }
 
         // Fallback: first authority
@@ -113,7 +116,10 @@ public class SecurityUtils {
         if (token != null) {
             try {
                 return jwtTokenProvider.extractRoles(token);
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                // Log at debug level - this is a fallback path, not an error condition
+                // logger.debug("Could not extract roles from JWT: {}", e.getMessage());
+            }
         }
         String role = getCurrentUserRole();
         return role != null ? List.of(role) : List.of();

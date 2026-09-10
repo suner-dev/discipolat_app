@@ -140,9 +140,9 @@ public class MemberController {
         return ResponseEntity.ok(memberService.submitDepartmentPresences(deptId, request));
     }
 
-    /** Enregistre la présence via scan QR code (dispo pour tout responsable). */
+    /** Enregistre la présence via scan QR code (dispo pour tous les rôles). */
     @PostMapping("/qr-checkin")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<Map<String, Object>> qrCheckin(@RequestBody Map<String, String> body) {
         String soulIdStr = body.get("soulId");
         if (soulIdStr == null || soulIdStr.isBlank()) {

@@ -43,7 +43,9 @@ export default function PrayerJournalPage() {
     try {
       const res = await api.get('/prayer-journal/stats');
       setStats(res.data);
-    } catch {}
+    } catch (error) {
+      console.error('[PrayerJournal] Erreur chargement stats:', error);
+    }
   };
 
   const createEntry = async () => {

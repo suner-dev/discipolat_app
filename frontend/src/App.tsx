@@ -1008,7 +1008,7 @@ export default function App() {
           <Route path="/kpi-narrative" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><KpiNarrativePage /></ProtectedRoute>} />
           <Route path="/maker-tracking" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><MakerTrackingPage /></ProtectedRoute>} />
           <Route path="/member-competences" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><MemberCompetencesPage /></ProtectedRoute>} />
-          <Route path="/qr-checkin" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}><QrCheckinPage /></ProtectedRoute>} />
+          <Route path="/qr-checkin" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><QrCheckinPage /></ProtectedRoute>} />
           <Route path="/network/stats" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><NetworkStatsPage /></ProtectedRoute>} />
           <Route path="/voices" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><VoicesPage /></ProtectedRoute>} />
           <Route path="/workflow" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><WorkflowPage /></ProtectedRoute>} />

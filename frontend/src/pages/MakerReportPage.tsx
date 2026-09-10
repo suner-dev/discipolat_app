@@ -160,7 +160,9 @@ export default function MakerReportPage() {
         setReports(parsed);
         setLastSaved(new Date());
       }
-    } catch {}
+    } catch (error) {
+      console.error('[MakerReport] Erreur sauvegarde brouillon:', error);
+    }
   }, []);
 
   // Auto-save every 30s

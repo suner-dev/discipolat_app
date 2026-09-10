@@ -157,7 +157,7 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/kpi-narrative': ['ADMIN', 'PASTEUR'],
   '/maker-tracking': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/member-competences': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
-  '/qr-checkin': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
+  '/qr-checkin': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/network/stats': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/voices': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/workflow': ['ADMIN', 'PASTEUR'],

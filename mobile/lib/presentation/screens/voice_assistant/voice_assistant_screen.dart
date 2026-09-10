@@ -47,13 +47,13 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
     return DateTime.now().millisecondsSinceEpoch.toRadixString(36);
   }
 
-  static const _quickCommands = [
-    'Montre-moi les familles en décrochement',
-    'Combien de nouveaux convertis ce mois ?',
-    'Génère un rapport de la semaine',
-    'Quels sont les prochains événements ?',
-    'Montre le taux de présence',
-    'Quelles sont les alertes actives ?',
+  List<String> _getQuickCommands(AppLocalizations l10n) => [
+    l10n.translate('voiceCmd1'),
+    l10n.translate('voiceCmd2'),
+    l10n.translate('voiceCmd3'),
+    l10n.translate('voiceCmd4'),
+    l10n.translate('voiceCmd5'),
+    l10n.translate('voiceCmd6'),
   ];
 
 // ── API calls ──────────────────────────────────────
@@ -416,30 +416,36 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
                 ),
               ),
             const SizedBox(height: 24),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: _quickCommands.map((cmd) {
-                return GestureDetector(
-                  onTap: () => _processMessage(cmd),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(6),
-                      borderRadius: BorderRadius.circular(20),
-                      border:
-                          Border.all(color: const Color(0xFF06B6D4).withAlpha(40)),
-                    ),
-                    child: Text(
-                      '🗣️ $cmd',
-                      style: TextStyle(
-                          color: Colors.white.withAlpha(180), fontSize: 12),
-                    ),
-                  ),
+            Builder(
+              builder: (context) {
+                final l10n = AppLocalizations.of(context);
+                final commands = _getQuickCommands(l10n);
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: commands.map((cmd) {
+                    return GestureDetector(
+                      onTap: () => _processMessage(cmd),
+                      child: Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(6),
+                          borderRadius: BorderRadius.circular(20),
+                          border:
+                              Border.all(color: const Color(0xFF06B6D4).withAlpha(40)),
+                        ),
+                        child: Text(
+                          '🗣️ $cmd',
+                          style: TextStyle(
+                              color: Colors.white.withAlpha(180), fontSize: 12),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
           ],
         ),

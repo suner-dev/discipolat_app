@@ -89,7 +89,9 @@ export default function SpiritualJourneyPage() {
     try {
       const res = await api.get(`/spiritual-journals/stats/${user.id}`);
       setJournalStats(res.data);
-    } catch {}
+    } catch (error) {
+      console.error('[SpiritualJourney] Erreur chargement stats:', error);
+    }
   };
 
   const createJournalEntry = async () => {
@@ -99,14 +101,18 @@ export default function SpiritualJourneyPage() {
       setShowCreate(false);
       setNewEntry({ titre: '', contenu: '', type: 'RÉFLEXION' });
       loadJournal();
-    } catch {}
+    } catch (error) {
+      console.error('[SpiritualJourney] Erreur création entrée:', error);
+    }
   };
 
   const toggleFavorite = async (id: string) => {
     try {
       await api.post(`/spiritual-journals/${id}/toggle-favorite`);
       loadJournal();
-    } catch {}
+    } catch (error) {
+      console.error('[SpiritualJourney] Erreur toggle favori:', error);
+    }
   };
 
   const deleteJournalEntry = async (id: string) => {
@@ -114,14 +120,18 @@ export default function SpiritualJourneyPage() {
       await api.delete(`/spiritual-journals/${id}`);
       if (selectedEntry?.id === id) setSelectedEntry(null);
       loadJournal();
-    } catch {}
+    } catch (error) {
+      console.error('[SpiritualJourney] Erreur suppression entrée:', error);
+    }
   };
 
   const viewDetail = async (id: string) => {
     try {
       const res = await api.get(`/spiritual-journals/${id}`);
       setSelectedEntry(res.data);
-    } catch {}
+    } catch (error) {
+      console.error('[SpiritualJourney] Erreur chargement détail:', error);
+    }
   };
 
   const completedCount = stages.filter(s => s.completed).length;

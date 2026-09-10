@@ -44,7 +44,14 @@ export default function MentoratIAPage() {
     catch { setSuggestions([]); } finally { setLoading(false); }
   };
 
-  const loadStats = async () => { try { const res = await api.get('/mentoring/stats'); setStats(res.data); } catch {} };
+  const loadStats = async () => {
+    try {
+      const res = await api.get('/mentoring/stats');
+      setStats(res.data);
+    } catch (error) {
+      console.error('[MentoratIA] Erreur chargement stats:', error);
+    }
+  };
 
     const generateSuggestions = async () => {
     try {
@@ -68,7 +75,13 @@ export default function MentoratIAPage() {
   };
 
   const markAsRead = async (id: string) => {
-    try { await api.patch(`/mentoring/${id}/read`); loadSuggestions(); loadStats(); } catch {}
+    try {
+      await api.patch(`/mentoring/${id}/read`);
+      loadSuggestions();
+      loadStats();
+    } catch (error) {
+      console.error('[MentoratIA] Erreur marquer lu:', error);
+    }
   };
 
   const getPrioritéColor = (p: string) => {

@@ -57,7 +57,12 @@ export default function CercleFaiseursPage() {
   };
 
   const likePost = async (id: string) => {
-    try { await api.post(`/cercle-faiseurs/${id}/like`); loadPosts(); } catch {}
+    try {
+      await api.post(`/cercle-faiseurs/${id}/like`);
+      loadPosts();
+    } catch (error) {
+      console.error('[CercleFaiseurs] Erreur like:', error);
+    }
   };
 
   const getCatInfo = (key: string) => CATEGORIES.find(c => c.key === key) || CATEGORIES[4];

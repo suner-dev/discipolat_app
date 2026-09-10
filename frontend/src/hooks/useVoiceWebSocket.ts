@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
+import { Client, Message, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuth } from '@/contexts/AuthContext';
 import ttsEngine from '@/lib/ttsEngine';
@@ -42,7 +42,8 @@ interface UseVoiceWebSocketReturn {
  */
 export function useVoiceWebSocket(options: UseVoiceWebSocketOptions = {}): UseVoiceWebSocketReturn {
   const { url = '/ws-church', autoSpeak = true, onNotification } = options;
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   const clientRef = useRef<Client | null>(null);
   const subscriptionsRef = useRef<StompSubscription[]>([]);
 
@@ -82,6 +83,15 @@ export function useVoiceWebSocket(options: UseVoiceWebSocketOptions = {}): UseVo
   }, []);
 
   const speakLastNotification = useCallback(() => {
+    if (lastNotification && ttsEngine.isAvailable()) {
+      ttsEngine.speak(`${lastNotification.title}. ${lastNotification.body}`);
+    }
+  }, [lastNotification]);
+
+  const clearNotifications = useCallback(() => {
+    setNotifications([]);
+    setLastNotification(null);
+  }, []);
 
   const connect = useCallback(() => {
     if (!token || !user) return;
@@ -105,7 +115,7 @@ export function useVoiceWebSocket(options: UseVoiceWebSocketOptions = {}): UseVo
       setIsConnected(true);
 
       // Topic global
-      const allSub = client.subscribe('/topic/voice/all', (message: IMessage) => {
+      const allSub = client.subscribe('/topic/voice/all', (message: Message) => {
         try {
           const notification = JSON.parse(message.body) as VoiceNotificationDTO;
           handleNotification(notification);
@@ -117,7 +127,7 @@ export function useVoiceWebSocket(options: UseVoiceWebSocketOptions = {}): UseVo
 
       // Topic par rôle
       if (user.activeRole) {
-        const roleSub = client.subscribe(`/topic/voice/role/${user.activeRole}`, (message: IMessage) => {
+        const roleSub = client.subscribe(`/topic/voice/role/${user.activeRole}`, (message: Message) => {
           try {
             const notification = JSON.parse(message.body) as VoiceNotificationDTO;
             handleNotification(notification);
@@ -130,7 +140,7 @@ export function useVoiceWebSocket(options: UseVoiceWebSocketOptions = {}): UseVo
 
       // Topic personnel
       if (user.id) {
-        const userSub = client.subscribe(`/topic/voice/user/${user.id}`, (message: IMessage) => {
+        const userSub = client.subscribe(`/topic/voice/user/${user.id}`, (message: Message) => {
           try {
             const notification = JSON.parse(message.body) as VoiceNotificationDTO;
             handleNotification(notification);
@@ -151,7 +161,7 @@ export function useVoiceWebSocket(options: UseVoiceWebSocketOptions = {}): UseVo
 
   const disconnect = useCallback(() => {
     subscriptionsRef.current.forEach((sub) => {
-      try { sub.unsubscribe(); } catch {}
+      try { sub.unsubscribe(); } catch (error) { console.error('[VoiceWS] Erreur désinscription:', error); }
     });
     subscriptionsRef.current = [];
 
@@ -183,14 +193,3 @@ export function useVoiceWebSocket(options: UseVoiceWebSocketOptions = {}): UseVo
 }
 
 export default useVoiceWebSocket;
-
-    if (lastNotification && ttsEngine.isAvailable()) {
-      ttsEngine.speak(`${lastNotification.title}. ${lastNotification.body}`);
-    }
-  }, [lastNotification]);
-
-  const clearNotifications = useCallback(() => {
-    setNotifications([]);
-    setLastNotification(null);
-  }, []);
-}

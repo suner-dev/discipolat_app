@@ -203,7 +203,9 @@ export default function AdminIntegrationsPage() {
         if (storageRes.status === 'fulfilled') results.storage = storageRes.value.data;
         if (jwtRes.status === 'fulfilled') results.jwt = jwtRes.value.data;
         if (rateRes.status === 'fulfilled') results.rateLimiting = rateRes.value.data;
-      } catch {}
+      } catch (error) {
+        console.error('[AdminIntegrations] Erreur chargement configs:', error);
+      }
       return results;
     },
   });

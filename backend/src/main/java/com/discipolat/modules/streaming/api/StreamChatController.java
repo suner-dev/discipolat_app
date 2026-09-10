@@ -13,6 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping({"/api/stream-chat", "/api/v1/stream-chat"})
+@PreAuthorize("isAuthenticated()")
 public class StreamChatController {
 
     private final StreamChatMessageService service;
@@ -22,11 +23,13 @@ public class StreamChatController {
     }
 
     @GetMapping("/{streamId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<StreamChatMessage>> list(@PathVariable Long streamId) {
         return ResponseEntity.ok(service.listByStream(streamId));
     }
 
     @PostMapping("/{streamId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<StreamChatMessage> send(
             @PathVariable Long streamId,
             @RequestBody Map<String, String> body,
@@ -41,6 +44,7 @@ public class StreamChatController {
     }
 
     @GetMapping("/{streamId}/count")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Long>> count(@PathVariable Long streamId) {
         return ResponseEntity.ok(Map.of("count", service.countByStream(streamId)));
     }
