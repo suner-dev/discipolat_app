@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
-import '../../../../l10n/app_localizations.dart';
 
 class UserCreateScreen extends StatefulWidget {
   const UserCreateScreen({super.key});
