@@ -23,4 +23,8 @@ public interface MemberPresenceRepository extends JpaRepository<MemberPresence, 
 
     /** Présences des membres d'un groupe d'âmes (famille ou département), semaine la plus récente d'abord. */
     List<MemberPresence> findBySoulIdInOrderBySemaineDesc(List<UUID> soulIds);
+
+    // AI module methods
+    long countByTenantIdAndCreatedAtAfter(UUID tenantId, java.time.LocalDateTime date);
+    double calculatePresenceRate(UUID tenantId, java.time.LocalDate start, java.time.LocalDate end);
 }

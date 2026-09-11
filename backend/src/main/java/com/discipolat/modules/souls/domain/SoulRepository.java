@@ -62,8 +62,14 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     List<Soul> findTop10ByDeletedFalseOrderByCreatedAtDesc();
 
     /** Observatoire santé spirituelle : âmes actives non supprimées. */
-    List<Soul> findByDeletedFalse();
-
-    /** Kingdom Mapping heatmap : âmes géolocalisées. */
     List<Soul> findByDeletedFalseAndLatitudeIsNotNullAndLongitudeIsNotNull();
+
+    // AI module methods
+    long countByTenantId(UUID tenantId);
+    Optional<Soul> findByIdAndTenantId(UUID id, UUID tenantId);
+    List<Soul> findByTenantId(UUID tenantId);
+    long countPresencesBySoulId(UUID soulId);
+    long countTotalEvents();
+    List<Soul> findByFamilleIdAndTenantId(UUID familleId, UUID tenantId);
+    long countByTenantIdAndDateIntegrationAfter(UUID tenantId, java.time.LocalDate date);
 }

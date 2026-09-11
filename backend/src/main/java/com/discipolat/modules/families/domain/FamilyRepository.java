@@ -25,4 +25,9 @@ public interface FamilyRepository extends JpaRepository<Family, UUID> {
     /** Source du Page Builder : familles non supprimées. */
     long countByDeletedFalse();
     Page<Family> findAllByIdIn(java.util.Collection<UUID> ids, Pageable pageable);
+
+    // AI module methods
+    long countByTenantId(UUID tenantId);
+    Optional<Family> findByIdAndTenantId(UUID id, UUID tenantId);
+    List<Family> findByTenantId(UUID tenantId);
 }
