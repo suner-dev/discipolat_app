@@ -237,7 +237,7 @@ export default function AuditPage() {
       </div>
 
       {/* Stats cards (cliquables → filtrent par catégorie d'action) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Créations', value: stats.create, icon: Plus, gradient: 'from-emerald-500 to-teal-500', category: 'CREATE' as const },
           { label: 'Modifications', value: stats.update, icon: Pencil, gradient: 'from-blue-500 to-indigo-500', category: 'UPDATE' as const },
@@ -250,18 +250,20 @@ export default function AuditPage() {
               key={s.label}
               type="button"
               onClick={() => setActionCategoryFilter(active ? '' : s.category)}
-              className={`stat-card animate-slide-up text-left cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${active ? 'ring-2 ring-primary-500/50' : ''}`}
+              className={`relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${active ? 'ring-2 ring-primary-500/50 border-primary-300' : ''}`}
               style={{ animationDelay: `${i * 60}ms` }}
               title={active ? 'Retirer le filtre' : `Voir les ${s.label.toLowerCase()}`}
             >
-              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${s.gradient} opacity-60`} />
-              <div className="flex items-start justify-between mb-2">
-                <span className="stat-label text-[10px]">{active ? `${s.label} (filtré)` : s.label}</span>
-                <div className={`p-1.5 rounded-lg bg-gradient-to-br ${s.gradient} text-white shadow-sm`}>
-                  <s.icon className="w-3.5 h-3.5" />
+              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.gradient}`} />
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  {active ? `${s.label} (filtré)` : s.label}
+                </span>
+                <div className={`p-2 rounded-lg bg-gradient-to-br ${s.gradient} text-white shadow-sm`}>
+                  <s.icon className="w-4 h-4" />
                 </div>
               </div>
-              <p className="stat-value text-xl">{s.value}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
             </button>
           );
         })}
@@ -271,13 +273,13 @@ export default function AuditPage() {
       {trend && trend.totalActions > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Actions par type */}
-          <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '180ms' }}>
+          <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-4 h-4 text-primary-500" />
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                 {tText('Répartition par action')}
               </h3>
-              <span className="ml-auto text-[10px] text-gray-400">{trend.totalActions} actions · {trend.jours} jours</span>
+              <span className="ml-auto text-xs text-gray-400">{trend.totalActions} actions · {trend.jours} jours</span>
             </div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
@@ -303,10 +305,10 @@ export default function AuditPage() {
           </div>
 
           {/* Entités les plus modifiées */}
-          <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '240ms' }}>
+          <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <FileText className="w-4 h-4 text-primary-500" />
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                 {tText('Entités les plus touchées')}
               </h3>
             </div>
@@ -336,8 +338,12 @@ export default function AuditPage() {
       )}
 
       {/* Filters */}
-      <div className="glass-card p-4 mb-6 animate-slide-up" style={{ animationDelay: '240ms' }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+      <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 mb-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Filtres</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
           <div className="xl:col-span-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -428,7 +434,7 @@ export default function AuditPage() {
           <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       ) : (
-        <div className="glass-card overflow-hidden animate-slide-up" style={{ animationDelay: '300ms' }}>
+        <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
