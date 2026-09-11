@@ -46,7 +46,7 @@ class TenantServiceTest {
 
     @Test
     void create_shouldPersistWithActiveStatusAndDefaultPlan() {
-        CreateTenantRequest req = new CreateTenantRequest("Église Nouvelle", "nouvelle-eglise", null);
+        CreateTenantRequest req = new CreateTenantRequest("Église Nouvelle", "nouvelle-eglise", null, null, null, null, null, null, null, null);
         when(tenantRepository.existsBySlug("nouvelle-eglise")).thenReturn(false);
         when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> {
             Tenant t = inv.getArgument(0);
@@ -65,7 +65,7 @@ class TenantServiceTest {
 
     @Test
     void create_withCustomPlan_shouldKeepIt() {
-        CreateTenantRequest req = new CreateTenantRequest("Église A", "eglise-a", "PRO");
+        CreateTenantRequest req = new CreateTenantRequest("Église A", "eglise-a", "PRO", null, null, null, null, null, null, null);
         when(tenantRepository.existsBySlug("eglise-a")).thenReturn(false);
         when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -76,7 +76,7 @@ class TenantServiceTest {
 
     @Test
     void create_withDuplicateSlug_shouldThrow() {
-        CreateTenantRequest req = new CreateTenantRequest("Église B", "eglise-b", null);
+        CreateTenantRequest req = new CreateTenantRequest("Église B", "eglise-b", null, null, null, null, null, null, null, null);
         when(tenantRepository.existsBySlug("eglise-b")).thenReturn(true);
 
         assertThrows(BusinessRuleException.class, () -> tenantService.create(req));
@@ -90,7 +90,7 @@ class TenantServiceTest {
         when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
 
         TenantResponse updated = tenantService.update(id,
-                new UpdateTenantRequest("Église Renommée", TenantStatus.SUSPENDED, "STARTER"));
+                new UpdateTenantRequest("Église Renommée", TenantStatus.SUSPENDED, "STARTER", null, null, null, null, null, null, null));
 
         assertEquals("Église Renommée", updated.name());
         assertEquals(TenantStatus.SUSPENDED, updated.status());
