@@ -67,6 +67,17 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                     // Stocker les infos utilisateur dans les headers de session pour accès ultérieur
                     accessor.setNativeHeader("userId", userId.toString());
                     accessor.setNativeHeader("roles", String.join(",", roles));
+                    
+                    // Extraire et stocker le tenantId pour l'isolation multi-tenant des channels
+                    try {
+                        UUID tenantId = jwtTokenProvider.extractTenantId(token);
+                        if (tenantId != null) {
+                            accessor.setNativeHeader("tenantId", tenantId.toString());
+                            log.debug("[WebSocket] Tenant isolé — tenantId={}", tenantId);
+                        }
+                    } catch (Exception e) {
+                        log.warn("[WebSocket] Impossible d'extraire tenantId: {}", e.getMessage());
+                    }
 
                     log.debug("[WebSocket] Authentifié — userId={}, roles={}", userId, roles);
                 } catch (Exception e) {

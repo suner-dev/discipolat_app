@@ -8,6 +8,7 @@ import com.discipolat.modules.members.domain.MemberDepartment;
 import com.discipolat.modules.members.domain.MemberDepartmentRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -39,6 +40,12 @@ public class DataInitializer implements CommandLineRunner {
     private final SoulRepository soulRepository;
     private final DepartmentRepository departmentRepository;
     private final MemberDepartmentRepository memberDepartmentRepository;
+    private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
+    private final TenantMembershipRepository membershipRepository;
+    private final OrganizationNodeRepository orgNodeRepository;
+    private final TenantSubscriptionRepository subscriptionRepository;
+    private final SaasPlanRepository planRepository;
 
     /**
      * Activation du jeu de données de démonstration (comptes connus / mot de
@@ -52,12 +59,24 @@ public class DataInitializer implements CommandLineRunner {
     public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder,
                            SoulRepository soulRepository,
                            DepartmentRepository departmentRepository,
-                           MemberDepartmentRepository memberDepartmentRepository) {
+                           MemberDepartmentRepository memberDepartmentRepository,
+                           RoleRepository roleRepository,
+                           PermissionRepository permissionRepository,
+                           TenantMembershipRepository membershipRepository,
+                           OrganizationNodeRepository orgNodeRepository,
+                           TenantSubscriptionRepository subscriptionRepository,
+                           SaasPlanRepository planRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.soulRepository = soulRepository;
         this.departmentRepository = departmentRepository;
         this.memberDepartmentRepository = memberDepartmentRepository;
+        this.roleRepository = roleRepository;
+        this.permissionRepository = permissionRepository;
+        this.membershipRepository = membershipRepository;
+        this.orgNodeRepository = orgNodeRepository;
+        this.subscriptionRepository = subscriptionRepository;
+        this.planRepository = planRepository;
     }
 
     @Override
@@ -135,6 +154,44 @@ public class DataInitializer implements CommandLineRunner {
 
         // Espace Membre : âme liée au compte membre + départements ministères
         seedMemberSpace();
+
+        // Multi-tenant: seed roles, permissions, organisations, subscriptions
+        seedDefaultRolesAndPermissions();
+        seedDefaultMemberships();
+    }
+
+    /**
+     * Seed les roles systeme et permissions par defaut (Sections 21-24 du prompt).
+     */
+    private void seedDefaultRolesAndPermissions() {
+        if (roleRepository.count() > 0) return;
+
+        String[][] systemRoles = {
+            {"PLATFORM_SUPER_ADMIN", "Super Admin Plateforme", "Administration complete de la plateforme"},
+            {"TENANT_OWNER", "Proprietaire Tenant", "Proprietaire de l'organisation"},
+            {"TENANT_ADMIN", "Admin Tenant", "Administrateur du tenant"},
+            {"REGION_ADMIN", "Admin Region", "Administrateur d'une region"},
+            {"CHURCH_ADMIN", "Admin Eglise", "Administrateur d'une eglise"},
+            {"SUB_CHURCH_ADMIN", "Admin Sous-Eglise", "Administrateur d'une sous-eglise"},
+            {"CAMPUS_ADMIN", "Admin Campus", "Administrateur d'un campus"},
+            {"DEPARTMENT_ADMIN", "Admin Departement", "Administrateur d'un departement"},
+            {"DEPARTMENT_LEADER", "Responsable Departement", "Responsable d'equipe"},
+            {"FAMILY_LEADER", "Chef de Famille", "Gestionnaire de famille"},
+            {"DISCIPLE_MAKER", "Faiseur de Disciples", "Accompagnement de disciples"},
+            {"MENTOR", "Mentor", "Mentor de personnes assignees"},
+            {"MEMBER", "Membre", "Membre standard"},
+            {"GUEST", "Invite", "Acces limite"}
+        };
+
+        for (String[] roleData : systemRoles) {
+            if (roleRepository.findByTenantIdAndKey(null, roleData[0]).isEmpty()) {
+                Role role = Role.builder()
+                        .tenantId(null).key(roleData[0]).label(roleData[1])
+                        .description(roleData[2]).system(true)
+                        .priority(getRolePriority(roleData[0])).build();
+                roleRepository.save(role);
+            }
+        }
     }
 
     /**
@@ -210,4 +267,47 @@ public class DataInitializer implements CommandLineRunner {
         userRepository.save(user);
         log.info("✅ Created {} (roles={}) user: {}", primaryRole, roles, email);
     }
+
+    // ==================== MULTI-TENANT SEED ====================
+
+    private int getRolePriority(String roleKey) {
+        switch (roleKey) {
+            case "PLATFORM_SUPER_ADMIN": return 1000;
+            case "TENANT_OWNER": return 900;
+            case "TENANT_ADMIN": return 800;
+            case "REGION_ADMIN": return 700;
+            case "CHURCH_ADMIN": return 600;
+            case "SUB_CHURCH_ADMIN": return 550;
+            case "CAMPUS_ADMIN": return 500;
+            case "DEPARTMENT_ADMIN": return 400;
+            case "DEPARTMENT_LEADER": return 350;
+            case "FAMILY_LEADER": return 300;
+            case "DISCIPLE_MAKER": return 200;
+            case "MENTOR": return 150;
+            case "MEMBER": return 100;
+            case "GUEST": return 50;
+            default: return 0;
+        }
+    }
+
+    private void seedDefaultMemberships() {
+        for (User user : userRepository.findAll()) {
+            if (user.getTenantId() != null &&
+                membershipRepository.findByUserIdAndTenantIdAndStatus(
+                    user.getId(), user.getTenantId(), MembershipStatus.ACTIVE).isEmpty()) {
+                try {
+                    TenantMembership membership = TenantMembership.builder()
+                            .tenantId(user.getTenantId())
+                            .userId(user.getId())
+                            .role(user.getRole().name())
+                            .status(MembershipStatus.ACTIVE)
+                            .build();
+                    membershipRepository.save(membership);
+                } catch (Exception e) {
+                    log.warn("Membership pour {}: {}", user.getEmail(), e.getMessage());
+                }
+            }
+        }
+    }
+}
 }
