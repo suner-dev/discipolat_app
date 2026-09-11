@@ -15,13 +15,16 @@ public class AiModuleController {
     private final AiKpiNarrativeService kpiService;
     private final AiFamilyCohesionService familyService;
     private final SermonAssistantService sermonService;
+    private final LlmProviderService llmProvider;
 
     public AiModuleController(AiModuleService moduleService, AiKpiNarrativeService kpiService,
-                              AiFamilyCohesionService familyService, SermonAssistantService sermonService) {
+                              AiFamilyCohesionService familyService, SermonAssistantService sermonService,
+                              LlmProviderService llmProvider) {
         this.moduleService = moduleService;
         this.kpiService = kpiService;
         this.familyService = familyService;
         this.sermonService = sermonService;
+        this.llmProvider = llmProvider;
     }
 
     @GetMapping("/summary")
@@ -69,17 +72,24 @@ public class AiModuleController {
         return ResponseEntity.ok(sermonService.generateOutlines(passage, theme, audience, null));
     }
 
-    @GetMapping("/health")
+    @GetMapping("/providers")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> health() {
+    public ResponseEntity<Map<String, Object>> getProviders() {
         return ResponseEntity.ok(Map.of(
-            "status", "UP",
-            "services", Map.of(
-                "module", true,
-                "kpi", true,
-                "family", true,
-                "sermon", true
-            )
+            "providers", llmProvider.getAvailableProviders(),
+            "status", "active"
         ));
+    }
+
+    @PostMapping("/chat")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> chat(@RequestBody Map<String, String> body) {
+        String message = body.getOrDefault("message", "");
+        String system = body.getOrDefault("system", "Tu es un assistant IA pastoral pour l'application Discipolat. Réponds en français, de manière concise et utile.");
+        if (message.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Message requis"));
+        }
+        String response = llmProvider.generateResponse(system, message);
+        return ResponseEntity.ok(Map.of("response", response));
     }
 }

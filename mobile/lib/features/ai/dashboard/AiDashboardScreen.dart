@@ -11,7 +11,11 @@ class AiDashboardScreen extends ConsumerStatefulWidget {
 class _AiDashboardScreenState extends ConsumerState<AiDashboardScreen> {
   Map<String, dynamic>? _summary;
   Map<String, dynamic>? _narrative;
+  Map<String, dynamic>? _providers;
   bool _isLoading = true;
+  String _chatMessage = '';
+  String _chatResponse = '';
+  bool _chatLoading = false;
 
   @override
   void initState() {
@@ -25,16 +29,38 @@ class _AiDashboardScreenState extends ConsumerState<AiDashboardScreen> {
       final results = await Future.wait([
         api.get('/ai/module/summary').catchError((_) => {}),
         api.get('/ai/module/kpi-narrative').catchError((_) => {}),
+        api.get('/ai/module/providers').catchError((_) => {}),
       ]);
       if (mounted) {
         setState(() {
           _summary = results[0] is Map ? results[0] as Map<String, dynamic> : null;
           _narrative = results[1] is Map ? results[1] as Map<String, dynamic> : null;
+          final p = results[2] is Map ? results[2] as Map<String, dynamic> : null;
+          _providers = p?['providers'] is Map ? p['providers'] as Map<String, dynamic> : null;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _sendChat() async {
+    if (_chatMessage.trim().isEmpty || _chatLoading) return;
+    setState(() { _chatLoading = true; _chatResponse = ''; });
+    try {
+      final api = ref.read(apiServiceProvider);
+      final res = await api.post('/ai/module/chat', {'message': _chatMessage});
+      if (mounted) {
+        setState(() {
+          _chatResponse = res is Map ? (res as Map)['response']?.toString() ?? 'Pas de réponse' : 'Pas de réponse';
+          _chatMessage = '';
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _chatResponse = 'Erreur: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _chatLoading = false);
     }
   }
 
@@ -65,6 +91,39 @@ class _AiDashboardScreenState extends ConsumerState<AiDashboardScreen> {
             ),
           ),
         const SizedBox(height: 16),
+        // Providers status
+        if (_providers != null) ...[
+          const Text('Modèles IA (gratuits)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ..._buildProviderChips(),
+          const SizedBox(height: 16),
+        ],
+        // Chat with AI
+        ...[
+          const Text('Assistant IA', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          TextField(
+            hintText: 'Posez une question...',
+            onChanged: (v) => _chatMessage = v,
+            onSubmitted: (_) => _sendChat(),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: _sendChat,
+            icon: const Icon(Icons.send),
+            label: _chatLoading ? const Text('...') : const Text('Envoyer'),
+          ),
+          if (_chatResponse.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              color: Colors.indigo[50],
+              child: SelectableText(_chatResponse),
+            ),
+          ],
+          const SizedBox(height: 16),
+        ],
         Row(children: [
           _statCard('Âmes', '${_summary?['totalSouls'] ?? '—'}', Icons.people, Colors.indigo),
           const SizedBox(width: 12),
@@ -125,5 +184,28 @@ class _AiDashboardScreenState extends ConsumerState<AiDashboardScreen> {
         Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ])),
     ));
+  }
+
+  List<Widget> _buildProviderChips() {
+    final labels = {
+      'groq': 'Groq (Llama 3.1 70B)',
+      'gemini': 'Gemini 1.5 Flash',
+      'mistral': 'Mistral 7B',
+      'huggingface': 'HuggingFace',
+      'fallback': 'Mode local',
+    };
+    return _providers!.entries.map((e) {
+      final enabled = e.value == true;
+      return Wrap(
+        spacing: const EdgeInsets.all(4),
+        children: [
+          Chip(
+            label: Text('${labels[e.key] ?? e.key}${enabled ? ' ✓' : ''}'),
+            backgroundColor: enabled ? Colors.green[50] : Colors.grey[100],
+            labelStyle: TextStyle(fontSize: 11, color: enabled ? Colors.green[700] : Colors.grey[500]),
+          ),
+        ],
+      );
+    }).toList();
   }
 }

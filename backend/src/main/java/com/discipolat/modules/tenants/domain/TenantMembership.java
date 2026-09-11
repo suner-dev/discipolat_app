@@ -8,7 +8,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "tenant_memberships", uniqueConstraints = @UniqueConstraint(name = "uk_tenant_membership_user_tenant", columnNames = {"user_id", "tenant_id"}))
+@Table(name = "tenant_memberships", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_tenant_membership_user_tenant", columnNames = {"user_id", "tenant_id"}),
+        @UniqueConstraint(name = "uk_tenant_membership_user_tenant_scope", columnNames = {"user_id", "tenant_id", "scope_type", "scope_id"})
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,8 +31,19 @@ public class TenantMembership {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
+
     @Column(name = "role", nullable = false, length = 50)
-    private String role;
+    private String roleLegacy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scope_type", nullable = false, length = 30)
+    private MembershipScopeType scopeType;
+
+    @Column(name = "scope_id")
+    private UUID scopeId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -53,6 +67,7 @@ public class TenantMembership {
         this.updatedAt = Instant.now();
         this.joinedAt = Instant.now();
         if (this.status == null) this.status = MembershipStatus.ACTIVE;
+        if (this.scopeType == null) this.scopeType = MembershipScopeType.TENANT;
     }
 
     @PreUpdate
