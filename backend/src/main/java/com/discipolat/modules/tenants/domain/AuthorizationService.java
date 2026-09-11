@@ -1,441 +1,280 @@
 package com.discipolat.modules.tenants.domain;
 
+import com.discipolat.common.exception.ForbiddenException;
+import com.discipolat.common.exception.UnauthorizedException;
+import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.users.domain.User;
+import com.discipolat.modules.users.domain.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * AUTHORIZATION SERVICE - Vérification Centralisée d'Autorisation
- * 
- * RÈGLE D'OR (Section 78 du prompt) :
- * Chaque requête métier doit être validée :
- * WHO ARE YOU? + WHICH TENANT? + WHICH MEMBERSHIP? + WHICH ROLE?
- * + WHICH PERMISSION? + WHICH SCOPE? + WHICH RESOURCE?
- * + DO YOU OWN / CONTROL THIS RESOURCE?
- * 
- * Si une seule condition échoue : ACCESS DENIED
+ * Centralized authorization service for multi-tenant scoped RBAC.
+ * All permission checks go through this service.
  */
 @Service
+@RequiredArgsConstructor
 public class AuthorizationService {
 
     private final TenantMembershipRepository membershipRepository;
-    private final PermissionRepository permissionRepository;
     private final RoleRepository roleRepository;
-
-    public AuthorizationService(
-            TenantMembershipRepository membershipRepository,
-            PermissionRepository permissionRepository,
-            RoleRepository roleRepository) {
-        this.membershipRepository = membershipRepository;
-        this.permissionRepository = permissionRepository;
-        this.roleRepository = roleRepository;
-    }
-
-    // ==================== VÉRIFICATION DE BASE ====================
+    private final PermissionRepository permissionRepository;
+    private final OrganizationNodeRepository orgNodeRepository;
+    private final UserRepository userRepository;
 
     /**
-     * Vérifie si l'utilisateur courant a l'authentification requise
+     * Check if current user has a specific permission within a scope.
+     * This is the main entry point for authorization checks.
      */
-    public boolean isAuthenticated() {
-        UUID userId = getCurrentUserId();
-        return userId != null && membershipRepository.existsByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
+    public boolean can(String permissionKey, MembershipScopeType scopeType, UUID scopeId) {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        UUID tenantId = TenantContext.requireTenantId();
+        return can(userId, tenantId, permissionKey, scopeType, scopeId);
     }
 
     /**
-     * Obtient l'ID utilisateur courant depuis le contexte
+     * Check if a specific user has a permission within a scope.
      */
-    private UUID getCurrentUserId() {
-        try {
-            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.getPrincipal() instanceof com.discipolat.modules.users.domain.User user) {
-                return user.getId();
-            }
-        } catch (Exception e) {
-            // Fallback si pas dans SecurityContext
-        }
-        return null;
-    }
-
-    // ==================== VÉRIFICATION TENANT ====================
-
-    /**
-     * Vérifie que l'utilisateur appartient au tenant donné
-     */
-    public boolean hasTenantAccess(UUID userId, UUID tenantId) {
-        return membershipRepository.existsByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
-    }
-
-    /**
-     * Vérifie que l'utilisateur a le rôle requis dans le tenant
-     */
-    public boolean hasRole(UUID userId, UUID tenantId, String requiredRole) {
-        Optional<TenantMembership> membership = membershipRepository
-                .findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
-        
-        if (membership.isEmpty()) return false;
-        
-        // Vérifier rôle direct
-        if (membership.get().getRole().equalsIgnoreCase(requiredRole)) {
+    @Transactional(readOnly = true)
+    public boolean can(UUID userId, UUID tenantId, String permissionKey, MembershipScopeType scopeType, UUID scopeId) {
+        // Super-admin check (platform level)
+        if (isPlatformSuperAdmin(userId)) {
             return true;
         }
-        
-        // Vérifier dans les permissions du rôle
-        Set<String> userRoles = getAllUserRolesInTenant(userId, tenantId);
-        return userRoles.contains(requiredRole.toUpperCase());
-    }
 
-    /**
-     * Vérifie si l'utilisateur a l'un des rôles donnés
-     */
-    public boolean hasAnyRole(UUID userId, UUID tenantId, String... requiredRoles) {
-        Set<String> userRoles = getAllUserRolesInTenant(userId, tenantId);
-        for (String role : requiredRoles) {
-            if (userRoles.contains(role.toUpperCase())) {
-                return true;
+        // Get user's memberships in this tenant
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        if (memberships.isEmpty()) {
+            return false;
+        }
+
+        // Check each membership for the permission
+        for (TenantMembership membership : memberships) {
+            if (membershipMatchesScope(membership, scopeType, scopeId)) {
+                if (roleHasPermission(membership.getRole(), permissionKey)) {
+                    return true;
+                }
             }
         }
+
         return false;
     }
 
     /**
-     * Vérifie si l'utilisateur a TOUS les rôles donnés
-     */
-    public boolean hasAllRoles(UUID userId, UUID tenantId, String... requiredRoles) {
-        Set<String> userRoles = getAllUserRolesInTenant(userId, tenantId);
-        for (String role : requiredRoles) {
-            if (!userRoles.contains(role.toUpperCase())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // ==================== VÉRIFICATION PERMISSIONS ====================
-
-    /**
-     * Vérifie si l'utilisateur a la permission donnée (scoped ou globale)
-     */
-    public boolean hasPermission(UUID userId, UUID tenantId, String permissionKey) {
-        Set<String> permissions = getAllPermissionsForUserInTenant(userId, tenantId);
-        return permissions.contains(permissionKey.toUpperCase());
-    }
-
-    /**
-     * Vérifie si l'utilisateur a la permission avec scope spécifique
-     */
-    public boolean hasPermissionInScope(
-            UUID userId, 
-            UUID tenantId, 
-            String permissionKey, 
-            PermissionScope scope, 
-            UUID scopeId) {
-        
-        // Vérifier permission globale d'abord
-        if (hasPermission(userId, tenantId, permissionKey)) {
-            return true;
-        }
-        
-        // Vérifier permission scoped
-        Set<String> scopedPermissions = getScopedPermissionsForUser(
-                userId, tenantId, permissionKey, scope, scopeId);
-        return !scopedPermissions.isEmpty();
-    }
-
-    /**
-     * Vérifie si l'utilisateur peut voir la ressource
+     * Check if user can view a resource (read access).
      */
     public boolean canView(UUID userId, UUID tenantId, String resourceType, UUID resourceId) {
-        // Déterminer le scope de la ressource
-        PermissionScope scope = getResourceScope(resourceType, resourceId);
-        String viewPermission = resourceType.toUpperCase() + "_VIEW";
-        
-        if (scope == PermissionScope.PLATFORM) {
-            return hasPermission(userId, tenantId, viewPermission);
-        }
-        
-        // Pour les ressources tenant-scoped, vérifier l'accès tenant + permission
-        if (!hasTenantAccess(userId, tenantId)) {
-            return false;
-        }
-        
-        return hasPermissionInScope(userId, tenantId, viewPermission, scope, resourceId);
+        // Determine scope from resource
+        MembershipScopeType scopeType = inferScopeFromResource(resourceType);
+        UUID scopeId = inferScopeIdFromResource(resourceType, resourceId);
+        String permissionKey = resourceType.toUpperCase() + "_READ";
+        return can(userId, tenantId, permissionKey, scopeType, scopeId);
     }
 
     /**
-     * Vérifie si l'utilisateur peut créer dans le scope donné
+     * Check if user can create a resource within a scope.
      */
-    public boolean canCreate(UUID userId, UUID tenantId, String resourceType, UUID scopeId) {
-        if (!hasTenantAccess(userId, tenantId)) {
-            return false;
-        }
-        
-        String createPermission = resourceType.toUpperCase() + "_CREATE";
-        PermissionScope scope = getResourceScope(resourceType, scopeId);
-        
-        return hasPermissionInScope(userId, tenantId, createPermission, scope, scopeId);
+    public boolean canCreate(UUID userId, UUID tenantId, String resourceType, MembershipScopeType scopeType, UUID scopeId) {
+        String permissionKey = resourceType.toUpperCase() + "_CREATE";
+        return can(userId, tenantId, permissionKey, scopeType, scopeId);
     }
 
     /**
-     * Vérifie si l'utilisateur peut modifier la ressource
+     * Check if user can update a resource.
      */
     public boolean canUpdate(UUID userId, UUID tenantId, String resourceType, UUID resourceId) {
-        if (!hasTenantAccess(userId, tenantId)) {
-            return false;
-        }
-        
-        String updatePermission = resourceType.toUpperCase() + "_UPDATE";
-        PermissionScope scope = getResourceScope(resourceType, resourceId);
-        
-        return hasPermissionInScope(userId, tenantId, updatePermission, scope, resourceId);
+        MembershipScopeType scopeType = inferScopeFromResource(resourceType);
+        UUID scopeId = inferScopeIdFromResource(resourceType, resourceId);
+        String permissionKey = resourceType.toUpperCase() + "_UPDATE";
+        return can(userId, tenantId, permissionKey, scopeType, scopeId);
     }
 
     /**
-     * Vérifie si l'utilisateur peut supprimer la ressource
+     * Check if user can delete a resource.
      */
     public boolean canDelete(UUID userId, UUID tenantId, String resourceType, UUID resourceId) {
-        if (!hasTenantAccess(userId, tenantId)) {
-            return false;
-        }
-        
-        String deletePermission = resourceType.toUpperCase() + "_DELETE";
-        PermissionScope scope = getResourceScope(resourceType, resourceId);
-        
-        return hasPermissionInScope(userId, tenantId, deletePermission, scope, resourceId);
+        MembershipScopeType scopeType = inferScopeFromResource(resourceType);
+        UUID scopeId = inferScopeIdFromResource(resourceType, resourceId);
+        String permissionKey = resourceType.toUpperCase() + "_DELETE";
+        return can(userId, tenantId, permissionKey, scopeType, scopeId);
     }
-
-    // ==================== VÉRIFICATION SCOPE HIÉRARCHIQUE ====================
 
     /**
-     * Vérifie si l'utilisateur a accès au scope hiérarchique (église, département, etc.)
+     * Require permission - throws ForbiddenException if not authorized.
      */
-    public boolean hasOrganizationalScope(
-            UUID userId, 
-            UUID tenantId, 
-            OrganizationNodeType nodeType, 
-            UUID nodeId) {
-        
-        if (!hasTenantAccess(userId, tenantId)) {
-            return false;
+    public void require(String permissionKey, MembershipScopeType scopeType, UUID scopeId) {
+        if (!can(permissionKey, scopeType, scopeId)) {
+            throw new ForbiddenException("Permission denied: " + permissionKey + " on " + scopeType + (scopeId != null ? ":" + scopeId : ""));
         }
-
-        Optional<OrganizationNode> node = getOrganizationNode(nodeId);
-        if (node.isEmpty() || !node.get().getTenantId().equals(tenantId)) {
-            return false;
-        }
-
-        // Vérifier si l'utilisateur a un scope qui inclut ce node
-        Set<UUID> userScopes = getUserOrganizationScopes(userId, tenantId);
-        
-        // L'utilisateur a accès si :
-        // 1. Il a le scope exact
-        if (userScopes.contains(nodeId)) {
-            return true;
-        }
-        
-        // 2. Il a un scope parent qui contient ce node
-        for (UUID userScopeId : userScopes) {
-            Optional<OrganizationNode> userScopeNode = getOrganizationNode(userScopeId);
-            if (userScopeNode.isPresent() && isAncestorOrSelf(userScopeNode.get(), node.get())) {
-                return true;
-            }
-        }
-        
-        // 3. Son rôle a accès global au type de node
-        String viewPermission = nodeType.name() + "_VIEW";
-        return hasPermission(userId, tenantId, viewPermission);
     }
 
-    // ==================== SERVICES PRIVÉS ====================
-
-    private Set<String> getAllUserRolesInTenant(UUID userId, UUID tenantId) {
-        Set<String> roles = new HashSet<>();
-        
-        List<TenantMembership> memberships = membershipRepository
-                .findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
-        
-        for (TenantMembership m : memberships) {
-            if (m.getTenantId().equals(tenantId)) {
-                roles.add(m.getRole());
-                
-                // Ajouter les permissions du rôle
-                Optional<Role> role = roleRepository.findByTenantIdAndKey(tenantId, m.getRole());
-                if (role.isPresent()) {
-                    // Dans un système complet, on aurait aussi les rôles système
-                    role.get().getPermissions().forEach(p -> 
-                        roles.addAll(getPermissionKeys(p)));
-                }
-            }
+    /**
+     * Require permission for current user - throws ForbiddenException if not authorized.
+     */
+    public void requireCurrentUser(String permissionKey, MembershipScopeType scopeType, UUID scopeId) {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        UUID tenantId = TenantContext.requireTenantId();
+        if (!can(userId, tenantId, permissionKey, scopeType, scopeId)) {
+            throw new ForbiddenException("Permission denied: " + permissionKey + " on " + scopeType + (scopeId != null ? ":" + scopeId : ""));
         }
-        
-        return roles;
     }
 
-    private Set<String> getAllPermissionsForUserInTenant(UUID userId, UUID tenantId) {
+    /**
+     * Get all permissions for current user in current tenant.
+     */
+    @Transactional(readOnly = true)
+    public Set<String> getCurrentUserPermissions() {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        UUID tenantId = TenantContext.requireTenantId();
+        return getUserPermissions(userId, tenantId);
+    }
+
+    /**
+     * Get all permissions for a user in a tenant.
+     */
+    @Transactional(readOnly = true)
+    public Set<String> getUserPermissions(UUID userId, UUID tenantId) {
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
         Set<String> permissions = new HashSet<>();
-        
-        List<TenantMembership> memberships = membershipRepository
-                .findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
-        
-        for (TenantMembership m : memberships) {
-            if (m.getTenantId().equals(tenantId)) {
-                Optional<Role> role = roleRepository.findByTenantIdAndKey(tenantId, m.getRole());
-                if (role.isPresent()) {
-                    role.get().getPermissions().forEach(p -> permissions.add(p.getKey()));
-                }
+
+        for (TenantMembership membership : memberships) {
+            if (membership.getRole() != null) {
+                Set<String> rolePerms = getRolePermissions(membership.getRole().getId());
+                permissions.addAll(rolePerms);
             }
         }
-        
+
         return permissions;
     }
 
-    private Set<String> getScopedPermissionsForUser(
-            UUID userId, UUID tenantId, String permissionKey, 
-            PermissionScope scope, UUID scopeId) {
-        
-        Set<String> result = new HashSet<>();
-        
-        List<TenantMembership> memberships = membershipRepository
-                .findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
-        
-        for (TenantMembership m : memberships) {
-            if (m.getTenantId().equals(tenantId)) {
-                Optional<Role> role = roleRepository.findByTenantIdAndKey(tenantId, m.getRole());
-                if (role.isPresent()) {
-                    for (Permission perm : role.get().getPermissions()) {
-                        if (perm.getKey().equalsIgnoreCase(permissionKey)) {
-                            if (perm.getScope() == scope || perm.getScope() == PermissionScope.PLATFORM) {
-                                if (perm.getScopeId() == null || perm.getScopeId().equals(scopeId)) {
-                                    result.add(perm.getKey());
-                                }
-                            }
-                        }
-                    }
+    /**
+     * Get effective permissions for a user within a specific scope.
+     */
+    @Transactional(readOnly = true)
+    public Set<String> getUserPermissionsInScope(UUID userId, UUID tenantId, MembershipScopeType scopeType, UUID scopeId) {
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        Set<String> permissions = new HashSet<>();
+
+        for (TenantMembership membership : memberships) {
+            if (membershipMatchesScope(membership, scopeType, scopeId)) {
+                if (membership.getRole() != null) {
+                    Set<String> rolePerms = getRolePermissions(membership.getRole().getId());
+                    permissions.addAll(rolePerms);
                 }
             }
         }
-        
-        return result;
+
+        return permissions;
     }
 
-    private Set<UUID> getUserOrganizationScopes(UUID userId, UUID tenantId) {
-        Set<UUID> scopes = new HashSet<>();
-        
-        List<TenantMembership> memberships = membershipRepository
-                .findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
-        
-        for (TenantMembership m : memberships) {
-            if (m.getTenantId().equals(tenantId)) {
-                // Dans un système complet, on aurait une table MembershipScope
-                // Pour l'instant, on utilise le role comme scope
-                scopes.add(m.getTenantId());
-            }
+    // ==================== PRIVATE HELPERS ====================
+
+    private boolean isPlatformSuperAdmin(UUID userId) {
+        // Check if user has PLATFORM_SUPER_ADMIN role in any tenant (global role)
+        Optional<Role> superAdminRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN");
+        if (superAdminRole.isEmpty()) {
+            return false;
         }
-        
-        return scopes;
+        return membershipRepository.existsByUserIdAndRoleIdAndStatus(userId, superAdminRole.get().getId(), MembershipStatus.ACTIVE);
     }
 
-    private PermissionScope getResourceScope(String resourceType, UUID resourceId) {
-        // Mapping des types de ressources vers leurs scopes
-        // Dans un système complet, chaque ressource aurait son propre scope
-        switch (resourceType.toUpperCase()) {
-            case "TENANT":
-            case "USER":
-            case "SETTINGS":
-                return PermissionScope.TENANT;
-            case "CHURCH":
-            case "EGLISE":
-                return PermissionScope.CHURCH;
-            case "SUB_CHURCH":
-                return PermissionScope.SUB_CHURCH;
-            case "CAMPUS":
-                return PermissionScope.CAMPUS;
-            case "DEPARTMENT":
-            case "DEPARTEMENT":
-                return PermissionScope.DEPARTMENT;
-            case "FAMILY":
-            case "GROUPE":
-            case "GROUPS":
-                return PermissionScope.FAMILY;
-            case "REGION":
-                return PermissionScope.REGION;
-            case "MEMBER":
-                return PermissionScope.OWN;
-            default:
-                return PermissionScope.TENANT;
-        }
-    }
-
-    private Optional<OrganizationNode> getOrganizationNode(UUID nodeId) {
-        // Dans un système complet, injecter OrganizationNodeRepository
-        return Optional.empty();
-    }
-
-    private boolean isAncestorOrSelf(OrganizationNode ancestor, OrganizationNode node) {
-        if (ancestor.getId().equals(node.getId())) {
+    private boolean membershipMatchesScope(TenantMembership membership, MembershipScopeType requiredScopeType, UUID requiredScopeId) {
+        // TENANT scope matches everything within tenant
+        if (membership.getScopeType() == MembershipScopeType.TENANT) {
             return true;
         }
-        // Vérifier si le path de node commence par le path de ancestor
-        return node.getPath().startsWith(ancestor.getPath());
-    }
 
-    private Set<String> getPermissionKeys(Permission perm) {
-        Set<String> keys = new HashSet<>();
-        keys.add(perm.getKey());
-        // Ajouter les permissions parentes si hiérarchie
-        return keys;
-    }
-
-    // ==================== VERIFICATIONS RAPIDES ====================
-
-    /**
-     * Vérification rapide : utilisateur authentifié + tenant valide
-     */
-    public void requireAuthenticated() {
-        if (!isAuthenticated()) {
-            throw new SecurityException("Authentification requise");
+        // Exact scope match
+        if (membership.getScopeType() == requiredScopeType) {
+            if (requiredScopeId == null || membership.getScopeId() == null) {
+                return requiredScopeId == null && membership.getScopeId() == null;
+            }
+            return membership.getScopeId().equals(requiredScopeId);
         }
-    }
 
-    /**
-     * Vérification rapide : accès tenant obligatoire
-     */
-    public void requireTenantAccess(UUID tenantId) {
-        UUID userId = getCurrentUserId();
-        if (userId == null || !hasTenantAccess(userId, tenantId)) {
-            throw new SecurityException("Accès au tenant refusé");
-        }
-    }
-
-    /**
-     * Vérification rapide : rôle requis
-     */
-    public void requireRole(UUID tenantId, String... requiredRoles) {
-        UUID userId = getCurrentUserId();
-        if (userId == null) {
-            throw new SecurityException("Authentification requise");
-        }
-        
-        boolean hasRole = false;
-        for (String role : requiredRoles) {
-            if (hasRole(userId, tenantId, role)) {
-                hasRole = true;
-                break;
+        // Hierarchy matching: parent scopes cover children
+        // e.g., CHURCH scope covers SUB_CHURCH, CAMPUS, DEPARTMENT, FAMILY
+        if (isParentScope(membership.getScopeType(), requiredScopeType)) {
+            if (membership.getScopeId() != null && requiredScopeId != null) {
+                return orgNodeRepository.isDescendantOf(requiredScopeId, membership.getScopeId());
             }
         }
-        
-        if (!hasRole) {
-            throw new SecurityException("Rôle requis: " + String.join(", ", requiredRoles));
+
+        // ASSIGNED scope: user can only access specifically assigned resources
+        if (membership.getScopeType() == MembershipScopeType.ASSIGNED) {
+            return requiredScopeId != null && membership.getScopeId() != null
+                    && membership.getScopeId().equals(requiredScopeId);
         }
+
+        // OWN scope: only own resources
+        if (membership.getScopeType() == MembershipScopeType.OWN) {
+            UUID userId = SecurityUtils.getCurrentUserId();
+            return requiredScopeId != null && requiredScopeId.equals(userId);
+        }
+
+        return false;
     }
 
-    /**
-     * Vérification rapide : permission requise
-     */
-    public void requirePermission(UUID tenantId, String permissionKey) {
-        UUID userId = getCurrentUserId();
-        if (userId == null || !hasPermission(userId, tenantId, permissionKey)) {
-            throw new SecurityException("Permission requise: " + permissionKey);
+    private boolean isParentScope(MembershipScopeType parent, MembershipScopeType child) {
+        // Define hierarchy: TENANT > REGION > CHURCH > SUB_CHURCH/CAMPUS > DEPARTMENT > FAMILY > ASSIGNED/OWN
+        return switch (parent) {
+            case TENANT -> true; // TENANT covers all
+            case REGION -> child == MembershipScopeType.CHURCH || child == MembershipScopeType.SUB_CHURCH
+                    || child == MembershipScopeType.CAMPUS || child == MembershipScopeType.DEPARTMENT
+                    || child == MembershipScopeType.FAMILY || child == MembershipScopeType.ASSIGNED;
+            case CHURCH -> child == MembershipScopeType.SUB_CHURCH || child == MembershipScopeType.CAMPUS
+                    || child == MembershipScopeType.DEPARTMENT || child == MembershipScopeType.FAMILY
+                    || child == MembershipScopeType.ASSIGNED;
+            case SUB_CHURCH, CAMPUS -> child == MembershipScopeType.DEPARTMENT || child == MembershipScopeType.FAMILY
+                    || child == MembershipScopeType.ASSIGNED;
+            case DEPARTMENT -> child == MembershipScopeType.FAMILY || child == MembershipScopeType.ASSIGNED;
+            default -> false;
+        };
+    }
+
+    private boolean roleHasPermission(Role role, String permissionKey) {
+        if (role == null) return false;
+        return role.getPermissions().stream()
+                .anyMatch(p -> p.getKey().equalsIgnoreCase(permissionKey));
+    }
+
+    private Set<String> getRolePermissions(UUID roleId) {
+        return permissionRepository.findByRoleId(roleId).stream()
+                .map(Permission::getKey)
+                .collect(Collectors.toSet());
+    }
+
+    private MembershipScopeType inferScopeFromResource(String resourceType) {
+        return switch (resourceType.toUpperCase()) {
+            case "TENANT", "USER", "ROLE", "PERMISSION", "SETTINGS", "BRANDING", "MODULES", "SUBSCRIPTION", "BILLING", "AUDIT" -> MembershipScopeType.TENANT;
+            case "CHURCH", "CAMPUS", "SUB_CHURCH", "REGION" -> MembershipScopeType.CHURCH;
+            case "DEPARTMENT" -> MembershipScopeType.DEPARTMENT;
+            case "FAMILY", "GROUP" -> MembershipScopeType.FAMILY;
+            case "MEMBER", "SOUL" -> MembershipScopeType.DEPARTMENT; // Members belong to departments
+            case "REPORT" -> MembershipScopeType.DEPARTMENT; // Reports belong to department/family
+            case "EVENT" -> MembershipScopeType.CHURCH;
+            case "COURSE" -> MembershipScopeType.TENANT; // Courses can be tenant-global or local
+            case "MESSAGE", "CONVERSATION" -> MembershipScopeType.TENANT;
+            case "FILE" -> MembershipScopeType.TENANT;
+            case "NOTIFICATION" -> MembershipScopeType.TENANT;
+            case "FINANCE" -> MembershipScopeType.TENANT;
+            default -> MembershipScopeType.TENANT;
+        };
+    }
+
+    private UUID inferScopeIdFromResource(String resourceType, UUID resourceId) {
+        // For resources that are organization nodes themselves, return their ID
+        if (Set.of("CHURCH", "CAMPUS", "SUB_CHURCH", "REGION", "DEPARTMENT", "FAMILY", "GROUP").contains(resourceType.toUpperCase())) {
+            return resourceId;
         }
+
+        // For other resources, we'd need to look up their organization node
+        // This is a simplified version - in practice, you'd query the resource's org node
+        return null;
     }
 }

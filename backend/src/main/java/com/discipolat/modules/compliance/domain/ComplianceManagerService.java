@@ -153,8 +153,11 @@ public class ComplianceManagerService {
     @Scheduled(cron = "0 30 3 * * *")
     public void scheduledPurgeAllTenants() {
         try {
-            TenantContext.runAsTenant(TenantContext.DEFAULT_TENANT_ID, () ->
-                    log.info("Purge RGPD planifiée déclenchée"));
+            tenantRepository.findAll().forEach(tenant ->
+                TenantContext.runAsTenant(tenant.getId(), () ->
+                    log.info("Purge RGPD planifiée déclenchée pour tenant {}", tenant.getId())
+                )
+            );
         } catch (Exception e) {
             log.warn("Purge planifiée échouée : {}", e.getMessage());
         }

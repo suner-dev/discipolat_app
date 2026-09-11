@@ -43,9 +43,12 @@ public class LlmProviderService {
             catch (Exception e) { log.warn("[LLM] Mistral: {}", e.getMessage()); }
         }
 
-        if (isConfigured(huggingfaceApiKey)) {
-            try { String r = callHuggingFace(fullPrompt); if (r != null && !r.isBlank()) return r; }
-            catch (Exception e) { log.warn("[LLM] HF: {}", e.getMessage()); }
+        // HuggingFace : avec clé OU en mode anonyme (sans clé, très limité mais 100% gratuit)
+        try {
+            String r = callHuggingFace(fullPrompt);
+            if (r != null && !r.isBlank()) return r;
+        } catch (Exception e) {
+            log.warn("[LLM] HF: {}", e.getMessage());
         }
 
         log.info("[LLM] Using deterministic fallback");
@@ -57,7 +60,9 @@ public class LlmProviderService {
         p.put("groq", isConfigured(groqApiKey));
         p.put("gemini", isConfigured(geminiApiKey));
         p.put("mistral", isConfigured(mistralApiKey));
-        p.put("huggingface", isConfigured(huggingfaceApiKey));
+        p.put("huggingface", isConfigured(huggingfaceApiKey) || true); // Anonyme possible
+        p.put("ollama", getOllamaAvailability());
+        p.put("local", false); // Déterministe — toujours dispo mais pas un LLM
         p.put("fallback", true);
         return p;
     }
@@ -134,14 +139,20 @@ public class LlmProviderService {
         return null;
     }
 
-    // ==================== HUGGING FACE (Llama 3) ====================
+    // ==================== HUGGING FACE (Llama 3, Qwen 2) ====================
     private String callHuggingFace(String prompt) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(huggingfaceApiKey);
+        if (isConfigured(huggingfaceApiKey)) {
+            headers.setBearerAuth(huggingfaceApiKey);
+        }
+        // Pas de header Authorization = mode ANONYME (limité ~10 req/h mais sans clé)
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-wait-for-model", "true");
+
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("inputs", "<|system|>Tu es un assistant IA pastoral pour Discipolat.<|end|><|user|>" + prompt + "<|end|><|assistant|>");
-        body.put("parameters", Map.of("max_new_tokens", 512, "temperature", 0.7));
+        body.put("parameters", Map.of("max_new_tokens", 256, "temperature", 0.7));
+
         HttpEntity<Map<String, Object>> req = new HttpEntity<>(body, headers);
         ResponseEntity<List> resp = restTemplate.postForEntity(HF_URL, req, List.class);
         if (resp.getBody() != null && !resp.getBody().isEmpty()) {
@@ -153,6 +164,16 @@ public class LlmProviderService {
             }
         }
         return null;
+    }
+
+    // ==================== OLLAMA (local, aucune clé nécessaire) ====================
+    private boolean getOllamaAvailability() {
+        try {
+            ResponseEntity<String> resp = restTemplate.getForEntity("http://localhost:11434/api/tags", String.class);
+            return resp.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // ==================== FALLBACK DETERMINISTE ====================
