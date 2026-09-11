@@ -23,7 +23,6 @@ public class LlmProviderService {
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
     private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
     private static final String MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
-    private static final String HF_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct";
 
     public String generateResponse(String systemPrompt, String userPrompt) {
         String fullPrompt = systemPrompt + "\n\n" + userPrompt;
@@ -139,28 +138,58 @@ public class LlmProviderService {
         return null;
     }
 
-    // ==================== HUGGING FACE (Llama 3, Qwen 2) ====================
+    // ==================== HUGGING FACE (Llama 3, Qwen 2, Deepseek) ====================
+    // Modèles essayés dans l'ordre — avec clé API : accès complet + quota 30k req/mois.
+    // Sans clé : mode anonyme (limité mais 100% gratuit, aucune inscription).
+    private static final String[] HF_MODELS = {
+        "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct",
+        "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct",
+        "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+        "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
+    };
+
     private String callHuggingFace(String prompt) {
+        int startIdx = isConfigured(huggingfaceApiKey) ? 0 : 0;
+        for (int i = startIdx; i < HF_MODELS.length; i++) {
+            try {
+                String r = callHuggingFaceModel(HF_MODELS[i], prompt);
+                if (r != null && !r.isBlank()) {
+                    log.debug("[LLM] HF model[{}] ok, configured={}", i, isConfigured(huggingfaceApiKey));
+                    return r;
+                }
+            } catch (Exception e) {
+                log.warn("[LLM] HF model[{}] failed: {}", i, e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    private String callHuggingFaceModel(String modelUrl, String prompt) {
         HttpHeaders headers = new HttpHeaders();
         if (isConfigured(huggingfaceApiKey)) {
-            headers.setBearerAuth(huggingfaceApiKey);
+            headers.setBearerAuth(huggingfaceApiKey);   // Mode clé (comme Groq/Gemini/Mistral)
         }
-        // Pas de header Authorization = mode ANONYME (limité ~10 req/h mais sans clé)
+        // Sans header Authorization = mode ANONYME (limité mais sans clé)
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("x-wait-for-model", "true");
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("inputs", "<|system|>Tu es un assistant IA pastoral pour Discipolat.<|end|><|user|>" + prompt + "<|end|><|assistant|>");
-        body.put("parameters", Map.of("max_new_tokens", 256, "temperature", 0.7));
+        body.put("inputs", "<|system|>Tu es un assistant IA pastoral pour Discipolat. Réponds en français, de manière concise et utile.<|end|><|user|>" + prompt + "<|end|><|assistant|>");
+        body.put("parameters", Map.of(
+                "max_new_tokens", isConfigured(huggingfaceApiKey) ? 512 : 256,
+                "temperature", 0.7,
+                "return_full_text", false
+        ));
 
         HttpEntity<Map<String, Object>> req = new HttpEntity<>(body, headers);
-        ResponseEntity<List> resp = restTemplate.postForEntity(HF_URL, req, List.class);
-        if (resp.getBody() != null && !resp.getBody().isEmpty()) {
-            var result = (Map<String, Object>) resp.getBody().get(0);
-            String gen = (String) result.get("generated_text");
-            if (gen != null) {
-                int idx = gen.indexOf("<|assistant|>");
-                return idx >= 0 ? gen.substring(idx + 13).trim() : gen.trim();
+        ResponseEntity<?> resp = restTemplate.postForEntity(modelUrl, req, Object.class);
+        if (resp.getBody() != null) {
+            if (resp.getBody() instanceof List<?> list && !list.isEmpty()) {
+                var result = (Map<String, Object>) list.get(0);
+                Object gt = result.get("generated_text");
+                if (gt != null) return gt.toString().trim();
+            } else if (resp.getBody() instanceof Map<?, ?> map && map.containsKey("generated_text")) {
+                return map.get("generated_text").toString().trim();
             }
         }
         return null;
