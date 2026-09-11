@@ -1,5 +1,6 @@
 package com.discipolat.common.multitenancy;
 
+import com.discipolat.common.infrastructure.security.SecurityUtils;
 import java.util.UUID;
 
 /**
@@ -78,6 +79,14 @@ public final class TenantContext {
      */
     public static boolean hasTenantContext() {
         return CURRENT_TENANT.get() != null;
+    }
+
+    /**
+     * Get the current authenticated user ID from SecurityContext.
+     * Delegates to SecurityUtils for proper extraction.
+     */
+    public static UUID getCurrentUserId() {
+        return SecurityUtils.getCurrentUserId();
     }
 }
 

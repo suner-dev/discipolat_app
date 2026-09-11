@@ -46,6 +46,7 @@ public class DataInitializer implements CommandLineRunner {
     private final OrganizationNodeRepository orgNodeRepository;
     private final TenantSubscriptionRepository subscriptionRepository;
     private final SaasPlanRepository planRepository;
+    private final TenantRepository tenantRepository;
 
     /**
      * Activation du jeu de données de démonstration (comptes connus / mot de
@@ -65,7 +66,8 @@ public class DataInitializer implements CommandLineRunner {
                            TenantMembershipRepository membershipRepository,
                            OrganizationNodeRepository orgNodeRepository,
                            TenantSubscriptionRepository subscriptionRepository,
-                           SaasPlanRepository planRepository) {
+                           SaasPlanRepository planRepository,
+                           TenantRepository tenantRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.soulRepository = soulRepository;
@@ -77,6 +79,7 @@ public class DataInitializer implements CommandLineRunner {
         this.orgNodeRepository = orgNodeRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
+        this.tenantRepository = tenantRepository;
     }
 
     @Override
@@ -246,14 +249,18 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    private static final UUID DEFAULT_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-
     private void seedUser(String email, String firstName, String lastName,
                           UserRole primaryRole, Set<UserRole> roles,
                           UserRole activeRole, boolean estChefDeFamille) {
         if (userRepository.findByEmail(email).isPresent()) return;
+        
+        // Get the default tenant (first active tenant)
+        UUID tenantId = tenantRepository.findFirstByStatusOrderByCreatedAtAsc(TenantStatus.ACTIVE)
+                .map(Tenant::getId)
+                .orElseThrow(() -> new IllegalStateException("No active tenant found for seeding demo accounts"));
+        
         User user = User.builder()
-                .tenantId(DEFAULT_TENANT_ID)
+                .tenantId(tenantId)
                 .email(email)
                 .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .firstName(firstName)

@@ -35,4 +35,6 @@ public interface OrganizationNodeRepository extends TenantAwareRepository<Organi
     Optional<OrganizationNode> findRootByTenantId(UUID tenantId);
 
     long countByTenantIdAndType(UUID tenantId, OrganizationNodeType type);
+
+    boolean isDescendantOf(UUID nodeId, UUID ancestorId);
 }

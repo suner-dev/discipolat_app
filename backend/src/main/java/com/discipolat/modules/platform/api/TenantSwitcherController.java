@@ -1,5 +1,6 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
@@ -8,228 +9,278 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
-/**
- * Tenant Switcher API (Sections 33-35 du prompt maître)
- * Permet aux utilisateurs multi-tenants de changer de contexte
- */
 @RestController
 @RequestMapping("/api/v1/tenant-switcher")
 public class TenantSwitcherController {
 
+    private final TenantRepository tenantRepository;
     private final TenantMembershipRepository membershipRepository;
     private final UserRepository userRepository;
-    private final TenantRepository tenantRepository;
+    private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
+    private final OrganizationNodeRepository orgNodeRepository;
     private final OrganizationNodeService orgNodeService;
+    private final TenantSubscriptionRepository subscriptionRepository;
+    private final SaasPlanRepository planRepository;
+    private final TenantService tenantService;
 
-    public TenantSwitcherController(
-            TenantMembershipRepository membershipRepository,
-            UserRepository userRepository,
-            TenantRepository tenantRepository,
-            OrganizationNodeService orgNodeService) {
+    public TenantSwitcherController(TenantRepository tenantRepository,
+                                    TenantMembershipRepository membershipRepository,
+                                    UserRepository userRepository,
+                                    RoleRepository roleRepository,
+                                    PermissionRepository permissionRepository,
+                                    OrganizationNodeRepository orgNodeRepository,
+                                    OrganizationNodeService orgNodeService,
+                                    TenantSubscriptionRepository subscriptionRepository,
+                                    SaasPlanRepository planRepository,
+                                    TenantService tenantService) {
+        this.tenantRepository = tenantRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
-        this.tenantRepository = tenantRepository;
+        this.roleRepository = roleRepository;
+        this.permissionRepository = permissionRepository;
+        this.orgNodeRepository = orgNodeRepository;
         this.orgNodeService = orgNodeService;
+        this.subscriptionRepository = subscriptionRepository;
+        this.planRepository = planRepository;
+        this.tenantService = tenantService;
     }
 
-    // ==================== OBTENIR LES TENANTS DE L'UTILISATEUR ====================
-
-    @GetMapping("/my-tenants")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<MyTenantInfo>> getMyTenants() {
-        UUID userId = TenantContext.getCurrentUserId();
-        if (userId == null) {
-            return ResponseEntity.ok(List.of());
-        }
-
-        List<TenantMembership> memberships = membershipRepository
-                .findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
-
-        List<MyTenantInfo> result = new ArrayList<>();
-        for (TenantMembership m : memberships) {
-            Optional<Tenant> tenant = tenantRepository.findById(m.getTenantId());
-            Optional<OrganizationNode> root = orgNodeService.findRootByTenantId(m.getTenantId());
-            
-            tenant.ifPresent(t -> result.add(new MyTenantInfo(
-                    t.getId(),
-                    t.getName(),
-                    t.getSlug(),
-                    root.map(r -> r.getName()).orElse(t.getName()),
-                    m.getRole(),
-                    m.getJoinedAt(),
-                    t.getStatus()
-            )));
-        }
-
-        return ResponseEntity.ok(result);
-    }
-
-    // ==================== CHANGER DE TENANT ====================
-
-    @PostMapping("/switch")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SwitchTenantResponse> switchTenant(@RequestBody SwitchTenantRequest request) {
-        UUID userId = TenantContext.getCurrentUserId();
-        if (userId == null) {
-            throw new SecurityException("Non authentifié");
-        }
-
-        UUID newTenantId = UUID.fromString(request.tenantId());
-        
-        // Vérifier que l'utilisateur a accès à ce tenant
-        boolean hasAccess = membershipRepository.existsByUserIdAndTenantIdAndStatus(
-                userId, newTenantId, MembershipStatus.ACTIVE);
-        
-        if (!hasAccess) {
-            throw new SecurityException("Accès refusé à ce tenant");
-        }
-
-        // Mettre à jour le contexte
-        TenantContext.setTenantId(newTenantId);
-
-        Optional<Tenant> tenant = tenantRepository.findById(newTenantId);
-        Optional<OrganizationNode> root = orgNodeService.findRootByTenantId(newTenantId);
-        Optional<TenantMembership> membership = membershipRepository
-                .findByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE);
-
-        return ResponseEntity.ok(new SwitchTenantResponse(
-                tenant.flatMap(t -> Optional.of(t.getName())).orElse("Inconnu"),
-                tenant.flatMap(t -> Optional.of(t.getSlug())).orElse(""),
-                root.map(r -> r.getName()).orElse(null),
-                membership.map(TenantMembership::getRole).orElse(null),
-                newTenantId,
-                membership.flatMap(m -> Optional.of(m.getJoinedAt())).orElse(null)
-        ));
-    }
-
-    // ==================== OBTENIR LES ORGANISATIONS ACCESSIBLES ====================
-
-    @GetMapping("/my-organizations")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<MyOrganizationInfo>> getMyOrganizations() {
-        UUID userId = TenantContext.getCurrentUserId();
-        UUID currentTenantId = TenantContext.getTenantId();
-        
-        if (userId == null || currentTenantId == null) {
-            return ResponseEntity.ok(List.of());
-        }
-
-        // Obtenir les nodes où l'utilisateur est responsable
-        List<OrganizationNode> responsibleNodes = orgNodeService.findByResponsibleId(userId);
-        
-        // Filtrer par tenant courant
-        List<OrganizationNode> myNodes = responsibleNodes.stream()
-                .filter(n -> n.getTenantId().equals(currentTenantId))
-                .toList();
-
-        List<MyOrganizationInfo> result = new ArrayList<>();
-        for (OrganizationNode node : myNodes) {
-            result.add(new MyOrganizationInfo(
-                    node.getId(),
-                    node.getName(),
-                    node.getType(),
-                    node.getParentId(),
-                    node.getPath(),
-                    node.getStatus()
-            ));
-        }
-
-        return ResponseEntity.ok(result);
-    }
-
-    // ==================== CHANGER D'ORGANISATION ====================
-
-    @PostMapping("/switch-org")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SwitchOrgResponse> switchOrganization(@RequestBody SwitchOrgRequest request) {
-        UUID userId = TenantContext.getCurrentUserId();
-        UUID currentTenantId = TenantContext.getTenantId();
-        
-        if (userId == null || currentTenantId == null) {
-            throw new SecurityException("Non authentifié");
-        }
-
-        UUID nodeId = UUID.fromString(request.organizationId());
-        
-        Optional<OrganizationNode> node = orgNodeService.findById(nodeId);
-        if (node.isEmpty()) {
-            throw new RuntimeException("Organisation non trouvée");
-        }
-        
-        if (!node.get().getTenantId().equals(currentTenantId)) {
-            throw new SecurityException("Cette organisation ne appartient pas au tenant courant");
-        }
-
-        // Vérifier que l'utilisateur a accès à ce node
-        boolean hasAccess = orgNodeService.hasUserAccessToNode(userId, nodeId);
-        if (!hasAccess) {
-            throw new SecurityException("Accès refusé à cette organisation");
-        }
-
-        return ResponseEntity.ok(new SwitchOrgResponse(
-                node.get().getName(),
-                node.get().getType(),
-                node.get().getId(),
-                node.get().getPath()
-        ));
-    }
-
-    // ==================== MISES À JOUR CONTEXTE ====================
+    // ==================== CONTEXTE COURANT ====================
 
     @GetMapping("/context")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CurrentContextResponse> getCurrentContext() {
-        UUID currentTenantId = TenantContext.getTenantId();
-        UUID currentUserId = TenantContext.getCurrentUserId();
+    public ResponseEntity<Map<String, Object>> getCurrentContext() {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        UUID tenantId = TenantContext.getTenantId();
 
-        if (currentTenantId == null || currentUserId == null) {
-            return ResponseEntity.ok(new CurrentContextResponse(null, null, null, null, null));
+        if (tenantId == null) {
+            // User has multiple tenants - return available tenants for selection
+            List<TenantMembership> memberships = membershipRepository.findActiveByUserId(userId, MembershipStatus.ACTIVE);
+            List<Map<String, Object>> availableTenants = memberships.stream()
+                    .map(m -> {
+                        Optional<Tenant> tenant = tenantRepository.findById(m.getTenantId());
+                        return tenant.map(t -> Map.<String, Object>of(
+                                "tenantId", t.getId().toString(),
+                                "tenantName", t.getName(),
+                                "tenantSlug", t.getSlug(),
+                                "role", m.getRole().getKey(),
+                                "scopeType", m.getScopeType().name(),
+                                "scopeId", m.getScopeId() != null ? m.getScopeId().toString() : null,
+                                "status", m.getStatus().name()
+                        )).orElse(null);
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            return ResponseEntity.ok(Map.of(
+                    "requiresSelection", true,
+                    "availableTenants", availableTenants,
+                    "userId", userId.toString()
+            ));
         }
 
-        Optional<Tenant> tenant = tenantRepository.findById(currentTenantId);
-        Optional<TenantMembership> membership = membershipRepository
-                .findByUserIdAndTenantIdAndStatus(currentUserId, currentTenantId, MembershipStatus.ACTIVE);
-        Optional<OrganizationNode> root = orgNodeService.findRootByTenantId(currentTenantId);
+        // Single tenant context - return full context
+        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
 
-        return ResponseEntity.ok(new CurrentContextResponse(
-                currentTenantId,
-                tenant.flatMap(t -> Optional.of(t.getName())).orElse(null),
-                membership.map(TenantMembership::getRole).orElse(null),
-                root.map(r -> r.getName()).orElse(null),
-                membership.flatMap(m -> Optional.of(m.getJoinedAt())).orElse(null)
+        // Get active membership (the one matching current scope)
+        TenantMembership activeMembership = memberships.stream()
+                .filter(m -> m.getScopeType() == MembershipScopeType.TENANT || m.getScopeId() == null)
+                .findFirst()
+                .orElse(memberships.get(0));
+
+        // Get roles and permissions for this membership
+        Set<String> permissions = new HashSet<>();
+        if (activeMembership.getRole() != null) {
+            permissions = permissionRepository.findByRoleId(activeMembership.getRole().getId())
+                    .stream().map(Permission::getKey).collect(Collectors.toSet());
+        }
+
+        // Get organization nodes user has access to
+        List<OrganizationNode> accessibleNodes = getAccessibleNodes(userId, tenantId, activeMembership);
+
+        // Get subscription
+        Optional<TenantSubscription> subscription = subscriptionRepository.findByTenantId(tenantId);
+        Optional<SaasPlan> plan = subscription.flatMap(s -> planRepository.findById(s.getPlanKey()));
+
+        Map<String, Object> context = new LinkedHashMap<>();
+        context.put("userId", userId.toString());
+        context.put("tenantId", tenantId.toString());
+        context.put("tenantName", tenant.getName());
+        context.put("tenantSlug", tenant.getSlug());
+        context.put("tenantStatus", tenant.getStatus().name());
+        context.put("plan", tenant.getPlan());
+        context.put("role", activeMembership.getRole() != null ? activeMembership.getRole().getKey() : "UNKNOWN");
+        context.put("scopeType", activeMembership.getScopeType().name());
+        context.put("scopeId", activeMembership.getScopeId() != null ? activeMembership.getScopeId().toString() : null);
+        context.put("permissions", permissions);
+        context.put("accessibleNodes", accessibleNodes.stream().map(n -> Map.of(
+                "id", n.getId().toString(),
+                "name", n.getName(),
+                "type", n.getType().name(),
+                "path", n.getPath()
+        )).toList());
+        context.put("subscription", subscription.map(s -> Map.of(
+                "planKey", s.getPlanKey(),
+                "status", s.getStatus().name(),
+                "currentPeriodEnd", s.getCurrentPeriodEnd(),
+                "limits", s.getQuotasJson(),
+                "plan", plan.map(p -> Map.of(
+                        "name", p.getName(),
+                        "features", p.getFeaturesJson()
+                )).orElse(null)
+        )).orElse(null));
+        context.put("branding", parseJson(tenant.getBrandingJson()));
+        context.put("features", parseJson(tenant.getFeaturesJson()));
+        context.put("settings", parseJson(tenant.getSettingsJson()));
+
+        return ResponseEntity.ok(context);
+    }
+
+    // ==================== MES TENANTS ====================
+
+    @GetMapping("/my-tenants")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Map<String, Object>>> getMyTenants() {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        List<TenantMembership> memberships = membershipRepository.findActiveByUserId(userId, MembershipStatus.ACTIVE);
+
+        List<Map<String, Object>> result = memberships.stream()
+                .map(m -> {
+                    Optional<Tenant> tenant = tenantRepository.findById(m.getTenantId());
+                    return tenant.map(t -> Map.<String, Object>of(
+                            "tenantId", t.getId().toString(),
+                            "tenantName", t.getName(),
+                            "tenantSlug", t.getSlug(),
+                            "plan", t.getPlan(),
+                            "role", m.getRole() != null ? m.getRole().getKey() : "UNKNOWN",
+                            "scopeType", m.getScopeType().name(),
+                            "scopeId", m.getScopeId() != null ? m.getScopeId().toString() : null,
+                            "status", m.getStatus().name(),
+                            "joinedAt", m.getJoinedAt().toString()
+                    )).orElse(null);
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        return ResponseEntity.ok(result);
+    }
+
+    // ==================== SWITCH TENANT ====================
+
+    @PostMapping("/switch")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> switchTenant(@RequestBody Map<String, String> request) {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        String tenantIdStr = request.get("tenantId");
+
+        if (tenantIdStr == null || tenantIdStr.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "tenantId requis"));
+        }
+
+        UUID newTenantId = UUID.fromString(tenantIdStr);
+
+        // Validate user has access to this tenant
+        boolean hasAccess = membershipRepository.existsByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE);
+        if (!hasAccess) {
+            return ResponseEntity.status(403).body(Map.of("error", "Accès non autorisé à ce tenant"));
+        }
+
+        // Set new tenant context
+        TenantContext.setTenantId(newTenantId);
+
+        Tenant tenant = tenantRepository.findById(newTenantId).orElseThrow();
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE);
+        TenantMembership membership = memberships.get(0);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "tenantId", newTenantId.toString(),
+                "tenantName", tenant.getName(),
+                "role", membership.getRole() != null ? membership.getRole().getKey() : "UNKNOWN",
+                "message", "Contexte tenant changé avec succès"
         ));
     }
 
-    // ==================== RECORDS ====================
+    // ==================== SWITCH ORGANIZATION NODE ====================
 
-    public record MyTenantInfo(
-            UUID tenantId, String name, String slug,
-            String organizationName, String role,
-            Instant joinedAt, TenantStatus status
-    ) {}
+    @PostMapping("/switch-org")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> switchOrganization(@RequestBody Map<String, String> request) {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        UUID tenantId = TenantContext.requireTenantId();
+        String orgNodeIdStr = request.get("organizationId");
 
-    public record MyOrganizationInfo(
-            UUID id, String name, OrganizationNodeType type,
-            UUID parentId, String path, OrganizationNodeStatus status
-    ) {}
+        if (orgNodeIdStr == null || orgNodeIdStr.isBlank()) {
+            // Clear org node context
+            return ResponseEntity.ok(Map.of("success", true, "message", "Contexte organisationnel réinitialisé"));
+        }
 
-    public record SwitchTenantRequest(String tenantId) {}
-    public record SwitchOrgRequest(String organizationId) {}
+        UUID newOrgNodeId = UUID.fromString(orgNodeIdStr);
 
-    public record SwitchTenantResponse(
-            String tenantName, String slug, String organizationName,
-            String role, UUID tenantId, Instant joinedAt
-    ) {}
+        // Validate user has access to this org node via their memberships
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        boolean hasAccess = memberships.stream().anyMatch(m ->
+                m.getScopeType() == MembershipScopeType.TENANT ||
+                (m.getScopeId() != null && m.getScopeId().equals(newOrgNodeId)) ||
+                (m.getScopeId() != null && orgNodeRepository.isDescendantOf(newOrgNodeId, m.getScopeId()))
+        );
 
-    public record SwitchOrgResponse(
-            String name, OrganizationNodeType type,
-            UUID organizationId, String path
-    ) {}
+        if (!hasAccess) {
+            return ResponseEntity.status(403).body(Map.of("error", "Accès non autorisé à ce nœud organisationnel"));
+        }
 
-    public record CurrentContextResponse(
-            UUID tenantId, String tenantName, String role,
-            String organizationName, Instant joinedAt
-    ) {}
+        // Note: In a real implementation, you'd store the active org node in session/context
+        // For now, we return the node details for frontend to store
+        Optional<OrganizationNode> node = orgNodeRepository.findById(newOrgNodeId);
+        if (node.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "organizationNodeId", newOrgNodeId.toString(),
+                "organizationNodeName", node.get().getName(),
+                "organizationNodeType", node.get().getType().name(),
+                "message", "Contexte organisationnel changé"
+        ));
+    }
+
+    // ==================== REFRESH CONTEXT ====================
+
+    @PostMapping("/refresh")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> refreshContext() {
+        return getCurrentContext();
+    }
+
+    // ==================== HELPERS ====================
+
+    private List<OrganizationNode> getAccessibleNodes(UUID userId, UUID tenantId, TenantMembership membership) {
+        if (membership.getScopeType() == MembershipScopeType.TENANT) {
+            return orgNodeRepository.findByTenantId(tenantId);
+        }
+        if (membership.getScopeId() != null) {
+            List<OrganizationNode> descendants = orgNodeRepository.findDescendants(tenantId, membership.getScopeId().toString() + ":*");
+            Optional<OrganizationNode> self = orgNodeRepository.findById(membership.getScopeId());
+            List<OrganizationNode> result = new ArrayList<>(descendants);
+            self.ifPresent(result::add);
+            return result;
+        }
+        return List.of();
+    }
+
+    private Map<String, Object> parseJson(String json) {
+        if (json == null || json.isBlank()) return Map.of();
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Map.class);
+        } catch (Exception e) {
+            return Map.of();
+        }
+    }
 }

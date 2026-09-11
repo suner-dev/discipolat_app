@@ -1,5 +1,7 @@
 package com.discipolat.common.infrastructure.config;
 
+import com.discipolat.modules.tenants.domain.AuthorizationMethodSecurityExpressionHandler;
+import com.discipolat.modules.tenants.domain.AuthorizationService;
 import java.util.Arrays;
 import java.util.List;
 
@@ -73,10 +75,6 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/v1/public/demo-requests").permitAll()
                     // Callback USSD Africa's Talking : public, sécurisé par secret webhook (X-Ussd-Secret)
                     .requestMatchers(HttpMethod.POST, "/api/v1/ussd/callback").permitAll()
-                    // Webhook opérateur Mobile Money : sécurisé par la référence unique
-                    // de l'intention + (en production) signature HMAC opérateur / IP allowlist.
-                    // Webhook endpoint moved behind authentication — webhook secret is now mandatory in production.
-                    // .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
                     // Actuator: health public (for load balancer / Render healthcheck), details only when authenticated
                     .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR");
@@ -106,7 +104,14 @@ public class SecurityConfig {
         return http.build();
     }
 
-@Bean
+    @Bean
+    public AuthorizationMethodSecurityExpressionHandler authorizationExpressionHandler(AuthorizationService authzService) {
+        AuthorizationMethodSecurityExpressionHandler handler = new AuthorizationMethodSecurityExpressionHandler();
+        handler.setAuthzService(authzService);
+        return handler;
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 

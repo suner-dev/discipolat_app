@@ -95,6 +95,32 @@ public class AuditService {
     }
 
     /**
+     * Extended log method used by controllers with full audit context.
+     */
+    public void log(UUID actorId, UUID tenantId, String action, String resourceType, UUID resourceId,
+                    String result, Map<String, Object> metadata,
+                    String ipAddress, String userAgent, HttpServletRequest request) {
+        AuditLog log = AuditLog.builder()
+                .action(action)
+                .entiteType(resourceType)
+                .entiteId(resourceId)
+                .ancienValeur(Map.of())
+                .nouvelleValeur(metadata)
+                .adresseIp(ipAddress != null ? ipAddress : (request != null ? request.getRemoteAddr() : null))
+                .userAgent(userAgent != null ? userAgent : (request != null ? request.getHeader("User-Agent") : null))
+                .build();
+
+        try {
+            log.setUtilisateurId(actorId);
+        } catch (Exception e) {
+            // System operations
+        }
+
+        auditLogRepository.save(log);
+        extendHashChain(log);
+    }
+
+    /**
      * Recherche combinée : utilisateur, type d'entité, action et plage de dates.
      * Chaque critère est optionnel (null = pas de filtre).
      */

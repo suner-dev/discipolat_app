@@ -31,7 +31,13 @@ public interface TenantMembershipRepository extends JpaRepository<TenantMembersh
 
     Optional<TenantMembership> findByUserIdAndTenantIdAndStatus(UUID userId, UUID tenantId, MembershipStatus status);
 
+    List<TenantMembership> findByUserIdAndTenantIdAndStatusList(UUID userId, UUID tenantId, MembershipStatus status);
+
     List<TenantMembership> findByTenantIdAndStatusIn(UUID tenantId, List<MembershipStatus> statuses);
 
     Optional<TenantMembership> findByInvitedBy(UUID invitedBy);
+
+    boolean existsByUserIdAndRoleIdAndStatus(UUID userId, UUID roleId, MembershipStatus status);
+
+    List<TenantMembership> findActiveByUserId(UUID userId, MembershipStatus status);
 }

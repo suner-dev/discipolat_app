@@ -1,6 +1,7 @@
 package com.discipolat.modules.ai.api;
 
 import com.discipolat.modules.ai.domain.*;
+import com.discipolat.modules.sermon.domain.SermonAssistantService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

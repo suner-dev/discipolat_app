@@ -1,13 +1,13 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
-import com.discipolat.modules.users.domain.UserRole;
 import com.discipolat.modules.users.domain.UserStatus;
-import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;

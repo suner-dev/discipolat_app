@@ -44,13 +44,15 @@ public class TenantFilterIntegrator implements Integrator {
         }
 
         private void autoSetTenantId(EntityPersister persister, Object[] state) {
-            // Contexte de requête HTTP : le tenant du JWT. Hors contexte
-            // (jobs planifiés, initialiseurs, tâches système) : repli sur le
-            // tenant par défaut créé/backfillé par V70 — sans quoi tout insert
-            // échouerait sur la contrainte tenant_id NOT NULL.
+            // Contexte de requête HTTP : le tenant du JWT.
+            // Si aucun tenant context n'est défini, on lève une exception explicite
+            // pour forcer l'appelant à utiliser TenantContext.runAsTenant().
+            // Cela évite les écritures silencieuses dans le mauvais tenant.
             java.util.UUID tenantId = TenantContext.getTenantId();
             if (tenantId == null) {
-                tenantId = TenantContext.DEFAULT_TENANT_ID;
+                throw new IllegalStateException("No tenant context set for entity persistence. " +
+                        "Use TenantContext.runAsTenant(tenantId, ...) for background jobs, " +
+                        "or ensure JWT contains valid tenantId claim for HTTP requests.");
             }
             String[] propertyNames = persister.getPropertyNames();
             int index = Arrays.asList(propertyNames).indexOf("tenantId");

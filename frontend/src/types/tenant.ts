@@ -12,6 +12,9 @@ export interface Tenant {
   locale: string;
   createdAt: string;
   updatedAt: string;
+  branding?: BrandingConfig;
+  features?: Record<string, boolean>;
+  settings?: TenantSettings;
 }
 
 export interface TenantMembership {
@@ -19,6 +22,9 @@ export interface TenantMembership {
   tenantId: string;
   userId: string;
   role: string;
+  roleId?: string;
+  scopeType: 'TENANT' | 'REGION' | 'CHURCH' | 'SUB_CHURCH' | 'CAMPUS' | 'DEPARTMENT' | 'FAMILY' | 'ASSIGNED' | 'OWN';
+  scopeId?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED' | 'REVOKED';
   joinedAt: string;
 }
@@ -62,7 +68,41 @@ export interface Plan {
   usersLimit: number;
   churchesLimit: number;
   departmentsLimit?: number;
-  features?: string[];
+  storageLimitMb?: number;
+  aiRequestsLimit?: number;
+  features?: Record<string, boolean>;
+}
+
+export interface Quotas {
+  maxUsers: number;
+  maxChurches: number;
+  maxDepartments: number;
+  maxStorageMb: number;
+  maxAiRequestsMonth: number;
+  maxCourses: number;
+  maxMessagesMonth: number;
+  currentUsers: number;
+  currentChurches: number;
+  currentDepartments: number;
+  currentStorageMb: number;
+  currentAiRequestsMonth: number;
+  currentCourses: number;
+  currentMessagesMonth: number;
+}
+
+export interface Subscription {
+  id: string;
+  tenantId: string;
+  planKey: string;
+  plan?: Plan;
+  status: 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'PAUSED' | 'EXPIRED';
+  billingCycle: 'monthly' | 'yearly';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  canceledAt?: string;
+  trialEndsAt?: string;
+  quotas: Quotas;
 }
 
 export interface TenantDashboard {
@@ -77,11 +117,7 @@ export interface TenantDashboard {
   subChurchCount: number;
   campusCount: number;
   groupCount: number;
-  subscription?: {
-    planKey: string;
-    status: string;
-    currentPeriodEnd: string;
-  };
+  subscription?: Subscription;
 }
 
 export interface BrandingConfig {
@@ -117,11 +153,16 @@ export interface Invitation {
   id: string;
   email: string;
   role: string;
+  scopeType?: 'TENANT' | 'REGION' | 'CHURCH' | 'SUB_CHURCH' | 'CAMPUS' | 'DEPARTMENT' | 'FAMILY' | 'ASSIGNED' | 'OWN';
+  scopeId?: string;
+  organizationNodeId?: string;
+  organizationNodeName?: string;
   status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'CANCELED';
   invitedBy?: string;
   createdAt: string;
   expiresAt: string;
   acceptedAt?: string;
+  tenantName?: string;
 }
 
 export interface Role {
@@ -142,4 +183,62 @@ export interface Permission {
   scope: 'GLOBAL' | 'TENANT' | 'CHURCH' | 'SUB_CHURCH' | 'DEPARTMENT' | 'FAMILY' | 'OWN';
   category?: string;
   isSystem: boolean;
+}
+
+export interface TenantContextValue {
+  // État du tenant
+  currentTenant: Tenant | null;
+  currentMembership: TenantMembership | null;
+  currentOrganizationNode: OrganizationNode | null;
+  availableTenants: Tenant[];
+  roles: Role[];
+  permissions: Permission[];
+  subscription: Subscription | null;
+  quotas: Quotas | null;
+  branding: BrandingConfig | null;
+  features: Record<string, boolean>;
+  settings: TenantSettings | null;
+
+  // Actions
+  switchTenant: (tenantId: string) => Promise<void>;
+  switchOrganization: (orgNodeId: string) => Promise<void>;
+  refreshContext: () => Promise<void>;
+
+  // Vérifications
+  hasRole: (role: string) => boolean;
+  hasPermission: (permission: string) => boolean;
+  hasFeature: (feature: string) => boolean;
+  canAccess: (resource: string, action: string, scopeType?: string, scopeId?: string) => boolean;
+  isQuotaExceeded: (quota: keyof Quotas) => boolean;
+
+  // État de chargement
+  isLoading: boolean;
+  isInitialized: boolean;
+}
+
+export interface SwitchTenantResponse {
+  success: boolean;
+  tenantId: string;
+  tenantName: string;
+  role: string;
+  message: string;
+}
+
+export interface CreateInvitationRequest {
+  email: string;
+  role: string;
+  scopeType?: 'TENANT' | 'REGION' | 'CHURCH' | 'SUB_CHURCH' | 'CAMPUS' | 'DEPARTMENT' | 'FAMILY' | 'ASSIGNED' | 'OWN';
+  scopeId?: string;
+  organizationNodeId?: string;
+}
+
+export interface CreateInvitationResponse {
+  success: boolean;
+  invitationId: string;
+  email: string;
+  role: string;
+  invitationToken: string;
+  invitationLink: string;
+  expiresAt: string;
+  message: string;
 }

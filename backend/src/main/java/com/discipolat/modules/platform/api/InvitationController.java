@@ -1,10 +1,11 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
-import com.discipolat.modules.users.domain.UserStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,319 +16,387 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/invitations")
+@RequestMapping("/api/v1/admin/invitations")
 public class InvitationController {
 
     private final InvitationRepository invitationRepository;
-    private final TenantMembershipRepository membershipRepository;
     private final UserRepository userRepository;
-    private final TenantMembershipService membershipService;
+    private final TenantMembershipRepository membershipRepository;
+    private final RoleRepository roleRepository;
+    private final OrganizationNodeRepository orgNodeRepository;
+    private final TenantRepository tenantRepository;
+    private final AuthorizationService authzService;
+    private final AuditService auditService;
 
     public InvitationController(InvitationRepository invitationRepository,
-                                TenantMembershipRepository membershipRepository,
                                 UserRepository userRepository,
-                                TenantMembershipService membershipService) {
+                                TenantMembershipRepository membershipRepository,
+                                RoleRepository roleRepository,
+                                OrganizationNodeRepository orgNodeRepository,
+                                TenantRepository tenantRepository,
+                                AuthorizationService authzService,
+                                AuditService auditService) {
         this.invitationRepository = invitationRepository;
-        this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
-        this.membershipService = membershipService;
+        this.membershipRepository = membershipRepository;
+        this.roleRepository = roleRepository;
+        this.orgNodeRepository = orgNodeRepository;
+        this.tenantRepository = tenantRepository;
+        this.authzService = authzService;
+        this.auditService = auditService;
     }
 
-    /**
-     * Créer une invitation par email
-     */
+    // ==================== CREATE INVITATION ====================
+
     @PostMapping
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'ADMIN', 'PASTEUR')")
-    public ResponseEntity<Map<String, Object>> createInvitation(
-            @RequestBody Map<String, Object> request) {
-        
+    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    public ResponseEntity<Map<String, Object>> createInvitation(@RequestBody Map<String, Object> request) {
         UUID tenantId = TenantContext.requireTenantId();
-        UUID currentUserId = TenantContext.getTenantId();
-        
-        String email = ((String) request.get("email")).toLowerCase();
-        String role = (String) request.get("role");
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+
+        String email = (String) request.get("email");
+        String roleKey = (String) request.get("role");
         UUID organizationNodeId = request.get("organizationNodeId") != null ?
-            UUID.fromString((String) request.get("organizationNodeId")) : null;
-        
-        if (email == null || role == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "email et role sont requis"
-            ));
+                UUID.fromString((String) request.get("organizationNodeId")) : null;
+        MembershipScopeType scopeType = request.get("scopeType") != null ?
+                MembershipScopeType.valueOf((String) request.get("scopeType")) : MembershipScopeType.TENANT;
+        UUID scopeId = request.get("scopeId") != null ?
+                UUID.fromString((String) request.get("scopeId")) : null;
+
+        if (email == null || email.isBlank() || roleKey == null || roleKey.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "email et role sont requis"));
         }
-        
-        // Vérifier si l'utilisateur existe
-        Optional<User> existingUser = userRepository.findByEmail(email);
-        
+
+        // Validate role exists
+        Optional<Role> role = roleRepository.findByTenantIdAndKey(tenantId, roleKey.toUpperCase());
+        if (role.isEmpty()) {
+            role = roleRepository.findByTenantIdIsNullAndKey(roleKey.toUpperCase());
+        }
+        if (role.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Rôle invalide: " + roleKey));
+        }
+
+        // Validate scope if provided
+        if (organizationNodeId != null) {
+            Optional<OrganizationNode> node = orgNodeRepository.findById(organizationNodeId);
+            if (node.isEmpty() || !node.get().getTenantId().equals(tenantId)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Nœud organisationnel invalide"));
+            }
+        }
+
+        // Check if user already exists
+        Optional<User> existingUser = userRepository.findByEmail(email.toLowerCase());
         if (existingUser.isPresent()) {
             User user = existingUser.get();
-            
-            // Vérifier si l'utilisateur a déjà une membership active
+
+            // Check if already member of this tenant
             Optional<TenantMembership> existingMembership = membershipRepository
-                .findByUserIdAndTenantIdAndStatus(user.getId(), tenantId, MembershipStatus.ACTIVE);
-            
+                    .findByUserIdAndTenantIdAndStatus(user.getId(), tenantId, MembershipStatus.ACTIVE);
+
             if (existingMembership.isPresent()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Cet utilisateur appartient déjà à ce tenant",
-                    "userId", user.getId().toString()
+                        "error", "Cet utilisateur appartient déjà à ce tenant",
+                        "userId", user.getId().toString()
                 ));
             }
-            
-            // Réactiver l'utilisateur s'il est inactif
-            if (user.getStatut() == UserStatus.INACTIVE || user.getStatut() == UserStatus.ACTIVE) {
-                // Créer la membership directement
-                TenantMembership membership = membershipService.addMembership(
-                    user.getId(), tenantId, role, currentUserId);
-                
-                return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+
+            // Create membership directly
+            TenantMembership membership = TenantMembership.builder()
+                    .tenantId(tenantId)
+                    .userId(user.getId())
+                    .role(role.get())
+                    .scopeType(scopeType)
+                    .scopeId(scopeId != null ? scopeId : (organizationNodeId != null ? organizationNodeId : null))
+                    .status(MembershipStatus.ACTIVE)
+                    .invitedBy(currentUserId)
+                    .build();
+            membershipRepository.save(membership);
+
+            auditService.log(currentUserId, tenantId, "USER_INVITED_EXISTING",
+                    "USER", user.getId(), "SUCCESS", Map.of("email", email, "role", roleKey));
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "success", true,
-                    "userId", user.getId().toString(),
+                    "invitedUserId", user.getId().toString(),
                     "email", email,
-                    "role", role,
-                    "message", "Utilisateur ajouté avec succès"
-                ));
-            }
-            
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Cet utilisateur est inactif"
+                    "role", roleKey,
+                    "message", "Utilisateur ajouté directement (compte existant)"
             ));
         }
-        
-        // Vérifier si une invitation existe déjà pour cet email
+
+        // Check if invitation already exists for this email
         Optional<Invitation> existingInvitation = invitationRepository
-            .findByEmailAndTenantIdAndStatus(email, tenantId, InvitationStatus.PENDING);
-        
+                .findByTenantIdAndEmailAndStatus(tenantId, email.toLowerCase(), InvitationStatus.PENDING);
         if (existingInvitation.isPresent()) {
             return ResponseEntity.badRequest().body(Map.of(
-                "error", "Une invitation est déjà en attente pour cet email",
-                "invitationId", existingInvitation.get().getId().toString(),
-                "expiresAt", existingInvitation.get().getExpiresAt().toString()
+                    "error", "Une invitation en attente existe déjà pour cet email",
+                    "invitationId", existingInvitation.get().getId().toString()
             ));
         }
-        
-        // Créer l'invitation
-        String token = UUID.randomUUID().toString();
-        
+
+        // Create invitation
+        String token = UUID.randomUUID().toString().replace("-", "").substring(0, 32);
         Invitation invitation = Invitation.builder()
-            .tenantId(tenantId)
-            .email(email)
-            .role(role)
-            .invitedBy(currentUserId)
-            .invitationToken(token)
-            .status(InvitationStatus.PENDING)
-            .expiresAt(Instant.now().plusSeconds(7 * 24 * 3600))
-            .organizationNodeId(organizationNodeId)
-            .build();
-        
-        invitation = invitationRepository.save(invitation);
-        
-        // Ici, envoyer l'email d'invitation (via un service d'email)
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-            "success", true,
-            "invitationId", invitation.getId().toString(),
-            "email", email,
-            "role", role,
-            "token", token,
-            "expiresAt", invitation.getExpiresAt().toString(),
-            "message", "Invitation créée. L'invité recevra un email avec un lien d'invitation."
-        ));
-    }
-
-    /**
-     * Accepter une invitation (depuis le lien d'invitation)
-     */
-    @PostMapping("/accept")
-    public ResponseEntity<Map<String, Object>> acceptInvitation(
-            @RequestBody Map<String, Object> request) {
-        
-        String token = (String) request.get("token");
-        String password = (String) request.get("password");
-        String firstName = (String) request.get("firstName");
-        String lastName = (String) request.get("lastName");
-        
-        if (token == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Token d'invitation requis"
-            ));
-        }
-        
-        // Trouver l'invitation
-        Optional<Invitation> invitationOpt = invitationRepository.findByInvitationToken(token);
-        
-        if (invitationOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Invitation invalide ou expirée"
-            ));
-        }
-        
-        Invitation invitation = invitationOpt.get();
-        
-        // Vérifier si l'invitation a expiré
-        if (invitation.getExpiresAt().isBefore(Instant.now())) {
-            invitation.setStatus(InvitationStatus.EXPIRED);
-            invitationRepository.save(invitation);
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Cette invitation a expiré"
-            ));
-        }
-        
-        // Vérifier si l'invitation est déjà acceptée ou annulée
-        if (invitation.getStatus() != InvitationStatus.PENDING) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Cette invitation a déjà été traitée"
-            ));
-        }
-        
-        // Vérifier si l'utilisateur existe déjà avec cet email
-        Optional<User> existingUser = userRepository.findByEmail(invitation.getEmail());
-        
-        if (existingUser.isPresent()) {
-            User user = existingUser.get();
-            
-            // Créer la membership
-            TenantMembership membership = membershipService.addMembership(
-                user.getId(), invitation.getTenantId(), invitation.getRole(), invitation.getInvitedBy());
-            
-            invitation.setStatus(InvitationStatus.ACCEPTED);
-            invitation.setUserId(user.getId());
-            invitation.setAcceptedAt(Instant.now());
-            invitationRepository.save(invitation);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "userId", user.getId().toString(),
-                "email", invitation.getEmail(),
-                "role", invitation.getRole(),
-                "message", "Votre compte a été lié avec succès"
-            ));
-        }
-        
-        // Créer un nouvel utilisateur
-        if (password == null || password.length() < 8) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Mot de passe requis (minimum 8 caractères)",
-                "requiresRegistration", true
-            ));
-        }
-        
-        // Créer l'utilisateur (le hash sera fait par le service d'authentification)
-        // Pour simplifier, on utilise directement le repository
-        User newUser = User.builder()
-            .tenantId(invitation.getTenantId())
-            .email(invitation.getEmail())
-            .firstName(firstName != null ? firstName : "")
-            .lastName(lastName != null ? lastName : "")
-            .passwordHash("HASH_" + password) // Dans un vrai cas, hasher avec BCrypt
-            .role(UserRole.valueOf(invitation.getRole()))
-            .activeRole(UserRole.valueOf(invitation.getRole()))
-            .statut(UserStatus.ACTIVE)
-            .build();
-        
-        newUser = userRepository.save(newUser);
-        
-        // Créer la membership
-        TenantMembership membership = membershipService.addMembership(
-            newUser.getId(), invitation.getTenantId(), invitation.getRole(), invitation.getInvitedBy());
-        
-        invitation.setStatus(InvitationStatus.ACCEPTED);
-        invitation.setUserId(newUser.getId());
-        invitation.setAcceptedAt(Instant.now());
+                .tenantId(tenantId)
+                .email(email.toLowerCase())
+                .role(roleKey.toUpperCase())
+                .scopeType(scopeType)
+                .scopeId(scopeId != null ? scopeId : (organizationNodeId != null ? organizationNodeId : null))
+                .inviterId(currentUserId)
+                .invitationToken(token)
+                .status(InvitationStatus.PENDING)
+                .expiresAt(Instant.now().plusSeconds(7 * 24 * 3600)) // 7 days
+                .organizationNodeId(organizationNodeId)
+                .build();
         invitationRepository.save(invitation);
-        
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "userId", newUser.getId().toString(),
-            "email", invitation.getEmail(),
-            "role", invitation.getRole(),
-            "message", "Compte créé et invitation acceptée"
+
+        auditService.log(currentUserId, tenantId, "INVITATION_CREATED",
+                "INVITATION", invitation.getId(), "SUCCESS", Map.of("email", email, "role", roleKey));
+
+        // TODO: Send email with invitation link
+        String invitationLink = "/auth/accept-invitation?token=" + token;
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "success", true,
+                "invitationId", invitation.getId().toString(),
+                "email", email,
+                "role", roleKey,
+                "scopeType", scopeType.name(),
+                "scopeId", scopeId != null ? scopeId.toString() : null,
+                "invitationToken", token,
+                "invitationLink", invitationLink,
+                "expiresAt", invitation.getExpiresAt().toString(),
+                "message", "Invitation créée. Envoyez le lien à l'utilisateur : " + invitationLink
         ));
     }
 
-    /**
-     * Vérifier le statut d'une invitation
-     */
-    @GetMapping("/check/{token}")
-    public ResponseEntity<Map<String, Object>> checkInvitation(@PathVariable String token) {
-        Optional<Invitation> invitationOpt = invitationRepository.findByInvitationToken(token);
-        
-        if (invitationOpt.isEmpty()) {
-            return ResponseEntity.ok(Map.of(
-                "valid", false,
-                "error", "Invitation introuvable"
-            ));
-        }
-        
-        Invitation invitation = invitationOpt.get();
-        
-        if (invitation.getExpiresAt().isBefore(Instant.now())) {
-            return ResponseEntity.ok(Map.of(
-                "valid", false,
-                "error", "Invitation expirée",
-                "status", "EXPIRED"
-            ));
-        }
-        
-        return ResponseEntity.ok(Map.of(
-            "valid", true,
-            "email", invitation.getEmail(),
-            "role", invitation.getRole(),
-            "status", invitation.getStatus().name(),
-            "expiresAt", invitation.getExpiresAt().toString()
-        ));
-    }
+    // ==================== LIST INVITATIONS ====================
 
-    /**
-     * Récupérer les invitations d'un tenant
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> listInvitations() {
         UUID tenantId = TenantContext.requireTenantId();
-        
-        List<Invitation> invitations = invitationRepository.findByTenantId(tenantId);
-        
-        return ResponseEntity.ok(invitations.stream().map(i -> Map.of(
-            "id", i.getId().toString(),
-            "email", i.getEmail(),
-            "role", i.getRole(),
-            "status", i.getStatus().name(),
-            "invitedBy", i.getInvitedBy() != null ? i.getInvitedBy().toString() : null,
-            "createdAt", i.getCreatedAt().toString(),
-            "expiresAt", i.getExpiresAt().toString(),
-            "acceptedAt", i.getAcceptedAt() != null ? i.getAcceptedAt().toString() : null
-        )).collect(Collectors.toList()));
+        List<Invitation> invitations = invitationRepository.findByTenantIdAndStatusIn(
+                tenantId, List.of(InvitationStatus.PENDING, InvitationStatus.ACCEPTED, InvitationStatus.EXPIRED));
+
+        return ResponseEntity.ok(invitations.stream().map(this::toMap).toList());
     }
 
-    /**
-     * Annuler une invitation
-     */
+    // ==================== GET INVITATION DETAILS ====================
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    public ResponseEntity<Map<String, Object>> getInvitation(@PathVariable UUID id) {
+        UUID tenantId = TenantContext.requireTenantId();
+        Optional<Invitation> invitation = invitationRepository.findById(id);
+
+        if (invitation.isEmpty() || !invitation.get().getTenantId().equals(tenantId)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(toMap(invitation.get()));
+    }
+
+    // ==================== CANCEL INVITATION ====================
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
     public ResponseEntity<Void> cancelInvitation(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
-        UUID currentUserId = TenantContext.getTenantId();
-        
-        Optional<Invitation> invitationOpt = invitationRepository.findById(id);
-        
-        if (invitationOpt.isEmpty()) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+
+        Optional<Invitation> invitation = invitationRepository.findById(id);
+        if (invitation.isEmpty() || !invitation.get().getTenantId().equals(tenantId)) {
             return ResponseEntity.notFound().build();
         }
-        
-        Invitation invitation = invitationOpt.get();
-        
-        if (!invitation.getTenantId().equals(tenantId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        Invitation inv = invitation.get();
+        if (inv.getStatus() != InvitationStatus.PENDING) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Seules les invitations en attente peuvent être annulées"));
         }
-        
-        if (invitation.getStatus() != InvitationStatus.PENDING) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Impossible d'annuler une invitation déjà traitée"
-            ));
-        }
-        
-        invitation.setStatus(InvitationStatus.CANCELED);
-        invitationRepository.save(invitation);
-        
+
+        inv.setStatus(InvitationStatus.CANCELED);
+        invitationRepository.save(inv);
+
+        auditService.log(currentUserId, tenantId, "INVITATION_CANCELLED",
+                "INVITATION", id, "SUCCESS", Map.of("email", inv.getEmail()));
+
         return ResponseEntity.noContent().build();
+    }
+
+    // ==================== RESEND INVITATION ====================
+
+    @PostMapping("/{id}/resend")
+    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    public ResponseEntity<Map<String, Object>> resendInvitation(@PathVariable UUID id) {
+        UUID tenantId = TenantContext.requireTenantId();
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+
+        Optional<Invitation> invitation = invitationRepository.findById(id);
+        if (invitation.isEmpty() || !invitation.get().getTenantId().equals(tenantId)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Invitation inv = invitation.get();
+        if (inv.getStatus() != InvitationStatus.PENDING) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Seules les invitations en attente peuvent être renvoyées"));
+        }
+
+        // Generate new token and extend expiry
+        String newToken = UUID.randomUUID().toString().replace("-", "").substring(0, 32);
+        inv.setInvitationToken(newToken);
+        inv.setExpiresAt(Instant.now().plusSeconds(7 * 24 * 3600));
+        invitationRepository.save(inv);
+
+        auditService.log(currentUserId, tenantId, "INVITATION_RESENT",
+                "INVITATION", id, "SUCCESS", Map.of("email", inv.getEmail()));
+
+        String invitationLink = "/auth/accept-invitation?token=" + newToken;
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "invitationToken", newToken,
+                "invitationLink", invitationLink,
+                "expiresAt", inv.getExpiresAt().toString(),
+                "message", "Invitation renvoyée"
+        ));
+    }
+
+    // ==================== PUBLIC: ACCEPT INVITATION ====================
+
+    @GetMapping("/validate/{token}")
+    public ResponseEntity<Map<String, Object>> validateInvitation(@PathVariable String token) {
+        Optional<Invitation> invitation = invitationRepository.findByInvitationToken(token);
+
+        if (invitation.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Invitation invalide"));
+        }
+
+        Invitation inv = invitation.get();
+
+        if (inv.getStatus() != InvitationStatus.PENDING) {
+            return ResponseEntity.status(HttpStatus.GONE).body(Map.of("error", "Invitation expirée ou déjà utilisée", "status", inv.getStatus().name()));
+        }
+
+        if (inv.getExpiresAt().isBefore(Instant.now())) {
+            inv.setStatus(InvitationStatus.EXPIRED);
+            invitationRepository.save(inv);
+            return ResponseEntity.status(HttpStatus.GONE).body(Map.of("error", "Invitation expirée"));
+        }
+
+        Optional<Tenant> tenant = tenantRepository.findById(inv.getTenantId());
+        Optional<OrganizationNode> orgNode = inv.getOrganizationNodeId() != null ?
+                orgNodeRepository.findById(inv.getOrganizationNodeId()) : Optional.empty();
+
+        return ResponseEntity.ok(Map.of(
+                "valid", true,
+                "email", inv.getEmail(),
+                "role", inv.getRole(),
+                "scopeType", inv.getScopeType() != null ? inv.getScopeType().name() : "TENANT",
+                "tenantName", tenant.map(Tenant::getName).orElse("Inconnu"),
+                "organizationName", orgNode.map(OrganizationNode::getName).orElse(null),
+                "expiresAt", inv.getExpiresAt().toString()
+        ));
+    }
+
+    @PostMapping("/accept/{token}")
+    public ResponseEntity<Map<String, Object>> acceptInvitation(@PathVariable String token,
+                                                                 @RequestBody(required = false) Map<String, String> request) {
+        Optional<Invitation> invitation = invitationRepository.findByInvitationToken(token);
+
+        if (invitation.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Invitation invalide"));
+        }
+
+        Invitation inv = invitation.get();
+
+        if (inv.getStatus() != InvitationStatus.PENDING) {
+            return ResponseEntity.status(HttpStatus.GONE).body(Map.of("error", "Invitation expirée ou déjà utilisée", "status", inv.getStatus().name()));
+        }
+
+        if (inv.getExpiresAt().isBefore(Instant.now())) {
+            inv.setStatus(InvitationStatus.EXPIRED);
+            invitationRepository.save(inv);
+            return ResponseEntity.status(HttpStatus.GONE).body(Map.of("error", "Invitation expirée"));
+        }
+
+        String password = request != null ? request.get("password") : null;
+        String firstName = request != null ? request.get("firstName") : null;
+        String lastName = request != null ? request.get("lastName") : null;
+
+        // Create or find user
+        User user;
+        Optional<User> existingUser = userRepository.findByEmail(inv.getEmail());
+        if (existingUser.isPresent()) {
+            user = existingUser.get();
+        } else {
+            if (password == null || password.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Mot de passe requis pour nouveau compte"));
+            }
+            user = User.builder()
+                    .tenantId(inv.getTenantId())
+                    .email(inv.getEmail())
+                    .passwordHash(password) // Will be encoded by service
+                    .firstName(firstName != null ? firstName : "")
+                    .lastName(lastName != null ? lastName : "")
+                    .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE)
+                    .build();
+            userRepository.save(user);
+        }
+
+        // Create membership
+        Optional<Role> role = roleRepository.findByTenantIdAndKey(inv.getTenantId(), inv.getRole());
+        if (role.isEmpty()) {
+            role = roleRepository.findByTenantIdIsNullAndKey(inv.getRole());
+        }
+
+        TenantMembership membership = TenantMembership.builder()
+                .tenantId(inv.getTenantId())
+                .userId(user.getId())
+                .role(role.orElseThrow())
+                .scopeType(inv.getScopeType() != null ? inv.getScopeType() : MembershipScopeType.TENANT)
+                .scopeId(inv.getScopeId())
+                .status(MembershipStatus.ACTIVE)
+                .invitedBy(inv.getInviterId())
+                .build();
+        membershipRepository.save(membership);
+
+        // Update invitation
+        inv.setStatus(InvitationStatus.ACCEPTED);
+        inv.setAcceptedAt(Instant.now());
+        invitationRepository.save(inv);
+
+        auditService.log(inv.getInviterId(), inv.getTenantId(), "INVITATION_ACCEPTED",
+                "INVITATION", inv.getId(), "SUCCESS", Map.of("email", inv.getEmail(), "userId", user.getId().toString()));
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "userId", user.getId().toString(),
+                "email", user.getEmail(),
+                "tenantId", inv.getTenantId().toString(),
+                "message", "Invitation acceptée avec succès"
+        ));
+    }
+
+    private Map<String, Object> toMap(Invitation inv) {
+        Optional<Tenant> tenant = tenantRepository.findById(inv.getTenantId());
+        Optional<OrganizationNode> orgNode = inv.getOrganizationNodeId() != null ?
+                orgNodeRepository.findById(inv.getOrganizationNodeId()) : Optional.empty();
+
+        return Map.of(
+                "id", inv.getId().toString(),
+                "email", inv.getEmail(),
+                "role", inv.getRole(),
+                "scopeType", inv.getScopeType() != null ? inv.getScopeType().name() : "TENANT",
+                "scopeId", inv.getScopeId() != null ? inv.getScopeId().toString() : null,
+                "organizationNodeId", inv.getOrganizationNodeId() != null ? inv.getOrganizationNodeId().toString() : null,
+                "organizationNodeName", orgNode.map(OrganizationNode::getName).orElse(null),
+                "status", inv.getStatus().name(),
+                "invitedBy", inv.getInviterId() != null ? inv.getInviterId().toString() : null,
+                "createdAt", inv.getCreatedAt().toString(),
+                "expiresAt", inv.getExpiresAt().toString(),
+                "acceptedAt", inv.getAcceptedAt() != null ? inv.getAcceptedAt().toString() : null,
+                "tenantName", tenant.map(Tenant::getName).orElse("Inconnu")
+        );
     }
 }

@@ -1,5 +1,6 @@
 package com.discipolat.common.multitenancy;
 
+import com.discipolat.modules.tenants.domain.MembershipStatus;
 import com.discipolat.modules.tenants.domain.TenantMembership;
 import com.discipolat.modules.tenants.domain.TenantMembershipRepository;
 import com.discipolat.modules.users.domain.User;
@@ -37,7 +38,7 @@ public class CurrentTenantResolver {
      * 1. Explicit tenant context already set (ThreadLocal)
      * 2. User has single active membership -> use that tenant
      * 3. User has multiple memberships -> require explicit selection (return null)
-     * 4. Fallback to default tenant (for system jobs)
+     * 4. No fallback - return null for system to handle
      */
     public UUID resolveTenantId() {
         // 1. Already set in context
@@ -49,15 +50,15 @@ public class CurrentTenantResolver {
         // 2. Get current user
         UUID userId = getCurrentUserId();
         if (userId == null) {
-            return TenantContext.DEFAULT_TENANT_ID;
+            return null;
         }
 
         // 3. Find active memberships
-        List<TenantMembership> memberships = membershipRepository.findActiveByUserId(userId, TenantMembership.MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findActiveByUserId(userId, MembershipStatus.ACTIVE);
 
         if (memberships.isEmpty()) {
             log.warn("User {} has no active tenant memberships", userId);
-            return TenantContext.DEFAULT_TENANT_ID;
+            return null;
         }
 
         if (memberships.size() == 1) {
@@ -75,14 +76,14 @@ public class CurrentTenantResolver {
      * Validate that user has access to the given tenant
      */
     public boolean validateTenantAccess(UUID userId, UUID tenantId) {
-        return membershipRepository.existsByUserIdAndTenantIdAndStatus(userId, tenantId, TenantMembership.MembershipStatus.ACTIVE);
+        return membershipRepository.existsByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
     }
 
     /**
      * Get all accessible tenants for a user
      */
     public List<TenantMembership> getUserTenants(UUID userId) {
-        return membershipRepository.findByUserIdAndStatus(userId, TenantMembership.MembershipStatus.ACTIVE);
+        return membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
     }
 
     /**

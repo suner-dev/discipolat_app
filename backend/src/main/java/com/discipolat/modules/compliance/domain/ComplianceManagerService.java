@@ -4,6 +4,8 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditLog;
 import com.discipolat.modules.audit.domain.AuditLogRepository;
+import com.discipolat.modules.tenants.domain.Tenant;
+import com.discipolat.modules.tenants.domain.TenantRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,7 @@ public class ComplianceManagerService {
     private final DataExportRecordRepository exportRepository;
     private final AuditHashLinkRepository hashLinkRepository;
     private final AuditLogRepository auditLogRepository;
+    private final TenantRepository tenantRepository;
 
     /** Adaptateur minimal sur GdprRequestRepository (évite le couplage direct au module gdpr). */
     public interface GdprRequestAdapter {
@@ -48,13 +51,15 @@ public class ComplianceManagerService {
                                     RetentionPolicyRepository policyRepository,
                                     DataExportRecordRepository exportRepository,
                                     AuditHashLinkRepository hashLinkRepository,
-                                    AuditLogRepository auditLogRepository) {
+                                    AuditLogRepository auditLogRepository,
+                                    TenantRepository tenantRepository) {
         this.consentRepository = consentRepository;
         this.gdprAdapter = gdprAdapter;
         this.policyRepository = policyRepository;
         this.exportRepository = exportRepository;
         this.hashLinkRepository = hashLinkRepository;
         this.auditLogRepository = auditLogRepository;
+        this.tenantRepository = tenantRepository;
     }
 
     // ── Politiques de rétention ──────────────────────────────────

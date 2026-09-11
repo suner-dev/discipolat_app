@@ -139,7 +139,7 @@ public class AuthorizationService {
      */
     @Transactional(readOnly = true)
     public Set<String> getUserPermissions(UUID userId, UUID tenantId) {
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatusList(userId, tenantId, MembershipStatus.ACTIVE);
         Set<String> permissions = new HashSet<>();
 
         for (TenantMembership membership : memberships) {
@@ -157,7 +157,7 @@ public class AuthorizationService {
      */
     @Transactional(readOnly = true)
     public Set<String> getUserPermissionsInScope(UUID userId, UUID tenantId, MembershipScopeType scopeType, UUID scopeId) {
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatusList(userId, tenantId, MembershipStatus.ACTIVE);
         Set<String> permissions = new HashSet<>();
 
         for (TenantMembership membership : memberships) {
@@ -174,7 +174,11 @@ public class AuthorizationService {
 
     // ==================== PRIVATE HELPERS ====================
 
-    private boolean isPlatformSuperAdmin(UUID userId) {
+    public boolean isPlatformSuperAdmin(UUID userId) {
+        return isPlatformSuperAdminInternal(userId);
+    }
+
+    private boolean isPlatformSuperAdminInternal(UUID userId) {
         // Check if user has PLATFORM_SUPER_ADMIN role in any tenant (global role)
         Optional<Role> superAdminRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN");
         if (superAdminRole.isEmpty()) {

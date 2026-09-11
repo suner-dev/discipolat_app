@@ -14,6 +14,8 @@ public interface RoleRepository extends TenantAwareRepository<Role, UUID> {
 
     Optional<Role> findByTenantIdAndKey(UUID tenantId, String key);
 
+    Optional<Role> findByTenantIdIsNullAndKey(String key);
+
     List<Role> findByTenantId(UUID tenantId);
 
     List<Role> findByTenantIdIsNull(); // System roles

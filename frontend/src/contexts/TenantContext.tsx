@@ -1,34 +1,20 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import api from '@/lib/api';
-import type { Tenant, TenantMembership, OrganizationNode, Permission, Role } from '@/types/tenant';
+import type { 
+  Tenant, 
+  TenantMembership, 
+  OrganizationNode, 
+  Permission, 
+  Role,
+  Subscription,
+  Quotas,
+  BrandingConfig,
+  TenantSettings,
+  TenantContextValue,
+  SwitchTenantResponse
+} from '@/types/tenant';
 
-interface TenantContextType {
-  // État du tenant
-  currentTenant: Tenant | null;
-  currentMembership: TenantMembership | null;
-  currentOrganizationNode: OrganizationNode | null;
-  availableTenants: Tenant[];
-  roles: Role[];
-  permissions: Permission[];
-  branding: Record<string, any> | null;
-  
-  // Actions
-  switchTenant: (tenantId: string) => Promise<void>;
-  switchOrganization: (orgNodeId: string) => Promise<void>;
-  refreshContext: () => Promise<void>;
-  
-  // Vérifications
-  hasRole: (role: string) => boolean;
-  hasPermission: (permission: string) => boolean;
-  hasFeature: (feature: string) => boolean;
-  canAccess: (resource: string, action: string) => boolean;
-  
-  // État de chargement
-  isLoading: boolean;
-  isInitialized: boolean;
-}
-
-const TenantContext = createContext<TenantContextType | null>(null);
+const TenantContext = createContext<TenantContextValue | null>(null);
 
 export function TenantProvider({ children }: { children: ReactNode }) {
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
@@ -37,7 +23,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [availableTenants, setAvailableTenants] = useState<Tenant[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [branding, setBranding] = useState<Record<string, any> | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [quotas, setQuotas] = useState<Quotas | null>(null);
+  const [branding, setBranding] = useState<BrandingConfig | null>(null);
+  const [features, setFeatures] = useState<Record<string, boolean>>({});
+  const [settings, setSettings] = useState<TenantSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -45,36 +35,70 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
-      // Charger le contexte courant
       const contextRes = await api.get('/tenant-switcher/context').catch(() => null);
-      if (contextRes?.data?.tenantId) {
+      
+      if (contextRes?.data?.requiresSelection) {
+        // User has multiple tenants - show selection
+        setAvailableTenants(contextRes.data.availableTenants || []);
+        setCurrentTenant(null);
+        setCurrentMembership(null);
+        setCurrentOrganizationNode(null);
+        setSubscription(null);
+        setQuotas(null);
+        setBranding(null);
+        setFeatures({});
+        setSettings(null);
+      } else if (contextRes?.data?.tenantId) {
+        // Single tenant context - populate all data
         const ctx = contextRes.data;
         
-        // Charger les détails du tenant
-        const tenantRes = await api.get(`/tenants/${ctx.tenantId}`).catch(() => null);
-        if (tenantRes?.data) {
-          setCurrentTenant(tenantRes.data);
+        setCurrentTenant({
+          id: ctx.tenantId,
+          name: ctx.tenantName,
+          slug: ctx.tenantSlug,
+          status: ctx.tenantStatus,
+          plan: ctx.plan,
+          country: '', currency: '', timezone: '', locale: '',
+          createdAt: '', updatedAt: '',
+          branding: ctx.branding,
+          features: ctx.features,
+          settings: ctx.settings
+        });
+
+        setCurrentMembership({
+          id: '',
+          tenantId: ctx.tenantId,
+          userId: ctx.userId,
+          role: ctx.role,
+          scopeType: ctx.scopeType,
+          scopeId: ctx.scopeId,
+          status: 'ACTIVE',
+          joinedAt: ''
+        });
+
+        if (ctx.accessibleNodes && ctx.accessibleNodes.length > 0) {
+          setCurrentOrganizationNode(ctx.accessibleNodes[0]);
         }
-        
-        // Charger le branding
-        const brandingRes = await api.get('/platform/branding').catch(() => null);
-        if (brandingRes?.data) {
-          setBranding(brandingRes.data);
+
+        setSubscription(ctx.subscription || null);
+        setQuotas(ctx.subscription?.quotas || null);
+        setBranding(ctx.branding || null);
+        setFeatures(ctx.features || {});
+        setSettings(ctx.settings || null);
+
+        if (ctx.permissions) {
+          const permObjects = ctx.permissions.map((key: string) => ({ key }));
+          setPermissions(permObjects);
         }
-        
-        // Charger les rôles et permissions
+
+        // Load roles
         const rolesRes = await api.get('/admin/roles').catch(() => null);
         if (rolesRes?.data) {
           setRoles(rolesRes.data);
         }
-        
-        const permsRes = await api.get('/admin/roles/permissions').catch(() => null);
-        if (permsRes?.data) {
-          setPermissions(permsRes.data);
-        }
       }
       
-      // Charger les tenants disponibles
+      // Load available tenants for switcher
       const tenantsRes = await api.get('/tenant-switcher/my-tenants').catch(() => null);
       if (tenantsRes?.data) {
         setAvailableTenants(tenantsRes.data);
@@ -94,9 +118,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   const switchTenant = useCallback(async (tenantId: string) => {
     try {
-      await api.post('/tenant-switcher/switch', { tenantId });
-      await refreshContext();
-      window.location.reload();
+      const response = await api.post<SwitchTenantResponse>('/tenant-switcher/switch', { tenantId });
+      if (response.data.success) {
+        await refreshContext();
+        window.location.reload();
+      }
     } catch (error) {
       console.error('Erreur changement tenant:', error);
       throw error;
@@ -124,15 +150,20 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   }, [permissions]);
 
   const hasFeature = useCallback((feature: string): boolean => {
-    if (!currentTenant) return false;
-    // Vérifier dans les feature flags du tenant
-    return true; // Simplifié - à implémenter avec les feature flags
-  }, [currentTenant]);
+    return features[feature] === true;
+  }, [features]);
 
-  const canAccess = useCallback((resource: string, action: string): boolean => {
+  const canAccess = useCallback((resource: string, action: string, scopeType?: string, scopeId?: string): boolean => {
     const permissionKey = `${resource.toUpperCase()}_${action.toUpperCase()}`;
     return hasPermission(permissionKey);
   }, [hasPermission]);
+
+  const isQuotaExceeded = useCallback((quotaKey: keyof Quotas): boolean => {
+    if (!quotas) return false;
+    const current = quotas[`current${quotaKey.charAt(0).toUpperCase() + quotaKey.slice(1).replace('Max', '')}` as keyof Quotas] as number;
+    const max = quotas[quotaKey] as number;
+    return current >= max;
+  }, [quotas]);
 
   return (
     <TenantContext.Provider value={{
@@ -142,7 +173,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       availableTenants,
       roles,
       permissions,
+      subscription,
+      quotas,
       branding,
+      features,
+      settings,
       switchTenant,
       switchOrganization,
       refreshContext,
@@ -150,6 +185,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       hasPermission,
       hasFeature,
       canAccess,
+      isQuotaExceeded,
       isLoading,
       isInitialized,
     }}>

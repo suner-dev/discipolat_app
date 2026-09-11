@@ -265,4 +265,55 @@ public class OrganizationNodeService {
     public long countByType(UUID tenantId, OrganizationNodeType type) {
         return nodeRepository.countByTenantIdAndType(tenantId, type);
     }
+
+    // ==================== WRAPPER METHODS FOR CONTROLLERS ====================
+
+    @Transactional(readOnly = true)
+    public Optional<OrganizationNode> findById(UUID id) {
+        return nodeRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrganizationNode> findByTenantId(UUID tenantId) {
+        return nodeRepository.findByTenantId(tenantId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrganizationNode> findByTenantIdAndType(UUID tenantId, OrganizationNodeType type) {
+        return nodeRepository.findByTenantIdAndType(tenantId, type);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrganizationNode> findByParentId(UUID parentId) {
+        return nodeRepository.findByParentId(parentId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrganizationNode> findDescendants(UUID tenantId, String path) {
+        return nodeRepository.findDescendants(tenantId, path);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<OrganizationNode> findRootByTenantId(UUID tenantId) {
+        return nodeRepository.findRootByTenantId(tenantId);
+    }
+
+    public OrganizationNode save(OrganizationNode node) {
+        return nodeRepository.save(node);
+    }
+
+    public void delete(UUID id) {
+        nodeRepository.deleteById(id);
+    }
+
+    public boolean isDescendantOf(UUID nodeId, UUID ancestorId) {
+        Optional<OrganizationNode> node = nodeRepository.findById(nodeId);
+        Optional<OrganizationNode> ancestor = nodeRepository.findById(ancestorId);
+        if (node.isEmpty() || ancestor.isEmpty()) return false;
+        return node.get().getPath().startsWith(ancestor.get().getPath());
+    }
+
+    public Optional<TenantSubscription> getTenantSubscription(UUID tenantId) {
+        return Optional.empty(); // To be implemented with subscriptionRepository
+    }
 }

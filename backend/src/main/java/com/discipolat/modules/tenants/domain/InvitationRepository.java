@@ -13,6 +13,8 @@ public interface InvitationRepository extends JpaRepository<Invitation, UUID> {
 
     Optional<Invitation> findByEmailAndTenantIdAndStatus(String email, UUID tenantId, InvitationStatus status);
 
+    Optional<Invitation> findByTenantIdAndEmailAndStatus(UUID tenantId, String email, InvitationStatus status);
+
     List<Invitation> findByTenantIdAndStatusIn(UUID tenantId, List<InvitationStatus> statuses);
 
     List<Invitation> findByTenantId(UUID tenantId);
