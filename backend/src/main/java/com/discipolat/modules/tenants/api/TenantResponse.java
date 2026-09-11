@@ -12,6 +12,14 @@ public record TenantResponse(
         String slug,
         TenantStatus status,
         String plan,
+        String country,
+        String currency,
+        String timezone,
+        String locale,
+        String brandingJson,
+        String featuresJson,
+        String settingsJson,
+        Instant trialEndsAt,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -22,6 +30,14 @@ public record TenantResponse(
                 tenant.getSlug(),
                 tenant.getStatus(),
                 tenant.getPlan(),
+                tenant.getCountry(),
+                tenant.getCurrency(),
+                tenant.getTimezone(),
+                tenant.getLocale(),
+                tenant.getBrandingJson(),
+                tenant.getFeaturesJson(),
+                tenant.getSettingsJson(),
+                tenant.getTrialEndsAt(),
                 tenant.getCreatedAt(),
                 tenant.getUpdatedAt()
         );

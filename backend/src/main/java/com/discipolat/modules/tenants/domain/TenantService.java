@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -69,6 +70,10 @@ public class TenantService {
                 .status(TenantStatus.ACTIVE)
                 .plan(request.plan() != null && !request.plan().isBlank()
                         ? request.plan() : DEFAULT_PLAN)
+                .country(request.country())
+                .currency(request.currency())
+                .timezone(request.timezone())
+                .locale(request.locale())
                 .build();
         tenant = tenantRepository.save(tenant);
         // ===== PROPAGATION CENTRALISÉE =====
@@ -89,6 +94,27 @@ public class TenantService {
         if (request.plan() != null && !request.plan().isBlank()) {
             tenant.setPlan(request.plan());
         }
+        if (request.country() != null) {
+            tenant.setCountry(request.country());
+        }
+        if (request.currency() != null) {
+            tenant.setCurrency(request.currency());
+        }
+        if (request.timezone() != null) {
+            tenant.setTimezone(request.timezone());
+        }
+        if (request.locale() != null) {
+            tenant.setLocale(request.locale());
+        }
+        if (request.brandingJson() != null) {
+            tenant.setBrandingJson(request.brandingJson());
+        }
+        if (request.featuresJson() != null) {
+            tenant.setFeaturesJson(request.featuresJson());
+        }
+        if (request.settingsJson() != null) {
+            tenant.setSettingsJson(request.settingsJson());
+        }
         tenant = tenantRepository.save(tenant);
         // ===== PROPAGATION CENTRALISÉE =====
         propagationPublisher.publishUpdated("TENANT", tenant.getId(),
@@ -106,6 +132,24 @@ public class TenantService {
         propagationPublisher.publishStatusChanged("TENANT", tenant.getId(),
                 oldStatus, TenantStatus.SUSPENDED.name(),
                 "Tenant désactivé: " + tenant.getName());
+    }
+
+    public void reactivate(UUID id) {
+        Tenant tenant = getEntity(id);
+        String oldStatus = tenant.getStatus().name();
+        tenant.setStatus(TenantStatus.ACTIVE);
+        tenantRepository.save(tenant);
+        propagationPublisher.publishStatusChanged("TENANT", tenant.getId(),
+                oldStatus, TenantStatus.ACTIVE.name(),
+                "Tenant réactivé: " + tenant.getName());
+    }
+
+    public Optional<Tenant> findBySlug(String slug) {
+        return tenantRepository.findBySlug(slug);
+    }
+
+    public boolean existsBySlug(String slug) {
+        return tenantRepository.existsBySlug(slug);
     }
 
     private Tenant getEntity(UUID id) {

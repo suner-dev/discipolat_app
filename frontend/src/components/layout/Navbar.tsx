@@ -17,7 +17,7 @@ import {
   CheckCircle2,
   Globe,
 } from 'lucide-react';
-import { WORKSPACE_HOME, ROLE_META, roleIcon } from '@/workspaces';
+import { WORKSPACE_HOME, ROLE_META, roleIcon, isTenantAdmin } from '@/workspaces';
 import BetaBadge from '@/components/beta/BetaBadge';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { useTheme } from '@/hooks/useTheme';
@@ -276,6 +276,19 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     <Settings className="w-4 h-4 text-gray-400" />
                     {t('nav.settings') || 'Paramètres'}
                   </Link>
+
+                  {/* SAAS multi-tenant — sélecteur d'organisation/église */}
+                  {isTenantAdmin(user?.role || activeRole || '') && (
+                    <Link
+                      to="/tenant-switcher"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300
+                               hover:bg-gray-100/60 dark:hover:bg-gray-800/40 transition-colors"
+                      onClick={() => setShowProfileMenu(false)}
+                    >
+                      <Building2 className="w-4 h-4 text-gray-400" />
+                      {t('nav.tenantSwitcher') || 'Sélecteur de tenant'}
+                    </Link>
+                  )}
 
                   {/* Role Switcher — only show if user has multiple roles */}
                   {roles && roles.length > 1 && (

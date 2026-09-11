@@ -156,6 +156,26 @@ export function isSuperUser(role: string | null | undefined): boolean {
   return role === 'ADMIN' || role === 'PASTEUR';
 }
 
+/* ============================================================================
+ * Multi-tenant RBAC helpers
+ * ---------------------------------------------------------------------------
+ * Rôles platform (Super Admin) — gestion de la plateforme SaaS complète.
+ * Rôles tenant  — administration d'un tenant (église). ADMIN = super-admin,
+ * donc AUTORISE implicitement à tout (backward compat avec le système legacy).
+ */
+export const PLATFORM_ROLES = ['PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN'];
+export const TENANT_ADMIN_ROLES = ['TENANT_SUPER_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'];
+
+/** L'utilisateur courant a-t-il les droits Super Admin de la plateforme ? */
+export function isPlatformAdmin(role: string | null | undefined): boolean {
+  return role === 'ADMIN' || PLATFORM_ROLES.includes(role || '');
+}
+
+/** L'utilisateur courant administre-t-il un tenant (église) ? */
+export function isTenantAdmin(role: string | null | undefined): boolean {
+  return role === 'ADMIN' || role === 'PASTEUR' || TENANT_ADMIN_ROLES.includes(role || '');
+}
+
 /* ----------------------------------------------------------------------------
  * Navigation des super-utilisateurs (Admin / Pasteur) — vue complète.
  * -------------------------------------------------------------------------- */

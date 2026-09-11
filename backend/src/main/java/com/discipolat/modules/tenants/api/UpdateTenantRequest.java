@@ -6,5 +6,12 @@ import jakarta.validation.constraints.Size;
 public record UpdateTenantRequest(
         @Size(max = 255) String name,
         TenantStatus status,
-        String plan
+        String plan,
+        String country,
+        String currency,
+        String timezone,
+        String locale,
+        String brandingJson,
+        String featuresJson,
+        String settingsJson
 ) {}

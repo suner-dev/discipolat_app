@@ -171,6 +171,8 @@ class _MorePage extends StatelessWidget {
         const SizedBox(height: 16),
         _moreItem(context, Icons.person, 'Mon profil', 'Informations personnelles'),
         _moreItem(context, Icons.shield, 'Sécurité', 'Session, biométrie, données', route: '/mobile-security'),
+        // SAAS multi-tenant
+        _moreItem(context, Icons.business, 'Sélection de tenant', 'Changer d\'organisation/église', route: '/tenant-selection'),
         _moreItem(context, Icons.settings, 'Paramètres', 'Configuration'),
       ],
     );

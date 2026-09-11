@@ -201,6 +201,16 @@ import 'presentation/screens/spiritual_journey/spiritual_journey_screen.dart';
 // are already imported from presentation/screens/ above — feature versions share the same class names.
 import 'tenant_config.dart';
 
+/// Écrans d'administration multi-tenant (Super Admin & Tenant Admin).
+import 'presentation/screens/tenant/tenant_selection_screen.dart';
+import 'presentation/screens/tenant/branding_screen.dart';
+import 'presentation/screens/tenant/org_settings_screen.dart';
+import 'presentation/screens/tenant/organizations_screen.dart';
+import 'presentation/screens/tenant/tenant_settings_screen.dart';
+import 'presentation/screens/tenant/modules_screen.dart';
+import 'presentation/screens/tenant/roles_screen.dart';
+import 'presentation/screens/tenant/users_screen.dart';
+
 /// Auth state notifier — singleton that tracks the authenticated user
 /// with full multi-role and multi-tenant support (roles + activeRole + orgId).
 class AuthState {
@@ -498,6 +508,14 @@ Map<String, List<String>> _routeRoles = {
   '/rewards/claims': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/user-roles': ['ADMIN'],
   '/compliance-exports': ['ADMIN'],
+  // SAAS multi-tenant — routes platform & tenant admin
+  '/tenant-selection': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_SUPER_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/tenant/modules': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/tenant/roles': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/tenant/users': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/tenant/organizations': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/tenant/settings': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/tenant/branding': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
   '/discipleship-paths': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/visit-notes/verify': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/encouragements/detail': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -1214,7 +1232,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/reward-certificates', name: 'reward-certificates', builder: (ctx, s) => const RewardCertificatesScreen()),
     GoRoute(path: '/sermons-library', name: 'sermons-library', builder: (ctx, s) => const SermonsScreen()),
     GoRoute(path: '/development-plans', name: 'development-plans', builder: (ctx, s) => const DevelopmentPlansScreen()),
-        GoRoute(path: '/form-responses', name: 'form-responses', builder: (ctx, s) => FormResponsesScreen(templateId: s.uri.queryParameters['templateId'] ?? '')),
+    GoRoute(path: '/form-responses', name: 'form-responses', builder: (ctx, s) => FormResponsesScreen(templateId: s.uri.queryParameters['templateId'] ?? '')),
     GoRoute(path: '/department-reports', name: 'department-reports', builder: (ctx, s) => DepartmentReportsScreen(departmentId: s.uri.queryParameters['departmentId'] ?? '')),
     GoRoute(path: '/family-tree', name: 'family-tree', builder: (ctx, s) => FamilyTreeScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
     GoRoute(path: '/announcement-schedule', name: 'announcement-schedule', builder: (ctx, s) => AnnouncementScheduleScreen(announcementId: s.uri.queryParameters['announcementId'] ?? '')),
@@ -1237,6 +1255,13 @@ final appRouter = GoRouter(
     GoRoute(path: '/spiritual-journey', name: 'spiritual-journey', builder: (ctx, s) => const SpiritualJourneyScreen()),
     GoRoute(path: '/conversations', name: 'conversations', builder: (ctx, s) => const ConversationsScreen()),
     GoRoute(path: '/ai-chat', name: 'ai-chat', builder: (ctx, s) => const AiChatScreen()),
+    GoRoute(path: '/tenant-selection', name: 'tenant-selection', builder: (ctx, s) => const TenantSelectionScreen()),
+    GoRoute(path: '/tenant/branding', name: 'tenant-branding', builder: (ctx, s) => const TenantBrandingScreen()),
+    GoRoute(path: '/tenant/settings', name: 'tenant-settings', builder: (ctx, s) => const TenantSettingsScreen()),
+    GoRoute(path: '/tenant/organizations', name: 'tenant-organizations', builder: (ctx, s) => const OrganizationsScreen()),
+    GoRoute(path: '/tenant/modules', name: 'tenant-modules', builder: (ctx, s) => const TenantModulesScreen()),
+    GoRoute(path: '/tenant/roles', name: 'tenant-roles', builder: (ctx, s) => const TenantRolesScreen()),
+    GoRoute(path: '/tenant/users', name: 'tenant-users', builder: (ctx, s) => const TenantUsersScreen()),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
 );

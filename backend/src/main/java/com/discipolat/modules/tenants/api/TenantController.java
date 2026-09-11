@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -41,6 +42,15 @@ public class TenantController {
         return ResponseEntity.ok(tenantService.get(id));
     }
 
+    @GetMapping("/by-slug/{slug}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<TenantResponse> getBySlug(@PathVariable String slug) {
+        return tenantService.findBySlug(slug)
+                .map(TenantResponse::from)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<TenantResponse> create(@Valid @RequestBody CreateTenantRequest request) {
@@ -60,5 +70,12 @@ public class TenantController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         tenantService.deactivate(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/reactivate")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    public ResponseEntity<Void> reactivate(@PathVariable UUID id) {
+        tenantService.reactivate(id);
+        return ResponseEntity.ok().build();
     }
 }

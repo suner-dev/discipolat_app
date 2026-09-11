@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { WORKSPACE_HOME, isSuperUser } from '@/workspaces';
+import { WORKSPACE_HOME, isSuperUser, isPlatformAdmin, isTenantAdmin } from '@/workspaces';
 import type { UserRole } from '@/types';
 import MainLayout from '@/layouts/MainLayout';
 import AuthLayout from '@/layouts/AuthLayout';
@@ -89,6 +89,15 @@ const AdminSettingsPage = lazy(() => import('@/pages/AdminSettingsPage'));
 const PlatformModulesPage = lazy(() => import('@/pages/PlatformModulesPage'));
 const PlatformMenusPage = lazy(() => import('@/pages/PlatformMenusPage'));
 const PlatformPagesPage = lazy(() => import('@/pages/PlatformPagesPage'));
+const PlatformAdminDashboardPage = lazy(() => import('@/pages/PlatformAdminDashboard'));
+const TenantAdminDashboardPage = lazy(() => import('@/pages/TenantAdminDashboard'));
+const TenantAdminMembersPage = lazy(() => import('@/pages/TenantAdminMembersPage'));
+const TenantAdminRolesPage = lazy(() => import('@/pages/TenantAdminRolesPage'));
+const TenantAdminInvitationsPage = lazy(() => import('@/pages/TenantAdminInvitationsPage'));
+const TenantAdminModulesPage = lazy(() => import('@/pages/TenantAdminModulesPage'));
+const TenantAdminSettingsPage = lazy(() => import('@/pages/TenantAdminSettingsPage'));
+const TenantAdminBrandingPage = lazy(() => import('@/pages/TenantAdminBrandingPage'));
+const TenantSwitcherPage = lazy(() => import('@/pages/TenantSwitcherPage'));
 const CustomPageView = lazy(() => import('@/pages/CustomPageView'));
 const ModuleUnavailablePage = lazy(() => import('@/pages/ModuleUnavailablePage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
@@ -243,7 +252,7 @@ function RouteFallback() {
   );
 }
 
-function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
+function ProtectedRoute({ children, roles, scope }: { children: React.ReactNode; roles?: string[]; scope?: 'platform' | 'tenant' }) {
   const { isAuthenticated, user, isLoading, activeRole } = useAuth();
 
   if (isLoading) {
@@ -260,6 +269,16 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
 
   // Check against activeRole; fallback to user.role for backward compatibility
   const currentRole = activeRole || user?.role;
+
+  // Scope multi-tenant : les rôles PLATFORM/TENANT sont hiérarchiques.
+  // ADMIN = super-administrateur, AUTORISE implicitement tout.
+  if (scope === 'platform' && isPlatformAdmin(currentRole as string)) {
+    return <>{children}</>;
+  }
+  if (scope === 'tenant' && isTenantAdmin(currentRole as string)) {
+    return <>{children}</>;
+  }
+
   // Super-utilisateur : un Admin accède aux capacités Pasteur (cf. mobile).
   const allowed = !roles
     || (currentRole && (roles.includes(currentRole)
@@ -1039,6 +1058,54 @@ export default function App() {
           <Route path="/family-resources/:id" element={<ProtectedRoute><FamilyResourcesDetailPage /></ProtectedRoute>} />
           <Route path="/geofencing" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}><GeofencingPage /></ProtectedRoute>} />
           <Route path="/referrals/status" element={<ProtectedRoute><ReferralsStatusPage /></ProtectedRoute>} />
+        </Route>
+
+        {/* ==================================================================
+          * SAAS MULTI-TENANT — administration plateforme & tenant.
+          * scope='platform' exige un rôle Super-Admin de plateforme.
+          * scope='tenant'  exige un rôle d'administration d'un tenant.
+          * ADMIN = super-admin → AUTORISE implicitement (backward compat).
+          * ================================================================= */}
+        <Route element={<MainLayout />}>
+          {/* Platform Super Admin */}
+          <Route path="/platform/dashboard" element={
+            <ProtectedRoute scope="platform"><PlatformAdminDashboardPage /></ProtectedRoute>
+          } />
+          <Route path="/platform/tenants" element={
+            <ProtectedRoute roles={['ADMIN']}><AdminTenantsPage /></ProtectedRoute>
+          } />
+          <Route path="/platform/saas/plans" element={
+            <ProtectedRoute scope="platform"><AdminTenantsPage /></ProtectedRoute>
+          } />
+          <Route path="/platform/branding" element={
+            <ProtectedRoute scope="platform"><TenantAdminBrandingPage /></ProtectedRoute>
+          } />
+          <Route path="/tenant-switcher" element={
+            <ProtectedRoute><TenantSwitcherPage /></ProtectedRoute>
+          } />
+
+          {/* Tenant Admin — administration d'une église (tenant) */}
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute scope="tenant"><TenantAdminDashboardPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/members" element={
+            <ProtectedRoute scope="tenant"><TenantAdminMembersPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/roles" element={
+            <ProtectedRoute scope="tenant"><TenantAdminRolesPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/invitations" element={
+            <ProtectedRoute scope="tenant"><TenantAdminInvitationsPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/modules" element={
+            <ProtectedRoute scope="tenant"><TenantAdminModulesPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/settings" element={
+            <ProtectedRoute scope="tenant"><TenantAdminSettingsPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/branding" element={
+            <ProtectedRoute scope="tenant"><TenantAdminBrandingPage /></ProtectedRoute>
+          } />
         </Route>
 
         {/* Page d'accueil publique (landing) — redirige vers /dashboard si connecté */}

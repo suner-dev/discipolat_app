@@ -12,9 +12,9 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
-    // Autorise les URL dynamiques des tunnels Cloudflare (trycloudflare.com)
+    // Autorise les URL dynamiques des tunnels (ngrok, Cloudflare trycloudflare)
     // pour que le dev server réponde aux hôtes publics.
-    allowedHosts: ['.trycloudflare.com', '.cloudflare.com', '.ngrok-free.dev', '.ngrok.io', 'localhost'],
+    allowedHosts: ['.trycloudflare.com', '.cloudflare.com', '.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io', 'localhost'],
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
