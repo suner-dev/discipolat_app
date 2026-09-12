@@ -12,4 +12,6 @@ public interface SaasPlanRepository extends JpaRepository<SaasPlan, String> {
     List<SaasPlan> findByIsActiveTrueOrderBySortOrderAsc();
 
     Optional<SaasPlan> findByKeyAndIsActiveTrue(String key);
+
+    Optional<SaasPlan> findById(String id);
 }

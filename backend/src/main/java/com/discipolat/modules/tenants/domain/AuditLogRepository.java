@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,4 +31,8 @@ public interface AuditLogRepository extends TenantAwareRepository<AuditLog, UUID
     );
 
     long countByTenantIdAndTimestampAfter(UUID tenantId, Instant since);
+
+    long countByTenantIdAndTimestampAfter(UUID tenantId, LocalDateTime since);
+
+    Page<com.discipolat.modules.tenants.domain.AuditLog> findByTenantId(UUID tenantId, Pageable pageable);
 }

@@ -48,6 +48,9 @@ public class Invitation {
     @Column(name = "inviter_id", nullable = false)
     private UUID inviterId;
 
+    @Column(name = "organization_node_id")
+    private UUID organizationNodeId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private InvitationStatus status;

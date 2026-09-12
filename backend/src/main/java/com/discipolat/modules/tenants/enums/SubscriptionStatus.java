@@ -1,4 +1,4 @@
-package com.discipolat.modules.tenants.domain;
+package com.discipolat.modules.tenants.enums;
 
 public enum SubscriptionStatus {
     TRIAL,

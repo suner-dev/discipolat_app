@@ -24,4 +24,6 @@ public interface PermissionRepository extends TenantAwareRepository<Permission, 
 
     @Query("SELECT p FROM Permission p JOIN p.roles r WHERE r.id = :roleId")
     List<Permission> findByRoleId(@Param("roleId") UUID roleId);
+
+    List<Permission> findAll();
 }

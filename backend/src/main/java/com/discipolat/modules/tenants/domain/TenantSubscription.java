@@ -7,6 +7,8 @@ import org.hibernate.annotations.Filter;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.discipolat.modules.tenants.enums.SubscriptionStatus;
+
 @Entity
 @Table(name = "tenant_subscriptions", indexes = {
         @Index(name = "idx_subscription_tenant", columnList = "tenant_id"),

@@ -1,6 +1,9 @@
 package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.multitenancy.TenantAwareRepository;
+import com.discipolat.modules.tenants.enums.SubscriptionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -14,4 +17,8 @@ public interface TenantSubscriptionRepository extends TenantAwareRepository<Tena
     Optional<TenantSubscription> findByStripeSubscriptionId(String stripeSubscriptionId);
 
     Optional<TenantSubscription> findByStripeCustomerId(String stripeCustomerId);
+
+    long countByStatus(SubscriptionStatus status);
+
+    Page<TenantSubscription> findByStatus(SubscriptionStatus status, Pageable pageable);
 }

@@ -1,6 +1,7 @@
 package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.modules.tenants.enums.SubscriptionStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -40,4 +40,8 @@ public interface TenantMembershipRepository extends JpaRepository<TenantMembersh
     boolean existsByUserIdAndRoleIdAndStatus(UUID userId, UUID roleId, MembershipStatus status);
 
     List<TenantMembership> findActiveByUserId(UUID userId, MembershipStatus status);
+
+    long countByRoleId(UUID roleId);
+
+    long countByTenantId(UUID tenantId);
 }

@@ -6,7 +6,7 @@ import com.discipolat.modules.tenants.domain.SaasPlanRepository;
 import com.discipolat.modules.tenants.domain.SaasPlanService;
 import com.discipolat.modules.tenants.domain.Tenant;
 import com.discipolat.modules.tenants.domain.TenantRepository;
-import com.discipolat.modules.tenants.domain.TenantSubscription;
+import com.discipolat.modules.tenants.enums.SubscriptionStatus;
 import com.discipolat.modules.tenants.domain.TenantSubscriptionRepository;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.http.ResponseEntity;
@@ -351,7 +351,7 @@ public class ModuleFeatureController {
                 sub.get().getCurrentPeriodEnd(),
                 sub.get().getCurrentPeriodStart(),
                 sub.get().isCancelAtPeriodEnd(),
-                sub.get().getStatus() == com.discipolat.modules.tenants.domain.SubscriptionStatus.ACTIVE
+                sub.get().getStatus() == SubscriptionStatus.ACTIVE
         );
     }
 

@@ -48,7 +48,7 @@ public class AuthorizationService {
         }
 
         // Get user's memberships in this tenant
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatusList(userId, tenantId, MembershipStatus.ACTIVE);
         if (memberships.isEmpty()) {
             return false;
         }

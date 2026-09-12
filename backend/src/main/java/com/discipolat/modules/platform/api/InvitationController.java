@@ -112,8 +112,7 @@ public class InvitationController {
                     .build();
             membershipRepository.save(membership);
 
-            auditService.log(currentUserId, tenantId, "USER_INVITED_EXISTING",
-                    "USER", user.getId(), "SUCCESS", Map.of("email", email, "role", roleKey));
+            auditService.logSimple("USER_INVITED_EXISTING", "USER", user.getId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "success", true,
@@ -140,34 +139,33 @@ public class InvitationController {
                 .tenantId(tenantId)
                 .email(email.toLowerCase())
                 .role(roleKey.toUpperCase())
-                .scopeType(scopeType)
+                .scopeType(scopeType != null ? scopeType.name() : null)
                 .scopeId(scopeId != null ? scopeId : (organizationNodeId != null ? organizationNodeId : null))
                 .inviterId(currentUserId)
-                .invitationToken(token)
+                .token(token)
                 .status(InvitationStatus.PENDING)
                 .expiresAt(Instant.now().plusSeconds(7 * 24 * 3600)) // 7 days
                 .organizationNodeId(organizationNodeId)
                 .build();
         invitationRepository.save(invitation);
 
-        auditService.log(currentUserId, tenantId, "INVITATION_CREATED",
-                "INVITATION", invitation.getId(), "SUCCESS", Map.of("email", email, "role", roleKey));
+        auditService.logSimple("INVITATION_CREATED", "INVITATION", invitation.getId());
 
         // TODO: Send email with invitation link
         String invitationLink = "/auth/accept-invitation?token=" + token;
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "success", true,
-                "invitationId", invitation.getId().toString(),
-                "email", email,
-                "role", roleKey,
-                "scopeType", scopeType.name(),
-                "scopeId", scopeId != null ? scopeId.toString() : null,
-                "invitationToken", token,
-                "invitationLink", invitationLink,
-                "expiresAt", invitation.getExpiresAt().toString(),
-                "message", "Invitation créée. Envoyez le lien à l'utilisateur : " + invitationLink
-        ));
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("invitationId", invitation.getId().toString());
+        response.put("email", email);
+        response.put("role", roleKey);
+        response.put("scopeType", scopeType != null ? scopeType.name() : null);
+        response.put("scopeId", scopeId != null ? scopeId.toString() : null);
+        response.put("invitationToken", token);
+        response.put("invitationLink", invitationLink);
+        response.put("expiresAt", invitation.getExpiresAt().toString());
+        response.put("message", "Invitation créée. Envoyez le lien à l'utilisateur : " + invitationLink);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // ==================== LIST INVITATIONS ====================
@@ -201,7 +199,7 @@ public class InvitationController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<Void> cancelInvitation(@PathVariable UUID id) {
+    public ResponseEntity<?> cancelInvitation(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID currentUserId = SecurityUtils.getCurrentUserId();
 
@@ -212,14 +210,15 @@ public class InvitationController {
 
         Invitation inv = invitation.get();
         if (inv.getStatus() != InvitationStatus.PENDING) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Seules les invitations en attente peuvent être annulées"));
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("error", "Seules les invitations en attente peuvent être annulées");
+            return (ResponseEntity<Map<String, Object>>) ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMap);
         }
 
         inv.setStatus(InvitationStatus.CANCELED);
         invitationRepository.save(inv);
 
-        auditService.log(currentUserId, tenantId, "INVITATION_CANCELLED",
-                "INVITATION", id, "SUCCESS", Map.of("email", inv.getEmail()));
+        auditService.logSimple("INVITATION_CANCELLED", "INVITATION", id);
 
         return ResponseEntity.noContent().build();
     }
@@ -244,12 +243,11 @@ public class InvitationController {
 
         // Generate new token and extend expiry
         String newToken = UUID.randomUUID().toString().replace("-", "").substring(0, 32);
-        inv.setInvitationToken(newToken);
+        inv.setToken(newToken);
         inv.setExpiresAt(Instant.now().plusSeconds(7 * 24 * 3600));
         invitationRepository.save(inv);
 
-        auditService.log(currentUserId, tenantId, "INVITATION_RESENT",
-                "INVITATION", id, "SUCCESS", Map.of("email", inv.getEmail()));
+        auditService.logSimple("INVITATION_RESENT", "INVITATION", id);
 
         String invitationLink = "/auth/accept-invitation?token=" + newToken;
 
@@ -292,7 +290,7 @@ public class InvitationController {
                 "valid", true,
                 "email", inv.getEmail(),
                 "role", inv.getRole(),
-                "scopeType", inv.getScopeType() != null ? inv.getScopeType().name() : "TENANT",
+                "scopeType", inv.getScopeType() != null ? inv.getScopeType() : "TENANT",
                 "tenantName", tenant.map(Tenant::getName).orElse("Inconnu"),
                 "organizationName", orgNode.map(OrganizationNode::getName).orElse(null),
                 "expiresAt", inv.getExpiresAt().toString()
@@ -350,11 +348,13 @@ public class InvitationController {
             role = roleRepository.findByTenantIdIsNullAndKey(inv.getRole());
         }
 
+        MembershipScopeType scopeTypeEnum = inv.getScopeType() != null ? 
+        MembershipScopeType.valueOf(inv.getScopeType()) : MembershipScopeType.TENANT;
         TenantMembership membership = TenantMembership.builder()
                 .tenantId(inv.getTenantId())
                 .userId(user.getId())
                 .role(role.orElseThrow())
-                .scopeType(inv.getScopeType() != null ? inv.getScopeType() : MembershipScopeType.TENANT)
+                .scopeType(scopeTypeEnum)
                 .scopeId(inv.getScopeId())
                 .status(MembershipStatus.ACTIVE)
                 .invitedBy(inv.getInviterId())
@@ -366,8 +366,7 @@ public class InvitationController {
         inv.setAcceptedAt(Instant.now());
         invitationRepository.save(inv);
 
-        auditService.log(inv.getInviterId(), inv.getTenantId(), "INVITATION_ACCEPTED",
-                "INVITATION", inv.getId(), "SUCCESS", Map.of("email", inv.getEmail(), "userId", user.getId().toString()));
+        auditService.logSimple("INVITATION_ACCEPTED", "INVITATION", inv.getId());
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -383,20 +382,20 @@ public class InvitationController {
         Optional<OrganizationNode> orgNode = inv.getOrganizationNodeId() != null ?
                 orgNodeRepository.findById(inv.getOrganizationNodeId()) : Optional.empty();
 
-        return Map.of(
-                "id", inv.getId().toString(),
-                "email", inv.getEmail(),
-                "role", inv.getRole(),
-                "scopeType", inv.getScopeType() != null ? inv.getScopeType().name() : "TENANT",
-                "scopeId", inv.getScopeId() != null ? inv.getScopeId().toString() : null,
-                "organizationNodeId", inv.getOrganizationNodeId() != null ? inv.getOrganizationNodeId().toString() : null,
-                "organizationNodeName", orgNode.map(OrganizationNode::getName).orElse(null),
-                "status", inv.getStatus().name(),
-                "invitedBy", inv.getInviterId() != null ? inv.getInviterId().toString() : null,
-                "createdAt", inv.getCreatedAt().toString(),
-                "expiresAt", inv.getExpiresAt().toString(),
-                "acceptedAt", inv.getAcceptedAt() != null ? inv.getAcceptedAt().toString() : null,
-                "tenantName", tenant.map(Tenant::getName).orElse("Inconnu")
-        );
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", inv.getId().toString());
+        map.put("email", inv.getEmail());
+        map.put("role", inv.getRole());
+        map.put("scopeType", inv.getScopeType() != null ? inv.getScopeType() : "TENANT");
+        map.put("scopeId", inv.getScopeId() != null ? inv.getScopeId().toString() : null);
+        map.put("organizationNodeId", inv.getOrganizationNodeId() != null ? inv.getOrganizationNodeId().toString() : null);
+        map.put("organizationNodeName", orgNode.map(OrganizationNode::getName).orElse(null));
+        map.put("status", inv.getStatus().name());
+        map.put("invitedBy", inv.getInviterId() != null ? inv.getInviterId().toString() : null);
+        map.put("createdAt", inv.getCreatedAt().toString());
+        map.put("expiresAt", inv.getExpiresAt().toString());
+        map.put("acceptedAt", inv.getAcceptedAt() != null ? inv.getAcceptedAt().toString() : null);
+        map.put("tenantName", tenant.map(Tenant::getName).orElse("Inconnu"));
+        return map;
     }
 }

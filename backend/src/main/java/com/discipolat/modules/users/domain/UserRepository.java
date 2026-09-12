@@ -49,4 +49,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByTenantIdAndWhatsappOptInTrue(UUID tenantId);
 
     Optional<User> findByTenantIdAndPhone(UUID tenantId, String phone);
+
+    long countByTenantId(UUID tenantId);
+
+    long countByTenantIdAndStatut(UUID tenantId, UserStatus status);
+
+    List<User> findByTenantId(UUID tenantId);
 }
