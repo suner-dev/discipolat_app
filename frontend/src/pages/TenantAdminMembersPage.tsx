@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 
 interface Member {
@@ -18,7 +18,7 @@ interface Member {
 }
 
 export default function TenantAdminMembersPage() {
-  const { hasRole } = useAuth();
+  const { hasPermission } = useTenant();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -26,7 +26,7 @@ export default function TenantAdminMembersPage() {
   const [roleFilter, setRoleFilter] = useState("");
 
   useEffect(() => {
-    if (!hasRole("TENANT_OWNER") && !hasRole("TENANT_ADMIN")) {
+    if (!hasPermission("USER_MANAGE")) {
       return;
     }
     fetchMembers();
@@ -49,11 +49,6 @@ export default function TenantAdminMembersPage() {
     }
   };
 
-  const hasAccess = hasRole("TENANT_OWNER") || hasRole("TENANT_ADMIN");
-  if (!hasAccess) {
-    return <div className="p-8 text-center">Acces non autorise</div>;
-  }
-
   if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
   }
@@ -62,7 +57,10 @@ export default function TenantAdminMembersPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Membres</h1>
-        <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+        <button 
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          disabled={!hasPermission("USER_INVITE")}
+        >
           + Inviter un membre
         </button>
       </div>
@@ -80,11 +78,11 @@ export default function TenantAdminMembersPage() {
           onChange={(e) => setRoleFilter(e.target.value)}
           className="px-4 py-2 border rounded-lg"
         >
-          <option value="">Tous les roles</option>
-          <option value="TENANT_OWNER">Proprietaire</option>
+          <option value="">Tous les rôles</option>
+          <option value="TENANT_OWNER">Propriétaire</option>
           <option value="TENANT_ADMIN">Administrateur</option>
           <option value="ADMIN">Admin</option>
-          <option value="PASTEUR">Pastor</option>
+          <option value="PASTEUR">Pasteur</option>
           <option value="RESPONSABLE">Responsable</option>
           <option value="CHEF_DE_FAMILLE">Chef de famille</option>
           <option value="FAISEUR">Faiseur</option>
@@ -98,7 +96,7 @@ export default function TenantAdminMembersPage() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rôle</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date d'ajout</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -138,7 +136,10 @@ export default function TenantAdminMembersPage() {
                   {new Date(member.joinedAt).toLocaleDateString("fr-FR")}
                 </td>
                 <td className="px-6 py-4">
-                  <button className="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                  <button 
+                    className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                    disabled={!hasPermission("USER_MANAGE")}
+                  >
                     Modifier
                   </button>
                 </td>
@@ -150,7 +151,7 @@ export default function TenantAdminMembersPage() {
 
       {members.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500">Aucun membre trouve</p>
+          <p className="text-gray-500">Aucun membre trouvé</p>
         </div>
       )}
 
@@ -161,7 +162,7 @@ export default function TenantAdminMembersPage() {
             disabled={page === 0}
             className="px-4 py-2 border rounded-lg disabled:opacity-50"
           >
-            Precedent
+            Précédent
           </button>
           <span className="px-4">Page {page + 1}</span>
           <button

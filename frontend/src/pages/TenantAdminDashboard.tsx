@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 
 interface TenantDashboard {
@@ -11,19 +11,27 @@ interface TenantDashboard {
   membersByRole: Record<string, number>;
   churchCount: number;
   departmentCount: number;
+  subChurchCount: number;
+  campusCount: number;
+  groupCount: number;
+  subscription?: {
+    planKey: string;
+    status: string;
+    currentPeriodEnd: string;
+  };
 }
 
 export default function TenantAdminDashboard() {
-  const { hasRole, user } = useAuth();
+  const { hasPermission, hasRole, currentTenant } = useTenant();
   const [dashboard, setDashboard] = useState<TenantDashboard | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasRole("TENANT_OWNER") && !hasRole("TENANT_ADMIN")) {
+    if (!hasPermission("TENANT_SETTINGS_READ")) {
       return;
     }
     fetchDashboard();
-  }, [hasRole]);
+  }, [hasPermission]);
 
   const fetchDashboard = async () => {
     try {
@@ -36,9 +44,9 @@ export default function TenantAdminDashboard() {
     }
   };
 
-  const hasAccess = hasRole("TENANT_OWNER") || hasRole("TENANT_ADMIN");
+  const hasAccess = hasPermission("TENANT_SETTINGS_READ");
   if (!hasAccess) {
-    return <div className="p-8 text-center">Acces non autorise</div>;
+    return <div className="p-8 text-center">Accès non autorisé</div>;
   }
 
   if (loading) {
@@ -48,7 +56,7 @@ export default function TenantAdminDashboard() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Tableau de bord - {dashboard?.tenantName}</h1>
+        <h1 className="text-2xl font-bold">Tableau de bord - {dashboard?.tenantName || currentTenant?.name}</h1>
       </div>
 
       {dashboard && (
@@ -64,17 +72,17 @@ export default function TenantAdminDashboard() {
               <p className="text-3xl font-bold mt-2">{dashboard.totalMemberships}</p>
             </div>
             <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm font-medium text-blue-700">Eglises</p>
+              <p className="text-sm font-medium text-blue-700">Églises</p>
               <p className="text-3xl font-bold mt-2">{dashboard.churchCount}</p>
             </div>
             <div className="p-6 bg-purple-50 rounded-lg border border-purple-200">
-              <p className="text-sm font-medium text-purple-700">Departements</p>
+              <p className="text-sm font-medium text-purple-700">Départements</p>
               <p className="text-3xl font-bold mt-2">{dashboard.departmentCount}</p>
             </div>
           </div>
 
           <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold mb-4">Membres par role</h3>
+            <h3 className="text-lg font-semibold mb-4">Membres par rôle</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {Object.entries(dashboard.membersByRole).map(([role, count]) => (
                 <div key={role} className="p-3 bg-gray-50 rounded-lg">

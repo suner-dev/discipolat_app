@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 
 export default function TenantAdminSettingsPage() {
-  const { hasRole } = useAuth();
+  const { hasPermission } = useTenant();
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{type: string, text: string} | null>(null);
 
   useEffect(() => {
-    if (!hasRole("TENANT_OWNER") && !hasRole("TENANT_ADMIN")) return;
+    if (!hasPermission("TENANT_SETTINGS_READ")) return;
     fetchSettings();
-  }, [hasRole]);
+  }, [hasPermission]);
 
   const fetchSettings = async () => {
     try {
@@ -27,26 +27,23 @@ export default function TenantAdminSettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasPermission("TENANT_SETTINGS_UPDATE")) return;
     setSaving(true);
     try {
       await api.put("/admin/settings", settings);
-      setMessage({ type: "success", text: "Parametres mis a jour avec succes" });
+      setMessage({ type: "success", text: "Paramètres mis à jour avec succès" });
     } catch (error: any) {
-      setMessage({ type: "error", text: error.response?.data?.error || "Erreur lors de la mise a jour" });
+      setMessage({ type: "error", text: error.response?.data?.error || "Erreur lors de la mise à jour" });
     } finally {
       setSaving(false);
     }
   };
 
-  if (!hasRole("TENANT_OWNER") && !hasRole("TENANT_ADMIN")) {
-    return <div className="p-8 text-center">Acces non autorise</div>;
-  }
-
   if (loading) return <div className="p-8 text-center">Chargement...</div>;
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Parametres</h1>
+      <h1 className="text-2xl font-bold mb-6">Paramètres</h1>
 
       {message && (
         <div className={"p-4 rounded-lg mb-6 " + (message.type === "success" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")}>
@@ -56,7 +53,7 @@ export default function TenantAdminSettingsPage() {
 
       <form onSubmit={handleSave} className="space-y-6">
         <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-lg font-semibold mb-4">Region & Langue</h2>
+          <h2 className="text-lg font-semibold mb-4">Région & Langue</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Langue</label>
@@ -65,7 +62,7 @@ export default function TenantAdminSettingsPage() {
                 onChange={(e) => setSettings({ ...settings, language: e.target.value })}
                 className="w-full px-4 py-2 border rounded-lg"
               >
-                <option value="fr">Francais</option>
+                <option value="fr">Français</option>
                 <option value="en">Anglais</option>
                 <option value="pt">Portugais</option>
                 <option value="es">Espagnol</option>
@@ -123,7 +120,7 @@ export default function TenantAdminSettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Indicatif telephone</label>
+              <label className="block text-sm font-medium mb-1">Indicatif téléphone</label>
               <input
                 type="text"
                 value={settings?.phoneCountryCode || "+237"}
@@ -136,7 +133,7 @@ export default function TenantAdminSettingsPage() {
         </div>
 
         <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-lg font-semibold mb-4">Coordonnees de l'organisation</h2>
+          <h2 className="text-lg font-semibold mb-4">Coordonnées de l'organisation</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Email</label>
@@ -148,7 +145,7 @@ export default function TenantAdminSettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Telephone</label>
+              <label className="block text-sm font-medium mb-1">Téléphone</label>
               <input
                 type="tel"
                 value={settings?.phone || ""}
@@ -171,10 +168,10 @@ export default function TenantAdminSettingsPage() {
         <div className="flex gap-4">
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || !hasPermission("TENANT_SETTINGS_UPDATE")}
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
           >
-            {saving ? "Enregistrement..." : "Enregistrer les parametres"}
+            {saving ? "Enregistrement..." : "Enregistrer les paramètres"}
           </button>
         </div>
       </form>

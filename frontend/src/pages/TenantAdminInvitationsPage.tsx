@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 
 interface Invitation {
@@ -13,7 +13,7 @@ interface Invitation {
 }
 
 export default function TenantAdminInvitationsPage() {
-  const { hasRole } = useAuth();
+  const { hasPermission } = useTenant();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -22,9 +22,9 @@ export default function TenantAdminInvitationsPage() {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    if (!hasRole("TENANT_OWNER") && !hasRole("TENANT_ADMIN")) return;
+    if (!hasPermission("USER_INVITE")) return;
     fetchInvitations();
-  }, [hasRole]);
+  }, [hasPermission]);
 
   const fetchInvitations = async () => {
     try {
@@ -64,11 +64,6 @@ export default function TenantAdminInvitationsPage() {
     }
   };
 
-  const hasAccess = hasRole("TENANT_OWNER") || hasRole("TENANT_ADMIN");
-  if (!hasAccess) {
-    return <div className="p-8 text-center">Acces non autorise</div>;
-  }
-
   if (loading) return <div className="p-8 text-center">Chargement...</div>;
 
   const pendingCount = invitations.filter(i => i.status === "PENDING").length;
@@ -80,7 +75,8 @@ export default function TenantAdminInvitationsPage() {
         <h1 className="text-2xl font-bold">Invitations</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          disabled={!hasPermission("USER_INVITE")}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
         >
           + Nouvelle invitation
         </button>
@@ -89,13 +85,13 @@ export default function TenantAdminInvitationsPage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard label="Total" value={invitations.length} color="indigo" />
         <StatCard label="En attente" value={pendingCount} color="yellow" />
-        <StatCard label="Acceptes" value={acceptedCount} color="green" />
+        <StatCard label="Acceptés" value={acceptedCount} color="green" />
       </div>
 
       {invitations.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg border">
           <p className="text-gray-500 mb-2">Aucune invitation</p>
-          <p className="text-sm text-gray-400">Envoyez des invitations pour ajouter des membres a votre organisation</p>
+          <p className="text-sm text-gray-400">Envoyez des invitations pour ajouter des membres à votre organisation</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -103,7 +99,7 @@ export default function TenantAdminInvitationsPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rôle</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date envoi</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiration</th>
@@ -138,7 +134,7 @@ export default function TenantAdminInvitationsPage() {
                     {new Date(inv.expiresAt).toLocaleDateString("fr-FR")}
                   </td>
                   <td className="px-6 py-4">
-                    {inv.status === "PENDING" && (
+                    {inv.status === "PENDING" && hasPermission("USER_MANAGE") && (
                       <button
                         onClick={() => cancelInvitation(inv.id)}
                         className="text-red-600 hover:text-red-900 text-sm font-medium"
@@ -171,17 +167,17 @@ export default function TenantAdminInvitationsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Role</label>
+                <label className="block text-sm font-medium mb-1">Rôle</label>
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg"
                   required
                 >
-                  <option value="">Selectionnez un role</option>
-                  <option value="TENANT_OWNER">Proprietaire</option>
+                  <option value="">Sélectionnez un rôle</option>
+                  <option value="TENANT_OWNER">Propriétaire</option>
                   <option value="TENANT_ADMIN">Administrateur</option>
-                  <option value="CHURCH_ADMIN">Admin Eglise</option>
+                  <option value="CHURCH_ADMIN">Admin Église</option>
                   <option value="RESPONSABLE">Responsable</option>
                   <option value="CHEF_DE_FAMILLE">Chef de famille</option>
                   <option value="FAISEUR">Faiseur</option>

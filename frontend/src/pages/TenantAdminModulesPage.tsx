@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 
 interface ModuleInfo {
@@ -9,16 +9,16 @@ interface ModuleInfo {
 }
 
 export default function TenantAdminModulesPage() {
-  const { hasRole } = useAuth();
+  const { hasPermission } = useTenant();
   const [modules, setModules] = useState<ModuleInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{type: string, text: string} | null>(null);
 
   useEffect(() => {
-    if (!hasRole("TENANT_OWNER") && !hasRole("TENANT_ADMIN")) return;
+    if (!hasPermission("MODULES_READ")) return;
     fetchModules();
-  }, [hasRole, message]);
+  }, [hasPermission]);
 
   const fetchModules = async () => {
     try {
@@ -37,10 +37,11 @@ export default function TenantAdminModulesPage() {
   };
 
   const toggleModule = async (key: string, enabled: boolean) => {
+    if (!hasPermission("MODULES_TOGGLE")) return;
     setSaving(true);
     try {
       await api.put(`/admin/modules/${key}`, { enabled });
-      setMessage({ type: "success", text: enabled ? "Module active" : "Module desactive" });
+      setMessage({ type: "success", text: enabled ? "Module activé" : "Module désactivé" });
       fetchModules();
     } catch (error) {
       setMessage({ type: "error", text: "Erreur lors de la modification" });
@@ -53,20 +54,15 @@ export default function TenantAdminModulesPage() {
   const formatModuleLabel = (key: string) => {
     return key
       .replace(/_/g, " ")
-      .replace(/\w/g, l => l.toUpperCase());
+      .replace(/\b\w/g, l => l.toUpperCase());
   };
-
-  const hasAccess = hasRole("TENANT_OWNER") || hasRole("TENANT_ADMIN");
-  if (!hasAccess) {
-    return <div className="p-8 text-center">Acces non autorise</div>;
-  }
 
   if (loading) return <div className="p-8 text-center">Chargement...</div>;
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Modules et Fonctionnalites</h1>
+        <h1 className="text-2xl font-bold">Modules et Fonctionnalités</h1>
         <button
           onClick={() => fetchModules() }
           className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
@@ -93,15 +89,15 @@ export default function TenantAdminModulesPage() {
               <div className="flex-1">
                 <h3 className="font-medium">{mod.label}</h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  {mod.enabled ? "Active" : "Desactive"}
+                  {mod.enabled ? "Activé" : "Désactivé"}
                 </p>
               </div>
               <button
                 onClick={() => toggleModule(mod.key, !mod.enabled)}
-                disabled={saving}
+                disabled={saving || !hasPermission("MODULES_TOGGLE")}
                 className={"relative w-11 h-6 rounded-full " +
                   (mod.enabled ? "bg-indigo-600" : "bg-gray-300") +
-                  " transition-colors"
+                  " transition-colors disabled:opacity-50"
                 }
               >
                 <span className={"absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow " +

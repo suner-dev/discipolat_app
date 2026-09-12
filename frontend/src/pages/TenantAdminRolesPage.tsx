@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 
 interface Role {
@@ -13,15 +13,15 @@ interface Role {
 }
 
 export default function TenantAdminRolesPage() {
-  const { hasRole } = useAuth();
+  const { hasPermission } = useTenant();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"list" | "permissions">("list");
 
   useEffect(() => {
-    if (!hasRole("TENANT_OWNER") && !hasRole("TENANT_ADMIN")) return;
+    if (!hasPermission("ROLE_READ")) return;
     fetchRoles();
-  }, [hasRole]);
+  }, [hasPermission]);
 
   const fetchRoles = async () => {
     try {
@@ -34,11 +34,6 @@ export default function TenantAdminRolesPage() {
     }
   };
 
-  const hasAccess = hasRole("TENANT_OWNER") || hasRole("TENANT_ADMIN");
-  if (!hasAccess) {
-    return <div className="p-8 text-center">Acces non autorise</div>;
-  }
-
   if (loading) return <div className="p-8 text-center">Chargement...</div>;
 
   const systemRoles = roles.filter(r => r.isSystem);
@@ -47,22 +42,19 @@ export default function TenantAdminRolesPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Roles et Permissions</h1>
-      </div>
-
-      <div className="flex gap-4 mb-6">
+        <h1 className="text-2xl font-bold">Rôles et Permissions</h1>
         <button
-          onClick={() => setActiveTab("list")}
-          className={`px-4 py-2 rounded-lg ${activeTab === "list" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700"}`}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          disabled={!hasPermission("ROLE_CREATE")}
         >
-          Liste des roles ({roles.length})
+          + Créer un rôle
         </button>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Roles systeme (non modifiables)</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Rôles système (non modifiables)</h2>
         {systemRoles.length === 0 ? (
-          <p className="text-gray-500 text-sm">Aucun role systeme</p>
+          <p className="text-gray-500 text-sm">Aucun rôle système</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {systemRoles.map((role) => (
@@ -71,11 +63,11 @@ export default function TenantAdminRolesPage() {
           </div>
         )}
 
-        <h2 className="text-lg font-semibold text-gray-900 mt-6">Roles personnalises</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mt-6">Rôles personnalisés</h2>
         {customRoles.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg border">
-            <p className="text-gray-500 mb-2">Aucun role personnalise cree</p>
-            <p className="text-sm text-gray-400">Vous pouvez creer des roles sur mesure pour votre organisation</p>
+            <p className="text-gray-500 mb-2">Aucun rôle personnalisé créé</p>
+            <p className="text-sm text-gray-400">Vous pouvez créer des rôles sur mesure pour votre organisation</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

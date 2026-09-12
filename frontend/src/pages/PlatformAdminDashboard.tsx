@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 import type { UserRole } from "@/types";
 
@@ -37,7 +37,7 @@ interface Tenant {
 }
 
 export default function PlatformAdminDashboard() {
-  const { hasRole } = useAuth();
+  const { hasPermission } = useTenant();
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -45,11 +45,11 @@ export default function PlatformAdminDashboard() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "tenants" | "plans">("dashboard");
 
   useEffect(() => {
-    if (!hasRole("PLATFORM_SUPER_ADMIN")) {
+    if (!hasPermission("TENANT_VIEW")) {
       return;
     }
     fetchData();
-  }, [hasRole]);
+  }, [hasPermission]);
 
   const fetchData = async () => {
     try {
@@ -68,10 +68,6 @@ export default function PlatformAdminDashboard() {
       setLoading(false);
     }
   };
-
-  if (!hasRole("PLATFORM_SUPER_ADMIN")) {
-    return <div className="p-8 text-center">Acces non autorise</div>;
-  }
 
   if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
@@ -127,7 +123,7 @@ export default function PlatformAdminDashboard() {
           <MetricCard
             title="Tenants Suspendus"
             value={metrics.suspendedTenants}
-            subtitle="A surveiller"
+            subtitle="À surveiller"
             variant="red"
           />
         </div>
@@ -221,11 +217,11 @@ export default function PlatformAdminDashboard() {
                 <ul className="space-y-2 mb-4">
                   <li className="flex justify-between">
                     <span>Utilisateurs max</span>
-                    <span className="font-medium">{plan.usersLimit === 0 ? "Illimite" : plan.usersLimit}</span>
+                    <span className="font-medium">{plan.usersLimit === 0 ? "Illimité" : plan.usersLimit}</span>
                   </li>
                   <li className="flex justify-between">
                     <span>Eglises max</span>
-                    <span className="font-medium">{plan.churchesLimit === 0 ? "Illimite" : plan.churchesLimit}</span>
+                    <span className="font-medium">{plan.churchesLimit === 0 ? "Illimité" : plan.churchesLimit}</span>
                   </li>
                 </ul>
                 <div className="flex gap-2">
@@ -233,7 +229,7 @@ export default function PlatformAdminDashboard() {
                     Editer
                   </button>
                   <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
-                    Desactiver
+                    Désactiver
                   </button>
                 </div>
               </div>

@@ -1,20 +1,18 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 
 export default function TenantAdminBrandingPage() {
-  const { hasRole } = useAuth();
+  const { hasPermission } = useTenant();
   const [branding, setBranding] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{type: string, text: string} | null>(null);
 
   useEffect(() => {
-    if (!hasRole("TENANT_OWNER") && !hasRole("TENANT_ADMIN")) {
-      return;
-    }
+    if (!hasPermission("BRANDING_READ")) return;
     fetchBranding();
-  }, [hasRole]);
+  }, [hasPermission]);
 
   const fetchBranding = async () => {
     try {
@@ -29,20 +27,17 @@ export default function TenantAdminBrandingPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasPermission("BRANDING_UPDATE")) return;
     setSaving(true);
     try {
       await api.put("/admin/branding", branding);
-      setMessage({ type: "success", text: "Branding mis a jour avec succes" });
+      setMessage({ type: "success", text: "Branding mis à jour avec succès" });
     } catch (error) {
-      setMessage({ type: "error", text: "Erreur lors de la mise a jour" });
+      setMessage({ type: "error", text: "Erreur lors de la mise à jour" });
     } finally {
       setSaving(false);
     }
   };
-
-  if (!hasRole("TENANT_OWNER") && !hasRole("TENANT_ADMIN")) {
-    return <div className="p-8 text-center">Acces non autorise</div>;
-  }
 
   if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
@@ -93,10 +88,10 @@ export default function TenantAdminBrandingPage() {
         </div>
 
         <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-lg font-semibold mb-4">Logo & Identite</h2>
+          <h2 className="text-lg font-semibold mb-4">Logo & Identité</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Nom de l'eglise / organisation</label>
+              <label className="block text-sm font-medium mb-1">Nom de l'église / organisation</label>
               <input
                 type="text"
                 value={branding?.churchName || ""}
@@ -135,7 +130,7 @@ export default function TenantAdminBrandingPage() {
         </div>
 
         <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-lg font-semibold mb-4">Coordonnees</h2>
+          <h2 className="text-lg font-semibold mb-4">Coordonnées</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Adresse</label>
@@ -147,7 +142,7 @@ export default function TenantAdminBrandingPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Telephone</label>
+              <label className="block text-sm font-medium mb-1">Téléphone</label>
               <input
                 type="tel"
                 value={branding?.phone || ""}
@@ -179,7 +174,7 @@ export default function TenantAdminBrandingPage() {
         <div className="flex gap-4">
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || !hasPermission("BRANDING_UPDATE")}
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
           >
             {saving ? "Enregistrement..." : "Enregistrer le branding"}
