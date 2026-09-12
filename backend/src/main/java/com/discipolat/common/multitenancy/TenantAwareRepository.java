@@ -24,8 +24,6 @@ public interface TenantAwareRepository<T, ID> extends JpaRepository<T, ID> {
      */
     List<T> findAll();
 
-    /**
-     * Find entity by ID, ensuring it belongs to the current tenant.
-     */
-    Optional<T> findById(UUID id);
+    // findById(UUID id) is inherited from JpaRepository/CrudRepository
+    // and works with the Hibernate tenant filter automatically
 }

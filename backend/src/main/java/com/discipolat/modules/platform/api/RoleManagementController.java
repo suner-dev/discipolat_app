@@ -2,6 +2,7 @@ package com.discipolat.modules.platform.api;
 
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.*;
+import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -9,285 +10,249 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
-/**
- * Gestion des rôles et permissions (Section 21-24 du prompt)
- * RBAC + Scope complet
- */
 @RestController
 @RequestMapping("/api/v1/admin/roles")
 public class RoleManagementController {
 
-    private final RoleService roleService;
-    private final PermissionService permissionService;
-    private final TenantMembershipRepository membershipRepository;
+    private final RoleManagementService roleService;
+    private final PermissionMatrixService permMatrixService;
+    private final UserRepository userRepository;
     private final AuditService auditService;
 
-    public RoleManagementController(
-            RoleService roleService,
-            PermissionService permissionService,
-            TenantMembershipRepository membershipRepository,
-            AuditService auditService) {
+    public RoleManagementController(RoleManagementService roleService,
+                                    PermissionMatrixService permMatrixService,
+                                    UserRepository userRepository,
+                                    AuditService auditService) {
         this.roleService = roleService;
-        this.permissionService = permissionService;
-        this.membershipRepository = membershipRepository;
+        this.permMatrixService = permMatrixService;
+        this.userRepository = userRepository;
         this.auditService = auditService;
     }
 
     private UUID getCurrentTenantId() {
-        UUID tenantId = TenantContext.getTenantId();
-        if (tenantId == null) throw new SecurityException("Aucun tenant");
-        return tenantId;
+        return TenantContext.requireTenantId();
     }
 
     private UUID getCurrentUserId() {
         return TenantContext.getCurrentUserId();
     }
 
-    // ==================== LISTER LES RÔLES ====================
+    // ==================== ROLE CATALOG ====================
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<List<RoleDetailResponse>> listRoles() {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Role>> getAllRoles() {
         UUID tenantId = getCurrentTenantId();
-        List<Role> roles = roleService.getAllRolesForTenant(tenantId);
-        
-        List<RoleDetailResponse> result = new ArrayList<>();
-        for (Role role : roles) {
-            List<Permission> permissions = new ArrayList<>();
-            if (role.getPermissions() != null) {
-                permissions = new ArrayList<>(role.getPermissions());
-            }
-            
-            // Compter les utilisateurs avec ce rôle
-            long userCount = membershipRepository.countByTenantIdAndStatus(tenantId, 
-                    MembershipStatus.ACTIVE);
-            
-            result.add(new RoleDetailResponse(
-                    role.getId(),
-                    role.getTenantId(),
-                    role.getKey(),
-                    role.getLabel(),
-                    role.getDescription(),
-                    role.getSystem(),
-                    role.getPriority(),
-                    permissions.stream().map(Permission::getKey).toList(),
-                    userCount
-            ));
-        }
-
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(roleService.getAllRoles(tenantId));
     }
 
-    // ==================== CRÉER UN RÔLE ====================
+    @GetMapping("/system")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Role>> getSystemRoles() {
+        return ResponseEntity.ok(roleService.getSystemRoles());
+    }
+
+    @GetMapping("/custom")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Role>> getCustomRoles() {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(roleService.getCustomRoles(tenantId));
+    }
+
+    @GetMapping("/hierarchy")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Role>> getRoleHierarchy() {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(roleService.getRoleHierarchy(tenantId));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Role> getRole(@PathVariable UUID id) {
+        return roleService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/key/{key}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Role> getRoleByKey(@PathVariable String key) {
+        UUID tenantId = getCurrentTenantId();
+        return roleService.findByKey(tenantId, key)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/permissions")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Set<String>> getRolePermissions(@PathVariable UUID id) {
+        return ResponseEntity.ok(roleService.getRolePermissions(id));
+    }
+
+    // ==================== CREATE CUSTOM ROLE ====================
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TENANT_OWNER')")
-    public ResponseEntity<RoleDetailResponse> createRole(@RequestBody CreateRoleRequest request) {
+    @PreAuthorize("@authz.can('ROLE_CREATE', 'TENANT', null)")
+    public ResponseEntity<Role> createRole(@RequestBody RoleManagementService.CreateRoleRequest request) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
-
-        // Vérifier unicité
-        if (roleService.getRoles(tenantId).stream()
-                .anyMatch(r -> r.getKey().equalsIgnoreCase(request.key()))) {
-            throw new RuntimeException("Un rôle avec cette clé existe déjà");
-        }
-
-        Role role = roleService.createRole(tenantId, request.key(), request.label(),
-                request.description(), currentUserId);
-
-        // Assigner les permissions si fournies
-        if (request.permissionKeys() != null && !request.permissionKeys().isEmpty()) {
-            Set<UUID> permissionIds = new HashSet<>();
-            for (String permKey : request.permissionKeys()) {
-                Optional<Permission> perm = permissionService.getByKey(permKey);
-                if (perm.isPresent()) {
-                    permissionIds.add(perm.get().getId());
-                }
-            }
-            if (!permissionIds.isEmpty()) {
-                roleService.assignPermissions(role.getId(), permissionIds, currentUserId);
-            }
-        }
-
-        auditService.log(currentUserId, tenantId, "ROLE_CREATED", "TENANT",
-                role.getId(), "SUCCESS",
-                Map.of("key", request.key(), "label", request.label()),
-                null, null, null);
-
-        return ResponseEntity.status(201).body(toRoleDetailResponse(role));
+        Role role = roleService.createCustomRole(tenantId, request, currentUserId);
+        return ResponseEntity.status(201).body(role);
     }
 
-    // ==================== MODIFIER UN RÔLE ====================
+    // ==================== UPDATE ROLE ====================
 
-    @PutMapping("/{roleId}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<RoleDetailResponse> updateRole(
-            @PathVariable UUID roleId,
-            @RequestBody UpdateRoleRequest request) {
-        
+    @PutMapping("/{id}")
+    @PreAuthorize("@authz.can('ROLE_UPDATE', 'TENANT', null)")
+    public ResponseEntity<Role> updateRole(@PathVariable UUID id, @RequestBody RoleManagementService.UpdateRoleRequest request) {
         UUID currentUserId = getCurrentUserId();
-        Role role = roleService.updateRole(roleId, request.label(), request.description(),
-                request.priority(), currentUserId);
-
-        // Mettre à jour les permissions si fournies
-        if (request.permissionKeys() != null) {
-            Set<UUID> permissionIds = new HashSet<>();
-            for (String permKey : request.permissionKeys()) {
-                Optional<Permission> perm = permissionService.getByKey(permKey);
-                if (perm.isPresent()) {
-                    permissionIds.add(perm.get().getId());
-                }
-            }
-            roleService.assignPermissions(roleId, permissionIds, currentUserId);
-        }
-
-        auditService.log(currentUserId, role.getTenantId(), "ROLE_UPDATED", "TENANT",
-                roleId, "SUCCESS",
-                Map.of("key", role.getKey()),
-                null, null, null);
-
-        return ResponseEntity.ok(toRoleDetailResponse(role));
+        Role role = roleService.updateRole(id, request, currentUserId);
+        return ResponseEntity.ok(role);
     }
 
-    // ==================== SUPPRIMER UN RÔLE ====================
+    // ==================== MANAGE ROLE PERMISSIONS ====================
 
-    @DeleteMapping("/{roleId}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER')")
-    public ResponseEntity<Void> deleteRole(@PathVariable UUID roleId) {
+    @PutMapping("/{id}/permissions")
+    @PreAuthorize("@authz.can('PERMISSION_ASSIGN', 'TENANT', null)")
+    public ResponseEntity<Role> assignPermissions(@PathVariable UUID id, @RequestBody Map<String, List<String>> req) {
         UUID currentUserId = getCurrentUserId();
-        UUID tenantId = getCurrentTenantId();
+        List<String> permissionKeys = req.get("permissionKeys");
+        Role role = roleService.assignPermissions(id, permissionKeys, currentUserId);
+        return ResponseEntity.ok(role);
+    }
 
-        roleService.deleteRole(roleId, currentUserId);
+    @PostMapping("/{id}/permissions")
+    @PreAuthorize("@authz.can('PERMISSION_ASSIGN', 'TENANT', null)")
+    public ResponseEntity<Role> addPermission(@PathVariable UUID id, @RequestBody Map<String, String> req) {
+        UUID currentUserId = getCurrentUserId();
+        String permissionKey = req.get("permissionKey");
+        Role role = roleService.addPermission(id, permissionKey, currentUserId);
+        return ResponseEntity.ok(role);
+    }
 
-        auditService.log(currentUserId, tenantId, "ROLE_DELETED", "TENANT",
-                roleId, "SUCCESS", Map.of(), null, null, null);
+    @DeleteMapping("/{id}/permissions/{permissionKey}")
+    @PreAuthorize("@authz.can('PERMISSION_ASSIGN', 'TENANT', null)")
+    public ResponseEntity<Role> removePermission(@PathVariable UUID id, @PathVariable String permissionKey) {
+        UUID currentUserId = getCurrentUserId();
+        Role role = roleService.removePermission(id, permissionKey, currentUserId);
+        return ResponseEntity.ok(role);
+    }
 
+    // ==================== DELETE CUSTOM ROLE ====================
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.can('ROLE_DELETE', 'TENANT', null)")
+    public ResponseEntity<Void> deleteRole(@PathVariable UUID id) {
+        UUID currentUserId = getCurrentUserId();
+        roleService.deleteRole(id, currentUserId);
         return ResponseEntity.noContent().build();
     }
 
-    // ==================== LISTER LES PERMISSIONS ====================
+    // ==================== VALIDATION ====================
+
+    @GetMapping("/{id}/validate")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<RoleManagementService.ValidationResult> validateRole(@PathVariable UUID id) {
+        return ResponseEntity.ok(roleService.validateRolePermissions(id));
+    }
+
+    // ==================== ROLE ASSIGNMENT TO USERS ====================
+
+    @PostMapping("/assign")
+    @PreAuthorize("@authz.can('USER_MANAGE', 'TENANT', null)")
+    public ResponseEntity<TenantMembership> assignRoleToUser(@RequestBody Map<String, Object> req) {
+        UUID tenantId = getCurrentTenantId();
+        UUID currentUserId = getCurrentUserId();
+        UUID userId = UUID.fromString((String) req.get("userId"));
+        UUID roleId = UUID.fromString((String) req.get("roleId"));
+        UUID scopeId = req.get("scopeId") != null ? UUID.fromString((String) req.get("scopeId")) : null;
+
+        TenantMembership membership = roleService.assignRoleToUser(userId, tenantId, roleId, scopeId, currentUserId);
+        return ResponseEntity.status(201).body(membership);
+    }
+
+    // ==================== PERMISSION CATALOG ====================
 
     @GetMapping("/permissions")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<PermissionResponse>> listPermissions(
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) PermissionScope scope) {
-        
-        UUID tenantId = getCurrentTenantId();
-        List<Permission> permissions;
-
-        if (scope != null) {
-            permissions = permissionService.getPermissionsByScope(scope);
-        } else if (category != null) {
-            permissions = permissionService.getPermissionsByCategory(category);
-        } else {
-            permissions = permissionService.getTenantPermissions(tenantId);
-        }
-
-        List<PermissionResponse> result = permissions.stream()
-                .map(p -> new PermissionResponse(
-                        p.getId(),
-                        p.getKey(),
-                        p.getLabel(),
-                        p.getDescription(),
-                        p.getScope(),
-                        p.getCategory(),
-                        p.getSystem(),
-                        p.getTenantId()
-                )).toList();
-
-        return ResponseEntity.ok(result);
+    public ResponseEntity<List<Permission>> getAllPermissions() {
+        return ResponseEntity.ok(roleService.getAllPermissions());
     }
 
-    // ==================== CRÉER UNE PERMISSION ====================
-
-    @PostMapping("/permissions")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER')")
-    public ResponseEntity<PermissionResponse> createPermission(@RequestBody CreatePermissionRequest request) {
-        UUID tenantId = getCurrentTenantId();
-        UUID currentUserId = getCurrentUserId();
-
-        Permission permission = permissionService.createPermission(
-                tenantId,
-                request.key(),
-                request.label(),
-                request.description(),
-                request.scope(),
-                request.category(),
-                currentUserId
-        );
-
-        auditService.log(currentUserId, tenantId, "PERMISSION_CREATED", "TENANT",
-                permission.getId(), "SUCCESS",
-                Map.of("key", request.key(), "scope", request.scope().name()),
-                null, null, null);
-
-        return ResponseEntity.status(201).body(new PermissionResponse(
-                permission.getId(),
-                permission.getKey(),
-                permission.getLabel(),
-                permission.getDescription(),
-                permission.getScope(),
-                permission.getCategory(),
-                permission.getSystem(),
-                permission.getTenantId()
-        ));
+    @GetMapping("/permissions/category/{category}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Permission>> getPermissionsByCategory(@PathVariable String category) {
+        return ResponseEntity.ok(roleService.getPermissionsByCategory(category));
     }
 
-    // ==================== LISTER LES RÔLES PAR UTILISATEUR ====================
-
-    @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<UserRolesResponse> getRolesForUser(@PathVariable UUID userId) {
-        UUID tenantId = getCurrentTenantId();
-
-        List<TenantMembership> memberships = membershipRepository
-                .findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
-
-        List<RoleInfo> roles = new ArrayList<>();
-        for (TenantMembership m : memberships) {
-            if (m.getTenantId().equals(tenantId)) {
-                Optional<Role> role = roleService.getRoles(tenantId).stream()
-                        .filter(r -> r.getKey().equals(m.getRole()))
-                        .findFirst();
-                
-                roles.add(new RoleInfo(
-                        m.getRole(),
-                        m.getStatus().name(),
-                        role.flatMap(r -> Optional.of(r.getLabel())).orElse(m.getRole()),
-                        m.getJoinedAt()
-                ));
-            }
-        }
-
-        return ResponseEntity.ok(new UserRolesResponse(userId, roles));
+    @GetMapping("/permissions/scope/{scope}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Permission>> getPermissionsByScope(@PathVariable PermissionScope scope) {
+        return ResponseEntity.ok(roleService.getPermissionsByScope(scope));
     }
 
-    // ==================== DTOs ====================
+    @GetMapping("/permissions/grouped/category")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, List<Permission>>> getPermissionsGroupedByCategory() {
+        return ResponseEntity.ok(roleService.getPermissionsGroupedByCategory());
+    }
 
-    public record RoleDetailResponse(
-            UUID id, UUID tenantId, String key, String label, String description,
-            boolean isSystem, int priority, List<String> permissionKeys, long userCount
-    ) {}
+    @GetMapping("/permissions/grouped/scope")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<PermissionScope, List<Permission>>> getPermissionsGroupedByScope() {
+        return ResponseEntity.ok(roleService.getPermissionsGroupedByScope());
+    }
 
-    public record PermissionResponse(
-            UUID id, String key, String label, String description,
-            PermissionScope scope, String category, boolean isSystem, UUID tenantId
-    ) {}
+    // ==================== PERMISSION MATRIX ====================
 
-    public record UserRolesResponse(UUID userId, List<RoleInfo> roles) {}
-    public record RoleInfo(String role, String status, String label, java.time.Instant joinedAt) {}
+    @GetMapping("/matrix")
+    @PreAuthorize("@authz.can('PERMISSION_READ', 'TENANT', null)")
+    public ResponseEntity<PermissionMatrixService.PermissionMatrix> getFullMatrix() {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(permMatrixService.getFullMatrix(tenantId));
+    }
 
-    public record CreateRoleRequest(
-            String key, String label, String description, List<String> permissionKeys
-    ) {}
+    @GetMapping("/matrix/scope/{scope}")
+    @PreAuthorize("@authz.can('PERMISSION_READ', 'TENANT', null)")
+    public ResponseEntity<PermissionMatrixService.PermissionMatrix> getMatrixByScope(@PathVariable PermissionScope scope) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(permMatrixService.getMatrixForScope(tenantId, scope));
+    }
 
-    public record UpdateRoleRequest(
-            String label, String description, Integer priority, List<String> permissionKeys
-    ) {}
+    @GetMapping("/matrix/user/{userId}")
+    @PreAuthorize("@authz.can('USER_MANAGE', 'TENANT', null)")
+    public ResponseEntity<PermissionMatrixService.UserPermissionMatrix> getUserMatrix(@PathVariable UUID userId) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(permMatrixService.getUserEffectivePermissions(userId, tenantId));
+    }
 
-    public record CreatePermissionRequest(
-            String key, String label, String description,
-            PermissionScope scope, String category
-    ) {}
+    @GetMapping("/matrix/users")
+    @PreAuthorize("@authz.can('USER_MANAGE', 'TENANT', null)")
+    public ResponseEntity<List<PermissionMatrixService.UserPermissionSummary>> getAllUsersMatrix() {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(permMatrixService.getAllUsersPermissions(tenantId));
+    }
+
+    @GetMapping("/matrix/node/{nodeId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PermissionMatrixService.NodePermissionView> getNodeMatrix(@PathVariable UUID nodeId) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(permMatrixService.getNodePermissions(tenantId, nodeId));
+    }
+
+    @GetMapping("/matrix/check")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Boolean> checkPermission(@RequestParam UUID userId, @RequestParam String permissionKey, @RequestParam(required = false) UUID nodeId) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(permMatrixService.userHasPermission(userId, tenantId, permissionKey, nodeId));
+    }
+
+    // ==================== AUDIT REPORT ====================
+
+    @GetMapping("/audit")
+    @PreAuthorize("@authz.can('AUDIT_READ', 'TENANT', null)")
+    public ResponseEntity<PermissionMatrixService.PermissionAuditReport> getAuditReport() {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(permMatrixService.generateAuditReport(tenantId));
+    }
 }

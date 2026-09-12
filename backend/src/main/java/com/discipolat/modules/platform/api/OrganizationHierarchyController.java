@@ -8,26 +8,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.*;
 
-/**
- * API de gestion de la hiérarchie organisationnelle :
- * Églises, Campus, Sous-églises, Assemblées, Départements, Groupes
- */
 @RestController
 @RequestMapping("/api/v1/org")
 public class OrganizationHierarchyController {
 
-    private final OrganizationNodeService orgNodeService;
+    private final OrganizationHierarchyService hierarchyService;
     private final UserRepository userRepository;
     private final AuditService auditService;
 
     public OrganizationHierarchyController(
-            OrganizationNodeService orgNodeService,
+            OrganizationHierarchyService hierarchyService,
             UserRepository userRepository,
             AuditService auditService) {
-        this.orgNodeService = orgNodeService;
+        this.hierarchyService = hierarchyService;
         this.userRepository = userRepository;
         this.auditService = auditService;
     }
@@ -40,356 +35,223 @@ public class OrganizationHierarchyController {
         return TenantContext.getCurrentUserId();
     }
 
-    // ==================== ARBRE COMPLET ====================
+    // ==================== TREE VIEWS ====================
 
     @GetMapping("/tree")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<OrganizationTree> getTree() {
+    public ResponseEntity<OrganizationHierarchyService.OrganizationTreeView> getTree() {
         UUID tenantId = getCurrentTenantId();
-        Optional<OrganizationNode> root = orgNodeService.findRootByTenantId(tenantId);
-        
-        if (root.isEmpty()) {
-            return ResponseEntity.ok(new OrganizationTree(null, Collections.emptyList(), Collections.emptyMap()));
-        }
-
-        List<OrganizationNode> allNodes = orgNodeService.findByTenantId(tenantId);
-        Map<UUID, List<OrganizationNode>> childrenByParent = new HashMap<>();
-        
-        allNodes.forEach(node -> {
-            if (node.getParentId() != null) {
-                childrenByParent.computeIfAbsent(node.getParentId(), k -> new ArrayList<>()).add(node);
-            }
-        });
-
-        return ResponseEntity.ok(new OrganizationTree(
-                root.get(),
-                allNodes,
-                childrenByParent
-        ));
+        return ResponseEntity.ok(hierarchyService.getTreeView(tenantId));
     }
 
-    // ==================== NOEUDS PAR TYPE ====================
-
-    @GetMapping("/nodes/{type}")
+    @GetMapping("/tree/flat")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<OrganizationNodeView>> getNodesByType(
-            @PathVariable OrganizationNodeType type) {
+    public ResponseEntity<List<OrganizationNode>> getFlatTree() {
         UUID tenantId = getCurrentTenantId();
-        List<OrganizationNode> nodes = orgNodeService.findByTenantIdAndType(tenantId, type);
-        
-        return ResponseEntity.ok(nodes.stream().map(this::toNodeView).toList());
+        return ResponseEntity.ok(hierarchyService.getTree(tenantId));
     }
 
-    // ==================== DÉTAILS D'UN NOEUD ====================
+    @GetMapping("/root")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<OrganizationNode> getRoot() {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.getRoot(tenantId).orElse(null));
+    }
+
+    // ==================== NODES BY TYPE ====================
+
+    @GetMapping("/nodes/type/{type}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<OrganizationNode>> getNodesByType(@PathVariable OrganizationNodeType type) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.getByType(tenantId, type));
+    }
+
+    @GetMapping("/nodes/parent/{parentId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<OrganizationNode>> getChildren(@PathVariable UUID parentId) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.getChildren(tenantId, parentId));
+    }
+
+    // ==================== NODE DETAILS ====================
 
     @GetMapping("/nodes/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<NodeDetails> getNode(@PathVariable UUID id) {
-        OrganizationNode node = orgNodeService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Noeud non trouvé"));
-        
-        List<OrganizationNode> children = orgNodeService.findByParentId(id);
-        List<OrganizationNode> descendants = orgNodeService.findDescendants(
-                getCurrentTenantId(), node.getPath());
-        
-        // Charger les informations du responsable
-        Optional<com.discipolat.modules.users.domain.User> responsible = Optional.empty();
-        if (node.getResponsibleId() != null) {
-            responsible = userRepository.findById(node.getResponsibleId());
-        }
-
-        return ResponseEntity.ok(new NodeDetails(
-                node,
-                children,
-                descendants.size(),
-                responsible.map(u -> new NodeResponsibleInfo(
-                        u.getId(), u.getFirstName() + " " + u.getLastName(), u.getEmail()
-                )).orElse(null)
-        ));
+    public ResponseEntity<OrganizationHierarchyService.NodeDetails> getNode(@PathVariable UUID id) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.getNodeDetails(tenantId, id));
     }
 
-    // ==================== CRÉER UN NOEUD ====================
+    @GetMapping("/nodes/{id}/descendants")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<OrganizationNode>> getDescendants(@PathVariable UUID id) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.getDescendants(tenantId, id));
+    }
+
+    @GetMapping("/nodes/{id}/ancestors")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<OrganizationNode>> getAncestors(@PathVariable UUID id) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.getAncestors(tenantId, id));
+    }
+
+    @GetMapping("/nodes/{id}/siblings")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<OrganizationNode>> getSiblings(@PathVariable UUID id) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.getSiblings(tenantId, id));
+    }
+
+    @GetMapping("/nodes/{id}/effective-config")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getEffectiveConfig(@PathVariable UUID id) {
+        return ResponseEntity.ok(hierarchyService.getEffectiveConfig(id));
+    }
+
+    @GetMapping("/nodes/{id}/members")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<TenantMembership>> getMembersWithAccess(@PathVariable UUID id) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.getMembersWithAccess(tenantId, id));
+    }
+
+    // ==================== CREATE NODE ====================
 
     @PostMapping("/nodes")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'ADMIN', 'PASTEUR')")
-    public ResponseEntity<OrganizationNodeView> createNode(@RequestBody CreateNodeRequest request) {
+    @PreAuthorize("@authz.can('ORG_NODE_CREATE', 'TENANT', null)")
+    public ResponseEntity<OrganizationNode> createNode(@RequestBody OrganizationHierarchyService.CreateNodeRequest request) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
-
-        // Vérifier le parent si fourni
-        OrganizationNode parent = null;
-        String pathPrefix = "" + tenantId + ":";
-        
-        if (request.parentId() != null) {
-            parent = orgNodeService.findById(request.parentId())
-                    .orElseThrow(() -> new RuntimeException("Parent non trouvé"));
-            pathPrefix = parent.getPath();
-        }
-
-        // Générer un code unique
-        String code = generateUniqueCode(request.type());
-        String path = pathPrefix + code + ":";
-
-        OrganizationNode node = OrganizationNode.builder()
-                .tenantId(tenantId)
-                .parentId(request.parentId())
-                .name(request.name())
-                .type(request.type())
-                .code(code)
-                .path(path)
-                .status(OrganizationNodeStatus.ACTIVE)
-                .responsibleId(request.responsibleId())
-                .build();
-
-        node = orgNodeService.save(node);
-
-        auditService.log(currentUserId, tenantId, "ORG_NODE_CREATED", "ORGANIZATION",
-                node.getId(), "SUCCESS",
-                Map.of("name", request.name(), "type", request.type().name(),
-                        "parentId", request.parentId() != null ? request.parentId().toString() : "ROOT"),
-                null, null, null);
-
-        return ResponseEntity.status(201).body(toNodeView(node));
+        OrganizationNode node = hierarchyService.createNode(tenantId, request, currentUserId);
+        return ResponseEntity.status(201).body(node);
     }
 
-    // ==================== METTRE À JOUR UN NOEUD ====================
+    @PostMapping("/root-church")
+    @PreAuthorize("@authz.can('CHURCH_CREATE', 'TENANT', null)")
+    public ResponseEntity<OrganizationNode> createRootChurch(@RequestBody Map<String, String> request) {
+        UUID tenantId = getCurrentTenantId();
+        UUID currentUserId = getCurrentUserId();
+        String name = request.get("name");
+        String code = request.get("code");
+        OrganizationNode node = hierarchyService.createRootChurch(tenantId, name, code, currentUserId);
+        return ResponseEntity.status(201).body(node);
+    }
+
+    // ==================== UPDATE NODE ====================
 
     @PutMapping("/nodes/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'ADMIN', 'PASTEUR')")
-    public ResponseEntity<OrganizationNodeView> updateNode(
-            @PathVariable UUID id,
-            @RequestBody UpdateNodeRequest request) {
-        
-        OrganizationNode node = orgNodeService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Noeud non trouvé"));
-        
-        UUID tenantId = getCurrentTenantId();
+    @PreAuthorize("@authz.can('ORG_NODE_UPDATE', 'TENANT', #id)")
+    public ResponseEntity<OrganizationNode> updateNode(@PathVariable UUID id, @RequestBody OrganizationHierarchyService.UpdateNodeRequest request) {
         UUID currentUserId = getCurrentUserId();
-
-        if (!node.getTenantId().equals(tenantId)) {
-            throw new SecurityException("Noeud ne appartient pas à ce tenant");
-        }
-
-        if (request.name() != null) node.setName(request.name());
-        if (request.type() != null) node.setType(request.type());
-        if (request.status() != null) node.setStatus(request.status());
-        if (request.responsibleId() != null) node.setResponsibleId(request.responsibleId());
-
-        node = orgNodeService.save(node);
-
-        auditService.log(currentUserId, tenantId, "ORG_NODE_UPDATED", "ORGANIZATION",
-                node.getId(), "SUCCESS",
-                Map.of("name", request.name() != null ? request.name() : node.getName()),
-                null, null, null);
-
-        return ResponseEntity.ok(toNodeView(node));
+        OrganizationNode node = hierarchyService.updateNode(id, request, currentUserId);
+        return ResponseEntity.ok(node);
     }
 
-    // ==================== DÉPLACER UN NOEUD ====================
+    // ==================== MOVE NODE ====================
 
     @PostMapping("/nodes/{id}/move")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<OrganizationNodeView> moveNode(
-            @PathVariable UUID id,
-            @RequestBody Map<String, UUID> req) {
-        
-        OrganizationNode node = orgNodeService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Noeud non trouvé"));
-        
-        UUID tenantId = getCurrentTenantId();
+    @PreAuthorize("@authz.can('ORG_NODE_MOVE', 'TENANT', #id)")
+    public ResponseEntity<OrganizationNode> moveNode(@PathVariable UUID id, @RequestBody Map<String, UUID> req) {
         UUID currentUserId = getCurrentUserId();
-
-        if (!node.getTenantId().equals(tenantId)) {
-            throw new SecurityException("Noeud ne appartient pas à ce tenant");
-        }
-
         UUID newParentId = req.get("parentId");
-        
-        // Ne pas autoriser le déplacement de la racine
-        if (node.getType() == OrganizationNodeType.ROOT_CHURCH) {
-            throw new RuntimeException("Impossible de déplacer la racine");
-        }
-
-        // Vérifier le nouveau parent
-        if (newParentId != null) {
-            OrganizationNode newParent = orgNodeService.findById(newParentId)
-                    .orElseThrow(() -> new RuntimeException("Nouveau parent non trouvé"));
-            if (!newParent.getTenantId().equals(tenantId)) {
-                throw new SecurityException("Nouveau parent ne appartient pas à ce tenant");
-            }
-        }
-
-        node.setParentId(newParentId);
-        
-        // Mettre à jour le path
-        String newPathPrefix = (newParentId != null) 
-            ? orgNodeService.findById(newParentId).get().getPath() 
-            : "" + tenantId + ":";
-        node.setPath(newPathPrefix + node.getCode() + ":");
-
-        node = orgNodeService.save(node);
-
-        auditService.log(currentUserId, tenantId, "ORG_NODE_MOVED", "ORGANIZATION",
-                node.getId(), "SUCCESS",
-                Map.of("newParentId", newParentId != null ? newParentId.toString() : "ROOT"),
-                null, null, null);
-
-        return ResponseEntity.ok(toNodeView(node));
+        OrganizationNode node = hierarchyService.moveNode(id, newParentId, currentUserId);
+        return ResponseEntity.ok(node);
     }
 
-    // ==================== SUPPRIMER UN NOEUD ====================
+    @PostMapping("/nodes/bulk-move")
+    @PreAuthorize("@authz.can('ORG_NODE_MOVE', 'TENANT', null)")
+    public ResponseEntity<List<OrganizationNode>> bulkMoveNodes(@RequestBody Map<String, Object> req) {
+        UUID currentUserId = getCurrentUserId();
+        @SuppressWarnings("unchecked")
+        List<UUID> nodeIds = (List<UUID>) req.get("nodeIds");
+        UUID newParentId = (UUID) req.get("parentId");
+        List<OrganizationNode> nodes = hierarchyService.moveNodes(nodeIds, newParentId, currentUserId);
+        return ResponseEntity.ok(nodes);
+    }
+
+    // ==================== COPY NODE ====================
+
+    @PostMapping("/nodes/{id}/copy")
+    @PreAuthorize("@authz.can('ORG_NODE_CREATE', 'TENANT', null)")
+    public ResponseEntity<OrganizationNode> copyNode(@PathVariable UUID id, @RequestBody Map<String, Object> req) {
+        UUID currentUserId = getCurrentUserId();
+        UUID newParentId = (UUID) req.get("parentId");
+        boolean includeDescendants = Boolean.TRUE.equals(req.get("includeDescendants"));
+        OrganizationNode node = hierarchyService.copyNode(id, newParentId, currentUserId, includeDescendants);
+        return ResponseEntity.status(201).body(node);
+    }
+
+    // ==================== DELETE NODE ====================
 
     @DeleteMapping("/nodes/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<Void> deleteNode(@PathVariable UUID id) {
-        UUID tenantId = getCurrentTenantId();
+    @PreAuthorize("@authz.can('ORG_NODE_DELETE', 'TENANT', #id)")
+    public ResponseEntity<Void> deleteNode(@PathVariable UUID id, @RequestParam(defaultValue = "false") boolean forceCascade) {
         UUID currentUserId = getCurrentUserId();
-
-        OrganizationNode node = orgNodeService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Noeud non trouvé"));
-
-        if (!node.getTenantId().equals(tenantId)) {
-            throw new SecurityException("Noeud ne appartient pas à ce tenant");
-        }
-
-        if (node.getType() == OrganizationNodeType.ROOT_CHURCH) {
-            throw new RuntimeException("Impossible de supprimer la racine");
-        }
-
-        String nodeName = node.getName();
-        OrganizationNodeType nodeType = node.getType();
-
-        orgNodeService.delete(id);
-
-        auditService.log(currentUserId, tenantId, "ORG_NODE_DELETED", "ORGANIZATION",
-                id, "SUCCESS",
-                Map.of("name", nodeName, "type", nodeType.name()),
-                null, null, null);
-
+        hierarchyService.deleteNode(id, currentUserId, forceCascade);
         return ResponseEntity.noContent().build();
     }
 
-    // ==================== AFFECTER DES UTILISATEURS ====================
+    // ==================== BULK OPERATIONS ====================
 
-    @PutMapping("/nodes/{id}/responsible")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<NodeDetails> setResponsible(
-            @PathVariable UUID id,
-            @RequestBody Map<String, UUID> req) {
-        
-        OrganizationNode node = orgNodeService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Noeud non trouvé"));
-        
+    @PostMapping("/nodes/bulk-create")
+    @PreAuthorize("@authz.can('ORG_NODE_CREATE', 'TENANT', null)")
+    public ResponseEntity<OrganizationHierarchyService.BulkOperationResult> bulkCreate(@RequestBody Map<String, Object> req) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
-
-        if (!node.getTenantId().equals(tenantId)) {
-            throw new SecurityException("Noeud ne appartient pas à ce tenant");
-        }
-
-        UUID responsibleId = req.get("responsibleId");
-        
-        if (responsibleId != null) {
-            // Vérifier que l'utilisateur existe et appartient au tenant
-            com.discipolat.modules.users.domain.User user = userRepository.findById(responsibleId)
-                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-            
-            if (!user.getTenantId().equals(tenantId)) {
-                throw new SecurityException("L'utilisateur ne appartient pas à ce tenant");
-            }
-        }
-
-        node.setResponsibleId(responsibleId);
-        node = orgNodeService.save(node);
-
-        auditService.log(currentUserId, tenantId, "NODE_RESPONSIBLE_SET", "ORGANIZATION",
-                node.getId(), "SUCCESS",
-                Map.of("responsibleId", responsibleId != null ? responsibleId.toString() : "null"),
-                null, null, null);
-
-        Optional<com.discipolat.modules.users.domain.User> responsible = Optional.empty();
-        if (node.getResponsibleId() != null) {
-            responsible = userRepository.findById(node.getResponsibleId());
-        }
-
-        return ResponseEntity.ok(new NodeDetails(
-                node,
-                orgNodeService.findByParentId(id),
-                orgNodeService.findDescendants(tenantId, node.getPath()).size(),
-                responsible.map(u -> new NodeResponsibleInfo(
-                        u.getId(), u.getFirstName() + " " + u.getLastName(), u.getEmail()
-                )).orElse(null)
-        ));
+        @SuppressWarnings("unchecked")
+        List<OrganizationHierarchyService.CreateNodeRequest> requests = (List<OrganizationHierarchyService.CreateNodeRequest>) req.get("requests");
+        OrganizationHierarchyService.BulkOperationResult result = hierarchyService.bulkCreate(tenantId, requests, currentUserId);
+        return ResponseEntity.ok(result);
     }
 
-    // ==================== STATS PAR TYPE ====================
+    @PostMapping("/nodes/bulk-delete")
+    @PreAuthorize("@authz.can('ORG_NODE_DELETE', 'TENANT', null)")
+    public ResponseEntity<OrganizationHierarchyService.BulkOperationResult> bulkDelete(@RequestBody Map<String, Object> req) {
+        UUID currentUserId = getCurrentUserId();
+        @SuppressWarnings("unchecked")
+        List<UUID> nodeIds = (List<UUID>) req.get("nodeIds");
+        boolean forceCascade = Boolean.TRUE.equals(req.get("forceCascade"));
+        OrganizationHierarchyService.BulkOperationResult result = hierarchyService.bulkDelete(nodeIds, currentUserId, forceCascade);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/nodes/bulk-status")
+    @PreAuthorize("@authz.can('ORG_NODE_UPDATE', 'TENANT', null)")
+    public ResponseEntity<OrganizationHierarchyService.BulkOperationResult> bulkUpdateStatus(@RequestBody Map<String, Object> req) {
+        UUID currentUserId = getCurrentUserId();
+        @SuppressWarnings("unchecked")
+        List<UUID> nodeIds = (List<UUID>) req.get("nodeIds");
+        OrganizationNodeStatus status = OrganizationNodeStatus.valueOf((String) req.get("status"));
+        OrganizationHierarchyService.BulkOperationResult result = hierarchyService.bulkUpdateStatus(nodeIds, status, currentUserId);
+        return ResponseEntity.ok(result);
+    }
+
+    // ==================== RESPONSIBLE ASSIGNMENT ====================
+
+    @PutMapping("/nodes/{id}/responsible")
+    @PreAuthorize("@authz.can('ORG_NODE_UPDATE', 'TENANT', #id)")
+    public ResponseEntity<OrganizationHierarchyService.NodeDetails> assignResponsible(@PathVariable UUID id, @RequestBody Map<String, UUID> req) {
+        UUID currentUserId = getCurrentUserId();
+        UUID responsibleId = req.get("responsibleId");
+        OrganizationHierarchyService.NodeDetails details = hierarchyService.assignResponsible(id, responsibleId, currentUserId);
+        return ResponseEntity.ok(details);
+    }
+
+    // ==================== STATS ====================
 
     @GetMapping("/stats")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Long>> getStats() {
+    public ResponseEntity<Map<OrganizationNodeType, Long>> getStats() {
         UUID tenantId = getCurrentTenantId();
-        
-        Map<String, Long> stats = new LinkedHashMap<>();
-        stats.put("eglises", orgNodeService.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH));
-        stats.put("campuses", orgNodeService.countByTenantIdAndType(tenantId, OrganizationNodeType.CAMPUS));
-        stats.put("sous_eglises", orgNodeService.countByTenantIdAndType(tenantId, OrganizationNodeType.SUB_CHURCH));
-        stats.put("assemblies", orgNodeService.countByTenantIdAndType(tenantId, OrganizationNodeType.ASSEMBLY));
-        stats.put("departements", orgNodeService.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT));
-        stats.put("groupes", orgNodeService.countByTenantIdAndType(tenantId, OrganizationNodeType.GROUP));
-
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok(hierarchyService.getStatsByType(tenantId));
     }
 
-    // ==================== MAPPERS ====================
-
-    private OrganizationNodeView toNodeView(OrganizationNode node) {
-        return new OrganizationNodeView(
-                node.getId(), node.getName(), node.getType(), node.getCode(),
-                node.getPath(), node.getStatus(), node.getTenantId(),
-                node.getParentId(), node.getResponsibleId(), node.getCreatedAt()
-        );
+    @GetMapping("/stats/count/{type}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Long> getCountByType(@PathVariable OrganizationNodeType type) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.countByType(tenantId, type));
     }
-
-    private String generateUniqueCode(OrganizationNodeType type) {
-        String base = type.name() + "_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        // Vérifier et regénérer si collision (peu probable mais sécurité)
-        while (orgNodeService.findByTenantIdAndCode(getCurrentTenantId(), base).isPresent()) {
-            base = type.name() + "_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        }
-        return base;
-    }
-
-    // ==================== RECORDS ====================
-
-    public record OrganizationTree(
-            OrganizationNode root,
-            List<OrganizationNode> allNodes,
-            Map<UUID, List<OrganizationNode>> childrenByParent
-    ) {}
-
-    public record NodeDetails(
-            OrganizationNode node,
-            List<OrganizationNode> children,
-            int descendantCount,
-            NodeResponsibleInfo responsible
-    ) {}
-
-    public record NodeResponsibleInfo(
-            UUID id, String fullName, String email
-    ) {}
-
-    public record OrganizationNodeView(
-            UUID id, String name, OrganizationNodeType type, String code,
-            String path, OrganizationNodeStatus status, UUID tenantId,
-            UUID parentId, UUID responsibleId, Instant createdAt
-    ) {}
-
-    public record CreateNodeRequest(
-            String name, OrganizationNodeType type, UUID parentId, UUID responsibleId
-    ) {}
-
-    public record UpdateNodeRequest(
-            String name, OrganizationNodeType type,
-            OrganizationNodeStatus status, UUID responsibleId
-    ) {}
 }
