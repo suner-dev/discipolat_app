@@ -6,5 +6,6 @@ public enum SubscriptionStatus {
     PAST_DUE,
     CANCELED,
     PAUSED,
-    EXPIRED
+    EXPIRED,
+    PENDING_CHANGE
 }
