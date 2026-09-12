@@ -2,13 +2,12 @@ package com.discipolat.common.infrastructure.config;
 
 import com.discipolat.modules.tenants.domain.AuthorizationMethodSecurityExpressionHandler;
 import com.discipolat.modules.tenants.domain.AuthorizationService;
-import java.util.Arrays;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -27,6 +26,9 @@ import com.discipolat.common.infrastructure.security.JwtAuthenticationFilter;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -105,7 +107,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthorizationMethodSecurityExpressionHandler authorizationExpressionHandler(AuthorizationService authzService) {
+    @Primary
+    public DefaultMethodSecurityExpressionHandler methodSecurityExpressionHandler(AuthorizationService authzService) {
         AuthorizationMethodSecurityExpressionHandler handler = new AuthorizationMethodSecurityExpressionHandler();
         handler.setAuthzService(authzService);
         return handler;
