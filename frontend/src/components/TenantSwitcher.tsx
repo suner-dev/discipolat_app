@@ -36,7 +36,7 @@ export default function TenantSwitcher() {
     } catch (error) {
       console.error("Erreur:", error);
     }
-    });
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

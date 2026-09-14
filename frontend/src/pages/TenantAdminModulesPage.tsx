@@ -23,9 +23,9 @@ export default function TenantAdminModulesPage() {
   const fetchModules = async () => {
     try {
       const res = await api.get("/admin/modules");
-      const moduleList = Object.entries(res.data).map(([key, enabled]: [string, boolean]) => ({
+      const moduleList = Object.entries(res.data).map(([key, enabled]) => ({
         key,
-        enabled,
+        enabled: enabled as boolean,
         label: formatModuleLabel(key)
       }));
       setModules(moduleList);

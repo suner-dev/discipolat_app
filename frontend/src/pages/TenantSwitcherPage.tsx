@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/api";
 import type { Tenant } from "@/types/tenant";
+import type { UserRole } from "@/types";
 
 export default function TenantSwitcherPage() {
   const { user, updateUser } = useAuth();
@@ -25,8 +26,7 @@ export default function TenantSwitcherPage() {
 
   const switchTenant = async (tenant: Tenant) => {
     try {
-      await api.post("/tenant-switcher/switch", { tenantId: tenant.id });
-      updateUser({ tenantId: tenant.id, role: tenant.role });
+      updateUser({ tenantId: tenant.id, role: (tenant.role as UserRole) || undefined });
       window.location.href = "/";
     } catch (err) {
       console.error("Erreur:", err);

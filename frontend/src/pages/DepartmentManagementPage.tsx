@@ -66,7 +66,7 @@ export default function DepartmentManagementPage() {
     if (!visibleTabs.some((t) => t.key === tab)) {
       setTab(visibleTabs[0]?.key ?? 'members');
     }
-  }, [visibleTabs, tab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visibleTabs, tab]);  
 
   const { data: searchResults } = useQuery({
     queryKey: ['department', id, 'search', search],

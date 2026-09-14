@@ -15,6 +15,7 @@ export interface Tenant {
   branding?: BrandingConfig;
   features?: Record<string, boolean>;
   settings?: TenantSettings;
+  role?: string;
 }
 
 export interface TenantMembership {

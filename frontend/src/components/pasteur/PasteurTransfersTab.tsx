@@ -94,7 +94,15 @@ export default function PasteurTransfersTab() {
   });
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
   const toggleSelectAll = () => {
     if (selectAll) { setSelectedIds(new Set()); } else { setSelectedIds(new Set((data?.content || []).filter((t: any) => t.statut === 'EN_ATTENTE_VALIDATION').map((t: any) => t.id))); }

@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   Globe,
+  Building2,
 } from 'lucide-react';
 import { WORKSPACE_HOME, ROLE_META, roleIcon, isTenantAdmin } from '@/workspaces';
 import BetaBadge from '@/components/beta/BetaBadge';

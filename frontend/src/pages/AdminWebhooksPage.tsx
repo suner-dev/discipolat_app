@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
-interface Webhook {
+interface WebhookConfig {
   id: string;
   name: string;
   url: string;
@@ -49,7 +49,7 @@ export default function AdminWebhooksPage() {
 
   const listQuery = useQuery({
     queryKey: ['admin-webhooks'],
-    queryFn: async () => (await api.get<Webhook[]>('/admin/webhooks')).data,
+    queryFn: async () => (await api.get<WebhookConfig[]>('/admin/webhooks')).data,
   });
   const logsQuery = useQuery({
     queryKey: ['webhook-logs'],
@@ -62,7 +62,7 @@ export default function AdminWebhooksPage() {
 
   const createMutation = useMutation({
     mutationFn: async () =>
-      (await api.post<Webhook>('/admin/webhooks', { ...form, secret: '' })).data,
+      (await api.post<WebhookConfig>('/admin/webhooks', { ...form, secret: '' })).data,
     onSuccess: (w) => {
       toast.success(`Webhook créé — secret : ${w.secret.slice(0, 8)}…`);
       setShowCreate(false);

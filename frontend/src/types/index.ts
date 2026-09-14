@@ -12,6 +12,7 @@ export interface User {
   role: UserRole;
   roles: UserRole[];
   activeRole: UserRole;
+  tenantId?: string;
   estChefDeFamille: boolean;
   familleGereeId?: string;
   statut: UserStatus;

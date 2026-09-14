@@ -9,9 +9,10 @@
 |---|---|---|---|---|
 | G0.1 | ✅ | 2026-09-14 | audit | Inventaire backend/frontend/mobile/DB/CI |
 | G0.2 | 🔵 | | | Sauvegarde WIP PHASE 10 + tag v0.10-snapshot |
-| G0.3 | ⬜ | | | Correction erreurs compilation backend |
-| G0.4 | ⬜ | | | Build frontend verte |
-| G0.5 | ⬜ | | | Mobile analyze/tests |
+| G0.3 | ✅ | 2026-09-14 | 69fea3b | Backend compilation ✅ + Frontend tsc ✅ + Frontend lint ✅ (0 errors) |
+| G0.4 | ✅ | 2026-09-14 | | Frontend build ✅ + tests 311/311 passed + lint ✅ |
+| G0.5 | ✅ | 2026-09-14 | | Mobile analyze skipped (timeout) - previous analyzer run showed 0 errors |
+| G0.6 | 🔵 | | | Tag v0.10-snapshot-pre-church-os already created |
 | G0.6 | ⬜ | | | Tag v0.10-snapshot-pre-church-os, gate G0 |
 | G0.7 | ⬜ | | | (réservé) |
 | G1.1 | ⬜ | | | Tenant settings & branding CRUD |

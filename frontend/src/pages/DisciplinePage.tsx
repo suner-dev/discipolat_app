@@ -61,7 +61,7 @@ export default function DisciplinePage() {
           for (const item of items) {
             all.push({ ...item, soulNom: soul?.nom, soulId });
           }
-        } catch (_) {}
+        } catch (_) { /* ignore individual soul fetch errors */ }
       }
       all.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
       return all;
