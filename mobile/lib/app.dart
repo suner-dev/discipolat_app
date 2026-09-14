@@ -195,6 +195,7 @@ import 'features/encouragements/EncouragementDetailScreen.dart';
 import 'features/referrals/ReferralsStatusScreen.dart';
 import 'features/spiritual/SpiritualChallengesDetailScreen.dart';
 import 'presentation/screens/cercle_faiseurs/cercle_faiseurs_screen.dart';
+import 'presentation/screens/dress_code/dress_code_screen.dart';
 import 'presentation/screens/passport/passport_screen.dart';
 import 'presentation/screens/spiritual_journey/spiritual_journey_screen.dart';
 // Note: SkillMatchingScreen, QuestScreen, GeofencingScreen, MakerTrackingScreen, and FollowUpRequestsScreen
@@ -477,6 +478,7 @@ Map<String, List<String>> _routeRoles = {
   '/encouragements': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/moderation': ['ADMIN'],
   '/cercle-faiseurs': ['ADMIN', 'PASTEUR', 'FAISEUR'],
+  '/dress-codes': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/passport': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/spiritual-journey': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/rewards': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -1251,6 +1253,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/spiritual-challenges/detail', name: 'spiritual-challenges-detail', builder: (ctx, s) => SpiritualChallengesDetailScreen(challengeId: s.uri.queryParameters['challengeId'] ?? '')),
     // ===== Nouvelles routes — Cercle Faiseurs, Passeport Spirituel, Parcours Spirituel =====
     GoRoute(path: '/cercle-faiseurs', name: 'cercle-faiseurs', builder: (ctx, s) => const CercleFaiseursScreen()),
+    GoRoute(path: '/dress-codes', name: 'dress-codes', builder: (ctx, s) => const DressCodeScreen()),
     GoRoute(path: '/passport', name: 'passport', builder: (ctx, s) => const PassportScreen()),
     GoRoute(path: '/spiritual-journey', name: 'spiritual-journey', builder: (ctx, s) => const SpiritualJourneyScreen()),
     GoRoute(path: '/conversations', name: 'conversations', builder: (ctx, s) => const ConversationsScreen()),

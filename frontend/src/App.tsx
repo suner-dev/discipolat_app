@@ -97,6 +97,7 @@ const TenantAdminInvitationsPage = lazy(() => import('@/pages/TenantAdminInvitat
 const TenantAdminModulesPage = lazy(() => import('@/pages/TenantAdminModulesPage'));
 const TenantAdminSettingsPage = lazy(() => import('@/pages/TenantAdminSettingsPage'));
 const TenantAdminBrandingPage = lazy(() => import('@/pages/TenantAdminBrandingPage'));
+const DressCodePage = lazy(() => import('@/pages/DressCodePage'));
 const TenantSwitcherPage = lazy(() => import('@/pages/TenantSwitcherPage'));
 const CustomPageView = lazy(() => import('@/pages/CustomPageView'));
 const ModuleUnavailablePage = lazy(() => import('@/pages/ModuleUnavailablePage'));
@@ -1105,6 +1106,9 @@ export default function App() {
           } />
           <Route path="/admin/branding" element={
             <ProtectedRoute scope="tenant"><TenantAdminBrandingPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/dress-codes" element={
+            <ProtectedRoute scope="tenant"><DressCodePage /></ProtectedRoute>
           } />
         </Route>
 
