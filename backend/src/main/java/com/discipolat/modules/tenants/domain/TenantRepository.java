@@ -22,7 +22,7 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
 
     Optional<Tenant> findFirstByStatusOrderByCreatedAtAsc(TenantStatus status);
 
-    @Query("SELECT t FROM Tenant t WHERE t.createdAt > :date")
+    @Query("SELECT COUNT(t) FROM Tenant t WHERE t.createdAt > :date")
     long countByCreatedAtAfter(Instant date);
 
     @Query("SELECT t FROM Tenant t WHERE LOWER(t.name) LIKE LOWER(CONCAT('%', :term, '%')) " +

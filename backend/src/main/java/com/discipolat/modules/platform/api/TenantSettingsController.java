@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -50,18 +51,18 @@ public class TenantSettingsController {
                 tenant.getId(),
                 tenant.getName(),
                 tenant.getSlug(),
-                tenant.getDescription(),
+                (String) settings.getOrDefault("description", ""),
                 tenant.getCountry(),
                 tenant.getCurrency(),
                 tenant.getTimezone(),
                 tenant.getLocale(),
-                settings.getOrDefault("dateFormat", "dd/MM/yyyy"),
-                settings.getOrDefault("phoneCountryCode", "+237"),
-                settings.getOrDefault("email", ""),
-                settings.getOrDefault("phone", ""),
-                settings.getOrDefault("website", ""),
-                settings.getOrDefault("openingHours", Map.of()),
-                settings.getOrDefault("workingDays", List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")),
+                settings.getOrDefault("dateFormat", "dd/MM/yyyy") + "",
+                settings.getOrDefault("phoneCountryCode", "+237") + "",
+                settings.getOrDefault("email", "") + "",
+                settings.getOrDefault("phone", "") + "",
+                settings.getOrDefault("website", "") + "",
+                (Map<String, Object>) settings.getOrDefault("openingHours", Map.of()),
+                (List<String>) settings.getOrDefault("workingDays", List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")),
                 tenant.getStatus(),
                 tenant.getTrialEndsAt()
         ));
@@ -78,7 +79,6 @@ public class TenantSettingsController {
 
         // Mettre à jour les champs de base
         if (request.name() != null) tenant.setName(request.name());
-        if (request.description() != null) tenant.setDescription(request.description());
         if (request.country() != null) tenant.setCountry(request.country());
         if (request.currency() != null) tenant.setCurrency(request.currency());
         if (request.timezone() != null) tenant.setTimezone(request.timezone());
@@ -86,6 +86,7 @@ public class TenantSettingsController {
 
         // Mettre à jour les settings JSON
         Map<String, Object> settings = parseJson(tenant.getSettingsJson());
+        if (request.description() != null) settings.put("description", request.description());
         if (request.dateFormat() != null) settings.put("dateFormat", request.dateFormat());
         if (request.phoneCountryCode() != null) settings.put("phoneCountryCode", request.phoneCountryCode());
         if (request.email() != null) settings.put("email", request.email());
@@ -127,18 +128,18 @@ public class TenantSettingsController {
                 tenant.getId(),
                 tenant.getName(),
                 tenant.getSlug(),
-                tenant.getDescription(),
+                (String) settings.getOrDefault("description", ""),
                 tenant.getCountry(),
                 tenant.getCurrency(),
                 tenant.getTimezone(),
                 tenant.getLocale(),
-                settings.getOrDefault("dateFormat", "dd/MM/yyyy"),
-                settings.getOrDefault("phoneCountryCode", "+237"),
-                settings.getOrDefault("email", ""),
-                settings.getOrDefault("phone", ""),
-                settings.getOrDefault("website", ""),
-                settings.getOrDefault("openingHours", Map.of()),
-                settings.getOrDefault("workingDays", List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")),
+                settings.getOrDefault("dateFormat", "dd/MM/yyyy") + "",
+                settings.getOrDefault("phoneCountryCode", "+237") + "",
+                settings.getOrDefault("email", "") + "",
+                settings.getOrDefault("phone", "") + "",
+                settings.getOrDefault("website", "") + "",
+                (Map<String, Object>) settings.getOrDefault("openingHours", Map.of()),
+                (List<String>) settings.getOrDefault("workingDays", List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")),
                 tenant.getStatus(),
                 tenant.getTrialEndsAt()
         );

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Repository
+@Repository("tenantAuditLogRepository")
 public interface AuditLogRepository extends TenantAwareRepository<AuditLog, UUID> {
 
     Page<AuditLog> findByTenantIdOrderByTimestampDesc(UUID tenantId, Pageable pageable);
@@ -23,7 +23,7 @@ public interface AuditLogRepository extends TenantAwareRepository<AuditLog, UUID
 
     List<AuditLog> findByTenantIdAndResourceAndResourceIdOrderByTimestampDesc(UUID tenantId, String resource, UUID resourceId);
 
-    @Query("SELECT a FROM AuditLog a WHERE a.tenantId = :tenantId AND a.timestamp BETWEEN :start AND :end ORDER BY a.timestamp DESC")
+    @Query("SELECT a FROM TenantAuditLog a WHERE a.tenantId = :tenantId AND a.timestamp BETWEEN :start AND :end ORDER BY a.timestamp DESC")
     List<AuditLog> findByTenantIdAndTimestampBetween(
             @Param("tenantId") UUID tenantId,
             @Param("start") Instant start,

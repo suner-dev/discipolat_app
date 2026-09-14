@@ -8,6 +8,7 @@ import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.audit.domain.AuditLogRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -81,7 +83,7 @@ public class SuperAdminDashboardController {
                 .collect(Collectors.groupingBy(t -> t.getStatus().name(), Collectors.counting()));
 
         // Recent tenants (last 30 days)
-        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        Instant thirtyDaysAgo = Instant.now().minus(30, ChronoUnit.DAYS);
         long recentTenants = tenantRepository.findAll().stream()
                 .filter(t -> t.getCreatedAt().isAfter(thirtyDaysAgo))
                 .count();
@@ -101,7 +103,7 @@ public class SuperAdminDashboardController {
 
         // Recent activity
         LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
-        long recentAuditLogs = auditLogRepository.countByTimestampAfter(weekAgo);
+        long recentAuditLogs = auditLogRepository.countByCreatedAtGreaterThan(weekAgo);
 
         Map<String, Object> overview = new LinkedHashMap<>();
         overview.put("generatedAt", Instant.now().toString());
@@ -248,17 +250,19 @@ public class SuperAdminDashboardController {
             subPage = subscriptionRepository.findAll(pageable);
         }
 
-        List<Map<String, Object>> content = subPage.getContent().stream().map(s -> Map.of(
-                "id", s.getId().toString(),
-                "tenantId", s.getTenantId().toString(),
-                "planKey", s.getPlanKey(),
-                "status", s.getStatus().name(),
-                "billingCycle", s.getBillingCycle(),
-                "currentPeriodStart", s.getCurrentPeriodStart(),
-                "currentPeriodEnd", s.getCurrentPeriodEnd(),
-                "cancelAtPeriodEnd", s.getCancelAtPeriodEnd(),
-                "canceledAt", s.getCanceledAt()
-        )).toList();
+        List<Map<String, Object>> content = subPage.getContent().stream().map(s -> {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", s.getId().toString());
+            map.put("tenantId", s.getTenantId().toString());
+            map.put("planKey", s.getPlanKey());
+            map.put("status", s.getStatus().name());
+            map.put("billingCycle", s.getBillingCycle());
+            map.put("currentPeriodStart", s.getCurrentPeriodStart());
+            map.put("currentPeriodEnd", s.getCurrentPeriodEnd());
+            map.put("cancelAtPeriodEnd", s.getCancelAtPeriodEnd());
+            map.put("canceledAt", s.getCanceledAt());
+            return map;
+        }).toList();
 
         return ResponseEntity.ok(PageResponse.of(content, page, size,
                 subPage.getTotalElements(), subPage.getTotalPages()));
@@ -270,43 +274,46 @@ public class SuperAdminDashboardController {
         Map<String, Object> health = new LinkedHashMap<>();
         health.put("status", "UP");
         health.put("timestamp", Instant.now().toString());
-        health.put("database", Map.of("status", "UP", "tenants", tenantRepository.count()));
+        Map<String, Object> dbHealth = new LinkedHashMap<>();
+        dbHealth.put("status", "UP");
+        dbHealth.put("tenants", tenantRepository.count());
+        health.put("database", dbHealth);
         health.put("version", "1.0.0"); // Would come from build info
         return ResponseEntity.ok(health);
     }
 
     private Map<String, Object> toTenantSummary(Tenant tenant) {
-        return Map.of(
-                "id", tenant.getId().toString(),
-                "name", tenant.getName(),
-                "slug", tenant.getSlug(),
-                "status", tenant.getStatus().name(),
-                "plan", tenant.getPlan(),
-                "country", tenant.getCountry(),
-                "currency", tenant.getCurrency(),
-                "timezone", tenant.getTimezone(),
-                "locale", tenant.getLocale(),
-                "createdAt", tenant.getCreatedAt().toString(),
-                "updatedAt", tenant.getUpdatedAt().toString()
-        );
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", tenant.getId().toString());
+        map.put("name", tenant.getName());
+        map.put("slug", tenant.getSlug());
+        map.put("status", tenant.getStatus().name());
+        map.put("plan", tenant.getPlan());
+        map.put("country", tenant.getCountry());
+        map.put("currency", tenant.getCurrency());
+        map.put("timezone", tenant.getTimezone());
+        map.put("locale", tenant.getLocale());
+        map.put("createdAt", tenant.getCreatedAt().toString());
+        map.put("updatedAt", tenant.getUpdatedAt().toString());
+        return map;
     }
 
     private Map<String, Object> toPlanSummary(SaasPlan plan) {
         Map<String, Object> limits = parseJson(plan.getLimitsJson());
         Map<String, Object> features = parseJson(plan.getFeaturesJson());
 
-        return Map.of(
-                "key", plan.getKey(),
-                "name", plan.getName(),
-                "description", plan.getDescription(),
-                "priceMonthly", plan.getPriceMonthly(),
-                "priceYearly", plan.getPriceYearly(),
-                "currency", plan.getCurrency(),
-                "limits", limits,
-                "features", features,
-                "isActive", plan.isActive(),
-                "sortOrder", plan.getSortOrder()
-        );
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("key", plan.getKey());
+        map.put("name", plan.getName());
+        map.put("description", plan.getDescription());
+        map.put("priceMonthly", plan.getPriceMonthly());
+        map.put("priceYearly", plan.getPriceYearly());
+        map.put("currency", plan.getCurrency());
+        map.put("limits", limits);
+        map.put("features", features);
+                map.put("isActive", plan.getIsActive());
+        map.put("sortOrder", plan.getSortOrder());
+        return map;
     }
 
     private Map<String, Object> parseJson(String json) {

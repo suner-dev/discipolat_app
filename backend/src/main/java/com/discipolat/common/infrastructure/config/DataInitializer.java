@@ -21,7 +21,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -103,6 +105,11 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
+        // Rôles système & permissions par défaut (Sections 21-24 du prompt).
+        // Applicable dans TOUS les environnements : idempotent (ne se lance que
+        // si aucune table n'a encore été seedée, sinon les migrations l'ont fait).
+        seedDefaultRolesAndPermissions();
+
         if (!seedDemoAccounts) {
             log.info("ℹ️ Comptes de démonstration désactivés sur cet environnement (seed-demo-accounts=false).");
             return;
@@ -158,8 +165,7 @@ public class DataInitializer implements CommandLineRunner {
         // Espace Membre : âme liée au compte membre + départements ministères
         seedMemberSpace();
 
-        // Multi-tenant: seed roles, permissions, organisations, subscriptions
-        seedDefaultRolesAndPermissions();
+        // Multi-tenant: seed organisations, subscriptions
         seedDefaultMemberships();
     }
 
@@ -195,6 +201,90 @@ public class DataInitializer implements CommandLineRunner {
                 roleRepository.save(role);
             }
         }
+
+        seedSystemPermissionsAndLinks();
+    }
+
+    /**
+     * Seed du catalogue de permissions système et des liens role-&gt;permission
+     * (miroir idempotent des migrations V135/V136, utile quand Flyway est
+     * désactivé, ex. profil test H2).
+     */
+    private void seedSystemPermissionsAndLinks() {
+        // [key, label, category, scope]
+        String[][] systemPermissions = {
+                {"MEMBER_READ", "Lire membres", "MEMBERS", "TENANT"},
+                {"MEMBER_CREATE", "Créer membres", "MEMBERS", "TENANT"},
+                {"MEMBER_UPDATE", "Modifier membres", "MEMBERS", "TENANT"},
+                {"MEMBER_DELETE", "Supprimer membres", "MEMBERS", "TENANT"},
+                {"FAMILY_READ", "Lire familles", "FAMILIES", "TENANT"},
+                {"FAMILY_CREATE", "Créer familles", "FAMILIES", "TENANT"},
+                {"FAMILY_UPDATE", "Modifier familles", "FAMILIES", "TENANT"},
+                {"FAMILY_DELETE", "Supprimer familles", "FAMILIES", "TENANT"},
+                {"REPORT_READ", "Lire rapports", "REPORTS", "TENANT"},
+                {"REPORT_CREATE", "Créer rapports", "REPORTS", "TENANT"},
+                {"FINANCE_READ", "Lire finances", "FINANCE", "TENANT"},
+                {"FINANCE_MANAGE", "Gérer finances", "FINANCE", "TENANT"},
+                {"COURSE_CREATE", "Créer formations", "ACADEMY", "TENANT"},
+                {"COURSE_MANAGE", "Gérer formations", "ACADEMY", "TENANT"},
+                {"TENANT_SETTINGS_READ", "Lire config tenant", "SETTINGS", "TENANT"},
+                {"TENANT_SETTINGS_UPDATE", "Modifier config tenant", "SETTINGS", "TENANT"},
+                {"CHURCH_CREATE", "Créer églises", "ORGANIZATION", "TENANT"},
+                {"CHURCH_MANAGE", "Gérer églises", "ORGANIZATION", "TENANT"},
+                {"USER_INVITE", "Inviter utilisateurs", "USERS", "TENANT"},
+                {"USER_MANAGE", "Gérer utilisateurs", "USERS", "TENANT"},
+                {"BRANDING_READ", "Lire branding", "SETTINGS", "TENANT"},
+                {"BRANDING_UPDATE", "Modifier branding", "SETTINGS", "TENANT"},
+                {"AUDIT_READ", "Lire journaux d'audit", "AUDIT", "TENANT"},
+        };
+
+        Map<String, Permission> byKey = new LinkedHashMap<>();
+        for (String[] perm : systemPermissions) {
+            Permission permission = permissionRepository.findByKey(perm[0])
+                    .orElseGet(() -> permissionRepository.save(Permission.builder()
+                            .tenantId(null)
+                            .key(perm[0])
+                            .label(perm[1])
+                            .description(perm[1])
+                            .scope(PermissionScope.valueOf(perm[3]))
+                            .category(perm[2])
+                            .system(true)
+                            .build()));
+            byKey.put(perm[0], permission);
+        }
+
+        // Admin roles : toutes les permissions systèmes
+        assignPermissions("PLATFORM_SUPER_ADMIN", byKey, byKey.keySet().toArray(new String[0]));
+        assignPermissions("TENANT_OWNER", byKey, byKey.keySet().toArray(new String[0]));
+        assignPermissions("TENANT_ADMIN", byKey, byKey.keySet().toArray(new String[0]));
+
+        assignPermissions("REGION_ADMIN", byKey, "MEMBER_READ", "FAMILY_READ", "REPORT_READ", "REPORT_CREATE", "CHURCH_MANAGE");
+        assignPermissions("CHURCH_ADMIN", byKey,
+                "MEMBER_READ", "MEMBER_CREATE", "MEMBER_UPDATE", "FAMILY_READ", "FAMILY_CREATE", "FAMILY_UPDATE",
+                "REPORT_READ", "REPORT_CREATE", "CHURCH_MANAGE", "CHURCH_CREATE");
+        assignPermissions("SUB_CHURCH_ADMIN", byKey, "MEMBER_READ", "FAMILY_READ", "REPORT_READ");
+        assignPermissions("CAMPUS_ADMIN", byKey, "MEMBER_READ", "FAMILY_READ", "REPORT_READ");
+        assignPermissions("DEPARTMENT_ADMIN", byKey,
+                "MEMBER_READ", "MEMBER_CREATE", "MEMBER_UPDATE", "FAMILY_READ", "FAMILY_CREATE", "FAMILY_UPDATE",
+                "REPORT_READ", "REPORT_CREATE");
+        assignPermissions("DEPARTMENT_LEADER", byKey, "MEMBER_READ", "FAMILY_READ", "REPORT_READ", "REPORT_CREATE");
+        assignPermissions("FAMILY_LEADER", byKey, "MEMBER_READ", "FAMILY_READ", "REPORT_READ", "REPORT_CREATE");
+        assignPermissions("DISCIPLE_MAKER", byKey, "MEMBER_READ", "REPORT_CREATE");
+        assignPermissions("MENTOR", byKey, "MEMBER_READ", "REPORT_CREATE");
+        assignPermissions("MEMBER", byKey, "MEMBER_READ", "REPORT_CREATE");
+        assignPermissions("GUEST", byKey, "MEMBER_READ");
+    }
+
+    private void assignPermissions(String roleKey, Map<String, Permission> byKey, String... permissionKeys) {
+        roleRepository.findByTenantIdAndKey(null, roleKey).ifPresent(role -> {
+            for (String key : permissionKeys) {
+                Permission permission = byKey.get(key);
+                if (permission != null && role.getPermissions().stream().noneMatch(p -> p.getKey().equals(key))) {
+                    role.getPermissions().add(permission);
+                }
+            }
+            roleRepository.save(role);
+        });
     }
 
     /**
@@ -303,10 +393,16 @@ public class DataInitializer implements CommandLineRunner {
                 membershipRepository.findByUserIdAndTenantIdAndStatus(
                     user.getId(), user.getTenantId(), MembershipStatus.ACTIVE).isEmpty()) {
                 try {
+                    Role role = roleRepository.findByTenantIdAndKey(user.getTenantId(), user.getRole().name())
+                            .orElseGet(() -> roleRepository.findByTenantIdIsNullAndKey(user.getRole().name()).orElse(null));
+                    if (role == null) {
+                        log.warn("No role found for user {} with role {}", user.getEmail(), user.getRole().name());
+                        continue;
+                    }
                     TenantMembership membership = TenantMembership.builder()
                             .tenantId(user.getTenantId())
                             .userId(user.getId())
-                            .role(user.getRole().name())
+                            .role(role)
                             .status(MembershipStatus.ACTIVE)
                             .build();
                     membershipRepository.save(membership);

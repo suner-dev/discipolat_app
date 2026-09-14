@@ -56,7 +56,7 @@ public class TontineGroup {
     @Column(name = "created_by")
     private UUID createdBy;
 
-    @OneToMany(mappedBy = "groupId", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "group", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @JsonIgnore
     private List<TontineMember> members = new ArrayList<>();

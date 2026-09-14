@@ -3,6 +3,8 @@ package com.discipolat.modules.tenants.domain;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,24 +26,36 @@ public interface TenantMembershipRepository extends JpaRepository<TenantMembersh
 
     boolean existsByUserIdAndTenantIdAndStatus(UUID userId, UUID tenantId, MembershipStatus status);
 
-    List<TenantMembership> findByTenantIdAndStatusAndRoleContaining(UUID tenantId, MembershipStatus status, String role);
+    @Query("SELECT tm FROM TenantMembership tm JOIN tm.role r WHERE tm.tenantId = :tenantId AND tm.status = :status AND LOWER(r.key) LIKE LOWER(CONCAT('%', :role, '%'))")
+    List<TenantMembership> findByTenantIdAndStatusAndRoleContaining(
+            @Param("tenantId") UUID tenantId,
+            @Param("status") MembershipStatus status,
+            @Param("role") String role);
 
+    @Query("SELECT tm FROM TenantMembership tm JOIN tm.role r WHERE tm.tenantId = :tenantId AND tm.status = :status AND LOWER(r.key) LIKE LOWER(CONCAT('%', :role, '%'))")
     Page<TenantMembership> findByTenantIdAndStatusAndRoleContaining(
-            UUID tenantId, MembershipStatus status, String role, Pageable pageable);
+            @Param("tenantId") UUID tenantId,
+            @Param("status") MembershipStatus status,
+            @Param("role") String role,
+            Pageable pageable);
 
     Optional<TenantMembership> findByUserIdAndTenantIdAndStatus(UUID userId, UUID tenantId, MembershipStatus status);
 
-    List<TenantMembership> findByUserIdAndTenantIdAndStatusList(UUID userId, UUID tenantId, MembershipStatus status);
+    List<TenantMembership> findAllByUserIdAndTenantIdAndStatus(UUID userId, UUID tenantId, MembershipStatus status);
+
+    List<TenantMembership> findByUserId(UUID userId);
 
     List<TenantMembership> findByTenantIdAndStatusIn(UUID tenantId, List<MembershipStatus> statuses);
 
     Optional<TenantMembership> findByInvitedBy(UUID invitedBy);
 
-    boolean existsByUserIdAndRoleIdAndStatus(UUID userId, UUID roleId, MembershipStatus status);
+    @Query("SELECT CASE WHEN COUNT(tm) > 0 THEN true ELSE false END FROM TenantMembership tm WHERE tm.userId = :userId AND tm.role.id = :roleId AND tm.status = :status")
+    boolean existsByUserIdAndRoleIdAndStatus(@Param("userId") UUID userId, @Param("roleId") UUID roleId, @Param("status") MembershipStatus status);
 
-    List<TenantMembership> findActiveByUserId(UUID userId, MembershipStatus status);
-
-    long countByRoleId(UUID roleId);
+    @Query("SELECT COUNT(tm) FROM TenantMembership tm WHERE tm.role.id = :roleId")
+    long countByRoleId(@Param("roleId") UUID roleId);
 
     long countByTenantId(UUID tenantId);
+
+    long countByStatus(MembershipStatus status);
 }

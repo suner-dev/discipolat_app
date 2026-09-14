@@ -8,8 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Branding Controller (Section 28 du prompt)
@@ -74,7 +77,7 @@ public class BrandingController {
             return getDefaultBranding();
         }
         try {
-            return com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Map.class);
+            return new ObjectMapper().readValue(json, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
         } catch (Exception e) {
             return getDefaultBranding();
         }
@@ -105,22 +108,22 @@ public class BrandingController {
     }
 
     private Map<String, Object> getDefaultBranding() {
-        return Map.of(
-                "primaryColor", "#6366F1",
-                "secondaryColor", "#8B5CF6",
-                "accentColor", "#EC4899",
-                "logoUrl", "",
-                "faviconUrl", "",
-                "logoDarkUrl", "",
-                "primaryFont", "Inter",
-                "secondaryFont", "Inter",
-                "churchName", "",
-                "tagline", "",
-                "address", "",
-                "phone", "",
-                "email", "",
-                "website", ""
-        );
+        Map<String, Object> branding = new LinkedHashMap<>();
+        branding.put("primaryColor", "#6366F1");
+        branding.put("secondaryColor", "#8B5CF6");
+        branding.put("accentColor", "#EC4899");
+        branding.put("logoUrl", "");
+        branding.put("faviconUrl", "");
+        branding.put("logoDarkUrl", "");
+        branding.put("primaryFont", "Inter");
+        branding.put("secondaryFont", "Inter");
+        branding.put("churchName", "");
+        branding.put("tagline", "");
+        branding.put("address", "");
+        branding.put("phone", "");
+        branding.put("email", "");
+        branding.put("website", "");
+        return branding;
     }
 
     public record BrandingResponse(UUID tenantId, Map<String, Object> branding) {}

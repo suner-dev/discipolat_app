@@ -13,7 +13,7 @@ import java.util.UUID;
 /**
  * Service pour la gestion des permissions (catalogue global + tenant)
  */
-@Service
+@Service("tenantPermissionService")
 @Transactional
 public class PermissionService {
 

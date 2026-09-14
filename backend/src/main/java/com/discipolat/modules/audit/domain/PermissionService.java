@@ -18,7 +18,7 @@ import java.util.*;
  * actif. Sans contexte tenant (tâches système), le comportement historique est
  * conservé.
  */
-@Service
+@Service("auditPermissionService")
 @Transactional
 public class PermissionService {
 

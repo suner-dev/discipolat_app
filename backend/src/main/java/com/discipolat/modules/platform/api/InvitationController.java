@@ -264,7 +264,7 @@ public class InvitationController {
 
     @GetMapping("/validate/{token}")
     public ResponseEntity<Map<String, Object>> validateInvitation(@PathVariable String token) {
-        Optional<Invitation> invitation = invitationRepository.findByInvitationToken(token);
+        Optional<Invitation> invitation = invitationRepository.findByToken(token);
 
         if (invitation.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Invitation invalide"));
@@ -300,7 +300,7 @@ public class InvitationController {
     @PostMapping("/accept/{token}")
     public ResponseEntity<Map<String, Object>> acceptInvitation(@PathVariable String token,
                                                                  @RequestBody(required = false) Map<String, String> request) {
-        Optional<Invitation> invitation = invitationRepository.findByInvitationToken(token);
+        Optional<Invitation> invitation = invitationRepository.findByToken(token);
 
         if (invitation.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Invitation invalide"));

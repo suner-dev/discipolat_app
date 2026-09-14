@@ -54,5 +54,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     long countByTenantIdAndStatut(UUID tenantId, UserStatus status);
 
+    long countByStatut(UserStatus status);
+
     List<User> findByTenantId(UUID tenantId);
 }

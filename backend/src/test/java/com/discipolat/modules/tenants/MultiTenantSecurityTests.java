@@ -102,11 +102,17 @@ class MultiTenantSecurityTests {
     }
 
     private User createUser(String email, String name, Tenant tenant, UUID roleId) {
+        String roleKey = roleRepository.findById(roleId).orElseThrow().getKey();
+        com.discipolat.common.domain.UserRole legacyRole = switch (roleKey) {
+            case "TENANT_OWNER", "TENANT_ADMIN" -> com.discipolat.common.domain.UserRole.ADMIN;
+            default -> com.discipolat.common.domain.UserRole.MEMBRE;
+        };
         User user = User.builder()
                 .tenantId(tenant.getId())
                 .email(email)
                 .passwordHash("hash")
                 .firstName(name)
+                .role(legacyRole)
                 .statut(UserStatus.ACTIVE)
                 .build();
         user = userRepository.save(user);
@@ -115,6 +121,7 @@ class MultiTenantSecurityTests {
                 .tenantId(tenant.getId())
                 .userId(user.getId())
                 .role(roleRepository.findById(roleId).orElseThrow())
+                .roleLegacy(roleKey)
                 .scopeType(MembershipScopeType.TENANT)
                 .status(MembershipStatus.ACTIVE)
                 .build();
@@ -149,6 +156,7 @@ class MultiTenantSecurityTests {
                     .typeDisciple(com.discipolat.common.enums.TypeDisciple.NOUVEL_ARRIVANT)
                     .dateIntegration(java.time.LocalDate.now())
                     .statut(com.discipolat.common.enums.StatutAme.EN_INTEGRATION)
+                    .niveauCroissance(1)
                     .faiseurId(userA_admin.getId())
                     .build();
             soul = soulRepository.save(soul);
@@ -171,6 +179,7 @@ class MultiTenantSecurityTests {
                     .typeDisciple(com.discipolat.common.enums.TypeDisciple.NOUVEL_ARRIVANT)
                     .dateIntegration(java.time.LocalDate.now())
                     .statut(com.discipolat.common.enums.StatutAme.EN_INTEGRATION)
+                    .niveauCroissance(1)
                     .faiseurId(userB_admin.getId())
                     .build();
             soulB = soulRepository.save(soulB);
@@ -192,6 +201,7 @@ class MultiTenantSecurityTests {
                     .typeDisciple(com.discipolat.common.enums.TypeDisciple.NOUVEL_ARRIVANT)
                     .dateIntegration(java.time.LocalDate.now())
                     .statut(com.discipolat.common.enums.StatutAme.EN_INTEGRATION)
+                    .niveauCroissance(1)
                     .faiseurId(userA_admin.getId())
                     .build();
             soulA = soulRepository.save(soulA);
@@ -214,6 +224,7 @@ class MultiTenantSecurityTests {
                         .typeDisciple(com.discipolat.common.enums.TypeDisciple.NOUVEL_ARRIVANT)
                         .dateIntegration(java.time.LocalDate.now())
                         .statut(com.discipolat.common.enums.StatutAme.EN_INTEGRATION)
+                        .niveauCroissance(1)
                         .faiseurId(userA_admin.getId()).build());
             }
             for (int i = 0; i < 2; i++) {
@@ -222,6 +233,7 @@ class MultiTenantSecurityTests {
                         .typeDisciple(com.discipolat.common.enums.TypeDisciple.NOUVEL_ARRIVANT)
                         .dateIntegration(java.time.LocalDate.now())
                         .statut(com.discipolat.common.enums.StatutAme.EN_INTEGRATION)
+                        .niveauCroissance(1)
                         .faiseurId(userB_admin.getId()).build());
             }
 
@@ -266,7 +278,7 @@ class MultiTenantSecurityTests {
             User deptAdmin = createUser("deptadmin@a.com", "Dept Admin", tenantA, deptAdminRole);
             
             // Update membership to have DEPARTMENT scope on deptA1
-            TenantMembership membership = membershipRepository.findByUserIdAndTenantIdAndStatus(deptAdmin.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
+            TenantMembership membership = membershipRepository.findAllByUserIdAndTenantIdAndStatus(deptAdmin.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
             membership.setScopeType(MembershipScopeType.DEPARTMENT);
             membership.setScopeId(deptA1.getId());
             membership.setRole(roleRepository.findById(deptAdminRole).orElseThrow());
@@ -297,7 +309,7 @@ class MultiTenantSecurityTests {
             UUID churchAdminRole = roleRepository.findByTenantIdIsNullAndKey("CHURCH_ADMIN").orElseThrow().getId();
             User churchAdmin = createUser("churchadmin@a.com", "Church Admin", tenantA, churchAdminRole);
             
-            TenantMembership membership = membershipRepository.findByUserIdAndTenantIdAndStatus(churchAdmin.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
+            TenantMembership membership = membershipRepository.findAllByUserIdAndTenantIdAndStatus(churchAdmin.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
             membership.setScopeType(MembershipScopeType.CHURCH);
             membership.setScopeId(churchA.getId());
             membership.setRole(roleRepository.findById(churchAdminRole).orElseThrow());
@@ -349,14 +361,14 @@ class MultiTenantSecurityTests {
 
             // Create church under region
             OrganizationNode churchUnderRegion = OrganizationNode.builder()
-                    .tenantId(tenantA.getId()).parentId(region.getId()).type(OrganizationNodeType.CHURCH)
+                    .tenantId(tenantA.getId()).parentId(region.getId()).type(OrganizationNodeType.SUB_CHURCH)
                     .name("Église Nord").code("CH_NORD").path(region.getPath() + "CH_NORD:").level(2).status(OrganizationNodeStatus.ACTIVE).build();
             churchUnderRegion = orgNodeRepository.save(churchUnderRegion);
 
             UUID regionAdminRole = roleRepository.findByTenantIdIsNullAndKey("REGION_ADMIN").orElseThrow().getId();
             User regionAdmin = createUser("regionadmin@a.com", "Region Admin", tenantA, regionAdminRole);
 
-            TenantMembership membership = membershipRepository.findByUserIdAndTenantIdAndStatus(regionAdmin.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
+            TenantMembership membership = membershipRepository.findAllByUserIdAndTenantIdAndStatus(regionAdmin.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
             membership.setScopeType(MembershipScopeType.REGION);
             membership.setScopeId(region.getId());
             membership.setRole(roleRepository.findById(regionAdminRole).orElseThrow());
@@ -378,7 +390,7 @@ class MultiTenantSecurityTests {
 
             UUID assignedSoulId = UUID.randomUUID();
 
-            TenantMembership membership = membershipRepository.findByUserIdAndTenantIdAndStatus(discipleMaker.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
+            TenantMembership membership = membershipRepository.findAllByUserIdAndTenantIdAndStatus(discipleMaker.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
             membership.setScopeType(MembershipScopeType.ASSIGNED);
             membership.setScopeId(assignedSoulId);
             membership.setRole(roleRepository.findById(discipleMakerRole).orElseThrow());
@@ -400,7 +412,7 @@ class MultiTenantSecurityTests {
             UUID memberRole = roleRepository.findByTenantIdIsNullAndKey("MEMBER").orElseThrow().getId();
             User member = createUser("own@a.com", "Own Member", tenantA, memberRole);
 
-            TenantMembership membership = membershipRepository.findByUserIdAndTenantIdAndStatus(member.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
+            TenantMembership membership = membershipRepository.findAllByUserIdAndTenantIdAndStatus(member.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
             membership.setScopeType(MembershipScopeType.OWN);
             membership.setScopeId(member.getId());
             membership.setRole(roleRepository.findById(memberRole).orElseThrow());
@@ -433,6 +445,7 @@ class MultiTenantSecurityTests {
                     .typeDisciple(com.discipolat.common.enums.TypeDisciple.NOUVEL_ARRIVANT)
                     .dateIntegration(java.time.LocalDate.now())
                     .statut(com.discipolat.common.enums.StatutAme.EN_INTEGRATION)
+                    .niveauCroissance(1)
                     .faiseurId(userA_admin.getId()).build();
             soulRepository.save(soulA);
 
@@ -520,6 +533,7 @@ class MultiTenantSecurityTests {
                     .tenantId(null)
                     .userId(superAdmin.getId())
                     .role(roleRepository.findById(superAdminRole).orElseThrow())
+                    .roleLegacy("PLATFORM_SUPER_ADMIN")
                     .scopeType(MembershipScopeType.TENANT)
                     .status(MembershipStatus.ACTIVE)
                     .build();
@@ -542,7 +556,7 @@ class MultiTenantSecurityTests {
             UUID deptAdminRole = roleRepository.findByTenantIdIsNullAndKey("DEPARTMENT_ADMIN").orElseThrow().getId();
             User deptAdmin = createUser("deptadmin2@a.com", "Dept Admin 2", tenantA, deptAdminRole);
             
-            TenantMembership membership = membershipRepository.findByUserIdAndTenantIdAndStatus(deptAdmin.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
+            TenantMembership membership = membershipRepository.findAllByUserIdAndTenantIdAndStatus(deptAdmin.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
             membership.setScopeType(MembershipScopeType.DEPARTMENT);
             membership.setScopeId(deptA1.getId());
             membership.setRole(roleRepository.findById(deptAdminRole).orElseThrow());
@@ -564,7 +578,7 @@ class MultiTenantSecurityTests {
             
             UUID familyId = UUID.randomUUID();
             
-            TenantMembership membership = membershipRepository.findByUserIdAndTenantIdAndStatus(familyLeader.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
+            TenantMembership membership = membershipRepository.findAllByUserIdAndTenantIdAndStatus(familyLeader.getId(), tenantA.getId(), MembershipStatus.ACTIVE).get(0);
             membership.setScopeType(MembershipScopeType.FAMILY);
             membership.setScopeId(familyId);
             membership.setRole(roleRepository.findById(familyLeaderRole).orElseThrow());

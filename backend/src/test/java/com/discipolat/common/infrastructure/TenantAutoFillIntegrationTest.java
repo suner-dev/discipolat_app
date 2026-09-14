@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class TenantAutoFillIntegrationTest {
 
-    private static final UUID DEFAULT_TENANT_ID = TenantContext.DEFAULT_TENANT_ID;
+    private static final UUID DEFAULT_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID TENANT_B = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Autowired private SoulRepository soulRepository;

@@ -39,7 +39,7 @@ public class RoleManagementController {
 
     // ==================== ROLE CATALOG ====================
 
-    @GetMapping
+    @GetMapping("/overview")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Role>> getAllRoles() {
         UUID tenantId = getCurrentTenantId();

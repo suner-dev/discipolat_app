@@ -369,7 +369,7 @@ public class ExportServiceImpl implements ExportService {
                 for (Alert alert : alertRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("id", alert.getId() != null ? alert.getId().toString() : "");
-                    row.put("titre", alert.getTitle() != null ? alert.getTitle() != null ? alert.getTitle() : "" : "");
+                    row.put("titre", alert.getTitre() != null ? alert.getTitre() : "");
                     row.put("message", alert.getMessage() != null ? alert.getMessage() : "");
                     row.put("statut", alert.getStatut() != null ? alert.getStatut().name() : "");
                     row.put("dateDeclenchement", alert.getDateDeclenchement() != null ? alert.getDateDeclenchement().toString() : "");
@@ -380,9 +380,9 @@ public class ExportServiceImpl implements ExportService {
                 for (Notification notif : notificationRepository.findAll()) {
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("id", notif.getId() != null ? notif.getId().toString() : "");
-                    row.put("titre", notif.getTitle() != null ? notif.getTitle() : "");
+                    row.put("titre", notif.getTitre() != null ? notif.getTitre() : "");
                     row.put("message", notif.getMessage() != null ? notif.getMessage() : "");
-                    row.put("lu", notif.isRead() ? "OUI" : "NON");
+                    row.put("lu", notif.isLu() ? "OUI" : "NON");
                     row.put("createdAt", notif.getCreatedAt() != null ? notif.getCreatedAt().toString() : "");
                     data.add(row);
                 }
@@ -453,7 +453,7 @@ public class ExportServiceImpl implements ExportService {
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("id", report.getId() != null ? report.getId().toString() : "");
                     row.put("authorId", report.getAuthorId() != null ? report.getAuthorId().toString() : "");
-                    row.put("durationSeconds", report.getDurationSeconds() != null ? report.getDurationSeconds().toString() : "0");
+                    row.put("durationSeconds", report.getDurationSeconds() > 0 ? String.valueOf(report.getDurationSeconds()) : "0");
                     row.put("transcript", report.getTranscript() != null ? report.getTranscript() : "");
                     row.put("extractedEntities", report.getExtractedEntities() != null ? report.getExtractedEntities() : "");
                     row.put("relatedSoulId", report.getRelatedSoulId() != null ? report.getRelatedSoulId().toString() : "");
@@ -471,7 +471,7 @@ public class ExportServiceImpl implements ExportService {
                     row.put("userId", record.getUserId() != null ? record.getUserId().toString() : "");
                     row.put("format", record.getFormat() != null ? record.getFormat().name() : "");
                     row.put("motif", record.getMotif() != null ? record.getMotif().name() : "");
-                    row.put("recordCount", record.getRecordCount() != null ? record.getRecordCount().toString() : "0");
+                    row.put("recordCount", record.getRecordCount() > 0 ? String.valueOf(record.getRecordCount()) : "0");
                     row.put("fichierPath", record.getFichierPath() != null ? record.getFichierPath() : "");
                     row.put("dateCreation", record.getCreatedAt() != null ? record.getCreatedAt().toString() : "");
                     data.add(row);

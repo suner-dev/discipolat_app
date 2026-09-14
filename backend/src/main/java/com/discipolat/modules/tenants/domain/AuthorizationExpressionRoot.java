@@ -137,7 +137,7 @@ public class AuthorizationExpressionRoot extends SecurityExpressionRoot
     /**
      * Check if user has role (legacy support - checks active role).
      */
-    public boolean hasRole(String role) {
+    public boolean hasTenantRole(String role) {
         // This checks the active role from JWT claims
         Authentication auth = getAuthentication();
         if (auth == null) return false;
@@ -148,7 +148,7 @@ public class AuthorizationExpressionRoot extends SecurityExpressionRoot
     /**
      * Check if user has any of the given roles.
      */
-    public boolean hasAnyRole(String... roles) {
+    public boolean hasAnyTenantRole(String... roles) {
         Authentication auth = getAuthentication();
         if (auth == null) return false;
         return auth.getAuthorities().stream()

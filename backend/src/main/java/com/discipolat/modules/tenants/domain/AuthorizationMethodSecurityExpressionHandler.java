@@ -16,7 +16,6 @@ public class AuthorizationMethodSecurityExpressionHandler extends DefaultMethodS
         this.authzService = authzService;
     }
 
-    @Override
     protected MethodSecurityExpressionOperations createSecurityExpressionRoot(
             Authentication authentication,
             java.lang.reflect.Method method) {

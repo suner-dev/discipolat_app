@@ -21,13 +21,16 @@ import java.util.UUID;
 public class OrganizationNodeService {
 
     private final OrganizationNodeRepository nodeRepository;
+    private final InvitationRepository invitationRepository;
     private final AuditService auditService;
     private final EntityPropagationPublisher propagationPublisher;
 
     public OrganizationNodeService(OrganizationNodeRepository nodeRepository,
+                                   InvitationRepository invitationRepository,
                                    AuditService auditService,
                                    EntityPropagationPublisher propagationPublisher) {
         this.nodeRepository = nodeRepository;
+        this.invitationRepository = invitationRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
     }
@@ -50,6 +53,11 @@ public class OrganizationNodeService {
     @Transactional(readOnly = true)
     public Optional<OrganizationNode> getRoot(UUID tenantId) {
         return nodeRepository.findRootByTenantId(tenantId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<OrganizationNode> findByTenantIdAndCode(UUID tenantId, String code) {
+        return nodeRepository.findByTenantIdAndCode(tenantId, code);
     }
 
     @Transactional(readOnly = true)
@@ -266,6 +274,16 @@ public class OrganizationNodeService {
         return nodeRepository.countByTenantIdAndType(tenantId, type);
     }
 
+    @Transactional(readOnly = true)
+    public long countByTenantIdAndType(UUID tenantId, OrganizationNodeType type) {
+        return nodeRepository.countByTenantIdAndType(tenantId, type);
+    }
+
+    @Transactional(readOnly = true)
+    public long countByTenantId(UUID tenantId) {
+        return nodeRepository.countByTenantId(tenantId);
+    }
+
     // ==================== WRAPPER METHODS FOR CONTROLLERS ====================
 
     @Transactional(readOnly = true)
@@ -315,5 +333,17 @@ public class OrganizationNodeService {
 
     public Optional<TenantSubscription> getTenantSubscription(UUID tenantId) {
         return Optional.empty(); // To be implemented with subscriptionRepository
+    }
+
+    public Invitation saveInvitation(Invitation invitation) {
+        return invitationRepository.save(invitation);
+    }
+
+    public Optional<Invitation> findInvitationById(UUID id) {
+        return invitationRepository.findById(id);
+    }
+
+    public List<Invitation> findInvitationsByTenantId(UUID tenantId) {
+        return invitationRepository.findByTenantId(tenantId);
     }
 }

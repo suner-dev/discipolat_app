@@ -6,6 +6,28 @@ import com.discipolat.common.infrastructure.propagation.EntityPropagationPublish
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
+import com.discipolat.modules.tenants.domain.Role;
+import com.discipolat.modules.tenants.domain.RoleRepository;
+import com.discipolat.modules.tenants.domain.TenantMembership;
+import com.discipolat.modules.tenants.domain.TenantMembershipRepository;
+import com.discipolat.modules.tenants.domain.TenantRepository;
+import com.discipolat.modules.tenants.domain.MembershipStatus;
+import com.discipolat.modules.tenants.enums.SubscriptionStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.discipolat.common.domain.BusinessRuleException;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
+import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.users.domain.User;
+import com.discipolat.modules.users.domain.UserRepository;
+import com.discipolat.modules.tenants.domain.Role;
+import com.discipolat.modules.tenants.domain.RoleRepository;
+import com.discipolat.modules.tenants.domain.TenantMembership;
+import com.discipolat.modules.tenants.domain.TenantMembershipRepository;
+import com.discipolat.modules.tenants.domain.TenantRepository;
+import com.discipolat.modules.tenants.domain.MembershipStatus;
+import com.discipolat.modules.tenants.enums.SubscriptionStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,10 +37,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Service pour la gestion des appartenances utilisateur-tenant.
- * Permet à un utilisateur d'appartenir à plusieurs tenants avec des rôles différents.
- */
 @Service
 @Transactional
 public class TenantMembershipService {
@@ -26,17 +44,20 @@ public class TenantMembershipService {
     private final TenantMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
+    private final RoleRepository roleRepository;
     private final AuditService auditService;
     private final EntityPropagationPublisher propagationPublisher;
 
     public TenantMembershipService(TenantMembershipRepository membershipRepository,
-                                   UserRepository userRepository,
-                                   TenantRepository tenantRepository,
-                                   AuditService auditService,
-                                   EntityPropagationPublisher propagationPublisher) {
+                                    UserRepository userRepository,
+                                    TenantRepository tenantRepository,
+                                    RoleRepository roleRepository,
+                                    AuditService auditService,
+                                    EntityPropagationPublisher propagationPublisher) {
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
         this.tenantRepository = tenantRepository;
+        this.roleRepository = roleRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
     }
@@ -44,7 +65,7 @@ public class TenantMembershipService {
     /**
      * Ajoute un utilisateur à un tenant avec un rôle donné
      */
-    public TenantMembership addMembership(UUID userId, UUID tenantId, String role, UUID invitedBy) {
+    public TenantMembership addMembership(UUID userId, UUID tenantId, String roleKey, UUID invitedBy) {
         // Vérifier que l'utilisateur existe
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User", userId));
@@ -52,6 +73,11 @@ public class TenantMembershipService {
         // Vérifier que le tenant existe
         tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("Tenant", tenantId));
+
+        // Résoudre le rôle
+        Role role = roleRepository.findByTenantIdAndKey(tenantId, roleKey.toUpperCase())
+                .orElseGet(() -> roleRepository.findByTenantIdIsNullAndKey(roleKey.toUpperCase())
+                        .orElseThrow(() -> new EntityNotFoundException("Role", "key", roleKey)));
 
         // Vérifier si l'appartenance existe déjà
         Optional<TenantMembership> existing = membershipRepository.findByUserIdAndTenantId(userId, tenantId);
@@ -89,8 +115,8 @@ public class TenantMembershipService {
 
         auditMembership(membership, "MEMBERSHIP_CREATED", invitedBy);
         propagationPublisher.publishCreated("TENANT_MEMBERSHIP", membership.getId(),
-                Map.of("userId", userId, "tenantId", tenantId, "role", role),
-                "Membership créé: user=" + userId + " tenant=" + tenantId + " role=" + role);
+                Map.of("userId", userId, "tenantId", tenantId, "role", roleKey),
+                "Membership créé: user=" + userId + " tenant=" + tenantId + " role=" + roleKey);
 
         return membership;
     }
@@ -98,11 +124,17 @@ public class TenantMembershipService {
     /**
      * Change le rôle d'un utilisateur dans un tenant
      */
-    public TenantMembership changeRole(UUID userId, UUID tenantId, String newRole, UUID changedBy) {
+    public TenantMembership changeRole(UUID userId, UUID tenantId, String newRoleKey, UUID changedBy) {
         TenantMembership membership = membershipRepository.findByUserIdAndTenantId(userId, tenantId)
-                .orElseThrow(() -> new EntityNotFoundException("TenantMembership", userId + ":" + tenantId));
+                .orElseThrow(() -> new EntityNotFoundException("TenantMembership", "userId:tenantId", userId + ":" + tenantId));
 
-        String oldRole = membership.getRole();
+        Role newRole = roleRepository.findByTenantIdAndKey(tenantId, newRoleKey.toUpperCase())
+                .orElseGet(() -> roleRepository.findByTenantIdIsNullAndKey(newRoleKey.toUpperCase())
+                        .orElseThrow(() -> new EntityNotFoundException("Role", "key", newRoleKey)));
+
+        Role oldRoleEntity = membership.getRole();
+        String oldRoleKey = oldRoleEntity != null ? oldRoleEntity.getKey() : null;
+
         membership.setRole(newRole);
         membership = membershipRepository.save(membership);
 
@@ -113,7 +145,7 @@ public class TenantMembershipService {
                 "TENANT_MEMBERSHIP",
                 membership.getId(),
                 "SUCCESS",
-                Map.of("oldRole", oldRole, "newRole", newRole),
+                Map.of("oldRole", oldRoleKey, "newRole", newRoleKey),
                 null, null, null
         );
 
@@ -125,7 +157,7 @@ public class TenantMembershipService {
      */
     public void removeMembership(UUID userId, UUID tenantId, UUID removedBy) {
         TenantMembership membership = membershipRepository.findByUserIdAndTenantId(userId, tenantId)
-                .orElseThrow(() -> new EntityNotFoundException("TenantMembership", userId + ":" + tenantId));
+                .orElseThrow(() -> new EntityNotFoundException("TenantMembership", "userId:tenantId", userId + ":" + tenantId));
 
         membership.setStatus(MembershipStatus.REVOKED);
         membershipRepository.save(membership);
@@ -137,7 +169,7 @@ public class TenantMembershipService {
                 "TENANT_MEMBERSHIP",
                 membership.getId(),
                 "SUCCESS",
-                Map.of("role", membership.getRole()),
+                Map.of("role", membership.getRole() != null ? membership.getRole().getKey() : null),
                 null, null, null
         );
     }
@@ -183,6 +215,11 @@ public class TenantMembershipService {
         return membershipRepository.countByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE);
     }
 
+    @Transactional(readOnly = true)
+    public List<TenantMembership> findByUserId(UUID userId) {
+        return membershipRepository.findByUserId(userId);
+    }
+
     private void auditMembership(TenantMembership membership, String action, UUID actorId) {
         auditService.log(
                 actorId != null ? actorId : membership.getUserId(),
@@ -191,7 +228,7 @@ public class TenantMembershipService {
                 "TENANT_MEMBERSHIP",
                 membership.getId(),
                 "SUCCESS",
-                Map.of("userId", membership.getUserId(), "role", membership.getRole()),
+                Map.of("userId", membership.getUserId(), "role", membership.getRole() != null ? membership.getRole().getKey() : null),
                 null, null, null
         );
     }

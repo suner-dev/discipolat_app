@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -38,7 +39,7 @@ public class AiKpiNarrativeService {
         long totalFamilies = familyRepo.countByTenantId(tenantId);
         long newSoulsWeek = soulRepo.countByTenantIdAndDateIntegrationAfter(tenantId, weekStart);
         long newSoulsMonth = soulRepo.countByTenantIdAndDateIntegrationAfter(tenantId, monthStart);
-        long activeReports = reportRepo.countByTenantIdAndCreatedAtAfter(tenantId, weekStart);
+        long activeReports = reportRepo.countByTenantIdAndCreatedAtAfter(tenantId, weekStart.atStartOfDay());
         double presenceRate = presenceRepo.calculatePresenceRate(tenantId, weekStart, now);
 
         Map<String, Object> narrative = new LinkedHashMap<>();

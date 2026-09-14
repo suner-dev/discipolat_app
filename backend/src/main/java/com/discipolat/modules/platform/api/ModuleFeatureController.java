@@ -7,7 +7,9 @@ import com.discipolat.modules.tenants.domain.SaasPlanService;
 import com.discipolat.modules.tenants.domain.Tenant;
 import com.discipolat.modules.tenants.domain.TenantRepository;
 import com.discipolat.modules.tenants.enums.SubscriptionStatus;
+import com.discipolat.modules.tenants.domain.TenantSubscription;
 import com.discipolat.modules.tenants.domain.TenantSubscriptionRepository;
+import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +30,7 @@ public class ModuleFeatureController {
     private final SaasPlanRepository planRepository;
     private final SaasPlanService planService;
     private final TenantSubscriptionRepository subscriptionRepository;
+    private final UserRepository userRepository;
     private final AuditService auditService;
 
     public ModuleFeatureController(
@@ -35,11 +38,13 @@ public class ModuleFeatureController {
             SaasPlanRepository planRepository,
             SaasPlanService planService,
             TenantSubscriptionRepository subscriptionRepository,
+            UserRepository userRepository,
             AuditService auditService) {
         this.tenantRepository = tenantRepository;
         this.planRepository = planRepository;
         this.planService = planService;
         this.subscriptionRepository = subscriptionRepository;
+        this.userRepository = userRepository;
         this.auditService = auditService;
     }
 
@@ -191,16 +196,16 @@ public class ModuleFeatureController {
         
         for (SaasPlan plan : plans) {
             result.add(new PlanInfo(
-                    plan.getId(),
+                    plan.getKey(),
                     plan.getKey(),
                     plan.getName(),
                     plan.getDescription(),
-                    plan.getPriceMonthly(),
-                    plan.getPriceYearly(),
-                    plan.getSeatsLimit(),
+                    plan.getPriceMonthly() != null ? plan.getPriceMonthly().doubleValue() : 0.0,
+                    plan.getPriceYearly() != null ? plan.getPriceYearly().doubleValue() : 0.0,
+                    0, // seatsLimit not available
                     parseJson(plan.getLimitsJson()),
-                    plan.getFeatures() != null ? plan.getFeatures() : List.of(),
-                    plan.getIsPublic()
+                    parseJson(plan.getFeaturesJson()),
+                    plan.getIsActive()
             ));
         }
 
@@ -321,8 +326,7 @@ public class ModuleFeatureController {
 
     private long getCurrentUserCount(UUID tenantId) {
         try {
-            return org.springframework.data.jpa.repository.support.SimpleJpaRepository
-                    .class.cast(null); // Placeholder - implémentation réelle via repository
+            return userRepository.countByTenantId(tenantId);
         } catch (Exception e) {
             return 0;
         }
@@ -346,11 +350,11 @@ public class ModuleFeatureController {
         return new SubscriptionInfo(
                 sub.get().getPlanKey(),
                 plan != null ? plan.getName() : "Inconnu",
-                plan != null ? plan.getPriceMonthly() : null,
-                plan != null ? plan.getPriceYearly() : null,
+                plan != null ? plan.getPriceMonthly() : 0.0,
+                plan != null ? plan.getPriceYearly() : 0.0,
                 sub.get().getCurrentPeriodEnd(),
                 sub.get().getCurrentPeriodStart(),
-                sub.get().isCancelAtPeriodEnd(),
+                sub.get().getCancelAtPeriodEnd(),
                 sub.get().getStatus() == SubscriptionStatus.ACTIVE
         );
     }
@@ -421,7 +425,7 @@ public class ModuleFeatureController {
     ) {}
 
     public record PlanInfo(
-            UUID id,
+            String id,
             String key,
             String name,
             String description,
@@ -429,7 +433,7 @@ public class ModuleFeatureController {
             Double priceYearly,
             Integer seatsLimit,
             Map<String, Object> limits,
-            List<String> features,
-            boolean isPublic
+            Map<String, Object> features,
+            Boolean isActive
     ) {}
 }

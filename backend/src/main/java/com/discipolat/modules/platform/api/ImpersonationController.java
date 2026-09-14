@@ -23,16 +23,17 @@ public class ImpersonationController {
 
     @PostMapping
     @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
-    public ResponseEntity<Map<String, Object>> startImpersonation(@RequestBody Map<String, Object> request) {
-        UUID tenantId = UUID.fromString((String) request.get("tenantId"));
-        String reason = (String) request.get("reason");
+    public ResponseEntity<Map<String, Object>> startImpersonation(@RequestBody Map<String, Object> requestBody, jakarta.servlet.http.HttpServletRequest httpRequest) {
+        UUID tenantId = UUID.fromString((String) requestBody.get("tenantId"));
+        String reason = (String) requestBody.get("reason");
         
         tenantRepository.findById(tenantId)
             .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
         
         Instant startTime = Instant.now();
-        auditService.log(UUID.randomUUID(), tenantId, "IMPERSONATION_START",
-            "TENANT", tenantId, "SUCCESS", Map.of("reason", reason));
+        auditService.log(UUID.randomUUID(), tenantId, "IMPERSONATION_START", "TENANT",
+            tenantId, "SUCCESS", Map.of("reason", reason),
+            httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), httpRequest);
         
         String token = UUID.randomUUID().toString();
         
@@ -47,9 +48,10 @@ public class ImpersonationController {
 
     @PostMapping("/stop")
     @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
-    public ResponseEntity<Void> stopImpersonation() {
+    public ResponseEntity<Void> stopImpersonation(jakarta.servlet.http.HttpServletRequest httpRequest) {
         auditService.log(UUID.randomUUID(), null, "IMPERSONATION_END",
-            "PLATFORM", null, "SUCCESS", Map.of());
+            "PLATFORM", null, "SUCCESS", Map.of(),
+            httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), httpRequest);
         return ResponseEntity.noContent().build();
     }
 }

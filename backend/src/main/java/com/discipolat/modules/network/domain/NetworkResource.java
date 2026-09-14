@@ -44,7 +44,8 @@ public class NetworkResource {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(columnDefinition = "text[]")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.ARRAY)
+    @Column(name = "tags")
     private String[] tags;
 
     @Column(name = "shared_with_public", nullable = false)

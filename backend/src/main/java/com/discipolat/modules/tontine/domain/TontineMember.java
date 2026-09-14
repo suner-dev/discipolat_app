@@ -28,6 +28,11 @@ public class TontineMember {
     @Column(name = "group_id", nullable = false)
     private UUID groupId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", insertable = false, updatable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private TontineGroup group;
+
     @Column(name = "soul_id")
     private UUID soulId;
 

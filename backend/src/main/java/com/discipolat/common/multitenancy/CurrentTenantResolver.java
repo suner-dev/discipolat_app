@@ -54,7 +54,7 @@ public class CurrentTenantResolver {
         }
 
         // 3. Find active memberships
-        List<TenantMembership> memberships = membershipRepository.findActiveByUserId(userId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
 
         if (memberships.isEmpty()) {
             log.warn("User {} has no active tenant memberships", userId);

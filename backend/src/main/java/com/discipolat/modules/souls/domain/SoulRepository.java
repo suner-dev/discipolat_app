@@ -5,6 +5,7 @@ import com.discipolat.common.enums.TypeDisciple;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -55,6 +56,7 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     List<Soul> findByUserIdIsNotNull();
     Page<Soul> findByDeletedTrue(Pageable pageable);
     List<Soul> findByDeletedTrue();
+    List<Soul> findByDeletedFalse();
 
     /** Sources du Page Builder : comptage et âmes récentes (non supprimées). */
     long countByDeletedFalse();
@@ -68,7 +70,9 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     long countByTenantId(UUID tenantId);
     Optional<Soul> findByIdAndTenantId(UUID id, UUID tenantId);
     List<Soul> findByTenantId(UUID tenantId);
+    @Query("SELECT COUNT(mp) FROM com.discipolat.modules.members.domain.MemberPresence mp WHERE mp.soulId = :soulId")
     long countPresencesBySoulId(UUID soulId);
+    @Query("SELECT COUNT(mp) FROM com.discipolat.modules.members.domain.MemberPresence mp")
     long countTotalEvents();
     List<Soul> findByFamilleIdAndTenantId(UUID familleId, UUID tenantId);
     long countByTenantIdAndDateIntegrationAfter(UUID tenantId, java.time.LocalDate date);

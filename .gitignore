@@ -54,3 +54,7 @@ backups/
 dist-ts/
 tsconfig.tsbuildinfo
 BOOT-INF
+
+# Large reference documents (keep locally, not in repo)
+docs/PRMPT.pdf
+docs/PRMPT.txt

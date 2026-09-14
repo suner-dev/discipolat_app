@@ -1,5 +1,6 @@
 package com.discipolat.common.multitenancy;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
  * Cela garantit l'isolation des données Redis entre tenants.
  */
 @Component
+@ConditionalOnBean(RedisTemplate.class)
 public class TenantAwareRedisManager {
 
     private final RedisTemplate<String, Object> redisTemplate;

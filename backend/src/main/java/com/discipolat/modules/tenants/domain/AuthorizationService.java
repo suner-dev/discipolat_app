@@ -48,7 +48,7 @@ public class AuthorizationService {
         }
 
         // Get user's memberships in this tenant
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatusList(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
         if (memberships.isEmpty()) {
             return false;
         }
@@ -139,7 +139,7 @@ public class AuthorizationService {
      */
     @Transactional(readOnly = true)
     public Set<String> getUserPermissions(UUID userId, UUID tenantId) {
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatusList(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
         Set<String> permissions = new HashSet<>();
 
         for (TenantMembership membership : memberships) {
@@ -157,7 +157,7 @@ public class AuthorizationService {
      */
     @Transactional(readOnly = true)
     public Set<String> getUserPermissionsInScope(UUID userId, UUID tenantId, MembershipScopeType scopeType, UUID scopeId) {
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatusList(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
         Set<String> permissions = new HashSet<>();
 
         for (TenantMembership membership : memberships) {

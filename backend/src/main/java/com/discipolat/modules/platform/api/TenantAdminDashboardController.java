@@ -6,7 +6,7 @@ import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
-import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.audit.domain.AuditLog;
 import com.discipolat.modules.audit.domain.AuditLogRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,8 +30,8 @@ public class TenantAdminDashboardController {
     private final TenantMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
     private final OrganizationNodeRepository orgNodeRepository;
-    private final AuditService auditService;
     private final AuditLogRepository auditLogRepository;
     private final TenantSubscriptionRepository subscriptionRepository;
     private final SaasPlanRepository planRepository;
@@ -41,8 +40,8 @@ public class TenantAdminDashboardController {
                                           TenantMembershipRepository membershipRepository,
                                           UserRepository userRepository,
                                           RoleRepository roleRepository,
+                                          PermissionRepository permissionRepository,
                                           OrganizationNodeRepository orgNodeRepository,
-                                          AuditService auditService,
                                           AuditLogRepository auditLogRepository,
                                           TenantSubscriptionRepository subscriptionRepository,
                                           SaasPlanRepository planRepository) {
@@ -50,8 +49,8 @@ public class TenantAdminDashboardController {
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.permissionRepository = permissionRepository;
         this.orgNodeRepository = orgNodeRepository;
-        this.auditService = auditService;
         this.auditLogRepository = auditLogRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
@@ -75,6 +74,7 @@ public class TenantAdminDashboardController {
         long pendingMemberships = membershipRepository.countByTenantIdAndStatus(tenantId, MembershipStatus.PENDING);
 
         Map<String, Long> membersByRole = membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE).stream()
+                .filter(m -> m.getRole() != null)
                 .collect(Collectors.groupingBy(m -> m.getRole().getKey(), Collectors.counting()));
 
         long churchCount = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH);
@@ -86,16 +86,17 @@ public class TenantAdminDashboardController {
         Optional<TenantSubscription> subscription = subscriptionRepository.findByTenantId(tenantId);
         Optional<SaasPlan> plan = subscription.flatMap(s -> planRepository.findById(s.getPlanKey()));
 
-        // Quota usage
         Map<String, Object> quotas = new HashMap<>();
         if (subscription.isPresent() && plan.isPresent()) {
             Map<String, Object> limits = parseJson(plan.get().getLimitsJson());
             quotas = calculateQuotaUsage(tenantId, limits);
         }
 
-        // Recent activity
         LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
-        long recentAuditLogs = auditLogRepository.countByTenantIdAndTimestampAfter(tenantId, weekAgo);
+        List<AuditLog> recentLogs = auditLogRepository.findSince(weekAgo);
+        long recentAuditLogs = recentLogs.stream()
+                .filter(l -> tenantId.equals(l.getTenantId()))
+                .count();
 
         Map<String, Object> overview = new LinkedHashMap<>();
         overview.put("generatedAt", Instant.now().toString());
@@ -103,43 +104,47 @@ public class TenantAdminDashboardController {
         overview.put("tenantName", tenant.getName());
         overview.put("plan", tenant.getPlan());
 
-        overview.put("users", Map.of(
-                "total", totalUsers,
-                "active", activeUsers,
-                "inactive", inactiveUsers,
-                "totalMemberships", totalMemberships,
-                "activeMemberships", activeMemberships,
-                "pendingMemberships", pendingMemberships,
-                "membersByRole", membersByRole
-        ));
+        Map<String, Object> userMetrics = new LinkedHashMap<>();
+        userMetrics.put("total", totalUsers);
+        userMetrics.put("active", activeUsers);
+        userMetrics.put("inactive", inactiveUsers);
+        userMetrics.put("totalMemberships", totalMemberships);
+        userMetrics.put("activeMemberships", activeMemberships);
+        userMetrics.put("pendingMemberships", pendingMemberships);
+        userMetrics.put("membersByRole", membersByRole);
+        overview.put("users", userMetrics);
 
-        overview.put("organizations", Map.of(
-                "churches", churchCount,
-                "campuses", campusCount,
-                "subChurches", subChurchCount,
-                "departments", departmentCount,
-                "groups", groupCount
-        ));
+        Map<String, Long> orgStats = new LinkedHashMap<>();
+        orgStats.put("churches", churchCount);
+        orgStats.put("campuses", campusCount);
+        orgStats.put("subChurches", subChurchCount);
+        orgStats.put("departments", departmentCount);
+        orgStats.put("groups", groupCount);
+        overview.put("organizations", orgStats);
 
-        overview.put("subscription", subscription.map(s -> Map.of(
-                "planKey", s.getPlanKey(),
-                "status", s.getStatus().name(),
-                "billingCycle", s.getBillingCycle(),
-                "currentPeriodStart", s.getCurrentPeriodStart(),
-                "currentPeriodEnd", s.getCurrentPeriodEnd(),
-                "cancelAtPeriodEnd", s.getCancelAtPeriodEnd(),
-                "trialEndsAt", s.getTrialEndsAt(),
-                "plan", plan.map(p -> Map.of(
-                        "name", p.getName(),
-                        "features", parseJson(p.getFeaturesJson())
-                )).orElse(null)
-        )).orElse(null));
+        overview.put("subscription", subscription.map(s -> {
+            Map<String, Object> sub = new LinkedHashMap<>();
+            sub.put("planKey", s.getPlanKey());
+            sub.put("status", s.getStatus().name());
+            sub.put("billingCycle", s.getBillingCycle());
+            sub.put("currentPeriodStart", s.getCurrentPeriodStart());
+            sub.put("currentPeriodEnd", s.getCurrentPeriodEnd());
+            sub.put("cancelAtPeriodEnd", s.getCancelAtPeriodEnd());
+            sub.put("trialEndsAt", s.getTrialEndsAt());
+            sub.put("plan", plan.map(p -> {
+                Map<String, Object> pMap = new LinkedHashMap<>();
+                pMap.put("name", p.getName());
+                pMap.put("features", parseJson(p.getFeaturesJson()));
+                return pMap;
+            }).orElse(null));
+            return sub;
+        }).orElse(null));
 
         overview.put("quotas", quotas);
 
-        overview.put("activity", Map.of(
-                "auditLogsLast7Days", recentAuditLogs
-        ));
+        Map<String, Object> activity = new LinkedHashMap<>();
+        activity.put("auditLogsLast7Days", recentAuditLogs);
+        overview.put("activity", activity);
 
         return ResponseEntity.ok(overview);
     }
@@ -167,7 +172,6 @@ public class TenantAdminDashboardController {
                     tenantId, MembershipStatus.ACTIVE, pageable).getContent();
         }
 
-        // Apply search filter
         if (search != null && !search.isBlank()) {
             String lowerSearch = search.toLowerCase();
             List<User> users = userRepository.findByTenantId(getCurrentTenantId());
@@ -183,20 +187,20 @@ public class TenantAdminDashboardController {
 
         List<Map<String, Object>> content = memberships.stream().map(m -> {
             Optional<User> user = userRepository.findById(m.getUserId());
-            return Map.<String, Object>of(
-                    "membershipId", m.getId().toString(),
-                    "userId", m.getUserId().toString(),
-                    "email", user.map(User::getEmail).orElse("unknown"),
-                    "firstName", user.map(User::getFirstName).orElse(""),
-                    "lastName", user.map(User::getLastName).orElse(""),
-                    "fullName", (user.map(User::getFirstName).orElse("") + " " + user.map(User::getLastName).orElse("")).trim(),
-                    "role", m.getRole().getKey(),
-                    "scopeType", m.getScopeType().name(),
-                    "scopeId", m.getScopeId() != null ? m.getScopeId().toString() : null,
-                    "status", m.getStatus().name(),
-                    "joinedAt", m.getJoinedAt().toString(),
-                    "photoUrl", user.map(User::getPhotoUrl).orElse(null)
-            );
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("membershipId", m.getId().toString());
+            map.put("userId", m.getUserId().toString());
+            map.put("email", user.map(User::getEmail).orElse("unknown"));
+            map.put("firstName", user.map(User::getFirstName).orElse(""));
+            map.put("lastName", user.map(User::getLastName).orElse(""));
+            map.put("fullName", (user.map(User::getFirstName).orElse("") + " " + user.map(User::getLastName).orElse("")).trim());
+            map.put("role", m.getRole() != null ? m.getRole().getKey() : "UNKNOWN");
+            map.put("scopeType", m.getScopeType() != null ? m.getScopeType().name() : null);
+            map.put("scopeId", m.getScopeId() != null ? m.getScopeId().toString() : null);
+            map.put("status", m.getStatus().name());
+            map.put("joinedAt", m.getJoinedAt().toString());
+            map.put("photoUrl", user.map(User::getPhotoUrl).orElse(null));
+            return map;
         }).toList();
 
         return ResponseEntity.ok(PageResponse.of(content, page, size, content.size(), 1));
@@ -222,14 +226,17 @@ public class TenantAdminDashboardController {
     @GetMapping("/permissions")
     public ResponseEntity<Map<String, List<Permission>>> getPermissionsByScope() {
         return ResponseEntity.ok(permissionRepository.findAll().stream()
-                .collect(Collectors.groupingBy(Permission::getScope)));
+                .collect(Collectors.groupingBy(p -> p.getScope().name())));
     }
 
     @GetMapping("/org/stats")
     public ResponseEntity<Map<String, Long>> getOrgStats() {
         UUID tenantId = getCurrentTenantId();
-        return ResponseEntity.ok(orgNodeRepository.findByTenantId(tenantId).stream()
-                .collect(Collectors.groupingBy(OrganizationNode::getType, Collectors.counting())));
+        Map<String, Long> stats = new LinkedHashMap<>();
+        for (OrganizationNode node : orgNodeRepository.findByTenantId(tenantId)) {
+            stats.merge(node.getType().name(), 1L, Long::sum);
+        }
+        return ResponseEntity.ok(stats);
     }
 
     @GetMapping("/activity")
@@ -238,72 +245,72 @@ public class TenantAdminDashboardController {
             @RequestParam(defaultValue = "20") int size) {
 
         UUID tenantId = getCurrentTenantId();
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
-        Page<com.discipolat.modules.audit.domain.AuditLog> auditPage = auditLogRepository.findByTenantId(tenantId, pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<AuditLog> auditPage = auditLogRepository.findFiltered(tenantId, null, null, null, null, pageable);
 
-        List<Map<String, Object>> content = auditPage.getContent().stream().map(log -> Map.of(
-                "id", log.getId().toString(),
-                "action", log.getAction(),
-                "resourceType", log.getEntiteType(),
-                "resourceId", log.getEntiteId() != null ? log.getEntiteId().toString() : null,
-                "result", log.getResult(),
-                "timestamp", log.getTimestamp().toString()
-        )).toList();
+        List<Map<String, Object>> content = auditPage.getContent().stream().map(log -> {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", log.getId().toString());
+            map.put("action", log.getAction());
+            map.put("resourceType", log.getEntiteType());
+            map.put("resourceId", log.getEntiteId() != null ? log.getEntiteId().toString() : null);
+            map.put("timestamp", log.getCreatedAt().toString());
+            return map;
+        }).toList();
 
         return ResponseEntity.ok(PageResponse.of(content, page, size,
                 auditPage.getTotalElements(), auditPage.getTotalPages()));
     }
 
     private Map<String, Object> toRoleMap(Role role, boolean isSystem) {
-        return Map.of(
-                "id", role.getId().toString(),
-                "key", role.getKey(),
-                "label", role.getLabel(),
-                "description", role.getDescription(),
-                "system", isSystem || role.getSystem(),
-                "priority", role.getPriority(),
-                "permissions", role.getPermissions().stream().map(Permission::getKey).toList()
-        );
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", role.getId().toString());
+        map.put("key", role.getKey());
+        map.put("label", role.getLabel());
+        map.put("description", role.getDescription());
+        map.put("system", isSystem || role.getSystem());
+        map.put("priority", role.getPriority());
+        map.put("permissions", role.getPermissions() != null ? role.getPermissions().stream().map(Permission::getKey).toList() : List.of());
+        return map;
     }
 
     private Map<String, Object> calculateQuotaUsage(UUID tenantId, Map<String, Object> limits) {
-        Map<String, Object> usage = new HashMap<>();
+        Map<String, Object> usage = new LinkedHashMap<>();
 
-        // Current usage
         long users = userRepository.countByTenantId(tenantId);
         long churches = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH);
         long departments = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT);
 
         if (limits.containsKey("max_users")) {
-            usage.put("users", Map.of(
-                    "used", users,
-                    "limit", limits.get("max_users"),
-                    "percent", limits.get("max_users") instanceof Number ?
-                            (users * 100.0 / ((Number) limits.get("max_users")).doubleValue()) : 0
-            ));
+            Map<String, Object> userQuota = new LinkedHashMap<>();
+            userQuota.put("used", users);
+            userQuota.put("limit", limits.get("max_users"));
+            userQuota.put("percent", limits.get("max_users") instanceof Number ?
+                    (users * 100.0 / ((Number) limits.get("max_users")).doubleValue()) : 0);
+            usage.put("users", userQuota);
         }
         if (limits.containsKey("max_churches")) {
-            usage.put("churches", Map.of(
-                    "used", churches,
-                    "limit", limits.get("max_churches"),
-                    "percent", limits.get("max_churches") instanceof Number ?
-                            (churches * 100.0 / ((Number) limits.get("max_churches")).doubleValue()) : 0
-            ));
+            Map<String, Object> churchQuota = new LinkedHashMap<>();
+            churchQuota.put("used", churches);
+            churchQuota.put("limit", limits.get("max_churches"));
+            churchQuota.put("percent", limits.get("max_churches") instanceof Number ?
+                    (churches * 100.0 / ((Number) limits.get("max_churches")).doubleValue()) : 0);
+            usage.put("churches", churchQuota);
         }
         if (limits.containsKey("max_departments")) {
-            usage.put("departments", Map.of(
-                    "used", departments,
-                    "limit", limits.get("max_departments"),
-                    "percent", limits.get("max_departments") instanceof Number ?
-                            (departments * 100.0 / ((Number) limits.get("max_departments")).doubleValue()) : 0
-            ));
+            Map<String, Object> deptQuota = new LinkedHashMap<>();
+            deptQuota.put("used", departments);
+            deptQuota.put("limit", limits.get("max_departments"));
+            deptQuota.put("percent", limits.get("max_departments") instanceof Number ?
+                    (departments * 100.0 / ((Number) limits.get("max_departments")).doubleValue()) : 0);
+            usage.put("departments", deptQuota);
         }
         if (limits.containsKey("max_storage_mb")) {
-            usage.put("storage", Map.of(
-                    "usedMb", 0, // Would need actual storage calculation
-                    "limitMb", limits.get("max_storage_mb"),
-                    "percent", 0
-            ));
+            Map<String, Object> storageQuota = new LinkedHashMap<>();
+            storageQuota.put("usedMb", 0);
+            storageQuota.put("limitMb", limits.get("max_storage_mb"));
+            storageQuota.put("percent", 0);
+            usage.put("storage", storageQuota);
         }
 
         return usage;

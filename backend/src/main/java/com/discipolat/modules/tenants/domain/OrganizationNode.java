@@ -44,6 +44,17 @@ public class OrganizationNode {
     @Column(name = "code", length = 50)
     private String code;
 
+    @Column(name = "slug", length = 100)
+    private String slug;
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private OrganizationNodeStatus status;
@@ -65,6 +76,14 @@ public class OrganizationNode {
 
     @Column(name = "metadata_json", columnDefinition = "jsonb")
     private String metadataJson;
+
+    public String getMetadata() {
+        return metadataJson;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadataJson = metadata;
+    }
 
     @Column(name = "responsible_id")
     private UUID responsibleId;

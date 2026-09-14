@@ -7,7 +7,7 @@ import org.hibernate.annotations.Filter;
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
+@Entity(name = "TenantAuditLog")
 @Table(name = "audit_logs", indexes = {
         @Index(name = "idx_audit_tenant", columnList = "tenant_id"),
         @Index(name = "idx_audit_actor", columnList = "actor_id"),

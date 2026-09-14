@@ -1,6 +1,8 @@
 package com.discipolat.modules.members.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -26,5 +28,6 @@ public interface MemberPresenceRepository extends JpaRepository<MemberPresence, 
 
     // AI module methods
     long countByTenantIdAndCreatedAtAfter(UUID tenantId, java.time.LocalDateTime date);
-    double calculatePresenceRate(UUID tenantId, java.time.LocalDate start, java.time.LocalDate end);
+    @Query("SELECT (COUNT(DISTINCT CASE WHEN mp.present = true THEN mp.soulId END) * 1.0d) / NULLIF(COUNT(DISTINCT mp.soulId), 0) FROM MemberPresence mp WHERE mp.tenantId = :tenantId AND mp.semaine BETWEEN :start AND :end")
+    double calculatePresenceRate(@Param("tenantId") UUID tenantId, @Param("start") java.time.LocalDate start, @Param("end") java.time.LocalDate end);
 }

@@ -61,8 +61,16 @@ public class AiModuleService {
         summary.put("totalSouls", soulRepo.countByTenantId(tenantId));
         summary.put("totalFamilies", familyRepo.countByTenantId(tenantId));
         try {
-            AiPrediction growth = predictionService.predictGrowth();
-            summary.put("growthPrediction", Map.of("value", growth.getPredictedValue(), "unit", growth.getUnit(), "explanation", growth.getExplanation()));
+            List<AiPrediction> predictions = predictionService.generatePredictions(tenantId);
+            AiPrediction growth = predictions.stream()
+                    .filter(p -> p.getPredictionType() == AiPrediction.PredictionType.GROWTH_FORECAST)
+                    .findFirst()
+                    .orElse(null);
+            if (growth != null) {
+                summary.put("growthPrediction", Map.of("value", growth.getPredictedValue(), "metricName", growth.getMetricName(), "explanation", growth.getExplanation()));
+            } else {
+                summary.put("growthPrediction", Map.of("error", "Prédiction non disponible"));
+            }
         } catch (Exception e) {
             summary.put("growthPrediction", Map.of("error", "Prédiction non disponible"));
         }

@@ -83,9 +83,11 @@ public class Soul {
     private String situationFamiliale;
 
     @Column(name = "etat_spirituel", nullable = false)
+    @Builder.Default
     private String etatSpirituel = "NOUVEAU_CONVERTI";
 
     @Column(name = "niveau_croissance", nullable = false)
+    @Builder.Default
     private Integer niveauCroissance = 1;
 
     @Column(name = "notes_pasteur")

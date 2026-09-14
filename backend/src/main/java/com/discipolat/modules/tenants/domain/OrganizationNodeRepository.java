@@ -29,12 +29,17 @@ public interface OrganizationNodeRepository extends TenantAwareRepository<Organi
     @Query("SELECT n FROM OrganizationNode n WHERE n.path LIKE :pathPattern")
     List<OrganizationNode> findByPathPrefix(@Param("pathPattern") String pathPattern);
 
-    @Query("SELECT n FROM OrganizationNode n WHERE n.tenantId = :tenantId AND n.path <@ :parentPath")
+    @Query("SELECT n FROM OrganizationNode n WHERE n.tenantId = :tenantId AND n.path LIKE CONCAT(:parentPath, '%')")
     List<OrganizationNode> findDescendants(@Param("tenantId") UUID tenantId, @Param("parentPath") String parentPath);
 
     Optional<OrganizationNode> findRootByTenantId(UUID tenantId);
 
     long countByTenantIdAndType(UUID tenantId, OrganizationNodeType type);
 
-    boolean isDescendantOf(UUID nodeId, UUID ancestorId);
+    long countByTenantId(UUID tenantId);
+
+    long countByType(OrganizationNodeType type);
+
+    @Query("SELECT CASE WHEN COUNT(n) > 0 THEN true ELSE false END FROM OrganizationNode n WHERE n.id = :nodeId AND EXISTS (SELECT a FROM OrganizationNode a WHERE a.id = :ancestorId AND n.path LIKE CONCAT(a.path, '%'))")
+    boolean isDescendantOf(@Param("nodeId") UUID nodeId, @Param("ancestorId") UUID ancestorId);
 }

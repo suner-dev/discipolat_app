@@ -60,7 +60,7 @@ public class TenantSwitcherController {
 
         if (tenantId == null) {
             // User has multiple tenants - return available tenants for selection
-            List<TenantMembership> memberships = membershipRepository.findActiveByUserId(userId, MembershipStatus.ACTIVE);
+            List<TenantMembership> memberships = membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
             List<Map<String, Object>> availableTenants = memberships.stream()
                     .map(m -> {
                         Optional<Tenant> tenant = tenantRepository.findById(m.getTenantId());
@@ -86,7 +86,7 @@ public class TenantSwitcherController {
 
         // Single tenant context - return full context
         Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
 
         // Get active membership (the one matching current scope)
         TenantMembership activeMembership = memberships.stream()
@@ -148,7 +148,7 @@ public class TenantSwitcherController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Map<String, Object>>> getMyTenants() {
         UUID userId = SecurityUtils.getCurrentUserId();
-        List<TenantMembership> memberships = membershipRepository.findActiveByUserId(userId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
 
         List<Map<String, Object>> result = memberships.stream()
                 .map(m -> {
@@ -195,7 +195,7 @@ public class TenantSwitcherController {
         TenantContext.setTenantId(newTenantId);
 
         Tenant tenant = tenantRepository.findById(newTenantId).orElseThrow();
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE);
         TenantMembership membership = memberships.get(0);
 
         return ResponseEntity.ok(Map.of(
@@ -224,7 +224,7 @@ public class TenantSwitcherController {
         UUID newOrgNodeId = UUID.fromString(orgNodeIdStr);
 
         // Validate user has access to this org node via their memberships
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
         boolean hasAccess = memberships.stream().anyMatch(m ->
                 m.getScopeType() == MembershipScopeType.TENANT ||
                 (m.getScopeId() != null && m.getScopeId().equals(newOrgNodeId)) ||

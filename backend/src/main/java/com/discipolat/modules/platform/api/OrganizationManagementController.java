@@ -2,14 +2,21 @@ package com.discipolat.modules.platform.api;
 
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.*;
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.tenants.domain.*;
+import com.discipolat.modules.tenants.domain.TenantMembershipService;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Gestion complète de la hiérarchie organisationnelle
@@ -22,14 +29,17 @@ public class OrganizationManagementController {
 
     private final OrganizationNodeService orgNodeService;
     private final UserRepository userRepository;
+    private final TenantMembershipService tenantMembershipService;
     private final AuditService auditService;
 
     public OrganizationManagementController(
             OrganizationNodeService orgNodeService,
             UserRepository userRepository,
+            TenantMembershipService tenantMembershipService,
             AuditService auditService) {
         this.orgNodeService = orgNodeService;
         this.userRepository = userRepository;
+        this.tenantMembershipService = tenantMembershipService;
         this.auditService = auditService;
     }
 
@@ -66,9 +76,13 @@ public class OrganizationManagementController {
         });
 
         return ResponseEntity.ok(new OrganizationTreeResponse(
-                root.get(),
-                allNodes,
-                childrenByParent
+                toResponse(root.get()),
+                allNodes.stream().map(this::toResponse).toList(),
+                childrenByParent.entrySet().stream()
+                        .collect(Collectors.toMap(
+                                Map.Entry::getKey,
+                                e -> e.getValue().stream().map(this::toResponse).toList()
+                        ))
         ));
     }
 
@@ -136,7 +150,7 @@ public class OrganizationManagementController {
                 .city(request.city())
                 .timezone(request.timezone() != null ? request.timezone() : 
                     parent != null ? parent.getTimezone() : "Africa/Douala")
-                .metadata(request.metadata())
+                .metadataJson(request.metadata() != null ? toJson(request.metadata()) : null)
                 .responsibleId(request.responsibleId())
                 .build();
 
@@ -182,7 +196,7 @@ public class OrganizationManagementController {
         if (request.country() != null) node.setCountry(request.country());
         if (request.city() != null) node.setCity(request.city());
         if (request.timezone() != null) node.setTimezone(request.timezone());
-        if (request.metadata() != null) node.setMetadata(request.metadata());
+        if (request.metadata() != null) node.setMetadata(toJson(request.metadata()));
         if (request.responsibleId() != null) node.setResponsibleId(request.responsibleId());
 
         node = orgNodeService.save(node);
@@ -378,7 +392,7 @@ public class OrganizationManagementController {
                 node.getCountry(),
                 node.getCity(),
                 node.getTimezone(),
-                node.getMetadata(),
+                node.getMetadata() != null ? fromJson(node.getMetadata()) : null,
                 node.getLevel(),
                 node.getCreatedAt(),
                 node.getUpdatedAt()
@@ -386,8 +400,8 @@ public class OrganizationManagementController {
     }
 
     private boolean hasRole(UUID userId, UUID tenantId, String role) {
-        return orgNodeService.getMembershipsByUserId(userId).stream()
-                .anyMatch(m -> m.getTenantId().equals(tenantId) && m.getRole().equalsIgnoreCase(role));
+        return tenantMembershipService.findByUserId(userId).stream()
+                .anyMatch(m -> m.getTenantId().equals(tenantId) && m.getRole() != null && m.getRole().getKey().equalsIgnoreCase(role));
     }
 
     private String generateCode(OrganizationNodeType type) {
@@ -399,6 +413,23 @@ public class OrganizationManagementController {
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("(^-|-$)", "")
                 .substring(0, Math.min(name.length(), 50));
+    }
+
+    private Map<String, Object> fromJson(String json) {
+        if (json == null || json.isBlank()) return Map.of();
+        try {
+            return new ObjectMapper().readValue(json, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            return Map.of();
+        }
+    }
+
+    private String toJson(Object obj) {
+        try {
+            return new ObjectMapper().writeValueAsString(obj);
+        } catch (Exception e) {
+            return "{}";
+        }
     }
 
     // ==================== RECORDS ====================
@@ -418,9 +449,16 @@ public class OrganizationManagementController {
     ) {}
 
     public record CreateNodeRequest(
-            String name, OrganizationNodeType type, UUID parentId,
-            String country, String city, String timezone,
-            Map<String, Object> metadata, UUID responsibleId
+            String name,
+            OrganizationNodeType type,
+            UUID parentId,
+            String slug,
+            String code,
+            String country,
+            String city,
+            String timezone,
+            Map<String, Object> metadata,
+            UUID responsibleId
     ) {}
 
     public record UpdateNodeRequest(

@@ -88,7 +88,7 @@ public class PermissionMatrixService {
 
     @Transactional(readOnly = true)
     public UserPermissionMatrix getUserEffectivePermissions(UUID userId, UUID tenantId) {
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatusList(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
 
         Set<String> allPermissions = new HashSet<>();
         Map<MembershipScopeType, Set<String>> permissionsByScope = new EnumMap<>(MembershipScopeType.class);
@@ -182,7 +182,7 @@ public class PermissionMatrixService {
 
     @Transactional(readOnly = true)
     public boolean userHasPermission(UUID userId, UUID tenantId, String permissionKey, UUID nodeId) {
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndTenantIdAndStatusList(userId, tenantId, MembershipStatus.ACTIVE);
+        List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
 
         for (TenantMembership membership : memberships) {
             if (membership.getRole() != null) {

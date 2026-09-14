@@ -43,21 +43,31 @@ public class TenantFilterIntegrator implements Integrator {
             return false;
         }
 
+        private static final java.util.UUID DEFAULT_TENANT_ID =
+                java.util.UUID.fromString("00000000-0000-0000-0000-000000000001");
+
         private void autoSetTenantId(EntityPersister persister, Object[] state) {
-            // Contexte de requête HTTP : le tenant du JWT.
-            // Si aucun tenant context n'est défini, on lève une exception explicite
-            // pour forcer l'appelant à utiliser TenantContext.runAsTenant().
-            // Cela évite les écritures silencieuses dans le mauvais tenant.
-            java.util.UUID tenantId = TenantContext.getTenantId();
-            if (tenantId == null) {
-                throw new IllegalStateException("No tenant context set for entity persistence. " +
-                        "Use TenantContext.runAsTenant(tenantId, ...) for background jobs, " +
-                        "or ensure JWT contains valid tenantId claim for HTTP requests.");
-            }
             String[] propertyNames = persister.getPropertyNames();
-            int index = Arrays.asList(propertyNames).indexOf("tenantId");
-            if (index >= 0 && state[index] == null) {
+            int index = java.util.Arrays.asList(propertyNames).indexOf("tenantId");
+            if (index < 0 || state[index] != null) {
+                // Aucune colonne tenant_id, ou tenantId déjà fixé explicitement par
+                // le service : on ne touche à rien.
+                return;
+            }
+            java.util.UUID tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                // Contexte de requête HTTP : le tenant du JWT.
                 state[index] = tenantId;
+                return;
+            }
+            // Hors contexte (jobs planifiés, initialiseurs, seed) : seuls les
+            // tenants REQUIS (colonnes NOT NULL) doivent être remplis, avec repli
+            // sur le tenant par défaut créé par la migration V70. Les lignes
+            // systèmes volontairement NULL (roles, permissions) restent NULL.
+            boolean[] nullability = persister.getPropertyNullability();
+            boolean required = nullability == null || index >= nullability.length || !nullability[index];
+            if (required) {
+                state[index] = DEFAULT_TENANT_ID;
             }
         }
     }

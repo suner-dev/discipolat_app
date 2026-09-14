@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Repository
+@Repository("auditLogRepository")
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
 
     /**
@@ -46,4 +46,6 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
             ORDER BY a.createdAt DESC
             """)
     List<AuditLog> findSince(@Param("debut") LocalDateTime debut);
+
+    long countByCreatedAtGreaterThan(LocalDateTime debut);
 }

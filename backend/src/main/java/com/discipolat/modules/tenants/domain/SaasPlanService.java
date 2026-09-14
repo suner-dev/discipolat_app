@@ -5,6 +5,9 @@ import com.discipolat.modules.tenants.enums.SubscriptionStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,7 +70,8 @@ public class SaasPlanService {
         if (plan == null) return false;
 
         try {
-            var features = com.fasterxml.jackson.databind.ObjectMapper().readTree(plan.getFeaturesJson());
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode features = mapper.readTree(plan.getFeaturesJson());
             return features.has(featureKey) && features.get(featureKey).asBoolean();
         } catch (Exception e) {
             return false;
@@ -85,7 +89,8 @@ public class SaasPlanService {
         }
 
         try {
-            var limits = com.fasterxml.jackson.databind.ObjectMapper().readTree(plan.getLimitsJson());
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode limits = mapper.readTree(plan.getLimitsJson());
             if (!limits.has(quotaKey)) {
                 return new QuotaCheck(true, Long.MAX_VALUE, currentUsage, "Unlimited");
             }
@@ -105,7 +110,7 @@ public class SaasPlanService {
      */
     public TenantSubscription subscribe(UUID tenantId, String planKey, String billingCycle, UUID creatorId) {
         SaasPlan plan = planRepository.findByKeyAndIsActiveTrue(planKey)
-                .orElseThrow(() -> new EntityNotFoundException("SaasPlan", planKey));
+                .orElseThrow(() -> new EntityNotFoundException("SaasPlan", "key", planKey));
 
         Optional<TenantSubscription> existing = subscriptionRepository.findByTenantId(tenantId);
         TenantSubscription subscription;
@@ -170,5 +175,9 @@ public class SaasPlanService {
     @Transactional(readOnly = true)
     public List<TenantSubscription> getAllSubscriptions() {
         return subscriptionRepository.findAll();
+    }
+
+    public SaasPlan savePlan(SaasPlan plan) {
+        return planRepository.save(plan);
     }
 }
