@@ -73,6 +73,21 @@ public class InventoryItem {
     @Column(name = "affecte_a_id")
     private UUID affecteAId; // memberId
 
+    // TCO fields (G3.5)
+    @Column(name = "total_maintenance_cost")
+    @Builder.Default
+    private Double totalMaintenanceCost = 0.0;
+
+    @Column(name = "total_checkout_count")
+    @Builder.Default
+    private Integer totalCheckoutCount = 0;
+
+    @Column(name = "purchase_price")
+    private Double purchasePrice;
+
+    @Column(name = "expected_lifespan_months")
+    private Integer expectedLifespanMonths;
+
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 

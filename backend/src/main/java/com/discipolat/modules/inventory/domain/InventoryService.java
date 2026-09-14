@@ -139,11 +139,27 @@ public class InventoryService {
         item.setStatut("EN_MAINTENANCE");
         item.setDerniereMaintenance(LocalDateTime.now());
         InventoryItem saved = repository.save(item);
-        // ===== PROPAGATION CENTRALISÉE =====
         propagationPublisher.publishStatusChanged("INVENTORY_ITEM", saved.getId(),
                 oldStatut, "EN_MAINTENANCE",
                 "Équipement en maintenance: " + saved.getNom());
         return saved;
+    }
+
+    @Transactional
+    public void markCheckedOut(UUID tenantId, UUID itemId) {
+        InventoryItem item = repository.findByTenantIdAndId(tenantId, itemId)
+                .orElseThrow(() -> new EntityNotFoundException("InventoryItem", itemId));
+        item.setStatut("AFFECTE");
+        item.setTotalCheckoutCount(item.getTotalCheckoutCount() + 1);
+        repository.save(item);
+    }
+
+    @Transactional
+    public void markReturned(UUID tenantId, UUID itemId) {
+        InventoryItem item = repository.findByTenantIdAndId(tenantId, itemId)
+                .orElseThrow(() -> new EntityNotFoundException("InventoryItem", itemId));
+        item.setStatut("DISPONIBLE");
+        repository.save(item);
     }
 
     @Transactional(readOnly = true)

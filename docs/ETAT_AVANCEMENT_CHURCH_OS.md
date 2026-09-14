@@ -41,7 +41,7 @@
 | G3.1 | ⬜ | | | People Engine : identité unique + inscription auto |
 | G3.2 | ⬜ | | | Membership, SpaceMembership & RoleAssignment (3 dim + historisation) |
 | G3.3 | ⬜ | | | Event Engine transversal |
-| G3.4 | ⬜ | | | DRESS CODE & PATRIMOINE ÉVÉNEMENTIEL |
+| G3.4 | ✅ | 2026-09-14 | | Dress Code & Patrimoine Eventiel (full module) |
 | G3.5 | ⬜ | | | Asset Engine (Assets, Inventaire, Checkout, Maintenance, TCO) |
 | G3.6 | ⬜ | | | Finance Engine central (une seule finance) |
 | G3.7 | ⬜ | | | Discipleship Engine configurable |
