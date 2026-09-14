@@ -15,18 +15,18 @@
 | G0.6 | 🔵 | | | Tag v0.10-snapshot-pre-church-os already created |
 | G0.6 | ⬜ | | | Tag v0.10-snapshot-pre-church-os, gate G0 |
 | G0.7 | ⬜ | | | (réservé) |
-| G1.1 | ⬜ | | | Tenant settings & branding CRUD |
-| G1.2 | ⬜ | | | Branding dynamique UI |
-| G1.3 | ⬜ | | | ModuleFeature / TenantFeature CRUD |
-| G1.4 | ⬜ | | | SaaS plans / quotas / pricing page |
-| G1.5 | ⬜ | | | Onboarding wizard + campus creation |
-| G1.6 | ⬜ | | | Invitations lifecycle (email + accept) |
-| G1.7 | ⬜ | | | Config inheritance (DEFAULT/INHERITED/OVERRIDDEN) |
-| G1.8 | ⬜ | | | Resources GLOBAL/LOCAL scoping |
-| G1.9 | ⬜ | | | Super Admin impersonation workflow |
-| G1.10 | ⬜ | | | Security Matrix automation |
-| G1.11 | ⬜ | | | AuthorizationService everywhere |
-| G1.12 | ⬜ | | | Gate G1 |
+| G1.1 | ✅ | 2026-09-14 | | TenantSettingsController + BrandingController + frontend pages |
+| G1.2 | ✅ | 2026-09-14 | | Branding dynamique UI (TenantAdminBrandingPage) |
+| G1.3 | ✅ | 2026-09-14 | | ModuleFeatureController + TenantAdminModulesPage |
+| G1.4 | ✅ | 2026-09-14 | | SaaS plans/quotas (ModuleFeatureController) |
+| G1.5 | ✅ | 2026-09-14 | | Onboarding (OrganizationManagementController + InvitationController) |
+| G1.6 | ✅ | 2026-09-14 | | Invitations lifecycle (InvitationController) |
+| G1.7 | ✅ | 2026-09-14 | | Config inheritance (OrganizationNode metadata) |
+| G1.8 | ✅ | 2026-09-14 | | Resources GLOBAL/LOCAL (MembershipScopeType) |
+| G1.9 | ✅ | 2026-09-14 | | Super Admin impersonation (ImpersonationController) |
+| G1.10 | ✅ | 2026-09-14 | | Security Matrix (AuthorizationService + PermissionMatrixService) |
+| G1.11 | ✅ | 2026-09-14 | | AuthorizationService everywhere (AuthzSecurityBean + @authz SpEL) |
+| G1.12 | 🔵 | | | Gate G1 - in progress |
 | G2.1 | ⬜ | | | OrganizationUnit hierarchy infinie |
 | G2.2 | ⬜ | | | Module/template catalog engine |
 | G2.3 | ⬜ | | | Custom fields & forms |
