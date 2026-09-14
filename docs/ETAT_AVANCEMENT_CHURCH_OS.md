@@ -9,7 +9,7 @@
 
 | Étape | Statut (⬜ / 🔵 en cours / ✅ vert) | Date | Commit | Note |
 |---|---|---|---|---|
-| G0.1 | 🔵 en cours | 2026-09-14 | — | État des lieux complet du dépôt (3 docs + fiche) |
+| G0.1 | ✅ vert | 2026-09-14 | `docs: state of the art audit before Church OS v1` | État des lieux complet du dépôt (3 docs + fiche) |
 | G0.2 | ⬜ | | | Sauvegarde de l'existant (tag v0.10-snapshot-pre-church-os) |
 | G0.3 | ⬜ | | | Corriger toutes les erreurs de compilation (backend) |
 | G0.4 | ⬜ | | | Frontend : build, lint et tests verts |
@@ -104,7 +104,10 @@
 
 | Fichier modifié | But présumé |
 |---|---|
-| — | Working tree clean (git status OK) |
+| `docs/ETAT_AVANCEMENT_CHURCH_OS.md` | Fiche de suivi créée |
+| `docs/architecture/current-state.md` | Inventaire backend/frontend/mobile/DB/CI |
+| `docs/architecture/gap-analysis.md` | Croisement existant ↔ §27-72 ↔ 43 sections PRMPT |
+| `docs/architecture/target-architecture.md` | Architecture cible Church OS (Annexe A, moteurs, UX, mobile, commercial) |
 
 ---
 
@@ -112,6 +115,6 @@
 
 | Document | Statut | Date |
 |---|---|---|
-| `docs/architecture/current-state.md` | 🔵 en cours | 2026-09-14 |
-| `docs/architecture/gap-analysis.md` | ⬜ | |
-| `docs/architecture/target-architecture.md` | ⬜ | |
+| `docs/architecture/current-state.md` | ✅ | 2026-09-14 |
+| `docs/architecture/gap-analysis.md` | ✅ | 2026-09-14 |
+| `docs/architecture/target-architecture.md` | ✅ | 2026-09-14 |
