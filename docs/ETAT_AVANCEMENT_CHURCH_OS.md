@@ -10,12 +10,12 @@
 | Étape | Statut (⬜ / 🔵 en cours / ✅ vert) | Date | Commit | Note |
 |---|---|---|---|---|
 | G0.1 | ✅ vert | 2026-09-14 | `docs: state of the art audit before Church OS v1` | État des lieux complet du dépôt (3 docs + fiche) |
-| G0.2 | ⬜ | | | Sauvegarde de l'existant (tag v0.10-snapshot-pre-church-os) |
-| G0.3 | ⬜ | | | Corriger toutes les erreurs de compilation (backend) |
-| G0.4 | ⬜ | | | Frontend : build, lint et tests verts |
-| G0.5 | ⬜ | | | Mobile : analyze et tests verts |
+| G0.2 | ✅ vert | 2026-09-14 | `chore: preserve WIP multitenancy phase 10 as v0.10-snapshot-pre-church-os` | Tag existant, WIP PHASE 10 préservé, secrets validés (.gitignore OK) |
+| G0.3 | ✅ vert | 2026-09-14 | `fix(backend): resolve all pre-existing compilation errors` | `mvn compile -q` ✅ sans erreur · build JAR ✅ |
+| G0.4 | ⚠️ partiel | 2026-09-14 | — | Build ✅ · Tests ✅ (311 passed) · Lint: 958 warnings (0 errors) — à corriger en G5.1 |
+| G0.5 | ⚠️ partiel | 2026-09-14 | — | Analyze: 193 issues (erreurs + warnings) · Tests: timeout — à corriger en G5.6 |
 | G0.6 | ⬜ | | | Verrou G0 (Gate) |
-| G1.1 | ⬜ | | | Cartographie fine de l'existant multi-tenant (§27-72) |
+| G1.1 | ✅ vert | 2026-09-14 | `docs: multitenancy contract mapping (27-72)` | Carte §27-72 remplie avec preuves (fichiers + endpoints + écrans) |
 | G1.2 | ⬜ | | | §27-28 : Tenant Settings & Branding dynamique complet |
 | G1.3 | ⬜ | | | §29 : TenantFeature — modules activables par tenant (CRUD) |
 | G1.4 | ⬜ | | | §30-31 : Plans SaaS & Quotas (CRUD + application réelle) |
