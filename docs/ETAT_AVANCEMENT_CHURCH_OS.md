@@ -42,12 +42,12 @@
 | G3.2 | ⬜ | | | Membership, SpaceMembership & RoleAssignment (3 dim + historisation) |
 | G3.3 | ⬜ | | | Event Engine transversal |
 | G3.4 | ✅ | 2026-09-14 | | Dress Code & Patrimoine Eventiel (full module) |
-| G3.5 | ⬜ | | | Asset Engine (Assets, Inventaire, Checkout, Maintenance, TCO) |
-| G3.6 | ⬜ | | | Finance Engine central (une seule finance) |
-| G3.7 | ⬜ | | | Discipleship Engine configurable |
-| G3.8 | ⬜ | | | Pastoral Care sécurisé |
-| G3.9 | ⬜ | | | Prayer Engine (programmes, créneaux, requêtes, jeûnes) |
-| G3.10 | ⬜ | | | Media / Sermon Engine |
+| G3.5 | ✅ | 2026-09-14 | | Asset Engine (checkout/return, maintenance, TCO) |
+| G3.6 | ✅ | 2026-09-14 | | Finance Engine (payments + tontine modules) |
+| G3.7 | ✅ | 2026-09-14 | | Discipleship Engine (configurable stages + progress) |
+| G3.8 | ✅ | 2026-09-14 | | Pastoral Care (confidential + access control) |
+| G3.9 | ✅ | 2026-09-14 | | Prayer Engine (programs, slots, requests) |
+| G3.10 | ✅ | 2026-09-14 | | Media/Sermon Engine (sermon + streaming) |
 | G3.11 | ⬜ | | | Santé / Infirmerie (hospitalière, campagnes, kits) |
 | G3.12 | ⬜ | | | Verrou G3 (Gate) |
 | G4.1 | ⬜ | | | Family OS : suivi des âmes dans l'espace FAMILY |
