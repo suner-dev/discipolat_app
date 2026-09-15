@@ -1,8 +1,6 @@
 package com.discipolat.modules.platform.api;
 
-import com.discipolat.common.infrastructure.config.SecurityConfig;
-import com.discipolat.common.infrastructure.security.JwtTokenProvider;
-import com.discipolat.common.test.TestJwtConfig;
+import com.discipolat.common.test.TestSecurityConfig;
 import com.discipolat.modules.platform.domain.ChurchSettings;
 import com.discipolat.modules.platform.domain.ChurchSettingsService;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,12 +33,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests de régression API du {@link SettingsController} (identité & marque).
  *
  * Exerce la chaîne de sécurité RÉELLE (@WebMvcTest + SecurityConfig +
- * JwtTokenProvider réel) : publication publique, lecture authentifiée,
+ * JwtTokenProvider réel + AuthorizationService mock) : publication publique, lecture authentifiée,
  * mise à jour ADMIN (avec validation bean) et réinitialisation.
  */
 @WebMvcTest(SettingsController.class)
-@Import({SecurityConfig.class, TestJwtConfig.class})
-@org.springframework.test.context.ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 class SettingsControllerTest {
 
     @Autowired
