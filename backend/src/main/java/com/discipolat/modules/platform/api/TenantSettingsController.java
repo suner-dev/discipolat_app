@@ -1,36 +1,32 @@
 package com.discipolat.modules.platform.api;
 
 import com.discipolat.common.multitenancy.TenantContext;
-import com.discipolat.modules.tenants.domain.Tenant;
-import com.discipolat.modules.tenants.domain.TenantRepository;
-import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.tenants.domain.TenantSettings;
+import com.discipolat.modules.tenants.service.TenantSettingsService;
+import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Tenant Settings Controller (Section 27, 37 du prompt)
- * Configuration complète du tenant
- */
 @RestController
 @RequestMapping("/api/v1/admin/settings")
 public class TenantSettingsController {
 
-    private final TenantRepository tenantRepository;
-    private final AuditService auditService;
+    private final TenantSettingsService settingsService;
 
-    public TenantSettingsController(TenantRepository tenantRepository, AuditService auditService) {
-        this.tenantRepository = tenantRepository;
-        this.auditService = auditService;
+    public TenantSettingsController(TenantSettingsService settingsService) {
+        this.settingsService = settingsService;
     }
 
     private UUID getCurrentTenantId() {
         UUID tenantId = TenantContext.getTenantId();
-        if (tenantId == null) throw new SecurityException("Aucun tenant");
+        if (tenantId == null) throw new SecurityException("Aucun tenant dans le contexte");
         return tenantId;
     }
 
@@ -42,124 +38,189 @@ public class TenantSettingsController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<TenantSettingsResponse> getSettings() {
         UUID tenantId = getCurrentTenantId();
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
-
-        Map<String, Object> settings = parseJson(tenant.getSettingsJson());
-
-        return ResponseEntity.ok(new TenantSettingsResponse(
-                tenant.getId(),
-                tenant.getName(),
-                tenant.getSlug(),
-                (String) settings.getOrDefault("description", ""),
-                tenant.getCountry(),
-                tenant.getCurrency(),
-                tenant.getTimezone(),
-                tenant.getLocale(),
-                settings.getOrDefault("dateFormat", "dd/MM/yyyy") + "",
-                settings.getOrDefault("phoneCountryCode", "+237") + "",
-                settings.getOrDefault("email", "") + "",
-                settings.getOrDefault("phone", "") + "",
-                settings.getOrDefault("website", "") + "",
-                (Map<String, Object>) settings.getOrDefault("openingHours", Map.of()),
-                (List<String>) settings.getOrDefault("workingDays", List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")),
-                tenant.getStatus(),
-                tenant.getTrialEndsAt()
-        ));
+        TenantSettings settings = settingsService.getSettings(tenantId);
+        return ResponseEntity.ok(toResponse(settings));
     }
 
     @PutMapping
     @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<TenantSettingsResponse> updateSettings(@RequestBody TenantSettingsRequest request) {
+    public ResponseEntity<TenantSettingsResponse> updateSettings(@Valid @RequestBody TenantSettingsRequest request) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
 
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
-
-        // Mettre à jour les champs de base
-        if (request.name() != null) tenant.setName(request.name());
-        if (request.country() != null) tenant.setCountry(request.country());
-        if (request.currency() != null) tenant.setCurrency(request.currency());
-        if (request.timezone() != null) tenant.setTimezone(request.timezone());
-        if (request.locale() != null) tenant.setLocale(request.locale());
-
-        // Mettre à jour les settings JSON
-        Map<String, Object> settings = parseJson(tenant.getSettingsJson());
-        if (request.description() != null) settings.put("description", request.description());
-        if (request.dateFormat() != null) settings.put("dateFormat", request.dateFormat());
-        if (request.phoneCountryCode() != null) settings.put("phoneCountryCode", request.phoneCountryCode());
-        if (request.email() != null) settings.put("email", request.email());
-        if (request.phone() != null) settings.put("phone", request.phone());
-        if (request.website() != null) settings.put("website", request.website());
-        if (request.openingHours() != null) settings.put("openingHours", request.openingHours());
-        if (request.workingDays() != null) settings.put("workingDays", request.workingDays());
-        
-        tenant.setSettingsJson(toJson(settings));
-        tenantRepository.save(tenant);
-
-        auditService.log(currentUserId, tenantId, "SETTINGS_UPDATED", "TENANT",
-                tenantId, "SUCCESS",
-                Map.of("fields", request.fieldsUpdated()),
-                null, null, null);
-
-        return ResponseEntity.ok(toResponse(tenant, settings));
+        TenantSettings saved = settingsService.updateSettings(tenantId, request, currentUserId);
+        return ResponseEntity.ok(toResponse(saved));
     }
 
-    private Map<String, Object> parseJson(String json) {
-        if (json == null || json.isBlank()) return new java.util.HashMap<>();
-        try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Map.class);
-        } catch (Exception e) {
-            return new java.util.HashMap<>();
-        }
+    @PostMapping(value = "/branding/assets", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    public ResponseEntity<Map<String, String>> uploadBrandingAsset(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("assetType") String assetType) {
+        UUID tenantId = getCurrentTenantId();
+        UUID currentUserId = getCurrentUserId();
+
+        String url = settingsService.uploadBrandingAsset(tenantId, file, assetType, currentUserId);
+        return ResponseEntity.ok(Map.of("url", url, "assetType", assetType));
     }
 
-    private String toJson(Object obj) {
-        try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(obj);
-        } catch (Exception e) {
-            return null;
-        }
+    @GetMapping("/branding/css")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> getBrandingCss() {
+        UUID tenantId = getCurrentTenantId();
+        String css = settingsService.generateBrandingCss(tenantId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(css);
     }
 
-    private TenantSettingsResponse toResponse(Tenant tenant, Map<String, Object> settings) {
+    @GetMapping("/public-branding")
+    public ResponseEntity<Map<String, Object>> getPublicBranding() {
+        UUID tenantId = getCurrentTenantId();
+        Map<String, Object> branding = settingsService.getPublicBranding(tenantId);
+        return ResponseEntity.ok(branding);
+    }
+
+    private TenantSettingsResponse toResponse(TenantSettings settings) {
         return new TenantSettingsResponse(
-                tenant.getId(),
-                tenant.getName(),
-                tenant.getSlug(),
-                (String) settings.getOrDefault("description", ""),
-                tenant.getCountry(),
-                tenant.getCurrency(),
-                tenant.getTimezone(),
-                tenant.getLocale(),
-                settings.getOrDefault("dateFormat", "dd/MM/yyyy") + "",
-                settings.getOrDefault("phoneCountryCode", "+237") + "",
-                settings.getOrDefault("email", "") + "",
-                settings.getOrDefault("phone", "") + "",
-                settings.getOrDefault("website", "") + "",
-                (Map<String, Object>) settings.getOrDefault("openingHours", Map.of()),
-                (List<String>) settings.getOrDefault("workingDays", List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")),
-                tenant.getStatus(),
-                tenant.getTrialEndsAt()
+                settings.getId(),
+                settings.getTenant() != null ? settings.getTenant().getId() : null,
+                settings.getBusinessName(),
+                settings.getSlogan(),
+                settings.getLegalName(),
+                settings.getDescription(),
+                settings.getLogoUrl(),
+                settings.getLogoDarkUrl(),
+                settings.getCoverUrl(),
+                settings.getFaviconUrl(),
+                settings.getPrimaryColor(),
+                settings.getSecondaryColor(),
+                settings.getAccentColor(),
+                settings.getSurfaceColor(),
+                settings.getBackgroundColor(),
+                settings.getTextPrimaryColor(),
+                settings.getTextSecondaryColor(),
+                settings.getSuccessColor(),
+                settings.getWarningColor(),
+                settings.getErrorColor(),
+                settings.getInfoColor(),
+                settings.getPrimaryFont(),
+                settings.getSecondaryFont(),
+                settings.getHeadingFont(),
+                settings.getMonoFont(),
+                settings.getLocale(),
+                settings.getSupportedLocales(),
+                settings.getTimezone(),
+                settings.getCountry(),
+                settings.getCity(),
+                settings.getCurrency(),
+                settings.getDateFormat(),
+                settings.getTimeFormat(),
+                settings.getDateTimeFormat(),
+                settings.getPhoneCountryCode(),
+                settings.getWeekStartDay(),
+                settings.getEmail(),
+                settings.getPhone(),
+                settings.getWebsite(),
+                settings.getAddress(),
+                settings.getOpeningHours(),
+                settings.getWorkingDays(),
+                settings.getInvitationEmailSubject(),
+                settings.getInvitationEmailBody(),
+                settings.getWelcomeEmailSubject(),
+                settings.getWelcomeEmailBody(),
+                settings.getFooterText(),
+                settings.getFooterLinks(),
+                settings.getLowBandEnabled(),
+                settings.getPublicDirectoryEnabled(),
+                settings.getLegacyMigrationEnabled(),
+                settings.getOfflineMode(),
+                settings.getAnalyticsEnabled(),
+                settings.getAiFeaturesEnabled(),
+                settings.getChatEnabled(),
+                settings.getAcademyEnabled(),
+                settings.getMarketplaceEnabled(),
+                settings.getApiAccessEnabled(),
+                settings.getCustomDomainEnabled(),
+                settings.getSsoEnabled(),
+                settings.getTwoFactorRequired(),
+                settings.getPasswordPolicyEnabled(),
+                settings.getSessionTimeoutMinutes(),
+                settings.getMaxFailedLoginAttempts(),
+                settings.getLockoutDurationMinutes(),
+                settings.getUiConfig(),
+                settings.getNotificationRules(),
+                settings.getIntegrationConfig(),
+                settings.getCustomCss(),
+                settings.getCustomHeadHtml(),
+                settings.getCreatedAt(),
+                settings.getUpdatedAt(),
+                settings.getVersion()
         );
     }
 
     public record TenantSettingsResponse(
-            UUID id, String name, String slug, String description,
-            String country, String currency, String timezone, String locale,
-            String dateFormat, String phoneCountryCode,
-            String email, String phone, String website,
-            Map<String, Object> openingHours, java.util.List<String> workingDays,
-            com.discipolat.modules.tenants.domain.TenantStatus status,
-            java.time.Instant trialEndsAt
+            UUID id, UUID tenantId,
+            String businessName, String slogan, String legalName, String description,
+            String logoUrl, String logoDarkUrl, String coverUrl, String faviconUrl,
+            String primaryColor, String secondaryColor, String accentColor,
+            String surfaceColor, String backgroundColor,
+            String textPrimaryColor, String textSecondaryColor,
+            String successColor, String warningColor, String errorColor, String infoColor,
+            String primaryFont, String secondaryFont, String headingFont, String monoFont,
+            String locale, List<String> supportedLocales, String timezone, String country,
+            String city, String currency, String dateFormat, String timeFormat,
+            String dateTimeFormat, String phoneCountryCode, Integer weekStartDay,
+            String email, String phone, String website, String address,
+            Map<String, Object> openingHours, List<String> workingDays,
+            String invitationEmailSubject, String invitationEmailBody,
+            String welcomeEmailSubject, String welcomeEmailBody,
+            String footerText, List<Map<String, String>> footerLinks,
+            Boolean lowBandEnabled, Boolean publicDirectoryEnabled, Boolean legacyMigrationEnabled,
+            String offlineMode, Boolean analyticsEnabled, Boolean aiFeaturesEnabled,
+            Boolean chatEnabled, Boolean academyEnabled, Boolean marketplaceEnabled,
+            Boolean apiAccessEnabled, Boolean customDomainEnabled, Boolean ssoEnabled,
+            Boolean twoFactorRequired, Boolean passwordPolicyEnabled,
+            Integer sessionTimeoutMinutes, Integer maxFailedLoginAttempts, Integer lockoutDurationMinutes,
+            Map<String, Object> uiConfig, Map<String, Object> notificationRules,
+            Map<String, Object> integrationConfig, String customCss, String customHeadHtml,
+            java.time.Instant createdAt, java.time.Instant updatedAt, Integer version
     ) {}
 
     public record TenantSettingsRequest(
-            String name, String description, String country, String currency,
-            String timezone, String locale, String dateFormat, String phoneCountryCode,
-            String email, String phone, String website,
-            Map<String, Object> openingHours, java.util.List<String> workingDays,
-            java.util.List<String> fieldsUpdated
+            // Identité
+            String businessName, String slogan, String legalName, String description,
+            // Branding visuel
+            String logoUrl, String logoDarkUrl, String coverUrl, String faviconUrl,
+            // Couleurs
+            String primaryColor, String secondaryColor, String accentColor,
+            String surfaceColor, String backgroundColor,
+            String textPrimaryColor, String textSecondaryColor,
+            String successColor, String warningColor, String errorColor, String infoColor,
+            // Polices
+            String primaryFont, String secondaryFont, String headingFont, String monoFont,
+            // Localisation
+            String locale, List<String> supportedLocales, String timezone, String country,
+            String city, String currency, String dateFormat, String timeFormat,
+            String dateTimeFormat, String phoneCountryCode, Integer weekStartDay,
+            // Contact
+            String email, String phone, String website, String address,
+            Map<String, Object> openingHours, List<String> workingDays,
+            // Textes communication
+            String invitationEmailSubject, String invitationEmailBody,
+            String welcomeEmailSubject, String welcomeEmailBody,
+            String footerText, List<Map<String, String>> footerLinks,
+            // Feature flags
+            Boolean lowBandEnabled, Boolean publicDirectoryEnabled, Boolean legacyMigrationEnabled,
+            String offlineMode, Boolean analyticsEnabled, Boolean aiFeaturesEnabled,
+            Boolean chatEnabled, Boolean academyEnabled, Boolean marketplaceEnabled,
+            Boolean apiAccessEnabled, Boolean customDomainEnabled, Boolean ssoEnabled,
+            Boolean twoFactorRequired, Boolean passwordPolicyEnabled,
+            Integer sessionTimeoutMinutes, Integer maxFailedLoginAttempts, Integer lockoutDurationMinutes,
+            // Config avancée
+            Map<String, Object> uiConfig, Map<String, Object> notificationRules,
+            Map<String, Object> integrationConfig, String customCss, String customHeadHtml,
+            // Métadonnées
+            List<String> updatedFields
     ) {}
 }

@@ -1,38 +1,30 @@
 package com.discipolat.modules.platform.api;
 
 import com.discipolat.common.multitenancy.TenantContext;
-import com.discipolat.modules.tenants.domain.Tenant;
-import com.discipolat.modules.tenants.domain.TenantRepository;
-import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.tenants.service.TenantSettingsService;
+import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-/**
- * Branding Controller (Section 28 du prompt)
- * Chaque tenant peut personnaliser son environnement
- */
 @RestController
 @RequestMapping("/api/v1/admin/branding")
 public class BrandingController {
 
-    private final TenantRepository tenantRepository;
-    private final AuditService auditService;
+    private final TenantSettingsService settingsService;
 
-    public BrandingController(TenantRepository tenantRepository, AuditService auditService) {
-        this.tenantRepository = tenantRepository;
-        this.auditService = auditService;
+    public BrandingController(TenantSettingsService settingsService) {
+        this.settingsService = settingsService;
     }
 
     private UUID getCurrentTenantId() {
         UUID tenantId = TenantContext.getTenantId();
-        if (tenantId == null) throw new SecurityException("Aucun tenant");
+        if (tenantId == null) throw new SecurityException("Aucun tenant dans le contexte");
         return tenantId;
     }
 
@@ -44,94 +36,144 @@ public class BrandingController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BrandingResponse> getBranding() {
         UUID tenantId = getCurrentTenantId();
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
-
-        return ResponseEntity.ok(new BrandingResponse(
-                tenant.getId(),
-                tenant.getBrandingJson() != null ? parseBranding(tenant.getBrandingJson()) : getDefaultBranding()
-        ));
+        TenantSettingsService.BrandingRequest emptyRequest = new TenantSettingsService.BrandingRequest(
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null
+        );
+        // On récupère les settings complets pour le branding
+        var settings = settingsService.getSettings(tenantId);
+        return ResponseEntity.ok(toBrandingResponse(settings));
     }
 
     @PutMapping
     @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<BrandingResponse> updateBranding(@RequestBody BrandingUpdateRequest request) {
+    public ResponseEntity<BrandingResponse> updateBranding(@Valid @RequestBody BrandingRequest request) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
 
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
+        // Convertir en TenantSettingsRequest pour réutiliser la logique
+        TenantSettingsService.TenantSettingsRequest settingsRequest = new TenantSettingsService.TenantSettingsRequest(
+                null, null, null, null,
+                request.logoUrl(), request.logoDarkUrl(), request.coverUrl(), request.faviconUrl(),
+                request.primaryColor(), request.secondaryColor(), request.accentColor(),
+                request.surfaceColor(), request.backgroundColor(),
+                request.textPrimaryColor(), request.textSecondaryColor(),
+                request.successColor(), request.warningColor(), request.errorColor(), request.infoColor(),
+                request.primaryFont(), request.secondaryFont(), request.headingFont(), request.monoFont(),
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                request.customCss(), request.customHeadHtml(),
+                request.updatedFields()
+        );
 
-        String brandingJson = toBrandingJson(request);
-        tenant.setBrandingJson(brandingJson);
-        tenantRepository.save(tenant);
+        TenantSettingsService.BrandingRequest brandingRequest = new TenantSettingsService.BrandingRequest(
+                request.logoUrl(), request.logoDarkUrl(), request.coverUrl(), request.faviconUrl(),
+                request.primaryColor(), request.secondaryColor(), request.accentColor(),
+                request.surfaceColor(), request.backgroundColor(),
+                request.textPrimaryColor(), request.textSecondaryColor(),
+                request.successColor(), request.warningColor(), request.errorColor(), request.infoColor(),
+                request.primaryFont(), request.secondaryFont(), request.headingFont(), request.monoFont(),
+                request.customCss(), request.customHeadHtml(),
+                request.updatedFields()
+        );
 
-        auditService.log(currentUserId, tenantId, "BRANDING_UPDATED", "TENANT",
-                tenantId, "SUCCESS", Map.of(), null, null, null);
+        TenantSettingsService.BrandingRequest empty = new TenantSettingsService.BrandingRequest(
+                request.logoUrl(), request.logoDarkUrl(), request.coverUrl(), request.faviconUrl(),
+                request.primaryColor(), request.secondaryColor(), request.accentColor(),
+                request.surfaceColor(), request.backgroundColor(),
+                request.textPrimaryColor(), request.textSecondaryColor(),
+                request.successColor(), request.warningColor(), request.errorColor(), request.infoColor(),
+                request.primaryFont(), request.secondaryFont(), request.headingFont(), request.monoFont(),
+                request.customCss(), request.customHeadHtml(),
+                request.updatedFields()
+        );
 
-        return ResponseEntity.ok(new BrandingResponse(tenantId, parseBranding(brandingJson)));
+        var saved = settingsService.updateBranding(tenantId, brandingRequest, currentUserId);
+        return ResponseEntity.ok(toBrandingResponse(saved));
     }
 
-    private Map<String, Object> parseBranding(String json) {
-        if (json == null || json.isBlank()) {
-            return getDefaultBranding();
-        }
-        try {
-            return new ObjectMapper().readValue(json, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            return getDefaultBranding();
-        }
+    @PostMapping(value = "/assets", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    public ResponseEntity<Map<String, String>> uploadBrandingAsset(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("assetType") String assetType) {
+        UUID tenantId = getCurrentTenantId();
+        UUID currentUserId = getCurrentUserId();
+
+        String url = settingsService.uploadBrandingAsset(tenantId, file, assetType, currentUserId);
+        return ResponseEntity.ok(Map.of("url", url, "assetType", assetType));
     }
 
-    private String toBrandingJson(BrandingUpdateRequest request) {
-        Map<String, Object> branding = new java.util.HashMap<>();
-        if (request.primaryColor() != null) branding.put("primaryColor", request.primaryColor());
-        if (request.secondaryColor() != null) branding.put("secondaryColor", request.secondaryColor());
-        if (request.accentColor() != null) branding.put("accentColor", request.accentColor());
-        if (request.logoUrl() != null) branding.put("logoUrl", request.logoUrl());
-        if (request.faviconUrl() != null) branding.put("faviconUrl", request.faviconUrl());
-        if (request.logoDarkUrl() != null) branding.put("logoDarkUrl", request.logoDarkUrl());
-        if (request.primaryFont() != null) branding.put("primaryFont", request.primaryFont());
-        if (request.secondaryFont() != null) branding.put("secondaryFont", request.secondaryFont());
-        branding.put("churchName", request.churchName() != null ? request.churchName() : "");
-        branding.put("tagline", request.tagline() != null ? request.tagline() : "");
-        branding.put("address", request.address() != null ? request.address() : "");
-        branding.put("phone", request.phone() != null ? request.phone() : "");
-        branding.put("email", request.email() != null ? request.email() : "");
-        branding.put("website", request.website() != null ? request.website() : "");
-        
-        try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(branding);
-        } catch (Exception e) {
-            return null;
-        }
+    @GetMapping("/css")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> getBrandingCss() {
+        UUID tenantId = getCurrentTenantId();
+        String css = settingsService.generateBrandingCss(tenantId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(css);
     }
 
-    private Map<String, Object> getDefaultBranding() {
-        Map<String, Object> branding = new LinkedHashMap<>();
-        branding.put("primaryColor", "#6366F1");
-        branding.put("secondaryColor", "#8B5CF6");
-        branding.put("accentColor", "#EC4899");
-        branding.put("logoUrl", "");
-        branding.put("faviconUrl", "");
-        branding.put("logoDarkUrl", "");
-        branding.put("primaryFont", "Inter");
-        branding.put("secondaryFont", "Inter");
-        branding.put("churchName", "");
-        branding.put("tagline", "");
-        branding.put("address", "");
-        branding.put("phone", "");
-        branding.put("email", "");
-        branding.put("website", "");
-        return branding;
+    @GetMapping("/public")
+    public ResponseEntity<Map<String, Object>> getPublicBranding() {
+        UUID tenantId = getCurrentTenantId();
+        Map<String, Object> branding = settingsService.getPublicBranding(tenantId);
+        return ResponseEntity.ok(branding);
     }
 
-    public record BrandingResponse(UUID tenantId, Map<String, Object> branding) {}
-    public record BrandingUpdateRequest(
+    private BrandingResponse toBrandingResponse(com.discipolat.modules.tenants.domain.TenantSettings settings) {
+        return new BrandingResponse(
+                settings.getId(),
+                settings.getTenant() != null ? settings.getTenant().getId() : null,
+                settings.getBusinessName(),
+                settings.getSlogan(),
+                settings.getLogoUrl(),
+                settings.getLogoDarkUrl(),
+                settings.getCoverUrl(),
+                settings.getFaviconUrl(),
+                settings.getPrimaryColor(),
+                settings.getSecondaryColor(),
+                settings.getAccentColor(),
+                settings.getSurfaceColor(),
+                settings.getBackgroundColor(),
+                settings.getTextPrimaryColor(),
+                settings.getTextSecondaryColor(),
+                settings.getSuccessColor(),
+                settings.getWarningColor(),
+                settings.getErrorColor(),
+                settings.getInfoColor(),
+                settings.getPrimaryFont(),
+                settings.getSecondaryFont(),
+                settings.getHeadingFont(),
+                settings.getMonoFont(),
+                settings.getCustomCss(),
+                settings.getCustomHeadHtml(),
+                settings.getUpdatedAt()
+        );
+    }
+
+    public record BrandingResponse(
+            UUID id, UUID tenantId,
+            String businessName, String slogan,
+            String logoUrl, String logoDarkUrl, String coverUrl, String faviconUrl,
             String primaryColor, String secondaryColor, String accentColor,
-            String logoUrl, String faviconUrl, String logoDarkUrl,
-            String primaryFont, String secondaryFont,
-            String churchName, String tagline, String address,
-            String phone, String email, String website
+            String surfaceColor, String backgroundColor,
+            String textPrimaryColor, String textSecondaryColor,
+            String successColor, String warningColor, String errorColor, String infoColor,
+            String primaryFont, String secondaryFont, String headingFont, String monoFont,
+            String customCss, String customHeadHtml,
+            java.time.Instant updatedAt
+    ) {}
+
+    public record BrandingRequest(
+            String logoUrl, String logoDarkUrl, String coverUrl, String faviconUrl,
+            String primaryColor, String secondaryColor, String accentColor,
+            String surfaceColor, String backgroundColor,
+            String textPrimaryColor, String textSecondaryColor,
+            String successColor, String warningColor, String errorColor, String infoColor,
+            String primaryFont, String secondaryFont, String headingFont, String monoFont,
+            String customCss, String customHeadHtml,
+            java.util.List<String> updatedFields
     ) {}
 }
