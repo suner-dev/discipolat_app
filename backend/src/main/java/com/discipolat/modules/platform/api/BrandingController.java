@@ -36,10 +36,6 @@ public class BrandingController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BrandingResponse> getBranding() {
         UUID tenantId = getCurrentTenantId();
-        TenantSettingsService.BrandingRequest emptyRequest = new TenantSettingsService.BrandingRequest(
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null
-        );
-        // On récupère les settings complets pour le branding
         var settings = settingsService.getSettings(tenantId);
         return ResponseEntity.ok(toBrandingResponse(settings));
     }
