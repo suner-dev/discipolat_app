@@ -3,6 +3,7 @@ package com.discipolat.modules.tenants;
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.exception.ForbiddenException;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
+import com.discipolat.common.multitenancy.TenantFilter;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.platform.domain.ImpersonationService;
 import com.discipolat.modules.souls.domain.Soul;
@@ -23,6 +24,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -56,6 +58,8 @@ class MultiTenantSecurityTests {
     @Autowired ImpersonationService impersonationService;
     @Autowired JwtTokenProvider jwtTokenProvider;
     @Autowired com.discipolat.modules.tenants.domain.FeatureAccessService featureAccessService;
+    @Autowired TenantFilter tenantFilter;
+
 
     private Tenant tenantA, tenantB;
     private User userA_admin, userA_member, userB_admin, userB_member;
@@ -243,9 +247,17 @@ class MultiTenantSecurityTests {
                         .faiseurId(userB_admin.getId()).build());
             }
 
-            List<Soul> allInTenantA = soulRepository.findAll();
-            assertThat(allInTenantA).hasSize(3);
-            assertThat(allInTenantA).allMatch(s -> s.getTenantId().equals(tenantA.getId()));
+            // Activate the production Hibernate tenant filter on this test thread,
+            // exactly as TenantFilterInterceptor does for real HTTP requests.
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            tenantFilter.enableFilter(request);
+            try {
+                List<Soul> allInTenantA = soulRepository.findAll();
+                assertThat(allInTenantA).hasSize(3);
+                assertThat(allInTenantA).allMatch(s -> s.getTenantId().equals(tenantA.getId()));
+            } finally {
+                tenantFilter.afterCompletion(request);
+            }
         }
     }
 
