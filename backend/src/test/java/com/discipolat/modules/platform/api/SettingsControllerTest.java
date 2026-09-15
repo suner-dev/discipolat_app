@@ -1,5 +1,6 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.test.TestSecurityConfig;
 import com.discipolat.modules.platform.domain.ChurchSettings;
 import com.discipolat.modules.platform.domain.ChurchSettingsService;
