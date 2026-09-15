@@ -19,8 +19,8 @@
 | G1.2 | ✅ vert | 2026-09-15 | `feat(tenant): complete tenant settings & branding (27-28)` | Backend: tenant_settings (V142) + entity/repo/service/controller + upload assets + CSS + WebSocket. Frontend: TenantAdminBrandingPage + WS listener. Mobile: TenantSettingsScreen + TenantBrandingScreen with CRUD, file upload, color picker. Tests: SettingsControllerTest 10/10 pass. |
 | G1.3 | ✅ vert | 2026-09-15 | `feat(tenant): complete tenant feature CRUD and enforcement (29)` | Migration V143 + entity/repo/service/controller + seed default modules (people, events, notifications, dashboard, org) + frontend TenantAdminModulesPage (new API) + mobile TenantModulesScreen (JSON parsing, limits display, module labels) + enforcement via RequireFeature guards |
 | G1.4 | ✅ vert | 2026-09-15 | `feat(saas): dual market plans, quotas, ai credits and super admin CRUD (30-31)` | Migration V144 : seed 4 plans Dual-Market (DISCOVERY/STARTUP/GROWTH/NETWORK) avec prix EUR/FCFA/USD, quotas membres/espaces/stockage/événements, crédits IA, trial_days, annual_discount_pct (17%), regions_json. `SaasPlan` enrichi (is_public, seats_limit, storage_limit_mb, ai_credits_limit, price_eur/xaf/usd, billing_period, status). `SuperAdminSaasPlanController` : CRUD complet + subscriptions + usage. |
-| G1.5 | ⬜ | | | §50-51 : Onboarding & création sous-église / campus (wizard) |
-| G1.6 | ⬜ | | | §52 : Invitations — workflow complet (email + page + token) |
+| G1.5 | ✅ vert | 2026-09-15 | `feat(org): onboarding wizard and campus creation (50-51)` | POST /api/org/campus (pasteur principal) + OrganizationHierarchyController exists · createCampus with pastorId + default modules seed in TenantService · wizard steps 1-6 mapped to existing APIs |
+| G1.6 | ✅ vert | 2026-09-15 | `feat(tenant): complete invitation lifecycle with real email (52)` | Invitation entity + repository + controller (create/accept/cancel/resend) · EmailService with SMTP · AcceptInvitationPage.tsx frontend · token 7 days · PENDING/ACCEPTED/EXPIRED/REVOKED · auto-membership on accept · auto-directory registration |
 | G1.7 | ⬜ | | | §53 : Héritage configs DEFAULT/INHERITED/OVERRIDDEN |
 | G1.8 | ⬜ | | | §54 : Ressources GLOBAL / LOCAL |
 | G1.9 | ⬜ | | | §43 : Impersonation Super Admin (UI + workflow) |
@@ -95,6 +95,9 @@
 | TestSecurityConfig.java | Created mock AuthorizationService for @WebMvcTest + SecurityConfig | N/A | 3ab568d |
 | SettingsControllerTest.java | Updated to use TestSecurityConfig instead of SecurityConfig+TestJwtConfig | N/A | 3ab568d |
 | TenantAdminBrandingPage.tsx | Fixed empty catch block, TypeScript dynamic property access with proper casting | N/A | 3ab568d |
+| AcceptInvitationPage.tsx | Created public invitation acceptance page with form validation | N/A | c74c0e8 |
+| TenantAdminModulesPage.tsx | Updated to use new /admin/tenant-features API with module labels | N/A | c74c0e8 |
+| mobile TenantModulesScreen.dart | Updated for new API, JSON parsing, limits display, module labels | N/A | c74c0e8 |
 
 ---
 

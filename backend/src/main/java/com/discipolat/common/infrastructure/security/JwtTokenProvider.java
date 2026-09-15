@@ -140,6 +140,42 @@ public class JwtTokenProvider {
         return generateAccessToken(user.getId(), user.getEmail(), activeRole,
                 rolesSet, user.isEstChefDeFamille(), user.getTenantId());
     }
+    /**
+     * §G1.9 — Token d'impersonation : porte l'IDENTITÉ DE LA CIBLE (subject, email,
+     * rôle, tenant) — jamais celle du super admin — pour garantir l'absence totale
+     * d'élévation de privilège : l'impersonateur n'obtient que les permissions de
+     * la cible. TTL court (non configurable au-delà de la constante), claim `imp`
+     * = identifiant réel du super admin (traçabilité), claim `type` = "impersonation"
+     * pour distinguer d'un access token de session normale.
+     */
+    public String generateImpersonationToken(UUID targetUserId, String targetEmail,
+                                             String targetActiveRole, java.util.Set<String> targetRoles,
+                                             UUID targetTenantId, UUID realAdminId, long validityMinutes) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", targetEmail);
+        claims.put("role", targetActiveRole);
+        claims.put("roles", targetRoles);
+        claims.put("activeRole", targetActiveRole);
+        claims.put("type", "impersonation");
+        claims.put("imp", realAdminId.toString());
+        if (targetTenantId != null) {
+            claims.put("tenantId", targetTenantId.toString());
+        }
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(targetUserId.toString())
+                .issuedAt(Date.from(Instant.now()))
+                .expiration(Date.from(Instant.now().plus(Duration.ofMinutes(validityMinutes))))
+                .signWith(privateKey, Jwts.SIG.RS256)
+                .compact();
+    }
+
+    /** Extrait l'identifiant du super admin réel depuis un token d'impersonation (claim `imp`). */
+    public UUID extractImpersonatorId(String token) {
+        String imp = getClaims(token).get("imp", String.class);
+        return imp != null ? UUID.fromString(imp) : null;
+    }
 
     public java.util.List<String> extractRoles(String token) {
         return getClaims(token).get("roles", java.util.List.class);

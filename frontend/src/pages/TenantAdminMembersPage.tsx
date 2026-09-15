@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
+import { isPlatformAdmin } from "@/workspaces";
+import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import api from "@/lib/api";
+import toast from "react-hot-toast";
+import { Eye } from "lucide-react";
 
 interface Member {
   membershipId: string;
@@ -19,6 +24,8 @@ interface Member {
 
 export default function TenantAdminMembersPage() {
   const { hasPermission } = useTenant();
+  const { user } = useAuth();
+  const { startImpersonation } = useImpersonation();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -136,12 +143,34 @@ export default function TenantAdminMembersPage() {
                   {new Date(member.joinedAt).toLocaleDateString("fr-FR")}
                 </td>
                 <td className="px-6 py-4">
-                  <button 
-                    className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-                    disabled={!hasPermission("USER_MANAGE")}
-                  >
-                    Modifier
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                      disabled={!hasPermission("USER_MANAGE")}
+                    >
+                      Modifier
+                    </button>
+                    {/* §G1.9 — Impersonation (super admin plateforme uniquement, motif requis + journalisé) */}
+                    {isPlatformAdmin(user?.activeRole ?? user?.role) && (
+                      <button
+                        className="flex items-center gap-1 text-violet-600 hover:text-violet-800 text-sm font-medium"
+                        title="Impersoner cet utilisateur (diagnostic)"
+                        onClick={async () => {
+                          const reason = window.prompt(
+                            `Impersonation de ${member.email} — motif (obligatoire, journalisé) :`
+                          );
+                          if (!reason || !reason.trim()) {
+                            toast.error("Un motif est requis pour impersoner");
+                            return;
+                          }
+                          await startImpersonation(member.email, reason.trim());
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                        Impersoner
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

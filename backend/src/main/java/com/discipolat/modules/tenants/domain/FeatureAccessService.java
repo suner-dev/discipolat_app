@@ -112,11 +112,11 @@ public class FeatureAccessService {
     }
 
     private Map<String, Object> parseJson(String json) {
-        if (json == null || json.isBlank()) return Map.of();
+        if (json == null || json.isBlank()) return new java.util.HashMap<>();
         try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Map.class);
+            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, java.util.HashMap.class);
         } catch (Exception e) {
-            return Map.of();
+            return new java.util.HashMap<>();
         }
     }
 

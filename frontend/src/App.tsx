@@ -21,6 +21,7 @@ const TwoFactorChallengePage = lazy(() => import('@/pages/TwoFactorChallengePage
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const ActivateAccountPage = lazy(() => import('@/pages/ActivateAccountPage'));
+const AcceptInvitationPage = lazy(() => import('@/pages/AcceptInvitationPage'));
 const MagicLinkVerifyPage = lazy(() => import('@/pages/MagicLinkVerifyPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const PasteurDashboardPage = lazy(() => import('@/pages/PasteurDashboardPage'));
@@ -344,6 +345,8 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />
           <Route path="/auth/magic-link" element={<MagicLinkVerifyPage />} />
+          {/* §G1.6 — Page PUBLIQUE d'acceptation d'invitation (invité sans compte) */}
+          <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
         </Route>
 
         <Route path="/verify-2fa" element={

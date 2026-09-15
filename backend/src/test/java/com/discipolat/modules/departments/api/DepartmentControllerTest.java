@@ -2,7 +2,7 @@ package com.discipolat.modules.departments.api;
 
 import com.discipolat.common.infrastructure.config.SecurityConfig;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
-import com.discipolat.common.test.TestJwtConfig;
+import com.discipolat.common.test.TestSecurityConfig;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentService;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * CreateDepartmentRequest et UpdateDepartmentRequest.
  */
 @WebMvcTest(DepartmentController.class)
-@Import({SecurityConfig.class, TestJwtConfig.class})
+@Import(TestSecurityConfig.class)
 class DepartmentControllerTest {
 
     @Autowired

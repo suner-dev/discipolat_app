@@ -3,7 +3,7 @@ package com.discipolat.modules.platform.api;
 import com.discipolat.common.infrastructure.config.SecurityConfig;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
-import com.discipolat.common.test.TestJwtConfig;
+import com.discipolat.common.test.TestSecurityConfig;
 import com.discipolat.modules.platform.domain.DictionaryEntry;
 import com.discipolat.modules.platform.domain.DictionaryService;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * à l'ADMIN.
  */
 @WebMvcTest(DictionaryController.class)
-@Import({SecurityConfig.class, TestJwtConfig.class})
+@Import(TestSecurityConfig.class)
 class DictionaryControllerTest {
 
     @Autowired

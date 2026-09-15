@@ -1,7 +1,7 @@
 package com.discipolat.modules.platform.api;
 
-import com.discipolat.common.exception.BusinessRuleException;
 import com.discipolat.common.infrastructure.api.PageResponse;
+import com.discipolat.modules.platform.domain.ImpersonationService;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -28,6 +28,7 @@ public class SuperAdminController {
     private final UserRepository userRepository;
     private final TenantService tenantService;
     private final SaasPlanService saasPlanService;
+    private final ImpersonationService impersonationService;
     private final AuditService auditService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -36,12 +37,14 @@ public class SuperAdminController {
                                 UserRepository userRepository,
                                 TenantService tenantService,
                                 SaasPlanService saasPlanService,
+                                ImpersonationService impersonationService,
                                 AuditService auditService) {
         this.tenantRepository = tenantRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
         this.tenantService = tenantService;
         this.saasPlanService = saasPlanService;
+        this.impersonationService = impersonationService;
         this.auditService = auditService;
     }
 
@@ -242,44 +245,42 @@ public class SuperAdminController {
     @PostMapping("/impersonate")
     @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> startImpersonation(
-            @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
 
-        UUID tenantId = UUID.fromString((String) request.get("tenantId"));
-        String reason = (String) request.get("reason");
-        String targetUserEmail = (String) request.get("targetUserEmail");
-
-        // §G1.9 — Anti-élévation : on ne peut pas impersoner un autre super admin plateforme.
-        if (targetUserEmail != null && !targetUserEmail.isBlank()
-                && "super@discipolat.com".equalsIgnoreCase(targetUserEmail.trim())) {
-            throw new BusinessRuleException("Impossible d'impersoner un super admin plateforme",
-                    "SUPER_ADMIN_IMPERSONATION_FORBIDDEN");
-        }
-
-        tenantRepository.findById(tenantId)
-            .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
-
-        Instant startTime = Instant.now();
-        auditService.log(UUID.randomUUID(), tenantId, "IMPERSONATION_START",
-            "TENANT", tenantId, "SUCCESS", Map.of("reason", reason),
-            null, null, null);
-
-        String impersonationToken = UUID.randomUUID().toString();
+        // §G1.9 — Délégue au service canonique (validation super admin réel,
+        // anti-escalade par rôle, JWT cible TTL court, journalisation complète).
+        var session = impersonationService.start(
+                com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId(),
+                UUID.fromString((String) request.get("tenantId")),
+                (String) request.get("targetUserEmail"),
+                (String) request.get("reason"),
+                httpRequest.getRemoteAddr(),
+                httpRequest.getHeader("User-Agent"));
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("impersonationToken", impersonationToken);
-        result.put("tenantId", tenantId.toString());
-        result.put("tenantName", tenantRepository.findById(tenantId).get().getName());
-        result.put("startTime", startTime.toString());
-        result.put("expiresAt", Instant.now().plusSeconds(1800).toString());
+        result.put("impersonationToken", session.token());
+        result.put("targetUserId", session.targetUserId().toString());
+        result.put("tenantId", session.tenantId().toString());
+        result.put("tenantName", session.tenantName());
+        result.put("targetRole", session.targetRole());
+        result.put("startTime", session.startTime().toString());
+        result.put("expiresAt", session.expiresAt().toString());
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("/impersonate/stop")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
-    public ResponseEntity<Void> stopImpersonation() {
-        auditService.log(UUID.randomUUID(), null, "IMPERSONATION_END",
-            "PLATFORM", null, "SUCCESS", Map.of(),
-            null, null, null);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> stopImpersonation(@RequestBody(required = false) Map<String, Object> request,
+                                                  jakarta.servlet.http.HttpServletRequest httpRequest) {
+        String token = request != null ? (String) request.get("impersonationToken") : null;
+        if (token != null && !token.isBlank()) {
+            impersonationService.stop(token, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+        } else {
+            auditService.log(com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId(), null,
+                    "IMPERSONATION_END", "PLATFORM", null, "SUCCESS", Map.of(),
+                    httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), httpRequest);
+        }
         return ResponseEntity.noContent().build();
     }
 

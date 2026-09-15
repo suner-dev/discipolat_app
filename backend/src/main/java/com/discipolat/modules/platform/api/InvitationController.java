@@ -3,12 +3,16 @@ package com.discipolat.modules.platform.api;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.authentication.domain.EmailService;
+import com.discipolat.common.infrastructure.config.PerIpRateLimiter;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -27,6 +31,10 @@ public class InvitationController {
     private final TenantRepository tenantRepository;
     private final AuthorizationService authzService;
     private final AuditService auditService;
+    private final com.discipolat.modules.authentication.domain.EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
+    private final com.discipolat.common.infrastructure.config.PerIpRateLimiter rateLimiter;
+    private final String frontendUrl;
 
     public InvitationController(InvitationRepository invitationRepository,
                                 UserRepository userRepository,
@@ -35,7 +43,11 @@ public class InvitationController {
                                 OrganizationNodeRepository orgNodeRepository,
                                 TenantRepository tenantRepository,
                                 AuthorizationService authzService,
-                                AuditService auditService) {
+                                AuditService auditService,
+                                com.discipolat.modules.authentication.domain.EmailService emailService,
+                                PasswordEncoder passwordEncoder,
+                                com.discipolat.common.infrastructure.config.PerIpRateLimiter rateLimiter,
+                                @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
         this.membershipRepository = membershipRepository;
@@ -44,6 +56,10 @@ public class InvitationController {
         this.tenantRepository = tenantRepository;
         this.authzService = authzService;
         this.auditService = auditService;
+        this.emailService = emailService;
+        this.passwordEncoder = passwordEncoder;
+        this.rateLimiter = rateLimiter;
+        this.frontendUrl = frontendUrl;
     }
 
     // ==================== CREATE INVITATION ====================
@@ -151,8 +167,24 @@ public class InvitationController {
 
         auditService.logSimple("INVITATION_CREATED", "INVITATION", invitation.getId());
 
-        // TODO: Send email with invitation link
-        String invitationLink = "/auth/accept-invitation?token=" + token;
+        // §G1.6 — Email d'invitation RÉELLEMENT envoyé (SMTP configurable ;
+        // échec non bloquant : l'invitation reste valable, lien affichable dans l'UI admin).
+        String invitationLink = frontendUrl + "/accept-invitation?token=" + token;
+        try {
+            Tenant invTenant = tenantRepository.findById(tenantId).orElse(null);
+            emailService.send(email.toLowerCase(),
+                    "Vous êtes invité(e) à rejoindre " + (invTenant != null ? invTenant.getName() : "Discipolat"),
+                    "Bonjour,\n\n"
+                    + "Vous avez été invité(e) à rejoindre "
+                    + (invTenant != null ? invTenant.getName() : "une église sur Discipolat")
+                    + " avec le rôle " + roleKey + ".\n\n"
+                    + "Pour accepter l'invitation et créer votre compte, ouvrez le lien suivant :\n"
+                    + invitationLink + "\n\n"
+                    + "Ce lien expire dans 7 jours.\n\n"
+                    + "Cordialement,\nL'équipe Discipolat");
+        } catch (Exception e) {
+            // Non bloquant : l'invitation reste valide, le lien reste visible côté admin.
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
@@ -249,7 +281,7 @@ public class InvitationController {
 
         auditService.logSimple("INVITATION_RESENT", "INVITATION", id);
 
-        String invitationLink = "/auth/accept-invitation?token=" + newToken;
+        String invitationLink = frontendUrl + "/accept-invitation?token=" + newToken;
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -299,7 +331,21 @@ public class InvitationController {
 
     @PostMapping("/accept/{token}")
     public ResponseEntity<Map<String, Object>> acceptInvitation(@PathVariable String token,
-                                                                 @RequestBody(required = false) Map<String, String> request) {
+                                                                 @RequestBody(required = false) Map<String, String> request,
+                                                                 jakarta.servlet.http.HttpServletRequest httpRequest) {
+        // §G1.6 — Endpoint désormais public (page d'acceptation sans session) :
+        // quota serré par IP pour prévenir le brute-force de tokens.
+        var ip = httpRequest != null ? httpRequest.getRemoteAddr() : "unknown";
+        var rl = rateLimiter.tryConsumeInvitationAccept(ip);
+        if (!rl.allowed()) {
+            return ResponseEntity.status(429)
+                    .headers(h -> {
+                        h.set("Retry-After", String.valueOf(rl.retryAfterSeconds()));
+                        h.set("X-RateLimit-Remaining", "0");
+                    })
+                    .body(Map.of("error", "Trop de tentatives, réessayez plus tard"));
+        }
+
         Optional<Invitation> invitation = invitationRepository.findByToken(token);
 
         if (invitation.isEmpty()) {
@@ -331,12 +377,18 @@ public class InvitationController {
             if (password == null || password.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Mot de passe requis pour nouveau compte"));
             }
+            if (password.length() < 8) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Le mot de passe doit contenir au moins 8 caractères"));
+            }
             user = User.builder()
                     .tenantId(inv.getTenantId())
                     .email(inv.getEmail())
-                    .passwordHash(password) // Will be encoded by service
+                    // §G1.6 — FIX critique : le mot de passe est encodé (BCrypt) avant
+                    // persistance ; l'ancien code stockait le mot de passe EN CLAIR.
+                    .passwordHash(passwordEncoder.encode(password))
                     .firstName(firstName != null ? firstName : "")
                     .lastName(lastName != null ? lastName : "")
+                    .role(com.discipolat.common.domain.UserRole.MEMBRE)
                     .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE)
                     .build();
             userRepository.save(user);

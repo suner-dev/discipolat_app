@@ -2,7 +2,7 @@ package com.discipolat.modules.families.api;
 
 import com.discipolat.common.infrastructure.config.SecurityConfig;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
-import com.discipolat.common.test.TestJwtConfig;
+import com.discipolat.common.test.TestSecurityConfig;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRiskService;
 import com.discipolat.modules.families.domain.FamilyService;
@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * CreateFamilyRequest et UpdateFamilyRequest.
  */
 @WebMvcTest(FamilyController.class)
-@Import({SecurityConfig.class, TestJwtConfig.class})
+@Import(TestSecurityConfig.class)
 class FamilyControllerTest {
 
     @Autowired

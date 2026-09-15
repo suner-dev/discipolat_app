@@ -95,6 +95,14 @@ public class PerIpRateLimiter {
     @Value("${app.rate-limiting.register-period-minutes:1}")
     private int registerPeriodMinutes;
 
+    // §G1.6 — Acceptation d'invitation publique : quota serré anti-abus (token public).
+    @Value("${app.rate-limiting.invitation-accept-capacity:5}")
+    private int invitationAcceptCapacity;
+    @Value("${app.rate-limiting.invitation-accept-refill:5}")
+    private int invitationAcceptRefill;
+    @Value("${app.rate-limiting.invitation-accept-period-minutes:1}")
+    private int invitationAcceptPeriodMinutes;
+
     private final MeterRegistry meterRegistry;
     private final boolean usingRedis;
     private final LettuceBasedProxyManager<byte[]> redisProxyManager;
@@ -105,11 +113,13 @@ public class PerIpRateLimiter {
     private Counter counterSwitchRoleTotal;
     private Counter counterDemoRequestTotal;
     private Counter counterRegisterTotal;
+    private Counter counterInvitationAcceptTotal;
     private Counter counterLoginDenied, counterRefreshDenied, counterForgotPasswordDenied;
     private Counter counterResetPasswordDenied, counterActivateDenied, counterChangePasswordDenied;
     private Counter counterSwitchRoleDenied;
     private Counter counterDemoRequestDenied;
     private Counter counterRegisterDenied;
+    private Counter counterInvitationAcceptDenied;
 
     public PerIpRateLimiter(
             Optional<LettuceBasedProxyManager<byte[]>> redisProxyManager,
@@ -136,6 +146,7 @@ public class PerIpRateLimiter {
         counterSwitchRoleTotal = buildCounter("switch_role", "total");
         counterDemoRequestTotal = buildCounter("demo_request", "total");
         counterRegisterTotal = buildCounter("register", "total");
+        counterInvitationAcceptTotal = buildCounter("invitation_accept", "total");
 
         counterLoginDenied = buildCounter("login", "denied");
         counterRefreshDenied = buildCounter("refresh", "denied");
@@ -146,6 +157,7 @@ public class PerIpRateLimiter {
         counterSwitchRoleDenied = buildCounter("switch_role", "denied");
         counterDemoRequestDenied = buildCounter("demo_request", "denied");
         counterRegisterDenied = buildCounter("register", "denied");
+        counterInvitationAcceptDenied = buildCounter("invitation_accept", "denied");
     }
 
     private Counter buildCounter(String endpoint, String result) {
@@ -197,6 +209,12 @@ public class PerIpRateLimiter {
     public RateLimitResult tryConsumeDemoRequest(String ip) {
         return consume("demo_request", demoRequestCapacity, demoRequestRefill, demoRequestPeriodMinutes, ip,
                 counterDemoRequestTotal, counterDemoRequestDenied);
+    }
+
+    /** §G1.6 — Acceptation d'invitation (endpoint public) : 5 req / minute / IP. */
+    public RateLimitResult tryConsumeInvitationAccept(String ip) {
+        return consume("invitation_accept", invitationAcceptCapacity, invitationAcceptRefill, invitationAcceptPeriodMinutes, ip,
+                counterInvitationAcceptTotal, counterInvitationAcceptDenied);
     }
 
     /** Inscriptions publiques — quota serré anti-spam par IP. */

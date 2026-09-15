@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
+import { ImpersonationProvider } from './contexts/ImpersonationContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { I18nProvider } from './i18n/index';
 import { PlatformProvider } from './contexts/PlatformContext';
@@ -43,6 +44,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <SettingsProvider>
           <AuthProvider>
+            <ImpersonationProvider>
             <PlatformProvider>
               <MetaProvider>
                 <I18nProvider>
@@ -72,6 +74,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 />                </I18nProvider>
                 </MetaProvider>
               </PlatformProvider>
+            </ImpersonationProvider>
             </AuthProvider>
         </SettingsProvider>
       </BrowserRouter>

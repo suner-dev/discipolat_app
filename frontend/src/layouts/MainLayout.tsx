@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/i18n';
 import { RealtimeSync } from '@/hooks/useRealtimeSync';
 import { FlaskConical, X } from 'lucide-react';
+import ImpersonationBanner from '@/components/shared/ImpersonationBanner';
 
 const TESTER_BANNER_KEY = 'discipolat:tester-banner-dismissed';
 
@@ -47,6 +48,9 @@ export default function MainLayout() {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64 transition-all duration-300">
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
+
+        {/* §G1.9 — Bandeau permanent d'impersonation (au-dessus de tout contenu) */}
+        <ImpersonationBanner />
 
         {/* Bandeau mode testeur — environnement bêta uniquement, masquable */}
         {meta.betaMode && testerBannerVisible && (

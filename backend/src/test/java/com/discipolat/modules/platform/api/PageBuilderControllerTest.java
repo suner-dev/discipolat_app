@@ -2,7 +2,7 @@ package com.discipolat.modules.platform.api;
 
 import com.discipolat.common.infrastructure.config.SecurityConfig;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
-import com.discipolat.common.test.TestJwtConfig;
+import com.discipolat.common.test.TestSecurityConfig;
 import com.discipolat.modules.platform.domain.CustomPage;
 import com.discipolat.modules.platform.domain.PageBuilderService;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * authentifiée du rendu public, écritures réservées ADMIN.
  */
 @WebMvcTest(PageBuilderController.class)
-@Import({SecurityConfig.class, TestJwtConfig.class})
+@Import(TestSecurityConfig.class)
 class PageBuilderControllerTest {
 
     @Autowired

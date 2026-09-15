@@ -1,7 +1,10 @@
 package com.discipolat.modules.tenants;
 
+import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.exception.ForbiddenException;
+import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.platform.domain.ImpersonationService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.tenants.domain.*;
@@ -50,6 +53,9 @@ class MultiTenantSecurityTests {
     @Autowired OrganizationNodeRepository orgNodeRepository;
     @Autowired SoulRepository soulRepository;
     @Autowired AuthorizationService authzService;
+    @Autowired ImpersonationService impersonationService;
+    @Autowired JwtTokenProvider jwtTokenProvider;
+    @Autowired com.discipolat.modules.tenants.domain.FeatureAccessService featureAccessService;
 
     private Tenant tenantA, tenantB;
     private User userA_admin, userA_member, userB_admin, userB_member;
@@ -541,6 +547,211 @@ class MultiTenantSecurityTests {
 
             // Super admin should bypass tenant isolation
             assertThat(authzService.isPlatformSuperAdmin(superAdmin.getId())).isTrue();
+        }
+
+        @Test
+        @DisplayName("G1.9 : l'impersonateur n'obtient que les permissions de la cible (token = identité cible, sans élévation)")
+        void impersonationToken_carriesTargetIdentityOnly() {
+            UUID superAdminRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN").orElseThrow().getId();
+            User superAdmin = createUser("g19.superadmin@a.com", "Super Admin", tenantA, superAdminRole);
+            superAdmin.setTenantId(null);
+            userRepository.save(superAdmin);
+            // Membership globale (tenant_id = null) pour être reconnu PLATFORM_SUPER_ADMIN réel
+            membershipRepository.save(TenantMembership.builder()
+                    .tenantId(null)
+                    .userId(superAdmin.getId())
+                    .role(roleRepository.findById(superAdminRole).orElseThrow())
+                    .roleLegacy("PLATFORM_SUPER_ADMIN")
+                    .scopeType(MembershipScopeType.TENANT)
+                    .status(MembershipStatus.ACTIVE)
+                    .build());
+
+            UUID memberRole = roleRepository.findByTenantIdIsNullAndKey("MEMBER").orElseThrow().getId();
+            User target = createUser("g19.target@a.com", "Target Member", tenantA, memberRole);
+
+            var session = impersonationService.start(superAdmin.getId(), tenantA.getId(),
+                    target.getEmail(), "Diagnostic support", "127.0.0.1", "JUnit");
+
+            // Le JWT porte l'identité de la CIBLE (subject = target, rôle actif = rôle cible hérité)
+            UUID tokenSubject = jwtTokenProvider.extractUserId(session.token());
+            assertThat(tokenSubject).isEqualTo(target.getId());
+            // Rôle actif = rôle hérité de la cible (MEMBRE = enum legacy associé au rôle MEMBER)
+            assertThat(jwtTokenProvider.extractActiveRole(session.token())).isEqualTo("MEMBRE");
+            assertThat(jwtTokenProvider.extractTenantId(session.token())).isEqualTo(tenantA.getId());
+            // L'admin réel n'est présent QUE pour traçabilité (claim imp), jamais comme identité
+            assertThat(jwtTokenProvider.extractImpersonatorId(session.token())).isEqualTo(superAdmin.getId());
+
+            // TTL court
+            var claims = jwtTokenProvider.getClaims(session.token());
+            long ttlSeconds = (claims.getExpiration().getTime() - claims.getIssuedAt().getTime()) / 1000;
+            assertThat(ttlSeconds).isLessThanOrEqualTo(ImpersonationService.IMPERSONATION_TTL_MINUTES * 60);
+        }
+
+        @Test
+        @DisplayName("G1.9 : impossible d'impersonner un super admin plateforme (anti-escalade par rôle)")
+        void impersonatingPlatformSuperAdmin_isForbidden() {
+            UUID superAdminRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN").orElseThrow().getId();
+            User superAdmin = createUser("g19.caller@a.com", "Super Admin Caller", tenantA, superAdminRole);
+            superAdmin.setTenantId(null);
+            userRepository.save(superAdmin);
+            membershipRepository.save(TenantMembership.builder()
+                    .tenantId(null)
+                    .userId(superAdmin.getId())
+                    .role(roleRepository.findById(superAdminRole).orElseThrow())
+                    .roleLegacy("PLATFORM_SUPER_ADMIN")
+                    .scopeType(MembershipScopeType.TENANT)
+                    .status(MembershipStatus.ACTIVE)
+                    .build());
+
+            // Cible = AUTRE super admin plateforme (email quelconque) : la garde doit le refuser
+            User otherSuperAdmin = createUser("g19.other.super@a.com", "Other Super Admin", tenantA, superAdminRole);
+            otherSuperAdmin.setTenantId(null);
+            userRepository.save(otherSuperAdmin);
+            membershipRepository.save(TenantMembership.builder()
+                    .tenantId(null)
+                    .userId(otherSuperAdmin.getId())
+                    .role(roleRepository.findById(superAdminRole).orElseThrow())
+                    .roleLegacy("PLATFORM_SUPER_ADMIN")
+                    .scopeType(MembershipScopeType.TENANT)
+                    .status(MembershipStatus.ACTIVE)
+                    .build());
+
+            assertThatThrownBy(() -> impersonationService.start(superAdmin.getId(), null,
+                    otherSuperAdmin.getEmail(), "Diagnostic", "127.0.0.1", "JUnit"))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .hasMessageContaining("super admin");
+        }
+
+        @Test
+        @DisplayName("G1.9 : un non super admin (vérifié en base) ne peut pas impersoner")
+        void nonSuperAdmin_cannotStartImpersonation() {
+            UUID memberRole = roleRepository.findByTenantIdIsNullAndKey("MEMBER").orElseThrow().getId();
+            User member = createUser("g19.member@a.com", "Simple Member", tenantA, memberRole);
+            User other = createUser("g19.other.member@a.com", "Other Member", tenantA, memberRole);
+
+            assertThatThrownBy(() -> impersonationService.start(member.getId(), tenantA.getId(),
+                    other.getEmail(), "Tentative", "127.0.0.1", "JUnit"))
+                    .isInstanceOf(BusinessRuleException.class);
+        }
+
+        @Test
+        @DisplayName("G1.9 : un rôle falsifié sans membership ACTIVE en base ne passe pas la vérification")
+        void forgedActiveRole_doesNotBypassDatabaseCheck() {
+            // Utilisateur avec le rôle super admin mais SANS membership ACTIVE en base :
+            // une falsification du seul rôle actif du JWT ne doit pas suffire.
+            User forger = userRepository.save(User.builder()
+                    .tenantId(tenantA.getId())
+                    .email("g19.forger@a.com")
+                    .passwordHash("hash")
+                    .firstName("Forger")
+                    .role(com.discipolat.common.domain.UserRole.MEMBRE)
+                    .statut(UserStatus.ACTIVE)
+                    .build());
+            // Un rôle hérité != membership : pas de PLATFORM_SUPER_ADMIN réel en base
+            assertThat(authzService.isPlatformSuperAdmin(forger.getId())).isFalse();
+            User other = createUser("g19.other2@a.com", "Other 2", tenantA, memberRoleForTest());
+            UUID forgerId = forger.getId();
+            assertThatThrownBy(() -> impersonationService.start(forgerId, tenantA.getId(),
+                    other.getEmail(), "Escalade", "127.0.0.1", "JUnit"))
+                    .isInstanceOf(BusinessRuleException.class);
+        }
+
+        private UUID memberRoleForTest() {
+            return roleRepository.findByTenantIdIsNullAndKey("MEMBER").orElseThrow().getId();
+        }
+
+        @Test
+        @DisplayName("G1.9 : la cible doit appartenir au tenant demandé (anti-IDOR)")
+        void impersonation_targetTenantMismatch_refused() {
+            UUID superAdminRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN").orElseThrow().getId();
+            User superAdmin = createUser("g19.admin2@a.com", "Super Admin 2", tenantA, superAdminRole);
+            superAdmin.setTenantId(null);
+            userRepository.save(superAdmin);
+            membershipRepository.save(TenantMembership.builder()
+                    .tenantId(null)
+                    .userId(superAdmin.getId())
+                    .role(roleRepository.findById(superAdminRole).orElseThrow())
+                    .roleLegacy("PLATFORM_SUPER_ADMIN")
+                    .scopeType(MembershipScopeType.TENANT)
+                    .status(MembershipStatus.ACTIVE)
+                    .build());
+
+            UUID memberRole = roleRepository.findByTenantIdIsNullAndKey("MEMBER").orElseThrow().getId();
+            User targetB = createUser("g19.targetb@b.com", "Target B", tenantB, memberRole);
+
+            // L'admin demande le tenant A mais la cible appartient au tenant B
+            assertThatThrownBy(() -> impersonationService.start(superAdmin.getId(), tenantA.getId(),
+                    targetB.getEmail(), "Diagnostic", "127.0.0.1", "JUnit"))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .hasMessageContaining("tenant");
+        }
+    }
+
+    // ==================== SECURITY MATRIX TESTS (§44-45, G1.10) ====================
+
+    @Nested
+    @DisplayName("Security Matrix (§44-45) — chaque cellule prouvée")
+    class SecurityMatrixTests {
+
+        @Test
+        @DisplayName("IDOR : un membre du tenant A n'a AUCUNE permission dans le tenant B")
+        void members_cross_tenant_idor_refused() {
+            // userA_member n'a aucune membership ACTIVE dans tenantB
+            assertThat(authzService.can(userA_member.getId(), tenantB.getId(),
+                    "MEMBER_READ", MembershipScopeType.TENANT, null)).isFalse();
+            assertThat(authzService.can(userA_member.getId(), tenantB.getId(),
+                    "MEMBER_CREATE", MembershipScopeType.TENANT, null)).isFalse();
+            // Le vrai membre de B, lui, a la lecture dans B
+            assertThat(authzService.can(userB_member.getId(), tenantB.getId(),
+                    "MEMBER_READ", MembershipScopeType.TENANT, null)).isTrue();
+        }
+
+        @Test
+        @DisplayName("Escalation : un MEMBER n'a pas les permissions admin tenant")
+        void member_cannot_access_tenant_admin_permissions() {
+            assertThat(authzService.can(userA_member.getId(), tenantA.getId(),
+                    "USER_MANAGE", MembershipScopeType.TENANT, null)).isFalse();
+            assertThat(authzService.can(userA_member.getId(), tenantA.getId(),
+                    "TENANT_SETTINGS_UPDATE", MembershipScopeType.TENANT, null)).isFalse();
+            assertThat(authzService.can(userA_member.getId(), tenantA.getId(),
+                    "FINANCE_MANAGE", MembershipScopeType.TENANT, null)).isFalse();
+            // Le tenant owner a bien ces permissions
+            assertThat(authzService.can(userA_admin.getId(), tenantA.getId(),
+                    "USER_MANAGE", MembershipScopeType.TENANT, null)).isTrue();
+            assertThat(authzService.can(userA_admin.getId(), tenantA.getId(),
+                    "FINANCE_MANAGE", MembershipScopeType.TENANT, null)).isTrue();
+        }
+
+        @Test
+        @DisplayName("Mass assignment : les permissions ne sont pas pilotables via les attributs client")
+        void permissions_not_grantable_via_client_attributes() {
+            // Seule source de vérité : la membership + le rôle lié en base.
+            assertThat(authzService.getUserPermissions(userA_member.getId(), tenantA.getId()))
+                    .contains("MEMBER_READ")
+                    .doesNotContain("USER_MANAGE", "FINANCE_MANAGE", "TENANT_SETTINGS_UPDATE");
+        }
+
+        @Test
+        @DisplayName("Module désactivé : l'accès aux données du module est refusé côté backend")
+        void disabled_module_data_access_refused() {
+            // Le tenant A démarre sans feature 'academy' activée → requireFeature refuse.
+            assertThatThrownBy(() -> featureAccessService.requireFeature(tenantA.getId(), "academy"))
+                    .isInstanceOf(BusinessRuleException.class);
+            // Après activation côté admin, l'accès est autorisé.
+            featureAccessService.setFeature(tenantA.getId(), "academy", true, userA_admin.getId());
+            tenantA.setFeaturesJson(tenantA.getFeaturesJson());
+            tenantRepository.save(tenantA);
+            assertThatCode(() -> featureAccessService.requireFeature(tenantA.getId(), "academy"))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("Finances : MEMBER refusé, admin tenant autorisé (confidentialité §46)")
+        void member_cannot_read_finance() {
+            assertThat(authzService.can(userA_member.getId(), tenantA.getId(),
+                    "FINANCE_READ", MembershipScopeType.TENANT, null)).isFalse();
+            assertThat(authzService.can(userA_admin.getId(), tenantA.getId(),
+                    "FINANCE_READ", MembershipScopeType.TENANT, null)).isTrue();
         }
     }
 

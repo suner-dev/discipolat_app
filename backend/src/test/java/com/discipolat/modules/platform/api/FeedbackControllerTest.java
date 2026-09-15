@@ -3,7 +3,7 @@ package com.discipolat.modules.platform.api;
 import com.discipolat.common.infrastructure.config.SecurityConfig;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
-import com.discipolat.common.test.TestJwtConfig;
+import com.discipolat.common.test.TestSecurityConfig;
 import com.discipolat.modules.platform.domain.FeedbackService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,7 +43,7 @@ import com.discipolat.common.infrastructure.security.SecurityTestHelper;
  * (401 sans token, 403 pour un rôle non habilité avec `verify(never)`).
  */
 @WebMvcTest(FeedbackController.class)
-@Import({SecurityConfig.class, TestJwtConfig.class})
+@Import(TestSecurityConfig.class)
 class FeedbackControllerTest {
 
     @Autowired
