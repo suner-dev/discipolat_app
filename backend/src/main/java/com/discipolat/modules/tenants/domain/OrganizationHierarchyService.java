@@ -543,15 +543,14 @@ public class OrganizationHierarchyService {
         Map<String, Object> effective = new HashMap<>();
         List<OrganizationNode> ancestors = getAncestors(node.get().getTenantId(), nodeId);
 
-        // Merge configs from root to node (child overrides parent)
+        // Merge configs du plus lointain ancêtre (racine) vers le nœud :
+        // le parent le plus proche l'emporte ; un OVERRIDDEN stoppe la remontée (G1.7 §53).
         for (OrganizationNode ancestor : ancestors) {
+            if (ancestor.getConfigSource() == OrganizationNode.ConfigSource.OVERRIDDEN) {
+                effective = new HashMap<>();
+            }
             if (ancestor.getMetadataJson() != null) {
-                Map<String, Object> ancestorConfig = fromJson(ancestor.getMetadataJson());
-                for (Map.Entry<String, Object> entry : ancestorConfig.entrySet()) {
-                    if (!effective.containsKey(entry.getKey())) {
-                        effective.put(entry.getKey(), entry.getValue());
-                    }
-                }
+                effective.putAll(fromJson(ancestor.getMetadataJson()));
             }
         }
 

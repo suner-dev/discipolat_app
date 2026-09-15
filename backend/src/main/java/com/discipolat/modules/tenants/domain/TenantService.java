@@ -37,12 +37,15 @@ public class TenantService {
     private final TenantRepository tenantRepository;
     private final AuditService auditService;
     private final EntityPropagationPublisher propagationPublisher;
+    private final TenantFeatureService featureService;
 
     public TenantService(TenantRepository tenantRepository, AuditService auditService,
-                         EntityPropagationPublisher propagationPublisher) {
+                         EntityPropagationPublisher propagationPublisher,
+                         TenantFeatureService featureService) {
         this.tenantRepository = tenantRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
+        this.featureService = featureService;
     }
 
     @Transactional(readOnly = true)
@@ -76,11 +79,26 @@ public class TenantService {
                 .locale(request.locale())
                 .build();
         tenant = tenantRepository.save(tenant);
+        
+        // Seed default modules for the new tenant
+        seedDefaultModules(tenant.getId());
+        
         // ===== PROPAGATION CENTRALISÉE =====
         propagationPublisher.publishCreated("TENANT", tenant.getId(),
                 Map.of("name", tenant.getName(), "slug", tenant.getSlug()),
                 "Tenant créé: " + tenant.getName());
         return TenantResponse.from(tenant);
+    }
+
+    private void seedDefaultModules(UUID tenantId) {
+        // Core modules that should always be enabled
+        String[] coreModules = {"people", "events", "notifications", "dashboard", "org"};
+        
+        for (String moduleCode : coreModules) {
+            if (!featureService.getFeature(tenantId, moduleCode).isPresent()) {
+                featureService.enableFeature(tenantId, moduleCode, Map.of());
+            }
+        }
     }
 
     public TenantResponse update(UUID id, UpdateTenantRequest request) {
