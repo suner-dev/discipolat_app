@@ -72,13 +72,13 @@ public class SuperAdminSaasPlanController {
                 .sortOrder(request.sortOrder())
                 .build();
         SaasPlan saved = planRepository.save(plan);
-        auditService.logSimple(userId, null, "SAAS_PLAN_CREATED", "SAAS_PLAN", saved.getId(), "SUCCESS", Map.of("key", request.key()));
+        auditService.logSimple("SAAS_PLAN_CREATED", "SAAS_PLAN", UUID.fromString(saved.getKey()));
         return ResponseEntity.status(201).body(toResponse(saved));
     }
 
     @PutMapping("/{key}")
     public ResponseEntity<SaasPlanResponse> updatePlan(@PathVariable String key, @RequestBody UpdatePlanRequest request) {
-        SaasPlan plan = planRepository.findByKey(key).orElseThrow(() -> new RuntimeException("Plan not found: " + key));
+        SaasPlan plan = planRepository.findById(key).orElseThrow(() -> new RuntimeException("Plan not found: " + key));
         if (request.name() != null) plan.setName(request.name());
         if (request.description() != null) plan.setDescription(request.description());
         if (request.priceMonthly() != null) plan.setPriceMonthly(request.priceMonthly());
@@ -105,7 +105,7 @@ public class SuperAdminSaasPlanController {
 
     @DeleteMapping("/{key}")
     public ResponseEntity<Void> deactivatePlan(@PathVariable String key) {
-        SaasPlan plan = planRepository.findByKey(key).orElseThrow(() -> new RuntimeException("Plan not found: " + key));
+        SaasPlan plan = planRepository.findById(key).orElseThrow(() -> new RuntimeException("Plan not found: " + key));
         plan.setIsActive(false);
         plan.setStatus("INACTIVE");
         planRepository.save(plan);
@@ -140,7 +140,7 @@ public class SuperAdminSaasPlanController {
     public record SubscriptionResponse(String id, UUID tenantId, String planKey, String planName, String billingCycle, String status, Boolean cancelAtPeriodEnd, String periodStart, String periodEnd) {}
 
     private SaasPlanResponse toResponse(SaasPlan p) {
-        return new SaasPlanResponse(p.getId() != null ? p.getId().toString() : null, p.getKey(), p.getName(), p.getDescription(), p.getPriceMonthly(), p.getPriceYearly(), p.getCurrency(), p.getLimitsJson(), p.getFeaturesJson(), p.getIsPublic(), p.getSeatsLimit(), p.getStorageLimitMb(), p.getModulesIncludedJson(), p.getAiCreditsLimit(), p.getPriceEur(), p.getPriceXaf(), p.getPriceUsd(), p.getBillingPeriod(), p.getTrialDays(), p.getAnnualDiscountPct(), p.getRegionsJson(), p.getStatus(), p.getSortOrder(), p.getIsActive());
+        return new SaasPlanResponse(p.getKey(), p.getKey(), p.getName(), p.getDescription(), p.getPriceMonthly(), p.getPriceYearly(), p.getCurrency(), p.getLimitsJson(), p.getFeaturesJson(), p.getIsPublic(), p.getSeatsLimit(), p.getStorageLimitMb(), p.getModulesIncludedJson(), p.getAiCreditsLimit(), p.getPriceEur(), p.getPriceXaf(), p.getPriceUsd(), p.getBillingPeriod(), p.getTrialDays(), p.getAnnualDiscountPct(), p.getRegionsJson(), p.getStatus(), p.getSortOrder(), p.getIsActive());
     }
 
     private SubscriptionResponse toSubscriptionResponse(TenantSubscription s) {

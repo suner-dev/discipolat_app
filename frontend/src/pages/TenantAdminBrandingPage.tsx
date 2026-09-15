@@ -30,7 +30,8 @@ function ColorInput({ label, value, onChange }: { label: string; value: string; 
 }
 
 export default function TenantAdminBrandingPage() {
-  const { tenantId, hasPermission } = useTenant();
+  const { currentTenant, hasPermission } = useTenant();
+  const tenantId = currentTenant?.id;
   const [data, setData] = useState<BrandingData>(DEFAULT_BRANDING);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,7 +67,7 @@ export default function TenantAdminBrandingPage() {
         }
       };
       return () => { ws.close(); wsRef.current = null; };
-    } catch {}
+    } catch { /* ignore WebSocket connection errors */ }
   }, [tenantId]);
 
   const applyLivePreview = useCallback(() => {
@@ -201,25 +202,29 @@ export default function TenantAdminBrandingPage() {
                             className="w-full px-3 py-2 border rounded-lg" placeholder="Accroche" />
                         </div>
                       </div>
-                      {(["logo", "logoDark", "cover", "favicon"] as const).map((type) => (
-                        <div key={type}>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {type === "logo" ? "Logo principal" : type === "logoDark" ? "Logo mode sombre" : type === "cover" ? "Couverture" : "Favicon"}
-                          </label>
-                          <div className="flex gap-3">
-                            <input type="url" value={data[type] || ""} onChange={(e) => update(type, e.target.value)}
-                              className="flex-1 px-3 py-2 border rounded-lg" placeholder="https://..." />
-                            <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 text-sm font-medium">
-                              {uploading === type ? "..." : "Upload"}
-                              <input type="file" accept="image/*" className="hidden"
-                                onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], type === "logoDark" ? "logo-dark" : type)} />
+                      {(["logo", "logoDark", "cover", "favicon"] as const).map((type) => {
+                        const typeKey = type === "logoDark" ? "logoDarkUrl" : type === "logo" ? "logoUrl" : type === "cover" ? "coverUrl" : "faviconUrl";
+                        const value = (data[typeKey] as string) || "";
+                        return (
+                          <div key={type}>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {type === "logo" ? "Logo principal" : type === "logoDark" ? "Logo mode sombre" : type === "cover" ? "Couverture" : "Favicon"}
                             </label>
+                            <div className="flex gap-3">
+                              <input type="url" value={value} onChange={(e) => update(typeKey, e.target.value)}
+                                className="flex-1 px-3 py-2 border rounded-lg" placeholder="https://..." />
+                              <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 text-sm font-medium">
+                                {uploading === type ? "..." : "Upload"}
+                                <input type="file" accept="image/*" className="hidden"
+                                  onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], type === "logoDark" ? "logo-dark" : type)} />
+                              </label>
+                            </div>
+                            {value && (
+                              <img src={value} alt={type} className="mt-2 h-16 object-contain rounded border" />
+                            )}
                           </div>
-                          {(data[type] as string) && (
-                            <img src={data[type] as string} alt={type} className="mt-2 h-16 object-contain rounded border" />
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">CSS personnalisé</label>
                         <textarea value={data.customCss} onChange={(e) => update("customCss", e.target.value)}
@@ -236,7 +241,7 @@ export default function TenantAdminBrandingPage() {
                       ].map(({ k, l }) => (
                         <div key={k}>
                           <label className="block text-sm font-medium text-gray-700 mb-1">{l}</label>
-                          <input type="text" value={data[k]} onChange={(e) => update(k, e.target.value)}
+                          <input type="text" value={(data[k] as string) || ""} onChange={(e) => update(k, e.target.value)}
                             className="w-full px-3 py-2 border rounded-lg" />
                         </div>
                       ))}
@@ -245,17 +250,17 @@ export default function TenantAdminBrandingPage() {
                   {tab === "contact" && (
                     <div className="grid grid-cols-2 gap-4">
                       <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" value={data.email || ""} onChange={(e) => update("email", e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
+                        <input type="email" value={(data.email as string) || ""} onChange={(e) => update("email", e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
                       <div><label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                        <input type="tel" value={data.phone || ""} onChange={(e) => update("phone", e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
+                        <input type="tel" value={(data.phone as string) || ""} onChange={(e) => update("phone", e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
                       <div><label className="block text-sm font-medium text-gray-700 mb-1">Site web</label>
-                        <input type="url" value={data.website || ""} onChange={(e) => update("website", e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
+                        <input type="url" value={(data.website as string) || ""} onChange={(e) => update("website", e.target.value)} className="w-full px-3 py-2 border rounded-lg" /></div>
                       <div><label className="block text-sm font-medium text-gray-700 mb-1">Devise</label>
-                        <select value={data.currency || "XAF"} onChange={(e) => update("currency", e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+                        <select value={(data.currency as string) || "XAF"} onChange={(e) => update("currency", e.target.value)} className="w-full px-3 py-2 border rounded-lg">
                           <option value="XAF">XAF (FCFA)</option><option value="EUR">EUR</option><option value="USD">USD</option>
                         </select></div>
                       <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-                        <textarea value={data.address || ""} onChange={(e) => update("address", e.target.value)} className="w-full px-3 py-2 border rounded-lg" rows={2} /></div>
+                        <textarea value={(data.address as string) || ""} onChange={(e) => update("address", e.target.value)} className="w-full px-3 py-2 border rounded-lg" rows={2} /></div>
                     </div>
                   )}
                   {tab === "advanced" && (
@@ -264,7 +269,7 @@ export default function TenantAdminBrandingPage() {
                         <textarea value={data.customHeadHtml || ""} onChange={(e) => update("customHeadHtml", e.target.value)}
                           className="w-full px-3 py-2 border rounded-lg font-mono text-xs" rows={4} /></div>
                       <div><label className="block text-sm font-medium text-gray-700 mb-1">Pied de page</label>
-                        <input type="text" value={(data as Record<string, string>).footerText || ""} onChange={(e) => update("footerText" as string, e.target.value)}
+                        <input type="text" value={(data.footerText as string) || ""} onChange={(e) => update("footerText", e.target.value)}
                           className="w-full px-3 py-2 border rounded-lg" placeholder="© {{year}} {{tenant_name}}" /></div>
                     </div>
                   )}
