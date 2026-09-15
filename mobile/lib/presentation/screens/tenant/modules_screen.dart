@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../api/api_service.dart';
+import 'package:flutter/services.dart';
+import '../../../api/api_service.dart';
 
-/// Écran de gestion des modules et fonctionnalités
+/// Écran de gestion des modules et fonctionnalités (TenantFeature API)
 class TenantModulesScreen extends ConsumerStatefulWidget {
   const TenantModulesScreen({super.key});
 
@@ -25,40 +26,28 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
 
   Future<void> _loadModules() async {
     try {
-      final response = await apiService.get('/admin/modules');
+      final response = await apiService.get('/admin/tenant-features');
       setState(() {
-        _modules = (response as Map<String, dynamic>).entries
-            .map((e) => _ModuleInfo(
-                  key: e.key,
-                  enabled: e.value as bool,
-                  label: _formatLabel(e.key),
-                ))
-            .toList();
+        _modules = (response as List).map((e) => _ModuleInfo.fromJson(e)).toList();
         _loading = false;
       });
     } catch (e) {
       setState(() {
         _loading = false;
-        _message = 'Erreur lors du chargement';
+        _message = 'Erreur lors du chargement: $e';
         _messageType = 'error';
       });
     }
   }
 
-  String _formatLabel(String key) {
-    return key
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w)
-        .join(' ');
-  }
-
-  Future<void> _toggleModule(String key, bool enabled) async {
+  Future<void> _toggleModule(_ModuleInfo mod) async {
+    HapticFeedback.lightImpact();
     setState(() => _saving = true);
     try {
-      await apiService.put('/admin/modules/$key', {'enabled': !enabled});
+      final newEnabled = !mod.enabled;
+      await apiService.put('/admin/tenant-features/${mod.key}', {'enabled': newEnabled});
       setState(() {
-        _message = enabled ? 'Module desactive' : 'Module active';
+        _message = newEnabled ? 'Module activé' : 'Module désactivé';
         _messageType = 'success';
       });
       await Future.delayed(const Duration(seconds: 2));
@@ -78,30 +67,67 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Modules'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadModules,
+            tooltip: 'Actualiser',
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadModules,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_message != null)
-                      _buildMessage(),
-                    if (_message != null) const SizedBox(height: 16),
-                    ..._modules.map((mod) => _buildModuleCard(mod)),
-                  ],
-                ),
-              ),
+              child: _modules.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        const SizedBox(height: 100),
+                        Center(
+                          child: Column(
+                            children: [
+                              const Icon(Icons.extension_off, size: 64, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Aucun module configuré',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 8),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 32),
+                                child: Text(
+                                  'Les modules de base (people, events, notifications) sont activés automatiquement.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_message != null) ...[
+                            _buildMessage(),
+                            const SizedBox(height: 16),
+                          ],
+                          ..._modules.map((mod) => _buildModuleCard(mod)),
+                        ],
+                      ),
+                    ),
             ),
     );
   }
 
   Widget _buildMessage() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: _messageType == 'success'
@@ -115,6 +141,7 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
           color: _messageType == 'success'
               ? Colors.green[800]
               : Colors.red[800],
+          fontSize: 14,
         ),
       ),
     );
@@ -123,6 +150,7 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
   Widget _buildModuleCard(_ModuleInfo mod) {
     return Card(
       elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -139,11 +167,35 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        mod.enabled ? 'Activé' : 'Désactivé',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: mod.enabled ? Colors.green[700] : Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (mod.limits.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          mod.limits.entries.map((e) => '${e.key}: ${e.value}').join(', '),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   Text(
-                    mod.enabled ? 'Active' : 'Desactive',
+                    mod.key,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: mod.enabled ? Colors.green[700] : Colors.grey,
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                      fontFamily: 'monospace',
                     ),
                   ),
                 ],
@@ -151,7 +203,7 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
             ),
             Switch(
               value: mod.enabled,
-              onChanged: _saving ? null : (value) => _toggleModule(mod.key, mod.enabled),
+              onChanged: _saving ? null : (value) => _toggleModule(mod),
               activeColor: Theme.of(context).primaryColor,
             ),
           ],
@@ -162,9 +214,77 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
 }
 
 class _ModuleInfo {
+  final String id;
+  final String tenantId;
   final String key;
   final bool enabled;
-  final String label;
+  final Map<String, dynamic> configuration;
+  final Map<String, dynamic> limits;
+  final String createdAt;
+  final String updatedAt;
 
-  _ModuleInfo({required this.key, required this.enabled, required this.label});
+  String get label => _formatLabelStatic(key);
+
+  static String _formatLabelStatic(String key) {
+    const labels = {
+      'people': 'Membres',
+      'events': 'Événements',
+      'notifications': 'Notifications',
+      'dashboard': 'Tableau de bord',
+      'org': 'Organisation',
+      'families': 'Familles',
+      'groups': 'Groupes',
+      'discipleship': 'Discipleship',
+      'academy': 'Académie',
+      'finance': 'Finances',
+      'media': 'Médias',
+      'pastoral': 'Pastoral',
+      'prayer': 'Prière',
+      'assets': 'Matériel',
+      'workflow': 'Workflows',
+      'custom_fields': 'Champs personnalisés',
+      'dress_code': 'Dress Code',
+      'health': 'Santé / Infirmerie',
+      'reports': 'Rapports',
+      'analytics': 'Analytics',
+      'messaging': 'Messagerie',
+      'documents': 'Documents',
+      'calendar': 'Calendrier',
+      'forms': 'Formulaires',
+      'marketplace': 'Marketplace',
+      'ai': 'Intelligence Artificielle',
+      'chat': 'Chat',
+      'payments': 'Paiements',
+    };
+    return labels[key] ??
+        key
+            .replaceAll('_', ' ')
+            .split(' ')
+            .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w)
+            .join(' ');
+  }
+
+  _ModuleInfo({
+    required this.id,
+    required this.tenantId,
+    required this.key,
+    required this.enabled,
+    required this.configuration,
+    required this.limits,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory _ModuleInfo.fromJson(Map<String, dynamic> json) {
+    return _ModuleInfo(
+      id: json['id']?.toString() ?? '',
+      tenantId: json['tenantId']?.toString() ?? '',
+      key: json['moduleCode']?.toString() ?? '',
+      enabled: json['enabled'] ?? false,
+      configuration: Map<String, dynamic>.from(json['configuration'] ?? {}),
+      limits: Map<String, dynamic>.from(json['limits'] ?? {}),
+      createdAt: json['createdAt']?.toString() ?? '',
+      updatedAt: json['updatedAt']?.toString() ?? '',
+    );
+  }
 }

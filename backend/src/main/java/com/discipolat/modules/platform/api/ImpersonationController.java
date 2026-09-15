@@ -1,5 +1,6 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.exception.BusinessRuleException;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.http.ResponseEntity;
@@ -26,17 +27,25 @@ public class ImpersonationController {
     public ResponseEntity<Map<String, Object>> startImpersonation(@RequestBody Map<String, Object> requestBody, jakarta.servlet.http.HttpServletRequest httpRequest) {
         UUID tenantId = UUID.fromString((String) requestBody.get("tenantId"));
         String reason = (String) requestBody.get("reason");
-        
+        String targetUserEmail = (String) requestBody.get("targetUserEmail");
+
+        // §G1.9 — Anti-élévation : on ne peut pas impersoner un autre super admin plateforme.
+        if (targetUserEmail != null && !targetUserEmail.isBlank()) {
+            if ("super@discipolat.com".equalsIgnoreCase(targetUserEmail.trim())) {
+                throw new BusinessRuleException("Impossible d'impersoner un super admin plateforme", "SUPER_ADMIN_IMPERSONATION_FORBIDDEN");
+            }
+        }
+
         tenantRepository.findById(tenantId)
             .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
-        
+
         Instant startTime = Instant.now();
         auditService.log(UUID.randomUUID(), tenantId, "IMPERSONATION_START", "TENANT",
-            tenantId, "SUCCESS", Map.of("reason", reason),
+            tenantId, "SUCCESS", Map.of("reason", reason != null ? reason : "", "targetUserEmail", targetUserEmail != null ? targetUserEmail : ""),
             httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), httpRequest);
-        
+
         String token = UUID.randomUUID().toString();
-        
+
         return ResponseEntity.ok(Map.of(
             "token", token,
             "tenantId", tenantId.toString(),

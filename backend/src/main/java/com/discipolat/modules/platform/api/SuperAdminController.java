@@ -1,5 +1,6 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.exception.BusinessRuleException;
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -245,6 +246,14 @@ public class SuperAdminController {
 
         UUID tenantId = UUID.fromString((String) request.get("tenantId"));
         String reason = (String) request.get("reason");
+        String targetUserEmail = (String) request.get("targetUserEmail");
+
+        // §G1.9 — Anti-élévation : on ne peut pas impersoner un autre super admin plateforme.
+        if (targetUserEmail != null && !targetUserEmail.isBlank()
+                && "super@discipolat.com".equalsIgnoreCase(targetUserEmail.trim())) {
+            throw new BusinessRuleException("Impossible d'impersoner un super admin plateforme",
+                    "SUPER_ADMIN_IMPERSONATION_FORBIDDEN");
+        }
 
         tenantRepository.findById(tenantId)
             .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
