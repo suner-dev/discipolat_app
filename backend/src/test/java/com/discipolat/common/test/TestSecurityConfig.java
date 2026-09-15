@@ -5,6 +5,7 @@ import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.modules.tenants.domain.AuthorizationService;
 import com.discipolat.modules.tenants.domain.MembershipScopeType;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
@@ -16,10 +17,13 @@ import java.util.Base64;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  * Configuration de test pour la chaîne de sécurité complète (@WebMvcTest + SecurityConfig).
  * Fournit :
- * - JwtTokenProvider réel (clés RSA générées)
+ * - JwtTokenProvider réel (clés RSA générées pour le test)
  * - AuthorizationService mock (autorise tout pour les tests de contrôleur)
  */
 @TestConfiguration
@@ -49,64 +53,17 @@ public class TestSecurityConfig {
     @Bean
     @Primary
     public AuthorizationService authorizationService() {
-        return new AuthorizationService() {
-            @Override
-            public boolean can(String permissionKey, MembershipScopeType scopeType, UUID scopeId) {
-                return true;
-            }
-
-            @Override
-            public boolean can(UUID userId, UUID tenantId, String permissionKey, MembershipScopeType scopeType, UUID scopeId) {
-                return true;
-            }
-
-            @Override
-            public boolean canView(UUID userId, UUID tenantId, String resourceType, UUID resourceId) {
-                return true;
-            }
-
-            @Override
-            public boolean canCreate(UUID userId, UUID tenantId, String resourceType, MembershipScopeType scopeType, UUID scopeId) {
-                return true;
-            }
-
-            @Override
-            public boolean canUpdate(UUID userId, UUID tenantId, String resourceType, UUID resourceId) {
-                return true;
-            }
-
-            @Override
-            public boolean canDelete(UUID userId, UUID tenantId, String resourceType, UUID resourceId) {
-                return true;
-            }
-
-            @Override
-            public void require(String permissionKey, MembershipScopeType scopeType, UUID scopeId) {
-            }
-
-            @Override
-            public void requireCurrentUser(String permissionKey, MembershipScopeType scopeType, UUID scopeId) {
-            }
-
-            @Override
-            public Set<String> getCurrentUserPermissions() {
-                return Set.of();
-            }
-
-            @Override
-            public Set<String> getUserPermissions(UUID userId, UUID tenantId) {
-                return Set.of();
-            }
-
-            @Override
-            public Set<String> getUserPermissionsInScope(UUID userId, UUID tenantId, MembershipScopeType scopeType, UUID scopeId) {
-                return Set.of();
-            }
-
-            @Override
-            public boolean isPlatformSuperAdmin(UUID userId) {
-                return true;
-            }
-        };
+        AuthorizationService mock = mock(AuthorizationService.class);
+        when(mock.can(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(mock.can(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(mock.canView(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(mock.canCreate(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(mock.canUpdate(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(mock.canDelete(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(mock.getCurrentUserPermissions()).thenReturn(Set.of());
+        when(mock.getUserPermissions(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(Set.of());
+        when(mock.getUserPermissionsInScope(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(Set.of());
+        when(mock.isPlatformSuperAdmin(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        return mock;
     }
 }
