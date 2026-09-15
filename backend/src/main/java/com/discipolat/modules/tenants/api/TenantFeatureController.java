@@ -5,6 +5,7 @@ import com.discipolat.modules.tenants.domain.TenantFeature;
 import com.discipolat.modules.tenants.domain.TenantFeatureService;
 import com.discipolat.modules.tenants.domain.TenantRepository;
 import com.discipolat.modules.audit.domain.AuditService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,13 +25,16 @@ public class TenantFeatureController {
     private final TenantFeatureService featureService;
     private final TenantRepository tenantRepository;
     private final AuditService auditService;
+    private final HttpServletRequest httpServletRequest;
 
     public TenantFeatureController(TenantFeatureService featureService,
                                    TenantRepository tenantRepository,
-                                   AuditService auditService) {
+                                   AuditService auditService,
+                                   HttpServletRequest httpServletRequest) {
         this.featureService = featureService;
         this.tenantRepository = tenantRepository;
         this.auditService = auditService;
+        this.httpServletRequest = httpServletRequest;
     }
 
     private UUID getCurrentTenantId() {
@@ -74,9 +78,12 @@ public class TenantFeatureController {
         TenantFeature feature = featureService.enableFeature(
                 tenantId, moduleCode, request.configuration());
 
-        auditService.logSimple(currentUserId, tenantId, "TENANT_FEATURE_UPDATED",
+        auditService.log(currentUserId, tenantId, "TENANT_FEATURE_UPDATED",
                 "TENANT_FEATURE", feature.getId(), "SUCCESS",
-                Map.of("moduleCode", moduleCode, "enabled", request.enabled()));
+                Map.of("moduleCode", moduleCode, "enabled", request.enabled()),
+                httpServletRequest.getRemoteAddr(),
+                httpServletRequest.getHeader("User-Agent"),
+                httpServletRequest);
 
         return ResponseEntity.ok(toResponse(feature));
     }
@@ -89,9 +96,12 @@ public class TenantFeatureController {
 
         featureService.disableFeature(tenantId, moduleCode);
 
-        auditService.logSimple(currentUserId, tenantId, "TENANT_FEATURE_DISABLED",
+        auditService.log(currentUserId, tenantId, "TENANT_FEATURE_DISABLED",
                 "TENANT_FEATURE", null, "SUCCESS",
-                Map.of("moduleCode", moduleCode));
+                Map.of("moduleCode", moduleCode),
+                httpServletRequest.getRemoteAddr(),
+                httpServletRequest.getHeader("User-Agent"),
+                httpServletRequest);
 
         return ResponseEntity.noContent().build();
     }
@@ -105,8 +115,8 @@ public class TenantFeatureController {
             boolean enabled,
             Map<String, Object> configuration,
             Map<String, Object> limits,
-            UUID createdAt,
-            UUID updatedAt
+            java.time.Instant createdAt,
+            java.time.Instant updatedAt
     ) {}
 
     public record TenantFeatureUpdateRequest(
@@ -122,8 +132,8 @@ public class TenantFeatureController {
                 feature.getEnabled(),
                 feature.getConfigurationJson(),
                 feature.getLimitsJson(),
-                feature.getCreatedAt() != null ? feature.getCreatedAt().toString().hashCode() : null,
-                feature.getUpdatedAt() != null ? feature.getUpdatedAt().toString().hashCode() : null
+                feature.getCreatedAt(),
+                feature.getUpdatedAt()
         );
     }
 }
