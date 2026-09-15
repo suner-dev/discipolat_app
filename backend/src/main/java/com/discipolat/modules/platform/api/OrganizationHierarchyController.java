@@ -139,6 +139,25 @@ public class OrganizationHierarchyController {
         return ResponseEntity.status(201).body(node);
     }
 
+    // ==================== G1.5 — CAMPUS CREATION (pasteur principal) ====================
+
+    /**
+     * Crée un campus / sous-église rattaché à l'église racine (G1.5 - §50-51).
+     * Le pasteur principal (ou admin tenant) crée un campus sans super admin.
+     * La permission CHURCH_CREATE couvre « églises / campus / sous-églises ».
+     */
+    @PostMapping("/campus")
+    @PreAuthorize("@authz.can('CHURCH_CREATE', 'TENANT', null)")
+    public ResponseEntity<OrganizationNode> createCampus(@RequestBody Map<String, String> request) {
+        UUID tenantId = getCurrentTenantId();
+        UUID currentUserId = getCurrentUserId();
+        String name = request.get("name");
+        String code = request.get("code");
+        UUID pastorId = request.get("pastorId") != null ? UUID.fromString(request.get("pastorId")) : null;
+        OrganizationNode campus = hierarchyService.createCampus(tenantId, name, code, pastorId, currentUserId);
+        return ResponseEntity.status(201).body(campus);
+    }
+
     // ==================== UPDATE NODE ====================
 
     @PutMapping("/nodes/{id}")

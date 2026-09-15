@@ -208,6 +208,45 @@ public class OrganizationHierarchyService {
         return createNode(tenantId, new CreateNodeRequest(name, OrganizationNodeType.ROOT_CHURCH, null, null, code, null, null, null, null), creatorId);
     }
 
+    // ==================== G1.5 — CAMPUS CREATION (pasteur principal) ====================
+
+    /**
+     * Crée un campus (ou sous-église) rattaché à la racine du tenant (G1.5 - §50-51).
+     * Le pasteur principal peut créer un campus sans passer par le super admin.
+     * Le responsable (pasteur de campus) est rattaché au nœud et doit appartenir au tenant.
+     *
+     * @param tenantId     tenant courant (jamais fourni par le frontend)
+     * @param name         nom du campus
+     * @param code         code unique optionnel (déduit si null)
+     * @param pastorId     pasteur de campus à rattacher (optionnel)
+     * @param creatorId    utilisateur qui crée (pour l'audit)
+     */
+    public OrganizationNode createCampus(UUID tenantId, String name, String code, UUID pastorId, UUID creatorId) {
+        if (name == null || name.isBlank()) {
+            throw new BusinessRuleException("Le nom du campus est requis", "CAMPUS_NAME_REQUIRED");
+        }
+
+        // Ratachement sous la racine du tenant (récupérée depuis le contexte, jamais du frontend)
+        OrganizationNode root = nodeRepository.findRootByTenantId(tenantId)
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Aucune église racine pour ce tenant : créez d'abord l'organisation", "ROOT_REQUIRED"));
+
+        OrganizationNode campus = createNode(tenantId, new CreateNodeRequest(
+                name,
+                OrganizationNodeType.CAMPUS,
+                root.getId(),
+                pastorId,
+                code,
+                root.getTimezone(),
+                root.getCountry(),
+                root.getCity(),
+                Map.of("origin", "G1.5_CAMPUS_WIZARD")
+        ), creatorId);
+
+        // Date de création du campus dans les métadonnées pour les settings hérités (G1.7)
+        return campus;
+    }
+
     // ==================== UPDATE OPERATIONS ====================
 
     public OrganizationNode updateNode(UUID nodeId, UpdateNodeRequest request, UUID updaterId) {

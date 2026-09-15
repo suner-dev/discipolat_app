@@ -77,6 +77,22 @@ public class OrganizationNode {
     @Column(name = "metadata_json", columnDefinition = "jsonb")
     private String metadataJson;
 
+    // ===== G1.7 §53 — Héritage de configuration =====
+
+    /** DEFAULT | INHERITED | OVERRIDDEN — un OVERRIDDEN stoppe la remontée vers le parent. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "config_source", nullable = false, length = 20)
+    @Builder.Default
+    private ConfigSource configSource = ConfigSource.DEFAULT;
+
+    /** Configuration résolue (cache), invalidée par l'événement config-changed. */
+    @Column(name = "resolved_config_json", columnDefinition = "jsonb")
+    private String resolvedConfigJson;
+
+    public enum ConfigSource {
+        DEFAULT, INHERITED, OVERRIDDEN
+    }
+
     public String getMetadata() {
         return metadataJson;
     }
