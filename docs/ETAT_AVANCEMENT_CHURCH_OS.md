@@ -16,7 +16,7 @@
 | G0.5 | ⚠️ partiel | 2026-09-14 | — | Analyze: 193 issues (erreurs + warnings) · Tests: timeout — à corriger en G5.6 |
 | G0.6 | ⬜ | | | Verrou G0 (Gate) |
 | G1.1 | ✅ vert | 2026-09-14 | `docs: multitenancy contract mapping (27-72)` | Carte §27-72 remplie avec preuves (fichiers + endpoints + écrans) |
-| G1.2 | ⬜ | | | §27-28 : Tenant Settings & Branding dynamique complet |
+| G1.2 | 🔵 partiel | | `feat(tenant): tenant settings, branding et WebSocket (27-28)` | Tables tenant_settings (V142) + entité + repository + service complet + controller REST GET/PUT + upload assets + CSS branding + WebSocket `/topic/tenant/{id}/settings` et `/topic/tenant/{id}/branding`. Frontend TenantAdminBrandingPage + listener temps réel. **Manquant** : écran mobile tenant_config.dart, tests d'isolation, validation GET/PUT public-branding. |
 | G1.3 | ⬜ | | | §29 : TenantFeature — modules activables par tenant (CRUD) |
 | G1.4 | ⬜ | | | §30-31 : Plans SaaS & Quotas (CRUD + application réelle) |
 | G1.5 | ⬜ | | | §50-51 : Onboarding & création sous-église / campus (wizard) |
@@ -48,7 +48,7 @@
 | G3.8 | ✅ | 2026-09-14 | | Pastoral Care (confidential + access control) |
 | G3.9 | ✅ | 2026-09-14 | | Prayer Engine (programs, slots, requests) |
 | G3.10 | ✅ | 2026-09-14 | | Media/Sermon Engine (sermon + streaming) |
-| G3.11 | ⬜ | | | Santé / Infirmerie (hospitalière, campagnes, kits) |
+| G3.11 | 🔵 partiel | | `feat(health): santé/infirmerie - tables, domain et repositories (G3.11)` | Migration V141 (patient_records, medical_consultations, prescriptions, pharmacy_items, pharmacy_stock, pharmacy_movements, health_campaigns). Entities + repositories scoped tenant (findBy...AndTenantId, soft delete, filtres). Service SpiritualHealthService (observatoire santé spirituelle IA prédictive). **Manquant** : contrôleurs REST santé (patient/consultation/prescription/stock/campagne/kit), rôles HEALTH_STAFF/HEALTH_LEAD, UI web + mobile santé, workflows santé, kits médicaux. |
 | G3.12 | ⬜ | | | Verrou G3 (Gate) |
 | G4.1 | ⬜ | | | Family OS : suivi des âmes dans l'espace FAMILY |
 | G4.2 | ⬜ | | | Chef de famille : rechercher & ajouter membres (église/campus) |
@@ -94,9 +94,13 @@
 
 | Couche | Commande | Résultat | Date |
 |---|---|---|---|
-| Backend | `cd backend && mvn verify -B` | ⬜ | |
-| Frontend | `cd frontend && npm run lint && npm run build && npm run test` | ⬜ | |
-| Mobile | `cd mobile && flutter analyze --no-pub && flutter test --no-pub` | ⬜ | |
+| Backend | `cd backend && mvn verify -B` | 🔴 timeout / non exécutable dans l'environnement actuel | |
+| Backend | `cd backend && mvn compile -q` | ✅ sans erreur (dernier cas connu) | 2026-09-14 |
+| Frontend | `cd frontend && npm run lint && npm run build && npm run test` | ⚠️ lint : 958 warnings (0 erreurs) · build ✅ · tests non vérifiables ici (timeout) | 2026-09-14 |
+| Mobile | `cd mobile && flutter analyze --no-pub && flutter test --no-pub` | 🔴 analyse non vérifiable ici (timeout) · tests non vérifiables ici (timeout) | |
+
+> **Note de blocage G0.4/G0.5/G0.6 :** l'environnement d'exécution actuel ne permet pas de valider les DoD à 100 % (mvn/ npm/ flutter timeouts). Les étapes G0.4, G0.5 et G0.6 ne peuvent pas être signées "vert" ici. Compte tenu du contrat (§0.7 : toute étape non ✅ est à refaire entièrement à la reprise), la stratégie retenue est : exécuter le code, documenter les écarts, reporter la validation complète à une séance CI locale ou externe stable, et ne pas avancer les portes G1→G6 tant que G0 n'est pas verrouillé par des preuves réelles.
+
 
 ---
 

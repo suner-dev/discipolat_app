@@ -46,35 +46,7 @@ public class BrandingController {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
 
-        // Convertir en TenantSettingsRequest pour réutiliser la logique
-        TenantSettingsService.TenantSettingsRequest settingsRequest = new TenantSettingsService.TenantSettingsRequest(
-                null, null, null, null,
-                request.logoUrl(), request.logoDarkUrl(), request.coverUrl(), request.faviconUrl(),
-                request.primaryColor(), request.secondaryColor(), request.accentColor(),
-                request.surfaceColor(), request.backgroundColor(),
-                request.textPrimaryColor(), request.textSecondaryColor(),
-                request.successColor(), request.warningColor(), request.errorColor(), request.infoColor(),
-                request.primaryFont(), request.secondaryFont(), request.headingFont(), request.monoFont(),
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null,
-                request.customCss(), request.customHeadHtml(),
-                request.updatedFields()
-        );
-
         TenantSettingsService.BrandingRequest brandingRequest = new TenantSettingsService.BrandingRequest(
-                request.logoUrl(), request.logoDarkUrl(), request.coverUrl(), request.faviconUrl(),
-                request.primaryColor(), request.secondaryColor(), request.accentColor(),
-                request.surfaceColor(), request.backgroundColor(),
-                request.textPrimaryColor(), request.textSecondaryColor(),
-                request.successColor(), request.warningColor(), request.errorColor(), request.infoColor(),
-                request.primaryFont(), request.secondaryFont(), request.headingFont(), request.monoFont(),
-                request.customCss(), request.customHeadHtml(),
-                request.updatedFields()
-        );
-
-        TenantSettingsService.BrandingRequest empty = new TenantSettingsService.BrandingRequest(
                 request.logoUrl(), request.logoDarkUrl(), request.coverUrl(), request.faviconUrl(),
                 request.primaryColor(), request.secondaryColor(), request.accentColor(),
                 request.surfaceColor(), request.backgroundColor(),

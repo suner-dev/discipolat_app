@@ -40,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(SettingsController.class)
 @Import({SecurityConfig.class, TestJwtConfig.class})
+@org.springframework.test.context.ActiveProfiles("test")
 class SettingsControllerTest {
 
     @Autowired

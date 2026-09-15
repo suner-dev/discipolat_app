@@ -228,31 +228,31 @@ public class TenantSettingsService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("Tenant non trouvé: " + tenantId));
 
-        return Map.of(
-                "tenantId", tenantId,
-                "displayName", settings.getBusinessName() != null ? settings.getBusinessName() : tenant.getName(),
-                "slogan", settings.getSlogan(),
-                "logoUrl", settings.getLogoUrl(),
-                "logoDarkUrl", settings.getLogoDarkUrl(),
-                "coverUrl", settings.getCoverUrl(),
-                "faviconUrl", settings.getFaviconUrl(),
-                "primaryColor", settings.getPrimaryColor(),
-                "secondaryColor", settings.getSecondaryColor(),
-                "accentColor", settings.getAccentColor(),
-                "surfaceColor", settings.getSurfaceColor(),
-                "backgroundColor", settings.getBackgroundColor(),
-                "textPrimaryColor", settings.getTextPrimaryColor(),
-                "textSecondaryColor", settings.getTextSecondaryColor(),
-                "successColor", settings.getSuccessColor(),
-                "warningColor", settings.getWarningColor(),
-                "errorColor", settings.getErrorColor(),
-                "infoColor", settings.getInfoColor(),
-                "primaryFont", settings.getPrimaryFont(),
-                "secondaryFont", settings.getSecondaryFont(),
-                "headingFont", settings.getHeadingFont(),
-                "monoFont", settings.getMonoFont(),
-                "customCss", settings.getCustomCss(),
-                "customHeadHtml", settings.getCustomHeadHtml()
+        return Map.ofEntries(
+                Map.entry("tenantId", tenantId),
+                Map.entry("displayName", settings.getBusinessName() != null ? settings.getBusinessName() : tenant.getName()),
+                Map.entry("slogan", settings.getSlogan()),
+                Map.entry("logoUrl", settings.getLogoUrl()),
+                Map.entry("logoDarkUrl", settings.getLogoDarkUrl()),
+                Map.entry("coverUrl", settings.getCoverUrl()),
+                Map.entry("faviconUrl", settings.getFaviconUrl()),
+                Map.entry("primaryColor", settings.getPrimaryColor()),
+                Map.entry("secondaryColor", settings.getSecondaryColor()),
+                Map.entry("accentColor", settings.getAccentColor()),
+                Map.entry("surfaceColor", settings.getSurfaceColor()),
+                Map.entry("backgroundColor", settings.getBackgroundColor()),
+                Map.entry("textPrimaryColor", settings.getTextPrimaryColor()),
+                Map.entry("textSecondaryColor", settings.getTextSecondaryColor()),
+                Map.entry("successColor", settings.getSuccessColor()),
+                Map.entry("warningColor", settings.getWarningColor()),
+                Map.entry("errorColor", settings.getErrorColor()),
+                Map.entry("infoColor", settings.getInfoColor()),
+                Map.entry("primaryFont", settings.getPrimaryFont()),
+                Map.entry("secondaryFont", settings.getSecondaryFont()),
+                Map.entry("headingFont", settings.getHeadingFont()),
+                Map.entry("monoFont", settings.getMonoFont()),
+                Map.entry("customCss", settings.getCustomCss()),
+                Map.entry("customHeadHtml", settings.getCustomHeadHtml())
         );
     }
 

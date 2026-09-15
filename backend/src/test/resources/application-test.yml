@@ -13,6 +13,11 @@ spring:
   flyway:
     enabled: false
 
+discipolat:
+  file:
+    storage:
+      root: ${java.io.tmpdir}/discipolat-test-files
+
 app:
   jwt:
     access-token-expiration-minutes: 15

@@ -44,7 +44,7 @@ public class TenantSettingsController {
 
     @PutMapping
     @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<TenantSettingsResponse> updateSettings(@Valid @RequestBody TenantSettingsRequest request) {
+    public ResponseEntity<TenantSettingsResponse> updateSettings(@Valid @RequestBody TenantSettingsService.TenantSettingsRequest request) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
 
@@ -185,42 +185,5 @@ public class TenantSettingsController {
             Map<String, Object> uiConfig, Map<String, Object> notificationRules,
             Map<String, Object> integrationConfig, String customCss, String customHeadHtml,
             java.time.Instant createdAt, java.time.Instant updatedAt, Integer version
-    ) {}
-
-    public record TenantSettingsRequest(
-            // Identité
-            String businessName, String slogan, String legalName, String description,
-            // Branding visuel
-            String logoUrl, String logoDarkUrl, String coverUrl, String faviconUrl,
-            // Couleurs
-            String primaryColor, String secondaryColor, String accentColor,
-            String surfaceColor, String backgroundColor,
-            String textPrimaryColor, String textSecondaryColor,
-            String successColor, String warningColor, String errorColor, String infoColor,
-            // Polices
-            String primaryFont, String secondaryFont, String headingFont, String monoFont,
-            // Localisation
-            String locale, List<String> supportedLocales, String timezone, String country,
-            String city, String currency, String dateFormat, String timeFormat,
-            String dateTimeFormat, String phoneCountryCode, Integer weekStartDay,
-            // Contact
-            String email, String phone, String website, String address,
-            Map<String, Object> openingHours, List<String> workingDays,
-            // Textes communication
-            String invitationEmailSubject, String invitationEmailBody,
-            String welcomeEmailSubject, String welcomeEmailBody,
-            String footerText, List<Map<String, String>> footerLinks,
-            // Feature flags
-            Boolean lowBandEnabled, Boolean publicDirectoryEnabled, Boolean legacyMigrationEnabled,
-            String offlineMode, Boolean analyticsEnabled, Boolean aiFeaturesEnabled,
-            Boolean chatEnabled, Boolean academyEnabled, Boolean marketplaceEnabled,
-            Boolean apiAccessEnabled, Boolean customDomainEnabled, Boolean ssoEnabled,
-            Boolean twoFactorRequired, Boolean passwordPolicyEnabled,
-            Integer sessionTimeoutMinutes, Integer maxFailedLoginAttempts, Integer lockoutDurationMinutes,
-            // Config avancée
-            Map<String, Object> uiConfig, Map<String, Object> notificationRules,
-            Map<String, Object> integrationConfig, String customCss, String customHeadHtml,
-            // Métadonnées
-            List<String> updatedFields
     ) {}
 }
