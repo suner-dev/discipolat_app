@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from '@/App';
 import { useAuth } from '@/contexts/AuthContext';
+import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 
 /* ============================================================================
  * Tests de transition de rôle (espaces métiers)
@@ -124,8 +125,12 @@ function renderApp(initialPath: string, activeRole: string, roles?: string[]) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialPath]}>
-        <LocationProbe />
-        <App />
+        {/* Même arbre de providers qu'en production (main.tsx) : App contient
+            <ImpersonationBanner> qui exige ImpersonationProvider. */}
+        <ImpersonationProvider>
+          <LocationProbe />
+          <App />
+        </ImpersonationProvider>
       </MemoryRouter>
     </QueryClientProvider>
   );
