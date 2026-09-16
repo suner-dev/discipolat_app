@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../api/api_service.dart';
+import '../../../api/api_service.dart';
 
 /// Écran de gestion des utilisateurs
 class TenantUsersScreen extends ConsumerStatefulWidget {

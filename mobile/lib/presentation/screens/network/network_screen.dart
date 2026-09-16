@@ -9,9 +9,12 @@ import '../../../../l10n/app_localizations.dart';
 /// PHASE 3 — Réseau fédéré inter-églises — écran mobile offline-first
 /// Charge depuis le cache Drift, sync depuis l'API en ligne.
 class NetworkScreen extends ConsumerStatefulWidget {
-  const NetworkScreen({super.key, this.apiService});
+  const NetworkScreen({super.key, this.apiService, this.database});
 
   final ApiService? apiService;
+
+  /// Cache local injectable (tests : base en mémoire).
+  final AppDatabase? database;
 
   @override
   ConsumerState<NetworkScreen> createState() => _NetworkScreenState();
@@ -35,7 +38,7 @@ class _NetworkScreenState extends ConsumerState<NetworkScreen>
   void initState() {
     super.initState();
     _api = widget.apiService ?? ApiService();
-    _db = AppDatabase();
+    _db = widget.database ?? AppDatabase();
     _tabs = TabController(length: 3, vsync: this);
     _load();
   }
@@ -84,11 +87,17 @@ class _NetworkScreenState extends ConsumerState<NetworkScreen>
       final eventList = (results[1].data is List ? results[1].data as List : <dynamic>[]);
       final directoryList = (results[2].data is List ? results[2].data as List : <dynamic>[]);
 
-      // Update cache
+      // Mise à jour du cache local — au mieux : un échec d'écriture du cache
+      // (stockage plein, migration) ne doit jamais masquer des données
+      // réseau valides à l'utilisateur.
       final now = DateTime.now().toIso8601String();
-      await _db.saveNetworkResources(resourceList.map((r) => _mapToResourceLocal(r, now)).toList());
-      await _db.saveNetworkEvents(eventList.map((e) => _mapToEventLocal(e, now)).toList());
-      await _db.saveNetworkDirectory(directoryList.map((d) => _mapToDirectoryLocal(d, now)).toList());
+      try {
+        await _db.saveNetworkResources(resourceList.map((r) => _mapToResourceLocal(r, now)).toList());
+        await _db.saveNetworkEvents(eventList.map((e) => _mapToEventLocal(e, now)).toList());
+        await _db.saveNetworkDirectory(directoryList.map((d) => _mapToDirectoryLocal(d, now)).toList());
+      } catch (_) {
+        // Cache indisponible : on continue avec les données serveur.
+      }
 
       if (mounted) {
         setState(() {

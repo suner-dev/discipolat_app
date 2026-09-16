@@ -352,7 +352,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                   const SizedBox(width: 4),
                   _actionBtn(Icons.swap_horiz, () => _showActionModal(u, 'transfer'), Colors.blue),
                 ],
-                if (role != 'FAISEUR' && role != 'ADMIN' && !AuthState().hasAnyRole(['ADMIN', 'PASTEUR'])) ...[
+                if (role != 'FAISEUR' && role != 'ADMIN' && AuthState().hasAnyRole(['ADMIN', 'PASTEUR'])) ...[
                   const SizedBox(width: 4),
                   _actionBtn(Icons.arrow_upward, () => _showActionModal(u, 'promote'), Colors.green),
                 ],

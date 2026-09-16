@@ -342,7 +342,8 @@ class TenantSession extends ChangeNotifier {
         await prefs.setString('scope_id', _scopeId!);
       }
 
-      _multipleTenants = (context['availableTenants'] as List?)?.length ?? 0 > 1;
+      _multipleTenants =
+          ((context['availableTenants'] as List?)?.length ?? 0) > 1;
     }
     _isLoaded = true;
     notifyListeners();
@@ -519,5 +520,6 @@ final tenantSessionProvider = ChangeNotifierProvider<TenantSession>((ref) {
 
 /// Extension pour utiliser le tenant session dans les widgets
 extension TenantSessionX on BuildContext {
-  TenantSession get tenantSession => read(tenantSessionProvider);
+  TenantSession get tenantSession =>
+      ProviderScope.containerOf(this, listen: false).read(tenantSessionProvider);
 }

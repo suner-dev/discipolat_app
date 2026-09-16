@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../api/api_service.dart';
+import '../../../api/api_service.dart';
 
 class TenantRolesScreen extends ConsumerStatefulWidget {
   const TenantRolesScreen({super.key});

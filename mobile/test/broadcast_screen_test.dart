@@ -10,7 +10,7 @@ class _FakeApiService extends ApiService {
 
   @override
   Future<Response> get(String path, {Map<String, dynamic>? params}) async {
-    if (path == '/api/v1/announcements') {
+    if (path == '/broadcast') {
       return Response(
         requestOptions: RequestOptions(path: path),
         statusCode: 200,
@@ -20,7 +20,7 @@ class _FakeApiService extends ApiService {
         ],
       );
     }
-    if (path == '/api/v1/announcements/stats') {
+    if (path == '/broadcast/stats') {
       return Response(
         requestOptions: RequestOptions(path: path),
         statusCode: 200,

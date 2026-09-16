@@ -205,7 +205,6 @@ import 'tenant_config.dart';
 /// Écrans d'administration multi-tenant (Super Admin & Tenant Admin).
 import 'presentation/screens/tenant/tenant_selection_screen.dart';
 import 'presentation/screens/tenant/branding_screen.dart';
-import 'presentation/screens/tenant/org_settings_screen.dart';
 import 'presentation/screens/tenant/organizations_screen.dart';
 import 'presentation/screens/tenant/tenant_settings_screen.dart';
 import 'presentation/screens/tenant/modules_screen.dart';
@@ -1213,22 +1212,18 @@ final appRouter = GoRouter(
     GoRoute(path: '/predictions-ml', name: 'predictions-ml', builder: (ctx, s) => const AiPredictionsScreen()),
     GoRoute(path: '/scheduled-announcements', name: 'scheduled-announcements', builder: (ctx, s) => const ScheduledAnnouncementsScreen()),
     // ===== Nouveaux écrans issus de l'audit des endpoints orphelins =====
-    GoRoute(path: '/admin-requests', name: 'admin-requests', builder: (ctx, s) => const AdminRequestsScreen()),
     GoRoute(path: '/emergency-aid', name: 'emergency-aid', builder: (ctx, s) => const EmergencyAidScreen()),
     GoRoute(path: '/aid-exchange', name: 'aid-exchange', builder: (ctx, s) => const AidExchangeScreen()),
     GoRoute(path: '/2fa-status', name: '2fa-status', builder: (ctx, s) => const TwoFactorStatusScreen()),
     GoRoute(path: '/ai-health', name: 'ai-health', builder: (ctx, s) => const AiHealthScreen()),
     GoRoute(path: '/ai-predictions/risks', name: 'ai-predictions-risks', builder: (ctx, s) => const PredictionsRiskScreen()),
     GoRoute(path: '/team-tasks', name: 'team-tasks', builder: (ctx, s) => const TeamTasksScreen()),
-    GoRoute(path: '/sermon-translations', name: 'sermon-translations', builder: (ctx, s) => const SermonTranslationsScreen()),
     GoRoute(path: '/import-data', name: 'import-data', builder: (ctx, s) => const ImportDataScreen()),
-    GoRoute(path: '/maker-tracking', name: 'maker-tracking', builder: (ctx, s) => const MakerTrackingScreen()),
     GoRoute(path: '/member-competences', name: 'member-competences', builder: (ctx, s) => const MemberCompetencesScreen()),
     GoRoute(path: '/qr-checkin', name: 'qr-checkin', builder: (ctx, s) => const QrCheckinScreen()),
     GoRoute(path: '/network/stats', name: 'network-stats', builder: (ctx, s) => const NetworkStatsScreen()),
     GoRoute(path: '/voices', name: 'voices', builder: (ctx, s) => const VoicesScreen()),
     GoRoute(path: '/workflow', name: 'workflow', builder: (ctx, s) => const WorkflowScreen()),
-    GoRoute(path: '/skill-matching', name: 'skill-matching', builder: (ctx, s) => const SkillMatchingScreen()),
     GoRoute(path: '/face-recognition', name: 'face-recognition', builder: (ctx, s) => const FaceRecognitionScreen()),
     GoRoute(path: '/twin-snapshot', name: 'twin-snapshot', builder: (ctx, s) => const TwinSnapshotScreen()),
     GoRoute(path: '/reward-certificates', name: 'reward-certificates', builder: (ctx, s) => const RewardCertificatesScreen()),
@@ -1244,7 +1239,6 @@ final appRouter = GoRouter(
     GoRoute(path: '/rewards/claims', name: 'rewards-claims', builder: (ctx, s) => const RewardsClaimsScreen()),
     GoRoute(path: '/user-roles', name: 'user-roles', builder: (ctx, s) => UserRolesScreen(userId: s.uri.queryParameters['userId'] ?? '')),
     GoRoute(path: '/compliance-exports', name: 'compliance-exports', builder: (ctx, s) => const ComplianceExportsScreen()),
-    GoRoute(path: '/quest', name: 'quest', builder: (ctx, s) => const QuestScreen()),
     GoRoute(path: '/discipleship-paths', name: 'discipleship-paths', builder: (ctx, s) => const DiscipleshipPathsScreen()),
     GoRoute(path: '/geo-tracking', name: 'geo-tracking', builder: (ctx, s) => const GeofencingScreen()),
     GoRoute(path: '/visit-notes/verify', name: 'visit-notes-verify', builder: (ctx, s) => VisitNotesVerifyScreen(memberId: s.uri.queryParameters['memberId'] ?? '')),

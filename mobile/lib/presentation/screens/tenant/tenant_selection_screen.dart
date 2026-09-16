@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../api/api_service.dart';
-import '../../core/tenant_session.dart';
-import '../auth/login_screen.dart';
+import '../../../api/api_service.dart';
+import '../../../core/tenant_session.dart';
+import '../login/login_screen.dart';
 import '../main_scaffold.dart';
 
 /// Écran de sélection du tenant (affiché après connexion)
@@ -131,7 +131,9 @@ class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
               leading: CircleAvatar(
                 backgroundColor: Theme.of(context).primaryColor,
                 child: Text(
-                  tenant['name']?.toString().charAt(0).toUpperCase() ?? '?',
+                  (tenant['name']?.toString().isNotEmpty ?? false)
+                      ? tenant['name'].toString()[0].toUpperCase()
+                      : '?',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),

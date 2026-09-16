@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../api/api_service.dart';
-import '../../core/tenant_session.dart';
+import '../../../api/api_service.dart';
+import '../../../core/tenant_session.dart';
 
 /// Écran de gestion de la structure organisationnelle
 class OrganizationsScreen extends ConsumerStatefulWidget {

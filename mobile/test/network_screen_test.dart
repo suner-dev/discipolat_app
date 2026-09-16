@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:discipolat_mobile/data/local/database.dart';
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/network/network_screen.dart';
 
@@ -15,7 +18,7 @@ class _FakeApiService extends ApiService {
   @override
   Future<Response> get(String path, {Map<String, dynamic>? params}) async {
     if (fail) throw Exception('network down');
-    if (path == '/api/v1/network/resources') {
+    if (path == '/network/resources') {
       return Response(
         requestOptions: RequestOptions(path: path),
         statusCode: 200,
@@ -25,7 +28,7 @@ class _FakeApiService extends ApiService {
             ],
       );
     }
-    if (path == '/api/v1/network/events') {
+    if (path == '/network/events') {
       return Response(
         requestOptions: RequestOptions(path: path),
         statusCode: 200,
@@ -45,7 +48,7 @@ class _FakeApiService extends ApiService {
             ],
       );
     }
-    if (path == '/api/v1/network/directory') {
+    if (path == '/network/directory') {
       return Response(
         requestOptions: RequestOptions(path: path),
         statusCode: 200,
@@ -60,7 +63,7 @@ class _FakeApiService extends ApiService {
 
   @override
   Future<Response> post(String path, {dynamic data}) async {
-    if (path == '/api/v1/network/events/e1/join') {
+    if (path == '/network/events/e1/join') {
       return Response(
         requestOptions: RequestOptions(path: path),
         statusCode: 200,
@@ -78,7 +81,13 @@ class _FakeApiService extends ApiService {
 }
 
 Future<void> _pump(WidgetTester tester, _FakeApiService api) async {
-  await tester.pumpWidget(MaterialApp(home: NetworkScreen(apiService: api)));
+  // Base en mémoire : le cache Drift hors-ligne ne doit jamais dépendre du
+  // disque (path_provider) dans un widget test.
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  await tester.pumpWidget(
+    MaterialApp(home: NetworkScreen(apiService: api, database: db)),
+  );
   await tester.pumpAndSettle();
 }
 

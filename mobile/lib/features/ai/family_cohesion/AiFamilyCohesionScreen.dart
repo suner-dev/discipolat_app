@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/providers.dart';
 
 class AiFamilyCohesionScreen extends ConsumerStatefulWidget {
   const AiFamilyCohesionScreen({super.key});
@@ -22,9 +23,10 @@ class _AiFamilyCohesionScreenState extends ConsumerState<AiFamilyCohesionScreen>
     try {
       final api = ref.read(apiServiceProvider);
       final res = await api.get('/ai/module/families/cohesion');
+      final data = res.data;
       if (mounted) {
         setState(() {
-          _families = List<Map<String, dynamic>>.from(res ?? []);
+          _families = List<Map<String, dynamic>>.from(data ?? []);
           _isLoading = false;
         });
       }
@@ -61,7 +63,7 @@ class _AiFamilyCohesionScreenState extends ConsumerState<AiFamilyCohesionScreen>
                         title: Text(f['familyName'] ?? 'Famille'),
                         subtitle: Text('${f['memberCount'] ?? 0} membres · $level'),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _showFamilyDetails(f['familyId']),
+                        onTap: () => _showFamilyDetails(f['familyId']?.toString() ?? ''),
                       ),
                     );
                   },
@@ -78,7 +80,8 @@ class _AiFamilyCohesionScreenState extends ConsumerState<AiFamilyCohesionScreen>
   void _showFamilyDetails(String familyId) async {
     try {
       final api = ref.read(apiServiceProvider);
-      final res = await api.get('/ai/module/family/$familyId/cohesion');
+      final response = await api.get('/ai/module/family/$familyId/cohesion');
+      final res = response.data;
       if (mounted && res is Map) {
         showModalBottomSheet(
           context: context,
@@ -92,7 +95,7 @@ class _AiFamilyCohesionScreenState extends ConsumerState<AiFamilyCohesionScreen>
                 const SizedBox(height: 8),
                 Text('Score: ${res['cohesionScore'] ?? '—'} (${res['cohesionLevel'] ?? '—'})'),
                 Text('Membres: ${res['memberCount'] ?? '—'}'),
-                Text('Présence moyenne: ${res['averagePresence'] ?? '—')}%'),
+                Text('Présence moyenne: ${res['averagePresence'] ?? '—'}%'),
                 const SizedBox(height: 12),
                 const Text('Recommandations:', style: TextStyle(fontWeight: FontWeight.bold)),
                 ...((res['recommendations'] ?? []) as List).map((r) => Text('• $r')),

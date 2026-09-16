@@ -9,20 +9,20 @@ class _FakeApiService extends ApiService {
 
   @override
   Future<Response> get(String path, {Map<String, dynamic>? params}) async {
-    if (path == '/api/v1/bible-reading/stats') {
+    if (path == '/bible-reading/stats') {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: {'streak': 12, 'totalRead': 236, 'totalEntries': 365});
     }
-    if (path == '/api/v1/bible-reading/plans') {
+    if (path == '/bible-reading/plans') {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: [
         {'titre': 'Parcours 365 jours', 'description': 'Bible entière en 1 an', 'joursTotal': 365, 'joursCompletes': 236},
       ]);
     }
-    if (path == '/api/v1/bible-reading/today') {
+    if (path == '/bible-reading/today') {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: [
         {'id': '1', 'referenceVerset': 'Jean 3:16-21', 'categorie': 'Évangile', 'theme': 'Amour de Dieu', 'lu': false},
       ]);
     }
-    if (path == '/api/v1/bible-reading/family-progress') {
+    if (path == '/bible-reading/family-progress') {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: []);
     }
     return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: []);

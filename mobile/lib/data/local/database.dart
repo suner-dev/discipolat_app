@@ -141,6 +141,9 @@ class SyncQueueTable extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// Base en mémoire pour les tests (aucun accès disque ni platform channel).
+  AppDatabase.forTesting(super.executor);
+
   @override
   int get schemaVersion => 3;
 

@@ -8,10 +8,10 @@ class _FakeApiService extends ApiService {
   _FakeApiService() : super(baseUrl: 'http://fake');
   @override
   Future<Response> get(String path, {Map<String, dynamic>? params}) async {
-    if (path == '/api/v1/family-cohesion') {
+    if (path == '/family-cohesion') {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: {'score': 7.5, 'indicators': {'Participation': 82}});
     }
-    if (path == '/api/v1/families') {
+    if (path == '/families') {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: {'content': [
         {'nom': 'Famille Grâce', 'cohesionScore': 8.2},
       ]});

@@ -11,7 +11,7 @@ class _FakeApiService extends ApiService {
 
   @override
   Future<Response> get(String path, {Map<String, dynamic>? params}) async {
-    if (path == '/api/v1/forms/published') {
+    if (path == '/forms/published') {
       return Response(
         requestOptions: RequestOptions(path: path),
         statusCode: 200,

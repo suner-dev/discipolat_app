@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/providers.dart';
 
 class AiDashboardScreen extends ConsumerStatefulWidget {
   const AiDashboardScreen({super.key});
@@ -23,26 +24,30 @@ class _AiDashboardScreenState extends ConsumerState<AiDashboardScreen> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
+  /// Lecture d'un objet JSON, tolérante aux erreurs réseau (retourne null).
+  Future<Map<String, dynamic>?> _getJson(ApiService api, String path) async {
     try {
-      final api = ref.read(apiServiceProvider);
-      final results = await Future.wait([
-        api.get('/ai/module/summary').catchError((_) => {}),
-        api.get('/ai/module/kpi-narrative').catchError((_) => {}),
-        api.get('/ai/module/providers').catchError((_) => {}),
-      ]);
-      if (mounted) {
-        setState(() {
-          _summary = results[0] is Map ? results[0] as Map<String, dynamic> : null;
-          _narrative = results[1] is Map ? results[1] as Map<String, dynamic> : null;
-          final p = results[2] is Map ? results[2] as Map<String, dynamic> : null;
-          _providers = p?['providers'] is Map ? p['providers'] as Map<String, dynamic> : null;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      final response = await api.get(path);
+      final data = response.data;
+      return data is Map<String, dynamic> ? data : null;
+    } catch (_) {
+      return null;
     }
+  }
+
+  Future<void> _loadData() async {
+    final api = ref.read(apiServiceProvider);
+    final summary = await _getJson(api, '/ai/module/summary');
+    final narrative = await _getJson(api, '/ai/module/kpi-narrative');
+    final providersResponse = await _getJson(api, '/ai/module/providers');
+    if (!mounted) return;
+    final providers = providersResponse?['providers'];
+    setState(() {
+      _summary = summary;
+      _narrative = narrative;
+      _providers = providers is Map<String, dynamic> ? providers : null;
+      _isLoading = false;
+    });
   }
 
   Future<void> _sendChat() async {
@@ -50,10 +55,13 @@ class _AiDashboardScreenState extends ConsumerState<AiDashboardScreen> {
     setState(() { _chatLoading = true; _chatResponse = ''; });
     try {
       final api = ref.read(apiServiceProvider);
-      final res = await api.post('/ai/module/chat', {'message': _chatMessage});
+      final res = await api.post('/ai/module/chat', data: {'message': _chatMessage});
+      final body = res.data;
       if (mounted) {
         setState(() {
-          _chatResponse = res is Map ? (res as Map)['response']?.toString() ?? 'Pas de réponse' : 'Pas de réponse';
+          _chatResponse = body is Map
+              ? body['response']?.toString() ?? 'Pas de réponse'
+              : 'Pas de réponse';
           _chatMessage = '';
         });
       }
@@ -103,7 +111,10 @@ class _AiDashboardScreenState extends ConsumerState<AiDashboardScreen> {
           const Text('Assistant IA', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           TextField(
-            hintText: 'Posez une question...',
+            decoration: const InputDecoration(
+              hintText: 'Posez une question...',
+              border: OutlineInputBorder(),
+            ),
             onChanged: (v) => _chatMessage = v,
             onSubmitted: (_) => _sendChat(),
           ),
@@ -197,7 +208,7 @@ class _AiDashboardScreenState extends ConsumerState<AiDashboardScreen> {
     return _providers!.entries.map((e) {
       final enabled = e.value == true;
       return Wrap(
-        spacing: const EdgeInsets.all(4),
+        spacing: 4,
         children: [
           Chip(
             label: Text('${labels[e.key] ?? e.key}${enabled ? ' ✓' : ''}'),
