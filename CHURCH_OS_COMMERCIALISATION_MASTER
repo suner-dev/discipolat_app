@@ -1,0 +1,111 @@
+# CHURCH OS COMMERCIALISATION MASTER
+## Fiche de contrat maître – Version 1.0
+
+### 1. Objectif
+Concevoir et implémenter **Church OS** – une plateforme de gestion communautaire multi-tenant (départements, familles, sous-équipes) avec:
+- **Multi-tenancy** unifié (département = famille = sous-équipe)
+- **Espaces configurables** (modèles, personnalisations, droits)
+- **Workflow engine** avec approbations et escalades
+- **Plans SaaS** (DISCOVERY/STARTUP/GROWTH/NETWORK) avec quotas, crédits IA, super-admin
+- **Mobile native** (Flutter/Dart) synchronisée en temps réel
+- **Commercialisation** complète (tarification, abonnements, reporting)
+
+### 2. Architecture globale
+
+#### 2.1 Composants principaux
+| Composant | Technologie | Responsabilité |
+|-----------|-------------|----------------|
+| Backend API | Spring Boot 3.x | Auth, business logic, workflows, payments |
+| Database | PostgreSQL 16 | Spaces, tenants, configurations, logs |
+| Frontend | React 19 + Vite + Tailwind | UI admin, mobile, personal dashboards |
+| Mobile | Flutter 3.x | Offline-first, real-time sync |
+| CI/CD | GitHub Actions | Build, test, deploy multi-environnement |
+| Monitoring | Prometheus + Grafana | Health, metrics, alerts |
+#### 2.2.1 Multi-tenancy & Spaces
+### 3. Exigences non-négociables (Senior Fullstack)
+1. **Zero hard-coded departments** – tout espace est une configuration, jamais une fonctionnalité codée en dur
+2. **Tenant resolution côté backend** – `CurrentTenantResolver` utilise le contexte authentifié
+3. **Pas de `repository.findById(id)` sur données multi-tenant** – toujours `findByIdAndTenantId()`
+4. **Permissions côté backend uniquement** – frontend ne peut pas autoriser d'accès
+5. **Soft delete + historisation** pour toute donnée critique
+6. **Propagation temps réel** : changement de config visible sur web + mobile (< 5s)
+7. **Rôles dynamiques** : modification d'un rôle → mise à jour immédiate de l'interface
+8. **Tout événement métier majeur** → outbox + consommateurs (notifications, audit, finance, analytics)
+9. **Spaces unifiés** : département = famille = sous-équipe (même modèle, différenciation par droits)
+10. **Status configurables** : chaque espace définit ses propres statuts
+### 5. DoD (Definition of Done) – Section 0.7
+- **Moteur de workflow complet** : transitions, approbations, escalades, audit
+- **Éditeur visuel** : nœuds/transitions, drag & drop, timeline d'instance
+- **3 scénarios de test** : approbation simple, rejet, escalade par timeout
+- **Commit** : `feat(workflow): configurable workflow engine with approvals and escalation`
+- **Espaces unifiés** : département = famille = sous-équipe (même objet, droits différents)
+- **Picker de fonctionnalités** : catalogue modulaire activable par espace
+- **Personnalisation par rôle** : backend `canCustomize(actor, space)` exposé à l'UI
+- **Propagation temps réel** : changement de config visible sur web + mobile (< 5s)
+- **Tests** : chef de famille ne configure que sa famille ; admin configure tout ; changement de couleur visible sur second client < 5s
+
+### 6. Checklist de validation
+- [ ] Backend compile sans erreur (`mvn compile -q`)
+- [ ] Frontend lint/build/test passent (`npm run lint`, `npm run build`, `npm run test`)
+- [ ] Mobile compile (`flutter analyze --no-pub`)
+- [ ] Workflow engine fonctionnel (tests 3 scénarios)
+- [ ] Espaces configurables unifiés (G2.6)
+- [ ] Statuts personnalisés par espace (G2.7)
+- [ ] Propriétés de sécurité respectées (pas de hard-coded departments, tenant resolution correcte)
+- [ ] Propagation temps réel validée (WebSocket + cache invalidation)
+
+### 7. Documentation associée
+- `docs/architecture/current-state.md` – inventaire backend/frontend/mobile/DB/CI
+- `docs/architecture/gap-analysis.md` – croisement existant ↔ §27-72 ↔ 43 sections PRMPT
+- `docs/architecture/target-architecture.md` – architecture cible Church OS (Annexe A, moteurs, UX, mobile, commercial)
+- `docs/À faire.md` – détails des erreurs et des §27-72 (répété en annexe B/C)
+- `docs/PRMPT.txt` / `docs/PRMPT.pdf` – maître-contrat 43 sections
+- `docs/tenant.md` – prompt maître multi-tenant existant
+- `docs/MULTI_TENANT_ARCHITECTURE_AUDIT.md` – audit de l'architecture multi-tenant
+
+---
+
+**Version** : 1.0  
+**Date** : 2026-09-16  
+**Responsable** : Ingenieur Senior Fullstack (Discipolat)  
+**Statut** : En cours de réalisation (prochain objectif : G0.6 Gate)
+
+
+### 4. Progression (State of the Art)
+| Étape | Statut | Commit | Date |
+|-------|--------|--------|------|
+| G0.1 | ✅ Vert | `docs: state of the art audit before Church OS v1` | 2026-09-14 |
+| G0.2 | ✅ Vert | `chore: preserve WIP multitenancy phase 10 as v0.10-snapshot-pre-church-os` | 2026-09-14 |
+| G0.3 | ✅ Vert | `fix(backend): resolve all pre-existing compilation errors` | 2026-09-15 |
+| G0.4 | ✅ Vert | `multitenancy contract mapping (27-72)` | 2026-09-15 |
+| G1.1 | ✅ Vert | `tenant: complete tenant settings & branding (27-28)` | 2026-09-14 |
+| G1.2 | ✅ Vert | `tenant: complete tenant feature CRUD and enforcement (29)` | 2026-09-15 |
+| G1.3 | ✅ Vert | `saas: dual market plans, quotas, ai credits and super admin CRUD (30-31)` | 2026-09-15 |
+| G1.4 | ✅ Vert | `org: onboarding wizard and campus creation (50-51)` | 2026-09-15 |
+| G1.5 | ✅ Vert | `tenant: complete invitation lifecycle with real email (52)` | 2026-09-15 |
+| G1.6 | ✅ Vert | `config: config inheritance DEFAULT INHERITED OVERRIDDEN (53)` | 2026-09-16 |
+| G2.6 | ✅ Vert | `spaces: unified configurable spaces department family sub-team` | 2026-09-16 |
+| G2.7 | ✅ Vert | `statuses: custom statuses & configurable statuses` | 2026-09-16 |
+
+- **Space** : entité centrale (id, tenant_id, org_unit_id, type [DEPARTMENT|FAMILY|SUB_TEAM], template, name, color, description, status)
+- **Organization Unit** : conteneur logique (département/famille) lié à un Space
+- **Configuration** : picker de modules, pages, boutons, widgets, couleurs, workflows, rôles
+- **Permissions** : RBAC hiérarchique (admin/pasteur/chef de département/chef de famille)
+
+#### 2.2.2 Workflow Engine
+- **Événementiel** : outbox pattern pour les transitions
+- **Approbations** : étapes avec validation, rejet, escalade timeout
+- **Statuts personnalisés** : configuration par espace (ex. Préproduction→Production→Validé→Publié)
+- **Audit** : logging complet (AuthLog, StatusChange, Transition, Invitation)
+
+#### 2.2.3 Plans SaaS & Commercialisation
+- **Quotas** : membres, espaces, stockage, événements, crédits IA
+- **Tarifs** : DISCOVERY, STARTUP, GROWTH, NETWORK (EUR/FCFA/USD)
+- **Crédits IA** : allocation dynamique selon utilisation
+- **Super Admin** : gestion des plans, abonnements, facturation
+
+#### 2.2.4 Mobile & Synchronisation
+- **Real-time sync** : WebSocket pour propagation instantanée des modifications
+- **CRUD mobile** : création/modification/annulation de modules, espaces, invitations
+- **Offline-first** : cache local avec synchronisation différée
+
