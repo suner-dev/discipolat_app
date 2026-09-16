@@ -12,9 +12,9 @@
 | G0.1 | ✅ vert | 2026-09-14 | `docs: state of the art audit before Church OS v1` | État des lieux complet du dépôt (3 docs + fiche) |
 | G0.2 | ✅ vert | 2026-09-14 | `chore: preserve WIP multitenancy phase 10 as v0.10-snapshot-pre-church-os` | Tag existant, WIP PHASE 10 préservé, secrets validés (.gitignore OK) |
 | G0.3 | ✅ vert | 2026-09-15 | `fix(backend): resolve all pre-existing compilation errors` | `mvn compile -q` ✅ sans erreur · build JAR ✅ |
-| G0.4 | ✅ vert | 2026-09-15 | `chore(frontend): green lint build and tests` | Lint: 0 erreurs · Build ✅ · Tests 311/311 ✅ |
-| G0.5 | ⚠️ partiel | 2026-09-15 | — | Analyze: 193 issues · Tests: compilation errors block — à corriger en G5.6 |
-| G0.6 | ⬜ | | | Verrou G0 (Gate) — attendre mobile green |
+| G0.4 | ✅ vert | 2026-09-16 | `fix(frontend): provide impersonation context in role routing tests` | Build ✅ · Tests 311/311 ✅ · Lint 0 erreur / **963 warnings** (DoD « 0 warning » non satisfait — voir Bloqueurs B3) |
+| G0.5 | ✅ vert | 2026-09-16 | `fix(mobile): green analyze and tests` | `flutter analyze` 0 erreur **et 0 warning** · `flutter test` 331/331 ✅ · Cause racine majeure : 5 noms de route go_router dupliqués → l'app ne démarrait pas |
+| G0.6 | ✅ vert | 2026-09-16 | *(voir commits G0.3→G0.6)* | `mvn verify -B` BUILD SUCCESS (1141 tests, 0 échec, 0 erreur, 13 skip) · frontend build+tests ✅ · mobile analyze+tests ✅ · 3 docs d'architecture G0.1 présents · tag `v0.10-snapshot-pre-church-os` présent · **réserve** : le working tree porte encore le WIP non commité de G2.2 (prochaine étape), à ne pas confondre avec un arbre sale |
 | G1.1 | ✅ vert | 2026-09-14 | `docs: multitenancy contract mapping (27-72)` | Carte §27-72 remplie avec preuves (fichiers + endpoints + écrans) |
 | G1.2 | ✅ vert | 2026-09-15 | `feat(tenant): complete tenant settings & branding (27-28)` | Backend: tenant_settings (V142) + entity/repo/service/controller + upload assets + CSS + WebSocket. Frontend: TenantAdminBrandingPage + WS listener. Mobile: TenantSettingsScreen + TenantBrandingScreen with CRUD, file upload, color picker. Tests: SettingsControllerTest 10/10 pass. |
 | G1.3 | ✅ vert | 2026-09-15 | `feat(tenant): complete tenant feature CRUD and enforcement (29)` | Migration V143 + entity/repo/service/controller + seed default modules (people, events, notifications, dashboard, org) + frontend TenantAdminModulesPage (new API) + mobile TenantModulesScreen (JSON parsing, limits display, module labels) + enforcement via RequireFeature guards |
@@ -111,18 +111,78 @@
 | Couche | Commande | Résultat | Date |
 |---|---|---|---|
 | Backend | `cd backend && mvn compile -q` | ✅ sans erreur | 2026-09-15 |
-| Backend | `cd backend && mvn test -q -Dspring.profiles.active=test` | 1016/1118 tests pass (101 errors in @WebMvcTest classes, 1 failure) | 2026-09-15 |
-| Frontend | `cd frontend && npm run lint` | ✅ 0 erreurs, 957 warnings | 2026-09-15 |
-| Frontend | `cd frontend && npm run build` | ✅ | 2026-09-15 |
-| Frontend | `cd frontend && npm run test` | ✅ 311/311 tests pass | 2026-09-15 |
-| Mobile | `cd mobile && flutter analyze --no-pub` | 193 issues (193 errors/warnings) | 2026-09-15 |
-| Mobile | `cd mobile && flutter test --no-pub` | Compilation errors block tests | 2026-09-15 |
+| Backend | `cd backend && mvn -o -B verify` | ✅ BUILD SUCCESS — 1141 tests, 0 failure, 0 error, 13 skip + JAR | 2026-09-16 |
+| Frontend | `cd frontend && npm run lint` | ✅ 0 erreur, 963 warnings (DoD 0-warning non atteinte, cf. B3) | 2026-09-16 |
+| Frontend | `cd frontend && npm run build` | ✅ built in ~21 s | 2026-09-16 |
+| Frontend | `cd frontend && npm run test` | ✅ 41 fichiers / 311 tests pass | 2026-09-16 |
+| Mobile | `cd mobile && flutter analyze --no-pub` | ✅ 0 erreur, 0 warning (124 `info` de dépréciation restants) | 2026-09-16 |
+| Mobile | `cd mobile && flutter test --no-pub` | ✅ 331/331 tests pass | 2026-09-16 |
 
-> **Note G0.4/G0.5/G0.6 :** Backend compile ✅, Frontend lint/build/test ✅. Mobile has pre-existing compilation errors blocking analyze/tests. G0.6 Gate requires all three layers green. Mobile fixes deferred to G5.6 per master plan.
+> **Note G0.4/G0.5/G0.6 (mise à jour 2026-09-16) :** les 3 couches sont vertes.
+> Les lignes précédentes de cette fiche annonçaient « Frontend 311/311 » et un backend
+> à 101 erreurs sans que ces chiffres aient été rejoués ; ils l'ont été le 2026-09-16
+> et **tous les défauts trouvés ont été corrigés, pas contournés** (voir Bloqueurs).
+
+---
+
+## Bloqueurs & écarts identifiés pendant la fermeture de la porte G0 (2026-09-16)
+
+### B1 — 🔴 BLOQUANT PRODUCTION : la migration V135 ne peut pas s'appliquer sur une base neuve
+
+`V1__initial_schema.sql:263` crée `audit_logs` (schéma legacy : `utilisateur_id`,
+`entite_type`, `entite_id`, `created_at`…). `V135__create_multi_tenant_core_tables.sql:163`
+refait `CREATE TABLE audit_logs` (schéma `actor_id`, `resource`, `result`,
+`metadata_json`, `timestamp NOT NULL DEFAULT …`) **sans `IF NOT EXISTS`**, puis crée
+5 index dont `idx_audit_timestamp ON audit_logs(timestamp)`.
+
+→ Sur une base vierge, Flyway s'arrête : `relation "audit_logs" already exists`
+(PostgreSQL) / `Column "timestamp" not found` (H2). Rollback, redémarrage, retriable
+par `start-local.sh` en mode docker, et bloquant pour toute nouvelle église (§G6.9).
+
+**Décision requise (annexe G, Go/No-Go)** : (a) renommer le bloc V135 en `audit_event`
+(c'est la table cible du moteur d'audit G2.9 — voie recommandée) ; (b) ajouter une
+migration `V149` qui aligne `audit_logs` sur le schéma V135 et rend V135 idempotent ;
+(c) baseliner V135 hors Flyway. **Non tranché automatiquement ici : impacte le schéma
+de production et la chaîne de hachage §G2.9.**
+
+### B2 — 🟠 Deux moteurs d'audit concurrents (à résorber en G2.9)
+
+Le contrat §G2.9 demande `audit_event` (+ hash chain `prev_hash`/`hash`, rétention 95 j,
+export) et `business_history`. Aujourd'hui seul `AuditLog`/`AuditService` existe, sans
+hash chain ni historique métier générique. L'entité dupliquée qui cassait les inserts a
+été supprimée ; l'implémentation du contrat §G2.9 reste **à faire**.
+
+### B3 — 🟡 Lint frontend : 963 warnings (DoD G0.4 exige max-warnings 0)
+
+Majoritairement `@typescript-eslint/no-explicit-any` et variables/icônes non utilisées.
+Le build et les 311 tests passent ; ces avertissements ne cassent rien mais la DoD
+G0.4 (« 0 warning ») n'est **pas** satisfaite. Réduction à planifier (étape dédiée,
+le nettoyage mécanique de 963 sites impose une passe par lots + non-régression).
 
 
 ---
 
+## Correctifs de la fermeture de porte G0 (2026-09-16)
+
+| Fichier | Nature du correctif | Commit |
+|---|---|---|
+| `backend/pom.xml` | lombok 1.18.36 → 1.18.38 | d125b314 |
+| `modules/audit/domain/AuditLog.java` (+ Alert, Department, DepartmentTask, Notification, Soul, OrganizationNode, Tenant, TenantMembership, User) | `@Getter/@Setter` explicites remplacés/ajoutés pour cohérence Lombok | d125b314 |
+| `modules/tenants/domain/AuditLog.java` + `AuditLogRepository.java` | **Supprimés** : 2ᵉ entité JPA mappée sur `audit_logs` avec un schéma incompatible (`timestamp`/`resource` NOT NULL) → tout insert d'audit échouait (23502) et marquait la transaction `rollback-only` | d125b314 |
+| `modules/broadcast/domain/BroadcastService.java` | `getById` passé de `findById(id)` à `findByIdAndTenantId` (règle absolue §0.3 n°3) + `getTenantStats()` réel | d125b314 |
+| `modules/broadcast/api/BroadcastController.java` | `GET /api/v1/broadcast/stats` (endpoint consommé par le mobile mais **inexistant**) | d125b314 |
+| `modules/configuration/*` | **Supprimés** : copies mortes du moteur d'héritage G1.7 (doublons de `modules/tenants/*`) | 4018295d |
+| `WorkspaceIsolationIntegrationTest.java` | `@Import(SecurityConfig)` → `@Import(TestSecurityConfig)` (AuthorizationService non satisfiable en slice `@WebMvcTest`) | d125b314 |
+| `TenantServiceTest.java` | `@Mock TenantFeatureService` (dépendance ajoutée en G1.3, NPE sur `create`) | d125b314 |
+| `mobile/lib/app.dart` | **5 noms de route go_router dupliqués supprimés** : l'assertion `!_nameToPath.containsKey(name)` faisait échouer le build de `DiscipolatApp` → l'application ne démarrait pas | 23691b63 |
+| `mobile/lib/presentation/screens/network/network_screen.dart` | Persistance du cache local rendue *best-effort* : un échec d'écriture ne masque plus des données réseau valides ; cache injectable (tests) | 23691b63 |
+| `mobile/lib/presentation/screens/users/users_list_screen.dart` | Garde d'autorisation inversée : « promouvoir » s'affichait aux non-Admin et **pas** aux Admin/Pasteur | 23691b63 |
+| `mobile/lib/core/tenant_session.dart` | `ProfileScope`-extension utilisant `read()` sans import Riverpod + précédence `?? >` sur `> 1` | 23691b63 |
+| `mobile/lib/features/ai/{dashboard,family_cohesion}/*.dart` | Les écrans lisaient un `Response` Dio comme du JSON déjà décodé (`api.get(...)[x]`) : jamais fonctionnel → `.data` | 23691b63 |
+| `mobile/lib/presentation/screens/tenant/*.dart` | Imports relatifs faux (`../../api/` → `../../../api/`), écrans admin tenant | 23691b63 |
+| `mobile/lib/presentation/screens/tenant_selection_screen.dart`, `mobile/lib/features/auth/TenantSelectionScreen.dart`, `mobile/lib/presentation/screens/tenant/org_settings_screen.dart` | **Supprimés** : doublons non référencés et non compilables (le 1er déclarait un 2ᵉ `MainScaffold`) ; `OrgSettingsScreen` dupliquait `TenantSettingsScreen` qui est, elle, routée | 23691b63 |
+| `mobile/test/*` (9 fichiers) | Fakes obsolètes : préfixe `/api/v1` que le client ne transmet jamais, et `/announcements` au lieu de `/broadcast` | 23691b63 |
+| `frontend/src/__tests__/RoleWorkspaceRouting.test.tsx` | Arbre de providers aligné sur `main.tsx` (`ImpersonationProvider`) — `<ImpersonationBanner>` faisait jeter l'ErrorBoundary | 981afc9e |
 ## Working Tree Status (G0.1 §198)
 
 | Fichier modifié | But présumé |
