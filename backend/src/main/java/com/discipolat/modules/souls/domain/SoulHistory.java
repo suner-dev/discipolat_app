@@ -61,4 +61,49 @@ public class SoulHistory {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    // Explicit setters for Lombok compatibility
+    public void setTypeEvenement(String typeEvenement) {
+        this.typeEvenement = typeEvenement;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setAncienStatut(String ancienStatut) {
+        this.ancienStatut = ancienStatut;
+    }
+
+    public void setNouveauStatut(String nouveauStatut) {
+        this.nouveauStatut = nouveauStatut;
+    }
+
+    public void setAncienFaiseurId(UUID ancienFaiseurId) {
+        this.ancienFaiseurId = ancienFaiseurId;
+    }
+
+    public void setNouveauFaiseurId(UUID nouveauFaiseurId) {
+        this.nouveauFaiseurId = nouveauFaiseurId;
+    }
+
+    public void setUtilisateurId(UUID utilisateurId) {
+        this.utilisateurId = utilisateurId;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
+    }
+
+    public void setAmeId(UUID ameId) {
+        this.ameId = ameId;
+    }
+
+    public void setTenantId(UUID tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
 }

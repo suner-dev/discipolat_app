@@ -273,4 +273,52 @@ public class OrganizationHierarchyController {
         UUID tenantId = getCurrentTenantId();
         return ResponseEntity.ok(hierarchyService.countByType(tenantId, type));
     }
+
+    // ==================== G2.1 — UNITS API (unifié Département/Famille/Sous-équipe) ====================
+
+    @GetMapping("/units")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<OrganizationNode>> getUnits(@RequestParam(required = false) OrganizationNodeType type,
+                                                            @RequestParam(required = false) UUID parentId) {
+        UUID tenantId = getCurrentTenantId();
+        if (type != null) {
+            return ResponseEntity.ok(hierarchyService.getByType(tenantId, type));
+        }
+        if (parentId != null) {
+            return ResponseEntity.ok(hierarchyService.getChildren(tenantId, parentId));
+        }
+        return ResponseEntity.ok(hierarchyService.getTree(tenantId));
+    }
+
+    @PostMapping("/units")
+    @PreAuthorize("@authz.can('ORG_NODE_CREATE', 'TENANT', null)")
+    public ResponseEntity<OrganizationNode> createUnit(@RequestBody OrganizationHierarchyService.CreateNodeRequest request) {
+        UUID tenantId = getCurrentTenantId();
+        UUID currentUserId = getCurrentUserId();
+        OrganizationNode node = hierarchyService.createNode(tenantId, request, currentUserId);
+        return ResponseEntity.status(201).body(node);
+    }
+
+    @PatchMapping("/units/{id}")
+    @PreAuthorize("@authz.can('ORG_NODE_UPDATE', 'TENANT', #id)")
+    public ResponseEntity<OrganizationNode> updateUnit(@PathVariable UUID id, @RequestBody OrganizationHierarchyService.UpdateNodeRequest request) {
+        UUID currentUserId = getCurrentUserId();
+        OrganizationNode node = hierarchyService.updateNode(id, request, currentUserId);
+        return ResponseEntity.ok(node);
+    }
+
+    @DeleteMapping("/units/{id}")
+    @PreAuthorize("@authz.can('ORG_NODE_DELETE', 'TENANT', #id)")
+    public ResponseEntity<Void> deleteUnit(@PathVariable UUID id, @RequestParam(defaultValue = "false") boolean forceCascade) {
+        UUID currentUserId = getCurrentUserId();
+        hierarchyService.deleteNode(id, currentUserId, forceCascade);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/stats/count/{type}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Long> getCountByType(@PathVariable OrganizationNodeType type) {
+        UUID tenantId = getCurrentTenantId();
+        return ResponseEntity.ok(hierarchyService.countByType(tenantId, type));
+    }
 }

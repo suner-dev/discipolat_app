@@ -82,4 +82,26 @@ public class Role {
     public int hashCode() {
         return getClass().hashCode();
     }
+
+    // Explicit getters/setters for Lombok compatibility
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getTenantId() { return tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
+    public String getKey() { return key; }
+    public void setKey(String key) { this.key = key; }
+    public String getLabel() { return label; }
+    public void setLabel(String label) { this.label = label; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public Boolean getSystem() { return system; }
+    public void setSystem(Boolean system) { this.system = system; }
+    public Integer getPriority() { return priority; }
+    public void setPriority(Integer priority) { this.priority = priority; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public Set<Permission> getPermissions() { return permissions; }
+    public void setPermissions(Set<Permission> permissions) { this.permissions = permissions; }
 }

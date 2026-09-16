@@ -189,6 +189,10 @@ public class OrganizationHierarchyService {
                 .timezone(request.timezone())
                 .country(request.country())
                 .city(request.city())
+                .description(request.description())
+                .icon(request.icon())
+                .color(request.color())
+                .sortOrder(request.sortOrder() != null ? request.sortOrder() : 0)
                 .metadataJson(request.metadata() != null ? toJson(request.metadata()) : null)
                 .responsibleId(request.responsibleId())
                 .build();
@@ -205,7 +209,7 @@ public class OrganizationHierarchyService {
         if (nodeRepository.findRootByTenantId(tenantId).isPresent()) {
             throw new BusinessRuleException("Une église racine existe déjà pour ce tenant", "ROOT_CHURCH_EXISTS");
         }
-        return createNode(tenantId, new CreateNodeRequest(name, OrganizationNodeType.ROOT_CHURCH, null, null, code, null, null, null, null), creatorId);
+        return createNode(tenantId, new CreateNodeRequest(name, OrganizationNodeType.ROOT_CHURCH, null, null, code, null, null, null, null, null, null, null, null), creatorId);
     }
 
     // ==================== G1.5 — CAMPUS CREATION (pasteur principal) ====================
@@ -240,7 +244,8 @@ public class OrganizationHierarchyService {
                 root.getTimezone(),
                 root.getCountry(),
                 root.getCity(),
-                Map.of("origin", "G1.5_CAMPUS_WIZARD")
+                Map.of("origin", "G1.5_CAMPUS_WIZARD"),
+                null, null, null, null
         ), creatorId);
 
         // Date de création du campus dans les métadonnées pour les settings hérités (G1.7)
@@ -280,6 +285,10 @@ public class OrganizationHierarchyService {
         if (request.country() != null) node.setCountry(request.country());
         if (request.city() != null) node.setCity(request.city());
         if (request.metadata() != null) node.setMetadataJson(toJson(request.metadata()));
+        if (request.description() != null) node.setDescription(request.description());
+        if (request.icon() != null) node.setIcon(request.icon());
+        if (request.color() != null) node.setColor(request.color());
+        if (request.sortOrder() != null) node.setSortOrder(request.sortOrder());
 
         node = nodeRepository.save(node);
 
@@ -629,7 +638,11 @@ public class OrganizationHierarchyService {
             String timezone,
             String country,
             String city,
-            Map<String, Object> metadata
+            Map<String, Object> metadata,
+            String description,
+            String icon,
+            String color,
+            Integer sortOrder
     ) {}
 
     public record UpdateNodeRequest(
@@ -640,7 +653,11 @@ public class OrganizationHierarchyService {
             String timezone,
             String country,
             String city,
-            Map<String, Object> metadata
+            Map<String, Object> metadata,
+            String description,
+            String icon,
+            String color,
+            Integer sortOrder
     ) {}
 
     public record OrganizationTreeView(
