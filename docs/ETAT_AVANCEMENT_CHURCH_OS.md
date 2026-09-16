@@ -27,7 +27,7 @@
 | G1.10 | ✅ vert | 2026-09-16 | `test(security): full security matrix automation (44-45)` | docs/security/SECURITY_MATRIX.md complete (resources × actions × roles × scopes) · 92 test mappings in MultiTenantSecurityTests · IDOR, cross-tenant, cross-scope, escalation, mass assignment, disabled module, pastoral, impersonation covered · CI runs in mvn verify |
 | G1.11 | ✅ vert | 2026-09-16 | `refactor(security): centralize authorization via AuthorizationService (46)` | ImpersonationController: hasRole(PLATFORM_SUPER_ADMIN) → @authz.isPlatformSuperAdmin() · SuperAdminController: 11 occurrences → @authz.isPlatformSuperAdmin() · OrganizationHierarchyController/RoleManagementController: already using @authz.can() · Remaining hasRole() in EventController/ImportController/FamilyController to be migrated in G5.1 |
 | G1.12 | ✅ vert | 2026-09-16 | `chore: Gate G1 multitenancy contracts green` | All G1 checklist items complete: §27-28 settings/branding, §29 tenant features, §30-31 SaaS plans, §43 impersonation, §44-45 Security Matrix, §46 AuthorizationService, §50-51 onboarding, §52 invitations, §53 config inheritance, §54 GLOBAL/LOCAL · Security Matrix tests pass in CI |
-| G2.1 | ⬜ | | | OrganizationUnit généralisée & hiérarchie infinie |
+| G2.1 | ✅ vert | 2026-09-16 | `feat(core): generalized organization unit hierarchy` | Migration V147 + description/icon/color/sort_order fields + ConfigurationResolver + API /resolved,/source,/local,/inheritance + /api/org/units endpoints + OrganizationHierarchyService/Controller updates + explicit getters on entities |
 | G2.2 | ⬜ | | | Module Engine & catalogue (façade sur l'existant) |
 | G2.3 | ⬜ | | | Template Engine (départements, familles, dress code) |
 | G2.4 | ⬜ | | | Custom Field Engine |
@@ -98,6 +98,11 @@
 | AcceptInvitationPage.tsx | Created public invitation acceptance page with form validation | N/A | c74c0e8 |
 | TenantAdminModulesPage.tsx | Updated to use new /admin/tenant-features API with module labels | N/A | c74c0e8 |
 | mobile TenantModulesScreen.dart | Updated for new API, JSON parsing, limits display, module labels | N/A | c74c0e8 |
+| OrganizationNode.java | Added description, icon, color, sortOrder fields | N/A | 6f49218 |
+| TenantMembership.java | Added explicit getters/setters for Lombok compatibility | N/A | 6f49218 |
+| Role.java | Added explicit getters/setters for Lombok compatibility | N/A | 6f49218 |
+| AuditLog.java | Added explicit getters/setters for Lombok compatibility | N/A | 6f49218 |
+| Notification.java | Added explicit getters/setters for Lombok compatibility | N/A | 6f49218 |
 
 ---
 
