@@ -31,7 +31,8 @@ public class BroadcastService {
     }
 
     public BroadcastMessage getById(UUID id) {
-        return broadcastRepository.findById(id)
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        return broadcastRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("BroadcastMessage", id));
     }
 
@@ -71,6 +72,48 @@ public class BroadcastService {
         receiptRepository.save(receipt);
         message.setTotalLu(message.getTotalLu() + 1);
         broadcastRepository.save(message);
+    }
+
+    /**
+     * Statistiques agrégées des diffusions du tenant courant.
+     *
+     * {@code totalSent} = nombre de diffusions envoyées ; {@code readRate} =
+     * moyenne des taux d'ouverture par diffusion envoyée (mêmes champs que
+     * {@link #getReceiptStats(UUID)}, alimentés par {@link #markAsRead}).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTenantStats() {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+
+        long total = broadcastRepository.countByTenantId(tenantId);
+        long totalSent = broadcastRepository.countByTenantIdAndStatut(tenantId, BroadcastMessage.Statut.ENVOYÉ);
+        long totalDrafts = broadcastRepository.countByTenantIdAndStatut(tenantId, BroadcastMessage.Statut.BROUILLON);
+        long totalScheduled = broadcastRepository.countByTenantIdAndStatut(tenantId, BroadcastMessage.Statut.PROGRAMMÉ);
+
+        List<BroadcastMessage> sent = broadcastRepository
+                .findByTenantIdAndStatut(tenantId, BroadcastMessage.Statut.ENVOYÉ, Pageable.unpaged())
+                .getContent();
+
+        long totalRead = 0;
+        double sumRate = 0;
+        long counted = 0;
+        for (BroadcastMessage message : sent) {
+            totalRead += message.getTotalLu();
+            if (message.getTotalEnvoyé() > 0) {
+                sumRate += (double) message.getTotalLu() / message.getTotalEnvoyé() * 100.0;
+                counted++;
+            }
+        }
+        long readRate = counted > 0 ? Math.round(sumRate / counted) : 0;
+
+        Map<String, Object> stats = new LinkedHashMap<>();
+        stats.put("total", total);
+        stats.put("totalSent", totalSent);
+        stats.put("totalDrafts", totalDrafts);
+        stats.put("totalScheduled", totalScheduled);
+        stats.put("totalRead", totalRead);
+        stats.put("readRate", readRate);
+        return stats;
     }
 
     public Map<String, Object> getReceiptStats(UUID broadcastId) {

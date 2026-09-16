@@ -150,4 +150,6 @@ public class User {
     public int hashCode() {
         return getClass().hashCode();
     }
+
+    // Explicit getters/setters for Lombok compatibility
 }

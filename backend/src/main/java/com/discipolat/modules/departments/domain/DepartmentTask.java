@@ -104,4 +104,6 @@ public class DepartmentTask {
     public boolean isOverdue() {
         return isOpen() && echeance != null && echeance.isBefore(LocalDate.now());
     }
+
+    // Explicit getters/setters for Lombok compatibility
 }

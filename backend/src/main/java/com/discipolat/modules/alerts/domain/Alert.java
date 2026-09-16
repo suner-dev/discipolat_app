@@ -86,4 +86,6 @@ public class Alert {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    // Explicit getters/setters for Lombok compatibility
 }

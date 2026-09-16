@@ -35,6 +35,12 @@ public class BroadcastController {
                 messages.getTotalElements(), messages.getTotalPages()));
     }
 
+    /** Statistiques agrégées du tenant courant (consommé par le mobile). */
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getStats() {
+        return ResponseEntity.ok(service.getTenantStats());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<BroadcastMessage> get(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getById(id));

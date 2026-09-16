@@ -89,28 +89,4 @@ public class TenantMembership {
     }
 
     // Explicit getters/setters for Lombok compatibility
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public UUID getTenantId() { return tenantId; }
-    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
-    public UUID getUserId() { return userId; }
-    public void setUserId(UUID userId) { this.userId = userId; }
-    public Role getRole() { return role; }
-    public void setRole(Role role) { this.role = role; }
-    public String getRoleLegacy() { return roleLegacy; }
-    public void setRoleLegacy(String roleLegacy) { this.roleLegacy = roleLegacy; }
-    public MembershipScopeType getScopeType() { return scopeType; }
-    public void setScopeType(MembershipScopeType scopeType) { this.scopeType = scopeType; }
-    public UUID getScopeId() { return scopeId; }
-    public void setScopeId(UUID scopeId) { this.scopeId = scopeId; }
-    public MembershipStatus getStatus() { return status; }
-    public void setStatus(MembershipStatus status) { this.status = status; }
-    public Instant getJoinedAt() { return joinedAt; }
-    public void setJoinedAt(Instant joinedAt) { this.joinedAt = joinedAt; }
-    public UUID getInvitedBy() { return invitedBy; }
-    public void setInvitedBy(UUID invitedBy) { this.invitedBy = invitedBy; }
-    public Instant getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

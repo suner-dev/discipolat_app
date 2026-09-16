@@ -314,11 +314,4 @@ public class OrganizationHierarchyController {
         hierarchyService.deleteNode(id, currentUserId, forceCascade);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/stats/count/{type}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Long> getCountByType(@PathVariable OrganizationNodeType type) {
-        UUID tenantId = getCurrentTenantId();
-        return ResponseEntity.ok(hierarchyService.countByType(tenantId, type));
-    }
 }

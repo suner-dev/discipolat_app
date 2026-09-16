@@ -30,6 +30,7 @@ class TenantServiceTest {
     @Mock private TenantRepository tenantRepository;
     @Mock private AuditService auditService;
     @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
+    @Mock private TenantFeatureService featureService;
 
     @InjectMocks private TenantService tenantService;
 

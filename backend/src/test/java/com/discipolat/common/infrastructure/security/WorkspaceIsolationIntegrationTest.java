@@ -1,6 +1,7 @@
 package com.discipolat.common.infrastructure.security;
 
 import com.discipolat.common.infrastructure.config.SecurityConfig;
+import com.discipolat.common.test.TestSecurityConfig;
 import com.discipolat.modules.dashboard.api.DashboardController;
 import com.discipolat.modules.dashboard.domain.DashboardService;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,17 +9,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -39,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * actif, donc {@code @PreAuthorize} évalue l'espace métier courant.
  */
 @WebMvcTest(DashboardController.class)
-@Import({SecurityConfig.class, WorkspaceIsolationIntegrationTest.TestJwtConfig.class})
+@Import(TestSecurityConfig.class)
 class WorkspaceIsolationIntegrationTest {
 
     @Autowired
@@ -158,32 +153,4 @@ class WorkspaceIsolationIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    /**
-     * Clé RSA dédiée au test : le {@link JwtTokenProvider} RÉEL valide et signe
-     * des tokens (même format que setup-keys.sh : PEM en base64). Sans cette
-     * config, le bean ne peut pas être construit (aucune clé JWT fournie).
-     */
-    @TestConfiguration
-    static class TestJwtConfig {
-
-        @Bean
-        JwtTokenProvider jwtTokenProvider() throws Exception {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(2048);
-            KeyPair pair = generator.generateKeyPair();
-
-            String privDerB64 = Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.UTF_8))
-                    .encodeToString(pair.getPrivate().getEncoded());
-            String privateKeyPem = "-----BEGIN PRIVATE KEY-----\n" + privDerB64 + "\n-----END PRIVATE KEY-----";
-
-            String pubDerB64 = Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.UTF_8))
-                    .encodeToString(pair.getPublic().getEncoded());
-            String publicKeyPem = "-----BEGIN PUBLIC KEY-----\n" + pubDerB64 + "\n-----END PUBLIC KEY-----";
-
-            String privateKeyBase64 = Base64.getEncoder().encodeToString(privateKeyPem.getBytes(StandardCharsets.UTF_8));
-            String publicKeyBase64 = Base64.getEncoder().encodeToString(publicKeyPem.getBytes(StandardCharsets.UTF_8));
-
-            return new JwtTokenProvider(privateKeyBase64, publicKeyBase64, "", "");
-        }
-    }
 }

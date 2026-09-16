@@ -12,6 +12,8 @@ import org.hibernate.annotations.Filter;
 
 @Entity
 @Table(name = "audit_logs")
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -60,26 +62,4 @@ public class AuditLog {
     }
 
     // Explicit getters/setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public UUID getTenantId() { return tenantId; }
-    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
-    public UUID getUtilisateurId() { return utilisateurId; }
-    public void setUtilisateurId(UUID utilisateurId) { this.utilisateurId = utilisateurId; }
-    public String getAction() { return action; }
-    public void setAction(String action) { this.action = action; }
-    public String getEntiteType() { return entiteType; }
-    public void setEntiteType(String entiteType) { this.entiteType = entiteType; }
-    public UUID getEntiteId() { return entiteId; }
-    public void setEntiteId(UUID entiteId) { this.entiteId = entiteId; }
-    public Map<String, Object> getAncienValeur() { return ancienValeur; }
-    public void setAncienValeur(Map<String, Object> ancienValeur) { this.ancienValeur = ancienValeur; }
-    public Map<String, Object> getNouvelleValeur() { return nouvelleValeur; }
-    public void setNouvelleValeur(Map<String, Object> nouvelleValeur) { this.nouvelleValeur = nouvelleValeur; }
-    public String getAdresseIp() { return adresseIp; }
-    public void setAdresseIp(String adresseIp) { this.adresseIp = adresseIp; }
-    public String getUserAgent() { return userAgent; }
-    public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

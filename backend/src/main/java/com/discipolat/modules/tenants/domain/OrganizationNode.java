@@ -47,9 +47,6 @@ public class OrganizationNode {
     @Column(name = "slug", length = 100)
     private String slug;
 
-    public String getSlug() {
-        return slug;
-    }
 
     public void setSlug(String slug) {
         this.slug = slug;
