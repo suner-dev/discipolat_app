@@ -1,5 +1,6 @@
 package com.discipolat.modules.events.domain;
 
+import com.discipolat.modules.scoping.domain.ResourceScope;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
@@ -32,6 +33,15 @@ public class Event {
 
     @Column(name = "department_id")
     private UUID departmentId;
+
+    // G1.8 §54 — Resource scoping
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resource_scope", nullable = false, length = 20)
+    @Builder.Default
+    private ResourceScope resourceScope = ResourceScope.TENANT_GLOBAL;
+
+    @Column(name = "organization_unit_id")
+    private UUID organizationUnitId;
 
     @Column(name = "type_evenement", nullable = false)
     private String typeEvenement;

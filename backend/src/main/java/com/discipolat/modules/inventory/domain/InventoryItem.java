@@ -1,5 +1,6 @@
 package com.discipolat.modules.inventory.domain;
 
+import com.discipolat.modules.scoping.domain.ResourceScope;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
@@ -72,6 +73,15 @@ public class InventoryItem {
 
     @Column(name = "affecte_a_id")
     private UUID affecteAId; // memberId
+
+    // G1.8 §54 — Resource scoping
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resource_scope", nullable = false, length = 20)
+    @Builder.Default
+    private ResourceScope resourceScope = ResourceScope.TENANT_GLOBAL;
+
+    @Column(name = "organization_unit_id")
+    private UUID organizationUnitId;
 
     // TCO fields (G3.5)
     @Column(name = "total_maintenance_cost")

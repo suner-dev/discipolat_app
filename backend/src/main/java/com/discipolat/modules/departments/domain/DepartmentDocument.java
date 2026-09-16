@@ -1,5 +1,6 @@
 package com.discipolat.modules.departments.domain;
 
+import com.discipolat.modules.scoping.domain.ResourceScope;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,6 +39,15 @@ public class DepartmentDocument {
 
     @Column(name = "department_id", nullable = false)
     private UUID departmentId;
+
+    // G1.8 §54 — Resource scoping
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resource_scope", nullable = false, length = 20)
+    @Builder.Default
+    private ResourceScope resourceScope = ResourceScope.TENANT_GLOBAL;
+
+    @Column(name = "organization_unit_id")
+    private UUID organizationUnitId;
 
     @Column(name = "titre", nullable = false)
     private String titre;

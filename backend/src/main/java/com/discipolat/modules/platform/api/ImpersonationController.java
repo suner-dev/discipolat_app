@@ -29,7 +29,7 @@ public class ImpersonationController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> startImpersonation(@RequestBody Map<String, Object> requestBody,
                                                                   HttpServletRequest httpRequest) {
         var currentUserId = com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId();

@@ -49,7 +49,7 @@ public class SuperAdminController {
     }
 
     @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> getAdminDashboard() {
         long totalTenants = tenantRepository.count();
         long activeTenants = tenantRepository.countByStatus(TenantStatus.ACTIVE);
@@ -80,7 +80,7 @@ public class SuperAdminController {
     }
 
     @GetMapping("/tenants")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<PageResponse<Map<String, Object>>> listTenants(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -108,7 +108,7 @@ public class SuperAdminController {
     }
 
     @PostMapping("/tenants")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> createTenant(
             @RequestBody Map<String, Object> request) {
 
@@ -153,7 +153,7 @@ public class SuperAdminController {
     }
 
     @PostMapping("/tenants/{id}/suspend")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Void> suspendTenant(@PathVariable UUID id) {
         tenantRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
@@ -162,7 +162,7 @@ public class SuperAdminController {
     }
 
     @PostMapping("/tenants/{id}/reactivate")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Void> reactivateTenant(@PathVariable UUID id) {
         tenantRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
@@ -171,7 +171,7 @@ public class SuperAdminController {
     }
 
     @PostMapping("/tenants/{id}/archive")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Void> archiveTenant(@PathVariable UUID id) {
         Tenant tenant = tenantRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
@@ -184,14 +184,14 @@ public class SuperAdminController {
     }
 
     @GetMapping("/plans")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<List<Map<String, Object>>> listPlans() {
         return ResponseEntity.ok(saasPlanService.getAllPlans().stream()
             .map(this::toPlanMap).collect(Collectors.toList()));
     }
 
     @PostMapping("/plans")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> createOrUpdatePlan(
             @RequestBody Map<String, Object> request) {
 
@@ -222,7 +222,7 @@ public class SuperAdminController {
     }
 
     @GetMapping("/feature-flags")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> getFeatureFlags() {
         Map<String, Object> flags = new LinkedHashMap<>();
         flags.put("aiEnabled", true);
@@ -234,7 +234,7 @@ public class SuperAdminController {
     }
 
     @PutMapping("/feature-flags/{key}")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> setFeatureFlag(
             @PathVariable String key,
             @RequestBody Map<String, Boolean> request) {
@@ -243,7 +243,7 @@ public class SuperAdminController {
     }
 
     @PostMapping("/impersonate")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> startImpersonation(
             @RequestBody Map<String, Object> request,
             jakarta.servlet.http.HttpServletRequest httpRequest) {
@@ -285,7 +285,7 @@ public class SuperAdminController {
     }
 
     @GetMapping("/tenants/{id}")
-    @PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> getTenantDetails(@PathVariable UUID id) {
         Tenant tenant = tenantRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));

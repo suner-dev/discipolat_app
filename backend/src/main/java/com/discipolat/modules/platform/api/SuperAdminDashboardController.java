@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/platform/admin/dashboard")
-@PreAuthorize("hasRole('PLATFORM_SUPER_ADMIN')")
+@PreAuthorize("@authz.isPlatformSuperAdmin()")
 public class SuperAdminDashboardController {
 
     private final TenantRepository tenantRepository;
