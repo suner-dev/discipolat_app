@@ -49,7 +49,7 @@
 | G3.9 | ✅ | 2026-09-14 | | Prayer Engine (programs, slots, requests) |
 | G3.10 | ✅ | 2026-09-14 | | Media/Sermon Engine (sermon + streaming) |
 | G3.11 | ✅ vert | 2026-09-17 | `feat(health): santé/infirmerie complete with REST API` | Migration V141 + REST controllers (HealthController) for patients, consultations, prescriptions, pharmacy, campaigns + HealthService dashboard stats + CRUD complet pour toutes les entités |
-| G3.12 | ⬜ | | | Verrou G3 (Gate) |
+| G3.12 | ✅ vert | 2026-09-17 | `chore: Gate G3 domain engines green` | All G3 checklist items complete: G3.1 people, G3.2 memberships/roles, G3.3 events, G3.4 dress code, G3.5 assets, G3.6 finance, G3.7 discipleship, G3.8 pastoral, G3.9 prayer, G3.10 media, G3.11 health. Security Matrix green. |
 | G4.1 | ⬜ | | | Family OS : suivi des âmes dans l'espace FAMILY |
 | G4.2 | ⬜ | | | Chef de famille : rechercher & ajouter membres (église/campus) |
 | G4.3 | ⬜ | | | Pastorate : transferts & nominations de pasteurs |
