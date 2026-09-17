@@ -2,6 +2,7 @@ package com.discipolat.modules.events.repository;
 
 import com.discipolat.modules.events.domain.Location;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
