@@ -91,7 +91,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G2.11 | ✅ Vert | `chore: Gate G2 church os core engines green` | 2026-09-17 |
 | G3.1 | ✅ Vert | `feat(people): unique people registry with auto self-registration` | 2026-09-17 |
 | G3.2 | ✅ Vert | `feat(people): memberships role assignments and history` | 2026-09-17 |
-| G3.3 | 🔵 En cours | — | — |
+| G3.3 | ⬜ En attente | — | — |
 | G3.4 | ⬜ En attente | — | — |
 | G3.5 | ⬜ En attente | — | — |
 | G3.6 | ⬜ En attente | — | — |
@@ -99,8 +99,8 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G3.8 | ⬜ En attente | — | — |
 | G3.9 | ⬜ En attente | — | — |
 | G3.10 | ⬜ En attente | — | — |
-| G3.11 | ⬜ En attente | — | — |
-| G3.12 | ⬜ En attente | — | — |
+| G3.11 | 🔵 partiel | | | Migration V141 + SpiritualHealthService (DB tables + repositories existants). **Manquant** : contrôleurs REST santé complets, rôles HEALTH_STAFF/HEALTH_LEAD, UI web + mobile, workflows, kits médicaux. |
+| G3.12 | ⬜ En attente | — | — | En attente G3.3 |
 | G4.1 | ⬜ En attente | — | — |
 | G4.2 | ⬜ En attente | — | — |
 | G4.3 | ⬜ En attente | — | — |
@@ -169,7 +169,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 #### PORTE G3 — MOTEURS DOMAINE (réutiliser l'existant, construire le manquant)
 - **G3.1** : People Engine : identité unique + inscription automatique au répertoire
 - **G3.2** : Membership, SpaceMembership & RoleAssignment (3 dimensions + historisation)
-- **G3.3** : Event Engine transversal (calendrier, planning visuel, check-in QR)
+- **G3.3** : Event Engine transversal (à refaire - conflit legacy events table)
 - **G3.4** : DRESS CODE & PATRIMOINE ÉVÉNEMENTIEL (dress codes, répertoires, debriefs, archives)
 - **G3.5** : Asset Engine (Assets, Inventaire, Checkout, Maintenance, Transferts, TCO, QR)
 - **G3.6** : Finance Engine central (une seule finance, Mobile Money, budgets, rapprochement)
@@ -177,8 +177,8 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 - **G3.8** : Pastoral Care sécurisé (confidentialité stricte, audit d'accès)
 - **G3.9** : Prayer Engine (programmes, sessions, créneaux, requêtes, jeûnes)
 - **G3.10** : Media / Sermon Engine (prédication riche, médiathèque, archives)
-- **G3.11** : Santé / Infirmerie (dossiers patients, pharmacie, gardes, campagnes, kits médicaux)
-- **G3.12** : Verrou G3 (Gate)
+- **G3.11** : Santé / Infirmerie (DB tables + repositories existants via Migration V141). **Manquant** : contrôleurs REST santé complets, rôles HEALTH_STAFF/HEALTH_LEAD, UI web + mobile, workflows, kits médicaux.
+- **G3.12** : Verrou G3 (Gate) - en attente G3.3
 
 #### PORTE G4 — FAMILY OS & RÔLES VIVANTS (exigences utilisateur)
 - **G4.1** : Family OS : suivi des âmes dans l'espace FAMILY
