@@ -159,29 +159,57 @@ CREATE INDEX idx_invitation_email ON invitations(email);
 CREATE INDEX idx_invitation_status ON invitations(status);
 CREATE INDEX idx_invitation_expires ON invitations(expires_at);
 
--- 10. AUDIT LOGS (tenant-aware, high volume)
-CREATE TABLE audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- 10. AUDIT EVENT (G2.9 — nouveau moteur d'audit avec hash chain, remplace audit_logs legacy)
+-- Note: V1 a déjà créé la table legacy audit_logs (schéma utilisateur_id/entite_type/entite_id/created_at).
+-- Cette migration crée la table cible audit_event (schéma G2.9 : tenant_id, actor_id, hash chain, etc.)
+-- et business_history. L'ancien audit_logs est conservé pour compatibilité mais n'est plus écrit.
+
+CREATE TABLE IF NOT EXISTS audit_event (
+    id BIGSERIAL PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     actor_id UUID,
-    actor_type VARCHAR(30),
+    actor_email VARCHAR(255),
     action VARCHAR(100) NOT NULL,
-    resource VARCHAR(100) NOT NULL,
-    resource_id UUID,
-    result VARCHAR(20) NOT NULL DEFAULT 'SUCCESS' CHECK (result IN ('SUCCESS', 'FAILURE', 'ERROR', 'DENIED')),
-    metadata_json JSONB,
-    ip_address VARCHAR(45),
+    entity VARCHAR(100) NOT NULL,
+    entity_id UUID,
+    old_value_json JSONB,
+    new_value_json JSONB,
+    ip VARCHAR(45),
     user_agent TEXT,
-    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    duration_ms BIGINT
+    prev_hash CHAR(64),
+    hash CHAR(64) NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_audit_tenant ON audit_logs(tenant_id);
-CREATE INDEX idx_audit_actor ON audit_logs(actor_id);
-CREATE INDEX idx_audit_action ON audit_logs(action);
-CREATE INDEX idx_audit_resource ON audit_logs(resource, resource_id);
-CREATE INDEX idx_audit_timestamp ON audit_logs(timestamp);
-CREATE INDEX idx_audit_tenant_timestamp ON audit_logs(tenant_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_event_tenant_entity ON audit_event(tenant_id, entity, entity_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_event_actor ON audit_event(actor_id);
+CREATE INDEX IF NOT EXISTS idx_audit_event_timestamp ON audit_event(timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_event_hash ON audit_event(hash);
+
+COMMENT ON TABLE audit_event IS 'G2.9 : audit technique avec hash chain (prev_hash/hash) — immuable, exportable, rétention 95j';
+COMMENT ON COLUMN audit_event.prev_hash IS 'Hash de l\'enregistrement précédent (chaîne d\'intégrité)';
+COMMENT ON COLUMN audit_event.hash IS 'SHA-256 de (prev_hash || tenant_id || actor_id || action || entity || entity_id || old_value_json || new_value_json || ip || user_agent || timestamp)';
+
+-- 10b. BUSINESS HISTORY (G2.9 — historique métier générique, distinct de l'audit technique)
+CREATE TABLE IF NOT EXISTS business_history (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    object_type VARCHAR(100) NOT NULL,
+    object_id UUID NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    summary TEXT,
+    detail_json JSONB,
+    actor_id UUID,
+    actor_role VARCHAR(80),
+    space_id UUID REFERENCES organization_nodes(id) ON DELETE SET NULL,
+    happened_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_biz_hist_object ON business_history(object_type, object_id, happened_at);
+CREATE INDEX IF NOT EXISTS idx_biz_hist_space ON business_history(space_id, happened_at);
+CREATE INDEX IF NOT EXISTS idx_biz_hist_tenant ON business_history(tenant_id, happened_at);
+
+COMMENT ON TABLE business_history IS 'G2.9 : historique métier (ce qui est arrivé à l\'objet) — distinct de audit_event (qui a fait quoi)';
 
 -- 11. Add tenant_id to existing roles table if not exists (from V70 platform_roles)
 -- Note: V70 created platform_roles with tenant_id. We'll keep both for migration period.

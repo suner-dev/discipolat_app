@@ -21,72 +21,8 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | Mobile | Flutter 3.x | Offline-first, real-time sync |
 | CI/CD | GitHub Actions | Build, test, deploy multi-environnement |
 | Monitoring | Prometheus + Grafana | Health, metrics, alerts |
+
 #### 2.2.1 Multi-tenancy & Spaces
-### 3. Exigences non-négociables (Senior Fullstack)
-1. **Zero hard-coded departments** – tout espace est une configuration, jamais une fonctionnalité codée en dur
-2. **Tenant resolution côté backend** – `CurrentTenantResolver` utilise le contexte authentifié
-3. **Pas de `repository.findById(id)` sur données multi-tenant** – toujours `findByIdAndTenantId()`
-4. **Permissions côté backend uniquement** – frontend ne peut pas autoriser d'accès
-5. **Soft delete + historisation** pour toute donnée critique
-6. **Propagation temps réel** : changement de config visible sur web + mobile (< 5s)
-7. **Rôles dynamiques** : modification d'un rôle → mise à jour immédiate de l'interface
-8. **Tout événement métier majeur** → outbox + consommateurs (notifications, audit, finance, analytics)
-9. **Spaces unifiés** : département = famille = sous-équipe (même modèle, différenciation par droits)
-10. **Status configurables** : chaque espace définit ses propres statuts
-### 5. DoD (Definition of Done) – Section 0.7
-- **Moteur de workflow complet** : transitions, approbations, escalades, audit
-- **Éditeur visuel** : nœuds/transitions, drag & drop, timeline d'instance
-- **3 scénarios de test** : approbation simple, rejet, escalade par timeout
-- **Commit** : `feat(workflow): configurable workflow engine with approvals and escalation`
-- **Espaces unifiés** : département = famille = sous-équipe (même objet, droits différents)
-- **Picker de fonctionnalités** : catalogue modulaire activable par espace
-- **Personnalisation par rôle** : backend `canCustomize(actor, space)` exposé à l'UI
-- **Propagation temps réel** : changement de config visible sur web + mobile (< 5s)
-- **Tests** : chef de famille ne configure que sa famille ; admin configure tout ; changement de couleur visible sur second client < 5s
-
-### 6. Checklist de validation
-- [ ] Backend compile sans erreur (`mvn compile -q`)
-- [ ] Frontend lint/build/test passent (`npm run lint`, `npm run build`, `npm run test`)
-- [ ] Mobile compile (`flutter analyze --no-pub`)
-- [ ] Workflow engine fonctionnel (tests 3 scénarios)
-- [ ] Espaces configurables unifiés (G2.6)
-- [ ] Statuts personnalisés par espace (G2.7)
-- [ ] Propriétés de sécurité respectées (pas de hard-coded departments, tenant resolution correcte)
-- [ ] Propagation temps réel validée (WebSocket + cache invalidation)
-
-### 7. Documentation associée
-- `docs/architecture/current-state.md` – inventaire backend/frontend/mobile/DB/CI
-- `docs/architecture/gap-analysis.md` – croisement existant ↔ §27-72 ↔ 43 sections PRMPT
-- `docs/architecture/target-architecture.md` – architecture cible Church OS (Annexe A, moteurs, UX, mobile, commercial)
-- `docs/À faire.md` – détails des erreurs et des §27-72 (répété en annexe B/C)
-- `docs/PRMPT.txt` / `docs/PRMPT.pdf` – maître-contrat 43 sections
-- `docs/tenant.md` – prompt maître multi-tenant existant
-- `docs/MULTI_TENANT_ARCHITECTURE_AUDIT.md` – audit de l'architecture multi-tenant
-
----
-
-**Version** : 1.0  
-**Date** : 2026-09-16  
-**Responsable** : Ingenieur Senior Fullstack (Discipolat)  
-**Statut** : En cours de réalisation (prochain objectif : G0.6 Gate)
-
-
-### 4. Progression (State of the Art)
-| Étape | Statut | Commit | Date |
-|-------|--------|--------|------|
-| G0.1 | ✅ Vert | `docs: state of the art audit before Church OS v1` | 2026-09-14 |
-| G0.2 | ✅ Vert | `chore: preserve WIP multitenancy phase 10 as v0.10-snapshot-pre-church-os` | 2026-09-14 |
-| G0.3 | ✅ Vert | `fix(backend): resolve all pre-existing compilation errors` | 2026-09-15 |
-| G0.4 | ✅ Vert | `multitenancy contract mapping (27-72)` | 2026-09-15 |
-| G1.1 | ✅ Vert | `tenant: complete tenant settings & branding (27-28)` | 2026-09-14 |
-| G1.2 | ✅ Vert | `tenant: complete tenant feature CRUD and enforcement (29)` | 2026-09-15 |
-| G1.3 | ✅ Vert | `saas: dual market plans, quotas, ai credits and super admin CRUD (30-31)` | 2026-09-15 |
-| G1.4 | ✅ Vert | `org: onboarding wizard and campus creation (50-51)` | 2026-09-15 |
-| G1.5 | ✅ Vert | `tenant: complete invitation lifecycle with real email (52)` | 2026-09-15 |
-| G1.6 | ✅ Vert | `config: config inheritance DEFAULT INHERITED OVERRIDDEN (53)` | 2026-09-16 |
-| G2.6 | ✅ Vert | `spaces: unified configurable spaces department family sub-team` | 2026-09-16 |
-| G2.7 | ✅ Vert | `statuses: custom statuses & configurable statuses` | 2026-09-16 |
-
 - **Space** : entité centrale (id, tenant_id, org_unit_id, type [DEPARTMENT|FAMILY|SUB_TEAM], template, name, color, description, status)
 - **Organization Unit** : conteneur logique (département/famille) lié à un Space
 - **Configuration** : picker de modules, pages, boutons, widgets, couleurs, workflows, rôles
@@ -109,3 +45,240 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 - **CRUD mobile** : création/modification/annulation de modules, espaces, invitations
 - **Offline-first** : cache local avec synchronisation différée
 
+### 3. Exigences non-négociables (Senior Fullstack)
+1. **Zero hard-coded departments** – tout espace est une configuration, jamais une fonctionnalité codée en dur
+2. **Tenant resolution côté backend** – `CurrentTenantResolver` utilise le contexte authentifié
+3. **Pas de `repository.findById(id)` sur données multi-tenant** – toujours `findByIdAndTenantId()`
+4. **Permissions côté backend uniquement** – frontend ne peut pas autoriser d'accès
+5. **Soft delete + historisation** pour toute donnée critique
+6. **Propagation temps réel** : changement de config visible sur web + mobile (< 5s)
+7. **Rôles dynamiques** : modification d'un rôle → mise à jour immédiate de l'interface
+8. **Tout événement métier majeur** → outbox + consommateurs (notifications, audit, finance, analytics)
+9. **Spaces unifiés** : département = famille = sous-équipe (même modèle, différenciation par droits)
+10. **Status configurables** : chaque espace définit ses propres statuts
+
+### 4. Progression (State of the Art)
+| Étape | Statut | Commit | Date |
+|-------|--------|--------|------|
+| G0.1 | ✅ Vert | `docs: state of the art audit before Church OS v1` | 2026-09-14 |
+| G0.2 | ✅ Vert | `chore: preserve WIP multitenancy phase 10 as v0.10-snapshot-pre-church-os` | 2026-09-14 |
+| G0.3 | ✅ Vert | `fix(backend): resolve all pre-existing compilation errors` | 2026-09-15 |
+| G0.4 | ✅ Vert | `chore(frontend): green lint build and tests` | 2026-09-15 |
+| G0.5 | ✅ Vert | `chore(mobile): green analyze and tests` | 2026-09-15 |
+| G0.6 | 🔵 En cours | — | — |
+| G1.1 | ✅ Vert | `docs: multitenancy contract mapping (27-72)` | 2026-09-14 |
+| G1.2 | ✅ Vert | `feat(tenant): complete tenant settings and dynamic branding (27-28)` | 2026-09-14 |
+| G1.3 | ✅ Vert | `feat(tenant): complete tenant feature CRUD and enforcement (29)` | 2026-09-15 |
+| G1.4 | ✅ Vert | `feat(saas): dual market plans quotas ai credits and pricing page (30-31)` | 2026-09-15 |
+| G1.5 | ✅ Vert | `feat(org): onboarding wizard and campus creation (50-51)` | 2026-09-15 |
+| G1.6 | ✅ Vert | `feat(tenant): complete invitation lifecycle with real email (52)` | 2026-09-15 |
+| G1.7 | ✅ Vert | `feat(config): config inheritance DEFAULT INHERITED OVERRIDDEN (53)` | 2026-09-16 |
+| G1.8 | ✅ Vert | `feat(core): global/local resource scoping (54)` | 2026-09-16 |
+| G1.9 | ✅ Vert | `feat(admin): complete super admin impersonation workflow (43)` | 2026-09-16 |
+| G1.10 | ✅ Vert | `test(security): full security matrix automation (44-45)` | 2026-09-16 |
+| G1.11 | ✅ Vert | `refactor(security): centralize authorization via AuthorizationService (46)` | 2026-09-16 |
+| G1.12 | ⬜ En attente | — | — |
+| G2.1 | ⬜ En attente | — | — |
+| G2.2 | ⬜ En attente | — | — |
+| G2.3 | ⬜ En attente | — | — |
+| G2.4 | ⬜ En attente | — | — |
+| G2.5 | ⬜ En attente | — | — |
+| G2.6 | ✅ Vert | `feat(config): unified configurable spaces department family sub-team` | 2026-09-16 |
+| G2.7 | ✅ Vert | `feat(config): custom status engine with controlled transitions` | 2026-09-16 |
+| G2.8 | ⬜ En attente | — | — |
+| G2.9 | ⬜ En attente | — | — |
+| G2.10 | ⬜ En attente | — | — |
+| G2.11 | ⬜ En attente | — | — |
+| G3.1 | ⬜ En attente | — | — |
+| G3.2 | ⬜ En attente | — | — |
+| G3.3 | ⬜ En attente | — | — |
+| G3.4 | ⬜ En attente | — | — |
+| G3.5 | ⬜ En attente | — | — |
+| G3.6 | ⬜ En attente | — | — |
+| G3.7 | ⬜ En attente | — | — |
+| G3.8 | ⬜ En attente | — | — |
+| G3.9 | ⬜ En attente | — | — |
+| G3.10 | ⬜ En attente | — | — |
+| G3.11 | ⬜ En attente | — | — |
+| G3.12 | ⬜ En attente | — | — |
+| G4.1 | ⬜ En attente | — | — |
+| G4.2 | ⬜ En attente | — | — |
+| G4.3 | ⬜ En attente | — | — |
+| G4.4 | ⬜ En attente | — | — |
+| G4.5 | ⬜ En attente | — | — |
+| G4.6 | ⬜ En attente | — | — |
+| G4.7 | ⬜ En attente | — | — |
+| G5.1 | ⬜ En attente | — | — |
+| G5.2 | ⬜ En attente | — | — |
+| G5.3 | ⬜ En attente | — | — |
+| G5.4 | ⬜ En attente | — | — |
+| G5.5 | ⬜ En attente | — | — |
+| G5.6 | ⬜ En attente | — | — |
+| G5.7 | ⬜ En attente | — | — |
+| G5.8 | ⬜ En attente | — | — |
+| G5.9 | ⬜ En attente | — | — |
+| G5.10 | ⬜ En attente | — | — |
+| G6.1 | ⬜ En attente | — | — |
+| G6.2 | ⬜ En attente | — | — |
+| G6.3 | ⬜ En attente | — | — |
+| G6.4 | ⬜ En attente | — | — |
+| G6.5 | ⬜ En attente | — | — |
+| G6.6 | ⬜ En attente | — | — |
+| G6.7 | ⬜ En attente | — | — |
+| G6.8 | ⬜ En attente | — | — |
+| G6.9 | ⬜ En attente | — | — |
+| G6.10 | ⬜ En attente | — | — |
+
+### 5. Plan détaillé par Porte
+
+#### PORTE G0 — STABILISATION (build vert sur les 3 couches)
+- **G0.1** : État des lieux complet du dépôt → 3 documents d'architecture + fiche de suivi
+- **G0.2** : Sauvegarde de l'existant (point de rétablissement) → tag `v0.10-snapshot-pre-church-os`
+- **G0.3** : Corriger toutes les erreurs de compilation (backend) → `mvn compile -q` ✅
+- **G0.4** : Frontend : build, lint et tests verts → `npm run lint && build && test` ✅
+- **G0.5** : Mobile : analyze et tests verts → `flutter analyze --no-pub && flutter test --no-pub` ✅
+- **G0.6** : Verrou G0 (Gate) → Checklist complète avant architecture
+
+#### PORTE G1 — CONTRATS MULTI-TENANT (finir les §27-72 bloquants)
+- **G1.1** : Cartographie fine de l'existant multi-tenant
+- **G1.2** : §27-28 Tenant Settings & Branding dynamique complet
+- **G1.3** : §29 TenantFeature — modules activables par tenant (CRUD complet)
+- **G1.4** : §30-31 Plans SaaS & Quotas (CRUD complet + application réelle) — Modèle Dual-Market validé
+- **G1.5** : §50-51 Onboarding & création de sous-église / campus (wizard)
+- **G1.6** : §52 Invitations — workflow complet (email + page d'acceptation + token)
+- **G1.7** : §53 Héritage de configuration (DEFAULT / INHERITED / OVERRIDDEN)
+- **G1.8** : §54 Ressources GLOBAL / LOCAL
+- **G1.9** : §43 Impersonation Super Admin (UI + workflow complet)
+- **G1.10** : §44-45 Security Matrix + extension des tests multi-tenant
+- **G1.11** : §46 AuthorizationService appliqué à tous les contrôleurs sensibles
+- **G1.12** : Verrou G1 (Gate)
+
+#### PORTE G2 — CŒUR CHURCH OS (Configuration & Moteurs fondamentaux)
+- **G2.1** : OrganizationUnit généralisée & hiérarchie infinie
+- **G2.2** : Module Engine & catalogue de modules (façade sur l'existant)
+- **G2.3** : Template Engine (départements, familles, dress code)
+- **G2.4** : Custom Field Engine (19 types, validation backend)
+- **G2.5** : Workflow Engine (configurable, approbations, délais, escalade, auto-actions)
+- **G2.6** : Espaces configurables unifiés (Département = Famille = Sous-équipe)
+- **G2.7** : Custom Statuses & Statuts configurables
+- **G2.8** : Event Bus & Transactional Outbox (20+ événements canoniques)
+- **G2.9** : Audit Engine ≠ Business History (hash chain + export)
+- **G2.10** : Real-time Engine (WebSocket ciblé + notifications multi-canal)
+- **G2.11** : Verrou G2 (Gate)
+
+#### PORTE G3 — MOTEURS DOMAINE (réutiliser l'existant, construire le manquant)
+- **G3.1** : People Engine : identité unique + inscription automatique au répertoire
+- **G3.2** : Membership, SpaceMembership & RoleAssignment (3 dimensions + historisation)
+- **G3.3** : Event Engine transversal (calendrier, planning visuel, check-in QR)
+- **G3.4** : DRESS CODE & PATRIMOINE ÉVÉNEMENTIEL (dress codes, répertoires, debriefs, archives)
+- **G3.5** : Asset Engine (Assets, Inventaire, Checkout, Maintenance, Transferts, TCO, QR)
+- **G3.6** : Finance Engine central (une seule finance, Mobile Money, budgets, rapprochement)
+- **G3.7** : Discipleship Engine configurable (parcours, étapes, mentors, groupes)
+- **G3.8** : Pastoral Care sécurisé (confidentialité stricte, audit d'accès)
+- **G3.9** : Prayer Engine (programmes, sessions, créneaux, requêtes, jeûnes)
+- **G3.10** : Media / Sermon Engine (prédication riche, médiathèque, archives)
+- **G3.11** : Santé / Infirmerie (dossiers patients, pharmacie, gardes, campagnes, kits médicaux)
+- **G3.12** : Verrou G3 (Gate)
+
+#### PORTE G4 — FAMILY OS & RÔLES VIVANTS (exigences utilisateur)
+- **G4.1** : Family OS : suivi des âmes dans l'espace FAMILY
+- **G4.2** : Chef de famille : rechercher & ajouter des membres (église/campus)
+- **G4.3** : Pastorate : transferts & nominations de pasteurs (historique mandats)
+- **G4.4** : Rôles vivants : l'interface change automatiquement (web + mobile < 5s)
+- **G4.5** : Import / Export des espaces, configurations & données
+- **G4.6** : Migration des données legacy (engine, dry-run & toggle tenant)
+- **G4.7** : Verrou G4 (Gate)
+
+#### PORTE G5 — UX 2 NIVEAUX & MOBILE (Commercialisation)
+- **G5.1** : Design System premium & fondations UX transverses (tokens, composants, a11y)
+- **G5.2** : Church OS (niveau 1 : vue globale de l'église)
+- **G5.3** : Department/Family OS (niveau 2 : expérience générée par config)
+- **G5.4** : Frontend Providers/Guards complets (§55-56)
+- **G5.5** : Super Admin / Tenant Admin Web complets + Mobile adapté (§57-59)
+- **G5.6** : Mobile terrain connecté (opérations terrain réelles, APIs vraies)
+- **G5.7** : Mobile offline ciblé (lecture cache + file d'écriture + résolution)
+- **G5.8** : Synchronisation & temps réel Web ↔ Mobile (< 5s)
+- **G5.9** : Portail basse connexion (WhatsApp / USSD)
+- **G5.10** : Verrou G5 (Gate)
+
+#### PORTE G6 — QUALITÉ, SÉCURITÉ & GO / NO-GO COMMERCIAL
+- **G6.1** : Search / Export / Delete tenant-aware (§60-62)
+- **G6.2** : Modules IA / Academy / Chat / Payments / Analytics (§63-68) — "L'IA Discipolat" fer de lance
+- **G6.3** : Redis tenant-aware (§38)
+- **G6.4** : Tests de non-régression automatisés (§70)
+- **G6.5** : Tests de performance (§71) — 1K-10K tenants
+- **G6.6** : Audit sécurité final exhaustif
+- **G6.7** : QA global (web / mobile / offline / realtime)
+- **G6.8** : Documentation complète (§72)
+- **G6.9** : Préparation production (staging, beta, monitoring, sauvegardes)
+- **G6.10** : Checklist commerciale GO / NO-GO (annexe G) → tag `v1.0-commercial-release`
+
+### 6. Modèle Commercial (Annexe F - Validé 12/09/2026)
+| Plan | Membres | Espaces | Stockage | Crédits IA/mois | Événements | **Europe €/mois** | **Afrique FCFA/mois** | **Amériques $/mois** | Annuel (2 mois offerts) |
+|------|---------|---------|----------|-----------------|------------|-------------------|----------------------|---------------------|------------------------|
+| **DÉCOUVERTE** (gratuit) | 50 | 1 | 100 Mo | 10 | 5 | 0 | 0 | 0 | 0 |
+| **DÉMARRAGE** | 250 | 10 | 1 Go | 30 | ∞ | 9 € | 5 000 | 10 $ | 90 € / 50 000 F / 100 $ |
+| **CROISSANCE** | 2 000 | 50 | 20 Go | 100 | ∞ | 29 € | 15 000 | 32 $ | 290 € / 150 000 F / 320 $ |
+| **RÉSEAU & CAMPUS** | 10 000 | 150+ | 100 Go | 500 | ∞ | 79 € | 35 000 | 85 $ | 790 € / 350 000 F / 850 $ |
+
+- Essai 30 jours toutes fonctionnalités
+- Géo-pricing : EUR (Europe) / FCFA (Afrique) / USD (Amériques & intl)
+- Paiements : MTN MoMo/Orange Money (Afrique), Carte/SEPA (Europe), Carte/Stripe (Amériques)
+- Module SANTÉ inclus dans CROISSANCE et RÉSEAU & CAMPUS
+
+### 7. DoD (Definition of Done) Global
+- [ ] `mvn verify -B` ✅ (backend complet)
+- [ ] `npm run lint && npm run build && npm run test` ✅ (frontend)
+- [ ] `flutter analyze --no-pub && flutter test --no-pub` ✅ (mobile)
+- [ ] Migrations Flyway appliquées et rejouables
+- [ ] API documentées (OpenAPI) pour les routes nouvelles/modifiées
+- [ ] Sécurité vérifiée : tenant-scope + RBAC scopé, pas d'IDOR
+- [ ] Aucun mock / bouton mort / erreur console / erreur de compilation
+- [ ] Fiche de suivi à jour
+- [ ] Documentation mise à jour si impact
+
+### 8. Commandes canoniques de validation
+```bash
+# BACKEND (Spring Boot 3.4.7 / Maven)
+cd backend && mvn compile -q
+cd backend && mvn test -q -Dspring.profiles.active=test
+cd backend && mvn verify -B
+
+# FRONTEND (React 19 / Vite / Tailwind / Vitest)
+cd frontend && npm ci
+cd frontend && npm run lint
+cd frontend && npm run build
+cd frontend && npm run test
+
+# MOBILE (Flutter 3.24 / Riverpod / Drift / Dio)
+cd mobile && flutter pub get
+cd mobile && flutter analyze --no-pub
+cd mobile && flutter test --no-pub
+
+# Démarrage local de référence
+bash start-local.sh
+```
+
+### 9. Documentation associée
+- `docs/architecture/current-state.md` – inventaire backend/frontend/mobile/DB/CI
+- `docs/architecture/gap-analysis.md` – croisement existant ↔ §27-72 ↔ 43 sections PRMPT
+- `docs/architecture/target-architecture.md` – architecture cible Church OS
+- `docs/ETAT_AVANCEMENT_CHURCH_OS.md` – fiche de suivi (mémoire de session)
+- `docs/PRMPT.txt` / `docs/PRMPT.pdf` – maître-contrat 43 sections
+- `docs/tenant.md` – prompt maître multi-tenant existant
+- `docs/MULTI_TENANT_ARCHITECTURE_AUDIT.md` – audit de l'architecture multi-tenant
+- `docs/CHURCH_OS_COMMERCIALISATION_MASTER_PROMPT.md` – prompt maître complet
+
+### 10. Protocole de reprise (si interruption)
+1. Lire `docs/ETAT_AVANCEMENT_CHURCH_OS.md`
+2. Lancer les validations des trois couches (commandes §8)
+3. Reprendre la première étape non verte **dans l'ordre**
+4. Ne jamais commencer une étape dont la précédente n'est pas verte
+5. En cas d'ambiguïté bloquante : écrire la question + 2-3 réponses candidates, marquer `🚧 BLOQUÉE`, s'arrêter (STOP-NEED-HELP)
+
+---
+
+**Version** : 1.0  
+**Date** : 2026-09-17  
+**Responsable** : Ingenieur Senior Fullstack (Discipolat)  
+**Statut** : En cours de réalisation (prochain objectif : G0.6 Gate)
