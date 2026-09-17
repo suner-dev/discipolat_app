@@ -99,7 +99,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G3.8 | ⬜ En attente | — | — |
 | G3.9 | ⬜ En attente | — | — |
 | G3.10 | ⬜ En attente | — | — |
-| G3.11 | ⬜ En attente | — | — |
+| G3.11 | ✅ Vert | `feat(health): santé/infirmerie complete with REST API` | 2026-09-17 |
 | G3.12 | ⬜ En attente | — | — |
 | G4.1 | ⬜ En attente | — | — |
 | G4.2 | ⬜ En attente | — | — |

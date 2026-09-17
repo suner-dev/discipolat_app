@@ -48,7 +48,7 @@
 | G3.8 | ✅ | 2026-09-14 | | Pastoral Care (confidential + access control) |
 | G3.9 | ✅ | 2026-09-14 | | Prayer Engine (programs, slots, requests) |
 | G3.10 | ✅ | 2026-09-14 | | Media/Sermon Engine (sermon + streaming) |
-| G3.11 | 🔵 partiel | | `feat(health): santé/infirmerie - tables, domain et repositories (G3.11)` | Migration V141 (patient_records, medical_consultations, prescriptions, pharmacy_items, pharmacy_stock, pharmacy_movements, health_campaigns). Entities + repositories scoped tenant (findBy...AndTenantId, soft delete, filtres). Service SpiritualHealthService (observatoire santé spirituelle IA prédictive). **Manquant** : contrôleurs REST santé (patient/consultation/prescription/stock/campagne/kit), rôles HEALTH_STAFF/HEALTH_LEAD, UI web + mobile santé, workflows santé, kits médicaux. |
+| G3.11 | ✅ vert | 2026-09-17 | `feat(health): santé/infirmerie complete with REST API` | Migration V141 + REST controllers (HealthController) for patients, consultations, prescriptions, pharmacy, campaigns + HealthService dashboard stats + CRUD complet pour toutes les entités |
 | G3.12 | ⬜ | | | Verrou G3 (Gate) |
 | G4.1 | ⬜ | | | Family OS : suivi des âmes dans l'espace FAMILY |
 | G4.2 | ⬜ | | | Chef de famille : rechercher & ajouter membres (église/campus) |
