@@ -40,7 +40,7 @@
 | G2.11 | ✅ vert | 2026-09-17 | `chore: Gate G2 church os core engines green` | All G2 checklist items complete: G2.1 org hierarchy, G2.2 module catalogue, G2.3 templates, G2.4 custom fields, G2.5 workflows, G2.6 unified spaces, G2.7 custom statuses, G2.8 outbox, G2.9 audit/history, G2.10 realtime. Migrations applied. Security Matrix green. |
 | G3.1 | ✅ vert | 2026-09-17 | `feat(people): unique people registry with auto self-registration` | Migration V154 + Person/Membership/SpaceMembership/RoleAssignment/EventAssignment entities + PeopleService (register, merge, search, assignToSpace, assignRole, transferPastor) + PeopleController |
 | G3.2 | ✅ vert | 2026-09-17 | `feat(people): memberships role assignments and history` | 3 dimensions (role_assignment, space_membership, event_assignment) historisées + wizard d'affectation + transfert pasteur |
-| G3.3 | ✅ vert | 2026-09-17 | `feat(event): transversal event engine with planning and check-in` | Migration V155+V156 + ChurchEvent/EventSpace/EventTeam/EventTask/EventAsset/EventExpense/EventAttendance/EventDocument/EventSchedule/Location entities + ChurchEventService (CRUD, spaces, teams, tasks, attendance/check-in, schedule, locations) + ChurchEventController |
+| G3.3 | 🔵 en cours | | | Event Engine transversal |
 | G3.4 | ✅ | 2026-09-14 | | Dress Code & Patrimoine Eventiel (full module) |
 | G3.5 | ✅ | 2026-09-14 | | Asset Engine (checkout/return, maintenance, TCO) |
 | G3.6 | ✅ | 2026-09-14 | | Finance Engine (payments + tontine modules) |
@@ -48,8 +48,8 @@
 | G3.8 | ✅ | 2026-09-14 | | Pastoral Care (confidential + access control) |
 | G3.9 | ✅ | 2026-09-14 | | Prayer Engine (programs, slots, requests) |
 | G3.10 | ✅ | 2026-09-14 | | Media/Sermon Engine (sermon + streaming) |
-| G3.11 | ✅ vert | 2026-09-17 | `feat(health): santé/infirmerie complete with REST API` | Migration V141 + REST controllers (HealthController) for patients, consultations, prescriptions, pharmacy, campaigns + HealthService dashboard stats + CRUD complet pour toutes les entités |
-| G3.12 | ✅ vert | 2026-09-17 | `chore: Gate G3 domain engines green` | All G3 checklist items complete: G3.1 people, G3.2 memberships/roles, G3.3 events, G3.4 dress code, G3.5 assets, G3.6 finance, G3.7 discipleship, G3.8 pastoral, G3.9 prayer, G3.10 media, G3.11 health. Security Matrix green. |
+| G3.11 | 🔵 partiel | | `feat(health): santé/infirmerie - tables, domain et repositories (G3.11)` | Migration V141 (patient_records, medical_consultations, prescriptions, pharmacy_items, pharmacy_stock, pharmacy_movements, health_campaigns). Entities + repositories scoped tenant (findBy...AndTenantId, soft delete, filtres). Service SpiritualHealthService (observatoire santé spirituelle IA prédictive). **Manquant** : contrôleurs REST santé (patient/consultation/prescription/stock/campagne/kit), rôles HEALTH_STAFF/HEALTH_LEAD, UI web + mobile santé, workflows santé, kits médicaux. |
+| G3.12 | ⬜ | | | Verrou G3 (Gate) |
 | G4.1 | ⬜ | | | Family OS : suivi des âmes dans l'espace FAMILY |
 | G4.2 | ⬜ | | | Chef de famille : rechercher & ajouter membres (église/campus) |
 | G4.3 | ⬜ | | | Pastorate : transferts & nominations de pasteurs |

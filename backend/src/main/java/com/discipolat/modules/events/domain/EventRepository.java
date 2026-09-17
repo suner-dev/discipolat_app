@@ -1,34 +1,38 @@
 package com.discipolat.modules.events.domain;
 
-import com.discipolat.modules.events.domain.Event;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface EventRepository extends JpaRepository<Event, UUID> {
 
-    List<Event> findByTenantIdAndDeletedAtIsNullOrderByStartAtAsc(UUID tenantId);
+    /** P3 #113 — Événements à venir (calendrier personnel du membre). */
+    Page<Event> findByTenantIdAndDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(
+            UUID tenantId, java.time.LocalDateTime from, org.springframework.data.domain.Pageable pageable);
+    Page<Event> findByFamilleIdAndDeletedFalse(UUID familleId, Pageable pageable);
+    Page<Event> findByDepartmentIdAndDeletedFalse(UUID departmentId, Pageable pageable);
+    List<Event> findByDepartmentIdAndDeletedFalse(UUID departmentId);
+    List<Event> findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedFalse(UUID departmentId, String titre);
+    Page<Event> findByOrganisateurIdAndDeletedFalse(UUID organisateurId, Pageable pageable);
+    Page<Event> findByTypeEvenementAndDeletedFalse(String typeEvenement, Pageable pageable);
+    Page<Event> findByStatutAndDeletedFalse(String statut, Pageable pageable);
+    Page<Event> findByDateDebutBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end, Pageable pageable);
+    List<Event> findByFamilleIdAndStatutAndDeletedFalse(UUID familleId, String statut);
+    List<Event> findByDepartmentIdInAndDeletedFalse(List<UUID> departmentIds);
+    List<Event> findByDateDebutBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end);
+    List<Event> findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(LocalDateTime start, LocalDateTime end);
+    long countByFamilleIdAndDeletedFalse(UUID familleId);
+    long countByDepartmentIdAndDeletedFalse(UUID departmentId);
 
-    Page<Event> findByTenantIdAndDeletedAtIsNull(UUID tenantId, Pageable pageable);
+    /** Sources du Page Builder : événements à venir (non supprimés). */
+    long countByDeletedFalseAndDateDebutAfter(LocalDateTime dateDebut);
 
-    List<Event> findByTenantIdAndStatusAndDeletedAtIsNull(UUID tenantId, String status);
-
-    @Query("SELECT e FROM Event e WHERE e.tenantId = :tenantId AND e.deletedAt IS NULL AND e.startAt BETWEEN :from AND :to ORDER BY e.startAt ASC")
-    List<Event> findByTenantIdAndStartAtBetween(@Param("tenantId") UUID tenantId, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
-
-    @Query("SELECT e FROM Event e WHERE e.tenantId = :tenantId AND e.deletedAt IS NULL AND e.startAt BETWEEN :from AND :to ORDER BY e.startAt ASC")
-    Page<Event> findByTenantIdAndStartAtBetween(@Param("tenantId") UUID tenantId, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to, Pageable pageable);
-
-    Optional<Event> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
-
-    long countByTenantIdAndDeletedAtIsNull(UUID tenantId);
+    List<Event> findTop10ByDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime dateDebut);
+    List<Event> findAllByFamilleIdAndDeletedFalse(UUID familleId);
 }

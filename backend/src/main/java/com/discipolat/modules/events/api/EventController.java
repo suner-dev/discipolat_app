@@ -1,210 +1,295 @@
 package com.discipolat.modules.events.api;
 
 import com.discipolat.common.infrastructure.api.PageResponse;
-import com.discipolat.common.infrastructure.security.SecurityUtils;
-import com.discipolat.common.multitenancy.TenantContext;
-import com.discipolat.modules.events.domain.*;
-import com.discipolat.modules.events.service.EventService;
+import com.discipolat.modules.events.domain.Event;
+import com.discipolat.modules.files.domain.EntityAttachment;
+import com.discipolat.modules.files.domain.EntityAttachmentService;
+import com.discipolat.modules.events.domain.EventRegistration;
+import com.discipolat.modules.events.domain.EventService;
+import com.discipolat.modules.events.domain.WeeklyProgramTemplate;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/events")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER', 'FAMILY_LEADER')")
+@PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR','MEMBRE')")
 public class EventController {
 
     private final EventService eventService;
+    private final EntityAttachmentService attachmentService;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, EntityAttachmentService attachmentService) {
         this.eventService = eventService;
+        this.attachmentService = attachmentService;
     }
 
-    // ========== EVENT CRUD ==========
-
-    @GetMapping
-    public ResponseEntity<PageResponse<Event>> getEvents(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String status) {
-        UUID tenantId = TenantContext.requireTenantId();
-        Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by("startAt"));
-        if (status != null) {
-            // TODO: add paginated findByStatus
-            return ResponseEntity.ok(PageResponse.empty());
-        }
-        Page<Event> result = eventService.getEvents(tenantId, pageable);
-        return ResponseEntity.ok(PageResponse.of(result.getContent(), result.getNumber(), result.getSize(),
-                result.getTotalElements(), result.getTotalPages()));
-    }
-
-    @GetMapping("/calendar")
-    public ResponseEntity<List<Event>> getCalendar(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.getEventsCalendar(tenantId, from, to));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Event> getEvent(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.getEvent(tenantId, id));
+    private EventResponse toResponse(Event event) {
+        return EventResponse.from(event,
+                attachmentService.itemsFor(EntityAttachment.EntityType.EVENT, event.getId()));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER')")
-    public ResponseEntity<Event> createEvent(@RequestBody Event event) {
-        UUID tenantId = TenantContext.requireTenantId();
-        UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(eventService.createEvent(tenantId, actorId, event));
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<EventResponse> create(@Valid @RequestBody CreateEventRequest request) {
+        Event event = Event.builder()
+                .typeEvenement(request.typeEvenement())
+                .titre(request.titre())
+                .description(request.description())
+                .lieu(request.lieu())
+                .dateDebut(request.dateDebut())
+                .dateFin(request.dateFin())
+                .limitePlaces(request.limitePlaces())
+                .familleId(request.familleId())
+                .departmentId(request.departmentId())
+                .build();
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(toResponse(eventService.create(event, request.fichierIds())));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<EventResponse> findById(@PathVariable UUID id) {
+        return ResponseEntity.ok(toResponse(eventService.findById(id)));
+    }
+
+    /** Événements rattachés à un département (espace Responsable). */
+    @GetMapping("/department/{departmentId}")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<PageResponse<EventResponse>> findByDepartmentId(
+            @PathVariable UUID departmentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50),
+                Sort.by(Sort.Direction.DESC, "dateDebut"));
+        Page<EventResponse> response = eventService.findByDepartmentId(departmentId, pageable)
+                .map(this::toResponse);
+        return ResponseEntity.ok(PageResponse.of(
+                response.getContent(), response.getNumber(), response.getSize(),
+                response.getTotalElements(), response.getTotalPages()));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<PageResponse<EventResponse>> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) UUID familleId,
+            @RequestParam(required = false) String typeEvenement,
+            @RequestParam(required = false) String statut,
+            @RequestParam(defaultValue = "false") boolean upcomingOnly) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50),
+                Sort.by(Sort.Direction.ASC, "dateDebut"));
+        Page<Event> events;
+        if (upcomingOnly) {
+            events = eventService.findUpcoming(pageable);
+        } else if (familleId != null) {
+            events = eventService.findByFamilleId(familleId, pageable);
+        } else if (typeEvenement != null) {
+            events = eventService.findByTypeEvenement(typeEvenement, pageable);
+        } else if (statut != null) {
+            events = eventService.findByStatut(statut, pageable);
+        } else {
+            events = eventService.findAll(pageable);
+        }
+        Page<EventResponse> response = events.map(this::toResponse);
+        return ResponseEntity.ok(PageResponse.of(
+                response.getContent(), response.getNumber(), response.getSize(),
+                response.getTotalElements(), response.getTotalPages()));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER')")
-    public ResponseEntity<Event> updateEvent(@PathVariable UUID id, @RequestBody Event event) {
-        UUID tenantId = TenantContext.requireTenantId();
-        UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(eventService.updateEvent(tenantId, actorId, id, event));
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<EventResponse> update(@PathVariable UUID id,
+                                                @Valid @RequestBody UpdateEventRequest request) {
+        Event event = Event.builder()
+                .titre(request.titre())
+                .description(request.description())
+                .lieu(request.lieu())
+                .dateDebut(request.dateDebut())
+                .dateFin(request.dateFin())
+                .limitePlaces(request.limitePlaces())
+                .typeEvenement(request.typeEvenement())
+                .statut(request.statut())
+                .compteRendu(request.compteRendu())
+                .departmentId(request.departmentId())
+                .build();
+        return ResponseEntity.ok(toResponse(eventService.update(id, event, request.fichierIds())));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        eventService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{eventId}/register")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<EventRegistrationResponse> register(@PathVariable UUID eventId) {
+        EventRegistration reg = eventService.register(eventId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(EventRegistrationResponse.from(reg));
+    }
+
+    @DeleteMapping("/{eventId}/unregister")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Void> unregister(@PathVariable UUID eventId) {
+        eventService.unregister(eventId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{eventId}/attendance")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<EventRegistrationResponse> markAttendance(
+            @PathVariable UUID eventId,
+            @RequestBody Map<String, Object> body) {
+        UUID userId = UUID.fromString((String) body.get("userId"));
+        boolean present = (Boolean) body.get("present");
+        return ResponseEntity.ok(EventRegistrationResponse.from(
+                eventService.markAttendance(eventId, userId, present)));
+    }
+
+    @GetMapping("/{eventId}/registrations")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<List<EventRegistrationResponse>> getRegistrations(
+            @PathVariable UUID eventId) {
+        return ResponseEntity.ok(eventService.getRegistrations(eventId)
+                .stream().map(EventRegistrationResponse::from).toList());
+    }
+
+    // ======================== P3 #113 — ÉVÉNEMENTS À VENIR (MEMBRE) ========================
+
+    /** Calendrier personnel du membre : événements à venir + son RSVP. */
+    @GetMapping("/upcoming/mine")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Map<String, Object>>> myUpcoming(
+            @RequestParam(defaultValue = "60") int days) {
+        return ResponseEntity.ok(eventService.myUpcomingEvents(days));
+    }
+
+    /** RSVP membre : GOING / INTERESTED / CANCEL. */
+    @PutMapping("/{eventId}/rsvp")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<EventRegistrationResponse> setRsvp(
+            @PathVariable UUID eventId,
+            @RequestBody Map<String, String> body) {
+        EventRegistration reg = eventService.setRsvp(eventId, body.get("rsvp"));
+        return ResponseEntity.ok(reg == null ? null : EventRegistrationResponse.from(reg));
+    }
+
+    // ======================== WEEKLY PROGRAM TEMPLATES (US-50) ========================
+
+    @GetMapping("/templates")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
-    public ResponseEntity<Void> deleteEvent(@PathVariable UUID id) {
-        UUID tenantId = TenantContext.requireTenantId();
-        UUID actorId = SecurityUtils.getCurrentUserId();
-        eventService.deleteEvent(tenantId, actorId, id);
+    public ResponseEntity<List<WeeklyProgramTemplate>> getTemplates() {
+        return ResponseEntity.ok(eventService.getActiveTemplates());
+    }
+
+    @PostMapping("/templates")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<WeeklyProgramTemplate> createTemplate(@Valid @RequestBody WeeklyProgramTemplate template) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createTemplate(template));
+    }
+
+    @PutMapping("/templates/{id}")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<WeeklyProgramTemplate> updateTemplate(
+            @PathVariable UUID id, @Valid @RequestBody WeeklyProgramTemplate template) {
+        return ResponseEntity.ok(eventService.updateTemplate(id, template));
+    }
+
+    @DeleteMapping("/templates/{id}")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<Void> deleteTemplate(@PathVariable UUID id) {
+        eventService.deleteTemplate(id);
         return ResponseEntity.noContent().build();
     }
 
-    // ========== SPACES ==========
-
-    @PostMapping("/{eventId}/spaces")
-    public ResponseEntity<EventSpace> addSpace(@PathVariable UUID eventId,
-                                                @RequestParam UUID spaceId,
-                                                @RequestParam(required = false) String role) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.addSpaceToEvent(tenantId, eventId, spaceId, role));
+    @PatchMapping("/templates/{id}/toggle")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<Void> toggleTemplate(@PathVariable UUID id, @RequestBody Map<String, Boolean> body) {
+        eventService.toggleTemplateActif(id, body.getOrDefault("actif", true));
+        return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{eventId}/spaces/{spaceId}")
-    public ResponseEntity<Void> removeSpace(@PathVariable UUID eventId, @PathVariable UUID spaceId) {
-        UUID tenantId = TenantContext.requireTenantId();
-        eventService.removeSpaceFromEvent(tenantId, eventId, spaceId);
-        return ResponseEntity.noContent().build();
+    /**
+     * Generate events for a specific week from the active program templates.
+     */
+    @PostMapping("/program/generate")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<List<EventResponse>> generateWeekProgram(
+            @RequestParam(required = false) String semaine) {
+        LocalDate weekStart = semaine != null ? LocalDate.parse(semaine)
+                : LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        List<Event> events = eventService.generateWeekProgram(weekStart);
+        return ResponseEntity.ok(events.stream().map(this::toResponse).toList());
     }
 
-    @GetMapping("/{eventId}/spaces")
-    public ResponseEntity<List<EventSpace>> getSpaces(@PathVariable UUID eventId) {
-        return ResponseEntity.ok(eventService.getEventSpaces(eventId));
+    /**
+     * Generate events for the next 4 weeks from the active program templates.
+     */
+    @PostMapping("/program/generate-month")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<List<EventResponse>> generateMonthProgram() {
+        List<Event> events = eventService.generateMonthProgram();
+        return ResponseEntity.ok(events.stream().map(this::toResponse).toList());
     }
 
-    // ========== TEAMS ==========
-
-    @PostMapping("/{eventId}/teams")
-    public ResponseEntity<EventTeam> createTeam(@PathVariable UUID eventId, @RequestBody EventTeam team) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.createTeam(tenantId, eventId, team));
+    /**
+     * Get the program for a specific week.
+     */
+    @GetMapping("/program/week")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<List<EventResponse>> getWeekProgram(
+            @RequestParam(required = false) String semaine) {
+        LocalDate weekStart = semaine != null ? LocalDate.parse(semaine)
+                : LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        List<Event> events = eventService.getWeekProgram(weekStart);
+        return ResponseEntity.ok(events.stream().map(this::toResponse).toList());
     }
 
-    @GetMapping("/{eventId}/teams")
-    public ResponseEntity<List<EventTeam>> getTeams(@PathVariable UUID eventId) {
-        return ResponseEntity.ok(eventService.getEventTeams(eventId));
+    // ======================== US-55: EVENT STATISTICS ========================
+
+    @GetMapping("/statistics")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<Map<String, Object>> getEventStatistics(
+            @RequestParam(required = false) UUID familleId,
+            @RequestParam(required = false) String periodeDebut,
+            @RequestParam(required = false) String periodeFin) {
+        return ResponseEntity.ok(eventService.getEventStatistics(familleId, periodeDebut, periodeFin));
     }
 
-    // ========== TASKS ==========
+    // ======================== CONSOLIDATED VIEW (Phase 6) ========================
 
-    @PostMapping("/{eventId}/tasks")
-    public ResponseEntity<EventTask> createTask(@PathVariable UUID eventId, @RequestBody EventTask task) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.createTask(tenantId, eventId, task));
+    /**
+     * Get all upcoming events consolidated — for Pasteur to see events from all departments/families.
+     */
+    @GetMapping("/consolidated")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<List<Map<String, Object>>> getConsolidatedUpcoming(
+            @RequestParam(defaultValue = "14") int days) {
+        return ResponseEntity.ok(eventService.getConsolidatedUpcoming(days));
     }
 
-    @PutMapping("/tasks/{taskId}/status")
-    public ResponseEntity<EventTask> updateTaskStatus(@PathVariable UUID taskId, @RequestParam String status) {
-        UUID tenantId = TenantContext.requireTenantId();
-        UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(eventService.updateTaskStatus(tenantId, taskId, status, actorId));
-    }
-
-    @GetMapping("/{eventId}/tasks")
-    public ResponseEntity<List<EventTask>> getTasks(@PathVariable UUID eventId) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.getEventTasks(tenantId, eventId));
-    }
-
-    // ========== ATTENDANCE / CHECK-IN ==========
-
-    @PostMapping("/{eventId}/checkin")
-    public ResponseEntity<EventAttendance> checkIn(@PathVariable UUID eventId,
-                                                    @RequestParam UUID personId,
-                                                    @RequestParam(required = false) String method,
-                                                    @RequestParam(required = false) UUID spaceId) {
-        UUID tenantId = TenantContext.requireTenantId();
-        UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(eventService.checkIn(tenantId, eventId, personId, method, spaceId, actorId));
-    }
-
-    @PostMapping("/{eventId}/checkout")
-    public ResponseEntity<EventAttendance> checkOut(@PathVariable UUID eventId, @RequestParam UUID personId) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.checkOut(tenantId, eventId, personId));
-    }
-
-    @PostMapping("/{eventId}/flash")
-    public ResponseEntity<EventAttendance> flashAttendance(@PathVariable UUID eventId,
-                                                            @RequestParam String phone) {
-        UUID tenantId = TenantContext.requireTenantId();
-        UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(eventService.flashAttendance(tenantId, eventId, phone, actorId));
-    }
-
-    @GetMapping("/{eventId}/attendance")
-    public ResponseEntity<List<EventAttendance>> getAttendance(@PathVariable UUID eventId) {
-        return ResponseEntity.ok(eventService.getEventAttendance(eventId));
-    }
-
-    @GetMapping("/{eventId}/attendance/count")
-    public ResponseEntity<Long> getPresentCount(@PathVariable UUID eventId) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.getPresentCount(tenantId, eventId));
-    }
-
-    // ========== SCHEDULE ==========
-
-    @PostMapping("/{eventId}/schedule")
-    public ResponseEntity<EventSchedule> addScheduleItem(@PathVariable UUID eventId, @RequestBody EventSchedule item) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.addScheduleItem(tenantId, eventId, item));
-    }
-
-    @GetMapping("/{eventId}/schedule")
-    public ResponseEntity<List<EventSchedule>> getSchedule(@PathVariable UUID eventId) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.getEventSchedule(tenantId, eventId));
-    }
-
-    // ========== LOCATIONS ==========
-
-    @PostMapping("/locations")
-    public ResponseEntity<Location> createLocation(@RequestBody Location location) {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.createLocation(tenantId, location));
-    }
-
-    @GetMapping("/locations")
-    public ResponseEntity<List<Location>> getLocations() {
-        UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(eventService.getLocations(tenantId));
+    /**
+     * Get upcoming events grouped by family and type — consolidated.
+     */
+    @GetMapping("/consolidated/by-family")
+    @PreAuthorize("hasRole('PASTEUR')")
+    public ResponseEntity<Map<String, Object>> getConsolidatedByFamily(
+            @RequestParam(defaultValue = "14") int days) {
+        return ResponseEntity.ok(eventService.getConsolidatedByFamily(days));
     }
 }
