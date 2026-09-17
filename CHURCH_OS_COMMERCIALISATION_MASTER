@@ -91,7 +91,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G2.11 | ✅ Vert | `chore: Gate G2 church os core engines green` | 2026-09-17 |
 | G3.1 | ✅ Vert | `feat(people): unique people registry with auto self-registration` | 2026-09-17 |
 | G3.2 | ✅ Vert | `feat(people): memberships role assignments and history` | 2026-09-17 |
-| G3.3 | ⬜ En attente | — | — |
+| G3.3 | ✅ Vert | `feat(event): church event engine with legacy migration` | 2026-09-17 |
 | G3.4 | ⬜ En attente | — | — |
 | G3.5 | ⬜ En attente | — | — |
 | G3.6 | ⬜ En attente | — | — |
@@ -169,7 +169,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 #### PORTE G3 — MOTEURS DOMAINE (réutiliser l'existant, construire le manquant)
 - **G3.1** : People Engine : identité unique + inscription automatique au répertoire
 - **G3.2** : Membership, SpaceMembership & RoleAssignment (3 dimensions + historisation)
-- **G3.3** : Event Engine transversal (à refaire - conflit legacy events table)
+- **G3.3** : Event Engine transversal (calendrier, planning visuel, check-in QR) — **Migration V158 terminée : legacy_events → church_event**
 - **G3.4** : DRESS CODE & PATRIMOINE ÉVÉNEMENTIEL (dress codes, répertoires, debriefs, archives)
 - **G3.5** : Asset Engine (Assets, Inventaire, Checkout, Maintenance, Transferts, TCO, QR)
 - **G3.6** : Finance Engine central (une seule finance, Mobile Money, budgets, rapprochement)
