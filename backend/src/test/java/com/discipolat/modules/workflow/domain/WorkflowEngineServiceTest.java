@@ -1,5 +1,6 @@
 package com.discipolat.modules.workflow.domain;
 
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ class WorkflowEngineServiceTest {
     @Mock private WorkflowTaskRepository taskRepository;
     @Mock private AuditService auditService;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private EntityPropagationPublisher entityPropagationPublisher;
 
     private WorkflowEngineService engine;
 
@@ -50,7 +52,7 @@ class WorkflowEngineServiceTest {
     @BeforeEach
     void setUp() {
         engine = new WorkflowEngineService(definitionRepository, stepRepository, transitionRepository,
-                instanceRepository, taskRepository, auditService, eventPublisher);
+                instanceRepository, taskRepository, auditService, eventPublisher, entityPropagationPublisher);
 
         definition = WorkflowDefinition.builder()
                 .id(UUID.randomUUID()).tenantId(TENANT).entityType("ASSET")

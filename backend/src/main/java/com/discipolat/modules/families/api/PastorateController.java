@@ -96,10 +96,11 @@ public class PastorateController {
     }
 
     @PostMapping("/transfers/{id}/reject")
-    public ResponseEntity<PastorateTransfer> rejectTransfer(@PathVariable UUID id, @RequestParam String reason) {
+    public ResponseEntity<Void> rejectTransfer(@PathVariable UUID id, @RequestParam String reason) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(pastorateService.rejectTransfer(tenantId, actorId, id, reason));
+        pastorateService.rejectTransfer(tenantId, actorId, id, reason);
+        return ResponseEntity.noContent().build();
     }
 
     // ========== HISTORY ==========

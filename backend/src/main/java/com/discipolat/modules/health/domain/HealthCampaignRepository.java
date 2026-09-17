@@ -16,7 +16,10 @@ public interface HealthCampaignRepository extends JpaRepository<HealthCampaign, 
     List<HealthCampaign> findByResponsibleIdAndTenantId(UUID responsibleId, UUID tenantId);
     List<HealthCampaign> findByCampaignTypeAndTenantIdAndDeletedFalse(HealthCampaign.CampaignType type, UUID tenantId);
     List<HealthCampaign> findByStatusAndTenantIdAndDeletedFalse(HealthCampaign.CampaignStatus status, UUID tenantId);
+    Page<HealthCampaign> findByStatusAndTenantIdAndDeletedFalse(UUID tenantId, HealthCampaign.CampaignStatus status, Pageable pageable);
+    Page<HealthCampaign> findByTenantIdAndDeletedFalse(UUID tenantId, Pageable pageable);
     @Query("SELECT hc FROM HealthCampaign hc WHERE hc.tenantId = :tenantId AND hc.deleted = false AND hc.startDate <= :end AND hc.endDate >= :start")
     List<HealthCampaign> findActiveBetween(UUID tenantId, LocalDate start, LocalDate end);
+    long countByTenantIdAndStatusAndDeletedFalse(UUID tenantId, HealthCampaign.CampaignStatus status);
     long countByTenantIdAndDeletedFalse(UUID tenantId);
 }

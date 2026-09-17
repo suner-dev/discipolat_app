@@ -4,6 +4,8 @@ import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.health.domain.*;
 import com.discipolat.modules.people.domain.Person;
 import com.discipolat.modules.people.repository.PersonRepository;
+import com.discipolat.modules.users.domain.User;
+import com.discipolat.modules.users.domain.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +30,7 @@ public class HealthService {
     private final PharmacyMovementRepository pharmacyMovementRepository;
     private final HealthCampaignRepository healthCampaignRepository;
     private final PersonRepository personRepository;
+    private final UserRepository userRepository;
 
     // ========== PATIENT RECORDS ==========
 
@@ -168,7 +171,9 @@ public class HealthService {
 
     public PharmacyMovement createMovement(UUID tenantId, UUID actorId, PharmacyMovement movement) {
         movement.setTenantId(tenantId);
-        movement.setResponsibleId(actorId);
+        User responsible = userRepository.findById(actorId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + actorId));
+        movement.setResponsible(responsible);
         return pharmacyMovementRepository.save(movement);
     }
 
@@ -176,7 +181,9 @@ public class HealthService {
 
     public HealthCampaign createCampaign(UUID tenantId, UUID actorId, HealthCampaign campaign) {
         campaign.setTenantId(tenantId);
-        campaign.setResponsibleId(actorId);
+        User responsible = userRepository.findById(actorId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + actorId));
+        campaign.setResponsible(responsible);
         return healthCampaignRepository.save(campaign);
     }
 

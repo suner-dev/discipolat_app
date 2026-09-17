@@ -12,8 +12,12 @@ import java.util.UUID;
 @Repository
 public interface MedicalConsultationRepository extends JpaRepository<MedicalConsultation, UUID> {
     List<MedicalConsultation> findByPatientIdAndTenantIdOrderByConsultationDateDesc(UUID patientId, UUID tenantId);
+    Page<MedicalConsultation> findByPatientIdAndTenantIdOrderByConsultationDateDesc(UUID patientId, UUID tenantId, Pageable pageable);
     Page<MedicalConsultation> findByFamilyIdAndTenantId(UUID familyId, UUID tenantId, Pageable pageable);
     List<MedicalConsultation> findByPractitionerIdAndTenantId(UUID practitionerId, UUID tenantId);
     List<MedicalConsultation> findByConsultationDateBetweenAndTenantId(LocalDate start, LocalDate end, UUID tenantId);
+    Page<MedicalConsultation> findByConsultationDateBetweenAndTenantId(LocalDate start, LocalDate end, UUID tenantId, Pageable pageable);
+    Page<MedicalConsultation> findByTenantIdAndDeletedFalse(UUID tenantId, Pageable pageable);
+    long countByTenantIdAndConsultationDateBetween(UUID tenantId, LocalDate from, LocalDate to);
     long countByTenantIdAndDeletedFalse(UUID tenantId);
 }

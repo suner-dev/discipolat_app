@@ -18,4 +18,6 @@ public interface EventSpaceRepository extends JpaRepository<EventSpace, UUID> {
     Optional<EventSpace> findByChurchEventIdAndSpaceId(UUID churchEventId, UUID spaceId);
 
     void deleteByChurchEventId(UUID churchEventId);
+
+    void deleteByChurchEventIdAndSpaceId(UUID churchEventId, UUID spaceId);
 }

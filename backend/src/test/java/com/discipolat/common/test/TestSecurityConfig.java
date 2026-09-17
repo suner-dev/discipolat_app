@@ -1,6 +1,7 @@
 package com.discipolat.common.test;
 
 import com.discipolat.common.infrastructure.config.SecurityConfig;
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.modules.tenants.domain.AuthorizationService;
 import com.discipolat.modules.tenants.domain.MembershipScopeType;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.when;
  * Fournit :
  * - JwtTokenProvider réel (clés RSA générées pour le test)
  * - AuthorizationService mock (autorise tout pour les tests de contrôleur)
+ * - EntityPropagationPublisher mock
  */
 @TestConfiguration
 @Import(SecurityConfig.class)
@@ -65,5 +67,11 @@ public class TestSecurityConfig {
         when(mock.getUserPermissionsInScope(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(Set.of());
         when(mock.isPlatformSuperAdmin(org.mockito.ArgumentMatchers.any())).thenReturn(true);
         return mock;
+    }
+
+    @Bean
+    @Primary
+    public EntityPropagationPublisher entityPropagationPublisher() {
+        return mock(EntityPropagationPublisher.class);
     }
 }

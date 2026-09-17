@@ -1,5 +1,6 @@
 package com.discipolat.modules.statuses.domain;
 
+import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ class CustomStatusServiceTest {
     @Mock private CustomStatusRepository repository;
     @Mock private AuditService auditService;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private EntityPropagationPublisher entityPropagationPublisher;
 
     private CustomStatusService service;
 
@@ -37,7 +39,7 @@ class CustomStatusServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CustomStatusService(repository, auditService, eventPublisher);
+        service = new CustomStatusService(repository, auditService, eventPublisher, entityPropagationPublisher);
     }
 
     private CustomStatus status(String code, int order, boolean initial, boolean finalStatus, List<String> allowed) {

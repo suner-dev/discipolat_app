@@ -3,6 +3,8 @@ package com.discipolat.modules.people.service;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.service.AuditEventService;
+import com.discipolat.modules.core.domain.PermissionVersion;
+import com.discipolat.modules.core.repository.PermissionVersionRepository;
 import com.discipolat.modules.core.service.OutboxPublisher;
 import com.discipolat.modules.people.domain.EventAssignment;
 import com.discipolat.modules.people.domain.Membership;
@@ -43,6 +45,7 @@ public class PeopleService {
     private final SpaceService spaceService;
     private final AuditEventService auditEventService;
     private final OutboxPublisher outboxPublisher;
+    private final PermissionVersionRepository permissionVersionRepository;
 
     // ========== G3.1 : PEOPLE ENGINE ==========
 
@@ -237,6 +240,9 @@ public class PeopleService {
                 Map.of(), Map.of("personId", personId.toString(), "spaceId", spaceId.toString()),
                 null, null);
 
+        // G4.4 : propager le changement de permission (rôle vivant)
+        notifyPermissionChange(personId, "SPACE_MEMBER_ADDED");
+
         return saved;
     }
 
@@ -257,6 +263,9 @@ public class PeopleService {
                 Map.of("personId", personId.toString(), "spaceId", spaceId.toString(), "action", "REMOVED"));
         auditEventService.log(tenantId, actorId, null, "SPACE_MEMBER_REMOVED", "SPACE_MEMBERSHIP", sm.getId(),
                 Map.of(), Map.of(), null, null);
+
+        // G4.4 : propager le changement de permission (rôle vivant)
+        notifyPermissionChange(personId, "SPACE_MEMBER_REMOVED");
     }
 
     /**
@@ -300,6 +309,9 @@ public class PeopleService {
         auditEventService.log(tenantId, actorId, null, "ROLE_ASSIGNED", "ROLE_ASSIGNMENT", saved.getId(),
                 Map.of(), Map.of("roleId", roleId.toString()), null, null);
 
+        // G4.4 : propager le changement de permission (rôle vivant)
+        notifyPermissionChange(personId, "ROLE_ASSIGNED");
+
         return saved;
     }
 
@@ -324,6 +336,9 @@ public class PeopleService {
                 Map.of("personId", ra.getPersonId().toString(), "roleId", ra.getRoleId().toString()));
         auditEventService.log(tenantId, actorId, null, "ROLE_ENDED", "ROLE_ASSIGNMENT", assignmentId,
                 Map.of(), Map.of(), null, null);
+
+        // G4.4 : propager le changement de permission (rôle vivant)
+        notifyPermissionChange(ra.getPersonId(), "ROLE_ENDED");
     }
 
     /**
@@ -349,7 +364,44 @@ public class PeopleService {
         outboxPublisher.publish("ROLE_ASSIGNMENT", personId, "PastorAppointed",
                 Map.of("personId", personId.toString(), "newOrgUnitId", newOrgUnitId.toString(), "reason", reason));
 
+        // G4.4 : propager le changement de permission (rôle vivant)
+        notifyPermissionChange(personId, "PASTOR_APPOINTED");
+
         return null; // TODO: retourner le nouveau RoleAssignment
+    }
+
+        /**
+     * G4.4 — Rôles vivantes : bump la version du cache permissions et publie
+     * l'événement outbox PermissionsChanged pour propagation temps réel.
+     * Appelé après tout changement de rôle/membre affectant les permissions d'un utilisateur.
+     */
+    @Transactional
+    private void notifyPermissionChange(UUID personId, String changeType) {
+        UUID tenantId = TenantContext.getTenantId();
+        if (tenantId == null) return;
+
+        // Bump la version du cache permission_version
+        permissionVersionRepository.findByTenantIdAndUserId(tenantId, personId)
+                .ifPresentOrElse(
+                        pv -> {
+                            pv.setVersion(pv.getVersion() + 1);
+                            pv.setUpdatedAt(OffsetDateTime.now());
+                            permissionVersionRepository.save(pv);
+                        },
+                        () -> {
+                            PermissionVersion pv = PermissionVersion.builder()
+                                    .tenantId(tenantId)
+                                    .userId(personId)
+                                    .version(1L)
+                                    .permissionsJson(new ArrayList<>())
+                                    .updatedAt(OffsetDateTime.now())
+                                    .build();
+                            permissionVersionRepository.save(pv);
+                        });
+
+        // Publie l'événement PermissionsChanged (outbox -> realtime consumer -> WS push)
+        outboxPublisher.publish("PERMISSION", personId, "PermissionsChanged",
+                Map.of("userId", personId.toString(), "changeType", changeType));
     }
 
     // ========== HELPERS ==========

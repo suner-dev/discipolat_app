@@ -16,4 +16,5 @@ public interface PharmacyItemRepository extends JpaRepository<PharmacyItem, UUID
     @Query("SELECT pi FROM PharmacyItem pi WHERE pi.tenantId = :tenantId AND LOWER(pi.nom) LIKE LOWER(CONCAT('%',:q,'%')) AND pi.deleted = false")
     Page<PharmacyItem> searchByNom(UUID tenantId, String q, Pageable pageable);
     List<PharmacyItem> findByCategorieAndTenantIdAndDeletedFalse(String categorie, UUID tenantId);
+    Page<PharmacyItem> findByCategorieAndTenantIdAndDeletedFalse(String categorie, UUID tenantId, Pageable pageable);
 }

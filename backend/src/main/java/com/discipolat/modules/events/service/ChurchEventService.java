@@ -217,7 +217,7 @@ public class ChurchEventService {
 
     public EventAttendance checkOut(UUID tenantId, UUID eventId, UUID personId) {
         EventAttendance attendance = eventAttendanceRepository.findByChurchEventIdAndPersonId(eventId, personId)
-                .orElseThrow(() -> new EntityNotFoundException("EventAttendance", eventId + "/" + personId));
+                .orElseThrow(() -> new EntityNotFoundException("EventAttendance", "eventId/personId", eventId + "/" + personId));
 
         attendance.setCheckOutAt(OffsetDateTime.now());
         return eventAttendanceRepository.save(attendance);
@@ -225,7 +225,7 @@ public class ChurchEventService {
 
     public EventAttendance flashAttendance(UUID tenantId, UUID eventId, String phoneNormalized, UUID actorId) {
         Person person = personRepository.findByTenantIdAndPhoneNormalizedAndDeletedAtIsNull(tenantId, phoneNormalized)
-                .orElseThrow(() -> new EntityNotFoundException("Person with phone: " + phoneNormalized));
+                .orElseThrow(() -> new EntityNotFoundException("Person", "phoneNormalized", phoneNormalized));
         return checkIn(tenantId, eventId, person.getId(), "PHONE_FLASH", null, actorId);
     }
 

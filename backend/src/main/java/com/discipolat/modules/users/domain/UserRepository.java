@@ -57,4 +57,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     long countByStatut(UserStatus status);
 
     List<User> findByTenantId(UUID tenantId);
+
+    Page<User> findByTenantIdAndDeletedFalse(UUID tenantId, Pageable pageable);
 }

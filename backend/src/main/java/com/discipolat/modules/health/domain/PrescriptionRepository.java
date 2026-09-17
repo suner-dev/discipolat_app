@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface PrescriptionRepository extends JpaRepository<Prescription, UUID> {
     List<Prescription> findByConsultationIdAndTenantId(UUID consultationId, UUID tenantId);
+    Page<Prescription> findByConsultationIdAndTenantId(UUID consultationId, UUID tenantId, Pageable pageable);
     List<Prescription> findByPatientIdAndTenantIdOrderByCreatedAtDesc(UUID patientId, UUID tenantId);
     Page<Prescription> findByPatientIdAndTenantId(UUID patientId, UUID tenantId, Pageable pageable);
     List<Prescription> findByPatientIdAndTenantIdAndStatus(UUID patientId, UUID tenantId, Prescription.PrescriptionStatus status);

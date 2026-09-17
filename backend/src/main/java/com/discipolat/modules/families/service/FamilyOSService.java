@@ -237,7 +237,8 @@ public class FamilyOSService {
                 .collect(Collectors.toSet());
 
         // Search in tenant scope
-        List<com.discipolat.modules.users.domain.User> candidates = userRepository.findByTenantIdAndDeletedFalse(tenantId, PageRequest.of(0, 100)).getContent();
+        Page<User> candidatesPage = userRepository.findByTenantIdAndDeletedFalse(tenantId, PageRequest.of(0, 100));
+        List<com.discipolat.modules.users.domain.User> candidates = candidatesPage.getContent();
 
         // Filter by scope
         if ("CAMPUS".equals(scope)) {
@@ -259,7 +260,7 @@ public class FamilyOSService {
         familyRepository.findById(familyId)
                 .orElseThrow(() -> new EntityNotFoundException("Family", familyId));
 
-        com.discipolat.modules.users.domain.User soul = userRepository.findById(soulId)
+        com.discipolat.modules.souls.domain.Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new EntityNotFoundException("Soul", soulId));
 
         // Create FamilyActivity for tracking
@@ -268,7 +269,7 @@ public class FamilyOSService {
                 .familyId(familyId)
                 .activityType("RECEPTION")
                 .referenceId(UUID.randomUUID())
-                .title("Ajout membre: " + soul.getFirstName() + " " + soul.getLastName())
+                .title("Ajout membre: " + soul.getPrenom() + " " + soul.getNom())
                 .description("Nouveau membre ajouté à la famille")
                 .activityDate(LocalDate.now())
                 .status("COMPLETED")

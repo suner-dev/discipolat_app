@@ -15,5 +15,6 @@ public interface PatientRecordRepository extends JpaRepository<PatientRecord, UU
     Page<PatientRecord> findByFamilyIdAndTenantId(UUID familyId, UUID tenantId, Pageable pageable);
     List<PatientRecord> findByFamilyIdAndTenantId(UUID familyId, UUID tenantId);
     List<PatientRecord> findByTenantIdAndDeletedFalse(UUID tenantId);
+    Page<PatientRecord> findByTenantIdAndDeletedFalse(UUID tenantId, Pageable pageable);
     long countByTenantIdAndDeletedFalse(UUID tenantId);
 }

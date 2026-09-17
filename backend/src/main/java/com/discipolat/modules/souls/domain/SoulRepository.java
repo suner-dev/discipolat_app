@@ -76,4 +76,6 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     long countTotalEvents();
     List<Soul> findByFamilleIdAndTenantId(UUID familleId, UUID tenantId);
     long countByTenantIdAndDateIntegrationAfter(UUID tenantId, java.time.LocalDate date);
+
+    List<Soul> findAllByFamilleIdAndDeletedFalse(UUID familleId);
 }
