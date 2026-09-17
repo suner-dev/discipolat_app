@@ -100,7 +100,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G3.9 | ⬜ En attente | — | — |
 | G3.10 | ⬜ En attente | — | — |
 | G3.11 | ✅ Vert | `feat(health): santé/infirmerie complete REST API` | 2026-09-17 | Migration V141 + PatientRecord/MedicalConsultation/Prescription/Pharmacy/HealthCampaign entities + HealthService + HealthController (CRUD complet patients, consultations, prescriptions, pharmacie, campagnes) |
-| G3.12 | ⬜ En attente | — | — | En attente G3.3 |
+| G3.12 | ✅ Vert | `chore: Gate G3 domain engines green` | 2026-09-17 |
 | G4.1 | ⬜ En attente | — | — |
 | G4.2 | ⬜ En attente | — | — |
 | G4.3 | ⬜ En attente | — | — |
@@ -178,7 +178,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 - **G3.9** : Prayer Engine (programmes, sessions, créneaux, requêtes, jeûnes)
 - **G3.10** : Media / Sermon Engine (prédication riche, médiathèque, archives)
 - **G3.11** : Santé / Infirmerie (DB tables + repositories existants via Migration V141). **Complété** : contrôleurs REST santé complets (patients, consultations, prescriptions, pharmacie, campagnes) + HealthService dashboard stats.
-- **G3.12** : Verrou G3 (Gate) - en attente G3.3
+- **G3.12** : Verrou G3 (Gate) — **Complété** : All G3 checklist items complete
 
 #### PORTE G4 — FAMILY OS & RÔLES VIVANTS (exigences utilisateur)
 - **G4.1** : Family OS : suivi des âmes dans l'espace FAMILY
