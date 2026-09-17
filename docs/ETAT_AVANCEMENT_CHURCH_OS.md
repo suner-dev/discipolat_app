@@ -29,15 +29,15 @@
 | G1.12 | ✅ vert | 2026-09-16 | `chore: Gate G1 multitenancy contracts green` | All G1 checklist items complete: §27-28 settings/branding, §29 tenant features, §30-31 SaaS plans, §43 impersonation, §44-45 Security Matrix, §46 AuthorizationService, §50-51 onboarding, §52 invitations, §53 config inheritance, §54 GLOBAL/LOCAL · Security Matrix tests pass in CI |
 | G2.1 | ✅ vert | 2026-09-16 | `feat(core): generalized organization unit hierarchy` | Migration V147 + description/icon/color/sort_order fields + ConfigurationResolver + API /resolved,/source,/local,/inheritance + /api/org/units endpoints + OrganizationHierarchyService/Controller updates + explicit getters on entities |
 | G2.2 | ✅ vert | 2026-09-16 | `feat(modules): module engine, catalogue and space module picker (G2.2)` | Migration V148 (`module_definition` catalogue + `space_module` remplaçant `department_module`) · `ModuleDefinition`/`SpaceModule` entités + repos tenant-aware · `ModuleCatalogService` (catalogue CORE/EXISTING/ENGINE, groupé par catégorie, stats) · `SpaceModuleService` (enable/disable/config/limits/order, validation catalogue + espace hors-tenant refusé) · `ModuleRouter` (routage feature-flag CORE/EXISTING/ENGINE, refus si désactivé globalement ou dans l'espace) · `ModuleCatalogController` (/modules/catalog, /spaces/:id/modules, /routes) · Tests : `ModuleCatalogServiceTest`, `SpaceModuleServiceTest`, `ModuleRouterTest` ✅ |
-| G2.3 | ⬜ | | | Template Engine (départements, familles, dress code) |
-| G2.4 | ⬜ | | | Custom Field Engine |
-| G2.5 | ⬜ | | | Workflow Engine (configurable, approbations, escalade) |
-| G2.6 | ⬜ | | | Espaces configurables unifiés (Département = Famille = Sous-équipe) |
-| G2.7 | ⬜ | | | Custom Statuses & Statuts configurables |
-| G2.8 | ⬜ | | | Event Bus & Transactional Outbox |
-| G2.9 | ⬜ | | | Audit Engine ≠ Business History |
-| G2.10 | ⬜ | | | Real-time Engine (WebSocket ciblé + notifications) |
-| G2.11 | ⬜ | | | Verrou G2 (Gate) |
+| G2.3 | ✅ vert | 2026-09-17 | `feat(config): space template engine with 20 seed templates` | Migration V152 + SpaceTemplate entity/repo/service/controller + AdminSpaceTemplatesPage + 20 templates seed |
+| G2.4 | ✅ vert | 2026-09-17 | `feat(config): custom field engine 19 types backend validation` | Migration V153 + CustomFieldDefinition/Value entities + repos + CustomFieldService (validation 19 types) + controller |
+| G2.5 | ✅ vert | 2026-09-17 | `feat(workflow): configurable workflow engine approvals escalation` | Migration V151 + WorkflowDefinition/Step/Transition/Instance/Task entities + repos + WorkflowService (start/approve/reject/escalate) |
+| G2.6 | ✅ vert | 2026-09-16 | `feat(config): unified configurable spaces department family sub-team` | Space entity + SpaceModuleService + SpaceService (canCustomize, resolveCustomizableSpaceIds, propagation temps réel) |
+| G2.7 | ✅ vert | 2026-09-16 | `feat(config): custom status engine with controlled transitions` | CustomStatus entity + CustomStatusService (resolveStatusSet, validateTransition, changeStatus, kanban board) |
+| G2.8 | ✅ vert | 2026-09-17 | `feat(core): transactional outbox event bus` | OutboxEvent/ProcessedEvent entities + OutboxPublisher/Dispatcher + 29 consumers (NOTIFY/AUDIT/BUSINESS_HISTORY/FINANCE/ANALYTICS/REALTIME) + AutoConfiguration |
+| G2.9 | ✅ vert | 2026-09-17 | `feat(audit): audit engine with hash chain and business history` | Migration V135 fix + audit_event + business_history tables + AuditEventService (hash chain, export, verify) + AuditController |
+| G2.10 | ✅ vert | 2026-09-17 | `feat(realtime): realtime engine and multi-channel notifications` | WebSocketConfig (tenant isolation) + RealTimeService (push config/status/roles/tasks/dresscode/invitations) + OutboxConsumers integration |
+| G2.11 | ✅ vert | 2026-09-17 | `chore: Gate G2 church os core engines green` | All G2 checklist items complete: G2.1 org hierarchy, G2.2 module catalogue, G2.3 templates, G2.4 custom fields, G2.5 workflows, G2.6 unified spaces, G2.7 custom statuses, G2.8 outbox, G2.9 audit/history, G2.10 realtime. Migrations applied. Security Matrix green. |
 | G3.1 | ⬜ | | | People Engine : identité unique + inscription auto |
 | G3.2 | ⬜ | | | Membership, SpaceMembership & RoleAssignment (3 dim + historisation) |
 | G3.3 | ⬜ | | | Event Engine transversal |

@@ -86,6 +86,7 @@ const TransfersPage = lazy(() => import('@/pages/TransfersPage'));
 const TransferDetailPage = lazy(() => import('@/pages/TransferDetailPage'));
 const TransferCreatePage = lazy(() => import('@/pages/TransferCreatePage'));
 const AdminWorkflowBuilderPage = lazy(() => import('@/pages/AdminWorkflowBuilderPage'));
+const AdminSpaceTemplatesPage = lazy(() => import('@/pages/AdminSpaceTemplatesPage'));
 const AdminSettingsPage = lazy(() => import('@/pages/AdminSettingsPage'));
 const PlatformModulesPage = lazy(() => import('@/pages/PlatformModulesPage'));
 const PlatformMenusPage = lazy(() => import('@/pages/PlatformMenusPage'));
@@ -733,6 +734,11 @@ export default function App() {
           <Route path="/admin/transfers" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <AdminWorkflowBuilderPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/space-templates" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+              <AdminSpaceTemplatesPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/settings" element={

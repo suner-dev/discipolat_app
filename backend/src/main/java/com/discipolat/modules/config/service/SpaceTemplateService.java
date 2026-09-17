@@ -34,7 +34,7 @@ public class SpaceTemplateService {
     @Transactional(readOnly = true)
     public SpaceTemplate getTemplateByCode(String code) {
         return spaceTemplateRepository.findByCode(code)
-                .orElseThrow(() -> new EntityNotFoundException("SpaceTemplate with code: " + code));
+                .orElseThrow(() -> new EntityNotFoundException("SpaceTemplate", "code", code));
     }
 
     @Transactional(readOnly = true)

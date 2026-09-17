@@ -65,7 +65,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G0.3 | ✅ Vert | `fix(backend): resolve all pre-existing compilation errors` | 2026-09-15 |
 | G0.4 | ✅ Vert | `chore(frontend): green lint build and tests` | 2026-09-15 |
 | G0.5 | ✅ Vert | `chore(mobile): green analyze and tests` | 2026-09-15 |
-| G0.6 | 🔵 En cours | — | — |
+| G0.6 | ✅ Vert | `chore: Gate G0 stabilization green` | 2026-09-16 |
 | G1.1 | ✅ Vert | `docs: multitenancy contract mapping (27-72)` | 2026-09-14 |
 | G1.2 | ✅ Vert | `feat(tenant): complete tenant settings and dynamic branding (27-28)` | 2026-09-14 |
 | G1.3 | ✅ Vert | `feat(tenant): complete tenant feature CRUD and enforcement (29)` | 2026-09-15 |
@@ -77,18 +77,18 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G1.9 | ✅ Vert | `feat(admin): complete super admin impersonation workflow (43)` | 2026-09-16 |
 | G1.10 | ✅ Vert | `test(security): full security matrix automation (44-45)` | 2026-09-16 |
 | G1.11 | ✅ Vert | `refactor(security): centralize authorization via AuthorizationService (46)` | 2026-09-16 |
-| G1.12 | ⬜ En attente | — | — |
-| G2.1 | ⬜ En attente | — | — |
-| G2.2 | ⬜ En attente | — | — |
-| G2.3 | ⬜ En attente | — | — |
-| G2.4 | ⬜ En attente | — | — |
-| G2.5 | ⬜ En attente | — | — |
+| G1.12 | ✅ Vert | `chore: Gate G1 multitenancy contracts green` | 2026-09-16 |
+| G2.1 | ✅ Vert | `feat(core): generalized organization unit hierarchy` | 2026-09-16 |
+| G2.2 | ✅ Vert | `feat(modules): module engine, catalogue and space module picker (G2.2)` | 2026-09-16 |
+| G2.3 | ✅ Vert | `feat(config): space template engine with 20 seed templates` | 2026-09-17 |
+| G2.4 | ✅ Vert | `feat(config): custom field engine 19 types backend validation` | 2026-09-17 |
+| G2.5 | ✅ Vert | `feat(workflow): configurable workflow engine approvals escalation` | 2026-09-17 |
 | G2.6 | ✅ Vert | `feat(config): unified configurable spaces department family sub-team` | 2026-09-16 |
 | G2.7 | ✅ Vert | `feat(config): custom status engine with controlled transitions` | 2026-09-16 |
-| G2.8 | ⬜ En attente | — | — |
-| G2.9 | ⬜ En attente | — | — |
-| G2.10 | ⬜ En attente | — | — |
-| G2.11 | ⬜ En attente | — | — |
+| G2.8 | ✅ Vert | `feat(core): transactional outbox event bus` | 2026-09-17 |
+| G2.9 | ✅ Vert | `feat(audit): audit engine with hash chain and business history` | 2026-09-17 |
+| G2.10 | ✅ Vert | `feat(realtime): realtime engine and multi-channel notifications` | 2026-09-17 |
+| G2.11 | ✅ Vert | `chore: Gate G2 church os core engines green` | 2026-09-17 |
 | G3.1 | ⬜ En attente | — | — |
 | G3.2 | ⬜ En attente | — | — |
 | G3.3 | ⬜ En attente | — | — |
