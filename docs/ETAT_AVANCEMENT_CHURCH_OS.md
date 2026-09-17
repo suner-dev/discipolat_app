@@ -38,9 +38,9 @@
 | G2.9 | ✅ vert | 2026-09-17 | `feat(audit): audit engine with hash chain and business history` | Migration V135 fix + audit_event + business_history tables + AuditEventService (hash chain, export, verify) + AuditController |
 | G2.10 | ✅ vert | 2026-09-17 | `feat(realtime): realtime engine and multi-channel notifications` | WebSocketConfig (tenant isolation) + RealTimeService (push config/status/roles/tasks/dresscode/invitations) + OutboxConsumers integration |
 | G2.11 | ✅ vert | 2026-09-17 | `chore: Gate G2 church os core engines green` | All G2 checklist items complete: G2.1 org hierarchy, G2.2 module catalogue, G2.3 templates, G2.4 custom fields, G2.5 workflows, G2.6 unified spaces, G2.7 custom statuses, G2.8 outbox, G2.9 audit/history, G2.10 realtime. Migrations applied. Security Matrix green. |
-| G3.1 | ⬜ | | | People Engine : identité unique + inscription auto |
-| G3.2 | ⬜ | | | Membership, SpaceMembership & RoleAssignment (3 dim + historisation) |
-| G3.3 | ⬜ | | | Event Engine transversal |
+| G3.1 | ✅ vert | 2026-09-17 | `feat(people): unique people registry with auto self-registration` | Migration V154 + Person/Membership/SpaceMembership/RoleAssignment/EventAssignment entities + PeopleService (register, merge, search, assignToSpace, assignRole, transferPastor) + PeopleController |
+| G3.2 | ✅ vert | 2026-09-17 | `feat(people): memberships role assignments and history` | 3 dimensions (role_assignment, space_membership, event_assignment) historisées + wizard d'affectation + transfert pasteur |
+| G3.3 | 🔵 en cours | | | Event Engine transversal |
 | G3.4 | ✅ | 2026-09-14 | | Dress Code & Patrimoine Eventiel (full module) |
 | G3.5 | ✅ | 2026-09-14 | | Asset Engine (checkout/return, maintenance, TCO) |
 | G3.6 | ✅ | 2026-09-14 | | Finance Engine (payments + tontine modules) |

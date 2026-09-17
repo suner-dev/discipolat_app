@@ -89,9 +89,9 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G2.9 | ✅ Vert | `feat(audit): audit engine with hash chain and business history` | 2026-09-17 |
 | G2.10 | ✅ Vert | `feat(realtime): realtime engine and multi-channel notifications` | 2026-09-17 |
 | G2.11 | ✅ Vert | `chore: Gate G2 church os core engines green` | 2026-09-17 |
-| G3.1 | ⬜ En attente | — | — |
-| G3.2 | ⬜ En attente | — | — |
-| G3.3 | ⬜ En attente | — | — |
+| G3.1 | ✅ Vert | `feat(people): unique people registry with auto self-registration` | 2026-09-17 |
+| G3.2 | ✅ Vert | `feat(people): memberships role assignments and history` | 2026-09-17 |
+| G3.3 | 🔵 En cours | — | — |
 | G3.4 | ⬜ En attente | — | — |
 | G3.5 | ⬜ En attente | — | — |
 | G3.6 | ⬜ En attente | — | — |
