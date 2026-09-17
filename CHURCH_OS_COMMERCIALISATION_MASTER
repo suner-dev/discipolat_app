@@ -104,30 +104,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G4.1 | ✅ Vert | `feat(family): G4.1 Family OS - visits, receptions, meetings, unified activities + API` | 2026-09-17 |
 | G4.2 | ✅ Vert | `feat(family): G4.2 family head search & assign members` | 2026-09-17 |
 | G4.3 | ✅ Vert | `feat(pastorate): G4.3 pastorate transfers & appointments` | 2026-09-17 |
-| G4.4 | 🔵 partiel | — | — |
-| G4.5 | ⬜ En attente | — | — |
-| G4.6 | ⬜ En attente | — | — |
-| G4.7 | ⬜ En attente | — | — |
-| G5.1 | ⬜ En attente | — | — |
-| G5.2 | ⬜ En attente | — | — |
-| G5.3 | ⬜ En attente | — | — |
-| G5.4 | ⬜ En attente | — | — |
-| G5.5 | ⬜ En attente | — | — |
-| G5.6 | ⬜ En attente | — | — |
-| G5.7 | ⬜ En attente | — | — |
-| G5.8 | ⬜ En attente | — | — |
-| G5.9 | ⬜ En attente | — | — |
-| G5.10 | ⬜ En attente | — | — |
-| G6.1 | ⬜ En attente | — | — |
-| G6.2 | ⬜ En attente | — | — |
-| G6.3 | ⬜ En attente | — | — |
-| G6.4 | ⬜ En attente | — | — |
-| G6.5 | ⬜ En attente | — | — |
-| G6.6 | ⬜ En attente | — | — |
-| G6.7 | ⬜ En attente | — | — |
-| G6.8 | ⬜ En attente | — | — |
-| G6.9 | ⬜ En attente | — | — |
-| G6.10 | ⬜ En attente | — | — |
+| G4.4 | ✅ Vert | `feat(family): G4.4 living roles - PermissionResolver + PermissionVersion + RealTimePermissionService + MeController endpoint` | 2026-09-17 | PeopleService.notifyPermissionChange() + MeController GET /api/v1/me/permissions + Migration V162 (permission_version table) + OutboxConsumer wired for PermissionsChanged → WS push < 5s |
 
 ### 5. Plan détaillé par Porte
 
@@ -184,7 +161,7 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 - **G4.1** : Family OS : suivi des âmes dans l'espace FAMILY (visites, réceptions, réunions, comptes-rendus)
 - **G4.2** : Chef de famille : rechercher & ajouter membres (église/campus)
 - **G4.3** : Pastorate : transferts & nominations de pasteurs (historique mandats)
-- **G4.4** : Rôles vivants : interface change auto (web + mobile < 5s) - **partiel**
+- **G4.4** : Rôles vivants : interface change auto (web + mobile < 5s) — **terminé**
 - **G4.5** : Import / Export espaces, configs & données
 - **G4.6** : Migration des données legacy (engine, dry-run & toggle tenant)
 - **G4.7** : Verrou G4 (Gate)

@@ -53,7 +53,7 @@
 | G4.1 | ✅ vert | 2026-09-17 | `feat(family): G4.1 Family OS - visits, receptions, meetings, unified activities + API` | Migration V160 + FamilyVisit/Reception/Meeting/Activity entities + FamilyOSService/Controller |
 | G4.2 | ✅ vert | 2026-09-17 | `feat(family): G4.2 family head search & assign members` | Search souls for family + addSoulToFamily (already in FamilyOSService) |
 | G4.3 | ✅ vert | 2026-09-17 | `feat(pastorate): G4.3 pastorate transfers & appointments` | Migration V161 + PastorateAppointment/Transfer entities + PastorateService/Controller |
-| G4.4 | 🔵 partiel | 2026-09-17 | `feat(core): living roles - permission resolver + real-time propagation (partial)` | Migration V163 (permission_version table) + PermissionResolver + RealTimePermissionService + OutboxConsumer integration (partially implemented - needs RoleAssignment/SpaceMembership integration) |
+| G4.4 | ✅ vert | 2026-09-17 | `feat(family): G4.4 living roles - PermissionResolver + PermissionVersion + RealTimePermissionService + MeController endpoint` | PeopleService.notifyPermissionChange() + MeController GET /api/v1/me/permissions + Migration V162 (permission_version table) + OutboxConsumer wired for PermissionsChanged → WS push < 5s |
 | G4.5 | ⬜ | | | Import / Export espaces, configs & données |
 | G4.6 | ⬜ | | | Migration données legacy (engine, dry-run, toggle tenant) |
 | G4.7 | ⬜ | | | Verrou G4 (Gate) |
