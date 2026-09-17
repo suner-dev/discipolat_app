@@ -50,10 +50,10 @@
 | G3.10 | ✅ | 2026-09-14 | | Media/Sermon Engine (sermon + streaming) |
 | G3.11 | ✅ vert | 2026-09-17 | `feat(health): santé/infirmerie complete REST API` | Migration V141 + PatientRecord/MedicalConsultation/Prescription/Pharmacy/HealthCampaign entities + HealthService + HealthController (CRUD complet patients, consultations, prescriptions, pharmacie, campagnes) |
 | G3.12 | ✅ vert | 2026-09-17 | `chore: Gate G3 domain engines green` | All G3 checklist items complete: G3.1 people, G3.2 memberships/roles, G3.3 events (legacy migration), G3.4 dress code, G3.5 assets, G3.6 finance, G3.7 discipleship, G3.8 pastoral, G3.9 prayer, G3.10 media, G3.11 health. Security Matrix green. |
-| G4.1 | ⬜ | | | Family OS : suivi des âmes dans l'espace FAMILY |
-| G4.2 | ⬜ | | | Chef de famille : rechercher & ajouter membres (église/campus) |
-| G4.3 | ⬜ | | | Pastorate : transferts & nominations de pasteurs |
-| G4.4 | ⬜ | | | Rôles vivants : interface change auto (web + mobile < 5s) |
+| G4.1 | ✅ vert | 2026-09-17 | `feat(family): G4.1 Family OS - visits, receptions, meetings, unified activities + API` | Migration V160 + FamilyVisit/Reception/Meeting/Activity entities + FamilyOSService/Controller |
+| G4.2 | ✅ vert | 2026-09-17 | `feat(family): G4.2 family head search & assign members` | Search souls for family + addSoulToFamily (already in FamilyOSService) |
+| G4.3 | ✅ vert | 2026-09-17 | `feat(pastorate): G4.3 pastorate transfers & appointments` | Migration V161 + PastorateAppointment/Transfer entities + PastorateService/Controller |
+| G4.4 | 🔵 partiel | 2026-09-17 | `feat(core): living roles - permission resolver + real-time propagation (partial)` | Migration V163 (permission_version table) + PermissionResolver + RealTimePermissionService + OutboxConsumer integration (partially implemented - needs RoleAssignment/SpaceMembership integration) |
 | G4.5 | ⬜ | | | Import / Export espaces, configs & données |
 | G4.6 | ⬜ | | | Migration données legacy (engine, dry-run, toggle tenant) |
 | G4.7 | ⬜ | | | Verrou G4 (Gate) |

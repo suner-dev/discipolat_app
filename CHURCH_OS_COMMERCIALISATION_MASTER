@@ -101,10 +101,10 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G3.10 | ⬜ En attente | — | — |
 | G3.11 | ✅ Vert | `feat(health): santé/infirmerie complete REST API` | 2026-09-17 | Migration V141 + PatientRecord/MedicalConsultation/Prescription/Pharmacy/HealthCampaign entities + HealthService + HealthController (CRUD complet patients, consultations, prescriptions, pharmacie, campagnes) |
 | G3.12 | ✅ Vert | `chore: Gate G3 domain engines green` | 2026-09-17 |
-| G4.1 | ⬜ En attente | — | — |
-| G4.2 | ⬜ En attente | — | — |
-| G4.3 | ⬜ En attente | — | — |
-| G4.4 | ⬜ En attente | — | — |
+| G4.1 | ✅ Vert | `feat(family): G4.1 Family OS - visits, receptions, meetings, unified activities + API` | 2026-09-17 |
+| G4.2 | ✅ Vert | `feat(family): G4.2 family head search & assign members` | 2026-09-17 |
+| G4.3 | ✅ Vert | `feat(pastorate): G4.3 pastorate transfers & appointments` | 2026-09-17 |
+| G4.4 | 🔵 partiel | — | — |
 | G4.5 | ⬜ En attente | — | — |
 | G4.6 | ⬜ En attente | — | — |
 | G4.7 | ⬜ En attente | — | — |
@@ -181,11 +181,11 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 - **G3.12** : Verrou G3 (Gate) — **Complété** : All G3 checklist items complete
 
 #### PORTE G4 — FAMILY OS & RÔLES VIVANTS (exigences utilisateur)
-- **G4.1** : Family OS : suivi des âmes dans l'espace FAMILY
-- **G4.2** : Chef de famille : rechercher & ajouter des membres (église/campus)
+- **G4.1** : Family OS : suivi des âmes dans l'espace FAMILY (visites, réceptions, réunions, comptes-rendus)
+- **G4.2** : Chef de famille : rechercher & ajouter membres (église/campus)
 - **G4.3** : Pastorate : transferts & nominations de pasteurs (historique mandats)
-- **G4.4** : Rôles vivants : l'interface change automatiquement (web + mobile < 5s)
-- **G4.5** : Import / Export des espaces, configurations & données
+- **G4.4** : Rôles vivants : interface change auto (web + mobile < 5s) - **partiel**
+- **G4.5** : Import / Export espaces, configs & données
 - **G4.6** : Migration des données legacy (engine, dry-run & toggle tenant)
 - **G4.7** : Verrou G4 (Gate)
 
