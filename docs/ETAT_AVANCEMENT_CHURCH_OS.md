@@ -54,6 +54,7 @@
 | G4.2 | ✅ vert | 2026-09-17 | `feat(family): G4.2 family head search & assign members` | Search souls for family + addSoulToFamily (already in FamilyOSService) |
 | G4.3 | ✅ vert | 2026-09-17 | `feat(pastorate): G4.3 pastorate transfers & appointments` | Migration V161 + PastorateAppointment/Transfer entities + PastorateService/Controller |
 | G4.4 | ✅ vert | 2026-09-17 | `feat(family): G4.4 living roles - PermissionResolver + PermissionVersion + RealTimePermissionService + MeController endpoint` | PeopleService.notifyPermissionChange() + MeController GET /api/v1/me/permissions + Migration V162 (permission_version table) + OutboxConsumer wired for PermissionsChanged → WS push < 5s |
+| G4.5 | ✅ vert | 2026-09-18 | `feat(import): G4.5 canonical space_export_v1 export/import + mobile read-only reader` | Backend: SpaceExportService/Controller (GET /spaces/{id}/export, GET /spaces/export-all) + SpaceImportService/Controller (POST /spaces/import transactionnel + rapport de conflits). Web: ImportDataPage.tsx. Mobile: SpaceConfigTransferScreen (lecture seule v1.0, écriture justifiée en TODO v1.1) + routes + drawer + 3 widget tests. |
 | G4.5 | ⬜ | | | Import / Export espaces, configs & données |
 | G4.6 | ⬜ | | | Migration données legacy (engine, dry-run, toggle tenant) |
 | G4.7 | ⬜ | | | Verrou G4 (Gate) |
