@@ -8,10 +8,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "event_assignment", indexes = {
-    @Index(name = "idx_ea_tenant", columnList = "tenant_id"),
-    @Index(name = "idx_ea_person", columnList = "person_id"),
-    @Index(name = "idx_ea_event", columnList = "event_id"),
-    @Index(name = "idx_ea_status", columnList = "status")
+    @Index(name = "idx_evasg_tenant", columnList = "tenant_id"),
+    @Index(name = "idx_evasg_person", columnList = "person_id"),
+    @Index(name = "idx_evasg_event", columnList = "event_id"),
+    @Index(name = "idx_evasg_status", columnList = "status")
 })
 @Getter
 @Setter

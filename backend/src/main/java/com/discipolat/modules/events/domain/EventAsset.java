@@ -8,8 +8,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "event_asset", indexes = {
-    @Index(name = "idx_ea_church_event", columnList = "church_event_id"),
-    @Index(name = "idx_ea_asset", columnList = "asset_id")
+    @Index(name = "idx_evasset_church_event", columnList = "church_event_id"),
+    @Index(name = "idx_evasset_asset", columnList = "asset_id")
 })
 @Getter
 @Setter

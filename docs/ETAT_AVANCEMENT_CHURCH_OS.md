@@ -117,6 +117,7 @@
 | Frontend | `cd frontend && npm run test` | ✅ 41 fichiers / 311 tests pass | 2026-09-16 |
 | Mobile | `cd mobile && flutter analyze --no-pub` | ✅ 0 erreur, 0 warning (124 `info` de dépréciation restants) | 2026-09-16 |
 | Mobile | `cd mobile && flutter test --no-pub` | ✅ 331/331 tests pass | 2026-09-16 |
+| Backend | `cd backend && mvn test -Dspring.profiles.active=test` | ✅ BUILD SUCCESS — **1161 tests, 0 failure, 0 error, 13 skip** (rejoué après l'assainissement des doublons G2.4/G2.5 et l'inventaire G4.5) | 2026-09-18 |
 
 > **Note G0.4/G0.5/G0.6 (mise à jour 2026-09-16) :** les 3 couches sont vertes.
 > Les lignes précédentes de cette fiche annonçaient « Frontend 311/311 » et un backend
@@ -201,3 +202,28 @@ le nettoyage mécanique de 963 sites impose une passe par lots + non-régression
 | `docs/architecture/current-state.md` | ✅ | 2026-09-14 |
 | `docs/architecture/gap-analysis.md` | ✅ | 2026-09-14 |
 | `docs/architecture/target-architecture.md` | ✅ | 2026-09-14 |
+---
+
+## Assainissement architectural avant G4.5 (2026-09-18)
+
+Trois familles de **doublons JPA/Spring morts ou conflictuels** bloquaient le démarrage du
+contexte Spring (`ConflictingBeanDefinitionException` / mappings dupliqués) et ont été retirées :
+
+| Doublon supprimé | Canonique conservé | Preuve du doublon |
+|---|---|---|
+| `modules/config/api/CustomFieldController.java` | `modules/customfields/api/CustomFieldController.java` (`/api/v1/custom-fields`) | Deux `@RestController` sur la même route + deux services `CustomFieldService` |
+| `modules/config/service/CustomFieldService.java`, `domain/CustomFieldDefinition.java`, `domain/CustomFieldValue.java`, `repository/CustomField*Repository.java` | `modules/customfields/domain/*` | Second mapping `@Entity` sur `custom_field_definitions` / `custom_field_values` |
+| `modules/config/api/CustomFieldController.java` (v2 de la classe), `modules/config/domain/Workflow{Definition,Instance,Step,Task,Transition,TransitionId}.java`, `modules/config/repository/Workflow*Repository.java`, `modules/config/service/WorkflowService.java` | `modules/workflow/domain/*` (`workflow_definition`, `workflow_instance`, `workflow_step`, `workflow_task`, `workflow_transition`) | Second mapping complet des tables `workflow_*` |
+| `modules/familyMeeting/**` (Controller, Service, entité, repository) | `modules/families/domain/FamilyMeeting.java` (`families.service.FamilyOSService`) | Second mapping `@Entity` sur `family_meeting` (créé en V128, étendu en V160) |
+
+**Après suppression :** `mvn compile -DskipTests` → BUILD SUCCESS · `mvn test -Dspring.profiles.active=test`
+→ **1161 tests, 0 échec**. Le module `config` ne contient plus que le moteur de templates d'espace
+(`SpaceTemplate*`), ce qui est son périmètre canonique.
+
+### Inventaire G4.5 — Import / Export existants
+
+| Couche | Existant | Manquant pour la DoD G4.5 |
+|---|---|---|
+| Backend | `modules/imports/*` (CSV SOULS/FAMILIES/USERS, validation + rapport ligne) · `modules/exports/*` (ExportType, `ExportServiceImpl` CSV/Excel/PDF/JSON/ZIP) | **Format canonique `space_export_v1`** (config + données d'un espace) · **export tenant complet super-admin** · **import JSON canonique idempotent** (UUID clients préservés, conflits signalés) · round-trip |
+| Frontend | `pages/ImportDataPage.tsx` (CSV) · `hooks/useExportReport.ts` · `pages/ComplianceExportsPage.tsx` | Boutons **Exporter/Importer un espace** · centre d'import acceptant le format canonique |
+| Mobile | `features/import/ImportDataScreen.dart` · `presentation/screens/imports/imports_screen.dart` | Lecture seule du format canonique (v1.0) + tentative d'import config (v1.1 justifiée en TODO si non faisable) |

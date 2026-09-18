@@ -13,9 +13,9 @@ import java.util.UUID;
 @Repository
 public interface MembershipRepository extends JpaRepository<Membership, UUID> {
 
-    List<Membership> findByTenantIdAndDeletedAtIsNull(UUID tenantId);
+    List<Membership> findByTenantId(UUID tenantId);
 
-    Optional<Membership> findByPersonIdAndDeletedAtIsNull(UUID personId);
+    Optional<Membership> findByPersonId(UUID personId);
 
     List<Membership> findByTenantIdAndMembershipStatus(UUID tenantId, String status);
 

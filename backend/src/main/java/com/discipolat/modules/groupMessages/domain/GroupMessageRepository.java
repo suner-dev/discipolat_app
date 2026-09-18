@@ -8,9 +8,9 @@ import java.util.UUID;
 
 @Repository
 public interface GroupMessageRepository extends JpaRepository<GroupMessage, UUID> {
-    List<GroupMessage> findByTenantIdAndGroupIdAndIsDeletedFalseOrderByCreatedAtAsc(UUID tenantId, UUID groupId);
-    long countByTenantIdAndGroupIdAndIsDeletedFalse(UUID tenantId, UUID groupId);
+    List<GroupMessage> findByTenantIdAndGroupIdAndIsDeletedIsFalseOrderByCreatedAtAsc(UUID tenantId, UUID groupId);
+    long countByTenantIdAndGroupIdAndIsDeletedIsFalse(UUID tenantId, UUID groupId);
 
-    java.util.List<GroupMessage> findByTenantIdAndGroupIdAndContentContainingIgnoreCaseAndIsDeletedFalseOrderByCreatedAtDesc(
+    java.util.List<GroupMessage> findByTenantIdAndGroupIdAndContentContainingIgnoreCaseAndIsDeletedIsFalseOrderByCreatedAtDesc(
             UUID tenantId, UUID groupId, String content);
 }

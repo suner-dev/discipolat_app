@@ -198,7 +198,7 @@ public class FamilyOSService {
     @Transactional(readOnly = true)
     public Page<FamilyActivity> getFamilyActivities(UUID tenantId, UUID familyId, int page, int size) {
         Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by("activityDate").descending());
-        return familyActivityRepository.findByTenantIdAndDeletedFalseOrderByActivityDateDesc(tenantId, pageable);
+        return familyActivityRepository.findByTenantIdOrderByActivityDateDesc(tenantId, pageable);
     }
 
     @Transactional(readOnly = true)

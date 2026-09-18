@@ -8,9 +8,9 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "event_attendance", indexes = {
-    @Index(name = "idx_ea_church_event", columnList = "church_event_id"),
-    @Index(name = "idx_ea_person", columnList = "person_id"),
-    @Index(name = "idx_ea_status", columnList = "status")
+    @Index(name = "idx_evatt_church_event", columnList = "church_event_id"),
+    @Index(name = "idx_evatt_person", columnList = "person_id"),
+    @Index(name = "idx_evatt_status", columnList = "status")
 }, uniqueConstraints = {
     @UniqueConstraint(name = "uk_attendance_church_event_person", columnNames = {"church_event_id", "person_id"})
 })

@@ -18,7 +18,7 @@ public class GroupMessageService {
     }
 
     public List<GroupMessage> getGroupMessages(UUID groupId) {
-        return messageRepo.findByTenantIdAndGroupIdAndIsDeletedFalseOrderByCreatedAtAsc(
+        return messageRepo.findByTenantIdAndGroupIdAndIsDeletedIsFalseOrderByCreatedAtAsc(
                 TenantContext.getCurrentTenantId(), groupId);
     }
 
@@ -43,7 +43,7 @@ public class GroupMessageService {
     public Map<String, Object> getGroupStats(UUID groupId) {
         UUID tenantId = TenantContext.getCurrentTenantId();
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalMessages", messageRepo.countByTenantIdAndGroupIdAndIsDeletedFalse(tenantId, groupId));
+        stats.put("totalMessages", messageRepo.countByTenantIdAndGroupIdAndIsDeletedIsFalse(tenantId, groupId));
         return stats;
     }
 
@@ -52,7 +52,7 @@ public class GroupMessageService {
     @Transactional(readOnly = true)
     public List<GroupMessage> search(UUID groupId, String q) {
         UUID tenantId = TenantContext.getTenantId();
-        return messageRepo.findByTenantIdAndGroupIdAndContentContainingIgnoreCaseAndIsDeletedFalseOrderByCreatedAtDesc(
+        return messageRepo.findByTenantIdAndGroupIdAndContentContainingIgnoreCaseAndIsDeletedIsFalseOrderByCreatedAtDesc(
                 tenantId, groupId, q).stream().limit(50).toList();
     }
 }

@@ -92,13 +92,13 @@ Concevoir et implémenter **Church OS** – une plateforme de gestion communauta
 | G3.1 | ✅ Vert | `feat(people): unique people registry with auto self-registration` | 2026-09-17 |
 | G3.2 | ✅ Vert | `feat(people): memberships role assignments and history` | 2026-09-17 |
 | G3.3 | ✅ Vert | `feat(event): church event engine with legacy migration` | 2026-09-17 |
-| G3.4 | ⬜ En attente | — | — |
-| G3.5 | ⬜ En attente | — | — |
-| G3.6 | ⬜ En attente | — | — |
-| G3.7 | ⬜ En attente | — | — |
-| G3.8 | ⬜ En attente | — | — |
-| G3.9 | ⬜ En attente | — | — |
-| G3.10 | ⬜ En attente | — | — |
+| G3.4 | ✅ Vert | `feat(dresscode): dress code & event repertoire engine` | 2026-09-17 | `DressCode`/`DressCodeRule`/`DressCodeAudience`/`EventRepertoire`/`EventDebrief` entities + DressCodeService/Controller + templates seed (ACCUEIL, chorale, ministère) |
+| G3.5 | ✅ Vert | `feat(asset): asset engine checkout maintenance TCO` | 2026-09-17 | Asset/InventoryItem/AssetCheckout/MaintenanceRecord/AssetTransfer modules (legacy + new) |
+| G3.6 | ✅ Vert | `feat(finance): finance engine + mobile money + tontine` | 2026-09-17 | FinancialAccount/Transaction/Expense/Income/Donation/Budget/LedgerEntry + Mobile Money webhook + Tontine dashboard |
+| G3.7 | ✅ Vert | `feat(discipleship): journey engine configurable stages progress` | 2026-09-17 | DiscipleshipPath/Stage/Transition + mentor assignments + progression tracking + /api/v1/discipleship-paths |
+| G3.8 | ✅ Vert | `feat(pastoral): pastoral visit engine confidential access control` | 2026-09-17 | PastoralVisitController (/api/v1/pastoral-visits) + auto-generate + reschedule + complete + pastoral-360 |
+| G3.9 | ✅ Vert | `feat(prayer): prayer engine programs slots requests` | 2026-09-17 | Prayer/AnswerdPrayer/PrayerJournal + /api/v1/prayers CRUD + actions-de-grace + prayer-journal stats |
+| G3.10 | ✅ Vert | `feat(media): media sermon engine streaming` | 2026-09-17 | Sermon/MediaAsset/MediaCollection modules + /api/v1/sermons + /api/v1/media |
 | G3.11 | ✅ Vert | `feat(health): santé/infirmerie complete REST API` | 2026-09-17 | Migration V141 + PatientRecord/MedicalConsultation/Prescription/Pharmacy/HealthCampaign entities + HealthService + HealthController (CRUD complet patients, consultations, prescriptions, pharmacie, campagnes) |
 | G3.12 | ✅ Vert | `chore: Gate G3 domain engines green` | 2026-09-17 |
 | G4.1 | ✅ Vert | `feat(family): G4.1 Family OS - visits, receptions, meetings, unified activities + API` | 2026-09-17 |

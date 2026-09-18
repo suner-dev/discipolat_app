@@ -123,7 +123,7 @@ public class PeopleService {
         Person duplicate = getPerson(tenantId, duplicateId);
 
         // Transférer memberships
-        membershipRepository.findByPersonIdAndDeletedAtIsNull(duplicateId).ifPresent(m -> {
+        membershipRepository.findByPersonId(duplicateId).ifPresent(m -> {
             m.setPersonId(masterId);
             membershipRepository.save(m);
         });

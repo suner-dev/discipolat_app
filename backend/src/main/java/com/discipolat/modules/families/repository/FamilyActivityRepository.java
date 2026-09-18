@@ -14,11 +14,11 @@ import java.util.UUID;
 @Repository
 public interface FamilyActivityRepository extends JpaRepository<FamilyActivity, UUID> {
 
-    List<FamilyActivity> findByFamilyIdAndDeletedFalseOrderByActivityDateDesc(UUID familyId);
+    List<FamilyActivity> findByFamilyIdOrderByActivityDateDesc(UUID familyId);
 
     List<FamilyActivity> findByFamilyIdAndActivityDateBetween(UUID familyId, java.time.LocalDate from, java.time.LocalDate to);
 
     Optional<FamilyActivity> findByReferenceId(UUID referenceId);
 
-    Page<FamilyActivity> findByTenantIdAndDeletedFalseOrderByActivityDateDesc(UUID tenantId, Pageable pageable);
+    Page<FamilyActivity> findByTenantIdOrderByActivityDateDesc(UUID tenantId, Pageable pageable);
 }
