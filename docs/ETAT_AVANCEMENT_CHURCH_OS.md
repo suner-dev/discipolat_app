@@ -69,7 +69,7 @@
 | G5.9 | ⬜ | | | Portail basse connexion (WhatsApp / USSD) |
 | G5.10 | ⬜ | | | Verrou G5 (Gate) |
 | G6.1 | ✅ vert | 2026-09-18 | `feat(core): tenant-aware search, export audit, soft delete with business history (§60-62)` | PostgreSQL full-text search with pg_trgm (tsvector + trigram), autocomplete API, fallback for H2 tests; ExportService with export_audit table logging (who/what/when); SoftDeleteService with soft_delete_audit + business_history integration, physical delete restricted to super admins. All 3 layers green (1172 backend tests, 311 frontend tests, 334 mobile tests). |
-| G6.2 | ⬜ | | | Modules IA / Academy / Chat / Payments / Analytics (§63-68) |
+| G6.2 | ✅ vert | 2026-09-18 | `feat(ai): Discipolat AI flagship with per-plan credits tracking, usage audit & admin dashboard (§63-68)` | AiUsage entity + repository for tracking AI credits per request; AiCreditsService with consumeCredits/recordUsage enforcing monthly quotas from SaasPlan; AiAssistantService integrated with credits (chat=1, analyze=2); AiCreditsController for admin dashboard (/credits/dashboard, /credits/my-usage, /credits/tenant-usage); all providers (Ollama, Groq, Gemini, Mistral, HuggingFace) with fallback; 1179 backend tests, 311 frontend tests pass. |
 | G6.3 | ⬜ | | | Redis tenant-aware (§38) |
 | G6.4 | ⬜ | | | Tests non-régression automatisés (§70) |
 | G6.5 | ⬜ | | | Tests de performance (§71) |
