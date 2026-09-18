@@ -246,9 +246,7 @@ class AuthState {
 
   /// Check if the current user has access to the current tenant/org
   bool hasCurrentTenantAccess() {
-    return _orgId != null &&
-        _orgId!.isNotEmpty &&
-        TenantConfig.isMultiTenantActive;
+    return _orgId != null && _orgId!.isNotEmpty && TenantConfig.isMultiTenantActive;
   }
 
   void setAuthenticated(bool value, {Map<String, dynamic>? userData}) {
@@ -317,8 +315,7 @@ String roleHome(String role) {
     case 'RESPONSABLE':
       return '/dashboard/responsable';
     case 'CHEF_DE_FAMILLE':
-      return '/dashboard/chef-famille';
-    case 'MEMBRE':
+      return '/dashboard/chef-famille';      case 'MEMBRE':
       return '/dashboard/membre';
     default:
       return '/dashboard'; // ADMIN, PASTEUR
@@ -328,62 +325,20 @@ String roleHome(String role) {
 /// List of roles allowed per route.
 /// null = all authenticated users, [] = no one (public only).
 Map<String, List<String>> _routeRoles = {
-  '/dashboard': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/dashboard': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/dashboard/membre': ['ADMIN', 'PASTEUR', 'MEMBRE'],
   '/dashboard/pasteur': ['ADMIN', 'PASTEUR'],
   '/dashboard/chef-famille': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE'],
   '/dashboard/responsable': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/souls': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-  '/souls/new': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/families': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/families/new': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
+  '/souls/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/families': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/families/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/reports/maker': ['ADMIN', 'PASTEUR', 'FAISEUR'],
-  '/reports/family': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/reports/pdf/consolidated': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE'
-  ],
-  '/reports/pdf/maker': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
+  '/reports/family': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/reports/pdf/consolidated': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  '/reports/pdf/maker': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/prayers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/events': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
@@ -394,37 +349,10 @@ Map<String, List<String>> _routeRoles = {
   '/benchmark': ['ADMIN', 'PASTEUR'],
   '/inventory': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/workflows': ['ADMIN', 'PASTEUR'],
-  '/video-conference': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/soul-map': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/profile': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/notifications': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/video-conference': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/soul-map': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/profile': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -432,240 +360,49 @@ Map<String, List<String>> _routeRoles = {
   '/departments/:id/stats': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/:id/members/:memberId': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/:id/tools': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/evaluations': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
+  '/evaluations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/crm-faiseur': ['ADMIN', 'PASTEUR', 'FAISEUR'],
-  '/souls/:id/pastoral-360': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
+  '/souls/:id/pastoral-360': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/search': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-  '/users': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/users': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/users/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/permissions': ['ADMIN'],
   '/discipline': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/prayers/actions-de-grace': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/prayers/actions-de-grace': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/dashboard/membre/activities': ['ADMIN', 'PASTEUR', 'MEMBRE'],
   '/departments/:id/presences': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/departments/qr-scan': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE'
-  ],
-  '/souls/:id/qr': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/documents': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
+  '/departments/qr-scan': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  '/souls/:id/qr': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/documents': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/audit': ['ADMIN', 'PASTEUR'],
-  '/appointments': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/appointments': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/visits': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-  '/evangelism': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/objectives': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/badges': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/quest': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/giving': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/ussd': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/tontines': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/voice-reports': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/voice-assistant': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/voice-notifications': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/ai-assistant': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/ai-predictions': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/prophetic-journal': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
+  '/evangelism': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/objectives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/badges': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/quest': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/giving': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/ussd': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/tontines': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/voice-reports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/voice-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/voice-notifications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/ai-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/ai-predictions': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/prophetic-journal': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/compliance': ['ADMIN', 'PASTEUR'],
   '/whatsapp-reminders': ['ADMIN', 'PASTEUR'],
-  '/discipleship-path': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/weekly-challenges': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/discipleship-path': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/weekly-challenges': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/team-gantt': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/face-checkin': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/trainings': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/communications': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/messages': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/parallel-followups': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
+  '/face-checkin': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/trainings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/communications': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/messages': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/parallel-followups': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/map': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/members/requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
-  '/transfers': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/transfers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/admin': ['ADMIN', 'PASTEUR'],
   '/finances': ['ADMIN', 'PASTEUR'],
   '/admin/modules': ['ADMIN'],
@@ -678,185 +415,39 @@ Map<String, List<String>> _routeRoles = {
   '/admin/tenants': ['ADMIN'],
   '/admin/payments': ['ADMIN', 'PASTEUR'],
   '/admin/webhook-logs': ['ADMIN', 'PASTEUR'],
-  '/security-settings': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/onboarding': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/health-observatory': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/security-settings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/onboarding': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/health-observatory': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/digital-twin': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/calendar': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/community': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/leave-requests': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/marketplace': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/calendar': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/community': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/leave-requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/marketplace': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/streaming': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/surveys': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/testimonials': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/tickets': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/conversation/:conversationId': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/conversation/enhanced/:conversationId': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/dashboard/main': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/surveys': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/testimonials': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/tickets': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/conversation/:conversationId': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/conversation/enhanced/:conversationId': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/dashboard/main': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/kpi-drilldown': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/ai-mentoring/detail': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE'],
   '/predictions-ml': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/scheduled-announcements': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/mobile-security': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/onboarding-ar': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/forms': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/mobile-security': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/onboarding-ar': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/forms': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/sermon-translations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'MEMBRE'],
-  '/spiritual-journal': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/spiritual-journal': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/admin-requests': ['ADMIN'],
-  '/dev-plans': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/dev-plans': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/maker-tracking': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/growth-projection': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/church-comparison': ['ADMIN', 'PASTEUR'],
-  '/volunteers': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/skill-matching': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/volunteers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/skill-matching': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/executive-insights': ['ADMIN', 'PASTEUR'],
-  '/ai-visit-notes': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
+  '/ai-visit-notes': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/predictions': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/intelligence-center': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/engagement-analytics': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -866,174 +457,35 @@ Map<String, List<String>> _routeRoles = {
   '/family-cohesion': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE'],
   '/family-resources': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE'],
   '/kpi-narrative': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/bible-reading': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/prayer-journal': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/spiritual-challenges': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/reverse-mentoring': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/personal-objectives': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/church-directory': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/bible-reading': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/prayer-journal': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/spiritual-challenges': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/reverse-mentoring': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/personal-objectives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/church-directory': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/event-checklist': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/skills-matrix': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/group-messages': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/skills-matrix': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/group-messages': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/broadcast': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/network': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/network': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/load-prediction': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/neighborhood-health': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/sabbath-dashboard': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/my-team-family': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/sabbath-dashboard': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/my-team-family': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/follow-up-requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/data-migration': ['ADMIN'],
   '/usage-analytics': ['ADMIN', 'PASTEUR'],
-  '/encouragements': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/encouragements': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/moderation': ['ADMIN'],
   '/cercle-faiseurs': ['ADMIN', 'PASTEUR', 'FAISEUR'],
-  '/dress-codes': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/passport': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/spiritual-journey': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/rewards': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/souls/:id': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/transfers/new': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/transfers/:id': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/users/:id': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/dress-codes': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/passport': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/spiritual-journey': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/rewards': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/souls/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/transfers/new': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/transfers/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/users/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments/:id/report': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   // Nouveaux modules
   '/emergency-aid': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -1043,7 +495,6 @@ Map<String, List<String>> _routeRoles = {
   '/ai-predictions/risks': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/team-tasks': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
   '/import-data': ['ADMIN', 'PASTEUR'],
-  '/space-config-transfer': ['ADMIN', 'PASTEUR'],
   '/member-competences': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
   '/qr-checkin': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'],
   '/network/stats': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
@@ -1060,114 +511,21 @@ Map<String, List<String>> _routeRoles = {
   '/user-roles': ['ADMIN'],
   '/compliance-exports': ['ADMIN'],
   // SAAS multi-tenant — routes platform & tenant admin
-  '/tenant-selection': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_SUPER_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/tenant/modules': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/tenant/roles': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/tenant/users': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/tenant/organizations': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/tenant/settings': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/tenant/branding': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/discipleship-paths': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/tenant-selection': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_SUPER_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/tenant/modules': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/tenant/roles': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/tenant/users': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/space-config-transfer': ['ADMIN', 'PASTEUR'],
+  '/tenant/organizations': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/tenant/settings': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/tenant/branding': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
+  '/discipleship-paths': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/visit-notes/verify': ['ADMIN', 'PASTEUR', 'FAISEUR'],
-  '/encouragements/detail': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/referrals/status': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR'
-  ],
-  '/spiritual-challenges/detail': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/conversations': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
-  '/ai-chat': [
-    'ADMIN',
-    'PASTEUR',
-    'RESPONSABLE',
-    'CHEF_DE_FAMILLE',
-    'FAISEUR',
-    'MEMBRE'
-  ],
+  '/encouragements/detail': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/referrals/status': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/spiritual-challenges/detail': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/conversations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/ai-chat': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
 };
 
 final appRouter = GoRouter(
@@ -1202,8 +560,7 @@ final appRouter = GoRouter(
     }
 
     // If authenticated and on login/onboarding page → redirect to dashboard
-    if (auth.isAuthenticated &&
-        (isLoginRoute || state.matchedLocation == onboardingRoute)) {
+    if (auth.isAuthenticated && (isLoginRoute || state.matchedLocation == onboardingRoute)) {
       return '/dashboard';
     }
 
@@ -1218,8 +575,7 @@ final appRouter = GoRouter(
       //    repli sur le premier segment (ex. /souls/:id/pastoral-360).
       final segments = state.matchedLocation.split('/');
       final basePath = '/${segments.length > 1 ? segments[1] : ''}';
-      final allowedRoles =
-          _routeRoles[state.matchedLocation] ?? _routeRoles[basePath];
+      final allowedRoles = _routeRoles[state.matchedLocation] ?? _routeRoles[basePath];
       if (allowedRoles != null && !auth.hasActiveRole(allowedRoles)) {
         // L'Admin actif dispose des capacités du Pasteur (super-utilisateurs
         // qui partagent la vue complète de l'application).
@@ -1234,13 +590,8 @@ final appRouter = GoRouter(
       if (!auth.hasActiveRole(['ADMIN', 'PASTEUR'])) {
         final home = roleHome(role);
         final location = state.matchedLocation;
-        final otherHomes = [
-          '/dashboard/responsable',
-          '/dashboard/chef-famille',
-          '/crm-faiseur'
-        ];
-        if (location == '/dashboard' ||
-            (otherHomes.contains(location) && location != home)) {
+        final otherHomes = ['/dashboard/responsable', '/dashboard/chef-famille', '/crm-faiseur'];
+        if (location == '/dashboard' || (otherHomes.contains(location) && location != home)) {
           return home;
         }
       }
@@ -1340,14 +691,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/reports/pdf/consolidated',
       name: 'report-pdf-consolidated',
-      builder: (context, state) =>
-          const ReportPdfViewerScreen(reportType: 'consolidated'),
+      builder: (context, state) => const ReportPdfViewerScreen(reportType: 'consolidated'),
     ),
     GoRoute(
       path: '/reports/pdf/maker',
       name: 'report-pdf-maker',
-      builder: (context, state) =>
-          const ReportPdfViewerScreen(reportType: 'maker'),
+      builder: (context, state) => const ReportPdfViewerScreen(reportType: 'maker'),
     ),
     GoRoute(
       path: '/families',
@@ -1787,217 +1136,61 @@ final appRouter = GoRouter(
       name: 'skill-matching',
       builder: (context, state) => const SkillMatchingScreen(),
     ),
-    GoRoute(
-        path: '/executive-insights',
-        name: 'executive-insights',
-        builder: (ctx, s) => const ExecutiveInsightsScreen()),
-    GoRoute(
-        path: '/ai-visit-notes',
-        name: 'ai-visit-notes',
-        builder: (ctx, s) => const AiVisitNotesScreen()),
-    GoRoute(
-        path: '/predictions',
-        name: 'predictions',
-        builder: (ctx, s) => const PredictionsScreen()),
-    GoRoute(
-        path: '/health-observatory',
-        name: 'health-observatory',
-        builder: (ctx, s) => const HealthObservatoryScreen()),
-    GoRoute(
-        path: '/intelligence-center',
-        name: 'intelligence-center',
-        builder: (ctx, s) => const IntelligenceCenterScreen()),
-    GoRoute(
-        path: '/digital-twin',
-        name: 'digital-twin',
-        builder: (ctx, s) => const DigitalTwinScreen()),
-    GoRoute(
-        path: '/engagement-analytics',
-        name: 'engagement-analytics',
-        builder: (ctx, s) => const EngagementAnalyticsScreen()),
-    GoRoute(
-        path: '/ai-mentoring',
-        name: 'ai-mentoring',
-        builder: (ctx, s) => const MentoratAiScreen()),
-    GoRoute(
-        path: '/succession',
-        name: 'succession',
-        builder: (ctx, s) => const SuccessionScreen()),
-    GoRoute(
-        path: '/family-meeting',
-        name: 'family-meeting',
-        builder: (ctx, s) => const FamilyMeetingScreen()),
-    GoRoute(
-        path: '/family-cohesion',
-        name: 'family-cohesion',
-        builder: (ctx, s) => const FamilyCohesionScreen()),
-    GoRoute(
-        path: '/family-resources',
-        name: 'family-resources',
-        builder: (ctx, s) => const FamilyResourcesScreen()),
-    GoRoute(
-        path: '/kpi-narrative',
-        name: 'kpi-narrative',
-        builder: (ctx, s) => const KpiNarrativeScreen()),
-    GoRoute(
-        path: '/bible-reading',
-        name: 'bible-reading',
-        builder: (ctx, s) => const BibleReadingScreen()),
-    GoRoute(
-        path: '/prayer-journal',
-        name: 'prayer-journal',
-        builder: (ctx, s) => const PrayerJournalScreen()),
-    GoRoute(
-        path: '/spiritual-challenges',
-        name: 'spiritual-challenges',
-        builder: (ctx, s) => const SpiritualChallengesScreen()),
-    GoRoute(
-        path: '/reverse-mentoring',
-        name: 'reverse-mentoring',
-        builder: (ctx, s) => const ReverseMentoringScreen()),
-    GoRoute(
-        path: '/personal-objectives',
-        name: 'personal-objectives',
-        builder: (ctx, s) => const PersonalObjectivesScreen()),
-    GoRoute(
-        path: '/church-directory',
-        name: 'church-directory',
-        builder: (ctx, s) => const ChurchDirectoryScreen()),
-    GoRoute(
-        path: '/event-checklist',
-        name: 'event-checklist',
-        builder: (ctx, s) => const EventChecklistScreen()),
-    GoRoute(
-        path: '/skills-matrix',
-        name: 'skills-matrix',
-        builder: (ctx, s) => const SkillsMatrixScreen()),
-    GoRoute(
-        path: '/group-messages',
-        name: 'group-messages',
-        builder: (ctx, s) => const GroupMessagesScreen()),
-    GoRoute(
-        path: '/broadcast',
-        name: 'broadcast',
-        builder: (ctx, s) => const BroadcastScreen()),
-    GoRoute(
-        path: '/network',
-        name: 'network',
-        builder: (ctx, s) => const NetworkScreen()),
+    GoRoute(path: '/executive-insights', name: 'executive-insights', builder: (ctx, s) => const ExecutiveInsightsScreen()),
+    GoRoute(path: '/ai-visit-notes', name: 'ai-visit-notes', builder: (ctx, s) => const AiVisitNotesScreen()),
+    GoRoute(path: '/predictions', name: 'predictions', builder: (ctx, s) => const PredictionsScreen()),
+    GoRoute(path: '/health-observatory', name: 'health-observatory', builder: (ctx, s) => const HealthObservatoryScreen()),
+    GoRoute(path: '/intelligence-center', name: 'intelligence-center', builder: (ctx, s) => const IntelligenceCenterScreen()),
+    GoRoute(path: '/digital-twin', name: 'digital-twin', builder: (ctx, s) => const DigitalTwinScreen()),
+    GoRoute(path: '/engagement-analytics', name: 'engagement-analytics', builder: (ctx, s) => const EngagementAnalyticsScreen()),
+    GoRoute(path: '/ai-mentoring', name: 'ai-mentoring', builder: (ctx, s) => const MentoratAiScreen()),
+    GoRoute(path: '/succession', name: 'succession', builder: (ctx, s) => const SuccessionScreen()),
+    GoRoute(path: '/family-meeting', name: 'family-meeting', builder: (ctx, s) => const FamilyMeetingScreen()),
+    GoRoute(path: '/family-cohesion', name: 'family-cohesion', builder: (ctx, s) => const FamilyCohesionScreen()),
+    GoRoute(path: '/family-resources', name: 'family-resources', builder: (ctx, s) => const FamilyResourcesScreen()),
+    GoRoute(path: '/kpi-narrative', name: 'kpi-narrative', builder: (ctx, s) => const KpiNarrativeScreen()),
+    GoRoute(path: '/bible-reading', name: 'bible-reading', builder: (ctx, s) => const BibleReadingScreen()),
+    GoRoute(path: '/prayer-journal', name: 'prayer-journal', builder: (ctx, s) => const PrayerJournalScreen()),
+    GoRoute(path: '/spiritual-challenges', name: 'spiritual-challenges', builder: (ctx, s) => const SpiritualChallengesScreen()),
+    GoRoute(path: '/reverse-mentoring', name: 'reverse-mentoring', builder: (ctx, s) => const ReverseMentoringScreen()),
+    GoRoute(path: '/personal-objectives', name: 'personal-objectives', builder: (ctx, s) => const PersonalObjectivesScreen()),
+    GoRoute(path: '/church-directory', name: 'church-directory', builder: (ctx, s) => const ChurchDirectoryScreen()),
+    GoRoute(path: '/event-checklist', name: 'event-checklist', builder: (ctx, s) => const EventChecklistScreen()),
+    GoRoute(path: '/skills-matrix', name: 'skills-matrix', builder: (ctx, s) => const SkillsMatrixScreen()),
+    GoRoute(path: '/group-messages', name: 'group-messages', builder: (ctx, s) => const GroupMessagesScreen()),
+    GoRoute(path: '/broadcast', name: 'broadcast', builder: (ctx, s) => const BroadcastScreen()),
+    GoRoute(path: '/network', name: 'network', builder: (ctx, s) => const NetworkScreen()),
     // ===== P3 — Innovation / futuriste =====
-    GoRoute(
-        path: '/load-prediction',
-        name: 'load-prediction',
-        builder: (ctx, s) => const LoadPredictionScreen()),
-    GoRoute(
-        path: '/neighborhood-health',
-        name: 'neighborhood-health',
-        builder: (ctx, s) => const NeighborhoodHealthScreen()),
-    GoRoute(
-        path: '/sabbath-dashboard',
-        name: 'sabbath-dashboard',
-        builder: (ctx, s) => const SabbathDashboardScreen()),
-    GoRoute(
-        path: '/my-team-family',
-        name: 'my-team-family',
-        builder: (ctx, s) => const MyTeamFamilyScreen()),
-    GoRoute(
-        path: '/follow-up-requests',
-        name: 'follow-up-requests',
-        builder: (ctx, s) => const FollowUpRequestsScreen()),
+    GoRoute(path: '/load-prediction', name: 'load-prediction', builder: (ctx, s) => const LoadPredictionScreen()),
+    GoRoute(path: '/neighborhood-health', name: 'neighborhood-health', builder: (ctx, s) => const NeighborhoodHealthScreen()),
+    GoRoute(path: '/sabbath-dashboard', name: 'sabbath-dashboard', builder: (ctx, s) => const SabbathDashboardScreen()),
+    GoRoute(path: '/my-team-family', name: 'my-team-family', builder: (ctx, s) => const MyTeamFamilyScreen()),
+    GoRoute(path: '/follow-up-requests', name: 'follow-up-requests', builder: (ctx, s) => const FollowUpRequestsScreen()),
     // P1 routes
-    GoRoute(
-        path: '/discipleship-path',
-        name: 'discipleship-path',
-        builder: (ctx, s) => const DiscipleshipPathScreen()),
-    GoRoute(
-        path: '/weekly-challenges',
-        name: 'weekly-challenges',
-        builder: (ctx, s) => const WeeklyChallengesScreen()),
-    GoRoute(
-        path: '/team-gantt',
-        name: 'team-gantt',
-        builder: (ctx, s) => const TeamGanttScreen()),
+    GoRoute(path: '/discipleship-path', name: 'discipleship-path', builder: (ctx, s) => const DiscipleshipPathScreen()),
+    GoRoute(path: '/weekly-challenges', name: 'weekly-challenges', builder: (ctx, s) => const WeeklyChallengesScreen()),
+    GoRoute(path: '/team-gantt', name: 'team-gantt', builder: (ctx, s) => const TeamGanttScreen()),
     // P0 new screens
-    GoRoute(
-        path: '/voice-assistant',
-        name: 'voice-assistant',
-        builder: (ctx, s) => const VoiceAssistantScreen()),
-    GoRoute(
-        path: '/voice-notifications',
-        name: 'voice-notifications',
-        builder: (ctx, s) => const VoiceNotificationsScreen()),
-    GoRoute(
-        path: '/ai-assistant',
-        name: 'ai-assistant',
-        builder: (ctx, s) => const AiAssistantScreen()),
-    GoRoute(
-        path: '/ai-predictions',
-        name: 'ai-predictions',
-        builder: (ctx, s) => const AiPredictionsScreen()),
-    GoRoute(
-        path: '/prophetic-journal',
-        name: 'prophetic-journal',
-        builder: (ctx, s) => const PropheticJournalScreen()),
-    GoRoute(
-        path: '/compliance',
-        name: 'compliance',
-        builder: (ctx, s) => const ComplianceManagerScreen()),
-    GoRoute(
-        path: '/whatsapp-reminders',
-        name: 'whatsapp-reminders',
-        builder: (ctx, s) => const WhatsAppRemindersScreen()),
-    GoRoute(
-        path: '/data-migration',
-        name: 'data-migration',
-        builder: (ctx, s) => const DataMigrationScreen()),
-    GoRoute(
-        path: '/usage-analytics',
-        name: 'usage-analytics',
-        builder: (ctx, s) => const UsageAnalyticsScreen()),
-    GoRoute(
-        path: '/encouragements',
-        name: 'encouragements',
-        builder: (ctx, s) => const EncouragementsScreen()),
-    GoRoute(
-        path: '/moderation',
-        name: 'moderation',
-        builder: (ctx, s) => const ModerationScreen()),
-    GoRoute(
-        path: '/rewards',
-        name: 'rewards',
-        builder: (ctx, s) => const RewardsScreen()),
-    GoRoute(
-        path: '/calendar',
-        name: 'calendar',
-        builder: (ctx, s) => const CalendarIntegrationScreen()),
-    GoRoute(
-        path: '/community',
-        name: 'community',
-        builder: (ctx, s) => const CommunityScreen()),
-    GoRoute(
-        path: '/leave-requests',
-        name: 'leave-requests',
-        builder: (ctx, s) => const LeaveRequestsScreen()),
-    GoRoute(
-        path: '/marketplace',
-        name: 'marketplace',
-        builder: (ctx, s) => const MarketplaceScreen()),
-    GoRoute(
-        path: '/streaming',
-        name: 'streaming',
-        builder: (ctx, s) => const StreamingScreen()),
-    GoRoute(
-        path: '/surveys',
-        name: 'surveys',
-        builder: (ctx, s) => const SurveysScreen()),
-    GoRoute(
-        path: '/testimonials',
-        name: 'testimonials',
-        builder: (ctx, s) => const TestimonialsScreen()),
-    GoRoute(
-        path: '/tickets',
-        name: 'tickets',
-        builder: (ctx, s) => const TicketsScreen()),
+    GoRoute(path: '/voice-assistant', name: 'voice-assistant', builder: (ctx, s) => const VoiceAssistantScreen()),
+    GoRoute(path: '/voice-notifications', name: 'voice-notifications', builder: (ctx, s) => const VoiceNotificationsScreen()),
+    GoRoute(path: '/ai-assistant', name: 'ai-assistant', builder: (ctx, s) => const AiAssistantScreen()),
+    GoRoute(path: '/ai-predictions', name: 'ai-predictions', builder: (ctx, s) => const AiPredictionsScreen()),
+    GoRoute(path: '/prophetic-journal', name: 'prophetic-journal', builder: (ctx, s) => const PropheticJournalScreen()),
+    GoRoute(path: '/compliance', name: 'compliance', builder: (ctx, s) => const ComplianceManagerScreen()),
+    GoRoute(path: '/whatsapp-reminders', name: 'whatsapp-reminders', builder: (ctx, s) => const WhatsAppRemindersScreen()),
+    GoRoute(path: '/data-migration', name: 'data-migration', builder: (ctx, s) => const DataMigrationScreen()),
+    GoRoute(path: '/usage-analytics', name: 'usage-analytics', builder: (ctx, s) => const UsageAnalyticsScreen()),
+    GoRoute(path: '/encouragements', name: 'encouragements', builder: (ctx, s) => const EncouragementsScreen()),
+    GoRoute(path: '/moderation', name: 'moderation', builder: (ctx, s) => const ModerationScreen()),
+    GoRoute(path: '/rewards', name: 'rewards', builder: (ctx, s) => const RewardsScreen()),
+    GoRoute(path: '/calendar', name: 'calendar', builder: (ctx, s) => const CalendarIntegrationScreen()),
+    GoRoute(path: '/community', name: 'community', builder: (ctx, s) => const CommunityScreen()),
+    GoRoute(path: '/leave-requests', name: 'leave-requests', builder: (ctx, s) => const LeaveRequestsScreen()),
+    GoRoute(path: '/marketplace', name: 'marketplace', builder: (ctx, s) => const MarketplaceScreen()),
+    GoRoute(path: '/streaming', name: 'streaming', builder: (ctx, s) => const StreamingScreen()),
+    GoRoute(path: '/surveys', name: 'surveys', builder: (ctx, s) => const SurveysScreen()),
+    GoRoute(path: '/testimonials', name: 'testimonials', builder: (ctx, s) => const TestimonialsScreen()),
+    GoRoute(path: '/tickets', name: 'tickets', builder: (ctx, s) => const TicketsScreen()),
     GoRoute(
       path: '/conversation/:conversationId',
       name: 'conversation-detail',
@@ -2015,228 +1208,60 @@ final appRouter = GoRouter(
         isGroup: s.uri.queryParameters['isGroup'] == '1',
       ),
     ),
-    GoRoute(
-        path: '/dashboard/main',
-        name: 'dashboard-main',
-        builder: (ctx, s) => const DashboardScreen()),
-    GoRoute(
-        path: '/kpi-drilldown',
-        name: 'kpi-drilldown',
-        builder: (ctx, s) => const KpiDrilldownScreen()),
-    GoRoute(
-        path: '/ai-mentoring/detail',
-        name: 'ai-mentoring-detail',
-        builder: (ctx, s) => const MentoratAiScreen()),
-    GoRoute(
-        path: '/predictions-ml',
-        name: 'predictions-ml',
-        builder: (ctx, s) => const AiPredictionsScreen()),
-    GoRoute(
-        path: '/scheduled-announcements',
-        name: 'scheduled-announcements',
-        builder: (ctx, s) => const ScheduledAnnouncementsScreen()),
+    GoRoute(path: '/dashboard/main', name: 'dashboard-main', builder: (ctx, s) => const DashboardScreen()),
+    GoRoute(path: '/kpi-drilldown', name: 'kpi-drilldown', builder: (ctx, s) => const KpiDrilldownScreen()),
+    GoRoute(path: '/ai-mentoring/detail', name: 'ai-mentoring-detail', builder: (ctx, s) => const MentoratAiScreen()),
+    GoRoute(path: '/predictions-ml', name: 'predictions-ml', builder: (ctx, s) => const AiPredictionsScreen()),
+    GoRoute(path: '/scheduled-announcements', name: 'scheduled-announcements', builder: (ctx, s) => const ScheduledAnnouncementsScreen()),
     // ===== Nouveaux écrans issus de l'audit des endpoints orphelins =====
-    GoRoute(
-        path: '/emergency-aid',
-        name: 'emergency-aid',
-        builder: (ctx, s) => const EmergencyAidScreen()),
-    GoRoute(
-        path: '/aid-exchange',
-        name: 'aid-exchange',
-        builder: (ctx, s) => const AidExchangeScreen()),
-    GoRoute(
-        path: '/2fa-status',
-        name: '2fa-status',
-        builder: (ctx, s) => const TwoFactorStatusScreen()),
-    GoRoute(
-        path: '/ai-health',
-        name: 'ai-health',
-        builder: (ctx, s) => const AiHealthScreen()),
-    GoRoute(
-        path: '/ai-predictions/risks',
-        name: 'ai-predictions-risks',
-        builder: (ctx, s) => const PredictionsRiskScreen()),
-    GoRoute(
-        path: '/team-tasks',
-        name: 'team-tasks',
-        builder: (ctx, s) => const TeamTasksScreen()),
-    GoRoute(
-        path: '/import-data',
-        name: 'import-data',
-        builder: (ctx, s) => const ImportDataScreen()),
-    GoRoute(
-        path: '/space-config-transfer',
-        name: 'space-config-transfer',
-        builder: (ctx, s) => const SpaceConfigTransferScreen()),
-    GoRoute(
-        path: '/member-competences',
-        name: 'member-competences',
-        builder: (ctx, s) => const MemberCompetencesScreen()),
-    GoRoute(
-        path: '/qr-checkin',
-        name: 'qr-checkin',
-        builder: (ctx, s) => const QrCheckinScreen()),
-    GoRoute(
-        path: '/network/stats',
-        name: 'network-stats',
-        builder: (ctx, s) => const NetworkStatsScreen()),
-    GoRoute(
-        path: '/voices',
-        name: 'voices',
-        builder: (ctx, s) => const VoicesScreen()),
-    GoRoute(
-        path: '/workflow',
-        name: 'workflow',
-        builder: (ctx, s) => const WorkflowScreen()),
-    GoRoute(
-        path: '/face-recognition',
-        name: 'face-recognition',
-        builder: (ctx, s) => const FaceRecognitionScreen()),
-    GoRoute(
-        path: '/twin-snapshot',
-        name: 'twin-snapshot',
-        builder: (ctx, s) => const TwinSnapshotScreen()),
-    GoRoute(
-        path: '/reward-certificates',
-        name: 'reward-certificates',
-        builder: (ctx, s) => const RewardCertificatesScreen()),
-    GoRoute(
-        path: '/sermons-library',
-        name: 'sermons-library',
-        builder: (ctx, s) => const SermonsScreen()),
-    GoRoute(
-        path: '/development-plans',
-        name: 'development-plans',
-        builder: (ctx, s) => const DevelopmentPlansScreen()),
-    GoRoute(
-        path: '/form-responses',
-        name: 'form-responses',
-        builder: (ctx, s) => FormResponsesScreen(
-            templateId: s.uri.queryParameters['templateId'] ?? '')),
-    GoRoute(
-        path: '/department-reports',
-        name: 'department-reports',
-        builder: (ctx, s) => DepartmentReportsScreen(
-            departmentId: s.uri.queryParameters['departmentId'] ?? '')),
-    GoRoute(
-        path: '/family-tree',
-        name: 'family-tree',
-        builder: (ctx, s) => FamilyTreeScreen(
-            familyId: s.uri.queryParameters['familyId'] ?? '')),
-    GoRoute(
-        path: '/announcement-schedule',
-        name: 'announcement-schedule',
-        builder: (ctx, s) => AnnouncementScheduleScreen(
-            announcementId: s.uri.queryParameters['announcementId'] ?? '')),
-    GoRoute(
-        path: '/documents/:id',
-        name: 'document-detail',
-        builder: (ctx, s) =>
-            DocumentDetailScreen(documentId: s.pathParameters['id']!)),
-    GoRoute(
-        path: '/tickets/:id',
-        name: 'ticket-detail',
-        builder: (ctx, s) =>
-            TicketDetailScreen(ticketId: s.pathParameters['id']!)),
-    GoRoute(
-        path: '/testimonies/:id',
-        name: 'testimony-detail',
-        builder: (ctx, s) =>
-            TestimonyDetailScreen(testimonyId: s.pathParameters['id']!)),
-    GoRoute(
-        path: '/rewards/claims',
-        name: 'rewards-claims',
-        builder: (ctx, s) => const RewardsClaimsScreen()),
-    GoRoute(
-        path: '/user-roles',
-        name: 'user-roles',
-        builder: (ctx, s) =>
-            UserRolesScreen(userId: s.uri.queryParameters['userId'] ?? '')),
-    GoRoute(
-        path: '/compliance-exports',
-        name: 'compliance-exports',
-        builder: (ctx, s) => const ComplianceExportsScreen()),
-    GoRoute(
-        path: '/discipleship-paths',
-        name: 'discipleship-paths',
-        builder: (ctx, s) => const DiscipleshipPathsScreen()),
-    GoRoute(
-        path: '/geo-tracking',
-        name: 'geo-tracking',
-        builder: (ctx, s) => const GeofencingScreen()),
-    GoRoute(
-        path: '/visit-notes/verify',
-        name: 'visit-notes-verify',
-        builder: (ctx, s) => VisitNotesVerifyScreen(
-            memberId: s.uri.queryParameters['memberId'] ?? '')),
-    GoRoute(
-        path: '/encouragements/detail',
-        name: 'encouragements-detail',
-        builder: (ctx, s) => EncouragementDetailScreen(
-            soulId: s.uri.queryParameters['soulId'] ?? '')),
-    GoRoute(
-        path: '/referrals/status',
-        name: 'referrals-status',
-        builder: (ctx, s) => ReferralsStatusScreen(
-            referralId: s.uri.queryParameters['referralId'] ?? '')),
-    GoRoute(
-        path: '/spiritual-challenges/detail',
-        name: 'spiritual-challenges-detail',
-        builder: (ctx, s) => SpiritualChallengesDetailScreen(
-            challengeId: s.uri.queryParameters['challengeId'] ?? '')),
+    GoRoute(path: '/emergency-aid', name: 'emergency-aid', builder: (ctx, s) => const EmergencyAidScreen()),
+    GoRoute(path: '/aid-exchange', name: 'aid-exchange', builder: (ctx, s) => const AidExchangeScreen()),
+    GoRoute(path: '/2fa-status', name: '2fa-status', builder: (ctx, s) => const TwoFactorStatusScreen()),
+    GoRoute(path: '/ai-health', name: 'ai-health', builder: (ctx, s) => const AiHealthScreen()),
+    GoRoute(path: '/ai-predictions/risks', name: 'ai-predictions-risks', builder: (ctx, s) => const PredictionsRiskScreen()),
+    GoRoute(path: '/team-tasks', name: 'team-tasks', builder: (ctx, s) => const TeamTasksScreen()),
+    GoRoute(path: '/import-data', name: 'import-data', builder: (ctx, s) => const ImportDataScreen()),
+    GoRoute(path: '/member-competences', name: 'member-competences', builder: (ctx, s) => const MemberCompetencesScreen()),
+    GoRoute(path: '/qr-checkin', name: 'qr-checkin', builder: (ctx, s) => const QrCheckinScreen()),
+    GoRoute(path: '/network/stats', name: 'network-stats', builder: (ctx, s) => const NetworkStatsScreen()),
+    GoRoute(path: '/voices', name: 'voices', builder: (ctx, s) => const VoicesScreen()),
+    GoRoute(path: '/workflow', name: 'workflow', builder: (ctx, s) => const WorkflowScreen()),
+    GoRoute(path: '/face-recognition', name: 'face-recognition', builder: (ctx, s) => const FaceRecognitionScreen()),
+    GoRoute(path: '/twin-snapshot', name: 'twin-snapshot', builder: (ctx, s) => const TwinSnapshotScreen()),
+    GoRoute(path: '/reward-certificates', name: 'reward-certificates', builder: (ctx, s) => const RewardCertificatesScreen()),
+    GoRoute(path: '/sermons-library', name: 'sermons-library', builder: (ctx, s) => const SermonsScreen()),
+    GoRoute(path: '/development-plans', name: 'development-plans', builder: (ctx, s) => const DevelopmentPlansScreen()),
+    GoRoute(path: '/form-responses', name: 'form-responses', builder: (ctx, s) => FormResponsesScreen(templateId: s.uri.queryParameters['templateId'] ?? '')),
+    GoRoute(path: '/department-reports', name: 'department-reports', builder: (ctx, s) => DepartmentReportsScreen(departmentId: s.uri.queryParameters['departmentId'] ?? '')),
+    GoRoute(path: '/family-tree', name: 'family-tree', builder: (ctx, s) => FamilyTreeScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
+    GoRoute(path: '/announcement-schedule', name: 'announcement-schedule', builder: (ctx, s) => AnnouncementScheduleScreen(announcementId: s.uri.queryParameters['announcementId'] ?? '')),
+    GoRoute(path: '/documents/:id', name: 'document-detail', builder: (ctx, s) => DocumentDetailScreen(documentId: s.pathParameters['id']!)),
+    GoRoute(path: '/tickets/:id', name: 'ticket-detail', builder: (ctx, s) => TicketDetailScreen(ticketId: s.pathParameters['id']!)),
+    GoRoute(path: '/testimonies/:id', name: 'testimony-detail', builder: (ctx, s) => TestimonyDetailScreen(testimonyId: s.pathParameters['id']!)),
+    GoRoute(path: '/rewards/claims', name: 'rewards-claims', builder: (ctx, s) => const RewardsClaimsScreen()),
+    GoRoute(path: '/user-roles', name: 'user-roles', builder: (ctx, s) => UserRolesScreen(userId: s.uri.queryParameters['userId'] ?? '')),
+    GoRoute(path: '/compliance-exports', name: 'compliance-exports', builder: (ctx, s) => const ComplianceExportsScreen()),
+    GoRoute(path: '/discipleship-paths', name: 'discipleship-paths', builder: (ctx, s) => const DiscipleshipPathsScreen()),
+    GoRoute(path: '/geo-tracking', name: 'geo-tracking', builder: (ctx, s) => const GeofencingScreen()),
+    GoRoute(path: '/visit-notes/verify', name: 'visit-notes-verify', builder: (ctx, s) => VisitNotesVerifyScreen(memberId: s.uri.queryParameters['memberId'] ?? '')),
+    GoRoute(path: '/encouragements/detail', name: 'encouragements-detail', builder: (ctx, s) => EncouragementDetailScreen(soulId: s.uri.queryParameters['soulId'] ?? '')),
+    GoRoute(path: '/referrals/status', name: 'referrals-status', builder: (ctx, s) => ReferralsStatusScreen(referralId: s.uri.queryParameters['referralId'] ?? '')),
+    GoRoute(path: '/spiritual-challenges/detail', name: 'spiritual-challenges-detail', builder: (ctx, s) => SpiritualChallengesDetailScreen(challengeId: s.uri.queryParameters['challengeId'] ?? '')),
     // ===== Nouvelles routes — Cercle Faiseurs, Passeport Spirituel, Parcours Spirituel =====
-    GoRoute(
-        path: '/cercle-faiseurs',
-        name: 'cercle-faiseurs',
-        builder: (ctx, s) => const CercleFaiseursScreen()),
-    GoRoute(
-        path: '/dress-codes',
-        name: 'dress-codes',
-        builder: (ctx, s) => const DressCodeScreen()),
-    GoRoute(
-        path: '/passport',
-        name: 'passport',
-        builder: (ctx, s) => const PassportScreen()),
-    GoRoute(
-        path: '/spiritual-journey',
-        name: 'spiritual-journey',
-        builder: (ctx, s) => const SpiritualJourneyScreen()),
-    GoRoute(
-        path: '/conversations',
-        name: 'conversations',
-        builder: (ctx, s) => const ConversationsScreen()),
-    GoRoute(
-        path: '/ai-chat',
-        name: 'ai-chat',
-        builder: (ctx, s) => const AiChatScreen()),
-    GoRoute(
-        path: '/tenant-selection',
-        name: 'tenant-selection',
-        builder: (ctx, s) => const TenantSelectionScreen()),
-    GoRoute(
-        path: '/tenant/branding',
-        name: 'tenant-branding',
-        builder: (ctx, s) => const TenantBrandingScreen()),
-    GoRoute(
-        path: '/tenant/settings',
-        name: 'tenant-settings',
-        builder: (ctx, s) => const TenantSettingsScreen()),
-    GoRoute(
-        path: '/tenant/organizations',
-        name: 'tenant-organizations',
-        builder: (ctx, s) => const OrganizationsScreen()),
-    GoRoute(
-        path: '/tenant/modules',
-        name: 'tenant-modules',
-        builder: (ctx, s) => const TenantModulesScreen()),
-    GoRoute(
-        path: '/tenant/roles',
-        name: 'tenant-roles',
-        builder: (ctx, s) => const TenantRolesScreen()),
-    GoRoute(
-        path: '/tenant/users',
-        name: 'tenant-users',
-        builder: (ctx, s) => const TenantUsersScreen()),
+    GoRoute(path: '/cercle-faiseurs', name: 'cercle-faiseurs', builder: (ctx, s) => const CercleFaiseursScreen()),
+    GoRoute(path: '/dress-codes', name: 'dress-codes', builder: (ctx, s) => const DressCodeScreen()),
+    GoRoute(path: '/passport', name: 'passport', builder: (ctx, s) => const PassportScreen()),
+    GoRoute(path: '/spiritual-journey', name: 'spiritual-journey', builder: (ctx, s) => const SpiritualJourneyScreen()),
+    GoRoute(path: '/conversations', name: 'conversations', builder: (ctx, s) => const ConversationsScreen()),
+    GoRoute(path: '/ai-chat', name: 'ai-chat', builder: (ctx, s) => const AiChatScreen()),
+    GoRoute(path: '/tenant-selection', name: 'tenant-selection', builder: (ctx, s) => const TenantSelectionScreen()),
+    GoRoute(path: '/tenant/branding', name: 'tenant-branding', builder: (ctx, s) => const TenantBrandingScreen()),
+    GoRoute(path: '/tenant/settings', name: 'tenant-settings', builder: (ctx, s) => const TenantSettingsScreen()),
+    GoRoute(path: '/tenant/organizations', name: 'tenant-organizations', builder: (ctx, s) => const OrganizationsScreen()),
+    GoRoute(path: '/tenant/modules', name: 'tenant-modules', builder: (ctx, s) => const TenantModulesScreen()),
+    GoRoute(path: '/tenant/roles', name: 'tenant-roles', builder: (ctx, s) => const TenantRolesScreen()),
+    GoRoute(path: '/tenant/users', name: 'tenant-users', builder: (ctx, s) => const TenantUsersScreen()),
+    GoRoute(path: '/space-config-transfer', name: 'space-config-transfer', builder: (ctx, s) => const SpaceConfigTransferScreen()),
   ],
   errorBuilder: (context, state) => NotFoundScreen(path: state.matchedLocation),
 );
