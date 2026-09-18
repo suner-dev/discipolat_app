@@ -63,7 +63,7 @@ class PeopleCriticalPathIntegrationTest {
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
         for (String table : List.of(
                 "soul_history", "soul_departments", "soul_notes", "soul_tags",
-                "souls", "families", "users", "user_roles", "memberships", "space_memberships")) {
+                "souls", "families", "users", "user_roles", "membership", "space_membership")) {
             jdbcTemplate.execute("TRUNCATE TABLE " + table);
         }
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
