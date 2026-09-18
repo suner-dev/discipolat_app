@@ -1,5 +1,7 @@
 package com.discipolat.common.infrastructure.config;
 
+import com.discipolat.common.multitenancy.TenantAwareRedisManager;
+import com.discipolat.common.multitenancy.TenantContext;
 import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;
 import io.lettuce.core.RedisClient;
@@ -12,12 +14,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
+import java.util.UUID;
 
 /**
  * Redis configuration for distributed rate limiting via Bucket4j ProxyManager.
  * <p>
  * Creates a {@link LettuceBasedProxyManager} that stores rate limit bucket state
  * in Redis, enabling multiple application instances to share rate limits.
+ * <p>
+ * Keys are tenant-aware via TenantAwareRedisManager prefix.
  * <p>
  * Disabled when {@code app.rate-limiting.redis-enabled=false} (e.g. in test profiles
  * without a running Redis instance).
@@ -53,5 +58,27 @@ public class RedisRateLimiterConfig {
                 .build();
         log.info("LettuceBasedProxyManager created — key expire after {} min of inactivity", keyExpireMinutes);
         return manager;
+    }
+    
+    /**
+     * Tenant-aware rate limiter that prefixes keys with tenant ID.
+     * Uses the existing TenantAwareRedisManager for key prefixing.
+     */
+    public static class TenantAwareRateLimiter {
+        private final LettuceBasedProxyManager<byte[]> proxyManager;
+        private final TenantAwareRedisManager redisManager;
+
+        public TenantAwareRateLimiter(LettuceBasedProxyManager<byte[]> proxyManager, TenantAwareRedisManager redisManager) {
+            this.proxyManager = proxyManager;
+            this.redisManager = redisManager;
+        }
+        
+        public String buildTenantKey(String... parts) {
+            return redisManager.buildKey(parts);
+        }
+        
+        public String buildTenantKeyForTenant(UUID tenantId, String... parts) {
+            return redisManager.buildKeyForTenant(tenantId, parts);
+        }
     }
 }
