@@ -1,5 +1,6 @@
 package com.discipolat.modules.ai.domain;
 
+import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
@@ -64,8 +65,8 @@ public class AiAssistantService {
     private final MemberPresenceRepository memberPresenceRepository;
     private final WorkspaceScopeService workspaceScope;
     private final SecurityUtils securityUtils;
-
     private final AiChatConversationRepository chatRepo;
+    private final AiCreditsService aiCreditsService;
 
     /** Cache simple de l'historique chat par userId (session). */
     private final ConcurrentHashMap<UUID, List<Map<String, Object>>> chatHistories = new ConcurrentHashMap<>();
@@ -78,7 +79,8 @@ public class AiAssistantService {
                                MemberPresenceRepository memberPresenceRepository,
                                WorkspaceScopeService workspaceScope,
                                SecurityUtils securityUtils,
-                               AiChatConversationRepository chatRepo) {
+                               AiChatConversationRepository chatRepo,
+                               AiCreditsService aiCreditsService) {
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.familyRepository = familyRepository;
@@ -88,6 +90,7 @@ public class AiAssistantService {
         this.workspaceScope = workspaceScope;
         this.securityUtils = securityUtils;
         this.chatRepo = chatRepo;
+        this.aiCreditsService = aiCreditsService;
     }
 
     /**
@@ -154,7 +157,15 @@ public class AiAssistantService {
     /**
      * Point d'entrée principal : chat IA pastoral.
      */
+    @Transactional
     public Map<String, Object> chat(String message, UUID userId) {
+        // Check and consume AI credits (1 credit per chat message)
+        try {
+            aiCreditsService.consumeCredits(userId, "CHAT", 1, modelName);
+        } catch (BusinessRuleException e) {
+            return Map.of("reply", "⚠️ " + e.getMessage(), "sources", List.of(), "sessionId", UUID.randomUUID().toString());
+        }
+
         // 1. Construire le contexte depuis les données de l'église
         Map<String, Object> context = buildChurchContext(message);
 
@@ -163,12 +174,29 @@ public class AiAssistantService {
         String userPrompt = buildUserPrompt(message, context);
 
         // 3. Essayer d'appeler Ollama
+        long startTime = System.currentTimeMillis();
         String reply = callOllama(systemPrompt, userPrompt);
 
         // 4. Si Ollama échoue, générer une réponse contextuelle
         if (reply == null || reply.isBlank()) {
             reply = generateContextualReply(message, context);
         }
+
+        long responseTimeMs = System.currentTimeMillis() - startTime;
+
+        // Record usage with details
+        aiCreditsService.recordUsage(
+                securityUtils.getCurrentTenantId(),
+                userId,
+                "CHAT",
+                1,
+                modelName,
+                null, // tokens input - could be calculated
+                null, // tokens output
+                (int) responseTimeMs,
+                true,
+                null
+        );
 
         // 5. Sauvegarder dans l'historique
         Map<String, Object> userMsg = Map.of(
@@ -261,13 +289,34 @@ public class AiAssistantService {
      * Analyse pastorale IA d'une âme spécifique — données réelles de la fiche.
      * Consommé par le détail d'âme web (SoulDetailPage) et mobile (soul_detail_screen).
      */
-    public Map<String, Object> analyzeSoul(UUID soulId) {
+    @Transactional
+    public Map<String, Object> analyzeSoul(UUID soulId, UUID userId) {
+        // Consume 2 credits for soul analysis (more complex operation)
+        try {
+            aiCreditsService.consumeCredits(userId, "ANALYZE", 2, modelName);
+        } catch (BusinessRuleException e) {
+            return Map.of("error", e.getMessage(), "soulId", soulId.toString());
+        }
+
         Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Âme non trouvée : " + soulId));
         Map<String, Object> analysis = new LinkedHashMap<>();
         analysis.put("soulId", soul.getId().toString());
         analysis.put("nom", soul.getNomComplet());
         analysis.put("resume", buildAnalysisResume(soul));
+
+        // Record usage
+        aiCreditsService.recordUsage(
+                securityUtils.getCurrentTenantId(),
+                userId,
+                "ANALYZE",
+                2,
+                modelName,
+                null, null,
+                0,
+                true,
+                null
+        );
 
         List<Map<String, Object>> signaux = new ArrayList<>();
         List<Map<String, Object>> suggestions = new ArrayList<>();

@@ -83,7 +83,7 @@ public class AiAssistantController {
     @GetMapping("/analyze/{soulId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> analyze(@PathVariable UUID soulId) {
-        return ResponseEntity.ok(service.analyzeSoul(soulId));
+        return ResponseEntity.ok(service.analyzeSoul(soulId, securityUtils.getCurrentUserId()));
     }
 
     /**

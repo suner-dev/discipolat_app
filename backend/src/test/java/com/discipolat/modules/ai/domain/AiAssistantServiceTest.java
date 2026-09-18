@@ -27,6 +27,8 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 
@@ -42,6 +44,7 @@ class AiAssistantServiceTest {
     @Mock private WorkspaceScopeService workspaceScope;
     @Mock private SecurityUtils securityUtils;
     @Mock private AiChatConversationRepository chatRepo;
+    @Mock private AiCreditsService aiCreditsService;
 
     @InjectMocks private AiAssistantService aiService;
 
@@ -54,6 +57,9 @@ class AiAssistantServiceTest {
         SecurityTestHelper.loginAs(userId);
         lenient().when(soulRepository.findByStatut(any(), any()))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+        // Mock credits service to do nothing
+        lenient().doNothing().when(aiCreditsService).consumeCredits(any(), anyString(), anyInt(), anyString());
+        lenient().doNothing().when(aiCreditsService).recordUsage(any(), any(), anyString(), anyInt(), anyString(), any(), any(), any(), any(), anyString());
     }
 
     @Test
