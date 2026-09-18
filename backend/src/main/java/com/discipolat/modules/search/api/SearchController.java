@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,6 +41,19 @@ public class SearchController {
         return ResponseEntity.ok(PageResponse.of(
                 results.getContent(), results.getNumber(), results.getSize(),
                 results.getTotalElements(), results.getTotalPages()));
+    }
+
+    /**
+     * Autocomplete search for type-ahead suggestions using trigram similarity.
+     * Returns up to 10 suggestions for the given query prefix.
+     */
+    @GetMapping("/autocomplete")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<List<Map<String, Object>>> autocomplete(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "10") int limit) {
+        List<Map<String, Object>> suggestions = searchService.autocomplete(q, Math.min(limit, 20));
+        return ResponseEntity.ok(suggestions);
     }
 
     /**

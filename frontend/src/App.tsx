@@ -233,6 +233,7 @@ const TestimonyDetailPage = lazy(() => import('@/pages/TestimonyDetailPage'));
 const RewardsClaimsPage = lazy(() => import('@/pages/RewardsClaimsPage'));
 const UserRolesPage = lazy(() => import('@/pages/UserRolesPage'));
 const ComplianceExportsPage = lazy(() => import('@/pages/ComplianceExportsPage'));
+const SpaceImportExportPage = lazy(() => import('@/pages/SpaceImportExportPage'));
 const ConversationsPage = lazy(() => import('@/pages/ConversationsPage'));
 const CoursesPage = lazy(() => import('@/pages/CoursesPage'));
 const EquipmentPage = lazy(() => import('@/pages/EquipmentPage'));
@@ -1059,6 +1060,7 @@ export default function App() {
           <Route path="/rewards/claims" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}><RewardsClaimsPage /></ProtectedRoute>} />
           <Route path="/users/roles" element={<ProtectedRoute roles={['ADMIN']}><UserRolesPage /></ProtectedRoute>} />
           <Route path="/admin/compliance-exports" element={<ProtectedRoute roles={['ADMIN']}><ComplianceExportsPage /></ProtectedRoute>} />
+          <Route path="/admin/space-import-export" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><SpaceImportExportPage /></ProtectedRoute>} />
           <Route path="/conversations" element={<ProtectedRoute><ConversationsPage /></ProtectedRoute>} />
           <Route path="/courses" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><CoursesPage /></ProtectedRoute>} />
           <Route path="/equipment" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EquipmentPage /></ProtectedRoute>} />

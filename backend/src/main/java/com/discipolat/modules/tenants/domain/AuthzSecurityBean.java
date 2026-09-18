@@ -37,4 +37,21 @@ public class AuthzSecurityBean {
             return false;
         }
     }
+
+    /**
+     * Super administrateur plateforme (rôle global {@code PLATFORM_SUPER_ADMIN}).
+     *
+     * <p>Exposé ici pour que l'expression {@code @PreAuthorize("@authz.isPlatformSuperAdmin()")}
+     * — utilisée notamment par {@code ImpersonationController} et l'export de tenant G4.5 —
+     * soit résolvable au runtime (le bean {@code authz} est {@link AuthzSecurityBean}).
+     * Ne lève jamais d'exception : tout contexte absent vaut refus.
+     */
+    public boolean isPlatformSuperAdmin() {
+        try {
+            UUID userId = SecurityUtils.getCurrentUserId();
+            return userId != null && authzService.isPlatformSuperAdmin(userId);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

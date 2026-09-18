@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Upload, FileText, AlertTriangle, CheckCircle, Loader2, Users, Home, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -90,6 +91,21 @@ export default function ImportDataPage() {
           <h1 className="page-title">{tText('Import de Données')}</h1>
           <p className="page-subtitle">{tText('Importez des données en masse depuis du CSV')}</p>
         </div>
+      </div>
+
+      {/* G4.5 — Le format canonique space_export_v1 (config + données) a son propre centre dédié. */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+        <p className="text-sm text-indigo-900">
+          <strong>Importer / exporter une configuration d&apos;espace ou d&apos;église ?</strong>{' '}
+          Utilisez le centre dédié au format canonique versionné <code className="font-mono">space_export_v1</code>
+          {' '}(modules, statuts, champs, workflows) avec validation, dry-run et rapport d&apos;erreurs.
+        </p>
+        <Link
+          to="/admin/space-import-export"
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+        >
+          <FileText className="w-4 h-4" /> Ouvrir le centre import/export
+        </Link>
       </div>
 
       {/* Type selector */}

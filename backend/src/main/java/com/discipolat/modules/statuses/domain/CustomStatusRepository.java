@@ -31,4 +31,7 @@ public interface CustomStatusRepository extends TenantAwareRepository<CustomStat
             UUID tenantId, String entityType, String code);
 
     List<CustomStatus> findByTenantIdAndSpaceIdAndDeletedAtIsNull(UUID tenantId, UUID spaceId);
+
+    /** G4.5 — Export tenant complet : tous les statuts du tenant (tenant-level + par espace). */
+    List<CustomStatus> findByTenantIdAndDeletedAtIsNullOrderByEntityTypeAscDisplayOrderAsc(UUID tenantId);
 }

@@ -10,6 +10,8 @@ import com.discipolat.modules.eventChecklist.domain.EventChecklistItem;
 import com.discipolat.modules.eventChecklist.domain.EventChecklistItemRepository;
 import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.domain.EventRepository;
+import com.discipolat.modules.exports.domain.ExportAudit;
+import com.discipolat.modules.exports.domain.ExportAuditRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.notifications.domain.Notification;
@@ -43,6 +45,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -72,6 +75,7 @@ public class ExportServiceImpl implements ExportService {
     private final EventChecklistItemRepository eventChecklistRepository;
     private final VoiceReportRepository voiceReportRepository;
     private final DataExportRecordRepository dataExportRecordRepository;
+    private final ExportAuditRepository exportAuditRepository;
 
     public ExportServiceImpl(
             @Value("${app.exports.directory:./exports}") String exportDirPath,
@@ -89,7 +93,8 @@ public class ExportServiceImpl implements ExportService {
             EventRepository eventRepository,
             EventChecklistItemRepository eventChecklistRepository,
             VoiceReportRepository voiceReportRepository,
-            DataExportRecordRepository dataExportRecordRepository) {
+            DataExportRecordRepository dataExportRecordRepository,
+            ExportAuditRepository exportAuditRepository) {
         java.util.UUID tenantUuid = TenantContext.getCurrentTenantId();
         String tenantId = tenantUuid != null ? tenantUuid.toString() : "default";
         this.exportDir = Paths.get(exportDirPath, tenantId).toAbsolutePath().normalize();
@@ -112,6 +117,7 @@ public class ExportServiceImpl implements ExportService {
         this.eventChecklistRepository = eventChecklistRepository;
         this.voiceReportRepository = voiceReportRepository;
         this.dataExportRecordRepository = dataExportRecordRepository;
+        this.exportAuditRepository = exportAuditRepository;
     }
 
     @Override
@@ -143,6 +149,8 @@ public class ExportServiceImpl implements ExportService {
     private void processExport(UUID exportId, ExportRequest request, String fileName, UUID userId) {
         ExportResult result = exportStore.get(exportId);
         if (result == null) return;
+        
+        Instant startTime = Instant.now();
 
         result.setStatus("PROCESSING");
         try {
@@ -155,10 +163,39 @@ public class ExportServiceImpl implements ExportService {
             result.setDownloadUrl("/api/v1/exports/download/" + exportId);
             result.setFileSize((long) fileData.length);
             result.setCompletedAt(Instant.now());
+            
+            // Log successful export to audit table
+            long recordCount = countRecords(request);
+            logExportAudit(request, userId, fileData.length, Duration.between(startTime, Instant.now()).toMillis(), "COMPLETED", null, recordCount);
         } catch (Exception e) {
             result.setStatus("FAILED");
             result.setErrorMessage(e.getMessage());
             result.setCompletedAt(Instant.now());
+            
+            // Log failed export to audit table
+            logExportAudit(request, userId, 0, Duration.between(startTime, Instant.now()).toMillis(), "FAILED", e.getMessage(), 0);
+        }
+    }
+    
+    private void logExportAudit(ExportRequest request, UUID userId, long fileSizeBytes, long executionTimeMs, String status, String errorMessage, long recordCount) {
+        try {
+            UUID tenantId = TenantContext.getCurrentTenantId();
+            ExportAudit audit = ExportAudit.builder()
+                    .tenantId(tenantId)
+                    .userId(userId)
+                    .exportType(request.getType().name())
+                    .exportFormat(request.getFormat())
+                    .filtersJson(request.getFilters() != null ? request.getFilters().toString() : null)
+                    .columnsExported(request.getColumns() != null ? request.getColumns().toArray(new String[0]) : null)
+                    .recordCount((int) recordCount)
+                    .fileSizeBytes(fileSizeBytes)
+                    .executionTimeMs((int) executionTimeMs)
+                    .status(status)
+                    .build();
+            exportAuditRepository.save(audit);
+        } catch (Exception e) {
+            // Log but don't fail the export
+            System.err.println("Failed to log export audit: " + e.getMessage());
         }
     }
 

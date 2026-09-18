@@ -353,6 +353,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Tâches équipe', href: '/team-tasks', icon: ListTodo, subtitle: 'Gestion tâches' },
       { name: 'Traductions sermons', href: '/sermon-translations', icon: Globe, subtitle: 'Multilingue' },
       { name: 'Import données', href: '/admin/import', icon: Server, subtitle: 'Import en masse' },
+      { name: 'Import / Export espaces', href: '/admin/space-import-export', icon: Server, subtitle: 'Format canonique space_export_v1' },
       { name: 'Récit KPI', href: '/kpi-narrative', icon: BarChart3, subtitle: 'Narration automatique' },
       { name: 'Suivi faiseurs', href: '/maker-tracking', icon: Eye, subtitle: 'Tracking terrain' },
       { name: 'Compétences membres', href: '/member-competences', icon: Award, subtitle: 'Évaluation' },

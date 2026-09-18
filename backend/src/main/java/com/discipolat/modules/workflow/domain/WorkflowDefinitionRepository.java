@@ -20,4 +20,12 @@ public interface WorkflowDefinitionRepository extends TenantAwareRepository<Work
 
     Optional<WorkflowDefinition> findFirstByTenantIdAndSpaceIdIsNullAndCodeAndEnabledTrueAndDeletedAtIsNullOrderByVersionDesc(
             UUID tenantId, String code);
+
+    /** G4.5 — Clé d'idempotence de l'import canonique : workflow d'espace (tenant, espace, code). */
+    Optional<WorkflowDefinition> findFirstByTenantIdAndSpaceIdAndCodeAndDeletedAtIsNullOrderByVersionDesc(
+            UUID tenantId, UUID spaceId, String code);
+
+    /** G4.5 — Clé d'idempotence de l'import canonique : workflow de tenant (tenant, code). */
+    Optional<WorkflowDefinition> findFirstByTenantIdAndSpaceIdIsNullAndCodeAndDeletedAtIsNullOrderByVersionDesc(
+            UUID tenantId, String code);
 }

@@ -143,6 +143,7 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/exports': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/import': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/admin/import': ['ADMIN', 'PASTEUR'],
+  '/admin/space-import-export': ['ADMIN', 'PASTEUR'],
 
   // Nouveaux modules issus de l'audit des endpoints orphelins
   '/admin-requests': ['ADMIN', 'PASTEUR'],
