@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS webhook_logs (
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_webhook_logs_tenant ON webhook_logs(tenant_id);
-CREATE INDEX idx_webhook_logs_provider ON webhook_logs(provider);
-CREATE INDEX idx_webhook_logs_created ON webhook_logs(created_at DESC);
-CREATE INDEX idx_webhook_logs_reference ON webhook_logs(reference);
-CREATE INDEX idx_webhook_logs_status ON webhook_logs(status_label);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_tenant ON webhook_logs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_provider ON webhook_logs(provider);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_created ON webhook_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_reference ON webhook_logs(reference);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_status ON webhook_logs(status_label);

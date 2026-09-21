@@ -1,0 +1,53 @@
+[
+  {
+    "id": "7ee3acb2-16f4-47e2-ae4f-c10b2d28a2c8",
+    "tenant_id": "40275e84-ce82-49b2-8a47-41eaa4cf7c19",
+    "organization_unit_id": "03846412-7a3a-47f9-9a8c-7054c3e0727e",
+    "space_type": "SUB_TEAM",
+    "template_code": "FAMILY",
+    "name": "SUB_TEAM Seuil 0",
+    "code": "SUB000",
+    "icon": "d\u00e9but",
+    "color": "#e3497b",
+    "description": "Compagnie possible repas quart ensuite action \u00e9tablir. Ennemi taire tu gu\u00e8re chercher imposer.",
+    "status": "ACTIVE",
+    "visible_people_scope": "CHURCH",
+    "configuration_json": "{\"modules\": [\"reports\", \"events\", \"people\", \"tasks\"], \"customColors\": {\"primary\": \"#8c5e1f\"}, \"dashboardWidgets\": [\"upcoming_events\", \"asset_status\"]}",
+    "created_at": "2026-06-29T12:02:12.324884",
+    "updated_at": "2026-09-21T12:02:12.324902"
+  },
+  {
+    "id": "0ce7e959-0005-497b-b260-c2839a72357e",
+    "tenant_id": "40275e84-ce82-49b2-8a47-41eaa4cf7c19",
+    "organization_unit_id": "51cb2498-7cdf-4403-8303-8347543df95f",
+    "space_type": "FAMILY",
+    "template_code": "FAMILY",
+    "name": "FAMILY Amuser 0",
+    "code": "FAM000",
+    "icon": "intention",
+    "color": "#76dfa3",
+    "description": "Mouvement accepter avance chemise. Continuer diriger exprimer en d\u00e9signer. Soit frapper discussion dehors remplacer tel id\u00e9e. Beau profiter attaquer lorsque parole carte dieu.",
+    "status": "ACTIVE",
+    "visible_people_scope": "CHURCH",
+    "configuration_json": "{\"modules\": [\"events\", \"people\"], \"customColors\": {\"primary\": \"#f172b8\"}, \"dashboardWidgets\": [\"upcoming_events\", \"asset_status\"]}",
+    "created_at": "2026-05-26T12:02:12.325670",
+    "updated_at": "2026-09-21T12:02:12.325687"
+  },
+  {
+    "id": "399c491e-c1bc-48d7-a792-652349894d38",
+    "tenant_id": "40275e84-ce82-49b2-8a47-41eaa4cf7c19",
+    "organization_unit_id": "171b4c52-dd7c-44c7-abb3-bf07d16035a3",
+    "space_type": "SUB_TEAM",
+    "template_code": "FAMILY",
+    "name": "SUB_TEAM Mesure 0",
+    "code": "SUB000",
+    "icon": "marchand",
+    "color": "#dc27f6",
+    "description": "Politique quartier sourire veiller achever. Vaste amuser retenir service triste habitant. Attirer d\u00e9sormais tuer long r\u00e9ponse ouvrir doux.",
+    "status": "ACTIVE",
+    "visible_people_scope": "CAMPUS",
+    "configuration_json": "{\"modules\": [\"assets\", \"finance\"], \"customColors\": {\"primary\": \"#f9c0f2\"}, \"dashboardWidgets\": [\"upcoming_events\", \"asset_status\"]}",
+    "created_at": "2026-05-30T12:02:12.326329",
+    "updated_at": "2026-09-21T12:02:12.326344"
+  }
+]

@@ -60,7 +60,9 @@ CREATE INDEX idx_permission_scope ON permissions(scope);
 CREATE INDEX idx_permission_category ON permissions(category);
 CREATE INDEX idx_permission_system ON permissions(system);
 
--- 5. ROLE_PERMISSIONS (many-to-many)
+-- 5. ROLE_PERMISSIONS (many-to-many) - Drop legacy table from V6 if exists
+DROP TABLE IF EXISTS role_permissions;
+
 CREATE TABLE role_permissions (
     role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
@@ -187,7 +189,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_event_timestamp ON audit_event(timestamp);
 CREATE INDEX IF NOT EXISTS idx_audit_event_hash ON audit_event(hash);
 
 COMMENT ON TABLE audit_event IS 'G2.9 : audit technique avec hash chain (prev_hash/hash) — immuable, exportable, rétention 95j';
-COMMENT ON COLUMN audit_event.prev_hash IS 'Hash de l\'enregistrement précédent (chaîne d\'intégrité)';
+COMMENT ON COLUMN audit_event.prev_hash IS 'Hash de l''enregistrement précédent (chaîne d''intégrité)';
 COMMENT ON COLUMN audit_event.hash IS 'SHA-256 de (prev_hash || tenant_id || actor_id || action || entity || entity_id || old_value_json || new_value_json || ip || user_agent || timestamp)';
 
 -- 10b. BUSINESS HISTORY (G2.9 — historique métier générique, distinct de l'audit technique)
@@ -209,7 +211,7 @@ CREATE INDEX IF NOT EXISTS idx_biz_hist_object ON business_history(object_type, 
 CREATE INDEX IF NOT EXISTS idx_biz_hist_space ON business_history(space_id, happened_at);
 CREATE INDEX IF NOT EXISTS idx_biz_hist_tenant ON business_history(tenant_id, happened_at);
 
-COMMENT ON TABLE business_history IS 'G2.9 : historique métier (ce qui est arrivé à l\'objet) — distinct de audit_event (qui a fait quoi)';
+COMMENT ON TABLE business_history IS 'G2.9 : historique métier (ce qui est arrivé à l''objet) — distinct de audit_event (qui a fait quoi)';
 
 -- 11. Add tenant_id to existing roles table if not exists (from V70 platform_roles)
 -- Note: V70 created platform_roles with tenant_id. We'll keep both for migration period.
@@ -217,10 +219,10 @@ COMMENT ON TABLE business_history IS 'G2.9 : historique métier (ce qui est arri
 -- 12. Insert default system roles (tenant_id = NULL = global)
 INSERT INTO roles (id, tenant_id, key, label, description, system, priority, created_at, updated_at) VALUES
     (uuid_generate_v4(), NULL, 'PLATFORM_SUPER_ADMIN', 'Super Admin Plateforme', 'Accès complet à la plateforme Discipolat', TRUE, 1000, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'TENANT_OWNER', 'Propriétaire Tenant', 'Propriétaire de l\'organisation', TRUE, 900, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'TENANT_ADMIN', 'Admin Tenant', 'Administrateur de l\'organisation', TRUE, 800, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'CHURCH_ADMIN', 'Admin Église', 'Administrateur d\'église/campus', TRUE, 700, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'CHURCH_LEADER', 'Leader Église', 'Responsable d\'église/campus', TRUE, 600, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'TENANT_OWNER', 'Propriétaire Tenant', 'Propriétaire de l''organisation', TRUE, 900, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'TENANT_ADMIN', 'Admin Tenant', 'Administrateur de l''organisation', TRUE, 800, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'CHURCH_ADMIN', 'Admin Église', 'Administrateur d''église/campus', TRUE, 700, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'CHURCH_LEADER', 'Leader Église', 'Responsable d''église/campus', TRUE, 600, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'DEPARTMENT_ADMIN', 'Admin Département', 'Administrateur de département', TRUE, 500, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'DEPARTMENT_LEADER', 'Leader Département', 'Responsable de département', TRUE, 400, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'FAMILY_LEADER', 'Chef de Famille', 'Responsable de famille/groupe', TRUE, 300, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -328,7 +330,7 @@ INSERT INTO saas_plans (key, name, description, price_monthly, price_yearly, cur
      '{"max_users": 200, "max_churches": 3, "max_storage_mb": 1000, "max_admin_users": 5, "max_ai_requests_month": 1000, "max_courses": 20, "max_messages_month": 10000}'::jsonb,
      '{"discipleship": true, "academy": true, "finance": false, "marketplace": false, "api": false, "ai_copilot": true, "support": "email"}'::jsonb,
      1),
-    ('PRO', 'Professionnel', 'Pour réseaux d\'églises', 50000, 500000, 'XAF',
+    ('PRO', 'Professionnel', 'Pour reseaux d''eglises', 50000, 500000, 'XAF',
      '{"max_users": 1000, "max_churches": 10, "max_storage_mb": 10000, "max_admin_users": 20, "max_ai_requests_month": 10000, "max_courses": 100, "max_messages_month": 100000}'::jsonb,
      '{"discipleship": true, "academy": true, "finance": true, "marketplace": true, "api": true, "ai_copilot": true, "support": "priority"}'::jsonb,
      2),

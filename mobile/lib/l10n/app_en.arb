@@ -49,6 +49,16 @@
     "delete": "Delete",
     "edit": "Edit",
     "loading": "Loading…",
-    "offline": "Offline"
+    "offline": "Offline",
+    "members": "Members",
+    "activitiesThisMonth": "Activities this month",
+    "familyMembers": "Family Members",
+    "recentActivity": "Recent Activity",
+    "noRecentActivity": "No recent activity",
+    "activity": "Activity",
+    "participants": "Participants",
+    "familyError": "Unable to load family space",
+    "family": "Family",
+    "familySpaceTitle": "Family Space"
   }
 }

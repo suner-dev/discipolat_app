@@ -49,6 +49,16 @@
     "delete": "Supprimer",
     "edit": "Modifier",
     "loading": "Chargement…",
-    "offline": "Hors ligne"
+    "offline": "Hors ligne",
+    "members": "Membres",
+    "activitiesThisMonth": "Activités ce mois",
+    "familyMembers": "Membres de la famille",
+    "recentActivity": "Activité récente",
+    "noRecentActivity": "Aucune activité récente",
+    "activity": "Activité",
+    "participants": "Participants",
+    "familyError": "Impossible de charger l'espace famille",
+    "family": "Famille",
+    "familySpaceTitle": "Espace Famille"
   }
 }

@@ -22,9 +22,7 @@ import 'presentation/screens/alerts/alerts_list_screen.dart';
 import 'presentation/screens/alerts/smart_alerts_screen.dart';
 import 'presentation/screens/notifications/notifications_screen.dart';
 import 'presentation/screens/profile/profile_screen.dart';
-import 'presentation/screens/streak/streak_screen.dart';
 import 'presentation/screens/family_space/family_space_screen.dart';
-import 'presentation/screens/streak/streak_screen.dart';
 import 'presentation/screens/prayers/prayers_list_screen.dart';
 import 'presentation/screens/events/events_list_screen.dart';
 import 'presentation/screens/departments/departments_list_screen.dart';
@@ -1155,7 +1153,6 @@ final appRouter = GoRouter(
     GoRoute(path: '/bible-reading', name: 'bible-reading', builder: (ctx, s) => const BibleReadingScreen()),
     GoRoute(path: '/prayer-journal', name: 'prayer-journal', builder: (ctx, s) => const PrayerJournalScreen()),
     GoRoute(path: '/spiritual-challenges', name: 'spiritual-challenges', builder: (ctx, s) => const SpiritualChallengesScreen()),
-    GoRoute(path: '/streak', name: 'streak', builder: (ctx, s) => const StreakScreen()),
     GoRoute(path: '/family-space', name: 'family-space', builder: (ctx, s) => const FamilySpaceScreen()),
     GoRoute(path: '/reverse-mentoring', name: 'reverse-mentoring', builder: (ctx, s) => const ReverseMentoringScreen()),
     GoRoute(path: '/personal-objectives', name: 'personal-objectives', builder: (ctx, s) => const PersonalObjectivesScreen()),

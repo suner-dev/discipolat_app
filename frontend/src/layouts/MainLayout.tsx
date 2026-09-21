@@ -9,6 +9,8 @@ import { usePlatformMeta } from '@/contexts/MetaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/i18n';
 import { RealtimeSync } from '@/hooks/useRealtimeSync';
+import { useCommandPalette } from '@/hooks/useKeyboardShortcuts';
+import CommandPalette from '@/components/CommandPalette';
 import { FlaskConical, X } from 'lucide-react';
 import ImpersonationBanner from '@/components/shared/ImpersonationBanner';
 
@@ -22,6 +24,10 @@ export default function MainLayout() {
   const { activeRole, user } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const openPalette = useMemo(() => () => setPaletteOpen(true), []);
+  // §G5.1 — Ctrl/Cmd+K ouvre la palette de commandes (même depuis les champs de saisie)
+  useCommandPalette(openPalette);
   const [testerBannerVisible, setTesterBannerVisible] = useState(
     () => localStorage.getItem(TESTER_BANNER_KEY) !== '1'
   );
@@ -47,7 +53,7 @@ export default function MainLayout() {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64 transition-all duration-300">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+        <Navbar onMenuClick={() => setSidebarOpen(true)} openPalette={openPalette} />
 
         {/* §G1.9 — Bandeau permanent d'impersonation (au-dessus de tout contenu) */}
         <ImpersonationBanner />
@@ -80,6 +86,9 @@ export default function MainLayout() {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in">
           <Outlet />
         </main>
+
+        {/* §G5.1 — Palette de commandes (Ctrl/Cmd+K) */}
+        <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
 
         {/* Widget de feedback (environnement bêta) */}
         <FeedbackWidget />

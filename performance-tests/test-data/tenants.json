@@ -1,0 +1,32 @@
+[
+  {
+    "id": "370a6805-1c6f-454d-990f-b1ebf45b70ed",
+    "name": "\u00c9glise Saint Cl\u00e9menceVille 0",
+    "slug": "eglise-director-why-effect-0",
+    "legal_name": "Association Dubois Boucher S.A.S.",
+    "country": "ML",
+    "city": "Sainte Bertrand",
+    "timezone": "Africa/Maputo",
+    "currency": "XAF",
+    "language": "fr",
+    "status": "ACTIVE",
+    "offline_mode": "FIELD_OPS",
+    "created_at": "2026-06-11T12:02:12.305967",
+    "updated_at": "2026-09-21T12:02:12.306012"
+  },
+  {
+    "id": "40275e84-ce82-49b2-8a47-41eaa4cf7c19",
+    "name": "\u00c9glise Girard 1",
+    "slug": "eglise-summer-issue-1",
+    "legal_name": "Association Cordier",
+    "country": "CH",
+    "city": "Letellier",
+    "timezone": "Indian/Mauritius",
+    "currency": "EUR",
+    "language": "fr",
+    "status": "ACTIVE",
+    "offline_mode": "FIELD_OPS",
+    "created_at": "2025-11-21T12:02:12.323767",
+    "updated_at": "2026-09-21T12:02:12.323781"
+  }
+]

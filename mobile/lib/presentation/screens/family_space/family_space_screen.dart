@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../widgets/glass_theme.dart';
@@ -107,7 +108,7 @@ class _FamilySpaceScreenState extends ConsumerState<FamilySpaceScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildFamilyHeader(familyName, memberCount, totalActivities),
+                          _buildFamilyHeader(familyName, memberCount, totalActivities, l10n),
                           const SizedBox(height: 24),
                           if (_members.isNotEmpty) ...[
                             _buildMembersList(),
@@ -146,7 +147,7 @@ class _FamilySpaceScreenState extends ConsumerState<FamilySpaceScreen> {
     );
   }
 
-  Widget _buildFamilyHeader(String familyName, int memberCount, int totalActivities) {
+  Widget _buildFamilyHeader(String familyName, int memberCount, int totalActivities, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -345,7 +346,7 @@ class _FamilySpaceScreenState extends ConsumerState<FamilySpaceScreen> {
       currentIndex: _currentNavIndex,
       onTap: (i) {
         setState(() => _currentNavIndex = i);
-        if (i < routes.length) context.go(routes[i]);
+        if (i < routes.length) GoRouter.of(context).go(routes[i]);
       },
     );
   }

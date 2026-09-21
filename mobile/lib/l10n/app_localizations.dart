@@ -68,6 +68,15 @@ class AppLocalizations {
   String get filter => translate('filter');
   String get refresh => translate('refresh');
   String get retry => translate('retry');
+  String get members => translate('members');
+  String get activitiesThisMonth => translate('activitiesThisMonth');
+  String get familyMembers => translate('familyMembers');
+  String get recentActivity => translate('recentActivity');
+  String get noRecentActivity => translate('noRecentActivity');
+  String get activity => translate('activity');
+  String get familyError => translate('familyError');
+  String get family => translate('family');
+  String get familySpaceTitle => translate('familySpaceTitle');
   // ── Lot H2 : admin_settings / admin_tenants / growth_projection / my_team_family ──
   String get churchSettings => translate('churchSettings');
   String get identity => translate('identity');
@@ -1507,6 +1516,13 @@ class AppLocalizations {
     'filter': 'Filtrer',
     'refresh': 'Rafraîchir',
     'retry': 'Réessayer',
+    'members': 'Membres',
+    'activitiesThisMonth': 'Activités ce mois',
+    'familyMembers': 'Membres de la famille',
+    'recentActivity': 'Activité récente',
+    'noRecentActivity': 'Aucune activité récente',
+    'activity': 'Activité',
+    'participants': 'Participants',
     'streakError': 'Erreur de récupération du streak',
     'streakTitle': 'Statistiques de streak',
     'currentStreak': 'Series actuelle',
@@ -1603,7 +1619,6 @@ class AppLocalizations {
     'addEventTitle': 'Nouvel événement',
     'eventDate': 'Date',
     'eventTime': 'Heure',
-    'participants': 'Participants',
     'rsvp': 'Confirmer présence',
     'adminSettings': 'Paramètres admin',
     'churchName': 'Nom de l\'église',
@@ -2882,12 +2897,12 @@ class AppLocalizations {
     'voiceCmd4': 'Quels sont les prochains événements ?',
     'voiceCmd5': 'Montre le taux de présence',
     'voiceCmd6': 'Quelles sont les alertes actives ?',
+    'familyError': 'Impossible de charger l\'espace famille.',
+    'family': 'Famille',
+    'familySpaceTitle': 'Espace Famille',
   };
 
-'familyError': 'Unable to load family space.',
-    'family': 'Family',
-    'familySpaceTitle': 'Family Space',
-  };\n\n  // ==================== ENGLISH ====================
+  // ==================== ENGLISH ====================
   static const Map<String, String> _english = {
 'language': 'Language',
     'languageChanged': 'Language changed successfully',
@@ -2918,6 +2933,13 @@ class AppLocalizations {
     'filter': 'Filter',
     'refresh': 'Refresh',
     'retry': 'Retry',
+    'members': 'Members',
+    'activitiesThisMonth': 'Activities this month',
+    'familyMembers': 'Family Members',
+    'recentActivity': 'Recent Activity',
+    'noRecentActivity': 'No recent activity',
+    'activity': 'Activity',
+    'participants': 'Participants',
     'streakError': 'Error fetching streak data',
     'streakTitle': 'Streak Statistics',
     'currentStreak': 'Current Streak',
@@ -3017,7 +3039,6 @@ class AppLocalizations {
     'addEventTitle': 'New event',
     'eventDate': 'Date',
     'eventTime': 'Time',
-    'participants': 'Participants',
     'rsvp': 'RSVP',
     'adminSettings': 'Admin settings',
     'churchName': 'Church name',

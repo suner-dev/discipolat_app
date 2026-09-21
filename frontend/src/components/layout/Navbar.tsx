@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Globe,
   Building2,
+  Search,
 } from 'lucide-react';
 import { WORKSPACE_HOME, ROLE_META, roleIcon, isTenantAdmin } from '@/workspaces';
 import BetaBadge from '@/components/beta/BetaBadge';
@@ -30,9 +31,10 @@ import type { Notification } from '@/types';
 
 interface NavbarProps {
   onMenuClick: () => void;
+  openPalette?: () => void;
 }
 
-export default function Navbar({ onMenuClick }: NavbarProps) {
+export default function Navbar({ onMenuClick, openPalette }: NavbarProps) {
   const navigate = useNavigate();
   const { darkMode, toggleTheme } = useTheme();
   const { user, logout, switchRole, roles, activeRole } = useAuth();
@@ -190,6 +192,25 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             ) : (
               <Moon className="w-[18px] h-[18px] transition-transform duration-500 group-hover:-rotate-12" />
             )}
+          </button>
+
+          {/* §G5.1 — Palette de commandes (Ctrl/Cmd+K) */}
+          <button
+            type="button"
+            onClick={openPalette}
+            className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl text-gray-400
+                       hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/50
+                       border border-gray-200/60 dark:border-gray-700/50 transition-all duration-200
+                       hover:scale-[1.02] active:scale-95"
+            title="Palette de commandes (Ctrl+K)"
+            aria-label="Ouvrir la palette de commandes"
+          >
+            <Search className="w-4 h-4" />
+            <span className="text-xs text-gray-400 dark:text-gray-500">Rechercher…</span>
+            <kbd className="ml-2 px-1.5 py-0.5 text-[10px] rounded border border-gray-200 dark:border-gray-700
+                            bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-medium">
+              Ctrl K
+            </kbd>
           </button>
 
           {/* Notifications */}

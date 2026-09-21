@@ -49,7 +49,7 @@ INSERT INTO permissions (id, tenant_id, key, label, description, scope, category
     (uuid_generate_v4(), NULL, 'EVENT_CREATE', 'Créer événements', 'Créer de nouveaux événements', 'TENANT', 'EVENTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'EVENT_UPDATE', 'Modifier événements', 'Modifier les événements', 'TENANT', 'EVENTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'EVENT_DELETE', 'Supprimer événements', 'Supprimer/archiver les événements', 'TENANT', 'EVENTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'EVENT_REGISTER', 'S\'inscrire aux événements', 'S\'inscrire aux événements', 'TENANT', 'EVENTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'EVENT_REGISTER', 'S inscrire aux evenements', 'S inscrire aux evenements', 'TENANT', 'EVENTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     
     -- NOTIFICATION permissions
     (uuid_generate_v4(), NULL, 'NOTIFICATION_READ', 'Lire notifications', 'Voir les notifications', 'TENANT', 'NOTIFICATIONS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -68,13 +68,13 @@ INSERT INTO permissions (id, tenant_id, key, label, description, scope, category
     
     -- COURSE/ACADEMY permissions
     (uuid_generate_v4(), NULL, 'COURSE_READ', 'Lire formations', 'Voir les cours et modules', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'COURSE_ENROLL', 'S\'inscrire formations', 'S\'inscrire aux cours', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'COURSE_ENROLL', 'S inscrire formations', 'S inscrire aux cours', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'COURSE_CREATE', 'Créer formations', 'Créer des cours et modules', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'COURSE_MANAGE', 'Gérer formations', 'Gérer toutes les formations', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     
     -- AI permissions
-    (uuid_generate_v4(), NULL, 'AI_USE', 'Utiliser IA', 'Utiliser les fonctionnalités IA', 'TENANT', 'AI', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'AI_ADMIN', 'Admin IA', 'Configurer et entraîner l\'IA', 'TENANT', 'AI', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'AI_USE', 'Utiliser IA', 'Utiliser les fonctionnalites IA', 'TENANT', 'AI', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'AI_ADMIN', 'Admin IA', 'Configurer et entrainer l\'IA', 'TENANT', 'AI', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     
     -- SETTINGS/BRANDING/MODULES permissions
     (uuid_generate_v4(), NULL, 'BRANDING_READ', 'Lire branding', 'Voir le branding', 'TENANT', 'SETTINGS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),

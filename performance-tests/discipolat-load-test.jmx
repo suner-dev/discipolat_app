@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Discipolat Load Test" enabled="true">
+      <stringProp name="TestPlan.comments">Discipolat/Church OS Performance Test Plan</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="BASE_URL" elementType="Argument">
+            <stringProp name="Argument.name">BASE_URL</stringProp>
+            <stringProp name="Argument.value">http://localhost:8080</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="TENANT_ID" elementType="Argument">
+            <stringProp name="Argument.name">TENANT_ID</stringProp>
+            <stringProp name="Argument.value">00000000-0000-0000-0000-000000000001</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="JWT_TOKEN" elementType="Argument">
+            <stringProp name="Argument.name">JWT_TOKEN</stringProp>
+            <stringProp name="Argument.value">${__P(JWT_TOKEN,)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <!-- Thread Group -->
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Discipolat Users" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <intProp name="LoopController.loops">-1</intProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">100</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">120</stringProp>
+        <stringProp name="ThreadGroup.duration">600</stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.scheduler">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <!-- HTTP Request Defaults -->
+        <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" enabled="true">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">localhost</stringProp>
+          <stringProp name="HTTPSampler.port">8080</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.contentEncoding">utf-8</stringProp>
+          <stringProp name="HTTPSampler.path"></stringProp>
+          <stringProp name="HTTPSampler.concurrentPool">6</stringProp>
+          <stringProp name="HTTPSampler.connect_timeout">5000</stringProp>
+          <stringProp name="HTTPSampler.response_timeout">30000</stringProp>
+        </ConfigTestElement>
+        <hashTree/>
+        
+        <!-- HTTP Header Manager -->
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Authorization</stringProp>
+              <stringProp name="Header.value">Bearer ${JWT_TOKEN}</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Content-Type</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">X-Tenant-ID</stringProp>
+              <stringProp name="Header.value">${TENANT_ID}</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
+        
+        <!-- CSV Data Set Config for test users -->
+        <CSVDataSet guiclass="CSVDataSetGui" testclass="CSVDataSet" testname="Test Users CSV" enabled="true">
+          <stringProp name="filename">test-users.csv</stringProp>
+          <stringProp name="variableNames">userId,email,password</stringProp>
+          <boolProp name="ignoreFirstLine">true</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="delimiter">,</stringProp>
+          <stringProp name="quotedData">false</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+        
+        <!-- Loop Controller for user scenarios -->
+        <LoopController guiclass="LoopControlPanel" testclass="LoopController" testname="User Scenario Loop" enabled="true">
+          <boolProp name="LoopController.continue_forever">true</boolProp>
+        </LoopController>
+        <hashTree>
+          <!-- 1. Church OS Dashboard -->
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="1. Church OS Dashboard" enabled="true">
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/dashboard/church</stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Dashboard Assertions" enabled="true">
+              <collectionProp name="Assertion.assumptions">
+                <stringProp name="">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Dashboard should return 200</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+            </ResponseAssertion>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Dashboard Has KPIs" enabled="true">
+              <collectionProp name="Assertion.assumptions">
+                <stringProp name="">kpis</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Dashboard should have KPIs</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_body</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+            </ResponseAssertion>
+            <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Dashboard Response Time < 500ms" enabled="true">
+              <stringProp name="DurationAssertion.duration">500</stringProp>
+            </DurationAssertion>
+          </hashTree>
+          
+          <!-- 2. Space List -->
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="2. Space List" enabled="true">
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/spaces?type=DEPARTMENT</stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Space List Assertions" enabled="true">
+              <collectionProp name="Assertion.assumptions">
+                <stringProp name="">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Space list should return 200</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+            </ResponseAssertion>
+            <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Space List Response Time < 300ms" enabled="true">
+              <stringProp name="DurationAssertion.duration">300</stringProp>
+            </DurationAssertion>
+          </hashTree>
+          
+          <!-- 3. Space Bootstrap (Department/Family OS) -->
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="3. Space Bootstrap" enabled="true">
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/spaces/${spaceId}/bootstrap</stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Space Bootstrap Assertions" enabled="true">
+              <collectionProp name="Assertion.assumptions">
+                <stringProp name="">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Space bootstrap should return 200</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+            </ResponseAssertion>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Space Bootstrap Has Config" enabled="true">
+              <collectionProp name="Assertion.assumptions">
+                <stringProp name="">configuration</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Space bootstrap should have configuration</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_body</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+            </ResponseAssertion>
+            <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Space Bootstrap Response Time < 1000ms" enabled="true">
+              <stringProp name="DurationAssertion.duration">1000</stringProp>
+            </DurationAssertion>
+          </hashTree>
+          
+          <!-- 4. Global Search -->
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="4. Global Search" enabled="true">
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/search?q=Jean&size=20</stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Global Search Assertions" enabled="true">
+              <collectionProp name="Assertion.assumptions">
+                <stringProp name="">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Global search should return 200</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+            </ResponseAssertion>
+            <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Global Search Response Time < 300ms" enabled="true">
+              <stringProp name="DurationAssertion.duration">300</stringProp>
+            </DurationAssertion>
+          </hashTree>
+          
+          <!-- 5. People Directory -->
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="5. People Directory" enabled="true">
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/people?page=0&size=50&sansEspace=false</stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="People Directory Assertions" enabled="true">
+              <collectionProp name="Assertion.assumptions">
+                <stringProp name="">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">People directory should return 200</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+            </ResponseAssertion>
+            <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="People Directory Response Time < 300ms" enabled="true">
+              <stringProp name="DurationAssertion.duration">300</stringProp>
+            </DurationAssertion>
+          </hashTree>
+          
+          <!-- 6. Virtual List (Large Pagination) -->
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="6. Virtual List" enabled="true">
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/people?page=0&size=100&sort=lastName,asc</stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Virtual List Response Time < 400ms" enabled="true">
+              <stringProp name="DurationAssertion.duration">400</stringProp>
+            </DurationAssertion>
+          </hashTree>
+          
+          <!-- 7. Calendar -->
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="7. Calendar" enabled="true">
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/events/calendar?from=2026-01-01&to=2026-12-31</stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Calendar Response Time < 500ms" enabled="true">
+              <stringProp name="DurationAssertion.duration">500</stringProp>
+            </DurationAssertion>
+          </hashTree>
+          
+          <!-- 8. Mobile Sync Push -->
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="8. Mobile Sync Push" enabled="true">
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/sync/push</stringProp>
+            <stringProp name="HTTPSampler.postBodyRaw">true</stringProp>
+            <stringProp name="HTTPSampler.postBodyRawContent">{&#xd;
+  "lastSync": "${__timeShift(yyyy-MM-dd'T'HH:mm:ss.SSS'Z',,-1h,,)}",&#xd;
+  "deviceId": "mobile-${__threadNum}",&#xd;
+  "changes": [&#xd;
+    {"type": "PERSON", "action": "CREATE", "data": {"email": "sync${__threadNum}@test.com", "firstName": "Sync", "lastName": "User${__threadNum}"}}&#xd;
+  ]&#xd;
+}</stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Mobile Sync Push Response Time < 2000ms" enabled="true">
+              <stringProp name="DurationAssertion.duration">2000</stringProp>
+            </DurationAssertion>
+          </hashTree>
+          
+          <!-- 9. Mobile Sync Pull -->
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="9. Mobile Sync Pull" enabled="true">
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/sync/pull?since=${__timeShift(yyyy-MM-dd'T'HH:mm:ss.SSS'Z',,-1h,,)}</stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Mobile Sync Pull Response Time < 2000ms" enabled="true">
+              <stringProp name="DurationAssertion.duration">2000</stringProp>
+            </DurationAssertion>
+          </hashTree>
+          
+          <!-- Think time between requests -->
+          <UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Think Time (1-3s)" enabled="true">
+            <stringProp name="ConstantTimer.delay">1000</stringProp>
+            <stringProp name="ConstantTimer.range">2000</stringProp>
+          </UniformRandomTimer>
+        </hashTree>
+      </hashTree>
+      
+      <!-- Summary Report Listener -->
+      <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <stringProp name="ResultCollector.output_file">jmeter-results.jtl</stringProp>
+      </ResultCollector>
+      <hashTree/>
+      
+      <!-- Aggregate Report Listener -->
+      <ResultCollector guiclass="AggregateReport" testclass="ResultCollector" testname="Aggregate Report" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+      </ResultCollector>
+      <hashTree/>
+      
+      <!-- View Results Tree (for debugging) -->
+      <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="false">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+      </ResultCollector>
+      <hashTree/>
+      
+      <!-- Backend Listener for InfluxDB/Grafana -->
+      <BackendListener guiclass="BackendListenerGui" testclass="BackendListener" testname="InfluxDB Backend Listener" enabled="false">
+        <stringProp name="BackendListener.classname">org.apache.jmeter.visualizers.backend.influxdb.InfluxdbBackendListenerClient</stringProp>
+        <stringProp name="influxdb.url">http://localhost:8086/write?db=jmeter</stringProp>
+        <stringProp name="influxdb.application">discipolat</stringProp>
+        <stringProp name="influxdb.measurement">response_times</stringProp>
+        <stringProp name="influxdb.tags">application=discipolat</stringProp>
+      </BackendListener>
+      <hashTree/>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
