@@ -12,7 +12,15 @@ import '../../../presentation/widgets/app_drawer.dart';
 /// le document canonique exporté par le web et d'en afficher la synthèse
 /// (scope, espaces, modules, statuts, workflows) **sans jamais écrire**.
 ///
-/// TODO(G4.5 mobile / v1.1) — ÉCRITURE différée volontairement :
+/// **DONE G4.5 mobile v1.0** — Lecture seule implémentée et testée :
+/// - ✅ Chargement de l'export depuis l'API (`GET /spaces/:id/export`)
+/// - ✅ Analyse du JSON collé (validation format, version)
+/// - ✅ Affichage de la synthèse (format, version, scope, espaces, modules, statuts, workflows, champs)
+/// - ✅ Documentation claire des limitations (voir TODO ci-dessous)
+/// - ✅ Route enregistrée dans app.dart (`/space-config-transfer`)
+/// - ✅ Intégration drawer navigation
+///
+/// **TODO G5.7/G5.8 (hors périmètre G4)** — Écriture mobile différée volontairement :
 ///   1. l'import canonique est **transactionnel côté serveur** (tout ou rien) et produit
 ///      un rapport de conflits ligne à ligne ; l'écraser depuis un écran mobile
 ///      réduirait la lisibilité du rapport et le risque d'import partiel ;

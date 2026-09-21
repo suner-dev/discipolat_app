@@ -75,7 +75,7 @@ class SpaceCriticalPathIntegrationTest {
     void setUp() {
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
         for (String table : List.of(
-                "space_modules", "spaces", "module_definitions",
+                "space_module", "spaces", "module_definition",
                 "organization_nodes", "soul_history", "soul_departments", "soul_notes", "soul_tags",
                 "souls", "families", "users", "user_roles", "membership", "space_membership",
                 "tenant_memberships", "invitations")) {
@@ -104,7 +104,7 @@ class SpaceCriticalPathIntegrationTest {
         String[] modules = {"people", "events", "notifications", "dashboard", "org", "teams", "tasks", "assets", "inventory", "maintenance", "finance", "reports", "archive", "dress_code", "rehearsal", "repertoire"};
         for (String code : modules) {
             jdbcTemplate.update("""
-                INSERT INTO module_definitions (id, code, name, description, category, version, enabled, icon, source, features_json, created_at, updated_at)
+                INSERT INTO module_definition (id, code, name, description, category, version, enabled, icon, source, features_json, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, UUID.randomUUID(), code, code.toUpperCase(), "Module " + code, "CORE", 1, true, code, "CORE", "{}", Instant.now(), Instant.now());
         }
