@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/ai_assistant/ai_assistant_screen.dart';
@@ -191,6 +192,8 @@ import 'features/streaming/screens/streams_screen.dart';
 import 'features/streaming/screens/stream_detail_screen.dart';
 import 'features/streaming/screens/stream_create_screen.dart';
 import 'presentation/screens/streaming/streaming_chat_screen.dart';
+import 'features/messages/screens/conversations_screen.dart' as msg_conv;
+import 'features/messages/screens/conversation_detail_screen.dart' as msg_feature;
 import 'features/testimonies/TestimonyDetailScreen.dart';
 import 'features/rewards/RewardsClaimsScreen.dart';
 import 'features/users/UserRolesScreen.dart';
@@ -1266,7 +1269,10 @@ final appRouter = GoRouter(
     GoRoute(path: '/dress-codes', name: 'dress-codes', builder: (ctx, s) => const DressCodeScreen()),
     GoRoute(path: '/passport', name: 'passport', builder: (ctx, s) => const PassportScreen()),
     GoRoute(path: '/spiritual-journey', name: 'spiritual-journey', builder: (ctx, s) => const SpiritualJourneyScreen()),
-    GoRoute(path: '/conversations', name: 'conversations', builder: (ctx, s) => const ConversationsScreen()),
+    GoRoute(path: '/conversations', name: 'conversations', builder: (ctx, s) => const msg_conv.ConversationsScreen()),
+    GoRoute(path: '/messages/new-direct', name: 'new-direct-message', builder: (ctx, s) => const Scaffold(body: Center(child: Text('Nouvelle discussion privée - à implémenter')))),
+    GoRoute(path: '/messages/new-group', name: 'new-group', builder: (ctx, s) => const Scaffold(body: Center(child: Text('Nouveau groupe - à implémenter')))),
+    GoRoute(path: '/messages/new-channel', name: 'new-channel', builder: (ctx, s) => const Scaffold(body: Center(child: Text('Nouveau canal - à implémenter')))),
     GoRoute(path: '/ai-chat', name: 'ai-chat', builder: (ctx, s) => const AiChatScreen()),
     GoRoute(path: '/tenant-selection', name: 'tenant-selection', builder: (ctx, s) => const TenantSelectionScreen()),
     GoRoute(path: '/tenant/branding', name: 'tenant-branding', builder: (ctx, s) => const TenantBrandingScreen()),

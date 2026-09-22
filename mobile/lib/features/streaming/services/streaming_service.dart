@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
+import 'package:discipolat_mobile/data/services/providers.dart';
 import 'package:discipolat_mobile/features/streaming/models/stream_model.dart';
 
 part 'streaming_service.g.dart';
@@ -22,7 +23,7 @@ class StreamingService {
     try {
       final queryParams = <String, dynamic>{};
       if (status != null) queryParams['status'] = status;
-      final response = await _api.get('/streams', queryParameters: queryParams);
+      final response = await _api.get('/streams', params: queryParams);
       final data = response.data as List;
       return data.map((json) => StreamModel.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -87,7 +88,7 @@ class StreamingService {
   // Chat
   Future<List<StreamChatMessage>> getChatMessages(int streamId, {int page = 0, int size = 50}) async {
     try {
-      final response = await _api.get('/stream-chat/$streamId', queryParameters: {'page': page, 'size': size});
+      final response = await _api.get('/stream-chat/$streamId', params: {'page': page, 'size': size});
       final data = response.data as List;
       return data.map((json) => StreamChatMessage.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {

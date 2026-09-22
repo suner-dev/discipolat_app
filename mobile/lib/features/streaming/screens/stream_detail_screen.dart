@@ -74,7 +74,7 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
       backgroundColor: Colors.black,
       body: streamAsync.when(
         data: (stream) => _buildContent(stream),
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        loading: () => Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (error, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

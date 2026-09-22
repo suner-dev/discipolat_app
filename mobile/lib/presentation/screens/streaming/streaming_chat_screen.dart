@@ -5,7 +5,7 @@ import 'package:web_socket_channel/status.dart' as status;
 import 'dart:convert';
 import 'dart:async';
 import '../../../data/services/api_service.dart';
-import '../../../tenant_config.dart';
+import '../../../data/services/api_config.dart';
 import '../../../../l10n/app_localizations.dart';
 
 /// Streaming Chat — mobile WebSocket version matching frontend StreamingChat.
@@ -82,11 +82,12 @@ class _StreamingChatScreenState extends State<StreamingChatScreen> {
 
   void _connectWebSocket() async {
     try {
-      final token = await TenantConfig.getAccessToken();
+      final token = await _apiService.getAccessToken();
       if (token == null) return;
       
+      final wsUrl = ApiConfig.baseUrl.replaceFirst('http', 'ws').replaceFirst('/api/v1', '');
       _channel = WebSocketChannel.connect(
-        Uri.parse('ws://${TenantConfig.apiBaseUrl.replaceFirst('http', 'ws')}/ws?access_token=$token'),
+        Uri.parse('$wsUrl/ws?access_token=$token'),
       );
       
       _subscription = _channel!.stream.listen(
@@ -228,7 +229,7 @@ class _StreamingChatScreenState extends State<StreamingChatScreen> {
 
   String _formatTime(DateTime? dt) {
     if (dt == null) return '';
-    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')};
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}'
   }
 
   @override

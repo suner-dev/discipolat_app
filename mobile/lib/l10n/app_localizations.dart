@@ -1259,6 +1259,7 @@ class AppLocalizations {
   // ==================== MODULES CONNECTÉS — LOT 2 ====================
   String get streamingTitle => translate('streamingTitle');
   String get streamingError => translate('streamingError');
+  String get streamingChatTitle => translate('streamingChatTitle');
   String get liveBadge => translate('liveBadge');
   String get statLive => translate('statLive');
   String get statViewers => translate('statViewers');
@@ -1725,6 +1726,7 @@ class AppLocalizations {
     'demoDataBanner': 'Aperçu — données de démonstration, pas encore connectées à votre église.',
     'streamingTitle': 'Streaming & Live',
     'streamingError': 'Impossible de charger les streams.',
+    'streamingChatTitle': 'Chat en direct',
     'liveBadge': 'EN DIRECT',
     'statLive': 'En direct',
     'statViewers': 'Spectateurs',
@@ -7297,6 +7299,7 @@ const Map<String, String> _swahili = {
     'demoDataBanner': 'Data ya onyesho',
     'streamingTitle': 'Matangazo',
     'streamingError': 'Hitilafu kupakia matangazo',
+    'streamingChatTitle': 'Mazungumzo ya moja kwa moja',
     'liveBadge': 'MOJA KWA MOJA',
     'statLive': 'Moja kwa moja',
     'statViewers': 'Watazamaji',
@@ -8675,6 +8678,7 @@ const Map<String, String> _arabic = {
     'demoDataBanner': 'بيانات تجريبية',
     'streamingTitle': 'البث المباشر',
     'streamingError': 'خطأ في تحميل البث',
+    'streamingChatTitle': 'الدردشة المباشرة',
     'liveBadge': 'مباشر',
     'statLive': 'مباشر',
     'statViewers': 'المشاهدون',

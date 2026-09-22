@@ -77,11 +77,11 @@ class _MakerTrackingScreenState extends State<MakerTrackingScreen> {
                     children: [
                       // Summary cards
                       Row(children: [
-                        _summaryCard('$formations', Icons.school, Colors.blue),
+                        Expanded(child: _summaryCard('$formations', Icons.school, Colors.blue)),
                         const SizedBox(width: 8),
-                        _summaryCard('$competences', Icons.psychology, Colors.purple),
+                        Expanded(child: _summaryCard('$competences', Icons.psychology, Colors.purple)),
                         const SizedBox(width: 8),
-                        _summaryCard('$ames', Icons.people, Colors.green),
+                        Expanded(child: _summaryCard('$ames', Icons.people, Colors.green)),
                       ]),
                       const SizedBox(height: 16),
                       // Points
@@ -127,15 +127,13 @@ class _MakerTrackingScreenState extends State<MakerTrackingScreen> {
   }
 
   Widget _summaryCard(String count, IconData icon, Color color) {
-    return Expanded(
-      child: GlassCard(
-        padding: const EdgeInsets.all(12),
-        child: Column(children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 4),
-          Text(count, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-        ]),
-      ),
+    return GlassCard(
+      padding: const EdgeInsets.all(12),
+      child: Column(children: [
+        Icon(icon, color: color, size: 28),
+        const SizedBox(height: 4),
+        Text(count, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+      ]),
     );
   }
 
