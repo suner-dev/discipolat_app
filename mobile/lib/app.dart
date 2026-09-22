@@ -197,6 +197,7 @@ import 'features/events/screens/event_detail_screen.dart';
 import 'features/events/screens/event_create_screen.dart';
 import 'features/finances/screens/finances_screen.dart';
 import 'features/health/screens/health_screen.dart';
+import 'features/assets/screens/assets_screen.dart';
 import 'features/messages/screens/conversations_screen.dart' as msg_conv;
 import 'features/messages/screens/conversation_detail_screen.dart' as msg_feature;
 import 'features/testimonies/TestimonyDetailScreen.dart';
@@ -447,6 +448,7 @@ Map<String, List<String>> _routeRoles = {
   '/events/create': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/finances': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/health': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/assets': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/surveys': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/testimonials': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/tickets': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -1220,6 +1222,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/events/create', name: 'event-create', builder: (ctx, s) => const EventCreateScreen()),
     GoRoute(path: '/finances', name: 'finances', builder: (ctx, s) => const FinancesScreen()),
     GoRoute(path: '/health', name: 'health', builder: (ctx, s) => const HealthScreen()),
+    GoRoute(path: '/assets', name: 'assets', builder: (ctx, s) => const AssetsScreen()),
     GoRoute(path: '/surveys', name: 'surveys', builder: (ctx, s) => const SurveysScreen()),
     GoRoute(path: '/testimonials', name: 'testimonials', builder: (ctx, s) => const TestimonialsScreen()),
     GoRoute(path: '/tickets', name: 'tickets', builder: (ctx, s) => const TicketsScreen()),
