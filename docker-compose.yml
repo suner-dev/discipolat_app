@@ -167,9 +167,54 @@ services:
     networks:
       - discipolat-net
 
+  # ============================================
+  # G6.9 — Monitoring local (profil `monitoring`) :
+  #   docker compose --profile monitoring up -d prometheus grafana
+  # Prometheus scrape /actuator/prometheus via la règle
+  # infra/monitoring/prometheus.yml ; alertes infra/monitoring/alert.rules.yml.
+  # Grafana embarque le dashboard cache provisionné (cache + API health).
+  # En staging/beta Render, le monitoring est le dashboard Render natif
+  # + keep-alive.yml ; Grafana auto-hébergé = v1.1 [BUSINESS_INPUT].
+  # ============================================
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: discipolat-prometheus
+    profiles: [monitoring]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/monitoring/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - promdata:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - discipolat-net
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    container_name: discipolat-grafana
+    profiles: [monitoring]
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ./infra/monitoring/grafana-cache-dashboard.json:/var/lib/grafana/dashboards/cache.json:ro
+    depends_on:
+      - prometheus
+    networks:
+      - discipolat-net
+
 volumes:
   pgdata:
   redisdata:
+  promdata:
+  grafanadata:
 
 networks:
   discipolat-net:

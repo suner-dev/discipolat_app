@@ -12,7 +12,7 @@ import { STATUT_TASK_BADGE } from './types';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
-function GlobalSearchResults({ results, deptId, onClear }: { results: any; deptId: string; onClear: () => void }) {
+export function GlobalSearchResults({ results, deptId, onClear }: { results: any; deptId: string; onClear: () => void }) {
   const navigate = useNavigate();
   if (!results) {
     return (

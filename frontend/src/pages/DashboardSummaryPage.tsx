@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { tText } from '@/i18n';
 import {
-  LayoutDashboard, Users, AlertTriangle, TrendingUp, Activity,
-  Heart, BarChart3, Loader2, Clock,
+  LayoutDashboard, Users, AlertTriangle, Activity,
+  Heart, Loader2, Clock,
 } from 'lucide-react';
 
 interface DashboardSummary {

@@ -5,8 +5,8 @@ import api from '@/lib/api';
 import type { User, PageResponse, UserRole } from '@/types';
 import {
   UserCog, Plus, Search, Eye, Edit3, Trash2, ArrowLeft,
-  Loader2, Shield, History, Filter, Mail, Phone, Calendar,
-  Key, X, CheckCircle, XCircle,
+  Loader2, Shield, Filter, Phone, Calendar,
+  Key, CheckCircle, XCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
@@ -47,10 +47,10 @@ export default function PasteurUsersTab() {
     enabled: view === 'liste',
   });
 
-  const { data: userDetail, isLoading: detailLoading } = useQuery({
+  const { data: userDetail, isLoading: _detailLoading } = useQuery({
     queryKey: ['users', selectedUser?.id],
     queryFn: async () => {
-      const res = await api.get(`/users/${selectedUser!.id}`);
+      const res = await api.get(`/users/${selectedUser?.id}`);
       return res.data as User;
     },
     enabled: !!selectedUser && (view === 'detail' || view === 'edit'),

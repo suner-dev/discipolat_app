@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import type { DictionaryEntry, DictionariesMap } from '@/types';
 import {
-  BookOpen, Plus, Save, Loader2, X, Trash2, Pencil,
+  BookOpen, Plus, Save, Loader2, Trash2, Pencil,
   RotateCcw, Sparkles, ChevronDown, ChevronUp, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';

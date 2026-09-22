@@ -196,16 +196,16 @@ export function ChecklistsTab({ deptId, onChanged }: { deptId: string; onChanged
 // INVENTAIRE — matériel du département
 // ============================================================
 
-type Equipment = {
+type _Equipment = {
   id: string; nom: string; description?: string; quantite: number;
   etat: string; responsableId?: string | null; affecteAId?: string | null;
   localisation?: string; dateAcquisition?: string;
 };
 
-const ETAT_LABELS: Record<string, string> = {
+const _ETAT_LABELS: Record<string, string> = {
   NEUF: 'Neuf', BON: 'Bon état', USAGE: 'Usage', REPARATION: 'En réparation', HORS_SERVICE: 'Hors service',
 };
-const ETAT_COLORS: Record<string, string> = {
+const _ETAT_COLORS: Record<string, string> = {
   NEUF: 'badge-success', BON: 'badge-info', USAGE: 'badge-gray', REPARATION: 'badge-warning', HORS_SERVICE: 'badge-danger',
 };
 

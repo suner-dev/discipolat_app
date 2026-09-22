@@ -5,13 +5,13 @@ import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  Trophy, Medal, Target, Flame, Award, TrendingUp, Crown,
+  Trophy, Medal, Target, Flame, Award, Crown,
   RefreshCw, Loader2, Star, CheckCircle, Users, Zap,
 } from 'lucide-react';
 
 interface LeaderboardEntry { userId: string; name: string; points: number; rank: number; badges: number; }
 interface QuestStats { totalPoints: number; totalBadges: number; totalChallenges: number; activeUsers: number; }
-interface UserProfile { userId: string; name: string; points: number; rank: number; badges: string[]; weeklyProgress: number; }
+interface _UserProfile { userId: string; name: string; points: number; rank: number; badges: string[]; weeklyProgress: number; }
 interface ContextualBadge { id: string; name: string; description: string; icon: string; unlockedAt?: string; }
 interface WeeklyChallenge { id: string; title: string; description: string; progress: number; target: number; rewardPoints: number; endsAt: string; }
 

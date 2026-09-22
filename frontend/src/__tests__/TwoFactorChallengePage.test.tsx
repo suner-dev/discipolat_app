@@ -156,7 +156,7 @@ describe('TwoFactorChallengePage — vérification en deux étapes', () => {
   });
 
   it('"Retour à la connexion" déconnecte et navigue vers /login', async () => {
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
     renderPage();
 
     fireEvent.click(screen.getByRole('button', { name: /retour à la connexion/i }));

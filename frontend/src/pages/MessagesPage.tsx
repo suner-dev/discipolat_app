@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { useI18n, tText, getI18nLocale } from '@/i18n';
 import {
   MessageSquare, Send, Search, Loader2, ChevronLeft, Users,
-  CheckCheck, X, Mic, MicOff, Smile, Reply, Hash, Play, Pause, Volume2,
+  CheckCheck, X, Mic, MicOff, Smile, Reply, Hash, Play,
 } from 'lucide-react';
 
 interface Conversation { id: string; otherUserId: string; otherUserName: string; otherUserRole: string; lastMessage?: string; lastMessageSenderId?: string; lastMessageAt?: string; unreadCount: number; }
@@ -30,7 +30,7 @@ function formatDuration(seconds?: number) {
 }
 
 export default function MessagesPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export default function MessagesPage() {
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Queries
-  const { data: conversations = [], isLoading } = useQuery({
+  const { data: conversations = [], isLoading: _isLoading } = useQuery({
     queryKey: ['messages', 'conversations'], queryFn: async () => (await api.get('/messages/conversations')).data as Conversation[], refetchInterval: 15000,
   });
 
@@ -159,7 +159,7 @@ export default function MessagesPage() {
         const blob = new Blob([e.data], { type: 'audio/webm' });
         const url = URL.createObjectURL(blob);
         // In production: upload to storage, get URL. Here we simulate.
-        voiceMutation.mutate({ convId: convId!, audioUrl: url, duration: recordingTime });
+        if (convId) voiceMutation.mutate({ convId, audioUrl: url, duration: recordingTime });
       };
       recorder.onstop = () => { stream.getTracks().forEach(t => t.stop()); setIsRecording(false); if (recordingTimerRef.current) clearInterval(recordingTimerRef.current); };
     } catch { toast.error('Microphone non disponible'); }

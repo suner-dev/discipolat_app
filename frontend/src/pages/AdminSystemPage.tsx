@@ -2,9 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import {
-  Server, Cpu, Database, Zap, Clock, RefreshCw, HardDrive, Activity,
-  Wifi, MemoryStick, Thermometer, Users, Heart, FileText, AlertTriangle,
-  Shield, Loader2, Trash2, Settings, BarChart3, Layers,
+  Server, Cpu, Database, Zap, RefreshCw, Activity, Thermometer, Users, Heart,
+  Shield, Loader2, Trash2, Layers,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -48,7 +47,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} Go`;
 }
 
-function StatCard({ icon: Icon, label, value, sub, color, trend }: {
+function _StatCard({ icon: Icon, label, value, sub, color, trend: _trend }: {
   icon: typeof Cpu; label: string; value: string | number; sub?: string;
   color: string; trend?: 'up' | 'down' | 'neutral';
 }) {
@@ -66,7 +65,7 @@ function StatCard({ icon: Icon, label, value, sub, color, trend }: {
   );
 }
 
-function ProgressBar({ value, max, color = 'primary' }: { value: number; max: number; color?: string }) {
+function ProgressBar({ value, max, color: _color = 'primary' }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   const colorClass = pct > 85 ? 'bg-red-500' : pct > 60 ? 'bg-amber-500' : 'bg-green-500';
   return (

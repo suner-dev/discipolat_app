@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
-import { BookOpen, Plus, CheckCircle2, Clock, Calendar, Users } from 'lucide-react';
+import { BookOpen, Plus, CheckCircle2, Calendar, Users } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface ReadingPlan {
@@ -22,7 +22,7 @@ interface ReadingPlan {
 }
 
 export default function BibleReadingPlanPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [plans, setPlans] = useState<ReadingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -44,7 +44,7 @@ export default function BibleReadingPlanPage() {
     catch { Toast.error('Erreur'); }
   };
 
-  const joinPlan = async (id: string) => {
+  const _joinPlan = async (id: string) => {
     try { await api.get(`/bible-reading/plans/${id}`); Toast.success('Plan rejoint !'); loadPlans(); }
     catch { Toast.error('Erreur'); }
   };

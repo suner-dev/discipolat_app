@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
-import { Mail, Loader2, ArrowLeft, CheckCircle2, Sparkles, Shield } from 'lucide-react';
+import { Mail, Loader2, ArrowLeft, CheckCircle2, Shield } from 'lucide-react';
 
 import { tText } from '@/i18n';
 export default function ForgotPasswordPage() {

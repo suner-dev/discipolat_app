@@ -8,7 +8,6 @@ import {
   Activity,
   CheckCircle2,
   XCircle,
-  Clock,
   AlertTriangle,
   Filter,
   ChevronLeft,
@@ -17,7 +16,6 @@ import {
   Globe,
   Shield,
   ShieldAlert,
-  Zap,
 } from 'lucide-react';
 
 interface WebhookLogEntry {
@@ -64,7 +62,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 export default function WebhookLogPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [provider, setProvider] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(0);

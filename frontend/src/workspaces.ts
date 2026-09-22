@@ -46,7 +46,6 @@ import {
   Scale,
   Briefcase,
   TrendingUp,
-  ListChecks,
   Zap,
   HeartPulse,
   HandCoins,
@@ -85,8 +84,6 @@ import {
   Wallet,
   Download,
   Upload,
-  Volume2,
-  FileSpreadsheet,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -621,8 +618,8 @@ const MEMBRE_NAV: WorkspaceSection[] = [
   {
     title: 'Ma vie spirituelle',
     items: [
-      { name: 'Mes présences', href: '/dashboard/membre', icon: ClipboardCheck, subtitle: 'Pointage & historique' },
-      { name: 'Ma progression', href: '/dashboard/membre', icon: TrendingUp, subtitle: 'Croissance spirituelle' },
+      { name: 'Mes présences', href: '/dashboard/membre#presences', icon: ClipboardCheck, subtitle: 'Pointage & historique' },
+      { name: 'Ma progression', href: '/dashboard/membre#progression', icon: TrendingUp, subtitle: 'Croissance spirituelle' },
       { name: 'Mes activités', href: '/dashboard/membre/activities', icon: Activity, subtitle: 'Timeline personnelle' },
       { name: 'Prières', href: '/prayers', icon: BookOpen, subtitle: 'Sujets & témoignages' },
       { name: 'Actions de grâce', href: '/prayers/actions-de-grace', icon: Heart, subtitle: 'Prières exaucées' },

@@ -5,9 +5,9 @@ import api from '@/lib/api';
 import type { Family, PageResponse } from '@/types';
 import {
   Users, Plus, Search, Eye, Edit3, Trash2, ArrowLeft,
-  Loader2, AlertTriangle, Shield, History, ChevronRight,
-  BarChart3, Filter, RotateCcw, Archive,
-  Bot, Send, Sparkles, X, MessageSquare, Copy, Check,
+  Loader2,
+  BarChart3, Filter,
+  Bot, Send, Sparkles, X, Copy, Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -70,7 +70,7 @@ export default function PasteurFamiliesTab() {
   const { data: familyDetail } = useQuery({
     queryKey: ['families', selectedFamily?.id],
     queryFn: async () => {
-      const res = await api.get(`/families/${selectedFamily!.id}`);
+      const res = await api.get(`/families/${selectedFamily?.id}`);
       return res.data;
     },
     enabled: !!selectedFamily && view === 'detail',

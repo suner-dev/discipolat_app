@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Copy, Eye, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Copy, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../lib/api';
 
 

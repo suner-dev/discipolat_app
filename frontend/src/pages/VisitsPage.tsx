@@ -1,13 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Plus, CalendarCheck, DoorOpen, CheckCircle2, XCircle, Clock, Camera, FileText,
-  Search, Filter, RotateCcw, Loader2, MapPin, Calendar, User as UserIcon,
-  ChevronRight, Sparkles, Eye,
+  Plus, CalendarCheck, DoorOpen, CheckCircle2, XCircle, Clock, FileText,
+  Search, Filter, Loader2, Calendar,
 } from 'lucide-react';
 import type { Visit, CreateVisitRequest, UpdateVisitRequest, Soul } from '@/types';
 

@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
-import { ClipboardList, Plus, BarChart3, Users, Clock, CheckCircle2 } from 'lucide-react';
+import { ClipboardList, Plus, BarChart3, Users, Clock } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface Survey {
@@ -23,7 +23,7 @@ interface Survey {
 }
 
 export default function SurveysPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

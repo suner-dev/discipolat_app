@@ -27,7 +27,7 @@ const CATEGORIES = [
 ];
 
 export default function CercleFaiseursPage() {
-  const { t, locale } = useI18n();
+  const { t: _t, locale } = useI18n();
   const [posts, setPosts] = useState<CerclePost[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

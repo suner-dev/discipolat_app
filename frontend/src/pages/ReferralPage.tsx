@@ -23,10 +23,10 @@ interface ReferralEntry {
 }
 
 export default function ReferralPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [referrals, setReferrals] = useState<ReferralEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState({ nom: '', email: '' });
   const [copied, setCopied] = useState(false);

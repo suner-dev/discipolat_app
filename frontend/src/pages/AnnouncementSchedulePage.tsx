@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import {
-  Megaphone, Clock, Calendar, Loader2, CheckCircle, Send, ArrowLeft,
+  Megaphone, Clock, Calendar, Loader2, Send, ArrowLeft,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';

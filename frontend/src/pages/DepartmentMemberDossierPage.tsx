@@ -8,7 +8,7 @@ import { tText } from '@/i18n';
 import {
   ArrowLeft, UserRound, Building2, Users2, ListTodo, ClipboardCheck, Gavel,
   FileText, Star, Calendar, StickyNote, Megaphone, ArrowLeftRight, History,
-  Loader2, Plus, Send, Trash2, FolderOpen, Bell, ExternalLink, Target, TrendingUp,
+  Loader2, Plus, Trash2, FolderOpen, Bell, ExternalLink, Target, TrendingUp,
   CheckCircle2, CalendarDays, UserCheck, UserX, Download,
 } from 'lucide-react';
 
@@ -160,14 +160,14 @@ export default function DepartmentMemberDossierPage() {
       {tab === 'appartenance' && <AppartenanceTab items={dossier.appartenance || []} />}
       {tab === 'affectations' && <AffectationsTab items={dossier.affectations || []} />}
       {tab === 'taches' && <TachesTab data={dossier.taches || {}} />}
-      {tab === 'presences' && <PresencesTab id={id!} memberId={memberId!} data={dossier.presences || {}} />}
+      {tab === 'presences' && <PresencesTab id={id ?? ''} memberId={memberId ?? ''} data={dossier.presences || {}} />}
       {tab === 'discipline' && <DisciplineTab data={dossier.discipline || {}} memberId={p.id} />}
-      {tab === 'rapports' && <RapportsTab id={id!} memberId={memberId!} data={dossier.rapports || {}} items={dossier.rapportsResponsable || []} />}
+      {tab === 'rapports' && <RapportsTab id={id ?? ''} memberId={memberId ?? ''} data={dossier.rapports || {}} items={dossier.rapportsResponsable || []} />}
       {tab === 'evaluations' && <EvaluationsTab data={dossier.evaluations || {}} />}
       {tab === 'evenements' && <EvenementsTab data={dossier.evenements || {}} />}
       {tab === 'annonces' && <AnnoncesTab items={dossier.annonces || []} />}
-      {tab === 'notes' && <NotesTab id={id!} memberId={memberId!} items={dossier.notes || []} />}
-      {tab === 'objectifs' && <ObjectifsTab id={id!} memberId={memberId!} items={dossier.objectifs || []} />}
+      {tab === 'notes' && <NotesTab id={id ?? ''} memberId={memberId ?? ''} items={dossier.notes || []} />}
+      {tab === 'objectifs' && <ObjectifsTab id={id ?? ''} memberId={memberId ?? ''} items={dossier.objectifs || []} />}
       {tab === 'documents' && <DocumentsTab documents={dossier.documents || []} notesDisciple={dossier.notesDisciple || []} />}
       {tab === 'transferts' && <TransfertsTab items={dossier.transferts || []} />}
       {tab === 'activite' && <ActiviteTab items={dossier.activite || []} />}
@@ -730,7 +730,7 @@ function EvaluationsTab({ data }: { data: any }) {
 // ÉVÉNEMENTS
 // ============================================================
 function EvenementsTab({ data }: { data: any }) {
-  const { locale } = useI18n();
+  const { locale: _locale } = useI18n();
   return (
     <div className="glass-card p-5">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Événements ({data.total ?? 0})</h3>

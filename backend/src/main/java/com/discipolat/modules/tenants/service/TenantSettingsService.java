@@ -181,10 +181,21 @@ public class TenantSettingsService {
     }
 
     public String uploadBrandingAsset(UUID tenantId, MultipartFile file, String assetType, UUID userId) {
-        // Validation type de fichier
+        // G6.6 — assetType allowlist (anti path traversal via "tenants/{id}/branding/{assetType}/...").
+        if (assetType == null || !java.util.Set.of("logo", "logo-dark", "cover", "favicon").contains(assetType)) {
+            throw new IllegalArgumentException("Type d'asset inconnu: " + assetType);
+        }
+        // Validation type de fichier : image allowlist stricte (MIME + extension, pas de SVG).
         String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("Seuls les fichiers images sont autorisés");
+        String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "";
+        String ext = originalName.contains(".")
+                ? originalName.substring(originalName.lastIndexOf('.') + 1).toLowerCase() : "";
+        java.util.Set<String> allowedMime = java.util.Set.of(
+                "image/png", "image/jpeg", "image/webp", "image/gif", "image/x-icon", "image/vnd.microsoft.icon");
+        java.util.Set<String> allowedExt = java.util.Set.of("png", "jpg", "jpeg", "webp", "gif", "ico");
+        if (contentType == null || !allowedMime.contains(contentType.toLowerCase())
+                || !allowedExt.contains(ext)) {
+            throw new IllegalArgumentException("Seules les images PNG/JPEG/WebP/GIF/ICO sont autorisées");
         }
 
         // Validation taille (max 5MB)
@@ -192,8 +203,14 @@ public class TenantSettingsService {
             throw new IllegalArgumentException("Fichier trop volumineux (max 5MB)");
         }
 
-        // Upload isolé par tenant
-        String path = "tenants/" + tenantId + "/branding/" + assetType + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        // Upload isolé par tenant — G6.6 : nom sanitisé (jamais le nom brut client).
+        String safeBase = originalName.contains(".")
+                ? originalName.substring(0, originalName.lastIndexOf('.')) : originalName;
+        safeBase = safeBase.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (safeBase.isBlank()) safeBase = "asset";
+        if (safeBase.length() > 64) safeBase = safeBase.substring(0, 64);
+        String path = "tenants/" + tenantId + "/branding/" + assetType + "/"
+                + System.currentTimeMillis() + "_" + safeBase + "." + ext;
         String url = fileStorageService.upload(file, path);
 
         // Mettre à jour le setting correspondant

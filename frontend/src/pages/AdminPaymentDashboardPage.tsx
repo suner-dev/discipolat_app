@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  Trash2,
   Repeat,
   Smartphone,
   Target,
@@ -180,7 +179,7 @@ export default function AdminPaymentDashboardPage() {
             <p className="text-sm text-gray-400 text-center py-4">{t('paymentDashboard.noData')}</p>
           ) : (
             <div className="space-y-3">
-              {data.byOperator!.map((o) => (
+              {(data.byOperator ?? []).map((o) => (
                 <div key={o.operator}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-700 dark:text-gray-300">{o.label}</span>
@@ -209,7 +208,7 @@ export default function AdminPaymentDashboardPage() {
             <p className="text-sm text-gray-400 text-center py-4">{t('paymentDashboard.noData')}</p>
           ) : (
             <div className="space-y-3">
-              {data.byPurpose!.map((p) => (
+              {(data.byPurpose ?? []).map((p) => (
                 <div key={p.purpose}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-700 dark:text-gray-300">
@@ -241,7 +240,7 @@ export default function AdminPaymentDashboardPage() {
           <p className="text-sm text-gray-400 text-center py-4">{t('paymentDashboard.noData')}</p>
         ) : (
           <div className="flex items-end gap-1 h-40">
-            {data.monthlyTrend!.slice(0, 12).reverse().map((m) => (
+            {(data.monthlyTrend ?? []).slice(0, 12).reverse().map((m) => (
               <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
                 <div
                   className="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-md transition-all duration-500 min-h-[2px]"
@@ -264,7 +263,7 @@ export default function AdminPaymentDashboardPage() {
             <Activity className="w-5 h-5 text-cyan-500" /> {t('paymentDashboard.byProvider')}
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {data.byProvider!.map((p) => (
+            {(data.byProvider ?? []).map((p) => (
               <div key={p.provider} className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{p.provider}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -326,7 +325,7 @@ export default function AdminPaymentDashboardPage() {
               <p className="text-xs text-gray-400 text-center py-2">{t('paymentDashboard.noData')}</p>
             ) : (
               <div className="space-y-2">
-                {data.recurringByFrequency!.map((f) => (
+                {(data.recurringByFrequency ?? []).map((f) => (
                   <div key={f.frequency} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                     <span className="text-sm text-gray-700 dark:text-gray-300">{f.label}</span>
                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -347,7 +346,7 @@ export default function AdminPaymentDashboardPage() {
               <p className="text-xs text-gray-400 text-center py-2">{t('paymentDashboard.noData')}</p>
             ) : (
               <div className="space-y-2">
-                {data.recurringByOperator!.map((o) => (
+                {(data.recurringByOperator ?? []).map((o) => (
                   <div key={o.operator} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                     <span className="text-sm text-gray-700 dark:text-gray-300">{o.label}</span>
                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">

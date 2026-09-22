@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api, { getErrorMessage } from '@/lib/api';
+import api from '@/lib/api';
 import { AlertTriangle, Loader2, Filter } from 'lucide-react';
 
 import { getI18nLocale } from '@/i18n';

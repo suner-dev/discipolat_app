@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
 import { useDictionaries } from '@/hooks/useDictionaries';
-import type { Soul, TypeDisciple, StatutAme } from '@/types';
+import type { Soul, StatutAme } from '@/types';
 import { ArrowLeft, Loader2, Save, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 

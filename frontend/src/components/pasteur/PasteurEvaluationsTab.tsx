@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { PageResponse } from '@/types';
 import {
   Star, Search, Filter, Eye, Plus, Loader2, X,
-  BarChart3, TrendingUp, Users, CheckCircle,
+  BarChart3, Users,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

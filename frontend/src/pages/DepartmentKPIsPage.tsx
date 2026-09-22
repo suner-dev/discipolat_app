@@ -3,7 +3,7 @@ import api from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  Target, BarChart3, TrendingUp, TrendingDown, Users, Award, Loader2,
+  Target, TrendingUp, TrendingDown, Users, Loader2,
 } from 'lucide-react';
 
 interface DepartmentKpi {

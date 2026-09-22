@@ -3,11 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Soul, PageResponse } from '@/types';
-import type { ColumnDef } from '@/types/table';
 import {
   Activity, Plus, Loader2, X, UserPlus, Calendar, Search,
-  Filter, Eye, CheckCircle2, Clock, RotateCcw, ChevronDown, ChevronUp,
-  FileText, MessageSquare, BarChart3, RefreshCw,
+  Filter, Eye, CheckCircle2, Clock, RotateCcw,
+  FileText, MessageSquare, BarChart3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DataTable from '@/components/shared/DataTable';

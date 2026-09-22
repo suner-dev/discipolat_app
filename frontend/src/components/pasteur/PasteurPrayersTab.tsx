@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { PageResponse } from '@/types';
 import {
-  BookOpen, Plus, Search, Trash2, Loader2, X, Filter,
-  CheckCircle, Clock, Eye, Edit3, ArrowLeft, Heart, CheckCircle2, Star,
+  BookOpen, Plus, Search, Trash2, Loader2, Filter,
+  CheckCircle, Clock, Eye, Edit3, ArrowLeft, CheckCircle2, Star,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

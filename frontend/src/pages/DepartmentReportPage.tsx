@@ -18,7 +18,37 @@ export default function DepartmentReportPage() {
   const today = new Date().toISOString().split('T')[0];
   const [semaine, setSemaine] = useState(today);
 
+  const moduleOn = moduleEnabled('DEPT_REPORTS');
+
+  const { data: dept } = useQuery({
+    queryKey: ['department', id],
+    queryFn: async () => {
+      const res = await api.get(`/departments/${id}/detail`);
+      return res.data as any;
+    },
+    enabled: !!id && moduleOn,
+  });
+
+  const { data: report, isLoading } = useQuery({
+    queryKey: ['department', id, 'report', semaine],
+    queryFn: async () => {
+      const res = await api.get(`/departments/${id}/report?semaine=${semaine}`);
+      return res.data as any;
+    },
+    enabled: !!id && moduleOn,
+  });
+
+  const { data: kpi } = useQuery({
+    queryKey: ['department', id, 'kpi'],
+    queryFn: async () => {
+      const res = await api.get(`/departments/${id}/kpi`);
+      return res.data as any;
+    },
+    enabled: !!id && moduleOn,
+  });
+
   // Module désactivé par l'administrateur : page remplacée par un état explicite
+  // (garde placée APRÈS les hooks pour respecter les règles des hooks React)
   if (!moduleEnabled('DEPT_REPORTS')) {
     return (
       <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -34,32 +64,6 @@ export default function DepartmentReportPage() {
     );
   }
 
-  const { data: dept } = useQuery({
-    queryKey: ['department', id],
-    queryFn: async () => {
-      const res = await api.get(`/departments/${id}/detail`);
-      return res.data as any;
-    },
-    enabled: !!id,
-  });
-
-  const { data: report, isLoading } = useQuery({
-    queryKey: ['department', id, 'report', semaine],
-    queryFn: async () => {
-      const res = await api.get(`/departments/${id}/report?semaine=${semaine}`);
-      return res.data as any;
-    },
-    enabled: !!id,
-  });
-
-  const { data: kpi } = useQuery({
-    queryKey: ['department', id, 'kpi'],
-    queryFn: async () => {
-      const res = await api.get(`/departments/${id}/kpi`);
-      return res.data as any;
-    },
-    enabled: !!id,
-  });
 
   if (isLoading) {
     return (

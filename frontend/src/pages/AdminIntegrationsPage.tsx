@@ -4,9 +4,8 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { tText } from '@/i18n';
 import {
-  Globe, Mail, Cloud, Key, Link2, Webhook, CheckCircle2, AlertTriangle,
-  Loader2, Save, Settings, Shield, Database, Send, TestTube, RefreshCw,
-  Server, ExternalLink, Lock, Unlock, Eye, EyeOff, Copy, Plus, Trash2,
+  Globe, Mail, Cloud, Key,
+  Loader2, Save, Shield, TestTube, Eye, EyeOff,
 } from 'lucide-react';
 
 /* ============================================================================
@@ -15,7 +14,7 @@ import {
  * L'admin configure ces paramètres sans toucher au code.
  * ========================================================================== */
 
-interface IntegrationConfig {
+interface _IntegrationConfig {
   smtp: {
     host: string; port: number; username: string; password: string;
     fromAddress: string; fromName: string; tls: boolean; enabled: boolean;
@@ -92,7 +91,7 @@ const INTEGRATIONS = [
   },
 ];
 
-function IntegrationSection({ integration, config, onConfigChange, saving, onTest }: {
+function IntegrationSection({ integration, config, onConfigChange, saving: _saving, onTest }: {
   integration: typeof INTEGRATIONS[0];
   config: Record<string, unknown>;
   onConfigChange: (key: string, value: unknown) => void;

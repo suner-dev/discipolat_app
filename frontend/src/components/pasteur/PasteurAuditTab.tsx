@@ -6,8 +6,7 @@ import type { AuditRecentActivity } from '@/types';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  Shield, Search, Filter, FileDown, Eye, Clock, User as UserIcon,
-  Calendar, ArrowLeft, History, ChevronRight,
+  Shield, Search, Filter, FileDown, Eye, Clock, ChevronRight,
 } from 'lucide-react';
 
 export default function PasteurAuditTab() {

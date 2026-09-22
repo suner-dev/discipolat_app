@@ -11,8 +11,8 @@ import {
   ArrowLeft, Mail, Phone, Calendar, MapPin, Briefcase, FileText,
   Activity, MessageSquare, Send, Loader2, AlertTriangle, BookOpen,
   TrendingUp, Edit, LogOut, Undo2, Heart, Sparkles, Clock, ChevronRight,
-  CheckCircle2, Star, Users, UserCheck, X, Flag, Gavel, Plus,
-  PhoneCall, MessageCircle, MailPlus, UserPlus, Handshake, Sparkle,
+  CheckCircle2, Star, X, Flag, Gavel, Plus,
+  PhoneCall, Handshake, Sparkle,
   BrainCircuit, AlertTriangle as AlertIcon, Trash2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -45,12 +45,12 @@ const TYPE_STYLES: Record<string, string> = {
 export default function SoulDetailPage() {
   const { locale } = useI18n();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const dictionaries = useDictionaries();
 
   const statutLabel = (code: string) =>
     dictionaries.label('SOUL_STATUS', code) || STATUT_FALLBACK[code] || code;
-  const typeLabel = (code: string) =>
+  const _typeLabel = (code: string) =>
     dictionaries.label('SOUL_TYPE', code) || (code === 'NOUVEAU_CONVERTI' ? 'Nouveau converti' : 'Nouvel arrivant') || code;
   const exitMotifEntries = useMemo(() => {
     const configured = dictionaries.options('EXIT_MOTIF');
@@ -186,7 +186,7 @@ export default function SoulDetailPage() {
       ? configured.map((e) => ({ value: e.code, label: e.label }))
       : Object.entries(TYPE_EVENEMENT_FALLBACK).map(([value, label]) => ({ value, label }));
   }, [dictionaries]);
-  const disciplineTypeLabel = (code: string) =>
+  const _disciplineTypeLabel = (code: string) =>
     dictionaries.label('DISCIPLINE_TYPE', code) || TYPE_EVENEMENT_FALLBACK[code] || code;
 
   /** Repli (dictionnaire indisponible) — les valeurs réelles viennent de la base. */

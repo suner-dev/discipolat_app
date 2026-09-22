@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
-import { Loader2, AlertTriangle, CheckCircle2, Search, Clock, MessageSquare } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle2, Search, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { getI18nLocale } from '@/i18n';
@@ -20,7 +20,7 @@ export default function UrgentAidPage() {
   const queryClient = useQueryClient();
   const [showTreated, setShowTreated] = useState(false);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [_selected, _setSelected] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useQuery({
     queryKey: ['urgent-aid', showTreated],

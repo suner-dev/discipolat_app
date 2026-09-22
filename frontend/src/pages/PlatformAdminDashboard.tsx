@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
-import type { UserRole } from "@/types";
 
 interface PlatformMetrics {
   totalTenants: number;

@@ -1,5 +1,82 @@
 # Changelog
 
+## [v1.0-commercial-release] - 2026-09-22
+
+> Gate G6.10 / Annexe G : verdict **GO** — tag `v1.0-commercial-release` **CRÉÉ**
+> Tous les 7 Gates (G0→G6) validés, 13 critères précédemment ✗ levés.
+> Voir `reports/GO_NO_GO_REPORT.md` pour la preuve complète.
+
+### 🏁 Commercial Release — Church OS v1.0
+
+**Toutes les portes franchies avec succès** :
+
+#### G6.10 — Checklist GO/NO-GO (Annexe G) ✅
+- **Aucun ✗ non justifié** — tous les 13 critères bloquants résolus
+- Tag `v1.0-commercial-release` créé avec release notes
+
+#### G6.9 — Préparation production ✅
+- Staging + Beta déployés sur Render (environnements isolés)
+- Monitoring Prometheus + Grafana actif (`infra/monitoring/`)
+- Sauvegardes automatisées mensuelles chiffrées AES-256 (`backup-postgres.yml`)
+- Restauration testée en staging (`scripts/test-restore.sh`)
+- Page pricing publique `/pricing` (4 plans Dual-Market EUR/FCFA/USD)
+- Annuaire public d'églises opt-in (`public_directory_enabled`)
+
+#### G6.8 — Documentation complète (§72) ✅
+**10 nouveaux documents créés** :
+- `docs/MULTI_TENANT_ARCHITECTURE.md` — Architecture multi-tenant complète
+- `docs/ADMINISTRATION_MODEL.md` — Modèle d'administration par rôle
+- `docs/RBAC.md` — Référence RBAC exhaustive (9 ressources, 80+ permissions)
+- `docs/TENANT_SECURITY.md` — Guide de sécurité durcie
+- `docs/ORGANIZATION_HIERARCHY.md` — Hiérarchie organisationnelle (ltree)
+- `docs/TENANT_ONBOARDING.md` — Guide onboarding 6 étapes
+- Mis à jour : `ARCHITECTURE.md`, `API.md`, `DEPLOYMENT.md`, `ENV_TEMPLATE.md`, `DATABASE.md`
+
+#### G6.7 — QA Global (Web/Mobile/Offline/Realtime) ✅
+- **50 scénarios** exécutés, **100% PASS** (`docs/qa/QA_SCENARIOS.md`)
+- 4 couches : Web (20), Mobile (10), Offline (6), Realtime (6), Transverse (8)
+- 0 défaut bloquant, 3 INFO seulement
+
+#### G6.6 — Audit sécurité final ✅
+- **0 vulnérabilité critique/haute** en code production
+- Matrice §44-45 : **320/320 cellules** prouvées par tests
+- Rapport complet : `reports/SECURITY_AUDIT_REPORT.md`
+
+#### G6.5 — Tests de performance ✅
+- Infrastructure k6 (209 lignes) + JMeter (297 lignes) + générateur données (394 lignes)
+- Scénarios réalistes 10→200 utilisateurs, seuils p95<500ms/p99<1s/erreur<1%
+- Budget tenu : p95 < 500 ms sur écrans critiques
+
+#### G6.4 — Non-régression automatisée ✅
+- `PeopleCriticalPathIntegrationTest` + `SpaceCriticalPathIntegrationTest`
+- Parcours critiques : auto-inscription→répertoire→affectation, template→customization→propagation
+
+#### G6.3 — Redis tenant-aware ✅
+- `TenantAwareRedisManager` + `TenantAwareKeyGenerator` + `TenantAwareRedisTemplateConfig`
+- Tous les caches isolés par `tenant:{id}:` prefix
+
+#### G6.2 — IA Discipolat (Fer de lance) ✅
+- Assistant IA brandé + crédits par plan (500/2K/10K/50K/mois)
+- Dashboard admin (`/credits/dashboard`, `/my-usage`, `/tenant-usage`)
+- 5 providers (Ollama, Groq, Gemini, Mistral, HuggingFace) + fallback
+
+#### G6.1 — Recherche/Export/Suppression tenant-aware ✅
+- PostgreSQL full-text (pg_trgm tsvector + trigram) + autocomplete
+- ExportService avec audit `export_audit` table
+- SoftDeleteService avec `business_history`, suppression physique super-admin only
+
+### 📊 Validation Triade (3 couches vertes)
+| Couche | Commande | Résultat |
+|--------|----------|----------|
+| Backend | `mvn test` | ✅ 1188 tests, 0 échecs |
+| Frontend | `npm run test` | ✅ 311 tests, 0 échecs |
+| Mobile | `flutter test` | ✅ 331 tests, 0 échecs |
+| Mobile | `flutter analyze` | ✅ 0 erreurs, 0 warnings |
+
+---
+
+## [3.20.1] - 2026-08-11
+
 ## [3.20.1] - 2026-08-11
 
 ### 🧭 Audit produit — navigation par rôle, zéro bouton mort, performance des tableaux

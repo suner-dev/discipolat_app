@@ -5,8 +5,8 @@ import toast from 'react-hot-toast';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  Megaphone, Bell, Loader2, Plus, Send, Trash2, AlertTriangle, Clock,
-  UserPlus, Target, CheckCircle2, Users2,
+  Megaphone, Bell, Loader2, Send, Trash2, AlertTriangle, Clock,
+  UserPlus, CheckCircle2, Users2,
 } from 'lucide-react';
 
 const CIBLE_LABELS: Record<string, string> = {

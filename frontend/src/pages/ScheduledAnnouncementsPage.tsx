@@ -6,7 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import toast from 'react-hot-toast';
-import { Megaphone, Clock, CheckCircle, Calendar, Plus, Trash2 } from 'lucide-react';
+import { Megaphone, Trash2 } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface Announcement { id: string; title: string; status: string; target: string; scheduledAt?: string; publishedAt?: string; expiresAt?: string; pinToTop: boolean; }

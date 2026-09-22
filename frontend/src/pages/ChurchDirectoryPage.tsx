@@ -51,7 +51,7 @@ export default function ChurchDirectoryPage() {
     } catch (e) { toast.error(getErrorMessage(e)); }
   };
 
-  const togglePublic = async () => {
+  const _togglePublic = async () => {
     try { await api.patch('/directory/me/toggle');       toast.success(tText('Visibilité mise à jour')); loadMyEntry(); } catch (e) { toast.error(getErrorMessage(e)); }
   };
 

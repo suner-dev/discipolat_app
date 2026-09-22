@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
 import api from '@/lib/api';
-import { Church, MapPin, Phone, Mail, Globe, Calendar, Heart, ExternalLink, Clock, Users, Send } from 'lucide-react';
+import { Church, MapPin, Phone, Mail, Calendar, Heart, Clock, Send } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface ChurchSettings {
@@ -24,7 +24,7 @@ interface ChurchEvent {
 }
 
 export default function PublicPortalPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [settings, setSettings] = useState<ChurchSettings | null>(null);
   const [events, setEvents] = useState<ChurchEvent[]>([]);
   const [loading, setLoading] = useState(true);

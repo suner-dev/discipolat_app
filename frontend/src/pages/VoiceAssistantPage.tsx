@@ -5,11 +5,10 @@ import api from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, Send, Loader2, Bot, Volume2, HelpCircle,
-  Sparkles, ArrowRight, RefreshCw, X, Copy, Check,
+  Sparkles, X, Copy, Check,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 interface VoiceMessage {
   id: string;
@@ -27,7 +26,7 @@ interface VoiceCommand {
   category: string;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
+const _CATEGORY_COLORS: Record<string, string> = {
   SUIVI: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
   STATISTIQUES: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
   RAPPORTS: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
@@ -196,7 +195,7 @@ export default function VoiceAssistantPage() {
             try {
               await processAudioMutation.mutateAsync(formData);
               toast.success('Transcription envoyée au serveur');
-            } catch (e) {
+            } catch (_e) {
               toast.error(tText('Erreur lors de l\'envoi de la transcription'));
             }
           }

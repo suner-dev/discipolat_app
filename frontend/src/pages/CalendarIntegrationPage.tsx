@@ -76,7 +76,7 @@ export default function CalendarIntegrationPage() {
 
       {/* Connect buttons */}
       <div className="flex gap-3 mb-6 flex-wrap">
-        {['Google Calendar', 'Outlook', 'iCal Export'].map((name, i) => (
+        {['Google Calendar', 'Outlook', 'iCal Export'].map((name, _i) => (
           <button key={name} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 transition-all flex items-center gap-2">
             <ExternalLink className="w-4 h-4" /> {name}
           </button>

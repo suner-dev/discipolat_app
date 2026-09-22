@@ -13,9 +13,11 @@ import java.util.UUID;
 @Repository
 public interface FamilyMeetingRepository extends JpaRepository<FamilyMeeting, UUID> {
 
-    List<FamilyMeeting> findByFamilyIdAndDeletedFalse(UUID familyId);
+        List<FamilyMeeting> findByFamilyIdAndDeletedFalse(UUID familyId);
 
     List<FamilyMeeting> findByFamilyIdAndMeetingDateBetween(UUID familyId, java.time.LocalDate from, java.time.LocalDate to);
+
+    List<FamilyMeeting> findAllByTenantIdAndDeletedFalseOrderByMeetingDateDesc(UUID tenantId);
 
     Page<FamilyMeeting> findByTenantIdAndDeletedFalseOrderByMeetingDateDesc(UUID tenantId, Pageable pageable);
 }

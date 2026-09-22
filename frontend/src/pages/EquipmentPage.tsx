@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
-import { Wrench, Plus, Trash2, Loader2, Edit2 } from 'lucide-react';
+import { Wrench, Plus, Trash2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { tText } from '@/i18n';

@@ -756,3 +756,15 @@ plus de spin-down, plus de quota, meilleures performances. C'est un choix métie
 | Tâches planifiées (absences, rappels) non exécutées | Scheduler Spring inactif | Vérifier les logs API (`ScheduledJobs`) + que le keep-alive tourne (API éveillée) |
 | Page blanche (frontend) | Build non trouvé ou `VITE_API_URL` incorrect | Vérifier les logs Nginx dans le Dashboard |
 | Flyway migration échoue | Schéma DB incompatible | Supprimer la table `flyway_schema_history` et relancer (⚠️ données perdues) |
+
+---
+
+## 11. Addendum G6.8 — §72 (2026-09-22)
+
+> Ce fichier etait deja complet (758 lignes) ; addendum de conformite sans reecriture.
+
+- Church OS : les espaces (`spaces`, `space_module` V148-149, templates V152) et l'outbox (`core.OutboxEvent`) sont deploys avec les migrations Flyway auto (`baseline-on-migrate: true`) — aucune etape manuelle.
+- Multi-tenant : `tenant_id` + filtre Hibernate + RLS critiques ; une nouvelle eglise = nouveau `tenant` + onboarding (voir [GUIDE_BACK_OFFICE_COMMERCIAL.md](GUIDE_BACK_OFFICE_COMMERCIAL.md)), sans intervention code.
+- Environnements : `dev|docker|beta|prod` + staging/beta/prod (§G6.9) ; beta : `deploy-beta.yml`, double garde reset (jamais en prod) ; toutes les variables documentees dans [ENV_TEMPLATE.md](ENV_TEMPLATE.md).
+- Monitoring : Prometheus (`/actuator/prometheus`) + Grafana (`infra/monitoring`) ; sauvegardes : snapshots + PITR + dump mensuel chiffre (`backup-postgres.yml`), restauration testee en staging — runbook [RUNBOOK.md](RUNBOOK.md).
+- Docs liees : [ARCHITECTURE.md](ARCHITECTURE.md) · [API.md](API.md) · [DATABASE.md](DATABASE.md) · [ENV_TEMPLATE.md](ENV_TEMPLATE.md) · [GUIDE_UTILISATEUR.md](GUIDE_UTILISATEUR.md) · [GUIDE_BACK_OFFICE_COMMERCIAL.md](GUIDE_BACK_OFFICE_COMMERCIAL.md) · [RUNBOOK.md](RUNBOOK.md).

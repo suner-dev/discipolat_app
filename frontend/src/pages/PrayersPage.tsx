@@ -45,13 +45,13 @@ const PRIORITE_FALLBACK: Record<string, string> = {
   HAUTE: 'Haute',
 };
 
-const PRIORITE_ICONS: Record<PrioritePriere, typeof Flame> = {
+const _PRIORITE_ICONS: Record<PrioritePriere, typeof Flame> = {
   BASSE: Tag,
   MOYENNE: Star,
   HAUTE: Flame,
 };
 
-const PRIORITE_COLORS: Record<PrioritePriere, string> = {
+const _PRIORITE_COLORS: Record<PrioritePriere, string> = {
   BASSE: 'text-gray-500',
   MOYENNE: 'text-amber-500',
   HAUTE: 'text-red-500',

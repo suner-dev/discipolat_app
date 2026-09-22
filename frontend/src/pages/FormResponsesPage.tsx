@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import api, { getErrorMessage } from '@/lib/api';
-import { FileText, Users, BarChart3, Clock, CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
+import api from '@/lib/api';
+import { FileText, Users, Clock, CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { getI18nLocale } from '@/i18n';

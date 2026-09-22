@@ -72,7 +72,7 @@ export default function NotificationsPage() {
   });
 
   const notifications = data?.content || [];
-  const unread = notifications.filter((n) => !n.lu).length;
+  const _unread = notifications.filter((n) => !n.lu).length;
   const globalUnread = unreadCount ?? 0;
 
   // Client-side filtering

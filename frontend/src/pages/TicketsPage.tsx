@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
-import { LifeBuoy, Plus, Search, Filter, Clock, CheckCircle2, AlertCircle, MessageSquare } from 'lucide-react';
+import { LifeBuoy, Plus, Search, Clock, CheckCircle2, AlertCircle, MessageSquare } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface Ticket {
@@ -52,7 +52,7 @@ const STATUTS = [
 ];
 
 export default function TicketsPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -102,7 +102,7 @@ export default function TicketsPage() {
       Toast.success('Statut mis à jour');
       loadTickets();
       if (selectedTicket?.id === ticketId) {
-        setSelectedTicket({ ...selectedTicket!, statut: newStatus as Ticket['statut'] });
+        if (selectedTicket) setSelectedTicket({ ...selectedTicket, statut: newStatus as Ticket['statut'] });
       }
     } catch {
       Toast.error('Erreur lors de la mise à jour');

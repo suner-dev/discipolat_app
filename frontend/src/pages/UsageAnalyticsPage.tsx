@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { tText } from '@/i18n';
 import {
-  BarChart3, TrendingUp, Users, Clock, RefreshCw, Loader2, Eye, MousePointer,
-  Smartphone, Monitor, Globe, Calendar, ArrowUpRight, ArrowDownRight,
+  BarChart3, Users, Clock, RefreshCw, Loader2, Eye, MousePointer,
+  Smartphone, Monitor,
 } from 'lucide-react';
 
 interface UsageSummary {
@@ -30,7 +30,7 @@ export default function UsageAnalyticsPage() {
     },
   });
 
-  const trackMutation = useMutation({
+  const _trackMutation = useMutation({
     mutationFn: async () => {
       await api.post('/usage-analytics/track', {
         eventType: 'PAGE_VIEW',

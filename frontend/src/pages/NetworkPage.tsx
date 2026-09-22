@@ -3,7 +3,7 @@ import { useState } from 'react';
 import api from '@/lib/api';
 import {
   Globe, Users, Calendar, Search, Plus, Download, MapPin, ExternalLink,
-  Loader2, BookOpen, Megaphone, Star, X, Check, Trash2, Filter
+  Loader2, BookOpen, Megaphone, X, Check, Trash2, Filter
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -95,10 +95,10 @@ export default function NetworkPage() {
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [resourceCategory, setResourceCategory] = useState('');
-  const [eventType, setEventType] = useState('');
+  const [eventType, _setEventType] = useState('');
   const [myResources, setMyResources] = useState(false);
-  const [myEvents, setMyEvents] = useState(false);
-  const [showAllEvents, setShowAllEvents] = useState(false);
+  const [myEvents, _setMyEvents] = useState(false);
+  const [showAllEvents, _setShowAllEvents] = useState(false);
   const queryClient = useQueryClient();
 
   // ======================== QUERIES ========================
@@ -195,7 +195,7 @@ export default function NetworkPage() {
     },
   });
 
-  const leaveEventMutation = useMutation({
+  const _leaveEventMutation = useMutation({
     mutationFn: async (eventId: string) => {
       return (await api.post(`/network/events/${eventId}/leave`)).data;
     },
@@ -217,7 +217,7 @@ export default function NetworkPage() {
     onError: () => toast.error(tText('Impossible de supprimer la ressource')),
   });
 
-  const deleteEventMutation = useMutation({
+  const _deleteEventMutation = useMutation({
     mutationFn: async (eventId: string) => {
       await api.delete(`/network/events/${eventId}`);
     },
@@ -228,12 +228,12 @@ export default function NetworkPage() {
     onError: () => toast.error('Impossible de supprimer l\'événement'),
   });
 
-  const myDirectoryQuery = useQuery({
+  const _myDirectoryQuery = useQuery({
     queryKey: ['network', 'directory', 'mine'],
     queryFn: async () => (await api.get<NetworkDirectoryEntry>('/network/directory/mine')).data,
   });
 
-  const updateMyDirectoryMutation = useMutation({
+  const _updateMyDirectoryMutation = useMutation({
     mutationFn: async (updates: Partial<NetworkDirectoryEntry>) => {
       return (await api.put<NetworkDirectoryEntry>('/network/directory/mine', updates)).data;
     },
@@ -243,7 +243,7 @@ export default function NetworkPage() {
     },
   });
 
-  const toggleListingMutation = useMutation({
+  const _toggleListingMutation = useMutation({
     mutationFn: async (listed: boolean) => {
       return (await api.post<NetworkDirectoryEntry>('/network/directory/mine/listing', { listed })).data;
     },

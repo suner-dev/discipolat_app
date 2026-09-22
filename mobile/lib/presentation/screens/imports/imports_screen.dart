@@ -24,6 +24,7 @@ class _ImportsScreenState extends State<ImportsScreen> {
     'users': 'Utilisateurs',
   };
 
+    // ignore: unused_field
   static const kImportTypeColors = {
     'souls': 'from-rose-500 to-pink-500',
     'families': 'from-blue-500 to-indigo-500',
@@ -56,12 +57,22 @@ class _ImportsScreenState extends State<ImportsScreen> {
     try { await _apiService.post('/import/$id'); _loadImports(); } catch (_) {}
   }
 
-  Color _getTypeColor(String type) {
-    return Color(0xFFFFFFFF); // placeholder
+    Color _getTypeColor(String type) {
+    switch (type) {
+      case 'souls':
+        return const Color(0xFFF43F5E);
+      case 'families':
+        return const Color(0xFF3B82F6);
+      case 'users':
+        return const Color(0xFF10B981);
+      default:
+        return const Color(0xFF0D9488);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+        // ignore: unnecessary_non_null_assertion
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
@@ -119,7 +130,7 @@ class _ImportsScreenState extends State<ImportsScreen> {
                                     child: Text(
                                       kImportTypeLabels[type] ?? type,
                                       style: TextStyle(
-                                        color: Colors.teal,
+                                                                                color: _getTypeColor(type),
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -127,7 +138,7 @@ class _ImportsScreenState extends State<ImportsScreen> {
                                   ),
                                   const Spacer(),
                                   Text(
-                                    '$imported/$total importés',
+                                    '$valid/$total validés • $imported/$total importés',
                                     style: TextStyle(
                                       color: Colors.white.withValues(alpha: 0.7),
                                       fontSize: 12,

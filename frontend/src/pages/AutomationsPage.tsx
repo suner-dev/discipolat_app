@@ -4,7 +4,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import toast from 'react-hot-toast';
-import { Zap, Plus, Play, Pause, Trash2, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Zap, Plus, Play, Pause, Trash2, CheckCircle2 } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface AutomationRule {
@@ -44,7 +44,7 @@ const ACTIONS: Record<string, string> = {
 };
 
 export default function AutomationsPage() {
-  const { t, locale } = useI18n();
+  const { t, locale: _locale } = useI18n();
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:discipolat_mobile/data/local/database.dart';
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/network/network_screen.dart';
-
 class _FakeApiService extends ApiService {
   _FakeApiService({this.data = const {}, this.fail = false})
       : super(baseUrl: 'http://fake');

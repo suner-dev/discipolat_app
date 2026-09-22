@@ -3,9 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { tText } from '@/i18n';
 import {
-  Home, Search, ArrowLeft, Heart, Users, Building2,
-  LayoutDashboard, BookOpen, Calendar, FileText, Church,
-  Activity, Sparkles, Compass, Map,
+  Home, Search, ArrowLeft, Heart, Users,
+  LayoutDashboard, BookOpen, Calendar, FileText, Church, Compass, Map,
 } from 'lucide-react';
 
 const quickLinks = [

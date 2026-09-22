@@ -16,7 +16,7 @@ export default function TenantAdminRolesPage() {
   const { hasPermission } = useTenant();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"list" | "permissions">("list");
+  const [_activeTab, _setActiveTab] = useState<"list" | "permissions">("list");
 
   useEffect(() => {
     if (!hasPermission("ROLE_READ")) return;

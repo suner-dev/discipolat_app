@@ -5,13 +5,12 @@ import api from '@/lib/api';
 import { useExportReport } from '@/hooks/useExportReport';
 import type { PasteurDashboardData, PresenceTrendData, AuditRecentActivity, PasteurKpis } from '@/types';
 import {
-  Heart, Users, Building2, TrendingUp, Bell, UserCheck,
-  FileDown, Loader2, ChevronRight, Church, Calendar,
+  Heart, Users, Building2, TrendingUp, Bell, UserCheck, ChevronRight, Church, Calendar,
   Shield, Star, Search, UserPlus, UserX, Clock,
   CheckCircle, XCircle, ArrowLeftRight, History, Flame,
   Zap, Target, UserCog, CalendarClock, AlertOctagon,
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
@@ -21,9 +20,9 @@ import { useState } from 'react';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
-const COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
+const _COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
 
-const getGreeting = () => {
+const _getGreeting = () => {
   const h = new Date().getHours();
   if (h < 12) return 'Bonjour';
   if (h < 17) return 'Bon après-midi';
@@ -35,9 +34,9 @@ interface Props {
 }
 
 export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const navigate = useNavigate();
-  const { exportReport, isExporting } = useExportReport();
+  const { exportReport: _exportReport, isExporting: _isExporting } = useExportReport();
   const [searchQuery, setSearchQuery] = useState('');
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
 

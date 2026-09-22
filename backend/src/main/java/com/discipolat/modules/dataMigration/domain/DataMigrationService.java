@@ -1,12 +1,16 @@
 package com.discipolat.modules.dataMigration.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.imports.domain.ImportResult;
+import com.discipolat.modules.imports.domain.ImportService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * P3 #101 — Assistant de migration de données avec mapping intelligent des champs.
@@ -15,10 +19,12 @@ import java.util.*;
 @Transactional
 public class DataMigrationService {
 
-    private final DataMigrationJobRepository repository;
+        private final DataMigrationJobRepository repository;
+    private final ImportService importService;
 
-    public DataMigrationService(DataMigrationJobRepository repository) {
+    public DataMigrationService(DataMigrationJobRepository repository, ImportService importService) {
         this.repository = repository;
+        this.importService = importService;
     }
 
     /** Champs cibles connus par type d'import (champ -> synonymes normalisés). */
@@ -142,14 +148,148 @@ public class DataMigrationService {
         repository.save(job);
     }
 
+        @Transactional(readOnly = true)
+    public Map<String, Object> analyze(UUID jobId, List<String[]> rows) {
+        DataMigrationJob job = getById(jobId);
+        if (rows == null || rows.isEmpty()) {
+            throw new BusinessRuleException("Le fichier est vide.");
+        }
+        List<String> headers = Arrays.stream(rows.get(0)).map(DataMigrationService::cleanCsvCell).toList();
+        List<Map<String, String>> preview = rows.subList(1, rows.size()).stream()
+                .limit(10)
+                .map(line -> toMap(headers, line))
+                .toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("jobId", jobId);
+        result.put("targetType", job.getTargetType());
+        result.put("totalRows", Math.max(0, rows.size() - 1));
+        result.put("headers", headers);
+        result.put("preview", preview);
+        result.put("analysis", analyzeHeaders(job.getTargetType(), headers,
+                preview.stream().limit(5).toList()));
+        return result;
+    }
+
     @Transactional(readOnly = true)
     public List<DataMigrationJob> list() {
         return repository.findByTenantIdOrderByCreatedAtDesc(TenantContext.getCurrentTenantId());
     }
 
+        /** G4.6 — execute réellement l'import via ImportService + traçabilité pour rollback. */
+    public DataMigrationResult execute(UUID jobId, List<String[]> rows, boolean dryRun) {
+        DataMigrationJob job = getById(jobId);
+        if (rows == null || rows.isEmpty()) {
+            throw new BusinessRuleException("Le fichier est vide.");
+        }
+        List<String> headers = Arrays.stream(rows.get(0)).map(DataMigrationService::cleanCsvCell).toList();
+        List<Map<String, String>> data = rows.subList(1, rows.size()).stream()
+                .map(line -> toMap(headers, line))
+                .toList();
+        int totalRows = data.size();
+
+        String target = job.getTargetType() == null ? "" : job.getTargetType().toUpperCase();
+        ImportResult importResult;
+        if (dryRun) {
+            importResult = ImportResult.builder()
+                    .imported(0).skipped(totalRows)
+                    .errors(List.of("Mode simulation — aucune écriture effectuée."))
+                    .build();
+        } else {
+            importResult = switch (target) {
+                case "SOULS", "MEMBERS" -> importService.importSouls(data);
+                case "FAMILIES" -> importService.importFamilies(data);
+                case "USERS" -> importService.importUsers(data);
+                default -> throw new BusinessRuleException("Type cible d'import non supporté: " + target);
+            };
+        }
+
+        String createdIds = importResult.getImportedIds() == null ? ""
+                : importResult.getImportedIds().stream().filter(Objects::nonNull)
+                    .map(UUID::toString).collect(Collectors.joining(","));
+        job.setCreatedEntityIds(createdIds);
+        job.setLastRunDry(dryRun);
+        job.setTotalRows(totalRows);
+        job.setImportedRows(importResult.getImported());
+        job.setErrorRows(importResult.getSkipped());
+        job.setErrorsLog(importResult.getErrors() == null ? "" : String.join("\n", importResult.getErrors()));
+        job.setStatus(dryRun ? DataMigrationJob.Status.COMPLETED
+                : (importResult.getImported() > 0 ? DataMigrationJob.Status.COMPLETED
+                                                   : DataMigrationJob.Status.FAILED));
+        job.setCompletedAt(LocalDateTime.now());
+        repository.save(job);
+
+        return DataMigrationResult.builder()
+                .jobId(jobId).status(job.getStatus().name()).dryRun(dryRun)
+                .totalRows(totalRows).importedRows(importResult.getImported())
+                .errorRows(importResult.getSkipped()).errorsLog(importResult.getErrors())
+                .analysis(analyzeHeaders(target, headers, data.subList(0, Math.min(5, data.size()))))
+                .build();
+    }
+
+    /** G4.6 — relit le fichier et ré‑exécute l'import (utile après correction de mapping). */
+    public DataMigrationResult replay(UUID jobId, List<String[]> rows) {
+        return execute(jobId, rows, false);
+    }
+
+    /** G4.6 — rollback des entités créées par le job précédemment exécuté. */
+    public DataMigrationResult rollback(UUID jobId) {
+        DataMigrationJob job = getById(jobId);
+        int deleted = importService.rollback(job);
+        repository.save(job);
+        return DataMigrationResult.builder()
+                .jobId(jobId).status(job.getStatus().name()).dryRun(false)
+                .deleted(deleted)
+                .errorsLog(List.of("Rollback effectué: " + deleted + " entité(s) désactivée(s)."))
+                .build();
+    }
+
+    private List<Map<String, String>> analyzeHeaders(String targetType, List<String> headers,
+                                                      List<Map<String, String>> sample) {
+        return headers.stream().map(h -> {
+            Map<String, String> entry = new LinkedHashMap<>();
+            entry.put("header", h);
+            entry.put("suggestedTarget", matchField(targetType, h));
+            return entry;
+        }).collect(Collectors.toList());
+    }
+
+    private String matchField(String targetType, String header) {
+        Map<String, List<String>> targets = TARGET_FIELDS.get(targetType == null ? "" : targetType.toUpperCase());
+        if (targets == null) return null;
+        String norm = normalize(header);
+        double best = 0.0;
+        String match = null;
+        for (Map.Entry<String, List<String>> e : targets.entrySet()) {
+            for (String syn : e.getValue()) {
+                double sim = similarity(norm, normalize(syn));
+                if (sim > best) { best = sim; match = e.getKey(); }
+            }
+        }
+        return best > 0.55 ? match : null;
+    }
+
     @Transactional(readOnly = true)
     public DataMigrationJob getById(UUID id) {
         return repository.findById(id).orElseThrow(() -> new EntityNotFoundException("DataMigrationJob", id));
+    }
+
+        /** Convertit une ligne CSV (sans headers) en map {header -> valeur}. */
+    private static Map<String, String> toMap(List<String> headers, String[] line) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (int i = 0; i < headers.size() && i < line.length; i++) {
+            map.put(headers.get(i), cleanCsvCell(line[i]));
+        }
+        return map;
+    }
+
+    private static String cleanCsvCell(String cell) {
+        if (cell == null) return "";
+        String c = cell.trim();
+        if (c.startsWith("\"") && c.endsWith("\"") && c.length() >= 2) {
+            c = c.substring(1, c.length() - 1);
+        }
+        return c.trim();
     }
 
     private static String normalize(String s) {

@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { X, ChevronLeft, Church, Star as StarIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { navForRole, ROLE_META, type WorkspaceNavItem } from '@/workspaces';
+import { navForRole, ROLE_META } from '@/workspaces';
 import { filterNavByRole } from '@/lib/routeAccess';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePlatformConfig, menusToSections } from '@/contexts/PlatformContext';
@@ -209,7 +209,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 )}
                 {collapsed && <div className="pt-3" />}
                 {section.items.map((item) => (
-                  <NavItem key={item.href} item={item} collapsed={collapsed} t={t} />
+                  <NavItem key={`${section.title}::${item.href}`} item={item} collapsed={collapsed} t={t} />
                 ))}
               </div>
             ))}
@@ -254,9 +254,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   {evalAvg != null && (
                     <div className="flex items-center gap-1 mt-1">
                       {[1,2,3,4,5].map(i => (
-                        <StarIcon key={i} className={`w-2.5 h-2.5 ${i <= Math.round(evalAvg!) ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
+                        <StarIcon key={i} className={`w-2.5 h-2.5 ${i <= Math.round(evalAvg ?? 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
                       ))}
-                      <span className="text-[9px] font-medium text-gray-400 ml-0.5">{evalAvg!.toFixed(1)}</span>
+                      <span className="text-[9px] font-medium text-gray-400 ml-0.5">{(evalAvg ?? 0).toFixed(1)}</span>
                     </div>
                   )}
                 </div>
@@ -318,7 +318,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   {t(navKeyMap[section.title] ?? section.title)}
                 </p>
                 {section.items.map((item) => (
-                  <NavItem key={item.href} item={item} onClick={onClose} t={t} />
+                  <NavItem key={`${section.title}::${item.href}`} item={item} onClick={onClose} t={t} />
                 ))}
               </div>
             ))}

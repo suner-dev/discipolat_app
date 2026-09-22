@@ -5,9 +5,8 @@ import api from '@/lib/api';
 import type { PageResponse } from '@/types';
 import {
   ArrowLeftRight, Plus, Search, Eye, Filter, CheckCircle, XCircle,
-  Clock, Loader2, AlertTriangle, ChevronRight, X, ArrowLeft,
+  Clock, Loader2, ChevronRight, X, ArrowLeft,
   History, MessageSquare, Send, Archive, Ban, CheckSquare, Square,
-  ChevronDown, ChevronUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
@@ -59,13 +58,13 @@ export default function PasteurTransfersTab() {
     },
   });
 
-  const { data: detailData, isLoading: detailLoading } = useQuery({
+  const { data: detailData, isLoading: _detailLoading } = useQuery({
     queryKey: ['transfers', showDetail?.id],
     queryFn: async () => {
       const [detail, history, decisions] = await Promise.all([
-        api.get(`/transfers/${showDetail!.id}`),
-        api.get(`/transfers/${showDetail!.id}/history`).catch(() => ({ data: [] })),
-        api.get(`/transfers/${showDetail!.id}/decisions`).catch(() => ({ data: [] })),
+        api.get(`/transfers/${showDetail?.id}`),
+        api.get(`/transfers/${showDetail?.id}/history`).catch(() => ({ data: [] })),
+        api.get(`/transfers/${showDetail?.id}/decisions`).catch(() => ({ data: [] })),
       ]);
       return { ...detail.data, historique: history.data, decisions: decisions.data } as TransferDetail;
     },

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   Star, Loader2, ThumbsUp, Shield,
   UserCheck, BarChart3, Send, Eye,
-  Users, Trophy, Medal, Search, Filter, X, TrendingUp, Award,
+  Users, Trophy, Search, Filter, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDictionaries } from '@/hooks/useDictionaries';
@@ -130,7 +130,7 @@ export default function EvaluationsPage() {
     FAISEUR: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   };
 
-  const CATEGORIE_GRADIENTS: Record<string, string> = {
+  const _CATEGORIE_GRADIENTS: Record<string, string> = {
     RESPONSABLE: 'from-purple-500 to-violet-500',
     CHEF_FAMILLE: 'from-amber-500 to-orange-500',
     FAISEUR: 'from-emerald-500 to-green-500',

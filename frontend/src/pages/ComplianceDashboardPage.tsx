@@ -6,8 +6,8 @@ import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
   Shield, Download, Trash2, Clock, FileText, CheckCircle2, AlertTriangle,
-  Plus, RefreshCw, Eye, X, Lock, Users, Hash, ChevronDown, Search, Filter,
-  ArrowRight, ExternalLink, Check, XCircle, Loader2,
+  Plus, RefreshCw, X, Lock, Users, Hash,
+  ArrowRight, Check, XCircle, Loader2,
 } from 'lucide-react';
 
 interface ComplianceOverview {
@@ -29,7 +29,7 @@ interface RetentionPolicy {
   lastPurgeCount: number;
 }
 
-interface ConsentRecord {
+interface _ConsentRecord {
   id: string;
   userId: string;
   consentType: string;

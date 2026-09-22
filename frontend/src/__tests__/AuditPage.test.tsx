@@ -120,8 +120,8 @@ describe('AuditPage — filtres et export', () => {
     renderPage();
     await screen.findByText('CREER_SOUL');
 
-    await user.selectOptions(screen.getByText(/tous les utilisateurs/i).closest('select')!, 'u-pasteur');
-    await user.selectOptions(screen.getByText(/toutes les entités/i).closest('select')!, 'SOUL');
+    await user.selectOptions(screen.getByText(/tous les utilisateurs/i).closest('select') as HTMLSelectElement, 'u-pasteur');
+    await user.selectOptions(screen.getByText(/toutes les entités/i).closest('select') as HTMLSelectElement, 'SOUL');
 
     await waitFor(() => {
       const auditCalls = mockGet.mock.calls.filter(([url]) => String(url).startsWith('/audit?'));
@@ -169,7 +169,7 @@ describe('AuditPage — filtres et export', () => {
     renderPage();
     await screen.findByText('CREER_SOUL');
 
-    await user.selectOptions(screen.getByText(/tous les utilisateurs/i).closest('select')!, 'u-pasteur');
+    await user.selectOptions(screen.getByText(/tous les utilisateurs/i).closest('select') as HTMLSelectElement, 'u-pasteur');
     expect(await screen.findByRole('button', { name: /réinitialiser/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /réinitialiser/i }));
@@ -192,7 +192,7 @@ describe('AuditPage — filtres et export', () => {
     renderPage();
     await screen.findByText('CREER_SOUL');
 
-    await user.selectOptions(screen.getByText(/tous les utilisateurs/i).closest('select')!, 'u-pasteur');
+    await user.selectOptions(screen.getByText(/tous les utilisateurs/i).closest('select') as HTMLSelectElement, 'u-pasteur');
     await user.click(screen.getByRole('button', { name: /exporter csv/i }));
 
     await waitFor(() => {

@@ -65,14 +65,22 @@ public class FileController {
         FileEntity file = fileRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fichier non trouvé"));
 
-        // Verify tenant access
+        // Verify tenant access (G6.6: fail-closed 403, pas 500)
         UUID currentTenantId = TenantContext.requireTenantId();
-        if (!file.getTenantId().equals(currentTenantId)) {
-            throw new RuntimeException("Accès non autorisé à ce fichier");
+        if (!currentTenantId.equals(file.getTenantId())) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Accès non autorisé à ce fichier");
         }
 
-        // Resolve file path
-        Path filePath = Paths.get(file.getChemin()).toAbsolutePath().normalize();
+        // G6.6 — Path traversal : le chemin stocké ne doit jamais sortir du
+        // dossier tenant. Refus si absolu ou contenant "..".
+        String storedPath = file.getChemin() != null ? file.getChemin() : "";
+        if (storedPath.isBlank() || Paths.get(storedPath).isAbsolute()
+                || storedPath.contains("..")) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Chemin de fichier invalide");
+        }
+        Path filePath = Paths.get(storedPath).toAbsolutePath().normalize();
         Resource resource;
         try {
             resource = new UrlResource(filePath.toUri());
@@ -84,18 +92,43 @@ public class FileController {
             throw new RuntimeException("Fichier non trouvé ou illisible");
         }
 
+        // G6.6 — Content-Type allowlist : jamais de valeur brute client.
         String contentType = determineContentType(file.getTypeFichier(), file.getNom());
-        
+
+        // G6.6 — Header injection : nom de fichier sanitisé (RFC 5987).
+        String safeName = file.getNom() != null
+                ? file.getNom().replaceAll("[\\r\\n\"]", "_") : "fichier";
+        String asciiName = safeName.replaceAll("[^\\x20-\\x7E]", "_");
+        String encodedName;
+        try {
+            encodedName = java.net.URLEncoder.encode(safeName,
+                    java.nio.charset.StandardCharsets.UTF_8).replace("+", "%20");
+        } catch (Exception e) {
+            encodedName = asciiName;
+        }
+
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, 
-                    "attachment; filename=\"" + file.getNom() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"" + asciiName + "\"; filename*=UTF-8''" + encodedName)
                 .body(resource);
     }
 
+    private static final java.util.Set<String> ALLOWED_CONTENT_TYPES = java.util.Set.of(
+            "application/pdf", "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "image/jpeg", "image/png", "image/gif", "image/webp",
+            "text/plain", "text/csv", "application/zip", "audio/mpeg",
+            "application/octet-stream");
+
     private String determineContentType(String typeFichier, String nom) {
-        if (typeFichier != null && !typeFichier.isBlank()) {
-            return typeFichier;
+        if (typeFichier != null && !typeFichier.isBlank()
+                && ALLOWED_CONTENT_TYPES.contains(typeFichier.strip().toLowerCase())) {
+            return typeFichier.strip().toLowerCase();
         }
         // Fallback: guess from extension
         String extension = "";

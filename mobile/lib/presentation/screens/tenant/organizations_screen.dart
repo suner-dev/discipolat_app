@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../api/api_service.dart';
+
+// ignore: unused_import
 import '../../../core/tenant_session.dart';
 
 /// Écran de gestion de la structure organisationnelle

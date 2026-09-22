@@ -18,7 +18,6 @@ import {
   Church,
   UserPlus,
   Download,
-  BarChart3,
   Trophy,
   Gauge,
   Flame,

@@ -1,11 +1,11 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import { useAuth } from '@/contexts/AuthContext';
 import type { User, PageResponse, Family, TransferRequest } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, RefreshCw, Users, BarChart3, Star, ClipboardList, Heart, UserX, UserRound, Search, Filter, KeyRound, Lock, Unlock, ShieldCheck, Eye, EyeOff, Power, PowerOff } from 'lucide-react';
+import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, BarChart3, Star, ClipboardList, Heart, UserX, UserRound, Search, Filter, KeyRound, Lock, Unlock, ShieldCheck, Power, PowerOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
 import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
@@ -64,8 +64,8 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<'activate' | 'deactivate' | ''>('');
-  const [accountModal, setAccountModal] = useState<'' | 'lock' | 'unlock' | 'reset2fa' | 'resetPassword'>('');
+  const [_bulkAction, _setBulkAction] = useState<'activate' | 'deactivate' | ''>('');
+  const [_accountModal, setAccountModal] = useState<'' | 'lock' | 'unlock' | 'reset2fa' | 'resetPassword'>('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -124,7 +124,7 @@ export default function UsersPage() {
   const { data: userHistory } = useQuery({
     queryKey: ['users', selectedUser?.id, 'history'],
     queryFn: async () => {
-      const res = await api.get(`/users/${selectedUser!.id}/faiseur-history`);
+      const res = await api.get(`/users/${selectedUser?.id}/faiseur-history`);
       return res.data as Record<string, any>;
     },
     enabled: !!selectedUser && actionModal === 'history',
@@ -243,7 +243,7 @@ export default function UsersPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const restoreMutation = useMutation({
+  const _restoreMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.patch(`/users/${id}/restore`);
     },
@@ -254,7 +254,7 @@ export default function UsersPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const lockMutation = useMutation({
+  const _lockMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.patch(`/users/${id}/deactivate`);
     },
@@ -267,7 +267,7 @@ export default function UsersPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const unlockMutation = useMutation({
+  const _unlockMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.patch(`/users/${id}/activate`);
     },
@@ -280,7 +280,7 @@ export default function UsersPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const resetPasswordMutation = useMutation({
+  const _resetPasswordMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.post(`/auth/forgot-password`, { userId: id });
     },
@@ -331,7 +331,7 @@ export default function UsersPage() {
     setSelectedIds(allSelected ? new Set() : new Set(allIds));
   };
 
-  const filteredData = data?.content?.filter((u) => {
+  const _filteredData = data?.content?.filter((u) => {
     if (!searchTerm) return true;
     const q = searchTerm.toLowerCase();
     return (u.firstName?.toLowerCase().includes(q)) || (u.lastName?.toLowerCase().includes(q)) || (u.email?.toLowerCase().includes(q));

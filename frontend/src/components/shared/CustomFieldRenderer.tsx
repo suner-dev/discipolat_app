@@ -1,4 +1,3 @@
-import type { CustomFieldDefinition } from '@/types';
 
 interface CustomFieldBundleDefinition {
   id: string;

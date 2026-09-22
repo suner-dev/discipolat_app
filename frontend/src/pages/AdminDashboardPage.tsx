@@ -3,10 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import {
   Palette, Boxes, Menu as MenuIcon, Shield, UserCog, Activity, FileText,
-  ArrowRight, Sparkles, MessageSquareText, BookOpen, LayoutTemplate, Building2,
-  Users, Bell, Settings, Workflow, Database, Zap, Globe, Sliders, Server,
-  Gauge, RefreshCw, Clock, AlertTriangle, CheckCircle2, Cpu, HardDrive,
-  Search, TrendingUp, BarChart3, FileDown, UserPlus, Eye, Smartphone,
+  ArrowRight, MessageSquareText, BookOpen, LayoutTemplate, Building2,
+  Users, Bell, Workflow, Database, Zap, Globe, Sliders, Server,
+  Gauge, Clock, CheckCircle2, Cpu, BarChart3, UserPlus, Smartphone,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -94,8 +93,8 @@ const CONFIG_SECTIONS = [
 const entityTypeIcon: Record<string, string> = { SOUL: '💜', USER: '👤', FAMILY: '👨‍👩‍👧', DEPARTMENT: '🏢', TRANSFER: '🔄', ALERT: '🔔', REPORT: '📋', EVENT: '📅', VISIT: '🏠', PRAYER: '🙏' };
 
 export default function AdminDashboardPage() {
-  const { locale } = useI18n();
-  const { activeRole } = useAuth();
+  const { locale: _locale } = useI18n();
+  const { activeRole: _activeRole } = useAuth();
   const { branding } = useSettings();
 
   const { data: health } = useQuery({

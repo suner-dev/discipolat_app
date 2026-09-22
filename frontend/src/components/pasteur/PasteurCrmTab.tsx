@@ -7,7 +7,6 @@ import { tText } from '@/i18n';
 import {
   Target, Eye, CheckCircle, XCircle, Users, Heart,
   TrendingUp, AlertTriangle, ArrowRight, ChevronDown, ChevronUp,
-  Calendar, BookOpen, BarChart3,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -25,7 +24,7 @@ export default function PasteurCrmTab() {
   });
 
   // Fetch CRM data per faiseur when expanded
-  const { data: faiseurDetail } = useQuery({
+  const { data: _faiseurDetail } = useQuery({
     queryKey: ['crm', 'faiseur', expandedFaiseur],
     queryFn: async () => {
       const res = await api.get('/dashboard/pasteur');

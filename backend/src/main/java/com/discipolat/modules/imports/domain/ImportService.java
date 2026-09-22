@@ -3,6 +3,7 @@ package com.discipolat.modules.imports.domain;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.enums.TypeDisciple;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.dataMigration.domain.DataMigrationJob;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.souls.domain.Soul;
@@ -87,17 +88,49 @@ public class ImportService {
         };
     }
 
+    private static final long MAX_IMPORT_BYTES = 5 * 1024 * 1024; // G6.6 : 5MB max
+    private static final int MAX_IMPORT_ROWS = 10_000;           // G6.6 : anti-DoS
+    private static final int MAX_CSV_LINE_CHARS = 100_000;       // G6.6 : ligne abusive
+
+    private void checkImportFile(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IOException("Fichier vide");
+        }
+        if (file.getSize() > MAX_IMPORT_BYTES) {
+            throw new IOException("Fichier trop volumineux (max 5MB)");
+        }
+        String name = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        String ct = file.getContentType() != null ? file.getContentType().toLowerCase() : "";
+        if (!name.endsWith(".csv") || !(ct.isEmpty() || ct.equals("text/csv")
+                || ct.equals("application/vnd.ms-excel") || ct.equals("text/plain"))) {
+            throw new IOException("Seuls les fichiers CSV (.csv, text/csv) sont acceptés");
+        }
+    }
+
     private List<Map<String, String>> parseCsv(MultipartFile file) throws IOException {
+        checkImportFile(file);
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String headerLine = reader.readLine();
             if (headerLine == null) return List.of();
+            if (headerLine.length() > MAX_CSV_LINE_CHARS) {
+                throw new IOException("En-tête CSV trop longue");
+            }
 
             String[] headers = headerLine.split(",");
+            if (headers.length > 100) {
+                throw new IOException("Trop de colonnes (max 100)");
+            }
             List<Map<String, String>> result = new ArrayList<>();
 
             String line;
             while ((line = reader.readLine()) != null) {
+                if (line.length() > MAX_CSV_LINE_CHARS) {
+                    throw new IOException("Ligne CSV trop longue");
+                }
+                if (result.size() >= MAX_IMPORT_ROWS) {
+                    throw new IOException("Trop de lignes (max 10000)");
+                }
                 String[] values = line.split(",", -1);
                 Map<String, String> row = new LinkedHashMap<>();
                 for (int j = 0; j < headers.length && j < values.length; j++) {
@@ -273,7 +306,7 @@ public class ImportService {
                 .build();
     }
 
-    private ImportResult importSouls(List<Map<String, String>> rows) {
+        public ImportResult importSouls(List<Map<String, String>> rows) {
         int imported = 0;
         int skipped = 0;
         List<String> errors = new ArrayList<>();
@@ -317,7 +350,7 @@ public class ImportService {
                 .build();
     }
 
-    private ImportResult importFamilies(List<Map<String, String>> rows) {
+        public ImportResult importFamilies(List<Map<String, String>> rows) {
         int imported = 0;
         int skipped = 0;
         List<String> errors = new ArrayList<>();
@@ -350,7 +383,7 @@ public class ImportService {
                 .build();
     }
 
-    private ImportResult importUsers(List<Map<String, String>> rows) {
+        public ImportResult importUsers(List<Map<String, String>> rows) {
         int imported = 0;
         int skipped = 0;
         int usersWithTempPassword = 0;
@@ -394,6 +427,63 @@ public class ImportService {
                 .skipped(skipped)
                 .errors(errors)
                 .build();
+    }
+
+        /**
+     * G4.6 — rollback : désactive (soft-delete) les entités créées par un job de migration.
+     * @return nombre d'entités désactivées.
+     */
+    public int rollback(DataMigrationJob job) {
+        String raw = job.getCreatedEntityIds();
+        if (raw == null || raw.isBlank()) return 0;
+
+        List<UUID> ids = Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(UUID::fromString)
+                .toList();
+
+        String target = job.getTargetType() == null ? "" : job.getTargetType().toUpperCase();
+        UUID tenantId = job.getTenantId();
+        int deleted = 0;
+
+        switch (target) {
+            case "SOULS", "MEMBERS" -> {
+                for (UUID id : ids) {
+                    soulRepository.findById(id).ifPresent(soul -> {
+                        soul.setDeleted(true);
+                        soulRepository.save(soul);
+                    });
+                }
+                deleted = ids.size();
+            }
+            case "FAMILIES" -> {
+                for (UUID id : ids) {
+                    familyRepository.findById(id).ifPresent(family -> {
+                        family.setDeleted(true);
+                        familyRepository.save(family);
+                    });
+                }
+                deleted = ids.size();
+            }
+            case "USERS" -> {
+                for (UUID id : ids) {
+                    userRepository.findById(id).ifPresent(user -> {
+                        user.setDeleted(true);
+                        userRepository.save(user);
+                    });
+                }
+                deleted = ids.size();
+            }
+            default -> {
+                /* types non supportés (DEPARTMENTS, EVENTS, ...) : rien à restaurer */
+                log.warn("Rollback : type cible non supporté pour le rollback: {}", target);
+            }
+        }
+
+        job.setStatus(DataMigrationJob.Status.ROLLED_BACK);
+        job.setRolledBackAt(java.time.LocalDateTime.now());
+        return deleted;
     }
 
     private LocalDate parseDate(String dateStr) {

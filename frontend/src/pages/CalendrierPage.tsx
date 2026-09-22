@@ -5,7 +5,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  Calendar, RefreshCw, Loader2, CheckCircle, Plus, ExternalLink,
+  Calendar, Loader2, CheckCircle, Plus, ExternalLink,
   Clock, Trash2, X,
 } from 'lucide-react';
 

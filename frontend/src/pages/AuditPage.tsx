@@ -26,8 +26,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import {
-  ResponsiveContainer, Tooltip, Legend,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid,
   BarChart, Bar, Cell,
 } from 'recharts';
 import { useI18n } from '@/i18n';
@@ -294,7 +293,7 @@ export default function AuditPage() {
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                     {Object.entries(trend.parAction)
                       .sort(([, a], [, b]) => b - a)
-                      .map(([action], i) => {
+                      .map(([action], _i) => {
                         const cat = actionCategory(action);
                         return <Cell key={action} fill={cat === 'CREATE' ? '#22c55e' : cat === 'UPDATE' ? '#3b82f6' : cat === 'DELETE' ? '#ef4444' : cat === 'TRANSFER' ? '#f59e0b' : '#8b5cf6'} />;
                       })}

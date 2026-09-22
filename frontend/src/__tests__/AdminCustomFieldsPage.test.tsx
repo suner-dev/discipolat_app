@@ -148,10 +148,11 @@ describe('AdminCustomFieldsPage — administration des champs personnalisés', (
       expect(screen.getByText('Langue parlée')).toBeInTheDocument();
     });
 
-    const row = screen.getByText('Langue parlée').closest('.glass-card')!;
+    const row = screen.getByText('Langue parlée').closest('.glass-card') as HTMLElement;
     const editBtn = row.querySelector('button[title="Modifier"]');
     expect(editBtn).toBeTruthy();
-    fireEvent.click(editBtn!);
+    if (!editBtn) throw new Error('Bouton Modifier introuvable');
+    fireEvent.click(editBtn);
 
     await waitFor(() => {
       expect(screen.getByText('Modifier le champ')).toBeInTheDocument();
@@ -176,9 +177,10 @@ describe('AdminCustomFieldsPage — administration des champs personnalisés', (
       expect(screen.getByText('Langue parlée')).toBeInTheDocument();
     });
 
-    const row = screen.getByText('Langue parlée').closest('.glass-card')!;
-    const deleteBtn = row.querySelector('button[title="Supprimer"]')!;
+    const row = screen.getByText('Langue parlée').closest('.glass-card') as HTMLElement;
+    const deleteBtn = row.querySelector('button[title="Supprimer"]');
     expect(deleteBtn).toBeTruthy();
+    if (!deleteBtn) throw new Error('Bouton Supprimer introuvable');
     fireEvent.click(deleteBtn);
 
     await waitFor(() => {
@@ -217,10 +219,11 @@ describe('AdminCustomFieldsPage — administration des champs personnalisés', (
     });
 
     // Click preview button on the first field
-    const row = screen.getByText('Langue parlée').closest('.glass-card')!;
+    const row = screen.getByText('Langue parlée').closest('.glass-card') as HTMLElement;
     const previewBtn = row.querySelector('button[title="Aperçu"]');
     expect(previewBtn).toBeTruthy();
-    fireEvent.click(previewBtn!);
+    if (!previewBtn) throw new Error('Bouton Aperçu introuvable');
+    fireEvent.click(previewBtn);
 
     await waitFor(() => {
       expect(screen.getByText(/Aperçu — Langue parlée/)).toBeInTheDocument();

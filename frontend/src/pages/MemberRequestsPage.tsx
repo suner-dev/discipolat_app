@@ -12,8 +12,8 @@ import type {
 import {
   Inbox, MessageSquare, CalendarCheck, CheckCircle2,
   XCircle, PlayCircle, Clock, ChevronRight, User, Building2, Users,
-  Search, Filter, Eye, X, Loader2, AlertTriangle, TrendingUp,
-  Lightbulb, ShieldAlert, Send,
+  Search, Filter, X, Loader2,
+  Lightbulb, ShieldAlert,
 } from 'lucide-react';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import { useDictionaries } from '@/hooks/useDictionaries';
@@ -62,7 +62,7 @@ const tauxPresence = (p: MemberPresence) => {
 
 export default function MemberRequestsPage() {
   const { user } = useAuth();
-  const dictionaries = useDictionaries();
+  const _dictionaries = useDictionaries();
   const { locale } = useI18n();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'demandes' | 'presences'>('demandes');

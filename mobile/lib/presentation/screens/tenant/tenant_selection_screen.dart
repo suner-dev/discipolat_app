@@ -15,6 +15,7 @@ class TenantSelectionScreen extends ConsumerStatefulWidget {
 
 class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
   bool _loading = true;
+  // ignore: unused_field
   bool _switching = false;
   List<Map<String, dynamic>> _tenants = [];
   String? _error;

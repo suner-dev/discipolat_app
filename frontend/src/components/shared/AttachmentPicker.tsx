@@ -196,7 +196,7 @@ export default function AttachmentPicker({ value, onChange }: AttachmentPickerPr
             <p className="text-sm text-gray-500">Aucun document disponible. Créez-en un ci-dessus.</p>
           ) : (
             <ul className="space-y-1 max-h-56 overflow-y-auto">
-              {files!.map(f => {
+              {(files ?? []).map(f => {
                 const checked = value.includes(f.id);
                 return (
                   <li key={f.id}>

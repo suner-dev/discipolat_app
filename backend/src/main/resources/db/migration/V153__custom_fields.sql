@@ -1,6 +1,6 @@
 -- V153__custom_fields.sql
 -- ============================================================
--- G2.4 — Custom Field Engine (19 types, validation backend, rendu generique)
+-- G2.4 - Custom Field Engine (19 types, validation backend, rendu generique)
 -- Contrat : Annexe A §A.3 (custom_field_definition, custom_field_value)
 -- Types: TEXT, LONG_TEXT, NUMBER, DECIMAL, BOOLEAN, DATE, DATETIME, TIME,
 --        SELECT, MULTI_SELECT, USER, PERSON, DEPARTMENT, SPACE, TEAM,

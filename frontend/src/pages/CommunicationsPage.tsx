@@ -37,30 +37,21 @@ export default function CommunicationsPage() {
   const canManage = activeRole === 'ADMIN' || activeRole === 'PASTEUR';
   const [modal, setModal] = useState<null | { edit?: Communication }>(null);
 
-  if (!moduleEnabled('COMMUNICATION')) {
-    return (
-      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <Megaphone className="w-10 h-10 text-gray-300 mb-3" />
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Communication désactivée')}</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
-        </p>
-        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
-      </div>
-    );
-  }
-
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['communications'] });
+
+  const moduleOn = moduleEnabled('COMMUNICATION');
 
   const { data: published = [], isLoading } = useQuery({
     queryKey: ['communications', 'published'],
     queryFn: async () => (await api.get('/communications')).data as Communication[],
+  
+    enabled: moduleOn,
   });
 
   const { data: all = [] } = useQuery({
     queryKey: ['communications', 'admin'],
     queryFn: async () => (await api.get('/communications/admin')).data as Communication[],
-    enabled: canManage,
+    enabled: canManage && moduleOn,
   });
 
   const saveMutation = useMutation({
@@ -93,6 +84,22 @@ export default function CommunicationsPage() {
       </span>
     );
   };
+
+  // Module désactivé par l'administrateur : page remplacée par un état explicite
+  // (garde placée APRÈS les hooks pour respecter les règles des hooks React)
+  if (!moduleEnabled('COMMUNICATION')) {
+    return (
+      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <Megaphone className="w-10 h-10 text-gray-300 mb-3" />
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Communication désactivée')}</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
+        </p>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
+      </div>
+    );
+  }
+
 
   return (
     <div className="page-container max-w-4xl">

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import api from '@/lib/api';
 import {
-  GitBranch, Users, Clock, AlertTriangle, TrendingUp, Loader2, ArrowLeft,
+  GitBranch, Users, Clock, AlertTriangle, Loader2, ArrowLeft,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  Activity,
   Bell,
   UserCheck,
   BarChart3,
@@ -26,8 +25,6 @@ import { Link } from 'react-router-dom';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -551,7 +548,7 @@ export default function DashboardPage() {
                           <div className="flex items-center gap-1">
                             <span className="font-semibold text-gray-900 dark:text-gray-100">{s.moyenne ?? '—'}</span>
                             {s.moyenne != null && [1,2,3,4,5].map(i => (
-                              <Star key={i} className={`w-2.5 h-2.5 ${i <= Math.round(s.moyenne!) ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
+                              <Star key={i} className={`w-2.5 h-2.5 ${i <= Math.round(s.moyenne ?? 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
                             ))}
                           </div>
                         </div>

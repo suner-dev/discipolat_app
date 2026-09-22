@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useI18n } from '@/i18n';
 import toast from 'react-hot-toast';
-import { Store, Search, Plus, Heart, MessageCircle, Filter, Trash2, Download, X, Loader2 } from 'lucide-react';
+import { Store, Search, Plus, Heart, MessageCircle, Filter, Download, Loader2 } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
@@ -39,7 +39,7 @@ export default function MarketplacePage() {
   const [showPublish, setShowPublish] = useState(false);
   const [newListing, setNewListing] = useState({ title: '', description: '', listingType: 'OFFER', category: '', priceCents: '', contactInfo: '' });
   const [newTemplate, setNewTemplate] = useState({ title: '', description: '', listingType: 'OFFER', category: 'TEMPLATE', contactInfo: '' });
-  const [installId, setInstallId] = useState<string | null>(null);
+  const [_installId, setInstallId] = useState<string | null>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['marketplace'] });
 
@@ -95,7 +95,7 @@ export default function MarketplacePage() {
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
-  const installMutation = useMutation({
+  const _installMutation = useMutation({
     mutationFn: async (id: string) => {
       setInstallId(id);
       const res = await api.post(`/marketplace/${id}/install`);
@@ -106,7 +106,7 @@ export default function MarketplacePage() {
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
-  const deleteMutation = useMutation({
+  const _deleteMutation = useMutation({
     mutationFn: async (id: string) => api.delete(`/marketplace/${id}`),
     onSuccess: () => { invalidate(); toast.success(tText('Annonce supprimée')); },
     onError: (e) => toast.error(getErrorMessage(e)),
@@ -120,8 +120,8 @@ export default function MarketplacePage() {
      (l.description || '').toLowerCase().includes(search.toLowerCase()))
   );
 
-  const isTemplate = (l: Listing) => l.category === 'TEMPLATE';
-  const isMine = (l: Listing) => activeRole === 'ADMIN' || activeRole === 'PASTEUR';
+  const _isTemplate = (l: Listing) => l.category === 'TEMPLATE';
+  const _isMine = (_l: Listing) => activeRole === 'ADMIN' || activeRole === 'PASTEUR';
 
   const typeColor = (type: string) => {
     if (type === 'offer') return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';

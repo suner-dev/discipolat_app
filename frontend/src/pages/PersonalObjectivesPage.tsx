@@ -4,7 +4,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import toast from 'react-hot-toast';
-import { Target, Plus, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
+import { Target, Plus, CheckCircle2, Clock } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface Objective {
@@ -28,7 +28,7 @@ const CATÉGORIES = [
 ];
 
 export default function PersonalObjectivesPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

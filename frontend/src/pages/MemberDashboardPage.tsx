@@ -21,7 +21,7 @@ import {
   Sparkles, User, Mail, Phone, Calendar, GraduationCap, Briefcase, Heart,
   Users, Building2, Camera, Edit3, Save, X, Loader2, MessageSquare,
   ChevronRight, UserCheck, Church, Cake, CalendarCheck, Send, Paperclip,
-  CheckCircle, Star, TrendingUp, Zap, BookOpen, ClipboardCheck, Trophy,
+  CheckCircle, Star, TrendingUp, Zap, BookOpen, Trophy,
 } from 'lucide-react';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
@@ -220,7 +220,7 @@ export default function MemberDashboardPage() {
   };
 
   // ==================== Phase 3 : progression, événements, notes ====================
-  const { data: progression } = useQuery({
+  const { data: _progression } = useQuery({
     queryKey: ['members', 'me', 'progression'],
     queryFn: async () => (await api.get('/members/me/progression')).data as Record<string, unknown>,
   });

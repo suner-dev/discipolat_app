@@ -12,7 +12,7 @@ import { useDictionaries } from '@/hooks/useDictionaries';
 import { ArrowLeft, ArrowLeftRight, Loader2, Send, User as UserIcon, Heart, Users, Building2, Paperclip } from 'lucide-react';
 
 import { tText } from '@/i18n';
-interface PageResponse<T> {
+interface _PageResponse<T> {
   content: T[];
   totalElements: number;
 }

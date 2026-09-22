@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
-import { Bot, Send, Loader2, Sparkles, User, RefreshCw, Trash2, Copy, Check } from 'lucide-react';
+import { Bot, Send, Loader2, Sparkles, User, Trash2, Copy, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { getI18nLocale } from '@/i18n';
@@ -27,7 +27,7 @@ const SUGGESTIONS = [
 
 export default function AiAssistantPage() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);

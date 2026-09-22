@@ -190,7 +190,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<List<ReportDraft>> getUnsyncedDrafts(String tenantId) =>
-      (select(reportDraftsTable)..where((t) => t.tenantId.equals(tenantId))).get();
+      (select(reportDraftsTable)..where((t) => t.tenantId.equals(tenantId) & t.synced.equals(false))).get();
 
   Future<ReportDraft?> getDraft(String ameId, String semaine, {String? tenantId}) {
     final query = select(reportDraftsTable)

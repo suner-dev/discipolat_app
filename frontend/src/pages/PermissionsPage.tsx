@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { Shield, Check, X, Loader2, Save, Plus, Copy, Pencil, Trash2, BadgeCheck, Eye, Pencil as PencilIcon, Trash, ChevronDown, ChevronRight } from 'lucide-react';
+import { Shield, Check, X, Save, Plus, Copy, Pencil, Trash2, BadgeCheck, Eye, Pencil as PencilIcon, Trash, ChevronDown, ChevronRight } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface PermissionEntry {
@@ -148,7 +148,7 @@ export default function PermissionsPage() {
     return acc;
   }, {} as Record<string, PermissionCatalogEntry[]>) || {};
 
-  const getPermissionLabel = (perm: string) => {
+  const _getPermissionLabel = (perm: string) => {
     const entry = catalog?.find((c) => c.key === perm);
     return entry?.label || perm.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
   };
@@ -158,13 +158,13 @@ export default function PermissionsPage() {
     return role?.label || key;
   };
 
-  const isSystemRole = (key: string) => roles?.find((r) => r.key === key)?.system ?? false;
+  const _isSystemRole = (key: string) => roles?.find((r) => r.key === key)?.system ?? false;
 
   const toggleModule = (module: string) => {
     setExpandedModules((prev) => ({ ...prev, [module]: !prev[module] }));
   };
 
-  const toggleRoleExpand = (role: string) => {
+  const _toggleRoleExpand = (role: string) => {
     setExpandedRole(expandedRole === role ? null : role);
   };
 

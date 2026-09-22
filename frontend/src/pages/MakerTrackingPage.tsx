@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Footprints, Plus, Trash2, Loader2, User, Calendar, FileText } from 'lucide-react';
+import { Footprints, Plus, Trash2, Loader2, User, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';

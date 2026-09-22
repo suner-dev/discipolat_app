@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import api, { getErrorMessage } from '@/lib/api';
+import api from '@/lib/api';
 import {
-  ClipboardList, BarChart3, Users, CheckCircle, Clock, AlertTriangle,
+  ClipboardList, BarChart3, Users, CheckCircle, Clock,
   Loader2, ArrowLeft,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

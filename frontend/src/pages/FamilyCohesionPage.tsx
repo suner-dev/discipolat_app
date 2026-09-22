@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import Toast from '@/components/shared/Toast';

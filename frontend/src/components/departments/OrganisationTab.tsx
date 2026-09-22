@@ -59,7 +59,7 @@ function TeamNode({ team, teams, depth = 0, deptId }: { team: Team; teams: Team[
   );
 }
 
-function TeamActions({ team, teams, deptId, members, onChanged }: { team: Team; teams: Team[]; deptId: string; members: any[]; onChanged: () => void }) {
+function TeamActions({ team, teams, deptId, members, onChanged: _onChanged }: { team: Team; teams: Team[]; deptId: string; members: any[]; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
   const queryClient = useQueryClient();
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['department'] });
@@ -98,13 +98,13 @@ function TeamActions({ team, teams, deptId, members, onChanged }: { team: Team; 
   );
 }
 
-function EditTeamForm({ team, teams, deptId, members, onDone }: { team: Team; teams: Team[]; deptId: string; members: any[]; onDone: () => void }) {
+function EditTeamForm({ team, teams: _teams, deptId, members, onDone }: { team: Team; teams: Team[]; deptId: string; members: any[]; onDone: () => void }) {
   const queryClient = useQueryClient();
   const [nom, setNom] = useState(team.nom);
-  const [parentId, setParentId] = useState(team.parentId || '');
+  const [parentId, _setParentId] = useState(team.parentId || '');
   const [type, setType] = useState(team.type);
   const [objectif, setObjectif] = useState(team.objectif || '');
-  const [dateFin, setDateFin] = useState(team.dateFin || '');
+  const [dateFin, _setDateFin] = useState(team.dateFin || '');
   const [chefId, setChefId] = useState('');
   const [adjointId, setAdjointId] = useState('');
 

@@ -153,7 +153,7 @@ describe('LoginPage', () => {
     // fireEvent.submit contourne la validation native jsdom du type=email pour
     // laisser zodResolver produire son erreur (le submit du bouton serait bloqué).
     const form = screen.getByPlaceholderText('vous@email.com').closest('form');
-    fireEvent.submit(form!);
+    fireEvent.submit(form as HTMLFormElement);
 
     await waitFor(() => {
       expect(screen.getByText('Email invalide')).toBeInTheDocument();

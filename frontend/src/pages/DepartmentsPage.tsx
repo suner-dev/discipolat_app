@@ -5,7 +5,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import type { Department, User, PageResponse } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { Building2, Plus, Pencil, Trash2, Loader2, X, Calendar, UserPlus, FolderOpen, Search, Filter } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, Loader2, X, Calendar, UserPlus, FolderOpen, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { getI18nLocale } from '@/i18n';

@@ -4,9 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { PageResponse } from '@/types';
 import {
-  CalendarClock, Plus, Search, Trash2, Loader2, X, Filter,
-  Eye, MapPin, Users as UsersIcon, Calendar, ChevronRight, BarChart3,
-  Edit3, CheckCircle, Clock, ArrowLeft, CalendarDays, Users,
+  CalendarClock, Plus, Search, Trash2, Loader2, X, Filter, MapPin, Users as UsersIcon, Calendar, ChevronRight, BarChart3, Clock, ArrowLeft, CalendarDays, Users,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
@@ -56,7 +54,7 @@ export default function PasteurEventsTab() {
 
   const { data: registrations } = useQuery({
     queryKey: ['events', 'registrations', showDetail?.id],
-    queryFn: async () => { const res = await api.get(`/events/${showDetail!.id}/registrations`); return res.data as any[]; },
+    queryFn: async () => { const res = await api.get(`/events/${showDetail?.id}/registrations`); return res.data as any[]; },
     enabled: !!showDetail?.id,
   });
 

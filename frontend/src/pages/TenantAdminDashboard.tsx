@@ -22,7 +22,7 @@ interface TenantDashboard {
 }
 
 export default function TenantAdminDashboard() {
-  const { hasPermission, hasRole, currentTenant } = useTenant();
+  const { hasPermission, hasRole: _hasRole, currentTenant } = useTenant();
   const [dashboard, setDashboard] = useState<TenantDashboard | null>(null);
   const [loading, setLoading] = useState(true);
 

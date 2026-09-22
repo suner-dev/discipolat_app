@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   Building2, Users, UserPlus, Calendar, UserCheck, FileText, Activity,
   Star, ChevronRight, Cake, CheckCircle, Clock, UserX, Network, AlertCircle,
-  Filter, RefreshCw, Heart, ClipboardCheck, Save, Loader2, UserRound, ListTodo, ArrowLeftRight,
+  Filter, RefreshCw, ClipboardCheck, Save, Loader2, UserRound, ListTodo, ArrowLeftRight,
   CalendarDays, X,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -70,7 +70,7 @@ export default function ResponsableDashboardPage() {
     queryFn: async () => (await api.get('/programs/active')).data as ProgramType[],
   });
 
-  const { data: presenceSheet = [], isLoading: sheetLoading, refetch: refetchSheet } = useQuery({
+  const { data: presenceSheet = [], isLoading: sheetLoading, refetch: _refetchSheet } = useQuery({
     queryKey: ['members', 'departments', activeDeptId, 'presences', presenceSemaine],
     queryFn: async () => {
       const res = await api.get(`/members/departments/${activeDeptId}/presences`, {

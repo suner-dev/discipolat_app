@@ -12,7 +12,7 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({ icon, title, message, action }: EmptyStateProps) {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">

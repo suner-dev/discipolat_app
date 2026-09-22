@@ -4,8 +4,8 @@ import api from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  BarChart3, TrendingUp, TrendingDown, Users, Activity, Eye, Heart,
-  Loader2, Search,
+  BarChart3, TrendingUp, TrendingDown, Activity,
+  Loader2,
 } from 'lucide-react';
 
 interface EngagementMetric {
@@ -20,7 +20,7 @@ interface EngagementMetric {
 
 export default function EngagementAnalyticsPage() {
   const [category, setCategory] = useState('');
-  const [search] = useState('');
+  const [_search] = useState('');
 
   const { data: metrics = [], isLoading } = useQuery({
     queryKey: ['engagement-analytics', 'dashboard'],

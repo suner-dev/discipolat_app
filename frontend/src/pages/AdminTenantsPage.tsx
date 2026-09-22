@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import {
   Plus, Pencil, Trash2, Building2, Loader2, Save, Globe, Calendar,
-  Search, Filter, Users, Database, Activity, Eye, ChevronRight,
-  Shield, Zap, X, RefreshCw, BarChart3, Mail,
+  Search, Filter, Users, Activity, Eye,
+  Shield, X, RefreshCw, BarChart3,
 } from 'lucide-react';
 import type { Tenant, TenantStatus } from '@/types';
 
@@ -52,7 +52,7 @@ export default function AdminTenantsPage() {
     },
   });
 
-  const { data: tenantStats } = useQuery({
+  const { data: _tenantStats } = useQuery({
     queryKey: ['admin', 'tenants', 'stats'],
     queryFn: async () => {
       const res = await api.get('/admin/system-health');

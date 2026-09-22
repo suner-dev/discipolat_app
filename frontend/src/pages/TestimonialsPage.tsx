@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
-import { Heart, Plus, ThumbsUp, MessageCircle, Shield, Clock } from 'lucide-react';
+import { Heart, Plus, ThumbsUp, MessageCircle, Shield } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface Testimony {
@@ -30,7 +30,7 @@ const CATEGORIES = [
 ];
 
 export default function TestimonialsPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

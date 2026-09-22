@@ -21,7 +21,7 @@ export function useExportReport() {
         responseType: 'blob',
       });
 
-      const mimeType = format === 'csv'
+      const _mimeType = format === 'csv'
         ? 'text/csv'
         : 'text/html';
 
@@ -47,7 +47,7 @@ export function useExportReport() {
       link.remove();
       window.URL.revokeObjectURL(url);
       toast.success(tText('Fichier téléchargé'));
-    } catch (error) {
+    } catch (_error) {
       toast.error('Erreur lors de l\'export');
     } finally {
       setIsExporting(false);

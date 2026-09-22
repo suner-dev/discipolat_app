@@ -6,11 +6,10 @@ import { useExportReport } from '@/hooks/useExportReport';
 import type { PasteurDashboardData, PageResponse } from '@/types';
 import {
   FileText, Eye, ChevronRight, CheckCircle, Clock, AlertTriangle,
-  BarChart3, FileDown, Users, Plus, Search, Filter, X,
-  Calendar, ArrowLeft, Loader2, Send, CheckCircle2,
+  BarChart3, FileDown, Users, Search, X, Loader2, CheckCircle2,
 } from 'lucide-react';
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import toast from 'react-hot-toast';
 

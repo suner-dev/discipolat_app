@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import api, { getErrorMessage } from '@/lib/api';
+import api from '@/lib/api';
 import { Heart, Loader2, Sparkles } from 'lucide-react';
 
 import { getI18nLocale } from '@/i18n';

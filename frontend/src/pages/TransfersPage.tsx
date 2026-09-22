@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
-import type { TransferRequest, TransferStatus, TransferType } from '@/types';
+import type { TransferRequest, TransferStatus } from '@/types';
 import { TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS, PRIORITE_LABELS } from '@/types';
 import type { ReactNode } from 'react';
 import { getI18nLocale } from '@/i18n';

@@ -7,14 +7,20 @@ import java.util.UUID;
 /**
  * P3 #101 — Assistant de migration de données.
  * Job de migration depuis Excel/CSV/autres logiciels avec mapping intelligent des champs.
+ * G4.6 — entités créées par ce job (UUIDs séparés par des virgules), pour rollback.
  */
 @Entity
 @Table(name = "data_migration_jobs")
 @org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
+@lombok.Getter
+@lombok.Setter
+@lombok.Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class DataMigrationJob {
 
     public enum SourceType { EXCEL, CSV, GOOGLE_SHEETS, AUTRE_LOGICIEL }
-    public enum Status { MAPPING, IMPORTING, COMPLETED, FAILED, CANCELLED }
+    public enum Status { MAPPING, IMPORTING, COMPLETED, FAILED, CANCELLED, ROLLED_BACK }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -55,34 +61,15 @@ public class DataMigrationJob {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public UUID getTenantId() { return tenantId; }
-    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
-    public String getFileName() { return fileName; }
-    public void setFileName(String fileName) { this.fileName = fileName; }
-    public SourceType getSourceType() { return sourceType; }
-    public void setSourceType(SourceType sourceType) { this.sourceType = sourceType; }
-    public String getTargetType() { return targetType; }
-    public void setTargetType(String targetType) { this.targetType = targetType; }
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
-    public String getFieldMapping() { return fieldMapping; }
-    public void setFieldMapping(String fieldMapping) { this.fieldMapping = fieldMapping; }
-    public int getTotalRows() { return totalRows; }
-    public void setTotalRows(int totalRows) { this.totalRows = totalRows; }
-    public int getImportedRows() { return importedRows; }
-    public void setImportedRows(int importedRows) { this.importedRows = importedRows; }
-    public int getErrorRows() { return errorRows; }
-    public void setErrorRows(int errorRows) { this.errorRows = errorRows; }
-    public String getErrorsLog() { return errorsLog; }
-    public void setErrorsLog(String errorsLog) { this.errorsLog = errorsLog; }
-    public UUID getCreatedBy() { return createdBy; }
-    public void setCreatedBy(UUID createdBy) { this.createdBy = createdBy; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public LocalDateTime getCompletedAt() { return completedAt; }
-    public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
+    @Column(name = "created_entity_ids", columnDefinition = "TEXT")
+    private String createdEntityIds;
+
+    @Column(name = "last_run_dry")
+    private Boolean lastRunDry = false;
+
+    @Column(name = "rolled_back_at")
+    private LocalDateTime rolledBackAt;
 }

@@ -174,7 +174,8 @@ class TTSEngine {
   private processQueue(): void {
     if (!this.synth || this.isPlaying || this.queue.length === 0) return;
 
-    const item = this.queue.shift()!;
+    const item = this.queue.shift();
+    if (!item) return;
     this.playUtterance(item);
   }
 

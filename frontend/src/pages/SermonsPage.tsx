@@ -5,8 +5,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  BookOpen, Plus, Loader2, RefreshCw, Play, Clock, BarChart3,
-  Users, FileText, CheckCircle, Mic, Search, X,
+  BookOpen, Plus, Loader2, RefreshCw, Play, Clock,
+  Users, CheckCircle, Mic, Search, X,
 } from 'lucide-react';
 
 interface Sermon {

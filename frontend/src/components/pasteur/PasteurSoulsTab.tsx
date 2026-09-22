@@ -6,9 +6,8 @@ import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Soul, PageResponse, TypeDisciple, StatutAme } from '@/types';
 import {
   Heart, Plus, Search, Filter, Trash2, RotateCcw, Edit3,
-  Eye, Loader2, X, ChevronDown, Star, ArrowLeft, Archive,
-  History, UserPlus, UserX, Clock, CheckCircle, XCircle,
-  FileDown, Download, Calendar, ArrowRight,
+  Eye, Loader2, ArrowLeft,
+  History, Download, Calendar, ArrowRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

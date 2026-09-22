@@ -38,7 +38,7 @@ const BENCHMARK_KEYS: { key: string; label: string; unit: string }[] = [
 
 /** P3 #107 — Benchmark anonyme inter-églises amélioré : comparaison par taille/pays/dénomination + clustering. */
 export default function ChurchBenchmarkPage() {
-  const { locale } = useI18n();
+  const { locale: _locale } = useI18n();
   const qc = useQueryClient();
   const [category, setCategory] = useState<string>('');
   const listQ = useQuery({ queryKey: ['church-comparisons'], queryFn: async () => (await api.get('/church-comparisons')).data as Comparison[] });

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import {
-  CheckCircle, XCircle, Calendar, BookOpen, TrendingUp, StickyNote,
+  CheckCircle, Calendar, TrendingUp, StickyNote,
   Activity, Filter,
 } from 'lucide-react';
 import { useState } from 'react';

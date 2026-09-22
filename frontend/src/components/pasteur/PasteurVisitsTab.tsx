@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import type { PageResponse } from '@/types';
 import {
   Calendar, Plus, Search, Trash2, ArrowLeft, Edit3, Eye,
-  Loader2, CheckCircle, Clock, X, Filter, AlertTriangle, MapPin, FileText,
+  Loader2, CheckCircle, Clock, X, Filter, AlertTriangle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
@@ -121,7 +121,7 @@ export default function PasteurVisitsTab() {
     return <span className={`badge text-[10px] ${item.cls}`}><Icon className="w-3 h-3 inline mr-1" />{item.label}</span>;
   };
 
-  const isUpcoming = (d?: string) => !!d && new Date(d) > new Date();
+  const _isUpcoming = (d?: string) => !!d && new Date(d) > new Date();
 
   // === VUE DÉTAIL ===
   if (view === 'detail' && selectedVisit) {

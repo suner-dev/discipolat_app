@@ -13,7 +13,7 @@ import { TRANSFER_TYPE_LABELS, TRANSFER_STATUS_LABELS, DECISION_LABELS, PRIORITE
 import { tText } from '@/i18n';
 import {
   ArrowLeft, ArrowLeftRight, Loader2, Send, XCircle, CheckCircle2, MessageSquare,
-  RefreshCcw, AlertTriangle, Archive, Clock, ShieldCheck, History, Paperclip, User,
+  RefreshCcw, Archive, Clock, ShieldCheck, History, Paperclip,
 } from 'lucide-react';
 
 const STATUS_BADGE: Record<TransferStatus, string> = {

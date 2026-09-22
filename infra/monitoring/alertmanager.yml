@@ -1,0 +1,10 @@
+rule_files:
+  - /etc/prometheus/alert.rules.yml
+
+alerting:
+  alertmanagers:
+    # [BUSINESS_INPUT] Activer quand une cible d'alerte réelle existe
+    # (email/Opsgenie/Slack) : renseigner l'adresse du relais SMTP ou
+    # l'URL webhook, puis retirer le commentaire.
+    - static_configs:
+        - targets: []

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { GitBranch, Users, Sparkles, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
+import { GitBranch, Users, Sparkles, TrendingUp, RefreshCw } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';

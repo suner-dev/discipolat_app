@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -7,9 +6,8 @@ import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import type { Pastoral360Data, SpiritualScorePoint } from '@/types';
 import {
   ArrowLeft, Heart, Activity, Clock, AlertTriangle, Star,
-  MessageSquare, TrendingUp, TrendingDown, Sparkles, Users,
-  Mail, Phone, Calendar, MapPin, Briefcase, Church, Shield,
-  CheckCircle, XCircle, ChevronRight, BookOpen, Gavel, Paperclip,
+  MessageSquare, TrendingUp, Sparkles, Users,
+  Mail, Phone, Calendar, MapPin, Briefcase, Church, Shield, ChevronRight, Paperclip,
 } from 'lucide-react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,

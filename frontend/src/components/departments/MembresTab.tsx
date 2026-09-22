@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { tText } from '@/i18n';
 import {
   Users, UserPlus, UserMinus, Search, ChevronRight, Mail, Phone,
-  CheckCircle, Clock, UserX, Heart, Download, Upload, Loader2, Filter,
+  CheckCircle, Clock, Heart, Download, Filter,
 } from 'lucide-react';
 
 type DeptMember = {
@@ -40,7 +40,7 @@ function initials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function MembresTab({ deptId, members, onChanged }: { deptId: string; members: any[]; onChanged: () => void }) {
+export function MembresTab({ deptId, members: _members, onChanged }: { deptId: string; members: any[]; onChanged: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');

@@ -4,10 +4,9 @@ import { useI18n } from '@/i18n';
 import api from '@/lib/api';
 import { useExportReport } from '@/hooks/useExportReport';
 import {
-  Users, Heart, UserCheck, FileText, Activity, Bell, Calendar,
-  BookOpen, Star, AlertTriangle, TrendingUp, Loader2, ChevronRight,
-  Church, Eye, CheckCircle, Clock, UserX, Search, GitBranch, BarChart3,
-  ArrowLeftRight, MapPin, Send, Zap, ClipboardList, Home, Cake,
+  Users, Heart, UserCheck, FileText, Calendar,
+  BookOpen, Star, AlertTriangle, TrendingUp,
+  Church, CheckCircle, GitBranch, BarChart3, MapPin, Zap, ClipboardList, Cake,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -15,7 +14,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 
-const COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
+const _COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
 
 const getGreeting = (t: (k: string) => string) => {
   const h = new Date().getHours();
@@ -151,7 +150,7 @@ export default function ChefFamilleDashboardPage() {
               { label: t('chef.alertes'), value: activeAlerts.length, icon: AlertTriangle, color: 'from-red-500 to-rose-500', tab: '#alertes-famille', alert: activeAlerts.length > 0 },
               { label: t('chef.visites'), value: upcomingVisits?.length ?? 0, icon: Calendar, color: 'from-teal-500 to-cyan-500', tab: '#visites-famille' },
               { label: t('chef.prieres'), value: prayers?.length ?? 0, icon: BookOpen, color: 'from-indigo-500 to-blue-500', tab: '#prieres-famille' },
-            ].map((s, i) => (
+            ].map((s, _i) => (
               <button key={s.label} type="button" onClick={() => document.querySelector(s.tab)?.scrollIntoView({ behavior: 'smooth' })}
                 className="glass-card p-3.5 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
                 <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.color} opacity-60`} />

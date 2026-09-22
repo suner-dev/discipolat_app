@@ -4,7 +4,7 @@ import { useI18n } from '@/i18n';
 import api, { getErrorMessage } from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
-import { Brain, TrendingUp, TrendingDown, AlertTriangle, Sparkles, BarChart3, RefreshCw, Shield } from 'lucide-react';
+import { Brain, TrendingUp, AlertTriangle, Sparkles, BarChart3, RefreshCw, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { tText } from '@/i18n';

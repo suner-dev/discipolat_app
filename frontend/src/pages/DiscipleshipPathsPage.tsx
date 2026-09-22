@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Route, Plus, BarChart3, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
+import { Route, Plus, Loader2, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';

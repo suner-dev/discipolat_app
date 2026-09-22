@@ -22,14 +22,12 @@ import {
   Loader2,
   X,
   CheckCircle2,
-  UserMinus,
   Pencil,
   Trash2,
   Eye,
   UserCheck,
   UserX,
   LayoutDashboard,
-  ChevronRight,
   Sparkles,
   BellRing,
   Paperclip,
@@ -226,18 +224,7 @@ export default function EventsPage() {
     fichierIds: [] as string[],
   });
 
-  if (!moduleEnabled('EVENTS')) {
-    return (
-      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <Calendar className="w-10 h-10 text-gray-300 mb-3" />
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Module Événements désactivé')}</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
-        </p>
-        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
-      </div>
-    );
-  }
+  const moduleOn = moduleEnabled('EVENTS');
 
   const { data, isLoading } = useQuery({
     queryKey: ['events', page, search, typeFilter, statutFilter],
@@ -249,6 +236,8 @@ export default function EventsPage() {
       const res = await api.get(`/events?${params}`);
       return res.data as PageResponse<Evenement>;
     },
+  
+    enabled: moduleOn,
   });
 
   const createMutation = useMutation({
@@ -329,7 +318,7 @@ export default function EventsPage() {
         familleId?: string;
       }[];
     },
-    enabled: isPasteurOrAdmin && view === 'consolidated',
+    enabled: isPasteurOrAdmin && view === 'consolidated' && moduleOn,
   });
 
   const { data: consolidatedStats } = useQuery({
@@ -338,7 +327,7 @@ export default function EventsPage() {
       const res = await api.get('/events/consolidated/by-family?days=14');
       return res.data as { total: number; parType: Record<string, number>; parFamille: Record<string, number> };
     },
-    enabled: isPasteurOrAdmin && view === 'consolidated',
+    enabled: isPasteurOrAdmin && view === 'consolidated' && moduleOn,
   });
 
   // User lookup cache
@@ -348,6 +337,8 @@ export default function EventsPage() {
       const res = await api.get('/users?size=100');
       return res.data.content as User[];
     },
+  
+    enabled: moduleOn,
   });
 
   const getUserName = (userId: string) => {
@@ -361,7 +352,7 @@ export default function EventsPage() {
       const res = await api.get(`/events/${showAttendance?.id}/registrations`);
       return res.data as { id?: string; utilisateurId: string; statutInscription: string; present: boolean }[];
     },
-    enabled: !!showAttendance,
+    enabled: !!showAttendance && moduleOn,
   });
 
   const markAttendanceMutation = useMutation({
@@ -569,6 +560,22 @@ export default function EventsPage() {
     return weeks;
   }, [allEvents]);
 
+  // Module désactivé par l'administrateur : page remplacée par un état explicite
+  // (garde placée APRÈS les hooks pour respecter les règles des hooks React)
+  if (!moduleEnabled('EVENTS')) {
+    return (
+      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <Calendar className="w-10 h-10 text-gray-300 mb-3" />
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Module Événements désactivé')}</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
+        </p>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
+      </div>
+    );
+  }
+
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -672,7 +679,7 @@ export default function EventsPage() {
             )}
             {attendanceData && attendanceData.length > 0 ? (
               <div className="space-y-2">
-                {attendanceData.map((reg, idx) => {
+                {attendanceData.map((reg, _idx) => {
                   const isAnnulee = reg.statutInscription === 'ANNULEE';
                   const isPresent = reg.statutInscription === 'PRESENT';
                   const isAbsent = reg.statutInscription === 'ABSENT';

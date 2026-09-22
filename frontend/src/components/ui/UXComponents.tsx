@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode } from 'react';
-import { AlertTriangle, CheckCircle2, Info, X, RefreshCw, Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════
 // P2 #85 — SKELETON LOADING

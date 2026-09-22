@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { MapPin, Navigation, Clock, RefreshCw, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';

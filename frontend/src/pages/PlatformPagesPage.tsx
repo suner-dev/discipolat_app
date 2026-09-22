@@ -20,7 +20,7 @@ const CHART_TYPES = ['PIE', 'BAR', 'LINE'];
 const BLOCK_TYPES = ['KPI', 'TABLEAU', 'LISTE', 'GRAPHIQUE', 'CALENDRIER', 'TIMELINE', 'CHECKLIST', 'FICHIERS', 'TACHES', 'FORMULAIRE', 'TEXTE', 'LIENS', 'RECHERCHE', 'IMAGES'];
 const FORM_TYPES = ['SUGGESTION', 'RENDEZ_VOUS', 'SIGNALEMENT'];
 const FORM_TARGETS = ['PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'];
-const EMPTY_BLOCK: CustomPageBlock = { type: 'KPI', config: {} };
+const _EMPTY_BLOCK: CustomPageBlock = { type: 'KPI', config: {} };
 
 interface PageForm {
   key: string;

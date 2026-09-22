@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
 import api from '@/lib/api';
-import { Code, ExternalLink, Key, Copy, CheckCircle2, Shield, Globe, Zap } from 'lucide-react';
+import { Code, ExternalLink, Key, Copy, CheckCircle2, Shield } from 'lucide-react';
 import Toast from '@/components/shared/Toast';
 
 import { tText } from '@/i18n';
@@ -60,9 +60,9 @@ const SAMPLE_ENDPOINTS: EndpointInfo[] = [
 ];
 
 export default function ApiDocsPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [filterModule, setFilterModule] = useState('');
   const [showCreateKey, setShowCreateKey] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');

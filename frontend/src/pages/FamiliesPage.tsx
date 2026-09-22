@@ -7,9 +7,8 @@ import DataTable from '@/components/shared/DataTable';
 import type { Family, PageResponse } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
-  Users, Plus, Building2, ChevronRight, BarChart3, AlertTriangle,
-  Search, Filter, Trash2, RotateCcw, Heart, CheckCircle, XCircle,
-  Loader2, Calendar, Crown, Eye,
+  Users, Plus, ChevronRight, BarChart3, AlertTriangle,
+  Search, Filter, Trash2, RotateCcw, CheckCircle, Crown, Eye,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
@@ -186,7 +185,7 @@ export default function FamiliesPage() {
     },
   ];
 
-  const trashColumns: ColumnDef<Family>[] = [
+  const _trashColumns: ColumnDef<Family>[] = [
     {
       header: 'Famille',
       cell: (family) => (

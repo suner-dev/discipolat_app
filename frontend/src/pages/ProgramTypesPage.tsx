@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
-import type { ProgramType, ProgramSubType } from '@/types';
+import type { ProgramType } from '@/types';
 import {
-  Calendar, Plus, Save, Loader2, X, CheckCircle2, Trash2,
-  Pencil, ToggleLeft, ToggleRight, Sparkles, Clock,
+  Calendar, Plus, Loader2, X, CheckCircle2, Trash2,
+  Pencil, Clock,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

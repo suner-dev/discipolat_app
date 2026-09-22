@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useI18n } from '@/i18n';
 import api, { getErrorMessage } from '@/lib/api';
@@ -24,8 +23,12 @@ export default function EventChecklistsPage() {
       const byEvent = new Map<string, CheckItem[]>();
       items.forEach((i) => {
         const eid = String(i.eventId);
-        if (!byEvent.has(eid)) byEvent.set(eid, []);
-        byEvent.get(eid)!.push({
+        let bucket = byEvent.get(eid);
+        if (!bucket) {
+          bucket = [];
+          byEvent.set(eid, bucket);
+        }
+        bucket.push({
           id: String(i.id),
           title: String(i.title ?? ''),
           status: String(i.status ?? 'PENDING'),

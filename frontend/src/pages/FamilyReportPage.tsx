@@ -9,7 +9,7 @@ import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import type { FamilyReport, Family, MakerReport } from '@/types';
 import {
   FileText, Send, Loader2, CheckCircle2, AlertCircle, FileDown,
-  Sparkles, Users, BarChart3, Clock, ChevronDown, Paperclip,
+  Sparkles, Users, BarChart3, Clock, Paperclip,
   type LucideIcon,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -123,7 +123,7 @@ export default function FamilyReportPage() {
     }
   };
 
-  const selectedFamily = families?.find(f => f.id === selectedFamilyId);
+  const _selectedFamily = families?.find(f => f.id === selectedFamilyId);
 
   /** Cartes de statistiques (couleur du statut pilotée par le dictionnaire). */
   const stats: Array<{

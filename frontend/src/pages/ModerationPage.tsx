@@ -6,7 +6,7 @@ import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
   Shield, CheckCircle2, XCircle, AlertTriangle, Eye, Clock, RefreshCw,
-  Loader2, Filter, Search, Ban, Check, ChevronDown, MessageSquare,
+  Loader2, Search, Ban, Check, MessageSquare,
 } from 'lucide-react';
 
 interface ModerationItem {
@@ -38,12 +38,12 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ModerationPage() {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const [filter, setFilter] = useState('PENDING');
   const [search, setSearch] = useState('');
   const [selectedItem, setSelectedItem] = useState<ModerationItem | null>(null);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: _statsLoading } = useQuery({
     queryKey: ['moderation', 'stats'],
     queryFn: async () => {
       const res = await api.get('/moderation/stats');

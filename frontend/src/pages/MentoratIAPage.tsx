@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import Toast from '@/components/shared/Toast';
-import { Brain, Sparkles, AlertTriangle, CheckCircle2, BookOpen, UserCheck, Eye, Archive } from 'lucide-react';
+import { Brain, Sparkles, AlertTriangle, CheckCircle2, BookOpen, UserCheck } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface Suggestion {
@@ -30,7 +30,7 @@ const CATÉGORIES_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function MentoratIAPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);

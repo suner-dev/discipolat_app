@@ -1,168 +1,84 @@
-# API REST
+# API REST — Discipolat Church OS
 
-## Base URL
+> Version 2.0 — 2026-09-22 · §72 / G6.8. Base : `http://localhost:8080/api/v1` (local), `https://discipolat-api.onrender.com/api/v1` (prod).
+> OpenAPI : `/api-docs` (JSON) · Swagger : `/swagger-ui.html` (springdoc 2.8.6). Auth : `Authorization: Bearer <JWT RS256, 15 min>` sauf mention contraire. Voir [ARCHITECTURE.md](ARCHITECTURE.md) · [RBAC.md](RBAC.md) · [matrice](security/SECURITY_MATRIX.md) · [ENV_TEMPLATE.md](ENV_TEMPLATE.md).
 
-```bash
-http://localhost:8080/api/v1
-```
+## Conventions
 
-## Authentification
+- Pagination Spring : `?page=0&size=20&sort=nom,asc` → `{content, totalElements, totalPages, size, number, first, last, empty}`.
+- Erreurs : `400` validation · `401` non authentifie · `403` RBAC/module (voir `ModuleRouter`) · `404` · `409` conflit metier · `429` rate limit · `500`.
+- Isolement : tout endpoint authentifie est scope par `tenant_id` + `organization_unit` (filtre Hibernate auto ; cross-tenant = 403/404 IDOR-safe).
+- Rate limiting (Bucket4j/Redis) : login 10/min/IP · refresh 20/min · forgot-password 3/min · reset/activate/change-password 5/min · switch-role 30/min.
 
-Tous les endpoints (sauf `/auth/login` et `/auth/refresh`) nécessitent un token JWT dans le header `Authorization: Bearer <token>`.
+## Authentification (`/auth`, `/auth/2fa`)
 
-## Endpoints
-
-### Authentification
-
-| Méthode | Endpoint | Description | Rôle requis |
+| Methode | Endpoint | Description | Role |
 |---|---|---|---|
-| POST | `/auth/login` | Authentification | Public |
-| POST | `/auth/refresh` | Rafraîchir le token | Authentifié |
+| POST | `/auth/login` | Login (rate-limite, brute-force protege) | Public |
+| POST | `/auth/refresh` | Rotation refresh token | Authentifie |
+| POST | `/auth/forgot-password` `…/reset-password` `…/activate` `…/change-password` | Cycle mot de passe/activation | Public/Authentifie |
+| POST | `/auth/switch-role` | Changer de role actif (multi-roles) | Authentifie |
+| * | `/auth/2fa/**` | Enrollment/verification TOTP | Authentifie |
 
-### Utilisateurs
+## Noyau eglise (scopes adaptes)
 
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| GET | `/users` | Liste des utilisateurs | PASTEUR, RESPONSABLE |
-| POST | `/users` | Créer un utilisateur | PASTEUR, RESPONSABLE |
-| GET | `/users/{id}` | Détail d'un utilisateur | Authentifié |
-| PUT | `/users/{id}` | Modifier un utilisateur | PASTEUR |
-| PATCH | `/users/{id}/transfer` | Transférer un faiseur vers une famille (**workflow** — retourne la demande de transfert) | ADMIN, PASTEUR |
+| Domaine | Base | Operations |
+|---|---|---|
+| Utilisateurs | `/users` | GET (PASTEUR, RESPONSABLE) · POST · GET/PUT `/{id}` · PATCH `/{id}/transfer` (workflow) |
+| Membres/People | `/members`, `/people` | CRUD + competences (`/members/competences`), dossiers 360 |
+| Ames | `/souls` | GET filtrable · POST · GET/PUT/DELETE `/{id}` · PATCH `/{id}/reassign` (workflow) · GET `/{id}/history` · notes `/souls/{soulId}/notes` · tags `/soul-tags` · discipline `/souls/{soulId}/discipline` |
+| Familles | `/families` | GET/POST · GET/PUT/DELETE `/{id}` · PATCH `/{id}/chief` (workflow) · OS `/families/{familyId}/os` · cohesion `/family-cohesion` · reunions `/family-meetings` · ressources `/family-resources` |
+| Departements | `/departments` | GET/POST · GET/PUT/DELETE `/{id}` · KPI `/department-kpis` · presences `/departments/{departmentId}/events/{eventId}/attendance` |
+| Espaces (Church OS) | `/spaces`, `/space-templates` | CRUD espaces · application de templates (`V152`) · modules par espace (`space_module` V148) |
+| Organisation | `/org`, `/tenants`, `/tenant-switcher` | Hierarchie `organization_unit` (V147) · switch de tenant · heritage config (V145) |
+| Rapports | `/reports` (+ export `/reports/export`) | `POST/GET /reports/maker-weekly`, `POST /reports/family-weekly`, `GET /reports/family-weekly/{familyId}`, rapports departements/membres (V53-55) |
+| Suivis paralleles | `/parallel-followups` | POST/GET · PATCH/DELETE `/{id}` |
+| Alertes/Notifications | `/alerts`, `/smart-alerts`, `/notifications` (+ `/notifications/preferences`) | GET · PATCH `/{id}/read` · PATCH `/read-all` |
+| Dashboard | `/dashboard` (+ `/sabbath-dashboard`, `/kpi-narrative`, `/executive-insights`, `/usage-analytics`, `/engagement-analytics`, `/growth-projections`, `/load-prediction`, `/benchmark`, `/church-comparisons`) | KPI consolides, par departement/famille, narratifs IA |
+| Transferts (workflow) | `/transfers` (+ `/admin/transfers/workflows`, `/workflow-engine`, `/workflows`, `/workflow/automations`, `/automations`) | GET liste/detail/historique/decisions · POST creer · PUT brouillon · POST `/{id}/submit|decide|cancel|archive` ; configs moteur (V151, V98) |
 
-### Départements
+## Evenements, communication, culte
 
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| GET | `/departments` | Liste des départements | Tous |
-| POST | `/departments` | Créer un département | PASTEUR |
-| GET | `/departments/{id}` | Détail d'un département | Tous |
-| PUT | `/departments/{id}` | Modifier un département | PASTEUR |
-| DELETE | `/departments/{id}` | Archiver un département | PASTEUR |
-
-### Familles de disciples
-
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| GET | `/families` | Liste des familles | Tous |
-| POST | `/families` | Créer une famille | PASTEUR, RESPONSABLE |
-| GET | `/families/{id}` | Détail d'une famille | Tous |
-| PUT | `/families/{id}` | Modifier une famille | PASTEUR, RESPONSABLE |
-| PATCH | `/families/{id}/chief` | Changer le chef de famille (**workflow** — retourne la demande de transfert) | ADMIN, PASTEUR, CHEF_DE_FAMILLE |
-| DELETE | `/families/{id}` | Archiver une famille | PASTEUR, RESPONSABLE |
-
-### Âmes (Disciples)
-
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| GET | `/souls` | Liste des âmes (filtrable) | Tous (scope adapté) |
-| POST | `/souls` | Créer une âme | FAISEUR, CHEF |
-| GET | `/souls/{id}` | Détail d'une âme | Tous (scope adapté) |
-| PUT | `/souls/{id}` | Modifier une âme | FAISEUR assigné |
-| PATCH | `/souls/{id}/reassign` | Réaffecter l'âme à un autre faiseur (**workflow** — retourne la demande de transfert) | ADMIN, PASTEUR, RESPONSABLE |
-| DELETE | `/souls/{id}` | Archiver une âme | FAISEUR assigné |
-| GET | `/souls/{id}/history` | Historique d'une âme | Tous (scope adapté) |
-
-### Rapports
-
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| POST | `/reports/maker-weekly` | Soumettre rapport faiseur | FAISEUR |
-| GET | `/reports/maker-weekly` | Consulter rapports faiseurs | CHEF, RESPONSABLE, PASTEUR |
-| POST | `/reports/family-weekly` | Soumettre rapport famille | CHEF |
-| GET | `/reports/family-weekly/{familyId}` | Rapport famille consolidé | RESPONSABLE, PASTEUR |
-
-### Suivis parallèles
-
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| POST | `/parallel-followups` | Déclarer un suivi parallèle | FAISEUR, CHEF |
-| GET | `/parallel-followups` | Liste des suivis parallèles | CHEF, RESPONSABLE, PASTEUR |
-| PATCH | `/parallel-followups/{id}` | Modifier un suivi | Initiateur |
-| DELETE | `/parallel-followups/{id}` | Supprimer un suivi | Initiateur |
-
-### Alertes
-
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| GET | `/alerts` | Liste des alertes | CHEF, RESPONSABLE, PASTEUR |
-| PATCH | `/alerts/{id}/resolve` | Résoudre une alerte | CHEF, RESPONSABLE |
-
-### Notifications
-
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| GET | `/notifications` | Mes notifications | Authentifié |
-| PATCH | `/notifications/{id}/read` | Marquer comme lu | Authentifié |
-| PATCH | `/notifications/read-all` | Tout marquer comme lu | Authentifié |
-
-### Dashboard
-
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| GET | `/dashboard/kpi` | KPI consolidés | PASTEUR |
-| GET | `/dashboard/kpi/department/{id}` | KPI par département | PASTEUR, RESPONSABLE |
-| GET | `/dashboard/kpi/family/{id}` | KPI par famille | PASTEUR, RESPONSABLE, CHEF |
-
-### Workflow de transfert
-
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| GET | `/transfers` | Liste des demandes (filtrée par statut/type, scopée par rôle actif) | Authentifié |
-| GET | `/transfers/configurations` | Types de transfert que je peux initier | Authentifié |
-| GET | `/transfers/{id}` | Détail d'une demande (circuit, décisions, pièces jointes) | Demandeur, concerné, validateur |
-| POST | `/transfers` | Créer une demande | Rôle initiateur (config) |
-| PUT | `/transfers/{id}` | Modifier un brouillon | Demandeur |
-| POST | `/transfers/{id}/submit` | Soumettre (exécution immédiate si circuit vide) | Demandeur |
-| POST | `/transfers/{id}/decide` | Décision motivée (approbation, refus, infos, correction) | Validateur (rôle actif) |
-| POST | `/transfers/{id}/cancel` | Annuler | Demandeur |
-| POST | `/transfers/{id}/archive` | Archiver | ADMIN, PASTEUR |
-| GET | `/transfers/{id}/history` | Historique immuable | Visibilité scopée |
-| GET | `/transfers/{id}/decisions` | Décisions | Visibilité scopée |
-| GET/PUT/POST/DELETE | `/admin/transfers/workflows` | Paramétrage du workflow (configs + étapes) | ADMIN, PASTEUR |
-
-### Bêta-testing & retours testeurs (V50)
-
-| Méthode | Endpoint | Description | Rôle requis |
-|---|---|---|---|
-| GET | `/public/meta` | Méta-données publiques (nom, version, environnement, betaMode, demoAccountsEnabled) — **aucun token** | Public |
-| POST | `/feedback` | Soumettre un retour (catégorie, priorité, sujet, description, page, navigateur, OS, appareil) | Authentifié |
-| GET | `/admin/feedback` | Liste des retours (les plus récents d'abord, email émetteur résolu) | ADMIN, PASTEUR |
-| GET | `/admin/feedback/stats` | Statistiques (total, par statut, par catégorie) | ADMIN, PASTEUR |
-| PATCH | `/admin/feedback/{id}/status` | Changer le statut (`NOUVEAU`/`EN_COURS`/`RESOLU`/`REJETE`) | ADMIN |
-| GET | `/admin/beta/status` | État de l'environnement (environment, resetEnabled) | ADMIN |
-| POST | `/admin/beta/reset` | Réinitialiser l'environnement bêta (tronque les données testeurs, restaure le seed démo, recrée les comptes) — **refusé en prod et si désactivé** | ADMIN (profil beta) |
-
-> 💡 Le reset bêta est protégé par une **double garde** : refus si
-> `app.environment=prod` ET refus si `app.beta-testing.reset-enabled` n'est pas
-> actif (seul le profil Spring `beta` l'active). Jamais accessible en production.
-
-## Pagination
-
-Tous les endpoints GET qui retournent des listes supportent la pagination :
-
-```json
-{
-  "content": [...],
-  "totalElements": 100,
-  "totalPages": 10,
-  "size": 10,
-  "number": 0,
-  "first": true,
-  "last": false,
-  "empty": false
-}
-```
-
-Paramètres : `?page=0&size=20&sort=nom,asc`
-
-## Codes d'erreur
-
-| Code | Description |
+| Domaine | Base |
 |---|---|
-| 400 | Bad Request (validation) |
-| 401 | Non authentifié |
-| 403 | Accès refusé (RBAC) |
-| 404 | Ressource non trouvée |
-| 409 | Conflit métier |
-| 429 | Rate limit dépassé |
-| 500 | Erreur interne |
+| Evenements | `/events`, `/church-events` (V158), `/event-checklists`, `/calendar`, `/programs`, `/appointments`, `/visits` (`/pastoral-visits`), `/map`, `/geofencing` |
+| Messagerie | `/messages`, `/group-messages`, `/stream-chat`, `/broadcast`, `/communications`, `/announcements`, `/conversations` (WS temps reel + outbox) |
+| WhatsApp/Vocal/USSD | `/whatsapp` (+ `/public/whatsapp`), `/voice`, `/voice-notifications`, `/voice-reports`, `/ussd` |
+| Documents/medias | `/documents`, `/files`, `/sermons` (+ `/sermons/translations`, `/sermon-assistant`), `/streams`, `/bible-reading`, `/spiritual-journals`, `/spiritual-journey`, `/spiritual-challenges`, `/prayers`, `/prayer-journal`, `/testimonies` |
+| Vie communautaire | `/communities`, `/directory`, `/network`, `/cercle-faiseurs`, `/volunteers`, `/twin`, `/neighborhood-health`, `/health-observatory`, `/facerec` |
+
+## Formation, accompagnement, RH d'eglise
+
+| Domaine | Base |
+|---|---|
+| Parcours | `/discipleship-paths`, `/mentoring`, `/reverse-mentoring`, `/trainings`, `/development-plans`, `/personal-objectives`, `/objectives`, `/evaluations`, `/badges`, `/rewards` (+ `/reward-certificates`), `/quest`, `/weekly-challenges` |
+| Passeports | `/passports` (+ `/public/passports`) |
+| Cas pastoraux | pastoral-case (V139), `/pastorate`, `/prophetic`, `/discipline`, `/dress-codes` |
+| Equipes | `/team-tasks`, `/team-gantt`, `/leave-requests`, `/referrals`, `/tickets`, `/admin-requests`, `/follow-up-requests`, `/maker-tracking`, `/succession`, `/skill-matching`, `/skills`, `/skills-matrix`, `/scoping`, `/intelligence`, `/search` (pg_trgm), `/forms`, `/surveys`, `/favorites`, `/encouragements` |
+| Sante/infirmerie | health-infirmary (V141) via `/health`, `/health-observatory` |
+
+## Finances, assets, marketplace
+
+| Domaine | Base |
+|---|---|
+| Finances | `/finances`, `/payments` (+ `/payments/webhooks`), `/tontines`, `/marketplace`, `/aid`, `/currencies`, `/inventory`, `/assets` (moteur V138) — webhooks signes, simulation configurable (voir [ENV_TEMPLATE.md](ENV_TEMPLATE.md)) |
+
+## IA & predictions
+
+| Domaine | Base |
+|---|---|
+| IA | `/ai`, `/ai/module`, `/ai/credits` (quotas SaaS) · `/ai-visit-notes` · `/ai-predictions` + `/predictions` · `/kpi-narrative` · Ollama local (`OLLAMA_URL`, `AI_MODEL`) ou providers (Groq/Gemini/Mistral/HF) — fallback contextuel si indisponible |
+
+## Plateforme / admin (TENANT_OWNER/ADMIN, SUPER_ADMIN)
+
+| Domaine | Base |
+|---|---|
+| Tenants & SaaS | `/tenants` · `/platform`, `/platform/admin`, `/platform/admin/dashboard`, `/platform/admin/impersonation` (TTL 30 min, journalise) · `/admin/tenant-features`, `/admin/saas/plans`, `/admin/subscription`, `/admin/quotas`, `/ai/credits` (V144) · `/admin/dashboard`, `/admin/system-health`, `/admin/cache-stats` |
+| Back-office | `/admin/settings`, `/admin/branding`, `/admin/features`, `/admin/roles`, `/admin/org`, `/admin/invitations`, `/admin/notifications`, `/admin/integrations`, `/admin/webhooks`, `/config`, `/connectors`, `/custom-fields` (V153), `/statuses` (V150), `/space-templates`, `/pages` (V65), `/permissions`, `/onboarding-wizard` |
+| Invitations & acces | `/admin/invitations` (create/resend/revoke, token public rate-limite) · `/tenant-switcher` · `/auth/switch-role` |
+| Conformite | `/gdpr` (export/effacement/audit) · `/compliance` · `/audit` (hash chain) · `/exports` · `/import`, `/data-migration` (moteur V164, dry-run+replay) · `/backups` |
+| Integrations temps reel | SSE `/sse/entity-changes` (ex. `EntityChangeSseController`) · `/scoping` (portees global/local V146) · `/moderation` · `/api-docs` |
+| Beta & feedback (V40-41) | `GET /public/meta` (public, betaMode…) · `POST /feedback` · `GET /admin/feedback…/stats` · `PATCH /admin/feedback/{id}/status` · `GET /admin/beta/status` · `POST /admin/beta/reset` (double garde prod+profil, jamais en prod) |
+| Public | `/public/**`, `/public/docs`, `/directory` (annuaire opt-in `public_directory_enabled`) |
+
+## Pagination & erreurs : voir Conventions en tete.

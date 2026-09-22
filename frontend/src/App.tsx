@@ -15,6 +15,7 @@ import { useUsageTracking } from '@/hooks/useUsageTracking';
  * minimal (critique pour les testeurs sur réseaux lents, cf. mission §16/§22).
  * ========================================================================== */
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
+const PublicChurchesPage = lazy(() => import('@/pages/PublicChurchesPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 const TwoFactorChallengePage = lazy(() => import('@/pages/TwoFactorChallengePage'));
@@ -1125,6 +1126,8 @@ export default function App() {
 
         {/* Page d'accueil publique (landing) — redirige vers /dashboard si connecté */}
         <Route path="/" element={<HomeGate />} />
+        {/* G6.9 — Annuaire public « Églises sur Discipolat » (opt-in, sans auth) */}
+        <Route path="/churches" element={<PublicChurchesPage />} />
         <Route path="/verify/passport/:code" element={<PassportVerifyPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

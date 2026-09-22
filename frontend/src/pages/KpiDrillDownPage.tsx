@@ -31,7 +31,7 @@ const KPI_TYPES = [
 ];
 
 export default function KpiDrillDownPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [narratives, setNarratives] = useState<KpiNarrative[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedKpi, setSelectedKpi] = useState<string | null>(null);

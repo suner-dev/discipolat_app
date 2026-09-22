@@ -1,5 +1,7 @@
 package com.discipolat.modules.core.service;
 
+import com.discipolat.common.infrastructure.propagation.EntityChangeBroadcaster;
+import com.discipolat.common.infrastructure.propagation.EntityChangedEvent;
 import com.discipolat.modules.audit.service.AuditEventService;
 import com.discipolat.modules.core.domain.OutboxEvent;
 import com.discipolat.modules.core.domain.ProcessedEvent;
@@ -21,7 +23,8 @@ public class OutboxConsumers {
 
     private final OutboxPublisher outboxPublisher;
     private final AuditEventService auditEventService;
-    private final RealTimeService realTimeService;
+        private final RealTimeService realTimeService;
+    private final EntityChangeBroadcaster sseBroadcaster;
     private final OutboxEventRepository outboxRepository;
     private final ProcessedEventRepository processedRepository;
 
@@ -217,9 +220,22 @@ public class OutboxConsumers {
             case "TaskCompleted" ->
                     realTimeService.pushTaskCompleted(event.getTenantId(), event.getAggregateId(),
                             getUUID(payload, "assigneeId"), getUUID(payload, "spaceId"));
-            case "PermissionsChanged" ->
+                        case "PermissionsChanged" -> {
                     realTimeService.pushPermissionsChanged(event.getTenantId(), getUUID(payload, "userId"),
                             (String) payload.get("changeType"));
+                    // G4.4 — diffusion SSE pour clients web/mobile sans WebSocket (STOMP).
+                    // Le broadcaster publie un événement "PERMISSION" que la page /family-meetings
+                    // et l'écran d'accueil mobile écoutent sur le flux SSE entity-change.
+                    UUID userId = getUUID(payload, "userId");
+                    if (userId != null) {
+                        sseBroadcaster.broadcast(event.getTenantId(), new EntityChangedEvent(
+                                this, "PERMISSION", userId,
+                                EntityChangedEvent.ChangeType.UPDATED,
+                                Map.of(),
+                                Map.of("changeType", payload.get("changeType")),
+                                null, "PermissionsChanged"));
+                    }
+                }
             default -> log.debug("REALTIME consumer (no handler): {}", event.getEventType());
         }
     }

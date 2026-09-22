@@ -13,7 +13,6 @@ import {
   Filter,
   Shield,
   ShieldCheck,
-  Sparkles,
   Plus,
   X,
   Send,

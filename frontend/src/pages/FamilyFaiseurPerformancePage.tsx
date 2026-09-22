@@ -5,7 +5,6 @@ import api from '@/lib/api';
 import { tText } from '@/i18n';
 import {
   ArrowLeft, Users, BarChart3, FileText, Loader2,
-  CheckCircle2, Clock, AlertCircle,
 } from 'lucide-react';
 
 export default function FamilyFaiseurPerformancePage() {

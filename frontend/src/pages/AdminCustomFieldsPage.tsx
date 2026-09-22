@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { Plus, Pencil, Trash2, Loader2, Save, GripVertical, Search, Eye, EyeOff, X, Filter, ChevronDown, ChevronUp, BarChart3, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Save, GripVertical, Search, Eye, EyeOff, X } from 'lucide-react';
 import type { CustomFieldDefinition } from '@/types';
 import { useDictionaries } from '@/hooks/useDictionaries';
 
@@ -98,7 +98,7 @@ export default function AdminCustomFieldsPage() {
   };
 
   // Stats per entity type
-  const statsPerEntity = useMemo(() => {
+  const _statsPerEntity = useMemo(() => {
     return ENTITY_TYPES.map((et) => ({
       key: et,
       label: ENTITY_LABELS[et],

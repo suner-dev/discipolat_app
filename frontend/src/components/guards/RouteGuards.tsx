@@ -81,13 +81,13 @@ export function AccessDenied({
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { isInitialized, currentMembership } = useTenant();
+  const navigate = useNavigate();
 
   if (!isInitialized) {
     return <LoadingSpinner />;
   }
 
   if (!currentMembership) {
-    const navigate = useNavigate();
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
         <div className="text-center">

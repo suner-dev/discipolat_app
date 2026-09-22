@@ -78,6 +78,21 @@ public class VoiceAssistantController {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Fichier audio requis"));
         }
+        // G6.6 — garde-fous audio : 25MB max, MIME audio/* allowlist, extension audio.
+        if (file.getSize() > 25 * 1024 * 1024) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Fichier audio trop volumineux (max 25MB)"));
+        }
+        String audioCt = file.getContentType() != null ? file.getContentType().toLowerCase() : "";
+        String audioName = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        java.util.Set<String> allowedAudioExt = java.util.Set.of(
+                "mp3", "m4a", "wav", "ogg", "webm", "mp4", "mpeg", "mpga", "flac", "aac");
+        String aExt = audioName.contains(".") ? audioName.substring(audioName.lastIndexOf('.') + 1) : "";
+        if (!audioCt.startsWith("audio/") && !audioCt.equals("video/webm") && !audioCt.equals("video/mp4")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Seuls les fichiers audio sont acceptés"));
+        }
+        if (!aExt.isEmpty() && !allowedAudioExt.contains(aExt)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Extension audio non supportée (mp3/m4a/wav/ogg/webm/flac/aac)"));
+        }
         try {
             byte[] audio = file.getBytes();
             String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "audio.m4a";
@@ -105,6 +120,12 @@ public class VoiceAssistantController {
      * GET /api/v1/voice/health
      */
     @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> health() {
+        return ResponseEntity.ok(Map.of(
+                "status", "UP",
+                "stt", sttService.status(),
+                "tts", ttsService.status()));
+    }
 
     /**
      * Synthétise un texte en audio MP3 (Text-to-Speech).

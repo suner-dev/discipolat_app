@@ -3,12 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
-import type { WeeklyProgramTemplate, Evenement, JourSemaine, TypeEvenement } from '@/types';
+import type { WeeklyProgramTemplate, Evenement, JourSemaine } from '@/types';
 import {
-  Calendar, Plus, Save, Loader2, X, Clock, MapPin, Sparkles,
-  CheckCircle2, Trash2, ToggleLeft, ToggleRight, Sun, Moon,
-  Sunrise, Sunset, ChevronLeft, ChevronRight, Pencil,
-  Church, BookOpen, Flame, Coffee, Music,
+  Calendar, Plus, Loader2, X, Clock, MapPin, Sparkles, Trash2, ToggleLeft, ToggleRight, Moon,
+  Sunrise, ChevronLeft, ChevronRight, Pencil,
+  Church, BookOpen, Flame, Coffee,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
@@ -79,7 +78,7 @@ export default function WeeklyProgramPage() {
     },
   });
 
-  const { data: weekProgram, isLoading: programLoading } = useQuery({
+  const { data: weekProgram, isLoading: _programLoading } = useQuery({
     queryKey: ['events', 'program', weekParam],
     queryFn: async () => {
       const res = await api.get(`/events/program/week?semaine=${weekParam}`);

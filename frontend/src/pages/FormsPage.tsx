@@ -5,8 +5,8 @@ import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  FileText, Plus, Loader2, RefreshCw, Eye, Edit3, Trash2, Send,
-  BarChart3, Users, Clock, CheckCircle, Archive, X, ChevronDown,
+  FileText, Plus, Loader2, RefreshCw, Edit3, Trash2, Send,
+  BarChart3, Users, Clock, CheckCircle, Archive, X,
   GripVertical, Type, Calendar, CheckSquare, List, Upload,
 } from 'lucide-react';
 

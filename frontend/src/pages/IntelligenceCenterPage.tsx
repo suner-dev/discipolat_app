@@ -36,7 +36,7 @@ export default function IntelligenceCenterPage() {
     retry: false,
   });
 
-  const { data: dashboard } = useQuery({
+  const { data: _dashboard } = useQuery({
     queryKey: ['intelligence-dashboard'],
     queryFn: async () => (await api.get('/intelligence/dashboard')).data as DashboardData,
   });

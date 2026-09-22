@@ -4,8 +4,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { tText } from '@/i18n';
 import {
-  Users, Plus, Loader2, RefreshCw, Search, Star, Calendar, Wrench,
-  BarChart3, UserPlus, CheckCircle, X, Filter, ChevronDown, Clock,
+  Users, Plus, Loader2, RefreshCw, Star, Calendar, Wrench, UserPlus, CheckCircle, X, Clock,
 } from 'lucide-react';
 
 interface Volunteer {
@@ -31,12 +30,12 @@ const SKILLS = ['Musique', 'Son', 'Projection', 'Accueil', 'Enseignement', 'Jeun
 
 export default function VolunteersPage() {
   const qc = useQueryClient();
-  const [search, setSearch] = useState('');
+  const [search, _setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [newVolunteer, setNewVolunteer] = useState({ userName: '', skills: [] as string[], maxHoursPerWeek: 10 });
 
-  const { data: volunteers = [], isLoading, refetch } = useQuery({
+  const { data: volunteers = [], isLoading: _isLoading, refetch } = useQuery({
     queryKey: ['volunteers'],
     queryFn: async () => { const res = await api.get('/volunteers'); return res.data as Volunteer[]; },
   });
@@ -46,7 +45,7 @@ export default function VolunteersPage() {
     queryFn: async () => { const res = await api.get('/volunteers/stats'); return res.data as Record<string, unknown>; },
   });
 
-  const { data: matches = [], refetch: refetchMatches } = useQuery({
+  const { data: matches = [], refetch: _refetchMatches } = useQuery({
     queryKey: ['volunteers', 'match', selectedSkills],
     queryFn: async () => {
       if (selectedSkills.length === 0) return [];

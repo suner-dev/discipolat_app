@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '@/lib/api';
-import { Loader2, Eye, Plus, Link2, Moon, Sun, Flame, CloudRainWind, HeartHandshake, Sparkles, Lightbulb, Globe2, Lock } from 'lucide-react';
+import { Loader2, Eye, Plus, Link2, Moon, Flame, CloudRainWind, HeartHandshake, Sparkles, Lightbulb, Globe2, Lock } from 'lucide-react';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';

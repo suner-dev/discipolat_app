@@ -39,7 +39,7 @@ export default function ImportDataPage() {
   const [csvText, setCsvText] = useState('');
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
-  const typeConfig = IMPORT_TYPES.find(t => t.key === selectedType)!;
+  const typeConfig = IMPORT_TYPES.find(t => t.key === selectedType) ?? IMPORT_TYPES[0];
 
   const parseCsv = (text: string): Record<string, string>[] => {
     const lines = text.trim().split('\n');

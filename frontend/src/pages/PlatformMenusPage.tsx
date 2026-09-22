@@ -31,7 +31,7 @@ export default function PlatformMenusPage() {
   const dictionaries = useDictionaries();
   const { refetch } = usePlatformConfig();
   const [createOpen, setCreateOpen] = useState(false);
-  const [editing, setEditing] = useState<MenuForm | null>(null);
+  const [_editing, setEditing] = useState<MenuForm | null>(null);
   const [form, setForm] = useState<MenuForm>(EMPTY_FORM);
 
   const { data: menus = [], isLoading } = useQuery({
@@ -92,7 +92,8 @@ export default function PlatformMenusPage() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      const menu = menus.find((m) => m.id === id)!;
+      const menu = menus.find((m) => m.id === id);
+      if (!menu) throw new Error('Menu introuvable');
       await api.put(`/platform/menus/${id}`, { ...menu, enabled });
     },
     onSuccess: () => { invalidate(); },

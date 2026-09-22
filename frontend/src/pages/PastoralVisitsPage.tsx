@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
-import { MapPin, Loader2, Plus, Calendar, RefreshCw } from 'lucide-react';
+import { MapPin, Loader2, Calendar, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { getI18nLocale } from '@/i18n';

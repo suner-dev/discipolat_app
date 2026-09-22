@@ -5,8 +5,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  TrendingUp, Plus, Loader2, RefreshCw, Sparkles, Target, CheckCircle,
-  Clock, BarChart3, User, ChevronDown, X, ArrowRight,
+  TrendingUp, Plus, Loader2, RefreshCw, Sparkles, CheckCircle, User, X,
 } from 'lucide-react';
 
 interface DevPlan {
@@ -31,11 +30,11 @@ interface DevObjective {
 
 export default function DevPlanPage() {
   const qc = useQueryClient();
-  const [selectedMember, setSelectedMember] = useState('');
+  const [selectedMember, _setSelectedMember] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [newObjective, setNewObjective] = useState({ title: '', description: '', category: 'COMPETENCE', deadline: '' });
 
-  const { data: plans = [], isLoading, refetch } = useQuery({
+  const { data: plans = [], isLoading: _isLoading, refetch } = useQuery({
     queryKey: ['dev-plans', selectedMember],
     queryFn: async () => {
       const url = selectedMember ? `/development-plans/by-member/${selectedMember}` : '/development-plans';

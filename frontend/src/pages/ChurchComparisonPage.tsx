@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { tText } from '@/i18n';
 import {
-  BarChart3, Users, Globe, Layers, RefreshCw, Loader2, TrendingUp, Search,
-  Target, Award, ChevronDown, Info,
+  BarChart3, Users, Globe, Layers, Loader2, TrendingUp,
+  Target, Award,
 } from 'lucide-react';
 
 interface ChurchData {
@@ -39,7 +39,7 @@ export default function ChurchComparisonPage() {
   const [view, setView] = useState<'benchmark' | 'clusters' | 'byCountry' | 'byDenom'>('benchmark');
   const [ourId, setOurId] = useState('');
 
-  const { data: churches = [], isLoading } = useQuery({
+  const { data: churches = [], isLoading: _isLoading } = useQuery({
     queryKey: ['church-comparisons'],
     queryFn: async () => { const res = await api.get('/church-comparisons'); return res.data as ChurchData[]; },
   });

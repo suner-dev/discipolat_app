@@ -109,6 +109,34 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(SecurityException.class)
+    public ProblemDetail handleSecurity(SecurityException ex) {
+        // G6.6 — les refus fail-closed (cross-tenant, chemin invalide) => 403,
+        // jamais 500 (fuite d'info / mauvais signalement).
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied");
+        problem.setTitle("Access Denied");
+        problem.setType(URI.create("https://api.discipolat.com/errors/access-denied"));
+        return problem;
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ProblemDetail handleIllegalState(IllegalStateException ex, HttpServletRequest request) {
+        // Contexte tenant manquant => 401 (non authentifié), pas 500.
+        if (request.getRequestURI() != null && request.getRequestURI().startsWith("/api/")
+                && ex.getMessage() != null && ex.getMessage().contains("tenant")) {
+            ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                    HttpStatus.UNAUTHORIZED, "Authentication required: missing tenant context");
+            problem.setTitle("Unauthorized");
+            problem.setType(URI.create("https://api.discipolat.com/errors/unauthorized"));
+            return problem;
+        }
+        log.error("Unhandled illegal state on {} {}", request.getMethod(), request.getRequestURI(), ex);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        problem.setTitle("Internal Server Error");
+        problem.setType(URI.create("https://api.discipolat.com/errors/internal-error"));
+        return problem;
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception ex, HttpServletRequest request) {
         log.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), ex);

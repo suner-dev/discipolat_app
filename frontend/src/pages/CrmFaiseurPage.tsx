@@ -4,20 +4,17 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import {
-  Heart, Users, FileText, Activity, Bell, Star, TrendingUp,
-  TrendingDown, Loader2, Sparkles, ChevronRight, AlertTriangle,
-  UserCheck, CheckCircle, Clock, UserX, XCircle, MessageSquare,
-  Calendar, Phone, Mail, MapPin, BookOpen, Target,
+  Heart, Users, FileText, Bell, Star, TrendingUp, ChevronRight, AlertTriangle, CheckCircle, MessageSquare,
+  Calendar, Phone, BookOpen,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { useI18n } from '@/i18n';
 
 import { tText } from '@/i18n';
-const COLORS = ['#22c55e', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'];
+const _COLORS = ['#22c55e', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'];
 
 const getGreeting = () => {
   const h = new Date().getHours();

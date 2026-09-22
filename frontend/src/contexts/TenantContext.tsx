@@ -153,7 +153,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     return features[feature] === true;
   }, [features]);
 
-  const canAccess = useCallback((resource: string, action: string, scopeType?: string, scopeId?: string): boolean => {
+  const canAccess = useCallback((resource: string, action: string, _scopeType?: string, _scopeId?: string): boolean => {
     const permissionKey = `${resource.toUpperCase()}_${action.toUpperCase()}`;
     return hasPermission(permissionKey);
   }, [hasPermission]);

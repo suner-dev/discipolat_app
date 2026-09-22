@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import {
   X, Loader2, Star, Send, UserRound, Heart, Building2, Users,
-  Phone, Mail, Briefcase, Shield, Calendar, CheckCircle, UserX,
+  Phone, Mail, Shield, Calendar, UserX,
   ChevronRight, RefreshCw, Home, Sparkles, Target, FileText, Paperclip,
   StickyNote, Clock, ClipboardList,
 } from 'lucide-react';

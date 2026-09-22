@@ -242,7 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       toast.success(`Rôle actif : ${roleLabels[newRole] || newRole}`);
       // React state update triggers automatic re-render with new role
-    } catch (err: any) {
+    } catch (_err: any) {
       toast.error(tText('Échec du changement de rôle'));
     }
   }, []);

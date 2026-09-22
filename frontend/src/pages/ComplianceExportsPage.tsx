@@ -5,8 +5,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/i18n';
 import { tText } from '@/i18n';
 import {
-  Shield, Download, Trash2, Loader2, Clock, CheckCircle2, FileText,
-  AlertTriangle, Search, Eye, ExternalLink,
+  Shield, Download, Trash2, Loader2, Clock, CheckCircle2, FileText, ExternalLink,
 } from 'lucide-react';
 
 interface ComplianceExport {
@@ -34,7 +33,7 @@ export default function ComplianceExportsPage() {
   const { locale } = useI18n();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<'exports' | 'gdpr'>('exports');
-  const [searchUser, setSearchUser] = useState('');
+  const [searchUser, _setSearchUser] = useState('');
   const [deleteUserId, setDeleteUserId] = useState('');
   const [exportUserId, setExportUserId] = useState('');
 

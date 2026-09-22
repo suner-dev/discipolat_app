@@ -3,8 +3,9 @@ import '../../../data/services/api_service.dart';
 import '../../../core/format.dart';
 import '../../../../l10n/app_localizations.dart';
 
-/// Réunions de famille — branché sur GET /api/v1/family-meetings.
-class FamilyMeetingScreen extends StatefulWidget {
+/// Réunions de famille — branché sur GET /api/v1/families/{familyId}/os/meetings
+  /// avec fallback sur /family-meetings si famille non sélectionnée dans la session.
+  class FamilyMeetingScreen extends StatefulWidget {
   const FamilyMeetingScreen({super.key, this.apiService});
   final ApiService? apiService;
 

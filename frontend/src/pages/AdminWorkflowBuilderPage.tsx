@@ -3,9 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import {
-  Workflow, Plus, Trash2, Loader2, Save, X, Power, PowerOff,
-  ChevronDown, ChevronUp, GripVertical, ArrowRight, CheckCircle2,
-  Circle, AlertTriangle, Settings, Users, Bell, Zap, Eye, EyeOff,
+  Workflow, Plus, Trash2, Loader2, Save, X,
+  ChevronDown, ChevronUp, ArrowRight, CheckCircle2, Settings, Users, Bell, Zap,
 } from 'lucide-react';
 import type { WorkflowConfig, TransferType, ValidationMode, UserRole, WorkflowStep } from '@/types';
 import { TRANSFER_TYPE_LABELS, ROLES } from '@/types';
@@ -91,7 +90,7 @@ const MODE_VALIDATION_DESCRIPTIONS: Record<ValidationMode, string> = {
 
 export default function AdminWorkflowBuilderPage() {
   const queryClient = useQueryClient();
-  const dictionaries = useDictionaries();
+  const _dictionaries = useDictionaries();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<ConfigDraft>(emptyDraft());

@@ -3,7 +3,7 @@ import { useI18n } from '@/i18n';
 import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import { useAuth } from '@/contexts/AuthContext';
-import { Sparkles, CheckCircle2, Circle, Lock, Star, BookOpen, Heart, Users, Award, Plus, Trash2, Filter } from 'lucide-react';
+import { Sparkles, CheckCircle2, Circle, Star, BookOpen, Heart, Users, Award, Plus, Trash2, Filter } from 'lucide-react';
 
 import { tText } from '@/i18n';
 interface JourneyStage {
@@ -37,14 +37,14 @@ const STAGE_ICONS: Record<string, any> = {
 const JOURNAL_TYPES = ['PRIÈRE', 'MÉDITATION', 'RÉFLEXION', 'TÉMOIGNAGE', 'GRÂCE', 'AUTRE'];
 
 export default function SpiritualJourneyPage() {
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const { user } = useAuth();
   const [stages, setStages] = useState<JourneyStage[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [tab, setTab] = useState<'journey' | 'journal'>('journey');
-  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
-  const [journalLoading, setJournalLoading] = useState(false);
+  const [_journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [_journalLoading, setJournalLoading] = useState(false);
   const [journalTypeFilter, setJournalTypeFilter] = useState<string>('');
   const [journalView, setJournalView] = useState<'all' | 'favorites'>('all');
   const [journalStats, setJournalStats] = useState<Record<string, any> | null>(null);
@@ -125,7 +125,7 @@ export default function SpiritualJourneyPage() {
     }
   };
 
-  const viewDetail = async (id: string) => {
+  const _viewDetail = async (id: string) => {
     try {
       const res = await api.get(`/spiritual-journals/${id}`);
       setSelectedEntry(res.data);

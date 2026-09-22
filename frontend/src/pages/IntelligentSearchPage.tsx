@@ -1,15 +1,15 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import { useI18n } from '@/i18n';
-import type { PageResponse, Soul, MakerReport, SoulHistoryEntry, SoulNote, Prayer } from '@/types';
+import type { PageResponse } from '@/types';
 import {
   Search, Heart, X, Loader2, Sparkles, User, Mail, Phone, Calendar,
-  MapPin, Briefcase, Activity, MessageSquare, BookOpen, TrendingUp,
-  AlertTriangle, Clock, ChevronRight, Church, Users, Shield,
-  CheckCircle2, FileText, Eye, EyeOff, Star, Flame, Award,
+  MapPin, Briefcase, Activity, BookOpen, TrendingUp,
+  AlertTriangle, ChevronRight, Church, Users,
+  CheckCircle2, Star,
   Home, Building2, UserCheck, ArrowLeft, ExternalLink,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -191,8 +191,8 @@ const GRAVITE_FALLBACK: Record<string, string> = {
 // ======================== Main Component ========================
 
 export default function IntelligentSearchPage() {
-  const dictionaries = useDictionaries();
-  const { user } = useAuth();
+  const _dictionaries = useDictionaries();
+  const { user: _user } = useAuth();
   const [query, setQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSoulId, setSelectedSoulId] = useState<string | null>(null);
@@ -427,7 +427,7 @@ function SearchResultCard({ result, onSelect }: { result: SearchResult; onSelect
 function CompleteMemberProfile({
   profile,
   onBack,
-  isLoading,
+  isLoading: _isLoading,
 }: {
   profile: CompleteProfile;
   onBack: () => void;
@@ -666,7 +666,7 @@ function CompleteMemberProfile({
                 <BookOpen className="w-4 h-4 text-primary-500" /> Demandes de prière ({profile.demandesPriere.length})
               </h3>
               <div className="space-y-2">
-                {profile.demandesPriere.map((prayer, i) => (
+                {profile.demandesPriere.map((prayer, _i2) => (
                   <div key={prayer.id} className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{prayer.titre}</p>
@@ -700,7 +700,7 @@ function CompleteMemberProfile({
               <div className="relative max-h-96 overflow-y-auto">
                 <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary-500/30 via-primary-500/20 to-transparent" />
                 <div className="space-y-3">
-                  {profile.historiqueComplet.slice(0, 20).map((entry, i) => (
+                  {profile.historiqueComplet.slice(0, 20).map((entry, _i) => (
                     <div key={entry.id} className="relative pl-10">
                       <div className="absolute left-2.5 top-1.5 w-3 h-3 rounded-full bg-primary-500 border-2 border-white dark:border-gray-900 shadow-[0_0_6px_rgba(22,163,74,0.4)]" />
                       <div className="p-3 rounded-xl bg-white/30 dark:bg-gray-800/30">

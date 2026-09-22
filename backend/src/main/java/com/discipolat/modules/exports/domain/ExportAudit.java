@@ -3,6 +3,8 @@ package com.discipolat.modules.exports.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -36,7 +38,8 @@ public class ExportAudit {
     @Column(name = "filters_json", columnDefinition = "JSONB")
     private String filtersJson;
 
-    @Column(name = "columns_exported", columnDefinition = "TEXT[]")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "columns_exported", columnDefinition = "jsonb")
     private String[] columnsExported;
 
     @Column(name = "record_count", nullable = false)

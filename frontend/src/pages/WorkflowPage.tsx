@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Wrench, Plus, Trash2, Loader2, ToggleLeft, ToggleRight, Zap, Settings, Save, Sliders } from 'lucide-react';
+import { Plus, Trash2, Loader2, ToggleLeft, ToggleRight, Zap, Settings, Save, Sliders } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';

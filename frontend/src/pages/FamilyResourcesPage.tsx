@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
-import Toast from '@/components/shared/Toast';
-import { FolderOpen, Plus, FileText, Video, Link, Download } from 'lucide-react';
+import { FolderOpen, FileText, Video, Link, Download } from 'lucide-react';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';

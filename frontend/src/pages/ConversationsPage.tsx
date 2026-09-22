@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
-import { MessageSquare, Send, Loader2, RefreshCw } from 'lucide-react';
+import { MessageSquare, Send, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { getI18nLocale } from '@/i18n';

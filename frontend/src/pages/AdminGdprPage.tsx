@@ -4,8 +4,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import {
   Shield, Download, Trash2, Search, Loader2, RefreshCw,
-  Clock, CheckCircle, XCircle, Filter, X, User, FileText,
-  ChevronDown, AlertTriangle, Eye,
+  Clock, CheckCircle, XCircle, Filter, X, User, FileText, AlertTriangle, Eye,
 } from 'lucide-react';
 import type { User as UserType } from '@/types';
 

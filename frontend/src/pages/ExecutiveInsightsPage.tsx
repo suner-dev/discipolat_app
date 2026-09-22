@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { tText } from '@/i18n';
 import {
-  Brain, TrendingUp, Users, BarChart3, Activity, Target, Loader2,
+  Brain, Users, BarChart3, Activity, Target, Loader2,
 } from 'lucide-react';
 
 interface ExecutiveStats {

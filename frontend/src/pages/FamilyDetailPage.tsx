@@ -101,7 +101,7 @@ export default function FamilyDetailPage() {
     enabled: !!id,
   });
 
-  const { data: risk, refetch: refetchRisk } = useQuery({
+  const { data: risk, refetch: _refetchRisk } = useQuery({
     queryKey: ['family', id, 'risk'],
     queryFn: async () => {
       const res = await api.get(`/families/${id}/risk`);

@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import {
-  Shield, Plus, Trash2, ArrowUp, ArrowDown, Loader2, CheckCircle, X,
+  Shield, Plus, Trash2, ArrowUp, ArrowDown, Loader2, X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

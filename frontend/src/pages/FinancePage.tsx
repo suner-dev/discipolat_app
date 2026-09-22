@@ -35,22 +35,11 @@ export default function FinancePage() {
   const [categorieFilter, setCategorieFilter] = useState('');
   const [modal, setModal] = useState<null | { edit?: FinanceTransaction }>(null);
 
-  if (!moduleEnabled('FINANCES')) {
-    return (
-      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <Wallet className="w-10 h-10 text-gray-300 mb-3" />
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Module Finances désactivé')}</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
-        </p>
-        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
-      </div>
-    );
-  }
-
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['finances'] });
   };
+
+  const moduleOn = moduleEnabled('FINANCES');
 
   const { data: transactions = [], isLoading: loadingTx } = useQuery({
     queryKey: ['finances', 'transactions', typeFilter, categorieFilter],
@@ -61,11 +50,15 @@ export default function FinancePage() {
       const res = await api.get(`/finances/transactions?${params.toString()}`);
       return res.data as FinanceTransaction[];
     },
+  
+    enabled: moduleOn,
   });
 
   const { data: stats } = useQuery({
     queryKey: ['finances', 'stats', annee],
     queryFn: async () => (await api.get(`/finances/stats?annee=${annee}`)).data as FinanceStats,
+  
+    enabled: moduleOn,
   });
 
   const { data: currencyStats } = useQuery({
@@ -75,11 +68,15 @@ export default function FinancePage() {
       if (currency) params.set('currency', currency);
       return (await api.get(`/finances/stats/currency?${params.toString()}`)).data as Record<string, unknown>;
     },
+  
+    enabled: moduleOn,
   });
 
   const { data: budgets = [] } = useQuery({
     queryKey: ['finances', 'budgets', annee],
     queryFn: async () => (await api.get(`/finances/budgets?annee=${annee}`)).data as FinanceBudget[],
+  
+    enabled: moduleOn,
   });
 
   const categories = useMemo(() => {
@@ -132,6 +129,22 @@ export default function FinancePage() {
   };
 
   const chartData = stats?.parMois || [];
+
+  // Module désactivé par l'administrateur : page remplacée par un état explicite
+  // (garde placée APRÈS les hooks pour respecter les règles des hooks React)
+  if (!moduleEnabled('FINANCES')) {
+    return (
+      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <Wallet className="w-10 h-10 text-gray-300 mb-3" />
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Module Finances désactivé')}</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
+        </p>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
+      </div>
+    );
+  }
+
 
   return (
     <div className="page-container max-w-6xl">

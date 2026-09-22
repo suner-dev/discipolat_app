@@ -5,10 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { useExportReport } from '@/hooks/useExportReport';
 import {
-  FileText, Users, FileSpreadsheet, ArrowRight, Download, FileDown,
-  Loader2, BarChart3, Sparkles, ChevronRight, Printer, Search, Filter,
-  Calendar, Eye, Clock, CheckCircle2, AlertTriangle, RefreshCw, X,
-  TrendingUp, PieChart as PieChartIcon, List,
+  FileText, Users, FileSpreadsheet, Download, FileDown,
+  Loader2, BarChart3, ChevronRight, Search, Filter,
+  Calendar, Eye, Clock, X,
+  TrendingUp, PieChart as PieChartIcon,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getI18nLocale } from '@/i18n';
@@ -46,7 +46,7 @@ interface FamilyReportEntry {
   createdAt: string;
 }
 
-const COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
+const _COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
 
 export default function ReportsPage() {
   const { user } = useAuth();

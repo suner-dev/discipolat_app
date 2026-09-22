@@ -210,4 +210,22 @@ describe('Sidebar - Multi-Role Navigation', () => {
 
     expectTextPresent('PP');
   });
+
+  it('MEMBRE nav keys are unique (anti-regression QA-001: duplicate href keys)', async () => {
+    // La section MEMBRE contenait 2 items pointant vers le même href
+    // ('Mes présences' + 'Ma progression' → '/dashboard/membre'), ce qui
+    // produisait "Encountered two children with the same key" dans les tests
+    // RoleWorkspaceRouting (MEMBRE). Chaque item doit avoir une clé unique.
+    const { navForRole } = await import('@/workspaces');
+    for (const role of ['MEMBRE', 'PASTEUR', 'ADMIN', 'FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE']) {
+      for (const section of navForRole(role)) {
+        const keys = section.items.map((i) => `${section.title}::${i.href}`);
+        expect(new Set(keys).size, `duplicate nav key in ${role}/${section.title}`).toBe(keys.length);
+      }
+    }
+    // MEMBRE : les entrées spirituelles sont ancrées, pas dupliquées.
+    await import('@/workspaces'); // ensure side-effects registered
+    const membre = navForRole('MEMBRE').flatMap((s) => s.items.map((i) => i.href));
+    expect(membre.filter((h) => h === '/dashboard/membre').length).toBeLessThanOrEqual(1);
+  });
 });

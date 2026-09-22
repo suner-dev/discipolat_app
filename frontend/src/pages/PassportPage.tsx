@@ -6,8 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import { tText } from '@/i18n';
 import {
-  ShieldCheck, Loader2, Plus, Share2, RotateCcw, Ban, Baby, GraduationCap,
-  HeartHandshake, BookOpen, Award, Sparkles, FileText, QrCode
+  ShieldCheck, Loader2, Plus, Share2, RotateCcw, Ban, BookOpen, QrCode
 } from 'lucide-react';
 
 /* ====================================================================
@@ -94,7 +93,7 @@ export default function PassportPage() {
 
   const { data: qr } = useQuery({
     queryKey: ['passport-qr', passport?.id],
-    queryFn: async () => (await api.get<QrPayload>(`/passports/${passport!.id}/qr`)).data,
+    queryFn: async () => (await api.get<QrPayload>(`/passports/${passport?.id}/qr`)).data,
     enabled: !!passport && showQr,
   });
 

@@ -30,6 +30,15 @@ public class FileStorageService {
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("Fichier vide");
             }
+            // G6.6 — garde-fous génériques : taille max 10MB + relativePath contraint.
+            if (file.getSize() > 10 * 1024 * 1024) {
+                throw new IllegalArgumentException("Fichier trop volumineux (max 10MB)");
+            }
+            if (relativePath == null || relativePath.isBlank()
+                    || relativePath.contains("..")
+                    || java.nio.file.Paths.get(relativePath).isAbsolute()) {
+                throw new SecurityException("Chemin de destination invalide");
+            }
 
             Path destinationFile = this.rootLocation.resolve(relativePath).normalize().toAbsolutePath();
             

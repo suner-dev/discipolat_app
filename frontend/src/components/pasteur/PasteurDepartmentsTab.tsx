@@ -6,7 +6,7 @@ import type { PageResponse } from '@/types';
 import {
   Building2, Plus, Search, Eye, Edit3, Trash2, ArrowLeft,
   Loader2, Users, BarChart3, FileDown, Settings, Hammer,
-  ChevronRight, Filter, X, History, FileText, Target,
+  ChevronRight, History, Target,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -38,7 +38,7 @@ export default function PasteurDepartmentsTab() {
   const [view, setView] = useState<ViewMode>('liste');
   const [selectedDept, setSelectedDept] = useState<DepartmentItem | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [_showFilters, _setShowFilters] = useState(false);
 
   const emptyForm = { nom: '', description: '', responsableId: '' };
   const [form, setForm] = useState(emptyForm);
@@ -67,10 +67,10 @@ export default function PasteurDepartmentsTab() {
   });
 
   // Fetch department detail
-  const { data: deptDetail, isLoading: detailLoading } = useQuery({
+  const { data: deptDetail, isLoading: _detailLoading } = useQuery({
     queryKey: ['departments', selectedDept?.id, 'detail'],
     queryFn: async () => {
-      const res = await api.get(`/departments/${selectedDept!.id}/detail`);
+      const res = await api.get(`/departments/${selectedDept?.id}/detail`);
       return res.data as Record<string, any>;
     },
     enabled: !!selectedDept && view === 'detail',
@@ -80,7 +80,7 @@ export default function PasteurDepartmentsTab() {
   const { data: deptKpi } = useQuery({
     queryKey: ['departments', selectedDept?.id, 'kpi'],
     queryFn: async () => {
-      const res = await api.get(`/departments/${selectedDept!.id}/kpi`);
+      const res = await api.get(`/departments/${selectedDept?.id}/kpi`);
       return res.data as Record<string, any>;
     },
     enabled: !!selectedDept && view === 'detail',
@@ -90,7 +90,7 @@ export default function PasteurDepartmentsTab() {
   const { data: deptTeams } = useQuery({
     queryKey: ['departments', selectedDept?.id, 'teams'],
     queryFn: async () => {
-      const res = await api.get(`/departments/${selectedDept!.id}/teams`);
+      const res = await api.get(`/departments/${selectedDept?.id}/teams`);
       return res.data as { id: string; nom: string; description?: string }[];
     },
     enabled: !!selectedDept && view === 'detail',
@@ -100,7 +100,7 @@ export default function PasteurDepartmentsTab() {
   const { data: deptTasks } = useQuery({
     queryKey: ['departments', selectedDept?.id, 'tasks'],
     queryFn: async () => {
-      const res = await api.get(`/departments/${selectedDept!.id}/tasks`);
+      const res = await api.get(`/departments/${selectedDept?.id}/tasks`);
       return res.data as { id: string; titre: string; statut: string; priorite?: string }[];
     },
     enabled: !!selectedDept && view === 'detail',

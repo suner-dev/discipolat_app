@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import api, { getErrorMessage } from '@/lib/api';
+import api from '@/lib/api';
 import {
   Layers, Target, TrendingUp, Users, Calendar, BarChart3, Loader2,
 } from 'lucide-react';

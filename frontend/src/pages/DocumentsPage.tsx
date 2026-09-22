@@ -7,8 +7,8 @@ import { useDictionaries } from '@/hooks/useDictionaries';
 import type { FileEntity, PageResponse, CategorieDocument } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import {
-  FolderOpen, Plus, Search, Filter, FileText, Image, BookOpen,
-  Download, Trash2, Loader2, X, Upload, Sparkles, Link2, BarChart3,
+  FolderOpen, Plus, Search, Filter, FileText,
+  Download, Trash2, Loader2, X, Upload, Link2, BarChart3,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Mic, Search, UserRound, Smile, Frown, Meh, Heart, Loader2, FileText, ChevronDown, ClipboardList } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Mic, Search, UserRound, Smile, Frown, Meh, Heart, FileText, ChevronDown, ClipboardList } from 'lucide-react';
 import toast from 'react-hot-toast';
-import api, { getErrorMessage } from '@/lib/api';
+import api from '@/lib/api';
 import EmptyState from '@/components/shared/EmptyState';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
@@ -41,7 +41,7 @@ const MOOD_STYLES: Record<string, { icon: typeof Smile; cls: string; label: stri
 type ReportTab = 'all' | 'mine';
 
 export default function VoiceReportsPage() {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<ReportTab>('all');
   const [openStructured, setOpenStructured] = useState<string | null>(null);

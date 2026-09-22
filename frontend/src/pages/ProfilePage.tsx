@@ -5,7 +5,7 @@ import { useDictionaries } from '@/hooks/useDictionaries';
 import api, { getErrorMessage } from '@/lib/api';
 import {
   User, Mail, Shield, Calendar, CheckCircle, XCircle, Edit3, Save, X, Lock,
-  Eye, EyeOff, Loader2, Phone, Heart, Sparkles, Key, ChevronDown, ChevronUp,
+  Eye, EyeOff, Loader2, Phone, Heart, Key, ChevronDown, ChevronUp,
   Smartphone, Copy, Check,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -475,7 +475,7 @@ export default function ProfilePage() {
                   ) : field.type === 'date' ? (
                     <input type="date" className="input mt-1" value={editData.dateNaissance} onChange={(e) => setEditData({ ...editData, dateNaissance: e.target.value })} />
                   ) : (
-                    <input className="input mt-1" value={editData[field.key as keyof typeof editData] as string} onChange={(e) => setEditData({ ...editData, [field.key!]: e.target.value })} />
+                    <input className="input mt-1" value={editData[field.key as keyof typeof editData] as string} onChange={(e) => setEditData({ ...editData, [field.key as string]: e.target.value })} />
                   )
                 ) : (
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{field.value}</p>

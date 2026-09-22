@@ -19,7 +19,7 @@ interface InventoryItem {
   lowStock: boolean;
 }
 
-interface InventoryStats {
+interface _InventoryStats {
   totalItems: number;
   lowStockCount: number;
   lowStockItems: InventoryItem[];

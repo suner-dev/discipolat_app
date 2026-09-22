@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, X, ArrowLeftRight } from 'lucide-react';
+import { CheckCircle2, X } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import Reveal from '@/components/shared/Reveal';
 import SectionHeading from '@/components/landing/SectionHeading';
@@ -7,7 +7,7 @@ import { BEFORE, AFTER } from '@/components/landing/landingData';
 
 export default function BeforeAfter() {
   const { t } = useI18n();
-  const [flip, setFlip] = useState(false);
+  const [_flip, _setFlip] = useState(false);
 
   return (
     <section id="before-after" className="py-24 sm:py-32 scroll-mt-20 bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-950 dark:to-gray-900/50">

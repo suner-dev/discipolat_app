@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { Alert, PageResponse } from '@/types';
 import {
-  Bell, BellRing, Plus, Eye, Search, Filter, CheckCircle2,
+  Bell, BellRing, Plus, Eye, Filter, CheckCircle2,
   AlertTriangle, Clock, Loader2, X, Church, Users, Building2,
   User as UserIcon, Send, CheckSquare, Square, ArrowLeft,
 } from 'lucide-react';

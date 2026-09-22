@@ -193,6 +193,30 @@ public class FamilyOSService {
         return familyMeetingRepository.findByFamilyIdAndDeletedFalse(familyId);
     }
 
+        @Transactional(readOnly = true)
+    public List<FamilyMeeting> getFamilyMeetings(UUID tenantId, LocalDate from, LocalDate to) {
+        if (from != null && to != null) {
+            return familyMeetingRepository.findAllByTenantIdAndDeletedFalseOrderByMeetingDateDesc(tenantId)
+                    .stream().filter(m -> !m.getMeetingDate().isBefore(from) && !m.getMeetingDate().isAfter(to))
+                    .toList();
+        }
+        return familyMeetingRepository.findAllByTenantIdAndDeletedFalseOrderByMeetingDateDesc(tenantId);
+    }
+
+    public FamilyMeeting completeMeeting(UUID tenantId, UUID actorId, UUID meetingId, String minutes) {
+        FamilyMeeting meeting = familyMeetingRepository.findById(meetingId)
+                .orElseThrow(() -> new EntityNotFoundException("FamilyMeeting", meetingId));
+        if (!tenantId.equals(meeting.getTenantId())) {
+            throw new EntityNotFoundException("FamilyMeeting", meetingId);
+        }
+        meeting.setStatus("COMPLETED");
+        if (minutes != null && !minutes.isBlank()) {
+            String existing = meeting.getDescription() == null ? "" : meeting.getDescription();
+            meeting.setDescription(existing + "\n\n[Clôture] " + minutes);
+        }
+        return familyMeetingRepository.save(meeting);
+    }
+
     // ========== UNIFIED ACTIVITY LIST ==========
 
     @Transactional(readOnly = true)
@@ -263,12 +287,20 @@ public class FamilyOSService {
         com.discipolat.modules.souls.domain.Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new EntityNotFoundException("Soul", soulId));
 
-        // Create FamilyActivity for tracking
+        // G4.2 — rattachement réel de l'âme à la famille (fix : la version
+        // précédente créait seulement une activité sans jamais modifier l'âme).
+        soul.setFamilleId(familyId);
+        if (faiseurId != null) {
+            soul.setFaiseurId(faiseurId);
+        }
+        soulRepository.save(soul);
+
+        // FamilyActivity for tracking
         FamilyActivity activity = FamilyActivity.builder()
                 .tenantId(tenantId)
                 .familyId(familyId)
                 .activityType("RECEPTION")
-                .referenceId(UUID.randomUUID())
+                .referenceId(soulId)
                 .title("Ajout membre: " + soul.getPrenom() + " " + soul.getNom())
                 .description("Nouveau membre ajouté à la famille")
                 .activityDate(LocalDate.now())
@@ -277,7 +309,7 @@ public class FamilyOSService {
                 .build();
         familyActivityRepository.save(activity);
 
-        return familyRepository.findById(familyId).get();
+        return familyRepository.findById(familyId).orElseThrow();
     }
 
     @Transactional(readOnly = true)

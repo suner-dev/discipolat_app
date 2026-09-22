@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import api from '@/lib/api';
 import {
-  LifeBuoy, Clock, CheckCircle2, AlertCircle, MessageSquare,
+  LifeBuoy, Clock, MessageSquare,
   ArrowLeft, Loader2, User,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

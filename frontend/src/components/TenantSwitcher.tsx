@@ -4,10 +4,10 @@ import type { Tenant } from "@/types/tenant";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 export default function TenantSwitcher() {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [_loading, _setLoading] = useState(false);
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

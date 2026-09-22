@@ -68,23 +68,12 @@ export default function TrainingsPage() {
     question: '', propositions: '["Vrai","Faux"]', reponseIndex: 0, ordre: 0,
   });
 
-  if (!moduleEnabled('TRAININGS')) {
-    return (
-      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <BookOpen className="w-10 h-10 text-gray-300 mb-3" />
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Module Formations désactivé')}</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
-        </p>
-        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
-      </div>
-    );
-  }
+  const moduleOn = moduleEnabled('TRAININGS');
 
   const { data: stats } = useQuery({
     queryKey: ['trainings', 'stats'],
     queryFn: async () => (await api.get('/trainings/stats')).data as TrainingStats,
-    enabled: isAdmin,
+    enabled: isAdmin && moduleOn,
   });
 
   const coursesQuery = useQuery({
@@ -93,15 +82,17 @@ export default function TrainingsPage() {
       const res = await api.get('/trainings/courses');
       return res.data as Course[];
     },
+  
+    enabled: moduleOn,
   });
 
   const modulesQuery = useQuery({
     queryKey: ['trainings', 'modules', selected?.id],
     queryFn: async () => {
-      const res = await api.get(`/trainings/courses/${selected!.id}/modules`);
+      const res = await api.get(`/trainings/courses/${selected?.id}/modules`);
       return res.data as CourseModule[];
     },
-    enabled: !!selected,
+    enabled: !!selected && moduleOn,
   });
 
   const enrollmentsQuery = useQuery({
@@ -110,6 +101,8 @@ export default function TrainingsPage() {
       const res = await api.get('/trainings/my-enrollments');
       return res.data as CourseEnrollment[];
     },
+  
+    enabled: moduleOn,
   });
 
   const certificatesQuery = useQuery({
@@ -118,6 +111,8 @@ export default function TrainingsPage() {
       const res = await api.get('/trainings/my-certificates');
       return res.data as Certificate[];
     },
+  
+    enabled: moduleOn,
   });
 
   const quizQuery = useQuery({
@@ -126,7 +121,7 @@ export default function TrainingsPage() {
       const res = await api.get(`/trainings/modules/${activeModule}/quiz`);
       return res.data as QuizQuestion[];
     },
-    enabled: quizOpen && !!activeModule,
+    enabled: quizOpen && !!activeModule && moduleOn,
   });
 
   const enrollMutation = useMutation({
@@ -233,6 +228,22 @@ export default function TrainingsPage() {
     if (!activeModule) return;
     submitQuizMutation.mutate({ courseId, payload: { moduleId: activeModule, reponses: quizAnswers } });
   };
+
+  // Module désactivé par l'administrateur : page remplacée par un état explicite
+  // (garde placée APRÈS les hooks pour respecter les règles des hooks React)
+  if (!moduleEnabled('TRAININGS')) {
+    return (
+      <div className="page-container flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <BookOpen className="w-10 h-10 text-gray-300 mb-3" />
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{tText('Module Formations désactivé')}</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          L'administrateur a désactivé ce module. Réactivez-le depuis l'espace d'administration.
+        </p>
+        <Link to="/dashboard" className="btn-ghost btn-sm mt-4">{tText('Retour au tableau de bord')}</Link>
+      </div>
+    );
+  }
+
 
   // ============================================================
   // Vue détail
