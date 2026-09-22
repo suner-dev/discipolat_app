@@ -38,7 +38,35 @@ function setup(role: string | null) {
     user: role ? ({ role } as never) : null,
   } as never);
   return render(
-    <MemoryRouter initialEntries={['/dashboard']}>
+    <MemoryRouter initialEntries={['/dashboard']} routes={[
+      { path: '/dashboard', element: <div>Dashboard</div> },
+      { path: '/souls/:id', element: <div data-testid="soul-detail">Soul Detail</div> },
+      { path: '/souls', element: <div>Souls List</div> },
+      { path: '/dashboard', element: <div>Dashboard</div> },
+      { path: '/events', element: <div>Events</div> },
+      { path: '/families', element: <div>Families</div> },
+      { path: '/departments', element: <div>Departments</div> },
+      { path: '/prayers', element: <div>Prayers</div> },
+      { path: '/calendar', element: <div>Calendar</div> },
+      { path: '/search', element: <div>Search</div> },
+      { path: '/directory', element: <div>Directory</div> },
+      { path: '/souls/new', element: <div>New Soul</div> },
+      { path: '/families/new', element: <div>New Family</div> },
+      { path: '/transfers/new', element: <div>New Transfer</div> },
+      { path: '/qr-checkin', element: <div>QR Check-in</div> },
+      { path: '/finances', element: <div>Finances</div> },
+      { path: '/inventory', element: <div>Inventory</div> },
+      { path: '/reports', element: <div>Reports</div> },
+      { path: '/alerts', element: <div>Alerts</div> },
+      { path: '/scheduled-announcements', element: <div>Announcements</div> },
+      { path: '/engagement-analytics', element: <div>Analytics</div> },
+      { path: '/audit', element: <div>Audit</div> },
+      { path: '/admin/settings', element: <div>Settings</div> },
+      { path: '/admin/roles', element: <div>Roles</div> },
+      { path: '/admin/users', element: <div>Users</div> },
+      { path: '/admin/modules', element: <div>Modules</div> },
+      { path: '/admin/branding', element: <div>Branding</div> },
+    ]}>
       <LocationProbe />
       <CommandPalette open onClose={vi.fn()} />
     </MemoryRouter>,
