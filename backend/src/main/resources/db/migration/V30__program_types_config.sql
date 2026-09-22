@@ -1,9 +1,9 @@
 -- V30__program_types_config.sql
--- Système de présences flexible :
--- Le pasteur configure les types de programmes (dimanche, convention, séminaire,
--- retraite, campagne, réunion spéciale, répétition, évangélisation, autre).
--- Chaque type peut avoir des sous-programmes (ex : premier culte, deuxième culte).
--- Lorsqu'une présence est enregistrée, l'utilisateur choisit Programme puis Sous-programme.
+-- Systeme de presences flexible :
+-- Le pasteur configure les types de programmes (dimanche, convention, seminaire,
+-- retraite, campagne, reunion speciale, repetition, evangelisation, autre).
+-- Chaque type peut avoir des sous-programmes (ex : premier culte, deuxieme culte).
+-- Lorsqu'une presence est enregistree, l'utilisateur choisit Programme puis Sous-programme.
 
 -- ============================================================
 -- 1. PROGRAM_TYPES : types de programmes configurables
@@ -46,19 +46,19 @@ CREATE TABLE IF NOT EXISTS program_sub_types (
 CREATE INDEX IF NOT EXISTS idx_program_sub_types_type ON program_sub_types(program_type_id);
 
 -- ============================================================
--- 3. SEED : types de programmes par défaut
+-- 3. SEED : types de programmes par defaut
 -- ============================================================
 
 INSERT INTO program_types (code, label, description, a_sous_programmes, couleur, actif, ordre) VALUES
 ('DIMANCHE', 'Dimanche', 'Culte du dimanche', TRUE, '#8b5cf6', TRUE, 1),
-('CONVENTION', 'Convention', 'Convention annuelle ou périodique', TRUE, '#f59e0b', TRUE, 2),
-('SEMINAIRE', 'Séminaire', 'Séminaire de formation', TRUE, '#06b6d4', TRUE, 3),
+('CONVENTION', 'Convention', 'Convention annuelle ou periodique', TRUE, '#f59e0b', TRUE, 2),
+('SEMINAIRE', 'Seminaire', 'Seminaire de formation', TRUE, '#06b6d4', TRUE, 3),
 ('RETRAITE', 'Retraite', 'Retraite spirituelle', TRUE, '#10b981', TRUE, 4),
-('CAMPAGNE', 'Campagne', 'Campagne d''évangélisation', TRUE, '#ef4444', TRUE, 5),
-('REUNION_SPECIALE', 'Réunion spéciale', 'Réunion spéciale', FALSE, '#f97316', TRUE, 6),
-('REPETITION', 'Répétition', 'Répétition (chorale, théâtre...)', FALSE, '#6366f1', TRUE, 7),
-('EVANGELISATION', 'Évangélisation', 'Sortie d''évangélisation', FALSE, '#22c55e', TRUE, 8),
-('ETUDE_BIBLIQUE', 'Étude biblique', 'Étude biblique en semaine', FALSE, '#14b8a6', TRUE, 9),
+('CAMPAGNE', 'Campagne', 'Campagne d''evangelisation', TRUE, '#ef4444', TRUE, 5),
+('REUNION_SPECIALE', 'Reunion speciale', 'Reunion speciale', FALSE, '#f97316', TRUE, 6),
+('REPETITION', 'Repetition', 'Repetition (chorale, theâtre...)', FALSE, '#6366f1', TRUE, 7),
+('EVANGELISATION', 'Evangelisation', 'Sortie d''evangelisation', FALSE, '#22c55e', TRUE, 8),
+('ETUDE_BIBLIQUE', 'Etude biblique', 'Etude biblique en semaine', FALSE, '#14b8a6', TRUE, 9),
 ('AUTRE', 'Autre', 'Autre type de programme', FALSE, '#64748b', TRUE, 99)
 ON CONFLICT (code) DO NOTHING;
 
@@ -72,13 +72,13 @@ SELECT id, 'Premier culte', '08:00', TRUE, 1 FROM program_types WHERE code = 'DI
 );
 
 INSERT INTO program_sub_types (program_type_id, label, heure_debut, actif, ordre)
-SELECT id, 'Deuxième culte', '10:00', TRUE, 2 FROM program_types WHERE code = 'DIMANCHE' AND NOT EXISTS (
-    SELECT 1 FROM program_sub_types WHERE program_type_id = (SELECT id FROM program_types WHERE code = 'DIMANCHE') AND label = 'Deuxième culte'
+SELECT id, 'Deuxieme culte', '10:00', TRUE, 2 FROM program_types WHERE code = 'DIMANCHE' AND NOT EXISTS (
+    SELECT 1 FROM program_sub_types WHERE program_type_id = (SELECT id FROM program_types WHERE code = 'DIMANCHE') AND label = 'Deuxieme culte'
 );
 
 INSERT INTO program_sub_types (program_type_id, label, heure_debut, actif, ordre)
-SELECT id, 'Troisième culte', '12:00', TRUE, 3 FROM program_types WHERE code = 'DIMANCHE' AND NOT EXISTS (
-    SELECT 1 FROM program_sub_types WHERE program_type_id = (SELECT id FROM program_types WHERE code = 'DIMANCHE') AND label = 'Troisième culte'
+SELECT id, 'Troisieme culte', '12:00', TRUE, 3 FROM program_types WHERE code = 'DIMANCHE' AND NOT EXISTS (
+    SELECT 1 FROM program_sub_types WHERE program_type_id = (SELECT id FROM program_types WHERE code = 'DIMANCHE') AND label = 'Troisieme culte'
 );
 
 INSERT INTO program_sub_types (program_type_id, label, heure_debut, actif, ordre)
@@ -97,7 +97,7 @@ ALTER TABLE member_presences ADD COLUMN IF NOT EXISTS present BOOLEAN;
 CREATE INDEX IF NOT EXISTS idx_member_presences_type ON member_presences(type_programme);
 CREATE INDEX IF NOT EXISTS idx_member_presences_semaine ON member_presences(semaine);
 
-COMMENT ON TABLE program_types IS 'Types de programmes configurables par le pasteur (dimanche, convention, séminaire, retraite, campagne, etc.).';
-COMMENT ON TABLE program_sub_types IS 'Sous-programmes d''un type (ex : premier culte, deuxième culte pour le dimanche).';
-COMMENT ON COLUMN member_presences.type_programme IS 'Type de programme choisi lors de la saisie de présence.';
+COMMENT ON TABLE program_types IS 'Types de programmes configurables par le pasteur (dimanche, convention, seminaire, retraite, campagne, etc.).';
+COMMENT ON TABLE program_sub_types IS 'Sous-programmes d''un type (ex : premier culte, deuxieme culte pour le dimanche).';
+COMMENT ON COLUMN member_presences.type_programme IS 'Type de programme choisi lors de la saisie de presence.';
 COMMENT ON COLUMN member_presences.sous_programme IS 'Sous-programme choisi (si le type en a).';

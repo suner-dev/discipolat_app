@@ -1,10 +1,10 @@
 -- ============================================================
--- V58 — Documentation du département (procédures, guides,
+-- V58 — Documentation du departement (procedures, guides,
 --       formulaires, comptes rendus, ressources) + annonces
---       ciblées à certains membres
+--       ciblees a certains membres
 -- ============================================================
 
--- Documents du département. type :
+-- Documents du departement. type :
 -- PROCEDURE | GUIDE | DOCUMENT | FORMULAIRE | COMPTE_RENDU | RESSOURCE
 -- statut : ACTIF | ARCHIVE
 CREATE TABLE IF NOT EXISTS department_documents (
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS department_documents (
 CREATE INDEX IF NOT EXISTS idx_dept_documents_dept ON department_documents(department_id);
 CREATE INDEX IF NOT EXISTS idx_dept_documents_type ON department_documents(department_id, type);
 
--- Cibles « certains membres » des annonces du département.
+-- Cibles « certains membres » des annonces du departement.
 CREATE TABLE IF NOT EXISTS department_announcement_members (
     announcement_id UUID NOT NULL REFERENCES department_announcements(id) ON DELETE CASCADE,
     member_id       UUID NOT NULL,

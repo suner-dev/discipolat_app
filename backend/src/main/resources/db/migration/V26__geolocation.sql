@@ -1,5 +1,5 @@
 -- ============================================================
--- V26 : Cartographie — coordonnées GPS + zone géographique
+-- V26 : Cartographie — coordonnees GPS + zone geographique
 -- ============================================================
 
 ALTER TABLE souls ADD COLUMN latitude DOUBLE PRECISION;
@@ -10,8 +10,8 @@ ALTER TABLE families ADD COLUMN latitude DOUBLE PRECISION;
 ALTER TABLE families ADD COLUMN longitude DOUBLE PRECISION;
 ALTER TABLE families ADD COLUMN zone VARCHAR(120);
 
--- Coordonnées de démonstration : répartition autour de Kinshasa
--- (latitude 0 à -5.5, longitude 15 à 19) selon un hachage stable de l'id.
+-- Coordonnees de demonstration : repartition autour de Kinshasa
+-- (latitude 0 a -5.5, longitude 15 a 19) selon un hachage stable de l'id.
 UPDATE souls SET
     latitude  = -4.3217 + ((('x' || substr(md5(id::text), 1, 8))::bit(32)::int % 5500) / 1000.0),
     longitude = 15.3121 + ((('x' || substr(md5(id::text), 9, 8))::bit(32)::int % 3500) / 1000.0),

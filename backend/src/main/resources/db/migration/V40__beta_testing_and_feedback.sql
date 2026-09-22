@@ -1,10 +1,10 @@
 -- V40__beta_testing_and_feedback.sql
 -- ============================================================
--- BÊTA-TESTING : RETOURS DES TESTEURS
+-- BETA-TESTING : RETOURS DES TESTEURS
 -- Collecte des retours (bugs, suggestions, UX, performance...)
--- envoyés par les testeurs via le widget intégré à l'application.
--- Chaque retour est rattaché à l'utilisateur connecté (created_by),
--- sans stocker d'autres données personnelles que le strict nécessaire.
+-- envoyes par les testeurs via le widget integre a l'application.
+-- Chaque retour est rattache a l'utilisateur connecte (created_by),
+-- sans stocker d'autres donnees personnelles que le strict necessaire.
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS feedbacks (
@@ -28,4 +28,4 @@ CREATE TABLE IF NOT EXISTS feedbacks (
 CREATE INDEX IF NOT EXISTS idx_feedbacks_status ON feedbacks (status);
 CREATE INDEX IF NOT EXISTS idx_feedbacks_created_at ON feedbacks (created_at);
 
-COMMENT ON TABLE feedbacks IS 'Retours des testeurs (bugs, suggestions, UX) — collectés via le widget de feedback du bêta-testing.';
+COMMENT ON TABLE feedbacks IS 'Retours des testeurs (bugs, suggestions, UX) — collectes via le widget de feedback du beta-testing.';

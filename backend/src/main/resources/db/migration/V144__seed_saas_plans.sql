@@ -1,15 +1,15 @@
 -- V144__seed_saas_plans.sql
 -- ============================================================
 -- G1.4 - §30-31 : Plans SaaS — 4 plans Dual-Market
--- DÉCOUVERTE / DÉMARRAGE / CROISSANCE / RÉSEAU & CAMPUS
--- Prix EUR ◈ FCFA ◈ USD, quotas et crédits IA par plan
+-- DECOUVERTE / DEMARRAGE / CROISSANCE / RESEAU & CAMPUS
+-- Prix EUR ◈ FCFA ◈ USD, quotas et credits IA par plan
 -- ============================================================
 
--- Plan 1 : DÉCOUVERTE (gratuit, viral)
+-- Plan 1 : DECOUVERTE (gratuit, viral)
 INSERT INTO saas_plans (key, name, description, price_monthly, price_yearly, currency,
     limits_json, features_json, is_active, sort_order, is_public, trial_days, annual_discount_pct,
     seats_limit, storage_limit_mb, ai_credits_limit, status)
-VALUES ('DISCOVERY', 'Découverte', 'Gratuit pour découvrir Discipolat. Parfait pour une petite église qui débute.',
+VALUES ('DISCOVERY', 'Decouverte', 'Gratuit pour decouvrir Discipolat. Parfait pour une petite eglise qui debute.',
     0, 0, 'EUR',
     '{"members": 50, "spaces": 3, "storage_mb": 500, "events": 10, "ai_credits": 100}',
     '{"dashboard": true, "members": true, "families": true, "churches": true, "events": true, "notifications": true, "documents": true, "reports": true, "analytics": false, "discipleship": false, "academy": false, "ai": false, "finance": false, "mobile_money": false, "marketplace": false, "community": false, "forms": true, "calendar": true}',
@@ -17,12 +17,12 @@ VALUES ('DISCOVERY', 'Découverte', 'Gratuit pour découvrir Discipolat. Parfait
     50, 500, 100, 'ACTIVE')
 ON CONFLICT (key) DO NOTHING;
 
--- Plan 2 : DÉMARRAGE (Afrique - FCFA)
+-- Plan 2 : DEMARRAGE (Afrique - FCFA)
 INSERT INTO saas_plans (key, name, description, price_monthly, price_yearly, currency,
     limits_json, features_json, is_active, sort_order, is_public, trial_days, annual_discount_pct,
     seats_limit, storage_limit_mb, ai_credits_limit, status)
-VALUES ('STARTUP', 'Démarrage', 'Pour les églises en croissance. Gestion complète avec IA incluse.',
-    15000, 150000, 'FCFA',
+VALUES ('STARTUP', 'Demarrage', 'Pour les eglises en croissance. Gestion complete avec IA incluse.',
+    15000, 150000, 'XAF',
     '{"members": 200, "spaces": 10, "storage_mb": 5000, "events": 50, "ai_credits": 500}',
     '{"dashboard": true, "members": true, "families": true, "churches": true, "events": true, "notifications": true, "documents": true, "reports": true, "analytics": true, "discipleship": true, "academy": false, "ai": true, "finance": true, "mobile_money": true, "marketplace": false, "community": false, "forms": true, "calendar": true}',
     true, 2, true, 30, 17,
@@ -33,7 +33,7 @@ ON CONFLICT (key) DO NOTHING;
 INSERT INTO saas_plans (key, name, description, price_monthly, price_yearly, currency,
     limits_json, features_json, is_active, sort_order, is_public, trial_days, annual_discount_pct,
     seats_limit, storage_limit_mb, ai_credits_limit, status)
-VALUES ('GROWTH', 'Croissance', 'Pour les églises en expansion. Fonctionnalités avancées et IA illimitée.',
+VALUES ('GROWTH', 'Croissance', 'Pour les eglises en expansion. Fonctionnalites avancees et IA illimitee.',
     29, 290, 'EUR',
     '{"members": 500, "spaces": 25, "storage_mb": 20000, "events": 200, "ai_credits": 2000}',
     '{"dashboard": true, "members": true, "families": true, "churches": true, "events": true, "notifications": true, "documents": true, "reports": true, "analytics": true, "discipleship": true, "academy": true, "ai": true, "finance": true, "mobile_money": false, "marketplace": true, "community": true, "forms": true, "calendar": true}',
@@ -41,11 +41,11 @@ VALUES ('GROWTH', 'Croissance', 'Pour les églises en expansion. Fonctionnalité
     500, 20000, 2000, 'ACTIVE')
 ON CONFLICT (key) DO NOTHING;
 
--- Plan 4 : RÉSEAU & CAMPUS (International - USD)
+-- Plan 4 : RESEAU & CAMPUS (International - USD)
 INSERT INTO saas_plans (key, name, description, price_monthly, price_yearly, currency,
     limits_json, features_json, is_active, sort_order, is_public, trial_days, annual_discount_pct,
     seats_limit, storage_limit_mb, ai_credits_limit, status)
-VALUES ('NETWORK', 'Réseau & Campus', 'Pour les réseaux d''églises et campus. Multi-tenant avancé, white-label, support dédié.',
+VALUES ('NETWORK', 'Reseau & Campus', 'Pour les reseaux d''eglises et campus. Multi-tenant avance, white-label, support dedie.',
     99, 990, 'USD',
     '{"members": 2000, "spaces": 100, "storage_mb": 100000, "events": 1000, "ai_credits": 5000}',
     '{"dashboard": true, "members": true, "families": true, "churches": true, "events": true, "notifications": true, "documents": true, "reports": true, "analytics": true, "discipleship": true, "academy": true, "ai": true, "finance": true, "mobile_money": true, "marketplace": true, "community": true, "forms": true, "calendar": true, "white_label": true, "api_access": true, "sso": true}',
@@ -53,4 +53,4 @@ VALUES ('NETWORK', 'Réseau & Campus', 'Pour les réseaux d''églises et campus.
     2000, 100000, 5000, 'ACTIVE')
 ON CONFLICT (key) DO NOTHING;
 
-COMMENT ON TABLE saas_plans IS 'Plans SaaS Dual-Market (G1.4 - §30-31) : DÉCOUVERTE/DÉMARRAGE/CROISSANCE/RÉSEAU & CAMPUS';
+COMMENT ON TABLE saas_plans IS 'Plans SaaS Dual-Market (G1.4 - §30-31) : DECOUVERTE/DEMARRAGE/CROISSANCE/RESEAU & CAMPUS';

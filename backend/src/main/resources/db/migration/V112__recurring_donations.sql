@@ -1,6 +1,6 @@
--- RecurringDonation — dons récurrents (dîme mensuelle, offrande hebdomadaire…).
--- Table ajoutée par migration : elle reposait auparavant uniquement sur JPA,
--- ce qui cassait le démarrage en dev (ddl-auto=validate) et toute requête en prod.
+-- RecurringDonation — dons recurrents (dime mensuelle, offrande hebdomadaire…).
+-- Table ajoutee par migration : elle reposait auparavant uniquement sur JPA,
+-- ce qui cassait le demarrage en dev (ddl-auto=validate) et toute requete en prod.
 
 CREATE TABLE IF NOT EXISTS recurring_donations (
     id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),

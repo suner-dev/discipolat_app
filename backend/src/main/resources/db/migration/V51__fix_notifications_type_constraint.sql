@@ -1,11 +1,11 @@
 -- V51__fix_notifications_type_constraint.sql
 -- ============================================================
 -- CORRECTION : la contrainte CHECK « notifications_type_check »
--- créée en V1 n'autorise que 5 types de notifications alors que
+-- creee en V1 n'autorise que 5 types de notifications alors que
 -- l'enum TypeNotification en compte 23 (transferts, DMS…). Toute
 -- notification MEMBRE_AJOUTE, TACHE_ASSIGNEE, TRANSFERT_EXECUTEE…
--- échouait sur PostgreSQL avec « violates check constraint ».
--- On remplace la contrainte par la liste complète miroir de l'enum.
+-- echouait sur PostgreSQL avec « violates check constraint ».
+-- On remplace la contrainte par la liste complete miroir de l'enum.
 -- ============================================================
 
 ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;

@@ -1,9 +1,9 @@
--- V68 : Outil métier FINANCES (module activable)
+-- V68 : Outil metier FINANCES (module activable)
 -- ============================================================
--- Gestion des recettes, dépenses, transactions et budget de
--- l'église. Le module est activable/désactivable comme les autres
+-- Gestion des recettes, depenses, transactions et budget de
+-- l'eglise. Le module est activable/desactivable comme les autres
 -- (ModuleGateFilter : /api/v1/finances → FINANCES) et le menu
--- est piloté par la configuration plateforme.
+-- est pilote par la configuration plateforme.
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS finance_transactions (
@@ -34,13 +34,13 @@ CREATE TABLE IF NOT EXISTS finance_budgets (
     UNIQUE (categorie, annee)
 );
 
-COMMENT ON TABLE finance_transactions IS 'Transactions financières de l''église (recettes / dépenses).';
-COMMENT ON TABLE finance_budgets IS 'Budget annuel par catégorie de dépense.';
+COMMENT ON TABLE finance_transactions IS 'Transactions financieres de l''eglise (recettes / depenses).';
+COMMENT ON TABLE finance_budgets IS 'Budget annuel par categorie de depense.';
 
 -- Module activable + menu (Administration plateforme).
 INSERT INTO platform_modules (key, label, description, icon, section, enabled, ordre)
 VALUES ('FINANCES', 'Finances',
-        'Gestion des recettes, dépenses et budget de l''église',
+        'Gestion des recettes, depenses et budget de l''eglise',
         'Wallet', 'Engagement & outils', TRUE, 22)
 ON CONFLICT (key) DO NOTHING;
 

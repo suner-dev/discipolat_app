@@ -1,5 +1,5 @@
--- ExecutiveInsight — insights exécutifs générés par IA pour le dashboard pastoral.
--- Table créée par migration pour coller à ddl-auto=validate.
+-- ExecutiveInsight — insights executifs generes par IA pour le dashboard pastoral.
+-- Table creee par migration pour coller a ddl-auto=validate.
 
 CREATE TABLE IF NOT EXISTS executive_insights (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),

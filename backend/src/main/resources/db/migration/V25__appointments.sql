@@ -1,5 +1,5 @@
 -- ============================================================
--- V25 : Système de rendez-vous (prise de RDV, validation, rappels)
+-- V25 : Systeme de rendez-vous (prise de RDV, validation, rappels)
 -- ============================================================
 
 CREATE TABLE appointments (

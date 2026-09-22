@@ -1,6 +1,6 @@
 -- V153__custom_fields.sql
 -- ============================================================
--- G2.4 — Custom Field Engine (19 types, validation backend, rendu générique)
+-- G2.4 — Custom Field Engine (19 types, validation backend, rendu generique)
 -- Contrat : Annexe A §A.3 (custom_field_definition, custom_field_value)
 -- Types: TEXT, LONG_TEXT, NUMBER, DECIMAL, BOOLEAN, DATE, DATETIME, TIME,
 --        SELECT, MULTI_SELECT, USER, PERSON, DEPARTMENT, SPACE, TEAM,
@@ -34,12 +34,12 @@ CREATE INDEX IF NOT EXISTS idx_cfd_entity ON custom_field_definitions(tenant_id,
 CREATE INDEX IF NOT EXISTS idx_cfd_space ON custom_field_definitions(space_id);
 CREATE INDEX IF NOT EXISTS idx_cfd_deleted ON custom_field_definitions(deleted_at);
 
-COMMENT ON TABLE custom_field_definitions IS 'G2.4 : définitions de champs personnalisés par entité/espace';
-COMMENT ON COLUMN custom_field_definitions.entity_type IS 'Entité cible : PERSON, EVENT, ASSET, TASK, SPACE, ORGANIZATION_NODE, etc.';
-COMMENT ON COLUMN custom_field_definitions.space_id IS 'NULL = définition au niveau tenant (héritable), sinon propre à l\'espace';
+COMMENT ON TABLE custom_field_definitions IS 'G2.4 : definitions de champs personnalises par entite/espace';
+COMMENT ON COLUMN custom_field_definitions.entity_type IS 'Entite cible : PERSON, EVENT, ASSET, TASK, SPACE, ORGANIZATION_NODE, etc.';
+COMMENT ON COLUMN custom_field_definitions.space_id IS 'NULL = definition au niveau tenant (heritable), sinon propre a l\'espace';
 COMMENT ON COLUMN custom_field_definitions.options_json IS 'Pour SELECT/MULTI_SELECT: [{value, label, color}]. Pour USER/PERSON/DEPARTMENT/SPACE/TEAM: config de filtrage.';
-COMMENT ON COLUMN custom_field_definitions.validation_json IS 'Règles: min/max/length, regex, custom validators par type';
-COMMENT ON COLUMN custom_field_definitions.visibility_scope IS 'Qui peut voir ce champ: PUBLIC (tous), PRIVATE (propriétaire), ADMIN, PASTORAL';
+COMMENT ON COLUMN custom_field_definitions.validation_json IS 'Regles: min/max/length, regex, custom validators par type';
+COMMENT ON COLUMN custom_field_definitions.visibility_scope IS 'Qui peut voir ce champ: PUBLIC (tous), PRIVATE (proprietaire), ADMIN, PASTORAL';
 
 CREATE TABLE IF NOT EXISTS custom_field_values (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -56,8 +56,8 @@ CREATE INDEX IF NOT EXISTS idx_cfv_field ON custom_field_values(field_id);
 CREATE INDEX IF NOT EXISTS idx_cfv_tenant ON custom_field_values(tenant_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_cfv_field_entity ON custom_field_values(field_id, entity_id);
 
-COMMENT ON TABLE custom_field_values IS 'G2.4 : valeurs des champs personnalisés (une ligne par champ par entité)';
-COMMENT ON COLUMN custom_field_values.value_json IS 'Valeur typée selon field_type: string, number, boolean, array, object {url, name} pour FILE/IMAGE, etc.';
+COMMENT ON TABLE custom_field_values IS 'G2.4 : valeurs des champs personnalises (une ligne par champ par entite)';
+COMMENT ON COLUMN custom_field_values.value_json IS 'Valeur typee selon field_type: string, number, boolean, array, object {url, name} pour FILE/IMAGE, etc.';
 
 -- Trigger updated_at
 DROP TRIGGER IF EXISTS update_custom_field_definitions_updated_at ON custom_field_definitions;

@@ -1,7 +1,7 @@
 -- V158__migrate_legacy_events_to_church_event.sql
 -- ============================================================
--- G3.3 — Migration des événements legacy vers Church OS Event Engine
--- Renomme events -> legacy_events, crée event (Church OS), migre les données
+-- G3.3 — Migration des evenements legacy vers Church OS Event Engine
+-- Renomme events -> legacy_events, cree event (Church OS), migre les donnees
 -- ============================================================
 
 -- 1. Renommer la table legacy
@@ -15,7 +15,7 @@ ALTER INDEX IF EXISTS idx_events_date RENAME TO idx_legacy_events_date;
 ALTER INDEX IF EXISTS idx_events_statut RENAME TO idx_legacy_events_statut;
 ALTER INDEX IF EXISTS idx_events_deleted RENAME TO idx_legacy_events_deleted;
 
--- 2. Créer la nouvelle table event (Church OS schema)
+-- 2. Creer la nouvelle table event (Church OS schema)
 CREATE TABLE IF NOT EXISTS event (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -43,14 +43,14 @@ CREATE INDEX IF NOT EXISTS idx_event_tenant_start ON event(tenant_id, start_at);
 CREATE INDEX IF NOT EXISTS idx_event_deleted ON event(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_event_organizer ON event(organizer_id);
 
-COMMENT ON TABLE event IS 'G3.3 : Church OS événement central — schema anglais, multi-tenant, configurable';
+COMMENT ON TABLE event IS 'G3.3 : Church OS evenement central — schema anglais, multi-tenant, configurable';
 COMMENT ON COLUMN event.tenant_id IS 'Tenant obligatoire (multi-tenancy)';
-COMMENT ON COLUMN event.type IS 'Type d\'événement (configurable via custom_status)';
+COMMENT ON COLUMN event.type IS 'Type d\'evenement (configurable via custom_status)';
 COMMENT ON COLUMN event.status IS 'Statut (configurable via custom_status)';
 
--- 3. Migrer les données de legacy_events vers event
--- Note: tenant_id est requis. Pour les événements existants, on associe au premier tenant trouvé
--- ou on crée un tenant par défaut si aucun n'existe.
+-- 3. Migrer les donnees de legacy_events vers event
+-- Note: tenant_id est requis. Pour les evenements existants, on associe au premier tenant trouve
+-- ou on cree un tenant par defaut si aucun n'existe.
 INSERT INTO event (id, tenant_id, title, description, type, status, start_at, end_at, 
                    organizer_id, visibility, created_at, updated_at, deleted_at)
 SELECT 
@@ -86,34 +86,34 @@ SELECT
 FROM legacy_events
 WHERE NOT EXISTS (SELECT 1 FROM event WHERE event.id = legacy_events.id);
 
--- 4. Mettre à jour event_registrations pour pointer vers event (même IDs)
--- Les IDs sont conservés, donc pas de changement nécessaire pour la FK
+-- 4. Mettre a jour event_registrations pour pointer vers event (meme IDs)
+-- Les IDs sont conserves, donc pas de changement necessaire pour la FK
 -- Mais il faut renommer la contrainte
 ALTER TABLE event_registrations 
     DROP CONSTRAINT IF EXISTS event_registrations_event_id_fkey,
     ADD CONSTRAINT event_registrations_event_id_fkey 
         FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE;
 
--- 5. Mettre à jour files (evenement_id -> event_id)
+-- 5. Mettre a jour files (evenement_id -> event_id)
 ALTER TABLE files 
     DROP CONSTRAINT IF EXISTS files_evenement_id_fkey,
     RENAME COLUMN evenement_id TO event_id,
     ADD CONSTRAINT files_event_id_fkey 
         FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE SET NULL;
 
--- 6. Mettre à jour department_event_attendance
+-- 6. Mettre a jour department_event_attendance
 ALTER TABLE department_event_attendance 
     DROP CONSTRAINT IF EXISTS department_event_attendance_event_id_fkey,
     ADD CONSTRAINT department_event_attendance_event_id_fkey 
         FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE;
 
--- 7. Mettre à jour department_teams
+-- 7. Mettre a jour department_teams
 ALTER TABLE department_teams 
     DROP CONSTRAINT IF EXISTS department_teams_event_id_fkey,
     ADD CONSTRAINT department_teams_event_id_fkey 
         FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE SET NULL;
 
--- 8. Index sur les FK mises à jour
+-- 8. Index sur les FK mises a jour
 CREATE INDEX IF NOT EXISTS idx_event_reg_event ON event_registrations(event_id);
 CREATE INDEX IF NOT EXISTS idx_files_event ON files(event_id);
 CREATE INDEX IF NOT EXISTS idx_dept_event_att_event ON department_event_attendance(event_id);
@@ -125,5 +125,5 @@ CREATE TRIGGER update_event_updated_at
     BEFORE UPDATE ON event 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-COMMENT ON TABLE legacy_events IS 'Table legacy conservée pour compatibilité — ne pas modifier';
-COMMENT ON TABLE event IS 'G3.3 : Church OS événement central — schéma anglais, multi-tenant, configurable';
+COMMENT ON TABLE legacy_events IS 'Table legacy conservee pour compatibilite — ne pas modifier';
+COMMENT ON TABLE event IS 'G3.3 : Church OS evenement central — schema anglais, multi-tenant, configurable';

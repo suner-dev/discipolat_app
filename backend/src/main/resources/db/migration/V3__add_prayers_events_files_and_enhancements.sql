@@ -28,7 +28,7 @@ ALTER TABLE maker_reports ADD COLUMN IF NOT EXISTS vie_faiseur_suggestions TEXT;
 ALTER TABLE maker_reports ADD COLUMN IF NOT EXISTS date_derniere_modification TIMESTAMP;
 
 -- ============================================================
--- PRAYERS (Sujets de prière) - Module G, US-44 to US-49
+-- PRAYERS (Sujets de priere) - Module G, US-44 to US-49
 -- ============================================================
 CREATE TABLE IF NOT EXISTS prayers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -58,7 +58,7 @@ CREATE INDEX IF NOT EXISTS idx_prayers_visibilite ON prayers(visibilite);
 CREATE INDEX IF NOT EXISTS idx_prayers_deleted ON prayers(deleted);
 
 -- ============================================================
--- EVENTS (Événements) - Module H, US-50 to US-55
+-- EVENTS (Evenements) - Module H, US-50 to US-55
 -- ============================================================
 CREATE TABLE IF NOT EXISTS events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -89,7 +89,7 @@ CREATE INDEX IF NOT EXISTS idx_events_statut ON events(statut);
 CREATE INDEX IF NOT EXISTS idx_events_deleted ON events(deleted);
 
 -- ============================================================
--- EVENT REGISTRATIONS (Inscriptions aux événements)
+-- EVENT REGISTRATIONS (Inscriptions aux evenements)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS event_registrations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

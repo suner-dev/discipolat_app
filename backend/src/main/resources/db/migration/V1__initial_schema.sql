@@ -149,7 +149,7 @@ CREATE INDEX idx_maker_reports_soumis ON maker_reports(soumis);
 CREATE INDEX idx_maker_reports_deleted ON maker_reports(deleted);
 
 -- ============================================================
--- FAMILY REPORTS (Rapport hebdomadaire consolidé de famille)
+-- FAMILY REPORTS (Rapport hebdomadaire consolide de famille)
 -- ============================================================
 CREATE TABLE family_reports (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -186,7 +186,7 @@ CREATE INDEX idx_family_reports_validation ON family_reports(statut_validation);
 CREATE INDEX idx_family_reports_deleted ON family_reports(deleted);
 
 -- ============================================================
--- PARALLEL FOLLOWUPS (Suivis parallèles)
+-- PARALLEL FOLLOWUPS (Suivis paralleles)
 -- ============================================================
 CREATE TABLE parallel_followups (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -299,7 +299,7 @@ CREATE INDEX idx_soul_history_ame ON soul_history(ame_id);
 CREATE INDEX idx_soul_history_created ON soul_history(created_at);
 
 -- ============================================================
--- CULTE CONFIGURATION (Cultes configurables par l'église)
+-- CULTE CONFIGURATION (Cultes configurables par l'eglise)
 -- ============================================================
 CREATE TABLE culte_config (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -314,10 +314,10 @@ INSERT INTO culte_config (nom, jour_semaine, ordre) VALUES
     ('Dimanche Matin', 'DIMANCHE', 1),
     ('Mercredi Soir', 'MERCREDI', 2),
     ('Vendredi Soir', 'VENDREDI', 3),
-    ('Veillée', 'SAMEDI', 4);
+    ('Veillee', 'SAMEDI', 4);
 
 -- ============================================================
--- DASHBOARD METRICS CACHE (Cache des KPI pré-calculés)
+-- DASHBOARD METRICS CACHE (Cache des KPI pre-calcules)
 -- ============================================================
 CREATE TABLE dashboard_metrics (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

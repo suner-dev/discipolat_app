@@ -1,6 +1,6 @@
 -- V149__spaces.sql
 -- ============================================================
--- G2.6 — Espaces configurables unifiés (département = famille = sous-équipe)
+-- G2.6 — Espaces configurables unifies (departement = famille = sous-equipe)
 -- Contrat : Annexe A §A.1 (space)
 -- Un space vit dans une organization_unit (pas de fusion des deux objets).
 -- Soft delete via deleted_at (§0.3 n°5) + historisation.
@@ -32,10 +32,10 @@ CREATE INDEX IF NOT EXISTS idx_space_type ON spaces(space_type);
 CREATE INDEX IF NOT EXISTS idx_space_tenant_type ON spaces(tenant_id, space_type);
 CREATE INDEX IF NOT EXISTS idx_space_deleted ON spaces(deleted_at);
 
-COMMENT ON TABLE spaces IS 'G2.6 : espace unifié (département = famille = sous-équipe), 100% configuration, aucun département codé en dur';
-COMMENT ON COLUMN spaces.organization_unit_id IS 'Unité organisationnelle qui accueille l''espace (§A.1 : space et organization_unit restent liés sans fusion)';
+COMMENT ON TABLE spaces IS 'G2.6 : espace unifie (departement = famille = sous-equipe), 100% configuration, aucun departement code en dur';
+COMMENT ON COLUMN spaces.organization_unit_id IS 'Unite organisationnelle qui accueille l''espace (§A.1 : space et organization_unit restent lies sans fusion)';
 COMMENT ON COLUMN spaces.configuration_json IS 'Configuration de l''espace (pages, boutons, widgets, dashboard, couleurs) — jamais du code';
-COMMENT ON COLUMN spaces.deleted_at IS 'Soft delete : un espace archivé reste historisé';
+COMMENT ON COLUMN spaces.deleted_at IS 'Soft delete : un espace archive reste historise';
 
 -- Backfill : un espace DEPARTMENT pour chaque nœud organization_nodes de type DEPARTMENT
 INSERT INTO spaces (tenant_id, organization_unit_id, space_type, name, code, icon, color, status, configuration_json)

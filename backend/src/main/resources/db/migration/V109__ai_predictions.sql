@@ -1,7 +1,7 @@
--- AiPrediction — moteur de prédictions IA (Predictive Care).
--- Table créée par migration pour coller à ddl-auto=validate :
--- elle était auparavant absente des migrations, ce qui cassait le
--- démarrage en dev (Hibernate validate) et toute requête en prod.
+-- AiPrediction — moteur de predictions IA (Predictive Care).
+-- Table creee par migration pour coller a ddl-auto=validate :
+-- elle etait auparavant absente des migrations, ce qui cassait le
+-- demarrage en dev (Hibernate validate) et toute requete en prod.
 
 CREATE TABLE IF NOT EXISTS ai_predictions (
     id              BIGSERIAL PRIMARY KEY,

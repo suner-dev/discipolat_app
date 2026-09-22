@@ -1,7 +1,7 @@
 -- V160__family_os_visits_receptions_meetings.sql
 -- ============================================================
--- G4.1 — Family OS : visites, réceptions, réunions, comptes-rendus
--- Nouveaux types d'activités pour l'espace FAMILY
+-- G4.1 — Family OS : visites, receptions, reunions, comptes-rendus
+-- Nouveaux types d'activites pour l'espace FAMILY
 -- ============================================================
 
 -- 1. FAMILY VISIT (visite d'âme)
@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_fv_status ON family_visit(status);
 
 COMMENT ON TABLE family_visit IS 'G4.1 : visites de suivi d''âmes par le faiseur';
 
--- 2. FAMILY RECEPTION (réception de nouveaux membres)
+-- 2. FAMILY RECEPTION (reception de nouveaux membres)
 CREATE TABLE IF NOT EXISTS family_reception (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -54,9 +54,9 @@ CREATE INDEX IF NOT EXISTS idx_fr_family ON family_reception(family_id);
 CREATE INDEX IF NOT EXISTS idx_fr_soul ON family_reception(soul_id);
 CREATE INDEX IF NOT EXISTS idx_fr_date ON family_reception(reception_date);
 
-COMMENT ON TABLE family_reception IS 'G4.1 : réceptions de nouveaux membres dans la famille';
+COMMENT ON TABLE family_reception IS 'G4.1 : receptions de nouveaux membres dans la famille';
 
--- 3. FAMILY MEETING (réunion de famille)
+-- 3. FAMILY MEETING (reunion de famille)
 CREATE TABLE IF NOT EXISTS family_meeting (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -78,9 +78,9 @@ CREATE TABLE IF NOT EXISTS family_meeting (
 CREATE INDEX IF NOT EXISTS idx_fm_family ON family_meeting(family_id);
 CREATE INDEX IF NOT EXISTS idx_fm_date ON family_meeting(meeting_date);
 
-COMMENT ON TABLE family_meeting IS 'G4.1 : réunions de famille (prière, formation, coordination)';
+COMMENT ON TABLE family_meeting IS 'G4.1 : reunions de famille (priere, formation, coordination)';
 
--- 4. FAMILY ACTIVITY (activité unifiée pour le bouton "Créer une activité")
+-- 4. FAMILY ACTIVITY (activite unifiee pour le bouton "Creer une activite")
 CREATE TABLE IF NOT EXISTS family_activity (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -102,7 +102,7 @@ CREATE INDEX IF NOT EXISTS idx_fa_family ON family_activity(family_id);
 CREATE INDEX IF NOT EXISTS idx_fa_date ON family_activity(activity_date);
 CREATE INDEX IF NOT EXISTS idx_fa_ref ON family_activity(reference_id);
 
-COMMENT ON TABLE family_activity IS 'G4.1 : vue unifiée pour le bouton "Créer une activité" (multi-type)';
+COMMENT ON TABLE family_activity IS 'G4.1 : vue unifiee pour le bouton "Creer une activite" (multi-type)';
 
 -- Triggers
 DROP TRIGGER IF EXISTS update_family_visit_updated_at ON family_visit;

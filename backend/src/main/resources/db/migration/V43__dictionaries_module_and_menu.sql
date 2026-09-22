@@ -1,14 +1,14 @@
 -- V43__dictionaries_module_and_menu.sql
 -- ============================================================
--- MODULE & MENU "DICTIONNAIRES" (référentiels configurables)
--- L'administrateur adapte les listes de l'église (types d'événements,
--- statuts, raisons d'absence, catégories…) sans modifier le code.
--- Comme tout module, il est activable/désactivable et masquable.
+-- MODULE & MENU "DICTIONNAIRES" (referentiels configurables)
+-- L'administrateur adapte les listes de l'eglise (types d'evenements,
+-- statuts, raisons d'absence, categories…) sans modifier le code.
+-- Comme tout module, il est activable/desactivable et masquable.
 -- ============================================================
 
 INSERT INTO platform_modules (key, label, description, icon, section, enabled, ordre)
 VALUES ('DICTIONARIES', 'Dictionnaires',
-        'Référentiels configurables : types d''événements, statuts, raisons d''absence, catégories…',
+        'Referentiels configurables : types d''evenements, statuts, raisons d''absence, categories…',
         'BookOpen', 'Administration', TRUE, 91)
 ON CONFLICT (key) DO NOTHING;
 

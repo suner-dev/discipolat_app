@@ -43,6 +43,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_tenant_membership_user_tenant_scope
     ON tenant_memberships(user_id, tenant_id, scope_type, scope_id);
 
 -- 8. Add missing atomic permissions for full RBAC coverage
+
 INSERT INTO permissions (id, tenant_id, key, label, description, scope, category, system, created_at, updated_at) VALUES
     -- EVENT permissions
     (uuid_generate_v4(), NULL, 'EVENT_READ', 'Lire événements', 'Voir les événements', 'TENANT', 'EVENTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -50,67 +51,79 @@ INSERT INTO permissions (id, tenant_id, key, label, description, scope, category
     (uuid_generate_v4(), NULL, 'EVENT_UPDATE', 'Modifier événements', 'Modifier les événements', 'TENANT', 'EVENTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'EVENT_DELETE', 'Supprimer événements', 'Supprimer/archiver les événements', 'TENANT', 'EVENTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'EVENT_REGISTER', 'S inscrire aux evenements', 'S inscrire aux evenements', 'TENANT', 'EVENTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+
     -- NOTIFICATION permissions
     (uuid_generate_v4(), NULL, 'NOTIFICATION_READ', 'Lire notifications', 'Voir les notifications', 'TENANT', 'NOTIFICATIONS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'NOTIFICATION_CREATE', 'Créer notifications', 'Envoyer des notifications', 'TENANT', 'NOTIFICATIONS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'NOTIFICATION_MANAGE', 'Gérer notifications', 'Gérer toutes les notifications', 'TENANT', 'NOTIFICATIONS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+
     -- MESSAGE/CHAT permissions
-    (uuid_generate_v4(), NULL, 'MESSAGE_READ', 'Lire messages', 'Voir les conversations', 'TENANT', 'MESSAGES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'MESSAGE_READ', 'Lire messages', 'Voir les conversations', 'TENANT', 'MESSAGES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO permissions (id, tenant_id, key, label, description, scope, category, system, created_at, updated_at) VALUES
     (uuid_generate_v4(), NULL, 'MESSAGE_CREATE', 'Envoyer messages', 'Envoyer des messages', 'TENANT', 'MESSAGES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'MESSAGE_MANAGE', 'Gérer messages', 'Modérer les conversations', 'TENANT', 'MESSAGES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+
     -- FILE permissions
     (uuid_generate_v4(), NULL, 'FILE_READ', 'Lire fichiers', 'Télécharger/voir les fichiers', 'TENANT', 'FILES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'FILE_UPLOAD', 'Uploader fichiers', 'Télécharger des fichiers', 'TENANT', 'FILES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'FILE_MANAGE', 'Gérer fichiers', 'Gérer tous les fichiers', 'TENANT', 'FILES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+
     -- COURSE/ACADEMY permissions
     (uuid_generate_v4(), NULL, 'COURSE_READ', 'Lire formations', 'Voir les cours et modules', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'COURSE_ENROLL', 'S inscrire formations', 'S inscrire aux cours', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'COURSE_CREATE', 'Créer formations', 'Créer des cours et modules', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'COURSE_MANAGE', 'Gérer formations', 'Gérer toutes les formations', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+
     -- AI permissions
-    (uuid_generate_v4(), NULL, 'AI_USE', 'Utiliser IA', 'Utiliser les fonctionnalites IA', 'TENANT', 'AI', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'AI_ADMIN', 'Admin IA', 'Configurer et entrainer l\'IA', 'TENANT', 'AI', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+    (uuid_generate_v4(), NULL, 'AI_USE', 'Utiliser IA', 'Utiliser les fonctionnalites IA', 'TENANT', 'AI', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO permissions (id, tenant_id, key, label, description, scope, category, system, created_at, updated_at) VALUES
+    (uuid_generate_v4(), NULL, 'AI_ADMIN', 'Admin IA', 'Configurer et entrainer l''IA', 'TENANT', 'AI', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
     -- SETTINGS/BRANDING/MODULES permissions
     (uuid_generate_v4(), NULL, 'BRANDING_READ', 'Lire branding', 'Voir le branding', 'TENANT', 'SETTINGS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'BRANDING_UPDATE', 'Modifier branding', 'Modifier le branding', 'TENANT', 'SETTINGS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'MODULES_READ', 'Lire modules', 'Voir les modules activés', 'TENANT', 'SETTINGS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'MODULES_TOGGLE', 'Activer/Désactiver modules', 'Activer ou désactiver des modules', 'TENANT', 'SETTINGS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+
     -- AUDIT permissions
-    (uuid_generate_v4(), NULL, 'AUDIT_READ', 'Lire audit', 'Voir les logs d\'audit', 'TENANT', 'AUDIT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'AUDIT_EXPORT', 'Exporter audit', 'Exporter les logs d\'audit', 'TENANT', 'AUDIT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+    (uuid_generate_v4(), NULL, 'AUDIT_READ', 'Lire audit', 'Voir les logs d''audit', 'TENANT', 'AUDIT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'AUDIT_EXPORT', 'Exporter audit', 'Exporter les logs d''audit', 'TENANT', 'AUDIT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
     -- EXPORT permissions
     (uuid_generate_v4(), NULL, 'EXPORT_DATA', 'Exporter données', 'Exporter des données du tenant', 'TENANT', 'EXPORT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+
     -- ROLE/PERMISSION management
     (uuid_generate_v4(), NULL, 'ROLE_READ', 'Lire rôles', 'Voir les rôles', 'TENANT', 'RBAC', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'ROLE_CREATE', 'Créer rôles', 'Créer des rôles personnalisés', 'TENANT', 'RBAC', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'ROLE_CREATE', 'Créer rôles', 'Créer des rôles personnalisés', 'TENANT', 'RBAC', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO permissions (id, tenant_id, key, label, description, scope, category, system, created_at, updated_at) VALUES
     (uuid_generate_v4(), NULL, 'ROLE_UPDATE', 'Modifier rôles', 'Modifier les rôles', 'TENANT', 'RBAC', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'ROLE_DELETE', 'Supprimer rôles', 'Supprimer des rôles personnalisés', 'TENANT', 'RBAC', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'PERMISSION_READ', 'Lire permissions', 'Voir le catalogue de permissions', 'TENANT', 'RBAC', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'PERMISSION_ASSIGN', 'Assigner permissions', 'Assigner permissions aux rôles', 'TENANT', 'RBAC', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+
     -- ORGANIZATION NODE permissions
     (uuid_generate_v4(), NULL, 'ORG_NODE_READ', 'Lire structure', 'Voir la hiérarchie organisationnelle', 'TENANT', 'ORGANIZATION', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'ORG_NODE_CREATE', 'Créer nœuds', 'Créer églises/campus/départements', 'TENANT', 'ORGANIZATION', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'ORG_NODE_UPDATE', 'Modifier nœuds', 'Modifier la structure', 'TENANT', 'ORGANIZATION', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'ORG_NODE_DELETE', 'Supprimer nœuds', 'Supprimer des nœuds', 'TENANT', 'ORGANIZATION', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'ORG_NODE_MOVE', 'Déplacer nœuds', 'Déplacer dans la hiérarchie', 'TENANT', 'ORGANIZATION', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+
     -- SUBSCRIPTION/BILLING permissions
-    (uuid_generate_v4(), NULL, 'SUBSCRIPTION_READ', 'Lire abonnement', 'Voir l\'abonnement du tenant', 'TENANT', 'BILLING', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'SUBSCRIPTION_MANAGE', 'Gérer abonnement', 'Modifier l\'abonnement', 'TENANT', 'BILLING', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    
+    (uuid_generate_v4(), NULL, 'SUBSCRIPTION_READ', 'Lire abonnement', 'Voir l''abonnement du tenant', 'TENANT', 'BILLING', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO permissions (id, tenant_id, key, label, description, scope, category, system, created_at, updated_at) VALUES
+    (uuid_generate_v4(), NULL, 'SUBSCRIPTION_MANAGE', 'Gérer abonnement', 'Modifier l''abonnement', 'TENANT', 'BILLING', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
     -- SUPPORT/IMPERSONATION permissions
-    (uuid_generate_v4(), NULL, 'IMPERSONATE', 'Impersonner', 'Impersonner un utilisateur', 'PLATFORM', 'SUPPORT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'SUPPORT_ACCESS', 'Accès support', 'Accès aux outils de support', 'PLATFORM', 'SUPPORT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    (uuid_generate_v4(), NULL, 'IMPERSONATE', 'Impersonner', 'Impersonner un utilisateur', 'GLOBAL', 'SUPPORT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'SUPPORT_ACCESS', 'Accès support', 'Accès aux outils de support', 'GLOBAL', 'SUPPORT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (key) DO NOTHING;
 
 -- 9. Link new permissions to system roles

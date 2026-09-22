@@ -1,24 +1,24 @@
 -- V141__create_tenant_settings_table.sql
 -- ============================================================
 -- TENANT SETTINGS & BRANDING (G1.2 - §27-28)
--- Table complète pour configuration tenant avec branding dynamique
+-- Table complete pour configuration tenant avec branding dynamique
 -- ============================================================
 
--- 1. Table tenant_settings (configuration complète par tenant)
+-- 1. Table tenant_settings (configuration complete par tenant)
 CREATE TABLE tenant_settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     
-    -- Identité commerciale
-    business_name VARCHAR(255),              -- Nom commercial affiché partout (remplace name si défini)
+    -- Identite commerciale
+    business_name VARCHAR(255),              -- Nom commercial affiche partout (remplace name si defini)
     slogan VARCHAR(500),                     -- Slogan/accroche
-    legal_name VARCHAR(255),                 -- Nom légal
+    legal_name VARCHAR(255),                 -- Nom legal
     description TEXT,                        -- Description tenant
     
     -- Branding visuel
     logo_url VARCHAR(1000),                  -- Logo principal
     logo_dark_url VARCHAR(1000),             -- Logo mode sombre
-    cover_url VARCHAR(1000),                 -- Image de couverture/bannière
+    cover_url VARCHAR(1000),                 -- Image de couverture/banniere
     favicon_url VARCHAR(1000),               -- Favicon
     
     -- Couleurs (tokens CSS --brand-*)
@@ -41,7 +41,7 @@ CREATE TABLE tenant_settings (
     mono_font VARCHAR(100) DEFAULT 'JetBrains Mono',
     
     -- Localisation
-    locale VARCHAR(10) DEFAULT 'fr',         -- Langue par défaut
+    locale VARCHAR(10) DEFAULT 'fr',         -- Langue par defaut
     supported_locales JSONB DEFAULT '["fr", "en"]'::jsonb,
     timezone VARCHAR(64) DEFAULT 'Africa/Douala',
     country VARCHAR(2) DEFAULT 'CM',
@@ -55,24 +55,24 @@ CREATE TABLE tenant_settings (
     
     -- Contact
     email VARCHAR(255),                      -- Email contact principal
-    phone VARCHAR(50),                       -- Téléphone contact
+    phone VARCHAR(50),                       -- Telephone contact
     website VARCHAR(255),                    -- Site web
-    address TEXT,                            -- Adresse complète
+    address TEXT,                            -- Adresse complete
     opening_hours JSONB DEFAULT '{}'::jsonb, -- Horaires d'ouverture par jour
     working_days JSONB DEFAULT '["Monday","Tuesday","Wednesday","Thursday","Friday"]'::jsonb,
     
     -- Textes d'invitation / communication
-    invitation_email_subject VARCHAR(255) DEFAULT 'Invitation à rejoindre {{tenant_name}} sur Discipolat',
-    invitation_email_body TEXT DEFAULT 'Bonjour,<br><br>Vous êtes invité à rejoindre <strong>{{tenant_name}}</strong> sur Discipolat. Cliquez sur le lien ci-dessous pour accepter :<br><br><a href="{{invitation_link}}">{{invitation_link}}</a><br><br>Ce lien expire dans 72h.<br><br>Cordialement,<br>L\'équipe {{tenant_name}}',
+    invitation_email_subject VARCHAR(255) DEFAULT 'Invitation a rejoindre {{tenant_name}} sur Discipolat',
+    invitation_email_body TEXT DEFAULT 'Bonjour,<br><br>Vous etes invite a rejoindre <strong>{{tenant_name}}</strong> sur Discipolat. Cliquez sur le lien ci-dessous pour accepter :<br><br><a href="{{invitation_link}}">{{invitation_link}}</a><br><br>Ce lien expire dans 72h.<br><br>Cordialement,<br>L''equipe {{tenant_name}}',
     welcome_email_subject VARCHAR(255) DEFAULT 'Bienvenue sur {{tenant_name}} !',
-    welcome_email_body TEXT DEFAULT 'Bonjour {{first_name}},<br><br>Bienvenue dans <strong>{{tenant_name}}</strong> ! Votre compte a été créé avec succès.<br><br>Connectez-vous ici : <a href="{{login_url}}">{{login_url}}</a><br><br>À bientôt,<br>L\'équipe {{tenant_name}}',
-    footer_text TEXT DEFAULT '© {{year}} {{tenant_name}}. Tous droits réservés.',
-    footer_links JSONB DEFAULT '[]'::jsonb,  -- Liens pied de page [{"label":"Mentions légales","url":"..."}]
+    welcome_email_body TEXT DEFAULT 'Bonjour {{first_name}},<br><br>Bienvenue dans <strong>{{tenant_name}}</strong> ! Votre compte a ete cree avec succes.<br><br>Connectez-vous ici : <a href="{{login_url}}">{{login_url}}</a><br><br>A bientot,<br>L''equipe {{tenant_name}}',
+    footer_text TEXT DEFAULT '© {{year}} {{tenant_name}}. Tous droits reserves.',
+    footer_links JSONB DEFAULT '[]'::jsonb,  -- Liens pied de page [{"label":"Mentions legales","url":"..."}]
     
     -- Feature flags / Toggles modules & canaux (activables par tenant)
     low_band_enabled BOOLEAN DEFAULT FALSE,        -- WhatsApp/USSD
-    public_directory_enabled BOOLEAN DEFAULT FALSE, -- Annuaire public "Églises sur Discipolat"
-    legacy_migration_enabled BOOLEAN DEFAULT FALSE, -- Migration données legacy
+    public_directory_enabled BOOLEAN DEFAULT FALSE, -- Annuaire public "Eglises sur Discipolat"
+    legacy_migration_enabled BOOLEAN DEFAULT FALSE, -- Migration donnees legacy
     offline_mode VARCHAR(20) DEFAULT 'LECTURE' CHECK (offline_mode IN ('LECTURE', 'FIELD_OPS', 'FULL')),
     analytics_enabled BOOLEAN DEFAULT TRUE,
     ai_features_enabled BOOLEAN DEFAULT TRUE,
@@ -88,14 +88,14 @@ CREATE TABLE tenant_settings (
     max_failed_login_attempts INTEGER DEFAULT 5,
     lockout_duration_minutes INTEGER DEFAULT 30,
     
-    -- Configuration avancée (JSON flexible)
-    ui_config JSONB DEFAULT '{}'::jsonb,        -- Config UI : thème, layout, widgets par défaut
-    notification_rules JSONB DEFAULT '{}'::jsonb, -- Règles notification par événement
-    integration_config JSONB DEFAULT '{}'::jsonb, -- Config intégrations (Stripe, MoMo, SMTP, etc.)
-    custom_css TEXT,                            -- CSS personnalisé (injecté dans head)
-    custom_head_html TEXT,                      -- HTML injecté dans <head>
+    -- Configuration avancee (JSON flexible)
+    ui_config JSONB DEFAULT '{}'::jsonb,        -- Config UI : theme, layout, widgets par defaut
+    notification_rules JSONB DEFAULT '{}'::jsonb, -- Regles notification par evenement
+    integration_config JSONB DEFAULT '{}'::jsonb, -- Config integrations (Stripe, MoMo, SMTP, etc.)
+    custom_css TEXT,                            -- CSS personnalise (injecte dans head)
+    custom_head_html TEXT,                      -- HTML injecte dans <head>
     
-    -- Métadonnées
+    -- Metadonnees
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -112,7 +112,7 @@ CREATE INDEX idx_tenant_settings_business_name ON tenant_settings(business_name)
 DROP TRIGGER IF EXISTS update_tenant_settings_updated_at ON tenant_settings;
 CREATE TRIGGER update_tenant_settings_updated_at BEFORE UPDATE ON tenant_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- 3. Créer tenant_settings par défaut pour tous les tenants existants
+-- 3. Creer tenant_settings par defaut pour tous les tenants existants
 INSERT INTO tenant_settings (
     tenant_id,
     business_name,
@@ -158,19 +158,19 @@ SELECT
     'Inter',
     'Inter',
     'JetBrains Mono',
-    COALESCE(locale, 'fr'),
-    COALESCE(timezone, 'Africa/Douala'),
-    COALESCE(country, 'CM'),
-    COALESCE(currency, 'XAF'),
+    'fr',
+    'Africa/Douala',
+    'CM',
+    'XAF',
     'dd/MM/yyyy',
-    COALESCE(phone_country_code, '+237'),
+    '+237',
     (SELECT id FROM users WHERE tenant_id = tenants.id LIMIT 1),
     (SELECT id FROM users WHERE tenant_id = tenants.id LIMIT 1)
 FROM tenants
 WHERE id NOT IN (SELECT tenant_id FROM tenant_settings WHERE tenant_id IS NOT NULL)
 ON CONFLICT (tenant_id) DO NOTHING;
 
--- 4. Vue pour branding résolu (avec héritage éventuel futur)
+-- 4. Vue pour branding resolu (avec heritage eventuel futur)
 CREATE OR REPLACE VIEW tenant_branding_resolved AS
 SELECT 
     ts.tenant_id,
@@ -200,7 +200,7 @@ SELECT
 FROM tenant_settings ts
 JOIN tenants t ON t.id = ts.tenant_id;
 
--- 5. Fonction pour générer les variables CSS --brand-*
+-- 5. Fonction pour generer les variables CSS --brand-*
 CREATE OR REPLACE FUNCTION generate_branding_css(tenant_uuid UUID) RETURNS TEXT AS $$
 DECLARE
     ts RECORD;

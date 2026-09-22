@@ -1,9 +1,9 @@
 -- ============================================================
--- V22 : Suivi d'évangélisation (pipeline) + Système d'objectifs
+-- V22 : Suivi d'evangelisation (pipeline) + Systeme d'objectifs
 -- ============================================================
 
 -- ------------------------------------------------------------
--- Pipeline d'évangélisation : une ligne par âme (étape courante)
+-- Pipeline d'evangelisation : une ligne par âme (etape courante)
 -- ------------------------------------------------------------
 CREATE TABLE evangelism_track (
     id            UUID PRIMARY KEY,
@@ -21,7 +21,7 @@ CREATE TABLE evangelism_track (
     ))
 );
 
--- Historique des franchissements d'étapes (chaque passage est tracé)
+-- Historique des franchissements d'etapes (chaque passage est trace)
 CREATE TABLE evangelism_stage_history (
     id          UUID PRIMARY KEY,
     track_id    UUID NOT NULL REFERENCES evangelism_track (id) ON DELETE CASCADE,
@@ -35,13 +35,13 @@ CREATE INDEX idx_evangelism_track_etape ON evangelism_track (etape);
 CREATE INDEX idx_evangelism_history_track ON evangelism_stage_history (track_id);
 
 -- ------------------------------------------------------------
--- Objectifs par rôle : cible mesurée automatiquement
+-- Objectifs par role : cible mesuree automatiquement
 -- ------------------------------------------------------------
 CREATE TABLE objectives (
     id          UUID PRIMARY KEY,
     role        VARCHAR(40) NOT NULL,             -- PASTEUR | RESPONSABLE | CHEF_DE_FAMILLE | FAISEUR
     type        VARCHAR(40) NOT NULL,             -- VISITES | NOUVELLES_AMES | DISCIPLES_ACTIFS | EVANGELISATION | SUIVIS | PRESENCE
-    cible       INTEGER NOT NULL,                 -- valeur à atteindre
+    cible       INTEGER NOT NULL,                 -- valeur a atteindre
     periode     VARCHAR(20) NOT NULL DEFAULT 'MENSUEL',  -- MENSUEL | TRIMESTRIEL | ANNUEL
     actif       BOOLEAN NOT NULL DEFAULT TRUE,
     cree_par    UUID,
@@ -55,7 +55,7 @@ CREATE INDEX idx_objectives_role ON objectives (role);
 CREATE INDEX idx_objectives_actif ON objectives (actif);
 
 -- ------------------------------------------------------------
--- Objectifs par défaut (évitent une page vide dès l'installation)
+-- Objectifs par defaut (evitent une page vide des l'installation)
 -- ------------------------------------------------------------
 INSERT INTO objectives (id, role, type, cible, periode) VALUES
   (gen_random_uuid(), 'PASTEUR', 'NOUVELLES_AMES', 5, 'MENSUEL'),

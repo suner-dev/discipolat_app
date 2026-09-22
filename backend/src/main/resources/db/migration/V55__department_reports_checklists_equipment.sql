@@ -1,11 +1,11 @@
 -- V55__department_reports_checklists_equipment.sql
 -- ============================================================
--- DEPARTMENT MANAGEMENT SYSTEM — rapports de département,
--- checklists et inventaire matériel
+-- DEPARTMENT MANAGEMENT SYSTEM — rapports de departement,
+-- checklists et inventaire materiel
 -- ============================================================
 
 -- ------------------------------------------------------------
--- Rapports de département (synthèses sauvegardées / exportables)
+-- Rapports de departement (syntheses sauvegardees / exportables)
 -- type : HEBDOMADAIRE | MENSUEL | TRIMESTRIEL | ANNUEL |
 --        EVENEMENT | INCIDENT | DISCIPLINE | ACTIVITE |
 --        EFFECTIF | ASSIDUITE | PERFORMANCE | SYNTHESE
@@ -29,7 +29,7 @@ CREATE INDEX IF NOT EXISTS idx_dept_reports_dept ON department_reports(departmen
 CREATE INDEX IF NOT EXISTS idx_dept_reports_type ON department_reports(department_id, type);
 
 -- ------------------------------------------------------------
--- Checklists du département (événement, tâche, équipe, membre, général)
+-- Checklists du departement (evenement, tâche, equipe, membre, general)
 -- cible_type : GENERAL | TACHE | EVENEMENT | EQUIPE | MEMBRE
 -- statut : OUVERTE | TERMINEE
 -- ------------------------------------------------------------
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS department_checklist_items (
 CREATE INDEX IF NOT EXISTS idx_dept_checklist_items_checklist ON department_checklist_items(checklist_id);
 
 -- ------------------------------------------------------------
--- Inventaire / matériel du département
+-- Inventaire / materiel du departement
 -- etat : NEUF | BON | USAGE | REPARATION | HORS_SERVICE
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS department_equipment (

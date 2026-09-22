@@ -1,5 +1,5 @@
--- AiVisitNote — notes de visites générées par IA (transcription, résumé, actions).
--- Table ajoutée par migration : indispensable au démarrage en dev (ddl-auto=validate).
+-- AiVisitNote — notes de visites generees par IA (transcription, resume, actions).
+-- Table ajoutee par migration : indispensable au demarrage en dev (ddl-auto=validate).
 
 CREATE TABLE IF NOT EXISTS ai_visit_notes (
     id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),

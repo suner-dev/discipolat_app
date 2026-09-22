@@ -1,8 +1,8 @@
 -- V145__config_inheritance.sql
 -- ============================================================
--- G1.7 - §53 : Héritage de configuration (DEFAULT / INHERITED / OVERRIDDEN)
--- Chaque nœud d'organisation peut définir sa source de configuration.
--- La résolution remonte la chaîne parente ; un OVERRIDDEN stoppe la remontée.
+-- G1.7 - §53 : Heritage de configuration (DEFAULT / INHERITED / OVERRIDDEN)
+-- Chaque nœud d'organisation peut definir sa source de configuration.
+-- La resolution remonte la chaine parente ; un OVERRIDDEN stoppe la remontee.
 -- ============================================================
 
 ALTER TABLE organization_nodes
@@ -16,6 +16,6 @@ CREATE INDEX IF NOT EXISTS idx_org_node_config_source
     ON organization_nodes(tenant_id, config_source);
 
 COMMENT ON COLUMN organization_nodes.config_source IS
-    'G1.7 §53 : DEFAULT (valeurs par défaut) | INHERITED (hérite du parent) | OVERRIDDEN (redéfinit et stoppe la remontée)';
+    'G1.7 §53 : DEFAULT (valeurs par defaut) | INHERITED (herite du parent) | OVERRIDDEN (redefinit et stoppe la remontee)';
 COMMENT ON COLUMN organization_nodes.resolved_config_json IS
-    'G1.7 §53 : configuration résolue mise en cache, invalidée par l''événement config-changed';
+    'G1.7 §53 : configuration resolue mise en cache, invalidee par l''evenement config-changed';

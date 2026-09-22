@@ -1,6 +1,6 @@
 -- V71__notification_templates.sql
 -- ============================================================
--- MODÈLES DE NOTIFICATION CONFIGURABLES (centre de configuration admin)
+-- MODELES DE NOTIFICATION CONFIGURABLES (centre de configuration admin)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS notification_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -14,13 +14,13 @@ CREATE TABLE IF NOT EXISTS notification_templates (
     CONSTRAINT uk_notification_template_tenant_event UNIQUE (tenant_id, event)
 );
 
--- Canaux de diffusion d'un modèle
+-- Canaux de diffusion d'un modele
 CREATE TABLE IF NOT EXISTS notification_template_channels (
     template_id UUID NOT NULL REFERENCES notification_templates(id) ON DELETE CASCADE,
     canal VARCHAR(20) NOT NULL
 );
 
--- Rôles destinataires recommandés d'un modèle
+-- Roles destinataires recommandes d'un modele
 CREATE TABLE IF NOT EXISTS notification_template_roles (
     template_id UUID NOT NULL REFERENCES notification_templates(id) ON DELETE CASCADE,
     role VARCHAR(40) NOT NULL

@@ -1,6 +1,6 @@
 -- AiChatConversation — persistance de la messagerie IA contextuelle (copilot).
--- Table ajoutée par migration : indispensable au démarrage en dev
--- (Hibernate ddl-auto=validate) et aux requêtes en production (ddl-auto=none).
+-- Table ajoutee par migration : indispensable au demarrage en dev
+-- (Hibernate ddl-auto=validate) et aux requetes en production (ddl-auto=none).
 
 CREATE TABLE IF NOT EXISTS ai_chat_conversations (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

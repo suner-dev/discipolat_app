@@ -1,5 +1,5 @@
--- V102 : demandes de démonstration (landing page publique).
--- Leads collectés sans authentification depuis la landing : niveau plateforme,
+-- V102 : demandes de demonstration (landing page publique).
+-- Leads collectes sans authentification depuis la landing : niveau plateforme,
 -- donc PAS de tenant_id (le TenantFilter ignore les chemins /api/v1/public).
 CREATE TABLE IF NOT EXISTS demo_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

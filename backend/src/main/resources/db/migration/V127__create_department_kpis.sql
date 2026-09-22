@@ -1,5 +1,5 @@
--- DepartmentKpi — KPIs par département (taux remplissage, réalisation, satisfaction).
--- Table créée par migration pour coller à ddl-auto=validate.
+-- DepartmentKpi — KPIs par departement (taux remplissage, realisation, satisfaction).
+-- Table creee par migration pour coller a ddl-auto=validate.
 
 CREATE TABLE IF NOT EXISTS department_kpis (
     id              BIGSERIAL PRIMARY KEY,

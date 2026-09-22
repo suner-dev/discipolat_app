@@ -1,11 +1,11 @@
--- V141: Santé / Infirmerie — module G3.11
+-- V141: Sante / Infirmerie — module G3.11
 -- =====================================================================
 -- patient_records, medical_consultations, prescriptions,
 -- pharmacy_items, pharmacy_stock, pharmacy_movements,
 -- health_campaigns
 -- =====================================================================
 
--- Patient Records (dossiers médicaux confidentiels)
+-- Patient Records (dossiers medicaux confidentiels)
 CREATE TABLE IF NOT EXISTS patient_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id),
@@ -83,7 +83,7 @@ CREATE INDEX IF NOT EXISTS idx_prescription_consultation ON prescriptions(consul
 CREATE INDEX IF NOT EXISTS idx_prescription_patient ON prescriptions(patient_id);
 CREATE INDEX IF NOT EXISTS idx_prescription_tenant ON prescriptions(tenant_id);
 
--- Pharmacy Items (catalogue médicaments/materiels)
+-- Pharmacy Items (catalogue medicaments/materiels)
 CREATE TABLE IF NOT EXISTS pharmacy_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id),
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS pharmacy_stock (
     seuil_alerte INTEGER NOT NULL DEFAULT 10 CHECK (seuil_alerte >= 0),
     date_expiration DATE NOT NULL,
     prix_unitaire DECIMAL(10,2),
-    status VARCHAR(50) NOT NULL DEFAULT 'EN_STOCK' CHECK (status IN ('EN_STOCK','STOCK_FAIBLE','EXPIRANT','EXPIRÉ','ÉPUISÉ')),
+    status VARCHAR(50) NOT NULL DEFAULT 'EN_STOCK' CHECK (status IN ('EN_STOCK','STOCK_FAIBLE','EXPIRANT','EXPIRE','EPUISE')),
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -123,7 +123,7 @@ CREATE INDEX IF NOT EXISTS idx_pharm_stock_lot ON pharmacy_stock(pharmacy_item_i
 CREATE INDEX IF NOT EXISTS idx_pharm_stock_expiration ON pharmacy_stock(date_expiration) WHERE deleted = FALSE;
 CREATE INDEX IF NOT EXISTS idx_pharm_stock_tenant ON pharmacy_stock(tenant_id);
 
--- Pharmacy Movements (traçabilité complète)
+-- Pharmacy Movements (tracabilite complete)
 CREATE TABLE IF NOT EXISTS pharmacy_movements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id),
@@ -174,10 +174,10 @@ CREATE INDEX IF NOT EXISTS idx_health_camp_status ON health_campaigns(status);
 CREATE INDEX IF NOT EXISTS idx_health_camp_tenant ON health_campaigns(tenant_id);
 
 -- Comments
-COMMENT ON TABLE patient_records IS 'Dossiers patients médicaux — CONFIDENTIEL (G3.11 Santé/Infirmerie)';
-COMMENT ON TABLE medical_consultations IS 'Consultations médicales — triage, consultation, suivi (G3.11)';
-COMMENT ON TABLE prescriptions IS 'Prescriptions médicamenteuses liées aux consultations (G3.11)';
-COMMENT ON TABLE pharmacy_items IS 'Catalogue des médicaments, vaccins, matériels (G3.11)';
+COMMENT ON TABLE patient_records IS 'Dossiers patients medicaux — CONFIDENTIEL (G3.11 Sante/Infirmerie)';
+COMMENT ON TABLE medical_consultations IS 'Consultations medicales — triage, consultation, suivi (G3.11)';
+COMMENT ON TABLE prescriptions IS 'Prescriptions medicamenteuses liees aux consultations (G3.11)';
+COMMENT ON TABLE pharmacy_items IS 'Catalogue des medicaments, vaccins, materiels (G3.11)';
 COMMENT ON TABLE pharmacy_stock IS 'Stocks par lot avec dates d''expiration (G3.11)';
-COMMENT ON TABLE pharmacy_movements IS 'Traçabilité complète des mouvements de stock (G3.11)';
-COMMENT ON TABLE health_campaigns IS 'Campagnes médicales : vaccination, dépistage, sensibilisation, dons de sang (G3.11)';
+COMMENT ON TABLE pharmacy_movements IS 'Tracabilite complete des mouvements de stock (G3.11)';
+COMMENT ON TABLE health_campaigns IS 'Campagnes medicales : vaccination, depistage, sensibilisation, dons de sang (G3.11)';

@@ -1,5 +1,5 @@
--- GroupMessage — messages de groupe (départements, familles, équipes).
--- Table créée par migration pour coller à ddl-auto=validate.
+-- GroupMessage — messages de groupe (departements, familles, equipes).
+-- Table creee par migration pour coller a ddl-auto=validate.
 
 CREATE TABLE IF NOT EXISTS group_messages (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

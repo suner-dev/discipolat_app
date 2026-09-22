@@ -1,9 +1,9 @@
--- V114 — Restitution des tables d'entités JPA absentes des migrations.
+-- V114 — Restitution des tables d'entites JPA absentes des migrations.
 --
--- Audit (ddl-auto=validate en dev) : 65 entités mappées à des tables qui
--- n'avaient jamais été créées par une migration Flyway. Elles provenaient
--- d'un passé où le schéma était géré par JPA (create/update), ce qui cassait
--- tout démarrage en dev (validate) et tout déploiement frais (ddl-auto=none).
+-- Audit (ddl-auto=validate en dev) : 65 entites mappees a des tables qui
+-- n'avaient jamais ete creees par une migration Flyway. Elles provenaient
+-- d'un passe ou le schema etait gere par JPA (create/update), ce qui cassait
+-- tout demarrage en dev (validate) et tout deploiement frais (ddl-auto=none).
 -- Ces instructions sont reproductibles (IF NOT EXISTS) : sans effet sur les
 -- bases existantes, requises pour les installations propres.
 --
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS personal_objectives (
     membre_id UUID NOT NULL,
     titre VARCHAR(255) NOT NULL,
     description TEXT,
-    catégorie VARCHAR(255) NOT NULL,
+    categorie VARCHAR(255) NOT NULL,
     statut VARCHAR(255) NOT NULL,
     objectif_cible INTEGER,
     progression_actuelle INTEGER,
@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS succession_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
     candidat_id UUID NOT NULL,
-    rôle_cible VARCHAR(255) NOT NULL,
+    role_cible VARCHAR(255) NOT NULL,
     mentor_id UUID,
     readiness VARCHAR(255) NOT NULL,
     statut VARCHAR(255) NOT NULL,
@@ -389,9 +389,9 @@ CREATE TABLE IF NOT EXISTS skill_evaluations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
     membre_id UUID NOT NULL,
-    compétence VARCHAR(255) NOT NULL,
+    competence VARCHAR(255) NOT NULL,
     niveau VARCHAR(255) NOT NULL,
-    évalué_par UUID,
+    evalue_par UUID,
     commentaire TEXT,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP
@@ -447,8 +447,8 @@ CREATE TABLE IF NOT EXISTS automation_executions (
     tenant_id UUID NOT NULL,
     contexte TEXT,
     statut VARCHAR(255) NOT NULL,
-    résultat TEXT,
-    exécuté_le TIMESTAMP NOT NULL,
+    resultat TEXT,
+    execute_le TIMESTAMP NOT NULL,
     rule_id UUID
 );
 
@@ -467,10 +467,10 @@ CREATE TABLE IF NOT EXISTS automation_rules (
     action_type VARCHAR(255) NOT NULL,
     action_params TEXT,
     statut VARCHAR(255) NOT NULL,
-    total_exécutions INTEGER,
-    dernière_exécution TIMESTAMP,
-    max_exécutions INTEGER,
-    créé_par UUID NOT NULL,
+    total_executions INTEGER,
+    derniere_execution TIMESTAMP,
+    max_executions INTEGER,
+    cree_par UUID NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP
 );
@@ -527,9 +527,9 @@ CREATE TABLE IF NOT EXISTS spiritual_challenges (
     type VARCHAR(255) NOT NULL,
     statut VARCHAR(255) NOT NULL,
     created_by UUID NOT NULL,
-    assignéà UUID,
+    assignea UUID,
     objectif_jours INTEGER,
-    jours_complétés INTEGER,
+    jours_completes INTEGER,
     created_at TIMESTAMP NOT NULL,
     deadline TIMESTAMP,
     completed_at TIMESTAMP
@@ -645,9 +645,9 @@ CREATE TABLE IF NOT EXISTS family_resources (
     description TEXT,
     type VARCHAR(255) NOT NULL,
     url VARCHAR(255),
-    uploadé_par UUID,
+    uploade_par UUID,
     created_at TIMESTAMP NOT NULL,
-    téléchargements INTEGER
+    telechargements INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_family_resources_tenant ON family_resources (tenant_id);
@@ -680,11 +680,11 @@ CREATE TABLE IF NOT EXISTS broadcast_messages (
     cible VARCHAR(255) NOT NULL,
     cible_ids TEXT,
     statut VARCHAR(255) NOT NULL,
-    envoyé_par UUID NOT NULL,
-    programmé_at TIMESTAMP,
-    envoyé_at TIMESTAMP,
+    envoye_par UUID NOT NULL,
+    programme_at TIMESTAMP,
+    envoye_at TIMESTAMP,
     expires_at TIMESTAMP,
-    total_envoyé INTEGER,
+    total_envoye INTEGER,
     total_lu INTEGER,
     receipts VARCHAR(255),
     created_at TIMESTAMP NOT NULL
@@ -753,11 +753,11 @@ CREATE INDEX IF NOT EXISTS idx_team_tasks_tenant ON team_tasks (tenant_id);
 CREATE TABLE IF NOT EXISTS team_assignments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
-    équipe_id UUID NOT NULL,
-    événement_id UUID,
-    rôle VARCHAR(255) NOT NULL,
+    equipe_id UUID NOT NULL,
+    evenement_id UUID,
+    role VARCHAR(255) NOT NULL,
     membre_id UUID,
-    début TIMESTAMP NOT NULL,
+    debut TIMESTAMP NOT NULL,
     fin TIMESTAMP NOT NULL,
     statut VARCHAR(255) NOT NULL,
     notes TEXT,
@@ -809,12 +809,12 @@ CREATE TABLE IF NOT EXISTS prayer_journal_entries (
     membre_id UUID NOT NULL,
     contenu TEXT NOT NULL,
     statut VARCHAR(255) NOT NULL,
-    visibilité VARCHAR(255) NOT NULL,
-    réponse TEXT,
+    visibilite VARCHAR(255) NOT NULL,
+    reponse TEXT,
     category VARCHAR(255),
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,
-    exaucée_at TIMESTAMP
+    exaucee_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_prayer_journal_entries_tenant ON prayer_journal_entries (tenant_id);
@@ -900,14 +900,14 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     tenant_id UUID NOT NULL,
     titre VARCHAR(255) NOT NULL,
     description TEXT,
-    début TIMESTAMP NOT NULL,
+    debut TIMESTAMP NOT NULL,
     fin TIMESTAMP NOT NULL,
     lieu VARCHAR(255),
-    événement_id UUID,
+    evenement_id UUID,
     source VARCHAR(255) NOT NULL,
     statut VARCHAR(255) NOT NULL,
     external_id VARCHAR(255),
-    rappel_activé BOOLEAN,
+    rappel_active BOOLEAN,
     rappel_minutes_avant INTEGER,
     created_at TIMESTAMP NOT NULL
 );
@@ -1024,10 +1024,10 @@ CREATE TABLE IF NOT EXISTS directory_entries (
     public_profil BOOLEAN,
     photo_url VARCHAR(255),
     bio TEXT,
-    téléphone VARCHAR(255),
+    telephone VARCHAR(255),
     email VARCHAR(255),
-    département VARCHAR(255),
-    rôle VARCHAR(255),
+    departement VARCHAR(255),
+    role VARCHAR(255),
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP
 );
@@ -1041,11 +1041,11 @@ CREATE TABLE IF NOT EXISTS family_cohesion (
     tenant_id UUID NOT NULL,
     famille_id UUID NOT NULL,
     taux_participation DOUBLE PRECISION,
-    diversité_âmes INTEGER,
-    équilibre_charges INTEGER,
-    score_cohésion DOUBLE PRECISION,
+    diversite_âmes INTEGER,
+    equilibre_charges INTEGER,
+    score_cohesion DOUBLE PRECISION,
     recommandations TEXT,
-    calculé_le TIMESTAMP NOT NULL
+    calcule_le TIMESTAMP NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_family_cohesion_tenant ON family_cohesion (tenant_id);
@@ -1079,11 +1079,11 @@ CREATE TABLE IF NOT EXISTS mentor_suggestions (
     tenant_id UUID NOT NULL,
     chef_de_famille_id UUID NOT NULL,
     faiseur_id UUID NOT NULL,
-    priorité VARCHAR(255) NOT NULL,
-    catégorie VARCHAR(255) NOT NULL,
+    priorite VARCHAR(255) NOT NULL,
+    categorie VARCHAR(255) NOT NULL,
     titre TEXT NOT NULL,
     "analyse" TEXT NOT NULL,
-    action_recommandée TEXT,
+    action_recommandee TEXT,
     raisonnement TEXT,
     confiance DOUBLE PRECISION,
     statut VARCHAR(255) NOT NULL,
@@ -1119,16 +1119,16 @@ CREATE TABLE IF NOT EXISTS kpi_narratives (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
     typekpi VARCHAR(255) NOT NULL,
-    période VARCHAR(255) NOT NULL,
+    periode VARCHAR(255) NOT NULL,
     valeur_actuelle DOUBLE PRECISION,
-    valeur_précédente DOUBLE PRECISION,
+    valeur_precedente DOUBLE PRECISION,
     tendance VARCHAR(255) NOT NULL,
     variation_pct DOUBLE PRECISION,
     narration TEXT NOT NULL,
     causes TEXT,
     recommandations TEXT,
-    département_id UUID,
-    généré_le TIMESTAMP NOT NULL
+    departement_id UUID,
+    genere_le TIMESTAMP NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_kpi_narratives_tenant ON kpi_narratives (tenant_id);
@@ -1197,10 +1197,10 @@ CREATE TABLE IF NOT EXISTS pastoral_visits (
     membre_id UUID NOT NULL,
     motif VARCHAR(255) NOT NULL,
     statut VARCHAR(255) NOT NULL,
-    prévu_le TIMESTAMP NOT NULL,
-    réalisé_le TIMESTAMP,
+    prevu_le TIMESTAMP NOT NULL,
+    realise_le TIMESTAMP,
     notes TEXT,
-    auto_généré BOOLEAN,
+    auto_genere BOOLEAN,
     created_at TIMESTAMP NOT NULL
 );
 

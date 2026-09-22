@@ -1,8 +1,8 @@
 -- V41__beta_feedback_module_and_menu.sql
 -- ============================================================
--- MODULE & MENU "RETOURS TESTEURS" (bêta-testing)
+-- MODULE & MENU "RETOURS TESTEURS" (beta-testing)
 -- Le panneau de gestion des retours testeurs est configurable comme
--- tout module de la plateforme : activable/désactivable et masquable
+-- tout module de la plateforme : activable/desactivable et masquable
 -- dans les menus par l'administration.
 -- ============================================================
 

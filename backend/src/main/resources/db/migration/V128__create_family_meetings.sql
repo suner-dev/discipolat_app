@@ -1,5 +1,5 @@
--- FamilyMeeting — réunions de famille avec ordre du jour auto-génération et compte-rendu.
--- Table créée par migration pour coller à ddl-auto=validate.
+-- FamilyMeeting — reunions de famille avec ordre du jour auto-generation et compte-rendu.
+-- Table creee par migration pour coller a ddl-auto=validate.
 
 CREATE TABLE IF NOT EXISTS family_meetings (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

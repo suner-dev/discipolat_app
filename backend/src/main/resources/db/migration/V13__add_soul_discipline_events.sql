@@ -1,5 +1,5 @@
 -- V13: Ajout de la table soul_discipline_events pour le suivi comportemental (Phase 7)
--- Permet de tracker : comportement, conduite, litiges, conflits, témoignages, etc.
+-- Permet de tracker : comportement, conduite, litiges, conflits, temoignages, etc.
 
 CREATE TABLE soul_discipline_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

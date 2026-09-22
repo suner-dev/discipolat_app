@@ -1,9 +1,9 @@
 -- V54__department_member_reports.sql
 -- ============================================================
 -- DEPARTMENT MANAGEMENT SYSTEM — rapports du responsable sur un membre
--- Bilan rédigé par le responsable (comportement, assiduité,
--- capacité, progression, incident, discipline, recommandation).
--- Complète les rapports hebdomadaires des faiseurs.
+-- Bilan redige par le responsable (comportement, assiduite,
+-- capacite, progression, incident, discipline, recommandation).
+-- Complete les rapports hebdomadaires des faiseurs.
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS department_member_reports (

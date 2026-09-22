@@ -1,5 +1,5 @@
 -- V73__create_integration_config.sql
--- Table pour stocker les configurations d'intégrations externes (SMTP, stockage, JWT, rate-limiting)
+-- Table pour stocker les configurations d'integrations externes (SMTP, stockage, JWT, rate-limiting)
 
 CREATE TABLE integration_config (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

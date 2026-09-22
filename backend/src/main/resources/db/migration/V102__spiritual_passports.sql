@@ -1,6 +1,6 @@
--- V102: Passeport spirituel portable et vérifiable (PHASE 2 du prompt maître)
+-- V102: Passeport spirituel portable et verifiable (PHASE 2 du prompt maitre)
 -- Tables: spiritual_passports, spiritual_passport_entries, passport_verifications
--- Sécurité: signature RSA (clé app), QR de vérification publique, traçabilité des vérifications.
+-- Securite: signature RSA (cle app), QR de verification publique, tracabilite des verifications.
 
 CREATE TABLE IF NOT EXISTS spiritual_passports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS spiritual_passport_entries (
 CREATE INDEX idx_passport_entries_passport ON spiritual_passport_entries(passport_id);
 CREATE INDEX idx_passport_entries_tenant ON spiritual_passport_entries(tenant_id);
 
--- Journal de traçabilité des vérifications publiques (QR) — non filtré par tenant :
--- la page de vérification est publique et doit tracer toute tentative.
+-- Journal de tracabilite des verifications publiques (QR) — non filtre par tenant :
+-- la page de verification est publique et doit tracer toute tentative.
 CREATE TABLE IF NOT EXISTS passport_verifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     passport_code VARCHAR(40) NOT NULL,

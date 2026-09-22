@@ -2,18 +2,18 @@
 -- ============================================================
 -- MODULE + MENU « NOTIFICATIONS »
 -- Le centre de notifications (/notifications) devient un module
--- activable/désactivable et un menu configurable, cohérent avec
+-- activable/desactivable et un menu configurable, coherent avec
 -- le reste de la plateforme (Administration → Modules / Menus).
 -- ============================================================
 
--- Décale les modules « Outils » suivants pour insérer Notifications après Alertes
+-- Decale les modules « Outils » suivants pour inserer Notifications apres Alertes
 UPDATE platform_modules SET ordre = ordre + 1 WHERE section = 'Outils' AND ordre >= 18;
 
 INSERT INTO platform_modules (key, label, description, icon, section, ordre, enabled) VALUES
-    ('NOTIFICATIONS', 'Notifications', 'Centre de notifications (rapports, absences, transferts, prières…).', 'BellRing', 'Outils', 18, TRUE)
+    ('NOTIFICATIONS', 'Notifications', 'Centre de notifications (rapports, absences, transferts, prieres…).', 'BellRing', 'Outils', 18, TRUE)
 ON CONFLICT (key) DO NOTHING;
 
--- Décale les menus « Engagement & outils » suivants pour insérer Notifications avant Alertes
+-- Decale les menus « Engagement & outils » suivants pour inserer Notifications avant Alertes
 UPDATE menu_entries SET ordre = ordre + 1 WHERE section = 'Engagement & outils' AND ordre >= 4;
 
 INSERT INTO menu_entries (key, label, href, icon, section, ordre, roles, module_key) VALUES

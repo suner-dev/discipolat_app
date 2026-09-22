@@ -1,6 +1,6 @@
 -- V20: Advanced features — internal messaging, tags, favorites
 -- ============================================================
--- MESSAGERIE INTERNE (conversations privées entre utilisateurs)
+-- MESSAGERIE INTERNE (conversations privees entre utilisateurs)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS conversations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS soul_tags (
 CREATE INDEX IF NOT EXISTS idx_soul_tags_tag ON soul_tags(tag);
 
 -- ============================================================
--- FAVORIS (âmes marquées par un utilisateur)
+-- FAVORIS (âmes marquees par un utilisateur)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS favorites (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

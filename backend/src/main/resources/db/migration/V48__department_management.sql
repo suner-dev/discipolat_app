@@ -1,18 +1,18 @@
 -- V48__department_management.sql
 -- ============================================================
 -- DEPARTMENT MANAGEMENT SYSTEM v1
--- Transforme le module Responsable de département en un véritable
--- outil de gestion : sous-départements/équipes (hiérarchie
--- récursive), postes, affectations de membres (avec dates et
--- traçabilité), tâches et journal d'activité du département.
+-- Transforme le module Responsable de departement en un veritable
+-- outil de gestion : sous-departements/equipes (hierarchie
+-- recursive), postes, affectations de membres (avec dates et
+-- tracabilite), tâches et journal d'activite du departement.
 -- ============================================================
 
 -- ------------------------------------------------------------
--- 1. ÉQUIPES / SOUS-DÉPARTEMENTS
--- parent_id NULL = racine ; sinon sous-équipe (récursif, sans
+-- 1. EQUIPES / SOUS-DEPARTEMENTS
+-- parent_id NULL = racine ; sinon sous-equipe (recursif, sans
 -- limite de profondeur). TYPE : SOUS_DEPARTEMENT | EQUIPE_PERMANENTE
--- | EQUIPE_TEMPORAIRE (avec date_debut/date_fin pour les équipes
--- temporaires, archivage à la fin de période).
+-- | EQUIPE_TEMPORAIRE (avec date_debut/date_fin pour les equipes
+-- temporaires, archivage a la fin de periode).
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS department_teams (
     id UUID PRIMARY KEY,
@@ -35,8 +35,8 @@ CREATE INDEX IF NOT EXISTS idx_dept_teams_department ON department_teams(departm
 CREATE INDEX IF NOT EXISTS idx_dept_teams_parent ON department_teams(parent_id);
 
 -- ------------------------------------------------------------
--- 2. POSTES DU DÉPARTEMENT (technicien son, vidéaste, secrétaire…)
--- Noms entièrement configurables par le responsable.
+-- 2. POSTES DU DEPARTEMENT (technicien son, videaste, secretaire…)
+-- Noms entierement configurables par le responsable.
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS department_positions (
     id UUID PRIMARY KEY,
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS department_positions (
 CREATE INDEX IF NOT EXISTS idx_dept_positions_department ON department_positions(department_id);
 
 -- ------------------------------------------------------------
--- 3. AFFECTATIONS MEMBRE -> ÉQUIPE / POSTE
--- member_id = soul_id. Traçabilité : created_by, dates, actif.
+-- 3. AFFECTATIONS MEMBRE -> EQUIPE / POSTE
+-- member_id = soul_id. Tracabilite : created_by, dates, actif.
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS department_assignments (
     id UUID PRIMARY KEY,
@@ -75,9 +75,9 @@ CREATE INDEX IF NOT EXISTS idx_dept_assignments_member ON department_assignments
 CREATE INDEX IF NOT EXISTS idx_dept_assignments_team ON department_assignments(team_id);
 
 -- ------------------------------------------------------------
--- 4. TÂCHES DU DÉPARTEMENT
+-- 4. TÂCHES DU DEPARTEMENT
 -- Statuts : A_FAIRE | EN_COURS | BLOQUEE | TERMINEE | VALIDEE | ANNULEE
--- Priorités : BASSE | MOYENNE | HAUTE
+-- Priorites : BASSE | MOYENNE | HAUTE
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS department_tasks (
     id UUID PRIMARY KEY,
@@ -101,8 +101,8 @@ CREATE INDEX IF NOT EXISTS idx_dept_tasks_statut ON department_tasks(statut);
 CREATE INDEX IF NOT EXISTS idx_dept_tasks_assigned ON department_tasks(assigned_to);
 
 -- ------------------------------------------------------------
--- 5. JOURNAL D'ACTIVITÉ DU DÉPARTEMENT
--- Historique des mouvements : création d'équipe, affectation,
+-- 5. JOURNAL D'ACTIVITE DU DEPARTEMENT
+-- Historique des mouvements : creation d'equipe, affectation,
 -- transfert, tâche, etc. (qui a fait quoi, quand).
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS department_activity (

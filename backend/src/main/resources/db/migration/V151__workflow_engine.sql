@@ -94,7 +94,7 @@ CREATE INDEX IF NOT EXISTS idx_wf_task_instance ON workflow_task(instance_id);
 CREATE INDEX IF NOT EXISTS idx_wf_task_assignee ON workflow_task(assignee_id);
 CREATE INDEX IF NOT EXISTS idx_wf_task_status_due ON workflow_task(status, due_at);
 
-COMMENT ON TABLE workflow_definition IS 'G2.5 : processus modélisé par un espace, aucun workflow codé en dur';
-COMMENT ON COLUMN workflow_definition.space_id IS 'Workflow propre à un espace ; NULL = workflow du tenant (héritage G1.7)';
-COMMENT ON TABLE workflow_task IS 'G2.5 : tâche d''approbation assignée à un acteur, avec délai (due_at) et escalade';
-COMMENT ON COLUMN workflow_task.escalated_from_task_id IS 'Traçabilité : tâche d''origine lors d''une escalade par timeout';
+COMMENT ON TABLE workflow_definition IS 'G2.5 : processus modelise par un espace, aucun workflow code en dur';
+COMMENT ON COLUMN workflow_definition.space_id IS 'Workflow propre a un espace ; NULL = workflow du tenant (heritage G1.7)';
+COMMENT ON TABLE workflow_task IS 'G2.5 : tâche d''approbation assignee a un acteur, avec delai (due_at) et escalade';
+COMMENT ON COLUMN workflow_task.escalated_from_task_id IS 'Tracabilite : tâche d''origine lors d''une escalade par timeout';

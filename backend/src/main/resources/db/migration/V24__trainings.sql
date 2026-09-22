@@ -35,14 +35,14 @@ CREATE TABLE course_modules (
 CREATE INDEX idx_modules_course ON course_modules (course_id);
 
 -- ------------------------------------------------------------
--- Questions de quiz (rattachées à un module)
+-- Questions de quiz (rattachees a un module)
 -- ------------------------------------------------------------
 CREATE TABLE quiz_questions (
     id            UUID PRIMARY KEY,
     module_id     UUID NOT NULL REFERENCES course_modules (id) ON DELETE CASCADE,
     question      TEXT NOT NULL,
-    propositions  TEXT NOT NULL,      -- JSON array de réponses possibles
-    reponse_index INTEGER NOT NULL,   -- index de la bonne réponse
+    propositions  TEXT NOT NULL,      -- JSON array de reponses possibles
+    reponse_index INTEGER NOT NULL,   -- index de la bonne reponse
     ordre         INTEGER NOT NULL DEFAULT 0
 );
 
@@ -67,7 +67,7 @@ CREATE INDEX idx_enrollments_user ON course_enrollments (user_id);
 CREATE INDEX idx_enrollments_course ON course_enrollments (course_id);
 
 -- ------------------------------------------------------------
--- Modules complétés par un apprenant (progression individuelle)
+-- Modules completes par un apprenant (progression individuelle)
 -- ------------------------------------------------------------
 CREATE TABLE module_completions (
     id            UUID PRIMARY KEY,
@@ -80,7 +80,7 @@ CREATE TABLE module_completions (
 CREATE INDEX idx_completions_enrollment ON module_completions (enrollment_id);
 
 -- ------------------------------------------------------------
--- Certificats délivrés
+-- Certificats delivres
 -- ------------------------------------------------------------
 CREATE TABLE certificates (
     id            UUID PRIMARY KEY,
@@ -95,10 +95,10 @@ CREATE TABLE certificates (
 CREATE INDEX idx_certificates_user ON certificates (user_id);
 
 -- ------------------------------------------------------------
--- Cours de référence (données de base)
+-- Cours de reference (donnees de base)
 -- ------------------------------------------------------------
 INSERT INTO courses (id, titre, description, categorie, niveau, duree_minutes) VALUES
   (gen_random_uuid(), 'Fondements du Discipolat', 'Les bases bibliques et pratiques du discipolat : faire des disciples qui en font d''autres.', 'DISCIPOLAT', 'DEBUTANT', 120),
-  (gen_random_uuid(), 'Vie de Prière', 'Développer une vie de prière régulière et structurée au quotidien.', 'SPIRITUEL', 'DEBUTANT', 90),
-  (gen_random_uuid(), 'Conduire une Visite Pastorale', 'Savoir préparer, conduire et rendre compte d''une visite de suivi.', 'MINISTERE', 'INTERMEDIAIRE', 75),
-  (gen_random_uuid(), 'Former des Leaders', 'Identifier, équiper et déléguer pour multiplier les leaders.', 'LEADERSHIP', 'AVANCE', 150);
+  (gen_random_uuid(), 'Vie de Priere', 'Developper une vie de priere reguliere et structuree au quotidien.', 'SPIRITUEL', 'DEBUTANT', 90),
+  (gen_random_uuid(), 'Conduire une Visite Pastorale', 'Savoir preparer, conduire et rendre compte d''une visite de suivi.', 'MINISTERE', 'INTERMEDIAIRE', 75),
+  (gen_random_uuid(), 'Former des Leaders', 'Identifier, equiper et deleguer pour multiplier les leaders.', 'LEADERSHIP', 'AVANCE', 150);

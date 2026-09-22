@@ -1,10 +1,10 @@
 -- V19__add_member_presences_and_requests.sql
--- Espace Membre — Phase 2 : présences hebdomadaires + suggestions / rendez-vous / signalements
--- Les données saisies par le membre sont visibles par son chef de famille,
--- son responsable de département et le pasteur (scoping côté service).
+-- Espace Membre — Phase 2 : presences hebdomadaires + suggestions / rendez-vous / signalements
+-- Les donnees saisies par le membre sont visibles par son chef de famille,
+-- son responsable de departement et le pasteur (scoping cote service).
 
 -- ============================================================
--- MEMBER PRESENCES — saisie de présence hebdomadaire par le membre
+-- MEMBER PRESENCES — saisie de presence hebdomadaire par le membre
 -- ============================================================
 CREATE TABLE IF NOT EXISTS member_presences (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -24,8 +24,8 @@ CREATE INDEX IF NOT EXISTS idx_member_presences_semaine ON member_presences(sema
 
 -- ============================================================
 -- MEMBER REQUESTS — suggestions, rendez-vous, signalements
--- cible : à qui la demande est adressée (visible par)
--- department_id / family_id : portée de la demande (département / famille du membre)
+-- cible : a qui la demande est adressee (visible par)
+-- department_id / family_id : portee de la demande (departement / famille du membre)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS member_requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

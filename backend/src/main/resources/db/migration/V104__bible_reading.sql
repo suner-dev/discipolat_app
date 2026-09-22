@@ -1,5 +1,5 @@
 -- Bible Reading Plans and Entries
--- P1 #49/#60 — Plan de lecture biblique partagé
+-- P1 #49/#60 — Plan de lecture biblique partage
 
 CREATE TABLE IF NOT EXISTS bible_reading_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

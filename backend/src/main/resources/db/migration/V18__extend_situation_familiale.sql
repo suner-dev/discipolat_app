@@ -1,5 +1,5 @@
 -- V18__extend_situation_familiale.sql
--- Espace Membre : ajout de 'PARENT_CELIBATAIRE' dans les valeurs autorisées
+-- Espace Membre : ajout de 'PARENT_CELIBATAIRE' dans les valeurs autorisees
 -- de situation_familiale (utilisateurs et âmes).
 
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_situation_familiale_check;

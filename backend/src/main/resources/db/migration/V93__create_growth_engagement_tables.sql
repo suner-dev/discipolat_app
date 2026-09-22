@@ -1,8 +1,8 @@
--- V93: Nouvelles fonctionnalités proposées dans les audits
--- Quest Gamification (XP), Tontine numérique, Mobile Money,
+-- V93: Nouvelles fonctionnalites proposees dans les audits
+-- Quest Gamification (XP), Tontine numerique, Mobile Money,
 -- Webhooks & API publique, Rapports vocaux IA, Secours humanitaire
 
--- ============ Gamification "Discipolat Quest" (XP / Niveaux / Quêtes) ============
+-- ============ Gamification "Discipolat Quest" (XP / Niveaux / Quetes) ============
 CREATE TABLE IF NOT EXISTS xp_ledger (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
@@ -17,7 +17,7 @@ CREATE INDEX idx_xp_ledger_tenant ON xp_ledger(tenant_id);
 CREATE INDEX idx_xp_ledger_user ON xp_ledger(user_id);
 CREATE INDEX idx_xp_ledger_action ON xp_ledger(action);
 
--- ============ Tontine Numérique (confiance & vœux) ============
+-- ============ Tontine Numerique (confiance & vœux) ============
 CREATE TABLE IF NOT EXISTS tontine_groups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS tontine_contributions (
 CREATE INDEX idx_tontine_contributions_group ON tontine_contributions(group_id);
 CREATE INDEX idx_tontine_contributions_member ON tontine_contributions(member_id);
 
--- ============ Passerelle Mobile Money (dîmes & offrandes 2.0) ============
+-- ============ Passerelle Mobile Money (dimes & offrandes 2.0) ============
 CREATE TABLE IF NOT EXISTS payment_intents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
@@ -87,7 +87,7 @@ CREATE INDEX idx_payment_intents_tenant ON payment_intents(tenant_id);
 CREATE INDEX idx_payment_intents_status ON payment_intents(status);
 CREATE INDEX idx_payment_intents_operator ON payment_intents(operator);
 
--- ============ Webhooks & API publique (connecteur écosystème) ============
+-- ============ Webhooks & API publique (connecteur ecosysteme) ============
 CREATE TABLE IF NOT EXISTS webhook_registrations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,

@@ -1,9 +1,9 @@
 -- V29__family_risk_level.sql
--- Système "Famille à risque" :
--- Le pasteur peut définir un niveau : NORMAL / SOUS_SURVEILLANCE / A_RISQUE
--- Le système calcule automatiquement un indice de risque (taux de présence,
+-- Systeme "Famille a risque" :
+-- Le pasteur peut definir un niveau : NORMAL / SOUS_SURVEILLANCE / A_RISQUE
+-- Le systeme calcule automatiquement un indice de risque (taux de presence,
 -- âmes perdues, croissance, stagnation, absences, litiges, retards).
--- Un historique complet des changements de niveau est conservé.
+-- Un historique complet des changements de niveau est conserve.
 
 -- ============================================================
 -- 1. FAMILIES : Ajouter la colonne niveau_risque

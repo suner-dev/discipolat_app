@@ -1,7 +1,7 @@
--- V95 : Pont WhatsApp Business + opt-in diffusion + préférences utilisateur
--- + tables manquantes des modules compliance/currency/onboarding (fix démarrage)
+-- V95 : Pont WhatsApp Business + opt-in diffusion + preferences utilisateur
+-- + tables manquantes des modules compliance/currency/onboarding (fix demarrage)
 
--- ── Configuration WhatsApp par église ─────────────────────────────────
+-- ── Configuration WhatsApp par eglise ─────────────────────────────────
 CREATE TABLE IF NOT EXISTS whatsapp_configs (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS currency_configs (
 );
 CREATE INDEX IF NOT EXISTS idx_currency_configs_tenant ON currency_configs(tenant_id);
 
--- ── Étapes wizard d'onboarding (feature #10 — table manquante) ────────
+-- ── Etapes wizard d'onboarding (feature #10 — table manquante) ────────
 CREATE TABLE IF NOT EXISTS onboarding_wizard_steps (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS integration_configs (
 );
 CREATE INDEX IF NOT EXISTS idx_integration_configs_tenant ON integration_configs(tenant_id);
 
--- ── Chaîne de hachage du journal d'audit (feature #4) ─────────────────
+-- ── Chaine de hachage du journal d'audit (feature #4) ─────────────────
 CREATE TABLE IF NOT EXISTS audit_hash_chain (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL,
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS audit_hash_chain (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_hash_chain_tenant ON audit_hash_chain(tenant_id, created_at);
 
--- ── Politiques de rétention RGPD (feature #4) ────────────────────────
+-- ── Politiques de retention RGPD (feature #4) ────────────────────────
 CREATE TABLE IF NOT EXISTS retention_policies (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL,

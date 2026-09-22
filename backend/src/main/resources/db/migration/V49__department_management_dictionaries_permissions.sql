@@ -1,27 +1,27 @@
 -- V49__department_management_dictionaries_permissions.sql
 -- ============================================================
 -- DEPARTMENT MANAGEMENT SYSTEM — configuration
--- Dictionnaires configurables (libellés des statuts de tâches,
--- priorités, types d'équipes, rôles d'affectation) + entrées du
+-- Dictionnaires configurables (libelles des statuts de tâches,
+-- priorites, types d'equipes, roles d'affectation) + entrees du
 -- catalogue de permissions pour les actions de gestion.
 -- Miroirs des enums backend : l'administrateur personnalise les
--- libellés affichés sans modifier le code.
+-- libelles affiches sans modifier le code.
 -- ============================================================
 
 -- ------------------------------------------------------------
 -- 1. Statuts de tâches (enum backend DepartmentTask.TaskStatus)
 -- ------------------------------------------------------------
 INSERT INTO dictionary_entries (dict_key, code, label, color, ordre, is_default) VALUES
-    ('DEPARTMENT_TASK_STATUT', 'A_FAIRE', 'À faire', '#94a3b8', 1, TRUE),
+    ('DEPARTMENT_TASK_STATUT', 'A_FAIRE', 'A faire', '#94a3b8', 1, TRUE),
     ('DEPARTMENT_TASK_STATUT', 'EN_COURS', 'En cours', '#3b82f6', 2, TRUE),
-    ('DEPARTMENT_TASK_STATUT', 'BLOQUEE', 'Bloquée', '#ef4444', 3, TRUE),
-    ('DEPARTMENT_TASK_STATUT', 'TERMINEE', 'Terminée', '#22c55e', 4, TRUE),
-    ('DEPARTMENT_TASK_STATUT', 'VALIDEE', 'Validée', '#10b981', 5, TRUE),
-    ('DEPARTMENT_TASK_STATUT', 'ANNULEE', 'Annulée', '#6b7280', 6, TRUE)
+    ('DEPARTMENT_TASK_STATUT', 'BLOQUEE', 'Bloquee', '#ef4444', 3, TRUE),
+    ('DEPARTMENT_TASK_STATUT', 'TERMINEE', 'Terminee', '#22c55e', 4, TRUE),
+    ('DEPARTMENT_TASK_STATUT', 'VALIDEE', 'Validee', '#10b981', 5, TRUE),
+    ('DEPARTMENT_TASK_STATUT', 'ANNULEE', 'Annulee', '#6b7280', 6, TRUE)
 ON CONFLICT (dict_key, code) DO NOTHING;
 
 -- ------------------------------------------------------------
--- 2. Priorités de tâches (enum backend DepartmentTask.TaskPriority)
+-- 2. Priorites de tâches (enum backend DepartmentTask.TaskPriority)
 -- ------------------------------------------------------------
 INSERT INTO dictionary_entries (dict_key, code, label, color, ordre, is_default) VALUES
     ('DEPARTMENT_TASK_PRIORITE', 'BASSE', 'Basse', '#94a3b8', 1, TRUE),
@@ -30,16 +30,16 @@ INSERT INTO dictionary_entries (dict_key, code, label, color, ordre, is_default)
 ON CONFLICT (dict_key, code) DO NOTHING;
 
 -- ------------------------------------------------------------
--- 3. Types d'équipes / sous-départements (enum DepartmentTeam.TeamType)
+-- 3. Types d'equipes / sous-departements (enum DepartmentTeam.TeamType)
 -- ------------------------------------------------------------
 INSERT INTO dictionary_entries (dict_key, code, label, color, ordre, is_default) VALUES
-    ('DEPARTMENT_TEAM_TYPE', 'SOUS_DEPARTEMENT', 'Sous-département', '#06b6d4', 1, TRUE),
-    ('DEPARTMENT_TEAM_TYPE', 'EQUIPE_PERMANENTE', 'Équipe permanente', '#3b82f6', 2, TRUE),
-    ('DEPARTMENT_TEAM_TYPE', 'EQUIPE_TEMPORAIRE', 'Équipe temporaire', '#a855f7', 3, TRUE)
+    ('DEPARTMENT_TEAM_TYPE', 'SOUS_DEPARTEMENT', 'Sous-departement', '#06b6d4', 1, TRUE),
+    ('DEPARTMENT_TEAM_TYPE', 'EQUIPE_PERMANENTE', 'Equipe permanente', '#3b82f6', 2, TRUE),
+    ('DEPARTMENT_TEAM_TYPE', 'EQUIPE_TEMPORAIRE', 'Equipe temporaire', '#a855f7', 3, TRUE)
 ON CONFLICT (dict_key, code) DO NOTHING;
 
 -- ------------------------------------------------------------
--- 4. Rôles d'affectation (enum DepartmentAssignment.AssignmentRole)
+-- 4. Roles d'affectation (enum DepartmentAssignment.AssignmentRole)
 -- ------------------------------------------------------------
 INSERT INTO dictionary_entries (dict_key, code, label, color, ordre, is_default) VALUES
     ('DEPARTMENT_ASSIGNMENT_ROLE', 'CHEF', 'Chef', '#f59e0b', 1, TRUE),
@@ -49,18 +49,18 @@ ON CONFLICT (dict_key, code) DO NOTHING;
 
 -- ------------------------------------------------------------
 -- 5. Catalogue de permissions du Department Management System
--- (documentation + matrice admin ; l'exécution reste fondée sur
--- le rôle actif et le scoping par département)
+-- (documentation + matrice admin ; l'execution reste fondee sur
+-- le role actif et le scoping par departement)
 -- ------------------------------------------------------------
 INSERT INTO permission_catalog (key, label, module, description, ordre) VALUES
-    ('DEPARTMENT_TEAMS_VIEW', 'Consulter les équipes / sous-départements', 'Départements', 'Consulter les équipes / sous-départements du département.', 18),
-    ('DEPARTMENT_TEAMS_MANAGE', 'Gérer les équipes', 'Départements', 'Créer, modifier et archiver les équipes / sous-départements.', 19),
-    ('DEPARTMENT_POSITIONS_VIEW', 'Consulter les postes', 'Départements', 'Consulter les postes du département.', 20),
-    ('DEPARTMENT_POSITIONS_MANAGE', 'Gérer les postes', 'Départements', 'Créer, modifier et archiver les postes du département.', 21),
-    ('DEPARTMENT_ASSIGNMENTS_VIEW', 'Consulter les affectations', 'Départements', 'Consulter les affectations des membres.', 22),
-    ('DEPARTMENT_ASSIGNMENTS_MANAGE', 'Gérer les affectations', 'Départements', 'Affecter ou retirer les membres des équipes / postes.', 23),
-    ('DEPARTMENT_TASKS_VIEW', 'Consulter les tâches', 'Départements', 'Consulter les tâches du département.', 24),
-    ('DEPARTMENT_TASKS_MANAGE', 'Gérer les tâches', 'Départements', 'Créer, modifier et clôturer les tâches du département.', 25),
-    ('DEPARTMENT_MEMBERS_MANAGE', 'Gérer les membres', 'Départements', 'Ajouter, créer ou retirer les membres du département.', 26),
-    ('DEPARTMENT_ACTIVITY_VIEW', 'Consulter le journal d''activité', 'Départements', 'Consulter le journal d''activité du département.', 27)
+    ('DEPARTMENT_TEAMS_VIEW', 'Consulter les equipes / sous-departements', 'Departements', 'Consulter les equipes / sous-departements du departement.', 18),
+    ('DEPARTMENT_TEAMS_MANAGE', 'Gerer les equipes', 'Departements', 'Creer, modifier et archiver les equipes / sous-departements.', 19),
+    ('DEPARTMENT_POSITIONS_VIEW', 'Consulter les postes', 'Departements', 'Consulter les postes du departement.', 20),
+    ('DEPARTMENT_POSITIONS_MANAGE', 'Gerer les postes', 'Departements', 'Creer, modifier et archiver les postes du departement.', 21),
+    ('DEPARTMENT_ASSIGNMENTS_VIEW', 'Consulter les affectations', 'Departements', 'Consulter les affectations des membres.', 22),
+    ('DEPARTMENT_ASSIGNMENTS_MANAGE', 'Gerer les affectations', 'Departements', 'Affecter ou retirer les membres des equipes / postes.', 23),
+    ('DEPARTMENT_TASKS_VIEW', 'Consulter les tâches', 'Departements', 'Consulter les tâches du departement.', 24),
+    ('DEPARTMENT_TASKS_MANAGE', 'Gerer les tâches', 'Departements', 'Creer, modifier et cloturer les tâches du departement.', 25),
+    ('DEPARTMENT_MEMBERS_MANAGE', 'Gerer les membres', 'Departements', 'Ajouter, creer ou retirer les membres du departement.', 26),
+    ('DEPARTMENT_ACTIVITY_VIEW', 'Consulter le journal d''activite', 'Departements', 'Consulter le journal d''activite du departement.', 27)
 ON CONFLICT (key) DO NOTHING;

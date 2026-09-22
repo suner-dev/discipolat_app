@@ -1,5 +1,5 @@
--- V94 : gabarits biométriques faciaux (pointage par reconnaissance faciale)
--- Aucune image stockée — uniquement l'empreinte perceptuelle non réversible.
+-- V94 : gabarits biometriques faciaux (pointage par reconnaissance faciale)
+-- Aucune image stockee — uniquement l'empreinte perceptuelle non reversible.
 CREATE TABLE IF NOT EXISTS face_templates (
     id              UUID PRIMARY KEY,
     tenant_id       UUID         NOT NULL,

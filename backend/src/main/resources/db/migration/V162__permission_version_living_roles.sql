@@ -1,7 +1,7 @@
 -- V162__permission_version_living_roles.sql
 -- ============================================================
--- G4.4 — Rôles vivantes : versionnage des permissions
--- Table de cache versionné pour propagation temps réel (web + mobile)
+-- G4.4 — Roles vivantes : versionnage des permissions
+-- Table de cache versionne pour propagation temps reel (web + mobile)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS permission_version (
@@ -18,4 +18,4 @@ CREATE TABLE IF NOT EXISTS permission_version (
 CREATE INDEX IF NOT EXISTS idx_pv_tenant_user ON permission_version(tenant_id, user_id);
 CREATE INDEX IF NOT EXISTS idx_pv_updated_at ON permission_version(updated_at);
 
-COMMENT ON TABLE permission_version IS 'G4.4 : cache versionné des permissions utilisateur pour propagation temps réel';
+COMMENT ON TABLE permission_version IS 'G4.4 : cache versionne des permissions utilisateur pour propagation temps reel';

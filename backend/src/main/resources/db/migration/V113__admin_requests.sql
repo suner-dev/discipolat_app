@@ -1,5 +1,5 @@
--- AdminRequest — demandes administratives (baptême, dédicace, accueil nouveau, …).
--- (P1 #57) Table absente des migrations : le schéma était auparavant créé via JPA
+-- AdminRequest — demandes administratives (bapteme, dedicace, accueil nouveau, …).
+-- (P1 #57) Table absente des migrations : le schema etait auparavant cree via JPA
 -- (ddl-auto=create en dev), ce qui cassait ddl-auto=validate/none en prod.
 
 CREATE TABLE IF NOT EXISTS admin_requests (

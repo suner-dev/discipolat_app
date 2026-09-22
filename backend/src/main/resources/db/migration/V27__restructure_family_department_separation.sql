@@ -1,9 +1,9 @@
 -- V27__restructure_family_department_separation.sql
 -- MISSION RESTRUCTURATION MAJEURE :
--- Séparation définitive Famille / Département
+-- Separation definitive Famille / Departement
 -- Ajout chef adjoint, user_id sur families
 -- Table de liaison soul_departments (ManyToMany)
--- Historique des changements de rôle, département, famille
+-- Historique des changements de role, departement, famille
 
 -- ============================================================
 -- 1. FAMILIES : Supprimer la liaison departement_id
@@ -42,11 +42,11 @@ CREATE INDEX IF NOT EXISTS idx_families_user ON families(user_id);
 ALTER TABLE families ADD COLUMN IF NOT EXISTS chef_adjoint_id UUID REFERENCES users(id);
 CREATE INDEX IF NOT EXISTS idx_families_chef_adjoint ON families(chef_adjoint_id);
 
--- Mettre à jour user_id avec chef_famille_id pour les familles existantes
+-- Mettre a jour user_id avec chef_famille_id pour les familles existantes
 UPDATE families SET user_id = chef_famille_id WHERE user_id IS NULL AND deleted = false;
 
 -- ============================================================
--- 3. SOUL_DEPARTMENTS : Table de liaison ManyToMany âme-département
+-- 3. SOUL_DEPARTMENTS : Table de liaison ManyToMany âme-departement
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS soul_departments (
@@ -64,7 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_soul_departments_soul ON soul_departments(soul_id
 CREATE INDEX IF NOT EXISTS idx_soul_departments_dept ON soul_departments(department_id);
 
 -- ============================================================
--- 4. ROLE_HISTORY : Historique des changements de rôle
+-- 4. ROLE_HISTORY : Historique des changements de role
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS role_history (
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS role_history (
 CREATE INDEX IF NOT EXISTS idx_role_history_user ON role_history(user_id);
 
 -- ============================================================
--- 5. DEPARTMENT_HISTORY : Historique des changements de département
+-- 5. DEPARTMENT_HISTORY : Historique des changements de departement
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS department_history (
@@ -119,8 +119,8 @@ CREATE TABLE IF NOT EXISTS family_history (
 CREATE INDEX IF NOT EXISTS idx_family_history_soul ON family_history(soul_id);
 
 -- ============================================================
--- 7. USER_DEPARTMENTS : Table de liaison utilisateur-département
---    (pour les responsables qui gèrent plusieurs départements)
+-- 7. USER_DEPARTMENTS : Table de liaison utilisateur-departement
+--    (pour les responsables qui gerent plusieurs departements)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS user_departments (
@@ -137,11 +137,11 @@ CREATE INDEX IF NOT EXISTS idx_user_departments_user ON user_departments(user_id
 CREATE INDEX IF NOT EXISTS idx_user_departments_dept ON user_departments(department_id);
 
 -- ============================================================
--- 8. SEED : Migrer les données existantes
+-- 8. SEED : Migrer les donnees existantes
 -- ============================================================
 
--- Pour chaque âme, créer une entrée soul_departments basée sur son département actuel
--- (via la famille qui appartenait à un département)
+-- Pour chaque âme, creer une entree soul_departments basee sur son departement actuel
+-- (via la famille qui appartenait a un departement)
 INSERT INTO soul_departments (soul_id, department_id, date_affectation, actif)
 SELECT DISTINCT s.id, d.id, s.date_integration, true
 FROM souls s
@@ -154,7 +154,7 @@ WHERE s.deleted = false
   )
 ON CONFLICT (soul_id, department_id) DO NOTHING;
 
--- Pour les responsables, créer user_departments
+-- Pour les responsables, creer user_departments
 INSERT INTO user_departments (user_id, department_id, role_dans_dept)
 SELECT d.responsable_id, d.id, 'RESPONSABLE'
 FROM departments d
@@ -168,9 +168,9 @@ ON CONFLICT (user_id, department_id) DO NOTHING;
 -- 9. COMMENTAIRES
 -- ============================================================
 
-COMMENT ON TABLE soul_departments IS 'Table de liaison ManyToMany âme ↔ département. Un membre peut appartenir à plusieurs départements.';
-COMMENT ON TABLE user_departments IS 'Table de liaison utilisateur ↔ département pour les responsables multi-départements.';
-COMMENT ON TABLE role_history IS 'Historique complet des changements de rôle de chaque utilisateur.';
-COMMENT ON TABLE department_history IS 'Historique des transferts entre départements.';
+COMMENT ON TABLE soul_departments IS 'Table de liaison ManyToMany âme ↔ departement. Un membre peut appartenir a plusieurs departements.';
+COMMENT ON TABLE user_departments IS 'Table de liaison utilisateur ↔ departement pour les responsables multi-departements.';
+COMMENT ON TABLE role_history IS 'Historique complet des changements de role de chaque utilisateur.';
+COMMENT ON TABLE department_history IS 'Historique des transferts entre departements.';
 COMMENT ON TABLE family_history IS 'Historique des changements de famille.';
-COMMENT ON TABLE family_department_history IS 'Historique des anciennes liaisons famille-département (supprimées par V27).';
+COMMENT ON TABLE family_department_history IS 'Historique des anciennes liaisons famille-departement (supprimees par V27).';

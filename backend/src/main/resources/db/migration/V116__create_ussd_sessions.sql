@@ -1,5 +1,5 @@
 -- USSD Sessions — persistence des sessions USSD Africa's Talking
--- Chaque interaction USSD entrante crée une session pour la continuité multi-écrans
+-- Chaque interaction USSD entrante cree une session pour la continuite multi-ecrans
 
 CREATE TABLE IF NOT EXISTS ussd_sessions (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS ussd_sessions (
     last_activity   TIMESTAMP
 );
 
--- Index pour recherche par session_id (unique tant que non terminée)
+-- Index pour recherche par session_id (unique tant que non terminee)
 CREATE INDEX IF NOT EXISTS idx_ussd_session_id ON ussd_sessions (session_id);
 CREATE INDEX IF NOT EXISTS idx_ussd_phone ON ussd_sessions (phone_number);
 CREATE INDEX IF NOT EXISTS idx_ussd_tenant ON ussd_sessions (tenant_id);

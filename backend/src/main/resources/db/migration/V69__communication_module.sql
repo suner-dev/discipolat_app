@@ -1,7 +1,7 @@
--- V69 : Outil métier COMMUNICATION (module activable)
+-- V69 : Outil metier COMMUNICATION (module activable)
 -- ============================================================
--- Annonces et diffusion ciblées (TOUS / rôle / famille /
--- département). La publication déclenche des notifications IN_APP
+-- Annonces et diffusion ciblees (TOUS / role / famille /
+-- departement). La publication declenche des notifications IN_APP
 -- vers les destinataires. Module activable (ModuleGateFilter :
 -- /api/v1/communications → COMMUNICATION) + menu configurable.
 -- ============================================================
@@ -26,13 +26,13 @@ CREATE TABLE IF NOT EXISTS communications (
 CREATE INDEX IF NOT EXISTS idx_communications_statut ON communications(statut);
 CREATE INDEX IF NOT EXISTS idx_communications_date ON communications(date_publication);
 
-COMMENT ON TABLE communications IS 'Annonces de l''église avec cible de diffusion (tous, rôle, famille, département).';
+COMMENT ON TABLE communications IS 'Annonces de l''eglise avec cible de diffusion (tous, role, famille, departement).';
 
--- Module activable + menu (tous les rôles lisent les annonces publiées ;
--- la gestion est réservée ADMIN/PASTEUR côté page).
+-- Module activable + menu (tous les roles lisent les annonces publiees ;
+-- la gestion est reservee ADMIN/PASTEUR cote page).
 INSERT INTO platform_modules (key, label, description, icon, section, enabled, ordre)
 VALUES ('COMMUNICATION', 'Communication',
-        'Annonces et diffusion ciblées vers les membres de l''église',
+        'Annonces et diffusion ciblees vers les membres de l''eglise',
         'Megaphone', 'Engagement & outils', TRUE, 23)
 ON CONFLICT (key) DO NOTHING;
 

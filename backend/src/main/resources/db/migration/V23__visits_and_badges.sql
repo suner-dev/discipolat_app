@@ -37,7 +37,7 @@ CREATE TABLE badges (
     icone         VARCHAR(30),
     niveau        VARCHAR(20) NOT NULL DEFAULT 'BRONZE',  -- BRONZE | ARGENT | OR | DIAMANT
     critere       VARCHAR(20) NOT NULL,           -- VISITES | PRESENCE | EVANGELISATION | INTERACTIONS | FIDELITE
-    seuil         INTEGER NOT NULL,               -- valeur déclenchant le badge
+    seuil         INTEGER NOT NULL,               -- valeur declenchant le badge
     actif         BOOLEAN NOT NULL DEFAULT TRUE,
     created_at    TIMESTAMP NOT NULL DEFAULT now(),
     CONSTRAINT ck_badge_niveau CHECK (niveau IN ('BRONZE', 'ARGENT', 'OR', 'DIAMANT')),
@@ -56,14 +56,14 @@ CREATE TABLE user_badges (
 CREATE INDEX idx_user_badges_user ON user_badges (user_id);
 
 -- ------------------------------------------------------------
--- Badges de base (données de référence)
+-- Badges de base (donnees de reference)
 -- ------------------------------------------------------------
 INSERT INTO badges (id, code, nom, description, icone, niveau, critere, seuil) VALUES
-  (gen_random_uuid(), 'VISITE_1',      'Première visite',          'Effectuer sa première visite pastorale',       'DoorOpen',   'BRONZE',  'VISITES', 1),
-  (gen_random_uuid(), 'VISITE_5',      'Visiteur régulier',        'Réaliser 5 visites de suivi',                  'Footprints', 'ARGENT',  'VISITES', 5),
-  (gen_random_uuid(), 'VISITE_10',     'Ambassadeur',              'Réaliser 10 visites de suivi',                 'Award',      'OR',      'VISITES', 10),
+  (gen_random_uuid(), 'VISITE_1',      'Premiere visite',          'Effectuer sa premiere visite pastorale',       'DoorOpen',   'BRONZE',  'VISITES', 1),
+  (gen_random_uuid(), 'VISITE_5',      'Visiteur regulier',        'Realiser 5 visites de suivi',                  'Footprints', 'ARGENT',  'VISITES', 5),
+  (gen_random_uuid(), 'VISITE_10',     'Ambassadeur',              'Realiser 10 visites de suivi',                 'Award',      'OR',      'VISITES', 10),
   (gen_random_uuid(), 'CONTACT_20',    'Bâtisseur de relations',   'Enregistrer 20 interactions de suivi',         'Handshake',  'BRONZE',  'INTERACTIONS', 20),
-  (gen_random_uuid(), 'CONTACT_50',    'Pasteur de proximité',     'Enregistrer 50 interactions de suivi',         'Heart',      'DIAMANT', 'INTERACTIONS', 50),
-  (gen_random_uuid(), 'EVANGELISME_1','Graine semée',              'Faire passer une âme à l''étape Baptême',      'Sprout',     'ARGENT',  'EVANGELISATION', 1),
-  (gen_random_uuid(), 'EVANGELISME_3','Moissonneur',               '3 âmes baptisées dans le pipeline',            'Church',     'OR',      'EVANGELISATION', 3),
-  (gen_random_uuid(), 'FIDELITE_1',   'Serviteur fidèle',          '1 an de service continu',                      'Crown',      'DIAMANT', 'FIDELITE', 1);
+  (gen_random_uuid(), 'CONTACT_50',    'Pasteur de proximite',     'Enregistrer 50 interactions de suivi',         'Heart',      'DIAMANT', 'INTERACTIONS', 50),
+  (gen_random_uuid(), 'EVANGELISME_1','Graine semee',              'Faire passer une âme a l''etape Bapteme',      'Sprout',     'ARGENT',  'EVANGELISATION', 1),
+  (gen_random_uuid(), 'EVANGELISME_3','Moissonneur',               '3 âmes baptisees dans le pipeline',            'Church',     'OR',      'EVANGELISATION', 3),
+  (gen_random_uuid(), 'FIDELITE_1',   'Serviteur fidele',          '1 an de service continu',                      'Crown',      'DIAMANT', 'FIDELITE', 1);

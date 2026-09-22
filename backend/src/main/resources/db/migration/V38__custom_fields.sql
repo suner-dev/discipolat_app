@@ -2,8 +2,8 @@
 -- ============================================================
 -- CHAMPS PERSONNALISABLES PAR LES ADMINISTRATEURS
 -- Sans modifier le code, l'administrateur ajoute des champs aux
--- entités (âme, utilisateur, département, famille) avec un type,
--- une obligation, des rôles visibles/éditables et les valeurs stockées.
+-- entites (âme, utilisateur, departement, famille) avec un type,
+-- une obligation, des roles visibles/editables et les valeurs stockees.
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS custom_field_definitions (
@@ -43,5 +43,5 @@ CREATE TABLE IF NOT EXISTS custom_field_values (
 CREATE INDEX IF NOT EXISTS idx_cfv_entity ON custom_field_values(entite_type, entite_id);
 CREATE INDEX IF NOT EXISTS idx_cfv_field ON custom_field_values(field_id);
 
-COMMENT ON TABLE custom_field_definitions IS 'Définitions de champs personnalisés configurés par l''administrateur pour chaque entité métier.';
-COMMENT ON TABLE custom_field_values IS 'Valeurs des champs personnalisés pour chaque entité.';
+COMMENT ON TABLE custom_field_definitions IS 'Definitions de champs personnalises configures par l''administrateur pour chaque entite metier.';
+COMMENT ON TABLE custom_field_values IS 'Valeurs des champs personnalises pour chaque entite.';

@@ -1,8 +1,8 @@
--- V100: Discipolat Network — module réseau inter-églises
+-- V100: Discipolat Network — module reseau inter-eglises
 -- Tables: network_resources, network_events, network_directory
--- Règle: aucune donnée privée exposée sans autorisation explicite
+-- Regle: aucune donnee privee exposee sans autorisation explicite
 
--- ======================== RESSOURCES PARTAGÉES ========================
+-- ======================== RESSOURCES PARTAGEES ========================
 CREATE TABLE IF NOT EXISTS network_resources (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
@@ -25,7 +25,7 @@ CREATE INDEX idx_network_resources_tenant ON network_resources(tenant_id);
 CREATE INDEX idx_network_resources_category ON network_resources(category);
 CREATE INDEX idx_network_resources_active ON network_resources(is_active) WHERE is_active = TRUE;
 
--- ======================== ÉVÉNEMENTS INTER-ÉGLISES ========================
+-- ======================== EVENEMENTS INTER-EGLISES ========================
 CREATE TABLE IF NOT EXISTS network_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
@@ -52,7 +52,7 @@ CREATE INDEX idx_network_events_tenant ON network_events(tenant_id);
 CREATE INDEX idx_network_events_starts ON network_events(starts_at);
 CREATE INDEX idx_network_events_active ON network_events(is_active) WHERE is_active = TRUE;
 
--- ======================== RÉPÉRTOIRE VOLONTAIRE DES ÉGLISES ========================
+-- ======================== REPERTOIRE VOLONTAIRE DES EGLISES ========================
 CREATE TABLE IF NOT EXISTS network_directory (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL UNIQUE,

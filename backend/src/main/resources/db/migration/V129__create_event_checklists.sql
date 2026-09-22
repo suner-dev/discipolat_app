@@ -1,5 +1,5 @@
--- EventChecklistItem — listes de vérification pour événements (templates auto-générés).
--- Table créée par migration pour coller à ddl-auto=validate.
+-- EventChecklistItem — listes de verification pour evenements (templates auto-generes).
+-- Table creee par migration pour coller a ddl-auto=validate.
 
 CREATE TABLE IF NOT EXISTS event_checklists (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,5 +1,5 @@
--- P1 — Mobile Money : provider réel + traçabilité des webhooks opérateur signés.
--- Colonnes ajoutées à chaud (nullable) : aucune donnée existante n'est affectée.
+-- P1 — Mobile Money : provider reel + tracabilite des webhooks operateur signes.
+-- Colonnes ajoutees a chaud (nullable) : aucune donnee existante n'est affectee.
 
 ALTER TABLE payment_intents
     ADD COLUMN IF NOT EXISTS provider_name   VARCHAR(40),
@@ -7,14 +7,14 @@ ALTER TABLE payment_intents
     ADD COLUMN IF NOT EXISTS instructions    TEXT;
 
 COMMENT ON COLUMN payment_intents.provider_name IS
-    'Provider opérateur réellement sollicité (MTN MoMo / Orange Money / M-Pesa).';
+    'Provider operateur reellement sollicite (MTN MoMo / Orange Money / M-Pesa).';
 COMMENT ON COLUMN payment_intents.checkout_url IS
-    'URL de redirection/checkout opérateur retournée par l''API (pour les providers à redirection).';
+    'URL de redirection/checkout operateur retournee par l''API (pour les providers a redirection).';
 COMMENT ON COLUMN payment_intents.instructions IS
-    'Instructions d''affichage au client (ex. code OTP reçu par SMS).';
+    'Instructions d''affichage au client (ex. code OTP recu par SMS).';
 
--- Journal d'audit des notifications de paiement reçues des opérateurs.
--- Chaque appel webhook est enregistré (même rejeté) pour non-répudiation.
+-- Journal d'audit des notifications de paiement recues des operateurs.
+-- Chaque appel webhook est enregistre (meme rejete) pour non-repudiation.
 CREATE TABLE IF NOT EXISTS payment_webhook_audit (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id       UUID NOT NULL,

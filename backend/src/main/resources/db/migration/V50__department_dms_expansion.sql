@@ -1,18 +1,18 @@
 -- V50__department_dms_expansion.sql
 -- ============================================================
 -- DEPARTMENT MANAGEMENT SYSTEM — expansion v2
--- 1. Traçabilité directe des rattachements (qui a ajouté, d'où
+-- 1. Tracabilite directe des rattachements (qui a ajoute, d'ou
 --    provient le rattachement : manuel / inscription / transfert).
--- 2. Notes départementales par membre (dossier de gestion).
--- 3. Annonces du département (communication interne).
+-- 2. Notes departementales par membre (dossier de gestion).
+-- 3. Annonces du departement (communication interne).
 -- ============================================================
 
 -- ------------------------------------------------------------
--- 1. soul_departments : qui / d'où / quand
--- created_by : compte utilisateur à l'origine du rattachement.
+-- 1. soul_departments : qui / d'ou / quand
+-- created_by : compte utilisateur a l'origine du rattachement.
 -- origine    : MANUEL (ajout par un responsable/pasteur),
---              SIGNUP (auto-affectation à l'inscription),
---              TRANSFERT (exécution d'un workflow de transfert).
+--              SIGNUP (auto-affectation a l'inscription),
+--              TRANSFERT (execution d'un workflow de transfert).
 -- ------------------------------------------------------------
 ALTER TABLE soul_departments ADD COLUMN IF NOT EXISTS created_by UUID;
 ALTER TABLE soul_departments ADD COLUMN IF NOT EXISTS origine VARCHAR(30);
@@ -20,8 +20,8 @@ ALTER TABLE soul_departments ADD COLUMN IF NOT EXISTS origine VARCHAR(30);
 CREATE INDEX IF NOT EXISTS idx_soul_departments_created_by ON soul_departments(created_by);
 
 -- ------------------------------------------------------------
--- 2. Notes départementales par membre
--- Notes internes du responsable sur un membre de son département
+-- 2. Notes departementales par membre
+-- Notes internes du responsable sur un membre de son departement
 -- (dossier de gestion) — distinctes des notes de disciple.
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS department_member_notes (
@@ -39,10 +39,10 @@ CREATE INDEX IF NOT EXISTS idx_dept_member_notes_dept ON department_member_notes
 CREATE INDEX IF NOT EXISTS idx_dept_member_notes_member ON department_member_notes(member_id);
 
 -- ------------------------------------------------------------
--- 3. Annonces du département (communication interne)
--- Cible : tous les membres, une équipe (team_id) ou un poste
--- (position_id). Affichées dans l'espace responsable et le
--- dossier des membres concernés.
+-- 3. Annonces du departement (communication interne)
+-- Cible : tous les membres, une equipe (team_id) ou un poste
+-- (position_id). Affichees dans l'espace responsable et le
+-- dossier des membres concernes.
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS department_announcements (
     id UUID PRIMARY KEY,

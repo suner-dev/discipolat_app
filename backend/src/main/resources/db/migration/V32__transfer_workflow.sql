@@ -1,21 +1,21 @@
 -- V32__transfer_workflow.sql
 -- ============================================================
 -- WORKFLOW INTELLIGENT ET CONFIGURABLE DES TRANSFERTS
--- Moteur métier entièrement piloté par la base :
---   * transfer_workflow_configs  : paramétrage pasteur par type de transfert
---     (rôles initiateurs, mode de validation, nombre requis, délais,
---      notifications automatiques, modèles de messages, règles d'exécution)
---   * transfer_workflow_steps    : étapes du circuit de validation (ordonnées)
+-- Moteur metier entierement pilote par la base :
+--   * transfer_workflow_configs  : parametrage pasteur par type de transfert
+--     (roles initiateurs, mode de validation, nombre requis, delais,
+--      notifications automatiques, modeles de messages, regles d'execution)
+--   * transfer_workflow_steps    : etapes du circuit de validation (ordonnees)
 --   * transfer_requests          : demandes de transfert (cycle de vie complet)
---   * transfer_decisions         : décisions motivées des validateurs
+--   * transfer_decisions         : decisions motivees des validateurs
 --   * transfer_history           : historique immuable de chaque demande
---   * transfer_attachments       : pièces jointes (lien vers la table files)
--- Le circuit de validation évolue SANS modification de code : il est
--- entièrement reconfigurable depuis l'administration (pasteur/admin).
+--   * transfer_attachments       : pieces jointes (lien vers la table files)
+-- Le circuit de validation evolue SANS modification de code : il est
+-- entierement reconfigurable depuis l'administration (pasteur/admin).
 -- ============================================================
 
 -- ============================================================
--- 1. TRANSFER_WORKFLOW_CONFIGS : paramétrage par type de transfert
+-- 1. TRANSFER_WORKFLOW_CONFIGS : parametrage par type de transfert
 -- ============================================================
 CREATE TABLE IF NOT EXISTS transfer_workflow_configs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -42,7 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_transfer_wf_configs_type ON transfer_workflow_con
 CREATE INDEX IF NOT EXISTS idx_transfer_wf_configs_actif ON transfer_workflow_configs(actif);
 
 -- ============================================================
--- 2. TRANSFER_WORKFLOW_STEPS : étapes du circuit de validation
+-- 2. TRANSFER_WORKFLOW_STEPS : etapes du circuit de validation
 -- ============================================================
 CREATE TABLE IF NOT EXISTS transfer_workflow_steps (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -92,7 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_transfer_requests_personne ON transfer_requests(p
 CREATE INDEX IF NOT EXISTS idx_transfer_requests_type ON transfer_requests(type_transfert);
 
 -- ============================================================
--- 4. TRANSFER_DECISIONS : décisions des validateurs
+-- 4. TRANSFER_DECISIONS : decisions des validateurs
 -- ============================================================
 CREATE TABLE IF NOT EXISTS transfer_decisions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS transfer_decisions (
 CREATE INDEX IF NOT EXISTS idx_transfer_decisions_request ON transfer_decisions(transfer_request_id);
 
 -- ============================================================
--- 5. TRANSFER_HISTORY : historique immuable (aucune donnée perdue)
+-- 5. TRANSFER_HISTORY : historique immuable (aucune donnee perdue)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS transfer_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS transfer_history (
 CREATE INDEX IF NOT EXISTS idx_transfer_history_request ON transfer_history(transfer_request_id);
 
 -- ============================================================
--- 6. TRANSFER_ATTACHMENTS : pièces jointes (module fichiers existant)
+-- 6. TRANSFER_ATTACHMENTS : pieces jointes (module fichiers existant)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS transfer_attachments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -141,43 +141,43 @@ CREATE TABLE IF NOT EXISTS transfer_attachments (
 CREATE INDEX IF NOT EXISTS idx_transfer_attachments_request ON transfer_attachments(transfer_request_id);
 
 -- ============================================================
--- 7. SEED : circuits de validation par défaut (modifiables par le pasteur)
--- Les identifiants sont stables pour permettre la reproductibilité.
+-- 7. SEED : circuits de validation par defaut (modifiables par le pasteur)
+-- Les identifiants sont stables pour permettre la reproductibilite.
 -- ============================================================
 
--- 7.1 Départements : transfert / ajout / retrait de membre → responsable → pasteur
+-- 7.1 Departements : transfert / ajout / retrait de membre → responsable → pasteur
 INSERT INTO transfer_workflow_configs (id, transfer_type, label, description, roles_initiateurs,
                                        mode_validation, nombre_validations_requises, delai_traitement_heures,
                                        notifications_auto, regles_execution)
 VALUES
     ('11000000-0000-0000-0000-000000000001', 'MEMBRE_DEPARTEMENT_TRANSFERT',
-     'Transfert de membre entre départements',
-     'Déplacement d''un membre d''un département vers un autre.',
+     'Transfert de membre entre departements',
+     'Deplacement d''un membre d''un departement vers un autre.',
      '["PASTEUR","RESPONSABLE","CHEF_DE_FAMILLE","MEMBRE"]'::jsonb,
      'SEQUENTIEL', 2, 72, TRUE,
      '{"notifierMembre":true,"notifierAncienDepartement":true,"notifierNouveauDepartement":true}'::jsonb),
     ('11000000-0000-0000-0000-000000000002', 'MEMBRE_DEPARTEMENT_AJOUT',
-     'Ajout de membre dans un département',
-     'Affectation d''un membre à un nouveau département.',
+     'Ajout de membre dans un departement',
+     'Affectation d''un membre a un nouveau departement.',
      '["PASTEUR","RESPONSABLE","CHEF_DE_FAMILLE","MEMBRE"]'::jsonb,
      'SEQUENTIEL', 2, 48, TRUE,
      '{"notifierMembre":true,"notifierNouveauDepartement":true}'::jsonb),
     ('11000000-0000-0000-0000-000000000003', 'MEMBRE_DEPARTEMENT_RETRAIT',
-     'Retrait de membre d''un département',
-     'Retrait d''un membre d''un département (sans le retirer de l''église).',
+     'Retrait de membre d''un departement',
+     'Retrait d''un membre d''un departement (sans le retirer de l''eglise).',
      '["PASTEUR","RESPONSABLE","CHEF_DE_FAMILLE","MEMBRE"]'::jsonb,
      'SEQUENTIEL', 2, 48, TRUE,
      '{"notifierMembre":true,"notifierDepartement":true}'::jsonb),
     -- 7.2 Familles : disciple / faiseur / chef → chef → pasteur
     ('11000000-0000-0000-0000-000000000004', 'DISCIPLE_FAMILLE_TRANSFERT',
      'Transfert de disciple entre familles',
-     'Déplacement d''un disciple d''une famille vers une autre.',
+     'Deplacement d''un disciple d''une famille vers une autre.',
      '["PASTEUR","RESPONSABLE","CHEF_DE_FAMILLE","FAISEUR"]'::jsonb,
      'SEQUENTIEL', 2, 72, TRUE,
      '{"notifierDisciple":true,"notifierAncienFaiseur":true,"notifierNouveauFaiseur":true}'::jsonb),
     ('11000000-0000-0000-0000-000000000005', 'FAISEUR_FAMILLE_TRANSFERT',
      'Transfert de faiseur entre familles',
-     'Déplacement d''un faiseur de disciple vers une autre famille (avec ou sans ses disciples).',
+     'Deplacement d''un faiseur de disciple vers une autre famille (avec ou sans ses disciples).',
      '["PASTEUR","RESPONSABLE","CHEF_DE_FAMILLE"]'::jsonb,
      'SEQUENTIEL', 2, 72, TRUE,
      '{"transfererAmes":false,"notifierFaiseur":true,"notifierFamilles":true}'::jsonb),
@@ -190,45 +190,45 @@ VALUES
     -- 7.3 Affectations
     ('11000000-0000-0000-0000-000000000007', 'FAISEUR_DISCIPLE_CHANGEMENT',
      'Changement du faiseur d''un disciple',
-     'Réaffectation du suivi d''un disciple à un autre faiseur.',
+     'Reaffectation du suivi d''un disciple a un autre faiseur.',
      '["PASTEUR","RESPONSABLE","CHEF_DE_FAMILLE","FAISEUR"]'::jsonb,
      'SEQUENTIEL', 2, 48, TRUE,
      '{"notifierAncienFaiseur":true,"notifierNouveauFaiseur":true,"notifierDisciple":true}'::jsonb),
     ('11000000-0000-0000-0000-000000000008', 'RESPONSABLE_DEPARTEMENT_CHANGEMENT',
-     'Changement du responsable d''un département',
-     'Désignation d''un nouveau responsable principal de département.',
+     'Changement du responsable d''un departement',
+     'Designation d''un nouveau responsable principal de departement.',
      '["PASTEUR"]'::jsonb,
      'SEQUENTIEL', 1, 48, TRUE,
      '{"notifierResponsable":true,"notifierDepartement":true}'::jsonb),
     ('11000000-0000-0000-0000-000000000009', 'CHEF_ADJOINT_CHANGEMENT',
      'Changement du chef adjoint d''une famille',
-     'Désignation d''un nouveau chef adjoint pour une famille.',
+     'Designation d''un nouveau chef adjoint pour une famille.',
      '["PASTEUR","CHEF_DE_FAMILLE"]'::jsonb,
      'SEQUENTIEL', 2, 48, TRUE,
      '{"notifierFamille":true}'::jsonb);
 
--- Étapes du circuit de validation (ordre = ordre de validation séquentielle)
+-- Etapes du circuit de validation (ordre = ordre de validation sequentielle)
 INSERT INTO transfer_workflow_steps (workflow_config_id, etape_ordre, roles_validateurs, label, description, requis) VALUES
-    ('11000000-0000-0000-0000-000000000001', 1, '["RESPONSABLE"]'::jsonb, 'Validation du responsable', 'Le responsable du département concerné valide la demande.', TRUE),
+    ('11000000-0000-0000-0000-000000000001', 1, '["RESPONSABLE"]'::jsonb, 'Validation du responsable', 'Le responsable du departement concerne valide la demande.', TRUE),
     ('11000000-0000-0000-0000-000000000001', 2, '["PASTEUR"]'::jsonb, 'Validation du pasteur', 'Validation finale par le pasteur.', TRUE),
-    ('11000000-0000-0000-0000-000000000002', 1, '["RESPONSABLE"]'::jsonb, 'Validation du responsable', 'Le responsable du département concerné valide la demande.', TRUE),
+    ('11000000-0000-0000-0000-000000000002', 1, '["RESPONSABLE"]'::jsonb, 'Validation du responsable', 'Le responsable du departement concerne valide la demande.', TRUE),
     ('11000000-0000-0000-0000-000000000002', 2, '["PASTEUR"]'::jsonb, 'Validation du pasteur', 'Validation finale par le pasteur.', TRUE),
-    ('11000000-0000-0000-0000-000000000003', 1, '["RESPONSABLE"]'::jsonb, 'Validation du responsable', 'Le responsable du département concerné valide la demande.', TRUE),
+    ('11000000-0000-0000-0000-000000000003', 1, '["RESPONSABLE"]'::jsonb, 'Validation du responsable', 'Le responsable du departement concerne valide la demande.', TRUE),
     ('11000000-0000-0000-0000-000000000003', 2, '["PASTEUR"]'::jsonb, 'Validation du pasteur', 'Validation finale par le pasteur.', TRUE),
-    ('11000000-0000-0000-0000-000000000004', 1, '["CHEF_DE_FAMILLE"]'::jsonb, 'Validation du chef de famille', 'Le chef de famille concerné valide la demande.', TRUE),
+    ('11000000-0000-0000-0000-000000000004', 1, '["CHEF_DE_FAMILLE"]'::jsonb, 'Validation du chef de famille', 'Le chef de famille concerne valide la demande.', TRUE),
     ('11000000-0000-0000-0000-000000000004', 2, '["PASTEUR"]'::jsonb, 'Validation du pasteur', 'Validation finale par le pasteur.', TRUE),
-    ('11000000-0000-0000-0000-000000000005', 1, '["CHEF_DE_FAMILLE"]'::jsonb, 'Validation du chef de famille', 'Le chef de famille concerné valide la demande.', TRUE),
+    ('11000000-0000-0000-0000-000000000005', 1, '["CHEF_DE_FAMILLE"]'::jsonb, 'Validation du chef de famille', 'Le chef de famille concerne valide la demande.', TRUE),
     ('11000000-0000-0000-0000-000000000005', 2, '["PASTEUR"]'::jsonb, 'Validation du pasteur', 'Validation finale par le pasteur.', TRUE),
     ('11000000-0000-0000-0000-000000000006', 1, '["PASTEUR"]'::jsonb, 'Validation du pasteur', 'Validation finale par le pasteur.', TRUE),
-    ('11000000-0000-0000-0000-000000000007', 1, '["CHEF_DE_FAMILLE"]'::jsonb, 'Validation du chef de famille', 'Le chef de famille concerné valide la demande.', TRUE),
+    ('11000000-0000-0000-0000-000000000007', 1, '["CHEF_DE_FAMILLE"]'::jsonb, 'Validation du chef de famille', 'Le chef de famille concerne valide la demande.', TRUE),
     ('11000000-0000-0000-0000-000000000007', 2, '["PASTEUR"]'::jsonb, 'Validation du pasteur', 'Validation finale par le pasteur.', TRUE),
     ('11000000-0000-0000-0000-000000000008', 1, '["PASTEUR"]'::jsonb, 'Validation du pasteur', 'Validation finale par le pasteur.', TRUE),
-    ('11000000-0000-0000-0000-000000000009', 1, '["CHEF_DE_FAMILLE"]'::jsonb, 'Validation du chef de famille', 'Le chef de famille concerné valide la demande.', TRUE),
+    ('11000000-0000-0000-0000-000000000009', 1, '["CHEF_DE_FAMILLE"]'::jsonb, 'Validation du chef de famille', 'Le chef de famille concerne valide la demande.', TRUE),
     ('11000000-0000-0000-0000-000000000009', 2, '["PASTEUR"]'::jsonb, 'Validation du pasteur', 'Validation finale par le pasteur.', TRUE);
 
-COMMENT ON TABLE transfer_workflow_configs IS 'Paramétrage du workflow de transfert par type (pasteur/admin). Circuit entièrement configurable sans code.';
-COMMENT ON TABLE transfer_workflow_steps IS 'Étapes du circuit de validation (rôles validateurs, ordre, caractère requis).';
+COMMENT ON TABLE transfer_workflow_configs IS 'Parametrage du workflow de transfert par type (pasteur/admin). Circuit entierement configurable sans code.';
+COMMENT ON TABLE transfer_workflow_steps IS 'Etapes du circuit de validation (roles validateurs, ordre, caractere requis).';
 COMMENT ON TABLE transfer_requests IS 'Demandes de transfert avec cycle de vie complet (BROUILLON → SOUMIS → EN_ATTENTE_VALIDATION → VALIDATION_PARTIELLE → VALIDE → EXECUTE / REFUSE / ANNULE / ARCHIVE).';
-COMMENT ON TABLE transfer_decisions IS 'Décisions motivées des validateurs (approbation, refus, demande d''informations, renvoi pour correction).';
-COMMENT ON TABLE transfer_history IS 'Historique immuable de chaque demande de transfert : aucune donnée perdue.';
-COMMENT ON TABLE transfer_attachments IS 'Pièces jointes d''une demande de transfert (lien vers le module fichiers).';
+COMMENT ON TABLE transfer_decisions IS 'Decisions motivees des validateurs (approbation, refus, demande d''informations, renvoi pour correction).';
+COMMENT ON TABLE transfer_history IS 'Historique immuable de chaque demande de transfert : aucune donnee perdue.';
+COMMENT ON TABLE transfer_attachments IS 'Pieces jointes d''une demande de transfert (lien vers le module fichiers).';

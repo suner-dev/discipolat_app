@@ -1,9 +1,9 @@
 -- V35__church_settings.sql
 -- ============================================================
--- PARAMÈTRES D'IDENTITÉ ET DE MARQUE DE L'ÉGLISE
+-- PARAMETRES D'IDENTITE ET DE MARQUE DE L'EGLISE
 -- Configuration sans code : l'administrateur personnalise le nom,
 -- le slogan, le logo, les couleurs, la typographie et les contacts
--- via l'interface d'administration. Le thème est appliqué dynamiquement.
+-- via l'interface d'administration. Le theme est applique dynamiquement.
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS church_settings (
@@ -30,12 +30,12 @@ CREATE TABLE IF NOT EXISTS church_settings (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Ligne par défaut (id stable : settings-0001)
+-- Ligne par defaut (id stable : settings-0001)
 INSERT INTO church_settings (id, church_name, platform_name, slogan, description,
                              primary_color, accent_color, button_color)
 VALUES ('00000000-0000-0000-0000-00000000c001', 'Discipolat', 'Discipolat',
-        'Former des disciples de Jésus-Christ',
+        'Former des disciples de Jesus-Christ',
         'Plateforme de gestion du discipolat',
         '#16a34a', '#f59e0b', '#16a34a');
 
-COMMENT ON TABLE church_settings IS 'Identité & marque de l''église (nom, logo, couleurs, contacts) — configurable sans code par l''administrateur.';
+COMMENT ON TABLE church_settings IS 'Identite & marque de l''eglise (nom, logo, couleurs, contacts) — configurable sans code par l''administrateur.';

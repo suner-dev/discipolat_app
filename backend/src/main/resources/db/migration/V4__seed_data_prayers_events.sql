@@ -48,37 +48,37 @@ UPDATE souls SET etat_spirituel = 'NOUVEAU_CONVERTI', niveau_croissance = 2, sit
 WHERE id = 'd0000000-0000-0000-0000-000000000010';
 
 -- ============================================================
--- SAMPLE PRAYERS (Sujets de prière)
+-- SAMPLE PRAYERS (Sujets de priere)
 -- ============================================================
 INSERT INTO prayers (id, auteur_id, famille_id, titre, description, categorie, priorite, statut, visibilite, created_at, updated_at)
 VALUES
     ('aa000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', 'c0000000-0000-0000-0000-000000000001',
-     'Guérison pour Marie Dupont', 'Marie traverse une période difficile de maladie. Demandez la guérison complète.', 'SANTE', 'HAUTE', 'EN_COURS', 'PARTAGEE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+     'Guerison pour Marie Dupont', 'Marie traverse une periode difficile de maladie. Demandez la guerison complete.', 'SANTE', 'HAUTE', 'EN_COURS', 'PARTAGEE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('aa000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000006', 'c0000000-0000-0000-0000-000000000001',
      'Emploi pour Jean Martin', 'Jean recherche un emploi depuis 2 mois. Demandez ouverture de portes.', 'TRAVAIL', 'HAUTE', 'EN_COURS', 'PARTAGEE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('aa000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000005', 'c0000000-0000-0000-0000-000000000002',
-     'Retour de Claire Durand', 'Claire s''est éloignée depuis quelques semaines. Demandez son retour.', 'SPIRITUEL', 'MOYENNE', 'EN_COURS', 'PARTAGEE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+     'Retour de Claire Durand', 'Claire s''est eloignee depuis quelques semaines. Demandez son retour.', 'SPIRITUEL', 'MOYENNE', 'EN_COURS', 'PARTAGEE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('aa000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000004', 'c0000000-0000-0000-0000-000000000001',
-     'Exaucement : Guérison de Sophie', 'Sophie a été guérie après 3 semaines de prière. Merci Seigneur !', 'SANTE', 'MOYENNE', 'EXAUCE', 'PARTAGEE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+     'Exaucement : Guerison de Sophie', 'Sophie a ete guerie apres 3 semaines de priere. Merci Seigneur !', 'SANTE', 'MOYENNE', 'EXAUCE', 'PARTAGEE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('aa000000-0000-0000-0000-000000000005', 'a0000000-0000-0000-0000-000000000008', 'c0000000-0000-0000-0000-000000000003',
      'Sagesse pour les examens', 'Sarah passe ses exams la semaine prochaine. Demandez la sagesse.', 'FAMILLE', 'BASSE', 'EN_COURS', 'PRIVEE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================
--- SAMPLE EVENTS (Événements)
+-- SAMPLE EVENTS (Evenements)
 -- ============================================================
 INSERT INTO events (id, organisateur_id, famille_id, type_evenement, titre, description, lieu, date_debut, date_fin, limite_places, nb_inscrits, statut, created_at, updated_at)
 VALUES
     ('bb000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', 'c0000000-0000-0000-0000-000000000001',
-     'REUNION', 'Réunion de famille mensuelle', 'Réunion de partage et de prière pour toute la famille Timothée.',
-     'Salle Évangile', CURRENT_TIMESTAMP + INTERVAL '7 days', CURRENT_TIMESTAMP + INTERVAL '7 days' + INTERVAL '2 hours', 30, 8, 'PLANIFIE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+     'REUNION', 'Reunion de famille mensuelle', 'Reunion de partage et de priere pour toute la famille Timothee.',
+     'Salle Evangile', CURRENT_TIMESTAMP + INTERVAL '7 days', CURRENT_TIMESTAMP + INTERVAL '7 days' + INTERVAL '2 hours', 30, 8, 'PLANIFIE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('bb000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000005', 'c0000000-0000-0000-0000-000000000002',
-     'SORTIE', 'Sortie evangelistique au parc', 'Invitation au parc pour partager l''Évangile avec les voisins.',
+     'SORTIE', 'Sortie evangelistique au parc', 'Invitation au parc pour partager l''Evangile avec les voisins.',
      'Parc Central', CURRENT_TIMESTAMP + INTERVAL '14 days', CURRENT_TIMESTAMP + INTERVAL '14 days' + INTERVAL '3 hours', 50, 12, 'PLANIFIE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('bb000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', 'c0000000-0000-0000-0000-000000000003',
      'FORMATION', 'Formation des nouveaux faiseurs', 'Session de formation pour les faiseurs nouvellement promus.',
      'Salle Pierre', CURRENT_TIMESTAMP + INTERVAL '21 days', CURRENT_TIMESTAMP + INTERVAL '21 days' + INTERVAL '4 hours', 15, 5, 'PLANIFIE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('bb000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000005', 'c0000000-0000-0000-0000-000000000004',
-     'RETRAITE', 'Retraite spirituelle de fin d''année', '3 jours de retraite pour approfondir la foi.',
+     'RETRAITE', 'Retraite spirituelle de fin d''annee', '3 jours de retraite pour approfondir la foi.',
      'Centre Spirituel Montagne', CURRENT_TIMESTAMP + INTERVAL '60 days', CURRENT_TIMESTAMP + INTERVAL '62 days', 40, 18, 'PLANIFIE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================
@@ -96,11 +96,11 @@ VALUES
 INSERT INTO soul_notes (id, ame_id, auteur_id, contenu, created_at, updated_at)
 VALUES
     ('dd000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004',
-     'Rencontre avec Marie aujourd''hui. Elle semble plus motivée après notre discussion sur la prière.',
+     'Rencontre avec Marie aujourd''hui. Elle semble plus motivee apres notre discussion sur la priere.',
      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('dd000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000007',
-     'Claire a eu un moment difficile cette semaine. J''ai partagé avec elle les Psaumes 23 et 91.',
+     'Claire a eu un moment difficile cette semaine. J''ai partage avec elle les Psaumes 23 et 91.',
      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('dd000000-0000-0000-0000-000000000003', 'd0000000-0000-0000-0000-000000000009', 'a0000000-0000-0000-0000-000000000008',
-     'Sarah a terminé ses exams avec succès ! Louange à Dieu. Elle souhaite participer au groupe de louange.',
+     'Sarah a termine ses exams avec succes ! Louange a Dieu. Elle souhaite participer au groupe de louange.',
      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

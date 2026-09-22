@@ -1,5 +1,5 @@
--- Présence des membres du département à un événement rattaché au département.
--- Une ligne par (département, événement, âme) ; présent/absent marqué par un
+-- Presence des membres du departement a un evenement rattache au departement.
+-- Une ligne par (departement, evenement, âme) ; present/absent marque par un
 -- responsable, un chef de famille ou le faiseur de l'âme.
 CREATE TABLE department_event_attendance (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

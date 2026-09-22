@@ -1,6 +1,6 @@
 -- V100 : table reward_certificates (module rewards / certificats)
--- L'entité Certificate (@Table reward_certificates) n'avait aucune migration :
--- en production (ddl-auto: none) la fonctionnalité échouait à l'exécution.
+-- L'entite Certificate (@Table reward_certificates) n'avait aucune migration :
+-- en production (ddl-auto: none) la fonctionnalite echouait a l'execution.
 CREATE TABLE IF NOT EXISTS reward_certificates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,

@@ -1,7 +1,7 @@
 -- V21: Premium features — CRM interactions, spiritual score history
 -- ============================================================
 -- INTERACTIONS CRM : chaque contact (appel, SMS, WhatsApp, email,
--- visite, réunion, conseil, prière, suivi) est historisé par âme.
+-- visite, reunion, conseil, priere, suivi) est historise par âme.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS soul_interactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -23,8 +23,8 @@ CREATE INDEX IF NOT EXISTS idx_soul_interactions_soul ON soul_interactions(soul_
 CREATE INDEX IF NOT EXISTS idx_soul_interactions_auteur ON soul_interactions(auteur_id, date_interaction DESC);
 
 -- ============================================================
--- HISTORIQUE DU SCORE SPIRITUEL : échantillonnage hebdomadaire
--- du score global par âme (pour les courbes d'évolution).
+-- HISTORIQUE DU SCORE SPIRITUEL : echantillonnage hebdomadaire
+-- du score global par âme (pour les courbes d'evolution).
 -- ============================================================
 CREATE TABLE IF NOT EXISTS spiritual_score_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

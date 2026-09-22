@@ -109,6 +109,13 @@ CREATE TABLE saas_plans (
     stripe_price_id_monthly VARCHAR(100),
     stripe_price_id_yearly VARCHAR(100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_public BOOLEAN NOT NULL DEFAULT TRUE,
+    trial_days INTEGER NOT NULL DEFAULT 30,
+    annual_discount_pct INTEGER NOT NULL DEFAULT 17,
+    seats_limit INTEGER NOT NULL DEFAULT 50,
+    storage_limit_mb INTEGER NOT NULL DEFAULT 500,
+    ai_credits_limit INTEGER NOT NULL DEFAULT 100,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'DEPRECATED')),
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -162,9 +169,9 @@ CREATE INDEX idx_invitation_status ON invitations(status);
 CREATE INDEX idx_invitation_expires ON invitations(expires_at);
 
 -- 10. AUDIT EVENT (G2.9 — nouveau moteur d'audit avec hash chain, remplace audit_logs legacy)
--- Note: V1 a déjà créé la table legacy audit_logs (schéma utilisateur_id/entite_type/entite_id/created_at).
--- Cette migration crée la table cible audit_event (schéma G2.9 : tenant_id, actor_id, hash chain, etc.)
--- et business_history. L'ancien audit_logs est conservé pour compatibilité mais n'est plus écrit.
+-- Note: V1 a deja cree la table legacy audit_logs (schema utilisateur_id/entite_type/entite_id/created_at).
+-- Cette migration cree la table cible audit_event (schema G2.9 : tenant_id, actor_id, hash chain, etc.)
+-- et business_history. L'ancien audit_logs est conserve pour compatibilite mais n'est plus ecrit.
 
 CREATE TABLE IF NOT EXISTS audit_event (
     id BIGSERIAL PRIMARY KEY,
@@ -188,11 +195,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_event_actor ON audit_event(actor_id);
 CREATE INDEX IF NOT EXISTS idx_audit_event_timestamp ON audit_event(timestamp);
 CREATE INDEX IF NOT EXISTS idx_audit_event_hash ON audit_event(hash);
 
-COMMENT ON TABLE audit_event IS 'G2.9 : audit technique avec hash chain (prev_hash/hash) — immuable, exportable, rétention 95j';
-COMMENT ON COLUMN audit_event.prev_hash IS 'Hash de l''enregistrement précédent (chaîne d''intégrité)';
+COMMENT ON TABLE audit_event IS 'G2.9 : audit technique avec hash chain (prev_hash/hash) — immuable, exportable, retention 95j';
+COMMENT ON COLUMN audit_event.prev_hash IS 'Hash de l''enregistrement precedent (chaine d''integrite)';
 COMMENT ON COLUMN audit_event.hash IS 'SHA-256 de (prev_hash || tenant_id || actor_id || action || entity || entity_id || old_value_json || new_value_json || ip || user_agent || timestamp)';
 
--- 10b. BUSINESS HISTORY (G2.9 — historique métier générique, distinct de l'audit technique)
+-- 10b. BUSINESS HISTORY (G2.9 — historique metier generique, distinct de l'audit technique)
 CREATE TABLE IF NOT EXISTS business_history (
     id BIGSERIAL PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -211,56 +218,56 @@ CREATE INDEX IF NOT EXISTS idx_biz_hist_object ON business_history(object_type, 
 CREATE INDEX IF NOT EXISTS idx_biz_hist_space ON business_history(space_id, happened_at);
 CREATE INDEX IF NOT EXISTS idx_biz_hist_tenant ON business_history(tenant_id, happened_at);
 
-COMMENT ON TABLE business_history IS 'G2.9 : historique métier (ce qui est arrivé à l''objet) — distinct de audit_event (qui a fait quoi)';
+COMMENT ON TABLE business_history IS 'G2.9 : historique metier (ce qui est arrive a l''objet) — distinct de audit_event (qui a fait quoi)';
 
 -- 11. Add tenant_id to existing roles table if not exists (from V70 platform_roles)
 -- Note: V70 created platform_roles with tenant_id. We'll keep both for migration period.
 
 -- 12. Insert default system roles (tenant_id = NULL = global)
 INSERT INTO roles (id, tenant_id, key, label, description, system, priority, created_at, updated_at) VALUES
-    (uuid_generate_v4(), NULL, 'PLATFORM_SUPER_ADMIN', 'Super Admin Plateforme', 'Accès complet à la plateforme Discipolat', TRUE, 1000, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'TENANT_OWNER', 'Propriétaire Tenant', 'Propriétaire de l''organisation', TRUE, 900, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'PLATFORM_SUPER_ADMIN', 'Super Admin Plateforme', 'Acces complet a la plateforme Discipolat', TRUE, 1000, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'TENANT_OWNER', 'Proprietaire Tenant', 'Proprietaire de l''organisation', TRUE, 900, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'TENANT_ADMIN', 'Admin Tenant', 'Administrateur de l''organisation', TRUE, 800, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'CHURCH_ADMIN', 'Admin Église', 'Administrateur d''église/campus', TRUE, 700, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'CHURCH_LEADER', 'Leader Église', 'Responsable d''église/campus', TRUE, 600, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'DEPARTMENT_ADMIN', 'Admin Département', 'Administrateur de département', TRUE, 500, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'DEPARTMENT_LEADER', 'Leader Département', 'Responsable de département', TRUE, 400, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'CHURCH_ADMIN', 'Admin Eglise', 'Administrateur d''eglise/campus', TRUE, 700, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'CHURCH_LEADER', 'Leader Eglise', 'Responsable d''eglise/campus', TRUE, 600, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'DEPARTMENT_ADMIN', 'Admin Departement', 'Administrateur de departement', TRUE, 500, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'DEPARTMENT_LEADER', 'Leader Departement', 'Responsable de departement', TRUE, 400, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'FAMILY_LEADER', 'Chef de Famille', 'Responsable de famille/groupe', TRUE, 300, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'DISCIPLE_MAKER', 'Faiseur de Disciples', 'Accompagnateur spirituel', TRUE, 200, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'MEMBER', 'Membre', 'Membre standard', TRUE, 100, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'GUEST', 'Invité', 'Accès lecture seule', TRUE, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    (uuid_generate_v4(), NULL, 'GUEST', 'Invite', 'Acces lecture seule', TRUE, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (tenant_id, key) DO NOTHING;
 
 -- 13. Insert default permissions (system, global)
 INSERT INTO permissions (id, tenant_id, key, label, description, scope, category, system, created_at, updated_at) VALUES
     -- MEMBER permissions
-    (uuid_generate_v4(), NULL, 'MEMBER_READ', 'Lire membres', 'Voir la liste et détails des membres', 'TENANT', 'MEMBERS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'MEMBER_CREATE', 'Créer membres', 'Ajouter de nouveaux membres', 'TENANT', 'MEMBERS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'MEMBER_READ', 'Lire membres', 'Voir la liste et details des membres', 'TENANT', 'MEMBERS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'MEMBER_CREATE', 'Creer membres', 'Ajouter de nouveaux membres', 'TENANT', 'MEMBERS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'MEMBER_UPDATE', 'Modifier membres', 'Modifier les informations des membres', 'TENANT', 'MEMBERS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'MEMBER_DELETE', 'Supprimer membres', 'Supprimer/archiver des membres', 'TENANT', 'MEMBERS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     -- FAMILY permissions
     (uuid_generate_v4(), NULL, 'FAMILY_READ', 'Lire familles', 'Voir les familles', 'TENANT', 'FAMILIES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'FAMILY_CREATE', 'Créer familles', 'Créer de nouvelles familles', 'TENANT', 'FAMILIES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'FAMILY_CREATE', 'Creer familles', 'Creer de nouvelles familles', 'TENANT', 'FAMILIES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'FAMILY_UPDATE', 'Modifier familles', 'Modifier les familles', 'TENANT', 'FAMILIES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'FAMILY_DELETE', 'Supprimer familles', 'Supprimer/archiver des familles', 'TENANT', 'FAMILIES', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     -- REPORT permissions
     (uuid_generate_v4(), NULL, 'REPORT_READ', 'Lire rapports', 'Voir les rapports de suivi', 'TENANT', 'REPORTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'REPORT_CREATE', 'Créer rapports', 'Soumettre des rapports', 'TENANT', 'REPORTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'REPORT_CREATE', 'Creer rapports', 'Soumettre des rapports', 'TENANT', 'REPORTS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     -- FINANCE permissions
     (uuid_generate_v4(), NULL, 'FINANCE_READ', 'Lire finances', 'Voir transactions et budgets', 'TENANT', 'FINANCE', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'FINANCE_MANAGE', 'Gérer finances', 'Créer/modifier transactions et budgets', 'TENANT', 'FINANCE', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'FINANCE_MANAGE', 'Gerer finances', 'Creer/modifier transactions et budgets', 'TENANT', 'FINANCE', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     -- COURSE permissions
-    (uuid_generate_v4(), NULL, 'COURSE_CREATE', 'Créer formations', 'Créer des cours et modules', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'COURSE_MANAGE', 'Gérer formations', 'Gérer toutes les formations', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'COURSE_CREATE', 'Creer formations', 'Creer des cours et modules', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'COURSE_MANAGE', 'Gerer formations', 'Gerer toutes les formations', 'TENANT', 'ACADEMY', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     -- TENANT SETTINGS permissions
     (uuid_generate_v4(), NULL, 'TENANT_SETTINGS_READ', 'Lire config tenant', 'Voir la configuration du tenant', 'TENANT', 'SETTINGS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (uuid_generate_v4(), NULL, 'TENANT_SETTINGS_UPDATE', 'Modifier config tenant', 'Modifier la configuration du tenant', 'TENANT', 'SETTINGS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     -- CHURCH permissions
-    (uuid_generate_v4(), NULL, 'CHURCH_CREATE', 'Créer églises', 'Créer églises/campus/sous-églises', 'TENANT', 'ORGANIZATION', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'CHURCH_MANAGE', 'Gérer églises', 'Gérer la hiérarchie des églises', 'TENANT', 'ORGANIZATION', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'CHURCH_CREATE', 'Creer eglises', 'Creer eglises/campus/sous-eglises', 'TENANT', 'ORGANIZATION', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (uuid_generate_v4(), NULL, 'CHURCH_MANAGE', 'Gerer eglises', 'Gerer la hierarchie des eglises', 'TENANT', 'ORGANIZATION', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     -- USER permissions
     (uuid_generate_v4(), NULL, 'USER_INVITE', 'Inviter utilisateurs', 'Envoyer des invitations', 'TENANT', 'USERS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (uuid_generate_v4(), NULL, 'USER_MANAGE', 'Gérer utilisateurs', 'Gérer rôles et appartenances', 'TENANT', 'USERS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    (uuid_generate_v4(), NULL, 'USER_MANAGE', 'Gerer utilisateurs', 'Gerer roles et appartenances', 'TENANT', 'USERS', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (key) DO NOTHING;
 
 -- 14. Link system permissions to system roles (admin gets all)
@@ -322,11 +329,11 @@ ON CONFLICT DO NOTHING;
 
 -- 16. Insert default SaaS plans
 INSERT INTO saas_plans (key, name, description, price_monthly, price_yearly, currency, limits_json, features_json, sort_order) VALUES
-    ('FREE', 'Gratuit', 'Plan gratuit pour petites équipes', 0, 0, 'XAF',
+    ('FREE', 'Gratuit', 'Plan gratuit pour petites equipes', 0, 0, 'XAF',
      '{"max_users": 50, "max_churches": 1, "max_storage_mb": 100, "max_admin_users": 2, "max_ai_requests_month": 100, "max_courses": 5, "max_messages_month": 1000}'::jsonb,
      '{"discipleship": true, "academy": false, "finance": false, "marketplace": false, "api": false, "ai_copilot": false, "support": "community"}'::jsonb,
      0),
-    ('STARTER', 'Démarrage', 'Pour églises en croissance', 15000, 150000, 'XAF',
+    ('STARTER', 'Demarrage', 'Pour eglises en croissance', 15000, 150000, 'XAF',
      '{"max_users": 200, "max_churches": 3, "max_storage_mb": 1000, "max_admin_users": 5, "max_ai_requests_month": 1000, "max_courses": 20, "max_messages_month": 10000}'::jsonb,
      '{"discipleship": true, "academy": true, "finance": false, "marketplace": false, "api": false, "ai_copilot": true, "support": "email"}'::jsonb,
      1),
@@ -334,7 +341,7 @@ INSERT INTO saas_plans (key, name, description, price_monthly, price_yearly, cur
      '{"max_users": 1000, "max_churches": 10, "max_storage_mb": 10000, "max_admin_users": 20, "max_ai_requests_month": 10000, "max_courses": 100, "max_messages_month": 100000}'::jsonb,
      '{"discipleship": true, "academy": true, "finance": true, "marketplace": true, "api": true, "ai_copilot": true, "support": "priority"}'::jsonb,
      2),
-    ('ENTERPRISE', 'Entreprise', 'Pour grandes dénominations', 200000, 2000000, 'XAF',
+    ('ENTERPRISE', 'Entreprise', 'Pour grandes denominations', 200000, 2000000, 'XAF',
      '{"max_users": 10000, "max_churches": 100, "max_storage_mb": 100000, "max_admin_users": 100, "max_ai_requests_month": 100000, "max_courses": 1000, "max_messages_month": 1000000}'::jsonb,
      '{"discipleship": true, "academy": true, "finance": true, "marketplace": true, "api": true, "ai_copilot": true, "support": "dedicated"}'::jsonb,
      3)

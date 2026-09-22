@@ -1,5 +1,5 @@
--- MarketplaceListing — marketplace de biens/services/templates entre églises.
--- Table créée par migration pour coller à ddl-auto=validate.
+-- MarketplaceListing — marketplace de biens/services/templates entre eglises.
+-- Table creee par migration pour coller a ddl-auto=validate.
 
 CREATE TABLE IF NOT EXISTS marketplace_listings (
     id              BIGSERIAL PRIMARY KEY,

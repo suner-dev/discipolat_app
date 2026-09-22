@@ -1,9 +1,9 @@
 -- V53__department_member_objectives.sql
 -- ============================================================
 -- DEPARTMENT MANAGEMENT SYSTEM — objectifs de progression
--- Suivi individuel des objectifs fixés à un membre par le
+-- Suivi individuel des objectifs fixes a un membre par le
 -- responsable (progression spirituelle, disciplinaire ou
--- opérationnelle), avec avancement 0..100 et échéance.
+-- operationnelle), avec avancement 0..100 et echeance.
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS department_member_objectives (

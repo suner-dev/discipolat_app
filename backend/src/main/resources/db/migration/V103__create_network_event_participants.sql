@@ -1,5 +1,5 @@
--- V103: Table de participation aux événements inter-églises (RSVP)
--- Utilisée par NetworkService pour le suivi idempotent des inscriptions.
+-- V103: Table de participation aux evenements inter-eglises (RSVP)
+-- Utilisee par NetworkService pour le suivi idempotent des inscriptions.
 
 CREATE TABLE IF NOT EXISTS network_event_participants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

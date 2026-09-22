@@ -4,8 +4,8 @@
 -- n'autorise que 4 types d'alertes. Les alertes automatiques du
 -- scheduler (ABSENCE_3_SEMAINES, TACHE_EN_RETARD) et les alertes
 -- intelligentes du Department Management System (ABSENCE_REPETEE)
--- échouaient sur PostgreSQL (« violates check constraint »).
--- On étend la contrainte avec l'ensemble des types réellement émis.
+-- echouaient sur PostgreSQL (« violates check constraint »).
+-- On etend la contrainte avec l'ensemble des types reellement emis.
 -- ============================================================
 
 ALTER TABLE alerts DROP CONSTRAINT IF EXISTS alerts_type_alerte_check;
