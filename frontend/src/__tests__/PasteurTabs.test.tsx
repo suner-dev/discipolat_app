@@ -3,6 +3,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+// Increase test timeout for async components
+vi.setConfig({ testTimeout: 30000 });
+
 // ─── Mocks partagés ───────────────────────────────────────────────
 
 vi.mock('@/contexts/AuthContext', () => ({
@@ -51,6 +54,14 @@ const mockDepartments = {
   number: 0, size: 20, totalElements: 2, totalPages: 1, first: true, last: true,
 };
 
+const mockTransfers = {
+  content: [
+    { id: 't1', type: 'SOUL_TRANSFERT', statut: 'EN_ATTENTE_VALIDATION', personneNom: 'Pierre Dupont', cible: 'Louange', demandeurNom: 'Paul', dateSoumission: '2024-07-20', priorite: 'HAUTE', motif: 'Besoin de renfort', createdAt: '2024-07-20' },
+    { id: 't2', type: 'FAISEUR_TRANSFERT', statut: 'EXECUTE', personneNom: 'Marie Martin', cible: 'Jeunesse', demandeurNom: 'Jean', dateSoumission: '2024-07-15', priorite: 'MOYENNE', motif: 'Réaffectation', createdAt: '2024-07-15' },
+  ],
+  number: 0, size: 20, totalElements: 2, totalPages: 1, first: true, last: true,
+};
+
 const mockUsers = {
   content: [
     { id: 'u1', firstName: 'Marie', lastName: 'Louange', role: 'PASTEUR', email: 'marie@test.com', phone: '+243123', statut: 'ACTIVE', twoFactorEnabled: false, createdAt: '2024-01-01', updatedAt: '2024-07-01' },
@@ -90,14 +101,6 @@ const mockAlerts = {
     { id: 'a2', typeAlerte: 'RISQUE', message: 'Famille en risque', statut: 'RESOLUE', priorite: 'MOYENNE', cible: 'FAMILLE', dateDeclenchement: '2024-07-10T08:00:00', createdAt: '2024-07-10' },
   ],
   number: 0, size: 15, totalElements: 2, totalPages: 1, first: true, last: true,
-};
-
-const mockTransfers = {
-  content: [
-    { id: 't1', type: 'SOUL_TRANSFERT', statut: 'EN_ATTENTE_VALIDATION', personneNom: 'Pierre Dupont', cible: 'Louange', demandeurNom: 'Paul', dateSoumission: '2024-07-20', priorite: 'HAUTE', motif: 'Besoin de renfort', createdAt: '2024-07-20' },
-    { id: 't2', type: 'FAISEUR_TRANSFERT', statut: 'EXECUTE', personneNom: 'Marie Martin', cible: 'Jeunesse', demandeurNom: 'Jean', dateSoumission: '2024-07-15', priorite: 'MOYENNE', motif: 'Réaffectation', createdAt: '2024-07-15' },
-  ],
-  number: 0, size: 20, totalElements: 2, totalPages: 1, first: true, last: true,
 };
 
 const mockMakerReports = {

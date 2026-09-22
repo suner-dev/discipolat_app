@@ -187,6 +187,10 @@ import 'features/families/FamilyTreeScreen.dart';
 import 'features/announcements/AnnouncementScheduleScreen.dart';
 import 'features/documents/DocumentDetailScreen.dart';
 import 'features/tickets/TicketDetailScreen.dart';
+import 'features/streaming/screens/streams_screen.dart';
+import 'features/streaming/screens/stream_detail_screen.dart';
+import 'features/streaming/screens/stream_create_screen.dart';
+import 'presentation/screens/streaming/streaming_chat_screen.dart';
 import 'features/testimonies/TestimonyDetailScreen.dart';
 import 'features/rewards/RewardsClaimsScreen.dart';
 import 'features/users/UserRolesScreen.dart';
@@ -427,6 +431,9 @@ Map<String, List<String>> _routeRoles = {
   '/leave-requests': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/marketplace': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/streaming': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/streaming/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/streaming/create': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/streaming/:id/chat': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'MEMBRE'],
   '/surveys': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/testimonials': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/tickets': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -1191,7 +1198,10 @@ final appRouter = GoRouter(
     GoRoute(path: '/community', name: 'community', builder: (ctx, s) => const CommunityScreen()),
     GoRoute(path: '/leave-requests', name: 'leave-requests', builder: (ctx, s) => const LeaveRequestsScreen()),
     GoRoute(path: '/marketplace', name: 'marketplace', builder: (ctx, s) => const MarketplaceScreen()),
-    GoRoute(path: '/streaming', name: 'streaming', builder: (ctx, s) => const StreamingScreen()),
+    GoRoute(path: '/streaming', name: 'streaming', builder: (ctx, s) => const StreamsScreen()),
+    GoRoute(path: '/streaming/:id', name: 'stream-detail', builder: (ctx, s) => StreamDetailScreen(streamId: int.parse(s.pathParameters['id']!))),
+    GoRoute(path: '/streaming/create', name: 'stream-create', builder: (ctx, s) => const StreamCreateScreen()),
+    GoRoute(path: '/streaming/:id/chat', name: 'stream-chat', builder: (ctx, s) => StreamingChatScreen(streamId: int.parse(s.pathParameters['id']!))),
     GoRoute(path: '/surveys', name: 'surveys', builder: (ctx, s) => const SurveysScreen()),
     GoRoute(path: '/testimonials', name: 'testimonials', builder: (ctx, s) => const TestimonialsScreen()),
     GoRoute(path: '/tickets', name: 'tickets', builder: (ctx, s) => const TicketsScreen()),
