@@ -192,6 +192,9 @@ import 'features/streaming/screens/streams_screen.dart';
 import 'features/streaming/screens/stream_detail_screen.dart';
 import 'features/streaming/screens/stream_create_screen.dart';
 import 'presentation/screens/streaming/streaming_chat_screen.dart';
+import 'features/events/screens/events_screen.dart';
+import 'features/events/screens/event_detail_screen.dart';
+import 'features/events/screens/event_create_screen.dart';
 import 'features/messages/screens/conversations_screen.dart' as msg_conv;
 import 'features/messages/screens/conversation_detail_screen.dart' as msg_feature;
 import 'features/testimonies/TestimonyDetailScreen.dart';
@@ -437,6 +440,9 @@ Map<String, List<String>> _routeRoles = {
   '/streaming/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/streaming/create': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/streaming/:id/chat': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'MEMBRE'],
+  '/events': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/events/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/events/create': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/surveys': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/testimonials': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/tickets': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -1205,6 +1211,9 @@ final appRouter = GoRouter(
     GoRoute(path: '/streaming/:id', name: 'stream-detail', builder: (ctx, s) => StreamDetailScreen(streamId: int.parse(s.pathParameters['id']!))),
     GoRoute(path: '/streaming/create', name: 'stream-create', builder: (ctx, s) => const StreamCreateScreen()),
     GoRoute(path: '/streaming/:id/chat', name: 'stream-chat', builder: (ctx, s) => StreamingChatScreen(streamId: int.parse(s.pathParameters['id']!))),
+    GoRoute(path: '/events', name: 'events', builder: (ctx, s) => const EventsScreen()),
+    GoRoute(path: '/events/:id', name: 'event-detail', builder: (ctx, s) => EventDetailScreen(eventId: int.parse(s.pathParameters['id']!))),
+    GoRoute(path: '/events/create', name: 'event-create', builder: (ctx, s) => const EventCreateScreen()),
     GoRoute(path: '/surveys', name: 'surveys', builder: (ctx, s) => const SurveysScreen()),
     GoRoute(path: '/testimonials', name: 'testimonials', builder: (ctx, s) => const TestimonialsScreen()),
     GoRoute(path: '/tickets', name: 'tickets', builder: (ctx, s) => const TicketsScreen()),

@@ -125,21 +125,19 @@ class _MessageInputState extends ConsumerState<MessageInput> {
           ),
         ),
         const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.send_rounded, color: Colors.white),
-                    onPressed: _send,
-                  ),
-                ),
-              ],
+        Container(
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
+            child: IconButton(
+              icon: const Icon(Icons.send_rounded, color: Colors.white),
+              onPressed: _send,
+            ),
+          ),
+        ],
       ),
+    ),
     );
   }
 
