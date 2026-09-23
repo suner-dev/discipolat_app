@@ -43,6 +43,7 @@ mixin _$Event {
   bool get hasGeofencing => throw _privateConstructorUsedError;
   bool get hasFaceCheckIn => throw _privateConstructorUsedError;
   String? get checkInQrCode => throw _privateConstructorUsedError;
+  String? get streamUrl => throw _privateConstructorUsedError;
   String? get thumbnailUrl => throw _privateConstructorUsedError;
   List<String>? get tags => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
@@ -90,6 +91,7 @@ abstract class $EventCopyWith<$Res> {
       bool hasGeofencing,
       bool hasFaceCheckIn,
       String? checkInQrCode,
+      String? streamUrl,
       String? thumbnailUrl,
       List<String>? tags,
       DateTime createdAt,
@@ -138,6 +140,7 @@ class _$EventCopyWithImpl<$Res, $Val extends Event>
     Object? hasGeofencing = null,
     Object? hasFaceCheckIn = null,
     Object? checkInQrCode = freezed,
+    Object? streamUrl = freezed,
     Object? thumbnailUrl = freezed,
     Object? tags = freezed,
     Object? createdAt = null,
@@ -240,6 +243,10 @@ class _$EventCopyWithImpl<$Res, $Val extends Event>
           ? _value.checkInQrCode
           : checkInQrCode // ignore: cast_nullable_to_non_nullable
               as String?,
+      streamUrl: freezed == streamUrl
+          ? _value.streamUrl
+          : streamUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       thumbnailUrl: freezed == thumbnailUrl
           ? _value.thumbnailUrl
           : thumbnailUrl // ignore: cast_nullable_to_non_nullable
@@ -307,6 +314,7 @@ abstract class _$$EventImplCopyWith<$Res> implements $EventCopyWith<$Res> {
       bool hasGeofencing,
       bool hasFaceCheckIn,
       String? checkInQrCode,
+      String? streamUrl,
       String? thumbnailUrl,
       List<String>? tags,
       DateTime createdAt,
@@ -353,6 +361,7 @@ class __$$EventImplCopyWithImpl<$Res>
     Object? hasGeofencing = null,
     Object? hasFaceCheckIn = null,
     Object? checkInQrCode = freezed,
+    Object? streamUrl = freezed,
     Object? thumbnailUrl = freezed,
     Object? tags = freezed,
     Object? createdAt = null,
@@ -455,6 +464,10 @@ class __$$EventImplCopyWithImpl<$Res>
           ? _value.checkInQrCode
           : checkInQrCode // ignore: cast_nullable_to_non_nullable
               as String?,
+      streamUrl: freezed == streamUrl
+          ? _value.streamUrl
+          : streamUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       thumbnailUrl: freezed == thumbnailUrl
           ? _value.thumbnailUrl
           : thumbnailUrl // ignore: cast_nullable_to_non_nullable
@@ -518,6 +531,7 @@ class _$EventImpl implements _Event {
       this.hasGeofencing = false,
       this.hasFaceCheckIn = false,
       this.checkInQrCode,
+      this.streamUrl,
       this.thumbnailUrl,
       final List<String>? tags,
       required this.createdAt,
@@ -584,6 +598,8 @@ class _$EventImpl implements _Event {
   @override
   final String? checkInQrCode;
   @override
+  final String? streamUrl;
+  @override
   final String? thumbnailUrl;
   final List<String>? _tags;
   @override
@@ -614,7 +630,7 @@ class _$EventImpl implements _Event {
 
   @override
   String toString() {
-    return 'Event(id: $id, title: $title, description: $description, type: $type, startAt: $startAt, endAt: $endAt, location: $location, latitude: $latitude, longitude: $longitude, maxAttendees: $maxAttendees, currentAttendees: $currentAttendees, status: $status, spaceId: $spaceId, spaceName: $spaceName, dressCodeId: $dressCodeId, dressCodeName: $dressCodeName, dressCodeDescription: $dressCodeDescription, isPublic: $isPublic, requiresRegistration: $requiresRegistration, hasCheckIn: $hasCheckIn, hasGeofencing: $hasGeofencing, hasFaceCheckIn: $hasFaceCheckIn, checkInQrCode: $checkInQrCode, thumbnailUrl: $thumbnailUrl, tags: $tags, createdAt: $createdAt, updatedAt: $updatedAt, isRegistered: $isRegistered, isCheckedIn: $isCheckedIn, isOrganizer: $isOrganizer, isTeamMember: $isTeamMember)';
+    return 'Event(id: $id, title: $title, description: $description, type: $type, startAt: $startAt, endAt: $endAt, location: $location, latitude: $latitude, longitude: $longitude, maxAttendees: $maxAttendees, currentAttendees: $currentAttendees, status: $status, spaceId: $spaceId, spaceName: $spaceName, dressCodeId: $dressCodeId, dressCodeName: $dressCodeName, dressCodeDescription: $dressCodeDescription, isPublic: $isPublic, requiresRegistration: $requiresRegistration, hasCheckIn: $hasCheckIn, hasGeofencing: $hasGeofencing, hasFaceCheckIn: $hasFaceCheckIn, checkInQrCode: $checkInQrCode, streamUrl: $streamUrl, thumbnailUrl: $thumbnailUrl, tags: $tags, createdAt: $createdAt, updatedAt: $updatedAt, isRegistered: $isRegistered, isCheckedIn: $isCheckedIn, isOrganizer: $isOrganizer, isTeamMember: $isTeamMember)';
   }
 
   @override
@@ -661,6 +677,8 @@ class _$EventImpl implements _Event {
                 other.hasFaceCheckIn == hasFaceCheckIn) &&
             (identical(other.checkInQrCode, checkInQrCode) ||
                 other.checkInQrCode == checkInQrCode) &&
+            (identical(other.streamUrl, streamUrl) ||
+                other.streamUrl == streamUrl) &&
             (identical(other.thumbnailUrl, thumbnailUrl) ||
                 other.thumbnailUrl == thumbnailUrl) &&
             const DeepCollectionEquality().equals(other._tags, _tags) &&
@@ -705,6 +723,7 @@ class _$EventImpl implements _Event {
         hasGeofencing,
         hasFaceCheckIn,
         checkInQrCode,
+        streamUrl,
         thumbnailUrl,
         const DeepCollectionEquality().hash(_tags),
         createdAt,
@@ -756,6 +775,7 @@ abstract class _Event implements Event {
       final bool hasGeofencing,
       final bool hasFaceCheckIn,
       final String? checkInQrCode,
+      final String? streamUrl,
       final String? thumbnailUrl,
       final List<String>? tags,
       required final DateTime createdAt,
@@ -813,6 +833,8 @@ abstract class _Event implements Event {
   bool get hasFaceCheckIn;
   @override
   String? get checkInQrCode;
+  @override
+  String? get streamUrl;
   @override
   String? get thumbnailUrl;
   @override

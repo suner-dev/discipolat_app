@@ -42,6 +42,7 @@ mixin _$Task {
   List<String>? get tags => throw _privateConstructorUsedError;
   List<TaskAttachment>? get attachments => throw _privateConstructorUsedError;
   List<TaskComment>? get comments => throw _privateConstructorUsedError;
+  List<Task>? get subtasks => throw _privateConstructorUsedError;
   List<TaskDependency>? get dependencies => throw _privateConstructorUsedError;
   int? get parentTaskId => throw _privateConstructorUsedError;
   String? get parentTaskTitle => throw _privateConstructorUsedError;
@@ -88,6 +89,7 @@ abstract class $TaskCopyWith<$Res> {
       List<String>? tags,
       List<TaskAttachment>? attachments,
       List<TaskComment>? comments,
+      List<Task>? subtasks,
       List<TaskDependency>? dependencies,
       int? parentTaskId,
       String? parentTaskTitle,
@@ -135,6 +137,7 @@ class _$TaskCopyWithImpl<$Res, $Val extends Task>
     Object? tags = freezed,
     Object? attachments = freezed,
     Object? comments = freezed,
+    Object? subtasks = freezed,
     Object? dependencies = freezed,
     Object? parentTaskId = freezed,
     Object? parentTaskTitle = freezed,
@@ -233,6 +236,10 @@ class _$TaskCopyWithImpl<$Res, $Val extends Task>
           ? _value.comments
           : comments // ignore: cast_nullable_to_non_nullable
               as List<TaskComment>?,
+      subtasks: freezed == subtasks
+          ? _value.subtasks
+          : subtasks // ignore: cast_nullable_to_non_nullable
+              as List<Task>?,
       dependencies: freezed == dependencies
           ? _value.dependencies
           : dependencies // ignore: cast_nullable_to_non_nullable
@@ -299,6 +306,7 @@ abstract class _$$TaskImplCopyWith<$Res> implements $TaskCopyWith<$Res> {
       List<String>? tags,
       List<TaskAttachment>? attachments,
       List<TaskComment>? comments,
+      List<Task>? subtasks,
       List<TaskDependency>? dependencies,
       int? parentTaskId,
       String? parentTaskTitle,
@@ -343,6 +351,7 @@ class __$$TaskImplCopyWithImpl<$Res>
     Object? tags = freezed,
     Object? attachments = freezed,
     Object? comments = freezed,
+    Object? subtasks = freezed,
     Object? dependencies = freezed,
     Object? parentTaskId = freezed,
     Object? parentTaskTitle = freezed,
@@ -441,6 +450,10 @@ class __$$TaskImplCopyWithImpl<$Res>
           ? _value._comments
           : comments // ignore: cast_nullable_to_non_nullable
               as List<TaskComment>?,
+      subtasks: freezed == subtasks
+          ? _value._subtasks
+          : subtasks // ignore: cast_nullable_to_non_nullable
+              as List<Task>?,
       dependencies: freezed == dependencies
           ? _value._dependencies
           : dependencies // ignore: cast_nullable_to_non_nullable
@@ -503,6 +516,7 @@ class _$TaskImpl extends _Task {
       final List<String>? tags,
       final List<TaskAttachment>? attachments,
       final List<TaskComment>? comments,
+      final List<Task>? subtasks,
       final List<TaskDependency>? dependencies,
       this.parentTaskId,
       this.parentTaskTitle,
@@ -514,6 +528,7 @@ class _$TaskImpl extends _Task {
       : _tags = tags,
         _attachments = attachments,
         _comments = comments,
+        _subtasks = subtasks,
         _dependencies = dependencies,
         super._();
 
@@ -588,6 +603,16 @@ class _$TaskImpl extends _Task {
     return EqualUnmodifiableListView(value);
   }
 
+  final List<Task>? _subtasks;
+  @override
+  List<Task>? get subtasks {
+    final value = _subtasks;
+    if (value == null) return null;
+    if (_subtasks is EqualUnmodifiableListView) return _subtasks;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
   final List<TaskDependency>? _dependencies;
   @override
   List<TaskDependency>? get dependencies {
@@ -615,7 +640,7 @@ class _$TaskImpl extends _Task {
 
   @override
   String toString() {
-    return 'Task(id: $id, title: $title, description: $description, type: $type, priority: $priority, status: $status, projectId: $projectId, projectName: $projectName, assignedToId: $assignedToId, assignedToName: $assignedToName, assignedById: $assignedById, assignedByName: $assignedByName, departmentId: $departmentId, departmentName: $departmentName, dueDate: $dueDate, startDate: $startDate, completedDate: $completedDate, estimatedHours: $estimatedHours, actualHours: $actualHours, tags: $tags, attachments: $attachments, comments: $comments, dependencies: $dependencies, parentTaskId: $parentTaskId, parentTaskTitle: $parentTaskTitle, recurrenceRuleId: $recurrenceRuleId, recurrencePattern: $recurrencePattern, recurrenceEndDate: $recurrenceEndDate, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Task(id: $id, title: $title, description: $description, type: $type, priority: $priority, status: $status, projectId: $projectId, projectName: $projectName, assignedToId: $assignedToId, assignedToName: $assignedToName, assignedById: $assignedById, assignedByName: $assignedByName, departmentId: $departmentId, departmentName: $departmentName, dueDate: $dueDate, startDate: $startDate, completedDate: $completedDate, estimatedHours: $estimatedHours, actualHours: $actualHours, tags: $tags, attachments: $attachments, comments: $comments, subtasks: $subtasks, dependencies: $dependencies, parentTaskId: $parentTaskId, parentTaskTitle: $parentTaskTitle, recurrenceRuleId: $recurrenceRuleId, recurrencePattern: $recurrencePattern, recurrenceEndDate: $recurrenceEndDate, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -660,6 +685,7 @@ class _$TaskImpl extends _Task {
             const DeepCollectionEquality()
                 .equals(other._attachments, _attachments) &&
             const DeepCollectionEquality().equals(other._comments, _comments) &&
+            const DeepCollectionEquality().equals(other._subtasks, _subtasks) &&
             const DeepCollectionEquality()
                 .equals(other._dependencies, _dependencies) &&
             (identical(other.parentTaskId, parentTaskId) ||
@@ -704,6 +730,7 @@ class _$TaskImpl extends _Task {
         const DeepCollectionEquality().hash(_tags),
         const DeepCollectionEquality().hash(_attachments),
         const DeepCollectionEquality().hash(_comments),
+        const DeepCollectionEquality().hash(_subtasks),
         const DeepCollectionEquality().hash(_dependencies),
         parentTaskId,
         parentTaskTitle,
@@ -754,6 +781,7 @@ abstract class _Task extends Task {
       final List<String>? tags,
       final List<TaskAttachment>? attachments,
       final List<TaskComment>? comments,
+      final List<Task>? subtasks,
       final List<TaskDependency>? dependencies,
       final int? parentTaskId,
       final String? parentTaskTitle,
@@ -810,6 +838,8 @@ abstract class _Task extends Task {
   List<TaskAttachment>? get attachments;
   @override
   List<TaskComment>? get comments;
+  @override
+  List<Task>? get subtasks;
   @override
   List<TaskDependency>? get dependencies;
   @override

@@ -9,7 +9,7 @@ class _FakeApiService extends ApiService {
   _FakeApiService() : super(baseUrl: 'http://fake');
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path == '/directory/all') {
       return Response(
         requestOptions: RequestOptions(path: path),

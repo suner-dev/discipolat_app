@@ -38,7 +38,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final tasksAsync = ref.watch(_tasksProvider(_filterStatus, _filterPriority, _filterType));
+    final tasksAsync = ref.watch(_tasksProvider((_filterStatus, _filterPriority, _filterType)));
     final kanbanAsync = ref.watch(_kanbanProvider);
     final statsAsync = ref.watch(_statsProvider);
 
@@ -113,7 +113,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProv
               ),
               Expanded(
                 child: RefreshIndicator(
-                  onRefresh: () => ref.refresh(_tasksProvider(_filterStatus, _filterPriority, _filterType).future),
+                  onRefresh: () => ref.refresh(_tasksProvider((_filterStatus, _filterPriority, _filterType)).future),
                   child: tasksAsync.when(
                     data: (tasks) {
                       if (tasks.isEmpty) {

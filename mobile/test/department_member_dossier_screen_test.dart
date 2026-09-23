@@ -17,7 +17,7 @@ class _FakeApiService extends ApiService {
   final List<String> deletePaths = [];
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path.endsWith('/dossier')) return _json(path, _dossier);
     return _json(path, <String, dynamic>{});
   }
@@ -36,7 +36,7 @@ class _FakeApiService extends ApiService {
   }
 
   @override
-  Future<Response> delete(String path) async {
+  Future<Response> delete(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     deletePaths.add(path);
     return _json(path, <String, dynamic>{});
   }

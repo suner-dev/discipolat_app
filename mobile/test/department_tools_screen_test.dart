@@ -13,7 +13,7 @@ class _FakeApiService extends ApiService {
   final List<String> postPaths = [];
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path.endsWith('/reports/list')) {
       return _json(path, [
         {

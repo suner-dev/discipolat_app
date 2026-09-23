@@ -11,7 +11,7 @@ class _FakeApiService extends ApiService {
   final bool empty;
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path == '/prayer-journal/stats') {
       return Response(
         requestOptions: RequestOptions(path: path),

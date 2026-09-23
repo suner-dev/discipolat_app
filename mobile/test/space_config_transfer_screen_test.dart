@@ -37,7 +37,7 @@ class _FakeApiService extends ApiService {
   };
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path == '/spaces') {
       return Response(
         requestOptions: RequestOptions(path: path),

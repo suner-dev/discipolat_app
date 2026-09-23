@@ -21,7 +21,7 @@ class _FakeApiService extends ApiService {
   bool shouldFailFeedback = false;
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path == '/public/meta') {
       return _json(path, {
         'appName': 'Discipolat',

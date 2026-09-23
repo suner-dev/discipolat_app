@@ -14,7 +14,7 @@ class _FakeApiService extends ApiService {
   int toggles = 0;
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     getPaths.add(path);
     if (fail) throw DioException(requestOptions: RequestOptions(path: path));
     if (path == '/event-checklists') {

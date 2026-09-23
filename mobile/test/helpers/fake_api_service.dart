@@ -10,7 +10,7 @@ class FakeApiService extends ApiService {
   final List<String> postPaths = [];
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     getPaths.add(path);
 
     // Smart Alerts
@@ -83,7 +83,7 @@ class FakeApiService extends ApiService {
   }
 
   @override
-  Future<Response> delete(String path) async {
+  Future<Response> delete(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     return _json(path, {'status': 'ok'});
   }
 

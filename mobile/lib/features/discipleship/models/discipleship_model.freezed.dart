@@ -2828,6 +2828,9 @@ mixin _$MentorMeeting {
   String? get nextSteps => throw _privateConstructorUsedError;
   int? get durationMinutes => throw _privateConstructorUsedError;
   String? get location => throw _privateConstructorUsedError;
+  String? get mentorName => throw _privateConstructorUsedError;
+  String? get discipleName => throw _privateConstructorUsedError;
+  bool get isGroup => throw _privateConstructorUsedError;
 
   /// Serializes this MentorMeeting to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -2857,7 +2860,10 @@ abstract class $MentorMeetingCopyWith<$Res> {
       String? actionItems,
       String? nextSteps,
       int? durationMinutes,
-      String? location});
+      String? location,
+      String? mentorName,
+      String? discipleName,
+      bool isGroup});
 }
 
 /// @nodoc
@@ -2887,6 +2893,9 @@ class _$MentorMeetingCopyWithImpl<$Res, $Val extends MentorMeeting>
     Object? nextSteps = freezed,
     Object? durationMinutes = freezed,
     Object? location = freezed,
+    Object? mentorName = freezed,
+    Object? discipleName = freezed,
+    Object? isGroup = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -2937,6 +2946,18 @@ class _$MentorMeetingCopyWithImpl<$Res, $Val extends MentorMeeting>
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
               as String?,
+      mentorName: freezed == mentorName
+          ? _value.mentorName
+          : mentorName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      discipleName: freezed == discipleName
+          ? _value.discipleName
+          : discipleName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      isGroup: null == isGroup
+          ? _value.isGroup
+          : isGroup // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -2961,7 +2982,10 @@ abstract class _$$MentorMeetingImplCopyWith<$Res>
       String? actionItems,
       String? nextSteps,
       int? durationMinutes,
-      String? location});
+      String? location,
+      String? mentorName,
+      String? discipleName,
+      bool isGroup});
 }
 
 /// @nodoc
@@ -2989,6 +3013,9 @@ class __$$MentorMeetingImplCopyWithImpl<$Res>
     Object? nextSteps = freezed,
     Object? durationMinutes = freezed,
     Object? location = freezed,
+    Object? mentorName = freezed,
+    Object? discipleName = freezed,
+    Object? isGroup = null,
   }) {
     return _then(_$MentorMeetingImpl(
       id: null == id
@@ -3039,6 +3066,18 @@ class __$$MentorMeetingImplCopyWithImpl<$Res>
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
               as String?,
+      mentorName: freezed == mentorName
+          ? _value.mentorName
+          : mentorName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      discipleName: freezed == discipleName
+          ? _value.discipleName
+          : discipleName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      isGroup: null == isGroup
+          ? _value.isGroup
+          : isGroup // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -3058,7 +3097,10 @@ class _$MentorMeetingImpl implements _MentorMeeting {
       this.actionItems,
       this.nextSteps,
       this.durationMinutes,
-      this.location});
+      this.location,
+      this.mentorName,
+      this.discipleName,
+      this.isGroup = false});
 
   factory _$MentorMeetingImpl.fromJson(Map<String, dynamic> json) =>
       _$$MentorMeetingImplFromJson(json);
@@ -3087,10 +3129,17 @@ class _$MentorMeetingImpl implements _MentorMeeting {
   final int? durationMinutes;
   @override
   final String? location;
+  @override
+  final String? mentorName;
+  @override
+  final String? discipleName;
+  @override
+  @JsonKey()
+  final bool isGroup;
 
   @override
   String toString() {
-    return 'MentorMeeting(id: $id, assignmentId: $assignmentId, mentorId: $mentorId, discipleId: $discipleId, scheduledAt: $scheduledAt, actualAt: $actualAt, status: $status, notes: $notes, actionItems: $actionItems, nextSteps: $nextSteps, durationMinutes: $durationMinutes, location: $location)';
+    return 'MentorMeeting(id: $id, assignmentId: $assignmentId, mentorId: $mentorId, discipleId: $discipleId, scheduledAt: $scheduledAt, actualAt: $actualAt, status: $status, notes: $notes, actionItems: $actionItems, nextSteps: $nextSteps, durationMinutes: $durationMinutes, location: $location, mentorName: $mentorName, discipleName: $discipleName, isGroup: $isGroup)';
   }
 
   @override
@@ -3118,7 +3167,12 @@ class _$MentorMeetingImpl implements _MentorMeeting {
             (identical(other.durationMinutes, durationMinutes) ||
                 other.durationMinutes == durationMinutes) &&
             (identical(other.location, location) ||
-                other.location == location));
+                other.location == location) &&
+            (identical(other.mentorName, mentorName) ||
+                other.mentorName == mentorName) &&
+            (identical(other.discipleName, discipleName) ||
+                other.discipleName == discipleName) &&
+            (identical(other.isGroup, isGroup) || other.isGroup == isGroup));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -3136,7 +3190,10 @@ class _$MentorMeetingImpl implements _MentorMeeting {
       actionItems,
       nextSteps,
       durationMinutes,
-      location);
+      location,
+      mentorName,
+      discipleName,
+      isGroup);
 
   /// Create a copy of MentorMeeting
   /// with the given fields replaced by the non-null parameter values.
@@ -3167,7 +3224,10 @@ abstract class _MentorMeeting implements MentorMeeting {
       final String? actionItems,
       final String? nextSteps,
       final int? durationMinutes,
-      final String? location}) = _$MentorMeetingImpl;
+      final String? location,
+      final String? mentorName,
+      final String? discipleName,
+      final bool isGroup}) = _$MentorMeetingImpl;
 
   factory _MentorMeeting.fromJson(Map<String, dynamic> json) =
       _$MentorMeetingImpl.fromJson;
@@ -3196,6 +3256,12 @@ abstract class _MentorMeeting implements MentorMeeting {
   int? get durationMinutes;
   @override
   String? get location;
+  @override
+  String? get mentorName;
+  @override
+  String? get discipleName;
+  @override
+  bool get isGroup;
 
   /// Create a copy of MentorMeeting
   /// with the given fields replaced by the non-null parameter values.

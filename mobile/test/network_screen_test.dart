@@ -15,7 +15,7 @@ class _FakeApiService extends ApiService {
   final bool fail;
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (fail) throw Exception('network down');
     if (path == '/network/resources') {
       return Response(

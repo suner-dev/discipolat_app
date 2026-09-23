@@ -10,7 +10,7 @@ class _FakeApiService extends ApiService {
   _FakeApiService() : super(baseUrl: 'http://fake');
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path == '/forms/published') {
       return Response(
         requestOptions: RequestOptions(path: path),
@@ -73,7 +73,7 @@ class _EmptyApiService extends ApiService {
   _EmptyApiService() : super(baseUrl: 'http://fake');
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: []);
   }
 }

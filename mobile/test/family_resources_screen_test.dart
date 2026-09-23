@@ -7,7 +7,7 @@ import 'package:discipolat_mobile/presentation/screens/family_resources/family_r
 class _FakeApiService extends ApiService {
   _FakeApiService() : super(baseUrl: 'http://fake');
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path.contains('/family-resources')) {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: {'content': [
         {'titre': 'Étude Jean 3:16', 'categorie': 'biblique', 'createdAt': '2025-08-22'},

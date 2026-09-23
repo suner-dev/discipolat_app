@@ -39,6 +39,9 @@ _$TaskImpl _$$TaskImplFromJson(Map<String, dynamic> json) => _$TaskImpl(
       comments: (json['comments'] as List<dynamic>?)
           ?.map((e) => TaskComment.fromJson(e as Map<String, dynamic>))
           .toList(),
+      subtasks: (json['subtasks'] as List<dynamic>?)
+          ?.map((e) => Task.fromJson(e as Map<String, dynamic>))
+          .toList(),
       dependencies: (json['dependencies'] as List<dynamic>?)
           ?.map((e) => TaskDependency.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -79,6 +82,7 @@ Map<String, dynamic> _$$TaskImplToJson(_$TaskImpl instance) =>
       'tags': instance.tags,
       'attachments': instance.attachments,
       'comments': instance.comments,
+      'subtasks': instance.subtasks,
       'dependencies': instance.dependencies,
       'parentTaskId': instance.parentTaskId,
       'parentTaskTitle': instance.parentTaskTitle,

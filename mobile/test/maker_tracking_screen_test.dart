@@ -7,7 +7,7 @@ import 'package:discipolat_mobile/presentation/screens/maker_tracking/maker_trac
 class _FakeApiService extends ApiService {
   _FakeApiService() : super(baseUrl: 'http://fake');
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path.contains('/maker-tracking/resume')) {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: {'formations': 5, 'competences': 8, 'ames': 12, 'points': 1250});
     }

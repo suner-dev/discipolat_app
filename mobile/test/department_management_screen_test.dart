@@ -14,7 +14,7 @@ class _FakeApiService extends ApiService {
   final List<String> getPaths = [];
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     getPaths.add('$path?$params');
     if (path.endsWith('/management')) {
       return _json(path, {
@@ -114,7 +114,7 @@ class _FakeApiService extends ApiService {
   }
 
   @override
-  Future<Response> delete(String path) async {
+  Future<Response> delete(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     return _json(path, <String, dynamic>{});
   }
 

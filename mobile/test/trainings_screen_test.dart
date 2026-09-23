@@ -14,7 +14,7 @@ class _FakeApiService extends ApiService {
   final List<String> getPaths = [];
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     getPaths.add(path);
     return _handler(path, params);
   }

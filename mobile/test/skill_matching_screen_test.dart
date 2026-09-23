@@ -7,7 +7,7 @@ import 'package:discipolat_mobile/presentation/screens/skill_matching/skill_matc
 class _FakeApiService extends ApiService {
   _FakeApiService() : super(baseUrl: 'http://fake');
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path == '/skill-matching') {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: {'content': [
         {'membreNom': 'Jean-Pierre M.', 'departement': 'Louange', 'competence': 'Animation', 'score': 92},

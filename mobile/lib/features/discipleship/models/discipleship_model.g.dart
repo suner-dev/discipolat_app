@@ -348,6 +348,9 @@ _$MentorMeetingImpl _$$MentorMeetingImplFromJson(Map<String, dynamic> json) =>
       nextSteps: json['nextSteps'] as String?,
       durationMinutes: (json['durationMinutes'] as num?)?.toInt(),
       location: json['location'] as String?,
+      mentorName: json['mentorName'] as String?,
+      discipleName: json['discipleName'] as String?,
+      isGroup: json['isGroup'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$MentorMeetingImplToJson(_$MentorMeetingImpl instance) =>
@@ -364,6 +367,9 @@ Map<String, dynamic> _$$MentorMeetingImplToJson(_$MentorMeetingImpl instance) =>
       'nextSteps': instance.nextSteps,
       'durationMinutes': instance.durationMinutes,
       'location': instance.location,
+      'mentorName': instance.mentorName,
+      'discipleName': instance.discipleName,
+      'isGroup': instance.isGroup,
     };
 
 const _$MeetingStatusEnumMap = {

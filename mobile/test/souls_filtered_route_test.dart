@@ -14,7 +14,7 @@ class _RecordingApiService extends ApiService {
   final List<Map<String, dynamic>> requestedParams = [];
 
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     requestedPaths.add(path);
     requestedParams.add(params ?? const {});
     return Response(

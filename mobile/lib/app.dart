@@ -768,11 +768,6 @@ final appRouter = GoRouter(
       builder: (context, state) => const PrayersListScreen(),
     ),
     GoRoute(
-      path: '/events',
-      name: 'events',
-      builder: (context, state) => const EventsListScreen(),
-    ),
-    GoRoute(
       path: '/departments',
       name: 'departments',
       builder: (context, state) => const DepartmentsListScreen(),
@@ -1103,11 +1098,6 @@ final appRouter = GoRouter(
       builder: (context, state) => PresenceEntryScreen(
         departmentId: state.pathParameters['id']!,
       ),
-    ),
-    GoRoute(
-      path: '/finances',
-      name: 'finances',
-      builder: (context, state) => const FinanceScreen(),
     ),
     GoRoute(
       path: '/communications',

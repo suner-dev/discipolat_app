@@ -272,6 +272,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
   Widget _buildPlaceholder(Event event) {
     final typeColor = event.type.getColorHex().toColor();
+    final isLive = event.status == EventStatus.live;
     return Container(
       color: typeColor.withOpacity(0.1),
       child: Center(
@@ -390,7 +391,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _handleAction('team', event),
                     icon: const Icon(Icons.group_rounded),
-                    label: const Text(isTeam ? 'Mon équipe' : 'Équipe'),
+                    label: Text(isTeam ? 'Mon équipe' : 'Équipe'),
                   ),
                 ),
               ],

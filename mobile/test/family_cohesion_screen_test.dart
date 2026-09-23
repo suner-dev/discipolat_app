@@ -7,7 +7,7 @@ import 'package:discipolat_mobile/presentation/screens/family_cohesion/family_co
 class _FakeApiService extends ApiService {
   _FakeApiService() : super(baseUrl: 'http://fake');
   @override
-  Future<Response> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) async {
     if (path == '/family-cohesion') {
       return Response(requestOptions: RequestOptions(path: path), statusCode: 200, data: {'score': 7.5, 'indicators': {'Participation': 82}});
     }
