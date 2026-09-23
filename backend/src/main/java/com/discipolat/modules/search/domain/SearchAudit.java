@@ -7,6 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -34,7 +35,7 @@ public class SearchAudit {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "entity_types", columnDefinition = "jsonb")
-    private String[] entityTypes;
+    private List<String> entityTypes;
 
     @Column(name = "results_count", nullable = false)
     private Integer resultsCount;

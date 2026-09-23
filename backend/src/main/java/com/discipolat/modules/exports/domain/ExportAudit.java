@@ -7,6 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -40,7 +41,7 @@ public class ExportAudit {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "columns_exported", columnDefinition = "jsonb")
-    private String[] columnsExported;
+    private List<String> columnsExported;
 
     @Column(name = "record_count", nullable = false)
     private Integer recordCount;

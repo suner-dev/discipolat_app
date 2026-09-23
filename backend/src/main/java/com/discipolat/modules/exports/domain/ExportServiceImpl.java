@@ -186,7 +186,7 @@ public class ExportServiceImpl implements ExportService {
                     .exportType(request.getType().name())
                     .exportFormat(request.getFormat())
                     .filtersJson(request.getFilters() != null ? request.getFilters().toString() : null)
-                    .columnsExported(request.getColumns() != null ? request.getColumns().toArray(new String[0]) : null)
+                    .columnsExported(request.getColumns())
                     .recordCount((int) recordCount)
                     .fileSizeBytes(fileSizeBytes)
                     .executionTimeMs((int) executionTimeMs)

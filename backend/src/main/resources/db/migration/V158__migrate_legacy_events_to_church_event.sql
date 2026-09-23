@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS event (
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
+    lieu VARCHAR(255),
     type VARCHAR(50) CHECK (type IN ('SERVICE', 'MEETING', 'TRAINING', 'EVANGELISM', 'CONFERENCE', 'RETREAT', 'WEDDING', 'BAPTISM', 'FUNERAL', 'OTHER')),
     status VARCHAR(30) NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED', 'CANCELLED', 'COMPLETED', 'ARCHIVED')),
     start_at TIMESTAMPTZ NOT NULL,
@@ -45,19 +46,20 @@ CREATE INDEX IF NOT EXISTS idx_event_organizer ON event(organizer_id);
 
 COMMENT ON TABLE event IS 'G3.3 : Church OS evenement central — schema anglais, multi-tenant, configurable';
 COMMENT ON COLUMN event.tenant_id IS 'Tenant obligatoire (multi-tenancy)';
-COMMENT ON COLUMN event.type IS 'Type d\'evenement (configurable via custom_status)';
+COMMENT ON COLUMN event.type IS 'Type d evenement (configurable via custom_status)';
 COMMENT ON COLUMN event.status IS 'Statut (configurable via custom_status)';
 
 -- 3. Migrer les donnees de legacy_events vers event
 -- Note: tenant_id est requis. Pour les evenements existants, on associe au premier tenant trouve
 -- ou on cree un tenant par defaut si aucun n'existe.
-INSERT INTO event (id, tenant_id, title, description, type, status, start_at, end_at, 
+INSERT INTO event (id, tenant_id, title, description, lieu, type, status, start_at, end_at, 
                    organizer_id, visibility, created_at, updated_at, deleted_at)
 SELECT 
     id,
     COALESCE((SELECT id FROM tenants LIMIT 1), gen_random_uuid()) as tenant_id,
     titre as title,
     description,
+    lieu,
     CASE 
         WHEN type_evenement = 'SORTIE' THEN 'MEETING'
         WHEN type_evenement = 'RETRAITE' THEN 'RETREAT'
@@ -96,8 +98,9 @@ ALTER TABLE event_registrations
 
 -- 5. Mettre a jour files (evenement_id -> event_id)
 ALTER TABLE files 
-    DROP CONSTRAINT IF EXISTS files_evenement_id_fkey,
-    RENAME COLUMN evenement_id TO event_id,
+    DROP CONSTRAINT IF EXISTS files_evenement_id_fkey;
+ALTER TABLE files RENAME COLUMN evenement_id TO event_id;
+ALTER TABLE files 
     ADD CONSTRAINT files_event_id_fkey 
         FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE SET NULL;
 

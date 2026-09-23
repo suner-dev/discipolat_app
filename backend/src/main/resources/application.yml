@@ -238,6 +238,9 @@ spring:
       url: ${REDIS_URL:redis://redis:6379}
   flyway:
     enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: update
 
 server:
   port: ${PORT:8080}

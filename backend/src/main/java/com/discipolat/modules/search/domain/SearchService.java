@@ -423,7 +423,7 @@ public class SearchService {
             audit.setTenantId(tenantId);
             audit.setUserId(userId);
             audit.setQueryText(query);
-            audit.setEntityTypes(new String[]{"SOULS"}); // Could be extended for multi-entity search
+            audit.setEntityTypes(List.of("SOULS")); // Could be extended for multi-entity search
             audit.setResultsCount(resultsCount);
             audit.setExecutionTimeMs((int) executionTimeMs);
             searchAuditRepository.save(audit);

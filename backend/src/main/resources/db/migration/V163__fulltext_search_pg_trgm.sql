@@ -137,33 +137,33 @@ CREATE INDEX IF NOT EXISTS idx_departments_search_vector ON departments USING GI
 CREATE INDEX IF NOT EXISTS idx_departments_nom_trgm ON departments USING GIN(nom gin_trgm_ops);
 
 -- ============================================================
--- EVENTS: Add full-text search vector and indexes
+-- EVENT: Add full-text search vector and indexes (singular: event, not events)
 -- ============================================================
-ALTER TABLE events ADD COLUMN IF NOT EXISTS search_vector tsvector;
+ALTER TABLE event ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
-CREATE OR REPLACE FUNCTION events_search_vector_update()
+CREATE OR REPLACE FUNCTION event_search_vector_update()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.search_vector :=
-        setweight(to_tsvector('french', COALESCE(NEW.titre, '')), 'A') ||
+        setweight(to_tsvector('french', COALESCE(NEW.title, '')), 'A') ||
         setweight(to_tsvector('french', COALESCE(NEW.description, '')), 'B') ||
         setweight(to_tsvector('french', COALESCE(NEW.lieu, '')), 'B');
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS events_search_vector_trigger ON events;
-CREATE TRIGGER events_search_vector_trigger
-    BEFORE INSERT OR UPDATE ON events
-    FOR EACH ROW EXECUTE FUNCTION events_search_vector_update();
+DROP TRIGGER IF EXISTS event_search_vector_trigger ON event;
+CREATE TRIGGER event_search_vector_trigger
+    BEFORE INSERT OR UPDATE ON event
+    FOR EACH ROW EXECUTE FUNCTION event_search_vector_update();
 
-UPDATE events SET search_vector = 
-    setweight(to_tsvector('french', COALESCE(titre, '')), 'A') ||
+UPDATE event SET search_vector = 
+    setweight(to_tsvector('french', COALESCE(title, '')), 'A') ||
     setweight(to_tsvector('french', COALESCE(description, '')), 'B') ||
     setweight(to_tsvector('french', COALESCE(lieu, '')), 'B');
 
-CREATE INDEX IF NOT EXISTS idx_events_search_vector ON events USING GIN(search_vector);
-CREATE INDEX IF NOT EXISTS idx_events_titre_trgm ON events USING GIN(titre gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_event_search_vector ON event USING GIN(search_vector);
+CREATE INDEX IF NOT EXISTS idx_event_title_trgm ON event USING GIN(title gin_trgm_ops);
 
 -- ============================================================
 -- MAKER_REPORTS: Add full-text search vector

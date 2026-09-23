@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_person_deleted ON person(deleted_at);
 COMMENT ON TABLE person IS 'G3.1 : identite unique par eglise — une seule fiche par personne';
 COMMENT ON COLUMN person.email_normalized IS 'Email normalise (lowercase, trim) pour dedoublonnage';
 COMMENT ON COLUMN person.phone_normalized IS 'Telephone normalise (E.164) pour dedoublonnage';
-COMMENT ON COLUMN person.visibility_scope IS 'Portee de visibilite dans l\'annuaire (G4.2)';
+COMMENT ON COLUMN person.visibility_scope IS 'Portee de visibilite dans l annuaire (G4.2)';
 
 -- 2. MEMBERSHIP (appartenance a l'eglise/tenant)
 CREATE TABLE IF NOT EXISTS membership (
@@ -54,7 +54,7 @@ CREATE INDEX IF NOT EXISTS idx_membership_tenant ON membership(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_membership_person ON membership(person_id);
 CREATE INDEX IF NOT EXISTS idx_membership_status ON membership(membership_status);
 
-COMMENT ON TABLE membership IS 'G3.2 : appartenance a l\'eglise (tenant) — distincte des espaces';
+COMMENT ON TABLE membership IS 'G3.2 : appartenance a l eglise (tenant) — distincte des espaces';
 
 -- 3. SPACE_MEMBERSHIP (appartenance a un espace : departement, famille, sous-equipe)
 CREATE TABLE IF NOT EXISTS space_membership (
@@ -79,7 +79,7 @@ CREATE INDEX IF NOT EXISTS idx_sm_tenant ON space_membership(tenant_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_sm_person_space ON space_membership(person_id, space_id) WHERE left_at IS NULL;
 
 COMMENT ON TABLE space_membership IS 'G3.2 : appartenance a un espace (departement/famille/sous-equipe) — dimension 2';
-COMMENT ON COLUMN space_membership.membership_type IS 'Type de responsabilite dans l\'espace';
+COMMENT ON COLUMN space_membership.membership_type IS 'Type de responsabilite dans l espace';
 
 -- 4. ROLE_ASSIGNMENT (fonction permanente dans l'organisation)
 CREATE TABLE IF NOT EXISTS role_assignment (
@@ -103,7 +103,7 @@ CREATE INDEX IF NOT EXISTS idx_ra_org_unit ON role_assignment(organization_unit_
 CREATE INDEX IF NOT EXISTS idx_ra_space ON role_assignment(space_id);
 CREATE INDEX IF NOT EXISTS idx_ra_status ON role_assignment(status);
 
-COMMENT ON TABLE role_assignment IS 'G3.2 : fonction permanente (role org) — dimension 1, historisee (jamais d\'ecrasement)';
+COMMENT ON TABLE role_assignment IS 'G3.2 : fonction permanente (role org) — dimension 1, historisee (jamais d ecrasement)';
 COMMENT ON COLUMN role_assignment.ended_at IS 'Date de fin du mandat — cloture sans suppression pour historique';
 
 -- 5. EVENT_ASSIGNMENT (fonction evenementielle)
@@ -146,8 +146,8 @@ CREATE TRIGGER update_event_assignment_updated_at BEFORE UPDATE ON event_assignm
 
 -- 6. Seed roles catalogue (complement roles existants)
 INSERT INTO roles (id, tenant_id, key, label, description, system, priority) VALUES
-    (gen_random_uuid(), NULL, 'HEALTH_STAFF', 'Personnel Sante', 'Infirmier/Medecin de l\'espace sante', TRUE, 250),
-    (gen_random_uuid(), NULL, 'HEALTH_LEAD', 'Responsable Sante', 'Responsable de l\'infirmerie', TRUE, 300),
-    (gen_random_uuid(), NULL, 'FAMILY_LEADER', 'Chef de Famille', 'Responsable d\'un espace FAMILY', TRUE, 300),
+    (gen_random_uuid(), NULL, 'HEALTH_STAFF', 'Personnel Sante', 'Infirmier/Medecin de l espace sante', TRUE, 250),
+    (gen_random_uuid(), NULL, 'HEALTH_LEAD', 'Responsable Sante', 'Responsable de l infirmerie', TRUE, 300),
+    (gen_random_uuid(), NULL, 'FAMILY_LEADER', 'Chef de Famille', 'Responsable d un espace FAMILY', TRUE, 300),
     (gen_random_uuid(), NULL, 'DISCIPLE_MAKER', 'Faiseur de Disciples', 'Accompagnateur spirituel (active par template FAMILY/DISCIPLESHIP)', TRUE, 200)
 ON CONFLICT (tenant_id, key) DO NOTHING;
