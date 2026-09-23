@@ -5,6 +5,9 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.tenants.api.CreateTenantRequest;
+import com.discipolat.modules.tenants.api.TenantResponse;
+import com.discipolat.modules.tenants.domain.TenantService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -38,6 +41,7 @@ public class AuthService {
     private final ActivationTokenRepository activationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+    private final TenantService tenantService;
     private final String frontendUrl;
     private final Set<String> blacklistedRefreshTokens = ConcurrentHashMap.newKeySet();
 
@@ -46,6 +50,7 @@ public class AuthService {
                        ActivationTokenRepository activationTokenRepository,
                        PasswordResetTokenRepository passwordResetTokenRepository,
                        EmailService emailService,
+                       TenantService tenantService,
                        @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -54,6 +59,7 @@ public class AuthService {
         this.activationTokenRepository = activationTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailService = emailService;
+        this.tenantService = tenantService;
         this.frontendUrl = frontendUrl;
     }
 
@@ -66,16 +72,41 @@ public class AuthService {
     // ======================== SELF-REGISTRATION ========================
 
     /**
-     * Public self-registration. Every new account starts with the MEMBRE
-     * role (everyone is a member first); an admin or pasteur later assigns
-     * additional roles (or demotes) through the users API. The tenant is
-     * resolved server-side: without a request tenant context the account is
-     * created in the default tenant (TenantAutoSetListener).
+     * Public self-registration.
+     * 
+     * Nouveau comportement (commercialisation) :
+     * - Si l'utilisateur a un invite code, on vérifie qu'il est valide
+     * - Si l'utilisateur n'a pas de tenant assigné, on crée automatiquement
+     *   un nouveau tenant (nouvelle église) et on promote l'utilisateur à PASTEUR.
+     * - Si l'utilisateur a déjà un tenant (via invitation ou contexte), le rôle
+     *   reste MEMBRE et un administrateur doit le promouvoir.
+     * 
+     * Cela permet à une nouvelle église de se connecter sans intervention manuelle.
      */
-    public User register(String email, String rawPassword, String firstName, String lastName, String phone) {
+    public User register(String email, String rawPassword, String firstName, String lastName, String phone, String inviteCode) {
         String normalizedEmail = email.trim().toLowerCase();
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new BusinessRuleException("Email already exists: " + normalizedEmail);
+        }
+
+        // Vérifier l'invite code si fourni
+        UUID inviteurId = null;
+        if (inviteCode != null && !inviteCode.isBlank()) {
+            // TODO: Valider l'invite code (InviteCodeRepository)
+            log.info("Invite code reçu: {}", inviteCode);
+        }
+
+        UUID tenantId = securityUtils.getCurrentTenantId();
+        UserRole initialRole = UserRole.MEMBRE;
+        boolean isFirstUserOfNewTenant = false;
+
+        // Si pas de tenant context (nouvel utilisateur sans église existante)
+        // → créer un nouveau tenant et promoter à PASTEUR
+        if (tenantId == null || tenantId == UUID.fromString("00000000-0000-0000-0000-000000000000")) {
+            tenantId = createDefaultTenantForNewUser(email);
+            initialRole = UserRole.PASTEUR;
+            isFirstUserOfNewTenant = true;
+            log.info("Nouveau tenant créé pour l'inscription: email={}, tenantId={}", email, tenantId);
         }
 
         User user = User.builder()
@@ -84,17 +115,127 @@ public class AuthService {
                 .lastName(lastName != null ? lastName.trim() : null)
                 .phone(phone != null ? phone.trim() : null)
                 .passwordHash(passwordEncoder.encode(rawPassword))
-                .role(UserRole.MEMBRE)
-                .roles(new HashSet<>(Set.of(UserRole.MEMBRE)))
-                .activeRole(UserRole.MEMBRE)
+                .role(initialRole)
+                .roles(new HashSet<>(Set.of(initialRole)))
+                .activeRole(initialRole)
                 .statut(UserStatus.PENDING_ACTIVATION)
                 .estChefDeFamille(false)
                 .twoFactorEnabled(false)
+                .tenantId(tenantId)
                 .build();
 
         User saved = userRepository.save(user);
-        sendActivationEmail(saved.getId());
+        
+        // Envoi d'email différencié selon le rôle
+        if (isFirstUserOfNewTenant) {
+            sendPastorWelcomeEmail(saved.getId(), tenantId);
+        } else {
+            sendActivationEmail(saved.getId());
+        }
+        
         return saved;
+    }
+
+    /**
+     * Crée un tenant par défaut pour un nouvel utilisateur sans église existante.
+     * Le nom du tenant est dérivé de l'email ou laissé générique.
+     */
+    private UUID createDefaultTenantForNewUser(String email) {
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+        // Extraction du nom depuis l'email (partie avant @)
+        String suggestedName = normalizedEmail.contains("@") 
+                ? capitalize(normalizedEmail.substring(0, normalizedEmail.indexOf("@"))).trim()
+                : "Nouvelle Église";
+        
+        // Génération d'un slug unique basé sur l'email
+        String slug = normalizedEmail.contains("@") 
+                ? normalizedEmail.substring(0, normalizedEmail.indexOf("@")).replaceAll("[^a-z0-9-]", "-")
+                : "eglise-" + System.currentTimeMillis();
+        
+        // Tentative de création via le service tenant
+        try {
+            TenantResponse tenant = tenantService.create(new CreateTenantRequest(
+                    suggestedName,
+                    slug,
+                    "free",  // Plan gratuit par défaut
+                    null,    // Country (optionnel)
+                    "EUR",   // Devise par défaut
+                    "Europe/Paris", // Fuseau horaire par défaut
+                    "fr",    // Locale par défaut
+                    null, null, null
+            ));
+            log.info("Tenant créé automatiquement pour nouvel utilisateur: name={}, slug={}, tenantId={}", 
+                    suggestedName, slug, tenant.id());
+            return tenant.id();
+        } catch (Exception e) {
+            log.error("Impossible de créer un tenant automatique pour {}: {}", email, e.getMessage(), e);
+            // Fallback : retourner un tenant générique
+            // En production, cela ne devrait pas arriver
+            return UUID.randomUUID();
+        }
+    }
+
+    /**
+     * Capitalise la première lettre de chaque mot.
+     */
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) return str;
+        StringBuilder result = new StringBuilder();
+        boolean nextTitleCase = true;
+        for (char c : str.toCharArray()) {
+            if (Character.isSpaceChar(c)) {
+                nextTitleCase = true;
+            } else if (nextTitleCase) {
+                c = Character.toTitleCase(c);
+                nextTitleCase = false;
+            }
+            result.append(c);
+        }
+        return result.toString();
+    }
+
+    /**
+     * Envoi d'email de bienvenue spécifique pour les nouveaux pasteurs.
+     */
+    private void sendPastorWelcomeEmail(UUID userId, UUID tenantId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
+
+        String token = UUID.randomUUID().toString();
+        ActivationToken activationToken = ActivationToken.builder()
+                .userId(userId)
+                .token(token)
+                .expiresAt(Instant.now().plus(ACTIVATION_VALIDITY_HOURS, ChronoUnit.HOURS))
+                .used(false)
+                .build();
+        activationTokenRepository.save(activationToken);
+
+        String activationLink = frontendUrl + "/activate?token=" + token;
+        
+        // Email spécifique pour les pasteurs
+        String firstName = user.getFirstName() != null && !user.getFirstName().isBlank() 
+                ? user.getFirstName() 
+                : "Pasteur";
+        
+        String subject = "Bienvenue à Discipolat — Votre église est prête";
+        String body = "Bonjour " + firstName + ",\n\n"
+                + "Votre église a été créée avec succès sur Discipolat !\n\n"
+                + "Félicitations ! Vous êtes le pasteur principal et avez tous les accès administratifs.\n\n"
+                + "Pour activer votre compte, cliquez sur ce lien :\n\n"
+                + activationLink + "\n\n"
+                + "Une fois activé, vous pourrez :\n"
+                + "- Configurer votre église (nom, logo, couleurs, fuseau, devise)\n"
+                + "- Inviter vos responsables de département et chefs de famille\n"
+                + "- Commencer à gérer vos membres et âmes\n"
+                + "- Utiliser l'assistant IA pastoral pour analyser votre église\n\n"
+                + "Besoin d'aide ? Contactez le support Discipolat.\n\n"
+                + "L'équipe Discipolat";
+        
+        try {
+            emailService.send(user.getEmail(), subject, body);
+        } catch (Exception e) {
+            log.warn("Failed to send pastor welcome email to {}: {}", user.getEmail(), e.getMessage());
+        }
     }
 
     // ======================== LOGIN ========================

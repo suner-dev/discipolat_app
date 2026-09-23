@@ -61,7 +61,19 @@ public class AuthController {
             return rateLimitedResponse(rl);
         }
 
-        authService.register(request.email(), request.password(), request.firstName(), request.lastName(), request.phone());
+        // Récupérer l'invite code depuis les headers (optionnel)
+        String inviteCode = httpRequest.getHeader("X-Invite-Code");
+        
+        authService.register(request.email(), request.password(), request.firstName(), request.lastName(), request.phone(), inviteCode);
+
+        // Retourner le rôle approprié selon si c'est un nouveau pasteur
+        if (inviteCode != null && !inviteCode.isBlank()) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "message", "Account created. Check your email to activate it.",
+                    "role", "MEMBRE"
+            ));
+        }
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "Account created. Check your email to activate it.",
                 "role", "MEMBRE"

@@ -4,9 +4,12 @@ import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.tenants.domain.TenantService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -39,6 +43,8 @@ class AuthServiceTest {
     private PasswordResetTokenRepository passwordResetTokenRepository;
     @Mock
     private EmailService emailService;
+    @Mock
+    private TenantService tenantService;
 
     private PasswordEncoder passwordEncoder;
     private AuthService authService;
@@ -49,10 +55,11 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+        TenantContext.setTenantId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         passwordEncoder = new BCryptPasswordEncoder(4);
         authService = new AuthService(userRepository, jwtTokenProvider, passwordEncoder, securityUtils,
                 activationTokenRepository, passwordResetTokenRepository, emailService,
-                "http://localhost:5173");
+                tenantService, "http://localhost:5173");
 
         userId = UUID.randomUUID();
         testUser = User.builder()
@@ -67,6 +74,12 @@ class AuthServiceTest {
                 .failedLoginAttempts(0)
                 .twoFactorEnabled(false)
                 .build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -191,7 +204,7 @@ class AuthServiceTest {
                 .thenAnswer(inv -> inv.getArgument(0));
         doNothing().when(emailService).sendWelcomeEmail(anyString(), anyString(), anyString());
 
-        User created = authService.register("New@Member.com", "password123", "New", "Member", null);
+        User created = authService.register("New@Member.com", "password123", "New", "Member", null, null);
 
         assertEquals(UserRole.MEMBRE, created.getRole());
         assertEquals(UserRole.MEMBRE, created.getActiveRole());
@@ -209,7 +222,7 @@ class AuthServiceTest {
         when(userRepository.existsByEmail("dup@member.com")).thenReturn(true);
 
         assertThrows(BusinessRuleException.class, () ->
-                authService.register("dup@member.com", "password123", "Dup", "Member", null)
+                authService.register("dup@member.com", "password123", "Dup", "Member", null, null)
         );
         verify(userRepository, never()).save(any(User.class));
     }
