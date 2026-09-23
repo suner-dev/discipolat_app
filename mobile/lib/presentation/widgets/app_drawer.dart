@@ -83,6 +83,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.book_rounded, 'title': 'Dictionnaires', 'route': '/admin/dictionaries'},
     {'icon': Icons.language_rounded, 'title': 'Intégrations', 'route': '/admin/integrations'},
     {'icon': Icons.business_rounded, 'title': 'Églises (tenants)', 'route': '/admin/tenants'},
+    {'icon': Icons.rocket_launch_rounded, 'title': 'Provisionnement guidé', 'route': '/platform/onboarding'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
     {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},
     {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions'},
@@ -266,6 +267,7 @@ class _AppDrawerState extends State<AppDrawer> {
       case '/admin/dictionaries': return l10n.navDictionaries;
       case '/admin/integrations': return l10n.navIntegrations;
       case '/admin/tenants': return l10n.navChurches;
+      case '/platform/onboarding': return 'Provisionnement guidé';
       case '/security-settings': return l10n.navSecurity;
       case '/users': return l10n.navUsers;
       case '/permissions': return l10n.navPermissions;

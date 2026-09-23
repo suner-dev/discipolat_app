@@ -83,6 +83,7 @@ import 'presentation/screens/platform/admin_custom_fields_screen.dart';
 import 'presentation/screens/platform/admin_dictionaries_screen.dart';
 import 'presentation/screens/platform/admin_integrations_screen.dart';
 import 'presentation/screens/platform/admin_tenants_screen.dart';
+import 'presentation/screens/platform/super_admin_provisioning_screen.dart';
 import 'presentation/screens/admin/benchmark_screen.dart';
 import 'presentation/screens/admin/admin_payment_dashboard_screen.dart';
 import 'presentation/screens/admin/webhook_log_screen.dart';
@@ -541,6 +542,7 @@ Map<String, List<String>> _routeRoles = {
   '/compliance-exports': ['ADMIN'],
   // SAAS multi-tenant — routes platform & tenant admin
   '/tenant-selection': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_SUPER_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
+  '/platform/onboarding': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN'],
   '/tenant/modules': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
   '/tenant/roles': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
   '/tenant/users': ['ADMIN', 'PASTEUR', 'PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'],
@@ -1289,6 +1291,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/messages/new-channel', name: 'new-channel', builder: (ctx, s) => const Scaffold(body: Center(child: Text('Nouveau canal - à implémenter')))),
     GoRoute(path: '/ai-chat', name: 'ai-chat', builder: (ctx, s) => const AiChatScreen()),
     GoRoute(path: '/tenant-selection', name: 'tenant-selection', builder: (ctx, s) => const TenantSelectionScreen()),
+    GoRoute(path: '/platform/onboarding', name: 'platform-onboarding', builder: (ctx, s) => const SuperAdminProvisioningScreen()),
     GoRoute(path: '/tenant/branding', name: 'tenant-branding', builder: (ctx, s) => const TenantBrandingScreen()),
     GoRoute(path: '/tenant/settings', name: 'tenant-settings', builder: (ctx, s) => const TenantSettingsScreen()),
     GoRoute(path: '/tenant/organizations', name: 'tenant-organizations', builder: (ctx, s) => const OrganizationsScreen()),
