@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'package:discipolat_mobile/features/discipleship/models/discipleship_model.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart'
@@ -16,7 +17,6 @@ class JourneyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isActive = journey.isActive;
     final journeyTypeColor = _getTypeColor(journey.type);
 
     return Card(
@@ -36,10 +36,10 @@ class JourneyCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.purple.withOpacity(0.2),
+                      color: journeyTypeColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.menu_book_rounded, color: Colors.purple, size: 28),
+                    child: Icon(Icons.menu_book_rounded, color: journeyTypeColor, size: 28),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -94,7 +94,7 @@ class JourneyCard extends StatelessWidget {
                   Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.surface.withOpacity(0.7)),
                   const SizedBox(width: 4),
                   Text(
-                    'Du ${DateFormat('dd/MM/yyyy').format(journey.startDate.toLocal())}',
+                    'Du ${DateFormat('dd/MM/yyyy').format(journey.startDate.toLocal())} • ${journey.totalStages} étapes',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.surface.withOpacity(0.7)),
                   ),
                   if (journey.endDate != null) ...[
@@ -113,5 +113,20 @@ class JourneyCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getTypeColor(JourneyType type) {
+    switch (type) {
+      case JourneyType.newBeliever:
+        return Colors.green;
+      case JourneyType.growth:
+        return Colors.blue;
+      case JourneyType.leadership:
+        return Colors.purple;
+      case JourneyType.ministry:
+        return Colors.orange;
+      case JourneyType.custom:
+        return Colors.grey;
+    }
   }
 }

@@ -32,6 +32,9 @@ class AppColors {
   /// Couleur des boutons (bouton principal) — par défaut = couleur principale.
   static Color button = defaultPrimary;
 
+  /// Success color (vert succès).
+  static const Color success = Color(0xFF22C55E);
+
   /// Police de caractères de l'église (null = police par défaut de l'app).
   static String? fontFamily;
 
@@ -60,8 +63,10 @@ class AppColors {
     fontFamily = font;
   }
 
-  static Color _lighten(Color color, double amount) => Color.lerp(color, Colors.white, amount) ?? color;
-  static Color _darken(Color color, double amount) => Color.lerp(color, Colors.black, amount) ?? color;
+  static Color _lighten(Color color, double amount) =>
+      Color.lerp(color, Colors.white, amount) ?? color;
+  static Color _darken(Color color, double amount) =>
+      Color.lerp(color, Colors.black, amount) ?? color;
 }
 
 /// Dark glassmorphism theme
@@ -122,7 +127,8 @@ class GlassTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.button,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
@@ -131,7 +137,8 @@ class GlassTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.white70,
           side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         ),
       ),
@@ -271,7 +278,10 @@ class GlassStatCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+              Text(label,
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 12)),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -362,14 +372,21 @@ class GradientAvatar extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(radius),
         boxShadow: showGlow
-            ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 12, spreadRadius: 1)]
+            ? [
+                BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    spreadRadius: 1)
+              ]
             : null,
       ),
       child: Stack(
         children: [
           Center(
             child: Text(
-              text.length > 2 ? text.substring(0, 2).toUpperCase() : text.toUpperCase(),
+              text.length > 2
+                  ? text.substring(0, 2).toUpperCase()
+                  : text.toUpperCase(),
               style: TextStyle(
                 color: Colors.white,
                 fontSize: radius * 0.6,
@@ -418,7 +435,9 @@ class StatusBadge extends StatelessWidget {
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withValues(alpha: 0.3)),
-        boxShadow: glowing ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8)] : null,
+        boxShadow: glowing
+            ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8)]
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -429,11 +448,14 @@ class StatusBadge extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              boxShadow: glowing ? [BoxShadow(color: color, blurRadius: 4)] : null,
+              boxShadow:
+                  glowing ? [BoxShadow(color: color, blurRadius: 4)] : null,
             ),
           ),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(label,
+              style: TextStyle(
+                  color: color, fontSize: 11, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -504,7 +526,8 @@ class SectionTitle extends StatelessWidget {
   final IconData? icon;
   final Widget? trailing;
 
-  const SectionTitle({super.key, required this.title, this.icon, this.trailing});
+  const SectionTitle(
+      {super.key, required this.title, this.icon, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -564,7 +587,8 @@ class GlassBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
-  const GlassBottomNav({super.key, required this.currentIndex, required this.onTap});
+  const GlassBottomNav(
+      {super.key, required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -579,7 +603,9 @@ class GlassBottomNav extends StatelessWidget {
             const Color(0xFF111827).withValues(alpha: 0.8),
           ],
         ),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20)
+        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -594,10 +620,14 @@ class GlassBottomNav extends StatelessWidget {
             unselectedItemColor: Colors.white38,
             type: BottomNavigationBarType.fixed,
             items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Accueil'),
-              BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Âmes'),
-              BottomNavigationBarItem(icon: Icon(Icons.description), label: 'Rapports'),
-              BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard), label: 'Accueil'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.favorite), label: 'Âmes'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.description), label: 'Rapports'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.person), label: 'Profil'),
             ],
           ),
         ),

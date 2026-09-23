@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:discipolat_mobile/data/services/api_service.dart';
+import 'package:discipolat_mobile/data/services/providers.dart';
 import 'package:discipolat_mobile/features/messages/models/message_model.dart';
 import 'package:discipolat_mobile/features/messages/models/typing_indicator.dart';
 
@@ -27,16 +30,19 @@ class MessagesService {
   Stream<TypingIndicator> get onTyping => _typingController.stream;
 
   // Conversations
-  Future<List<Conversation>> getConversations({int page = 0, int size = 20, String? type}) async {
+  Future<List<Conversation>> getConversations(
+      {int page = 0, int size = 20, String? type}) async {
     try {
       final queryParams = <String, dynamic>{
         'page': page,
         'size': size,
         if (type != null) 'type': type,
       };
-      final response = await _api.get('/conversations', queryParameters: queryParams);
+      final response = await _api.get('/conversations', params: queryParams);
       final data = response.data as List;
-      return data.map((json) => Conversation.fromJson(json as Map<String, dynamic>)).toList();
+      return data
+          .map((json) => Conversation.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw Exception('Erreur lors du chargement des conversations: $e');
     }
@@ -62,7 +68,9 @@ class MessagesService {
     }
   }
 
-  Future<Conversation> createGroupConversation(String title, List<int> participantIds, {String? avatarUrl}) async {
+  Future<Conversation> createGroupConversation(
+      String title, List<int> participantIds,
+      {String? avatarUrl}) async {
     try {
       final response = await _api.post('/conversations/group', data: {
         'title': title,
@@ -75,7 +83,12 @@ class MessagesService {
     }
   }
 
-  Future<void> updateConversation(int id, {String? title, String? avatarUrl, bool? isPinned, bool? isMuted, bool? isArchived}) async {
+  Future<void> updateConversation(int id,
+      {String? title,
+      String? avatarUrl,
+      bool? isPinned,
+      bool? isMuted,
+      bool? isArchived}) async {
     try {
       final data = <String, dynamic>{};
       if (title != null) data['title'] = title;
@@ -98,11 +111,16 @@ class MessagesService {
   }
 
   // Participants
-  Future<List<ConversationParticipant>> getParticipants(int conversationId) async {
+  Future<List<ConversationParticipant>> getParticipants(
+      int conversationId) async {
     try {
-      final response = await _api.get('/conversations/$conversationId/participants');
+      final response =
+          await _api.get('/conversations/$conversationId/participants');
       final data = response.data as List;
-      return data.map((json) => ConversationParticipant.fromJson(json as Map<String, dynamic>)).toList();
+      return data
+          .map((json) =>
+              ConversationParticipant.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw Exception('Erreur lors du chargement des participants: $e');
     }
@@ -126,9 +144,11 @@ class MessagesService {
     }
   }
 
-  Future<void> updateParticipantRole(int conversationId, int userId, ConversationRole role) async {
+  Future<void> updateParticipantRole(
+      int conversationId, int userId, ConversationRole role) async {
     try {
-      await _api.patch('/conversations/$conversationId/participants/$userId', data: {
+      await _api
+          .patch('/conversations/$conversationId/participants/$userId', data: {
         'role': role.name,
       });
     } catch (e) {
@@ -137,24 +157,32 @@ class MessagesService {
   }
 
   // Messages
-  Future<List<Message>> getMessages(int conversationId, {int page = 0, int size = 50, int? beforeMessageId}) async {
+  Future<List<Message>> getMessages(int conversationId,
+      {int page = 0, int size = 50, int? beforeMessageId}) async {
     try {
       final queryParams = <String, dynamic>{
         'page': page,
         'size': size,
         if (beforeMessageId != null) 'before': beforeMessageId,
       };
-      final response = await _api.get('/conversations/$conversationId/messages', queryParameters: queryParams);
+      final response = await _api.get('/conversations/$conversationId/messages',
+          params: queryParams);
       final data = response.data as List;
-      return data.map((json) => Message.fromJson(json as Map<String, dynamic>)).toList();
+      return data
+          .map((json) => Message.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw Exception('Erreur lors du chargement des messages: $e');
     }
   }
 
-  Future<Message> sendMessage(int conversationId, String content, {MessageType type = MessageType.text, List<String>? mediaUrls, int? replyToMessageId}) async {
+  Future<Message> sendMessage(int conversationId, String content,
+      {MessageType type = MessageType.text,
+      List<String>? mediaUrls,
+      int? replyToMessageId}) async {
     try {
-      final response = await _api.post('/conversations/$conversationId/messages', data: {
+      final response =
+          await _api.post('/conversations/$conversationId/messages', data: {
         'content': content,
         'type': type.name,
         if (mediaUrls != null) 'mediaUrls': mediaUrls,
@@ -166,7 +194,8 @@ class MessagesService {
     }
   }
 
-  Future<Message> sendMediaMessage(int conversationId, String filePath, MessageType type) async {
+  Future<Message> sendMediaMessage(
+      int conversationId, String filePath, MessageType type) async {
     try {
       // TODO: Upload file first, then send message with media URL
       // For now, placeholder
@@ -189,7 +218,7 @@ class MessagesService {
 
   Future<void> deleteMessage(int messageId, {bool forEveryone = false}) async {
     try {
-      await _api.delete('/messages/$messageId', queryParameters: {
+      await _api.delete('/messages/$messageId', params: {
         'forEveryone': forEveryone.toString(),
       });
     } catch (e) {
@@ -230,7 +259,9 @@ class MessagesService {
     try {
       final response = await _api.get('/messages/$messageId/reactions');
       final data = response.data as List;
-      return data.map((json) => MessageReaction.fromJson(json as Map<String, dynamic>)).toList();
+      return data
+          .map((json) => MessageReaction.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw Exception('Erreur lors du chargement des réactions: $e');
     }
@@ -249,7 +280,8 @@ class MessagesService {
 
   Future<int> getUnreadCount(int conversationId) async {
     try {
-      final response = await _api.get('/conversations/$conversationId/unread-count');
+      final response =
+          await _api.get('/conversations/$conversationId/unread-count');
       return (response.data as Map<String, dynamic>)['count'] as int? ?? 0;
     } catch (e) {
       return 0;
@@ -257,7 +289,11 @@ class MessagesService {
   }
 
   // Search
-  Future<List<Message>> searchMessages({required String query, int? conversationId, int page = 0, int size = 20}) async {
+  Future<List<Message>> searchMessages(
+      {required String query,
+      int? conversationId,
+      int page = 0,
+      int size = 20}) async {
     try {
       final queryParams = <String, dynamic>{
         'q': query,
@@ -265,9 +301,11 @@ class MessagesService {
         'size': size,
         if (conversationId != null) 'conversationId': conversationId,
       };
-      final response = await _api.get('/messages/search', queryParameters: queryParams);
+      final response = await _api.get('/messages/search', params: queryParams);
       final data = response.data as List;
-      return data.map((json) => Message.fromJson(json as Map<String, dynamic>)).toList();
+      return data
+          .map((json) => Message.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw Exception('Erreur lors de la recherche: $e');
     }
@@ -281,7 +319,8 @@ class MessagesService {
       final wsUrl = _api.dio.options.baseUrl
           .replaceFirst('http', 'ws')
           .replaceFirst('/api', '/ws');
-      _wsChannel = WebSocketChannel.connect(Uri.parse('$wsUrl/messages?token=$token'));
+      _wsChannel =
+          WebSocketChannel.connect(Uri.parse('$wsUrl/messages?token=$token'));
 
       _wsChannel!.stream.listen(
         (data) {
@@ -290,15 +329,18 @@ class MessagesService {
 
           switch (type) {
             case 'NEW_MESSAGE':
-              _messageController.add(Message.fromJson(json['payload'] as Map<String, dynamic>));
+              _messageController.add(
+                  Message.fromJson(json['payload'] as Map<String, dynamic>));
               break;
             case 'REACTION_ADDED':
             case 'REACTION_REMOVED':
-              _reactionController.add(MessageReaction.fromJson(json['payload'] as Map<String, dynamic>));
+              _reactionController.add(MessageReaction.fromJson(
+                  json['payload'] as Map<String, dynamic>));
               break;
             case 'TYPING_START':
             case 'TYPING_STOP':
-              _typingController.add(TypingIndicator.fromJson(json['payload'] as Map<String, dynamic>));
+              _typingController.add(TypingIndicator.fromJson(
+                  json['payload'] as Map<String, dynamic>));
               break;
             case 'MESSAGE_READ':
               // Handle read receipts

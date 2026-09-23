@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
+import 'package:discipolat_mobile/data/services/providers.dart';
 import 'package:discipolat_mobile/features/events/models/event_model.dart';
 
 part 'events_service.g.dart';

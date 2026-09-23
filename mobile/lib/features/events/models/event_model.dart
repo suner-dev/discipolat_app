@@ -30,6 +30,7 @@ class Event with _$Event {
     @Default(false) bool hasGeofencing,
     @Default(false) bool hasFaceCheckIn,
     String? checkInQrCode,
+    String? streamUrl,
     String? thumbnailUrl,
     List<String>? tags,
     required DateTime createdAt,

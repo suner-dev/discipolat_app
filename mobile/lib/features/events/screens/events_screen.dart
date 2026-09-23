@@ -40,7 +40,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    final eventsAsync = ref.watch(_eventsProvider(_filterStatus, _filterType));
+    final eventsAsync = ref.watch(_eventsProvider((_filterStatus, _filterType)));
     final upcomingAsync = ref.watch(_upcomingEventsProvider);
 
     return Scaffold(
@@ -90,7 +90,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
               ),
               Expanded(
                 child: RefreshIndicator(
-                  onRefresh: () => ref.refresh(_eventsProvider(_filterStatus, _filterType).future),
+                  onRefresh: () => ref.refresh(_eventsProvider((_filterStatus, _filterType)).future),
                   child: eventsAsync.when(
                     data: (events) {
                       if (events.isEmpty) {
@@ -137,7 +137,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
   }
 
   Widget _buildCalendarTab() {
-    final eventsAsync = ref.watch(_eventsProvider(_filterStatus, _filterType));
+    final eventsAsync = ref.watch(_eventsProvider((_filterStatus, _filterType)));
 
     return eventsAsync.when(
       data: (events) {
@@ -306,7 +306,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
   Future<void> _handleRegister(Event event) async {
     try {
       await ref.read(eventsServiceProvider).registerForEvent(event.id);
-      ref.invalidate(_eventsProvider(_filterStatus, _filterType));
+      ref.invalidate(_eventsProvider((_filterStatus, _filterType)));
       ref.invalidate(_upcomingEventsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Inscription confirmée ✓')));
@@ -321,7 +321,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
   Future<void> _handleCheckIn(Event event) async {
     try {
       await ref.read(eventsServiceProvider).checkIn(event.id);
-      ref.invalidate(_eventsProvider(_filterStatus, _filterType));
+      ref.invalidate(_eventsProvider((_filterStatus, _filterType)));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Check-in effectué ✓')));
       }
@@ -337,7 +337,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
 final _eventsProvider = FutureProvider.family<List<Event>, (EventStatus?, EventType?)>((ref, params) async {
   final (status, type) = params;
   final service = ref.watch(eventsServiceProvider);
-  return service.getEvents(status: status.$1, type: status.$2);
+  return service.getEvents(status: status, type: type);
 });
 
 final _upcomingEventsProvider = FutureProvider<List<Event>>((ref) async {

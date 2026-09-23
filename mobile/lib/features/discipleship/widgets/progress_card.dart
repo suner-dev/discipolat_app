@@ -74,9 +74,9 @@ class ProgressCard extends StatelessWidget {
               // Progress bars
               Column(
                 children: [
-                  _buildProgressRow('Étapes', progress.completedStages, progress.totalStages, Colors.purple),
+                  _buildProgressRow(context, 'Étapes', progress.completedStages, progress.totalStages, Colors.purple),
                   const SizedBox(height: 8),
-                  _buildProgressRow('Exigences', progress.completedRequirements, progress.totalRequirements, Colors.blue),
+                  _buildProgressRow(context, 'Exigences', progress.completedRequirements, progress.totalRequirements, Colors.blue),
                 ],
               ),
               const SizedBox(height: 12),
@@ -123,7 +123,7 @@ class ProgressCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressRow(String label, int completed, int total, Color color) {
+  Widget _buildProgressRow(BuildContext context, String label, int completed, int total, Color color) {
     final progress = total > 0 ? completed / total : 0.0;
     final percentage = (progress * 100).toStringAsFixed(1);
 

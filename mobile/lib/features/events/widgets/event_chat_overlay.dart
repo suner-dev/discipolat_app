@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 import 'package:discipolat_mobile/features/events/models/event_model.dart';
 import 'package:discipolat_mobile/features/events/services/events_service.dart';
+import 'package:discipolat_mobile/features/streaming/models/stream_model.dart'
+    show StreamChatMessage;
 
 class EventChatOverlay extends ConsumerStatefulWidget {
   final int eventId;
@@ -260,20 +262,6 @@ class _EventChatOverlayState extends ConsumerState<EventChatOverlay> {
 
 // Providers
 final _messagesProvider = FutureProvider.family<List<StreamChatMessage>, int>((ref, eventId) async {
-  final service = ref.watch(eventsServiceProvider);
   // TODO: Implement getChatMessages in events service
   return <StreamChatMessage>[];
 });
-
-@freezed
-class StreamChatMessage with _$StreamChatMessage {
-  const factory StreamChatMessage({
-    required int id,
-    required String senderName,
-    required String content,
-    required DateTime createdAt,
-    @Default(false) bool isOwn,
-  }) = _StreamChatMessage;
-
-  factory StreamChatMessage.fromJson(Map<String, dynamic> json) => _$StreamChatMessageFromJson(json);
-}

@@ -87,8 +87,8 @@ class ApiService {
     }
   }
 
-  Future<Response> get(String path, {Map<String, dynamic>? params}) =>
-    _dio.get(path, queryParameters: params);
+  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) =>
+      _dio.get(path, queryParameters: params ?? queryParameters);
 
   Future<Response> getBytes(String path, {Map<String, dynamic>? params}) =>
     _dio.get(path, queryParameters: params, options: Options(responseType: ResponseType.bytes));
@@ -110,7 +110,8 @@ class ApiService {
   Future<Response> patch(String path, {dynamic data}) =>
     _dio.patch(path, data: data);
 
-  Future<Response> delete(String path) => _dio.delete(path);
+  Future<Response> delete(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) =>
+      _dio.delete(path, queryParameters: params ?? queryParameters);
 
   /// Envoie un fichier (multipart/form-data) sur [path].
   /// [fieldName] est le nom du champ multipart attendu par le backend.

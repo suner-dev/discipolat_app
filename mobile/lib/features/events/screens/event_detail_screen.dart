@@ -76,7 +76,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       backgroundColor: Colors.black,
       body: eventAsync.when(
         data: (event) => _buildContent(event, registrationAsync),
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        loading: () => Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (error, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -396,7 +396,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               ],
             ),
           ],
-        ),
+        ],
       ),
     );
   }

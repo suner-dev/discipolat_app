@@ -5,7 +5,10 @@ import 'package:discipolat_mobile/features/messages/models/message_model.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 
 class MessageInput extends ConsumerStatefulWidget {
-  final Function(String, {MessageType type, List<String>? mediaUrls, int? replyToMessageId}) onSend;
+  final Function(String,
+      {MessageType type,
+      List<String>? mediaUrls,
+      int? replyToMessageId}) onSend;
   final VoidCallback onMedia;
   final VoidCallback onVoice;
 
@@ -40,7 +43,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardDark,
-        border: Border(top: BorderSide(color: AppColors.surface.withOpacity(0.3))),
+        border:
+            Border(top: BorderSide(color: AppColors.surface.withOpacity(0.3))),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
@@ -58,15 +62,19 @@ class _MessageInputState extends ConsumerState<MessageInput> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _buildMediaButton(Icons.photo_library_rounded, 'Galerie', onMedia: widget.onMedia),
+                _buildMediaButton(Icons.photo_library_rounded, 'Galerie',
+                    onMedia: widget.onMedia),
                 const SizedBox(width: 8),
-                _buildMediaButton(Icons.camera_alt_rounded, 'Appareil', onMedia: () {
+                _buildMediaButton(Icons.camera_alt_rounded, 'Appareil',
+                    onMedia: () {
                   // TODO: Camera
                 }),
                 const SizedBox(width: 8),
-                _buildMediaButton(Icons.mic_rounded, 'Vocal', onMedia: widget.onVoice),
+                _buildMediaButton(Icons.mic_rounded, 'Vocal',
+                    onMedia: widget.onVoice),
                 const SizedBox(width: 8),
-                _buildMediaButton(Icons.attach_file_rounded, 'Fichier', onMedia: () {
+                _buildMediaButton(Icons.attach_file_rounded, 'Fichier',
+                    onMedia: () {
                   // TODO: File picker
                 }),
                 const SizedBox(width: 12),
@@ -75,7 +83,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                     decoration: BoxDecoration(
                       color: AppColors.surfaceDark,
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.surface.withOpacity(0.3)),
+                      border:
+                          Border.all(color: AppColors.surface.withOpacity(0.3)),
                     ),
                     child: Row(
                       children: [
@@ -91,11 +100,14 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                             },
                             decoration: InputDecoration(
                               hintText: 'Écrire un message...',
-                              hintStyle: TextStyle(color: AppColors.surface.withOpacity(0.5)),
+                              hintStyle: TextStyle(
+                                  color: AppColors.surface.withOpacity(0.5)),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
                             ),
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
                           ),
                         ),
                         IconButton(
@@ -122,22 +134,20 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 ),
               ],
             ),
-          ),
+            const SizedBox(width: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.send_rounded, color: Colors.white),
+                onPressed: _send,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Container(
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.send_rounded, color: Colors.white),
-              onPressed: _send,
-            ),
-          ),
-        ],
       ),
-    ),
     );
   }
 
@@ -163,18 +173,23 @@ class _MessageInputState extends ConsumerState<MessageInput> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.reply_rounded, size: 14, color: AppColors.primary),
+                    Icon(Icons.reply_rounded,
+                        size: 14, color: AppColors.primary),
                     const SizedBox(width: 4),
                     Text(
                       'Réponse à',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.primary),
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary),
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
                   _replyPreview ?? 'Message',
-                  style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
+                  style: TextStyle(
+                      fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -182,7 +197,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.close_rounded, size: 18, color: AppColors.surface.withOpacity(0.7)),
+            icon: Icon(Icons.close_rounded,
+                size: 18, color: AppColors.surface.withOpacity(0.7)),
             onPressed: () {
               setState(() {
                 _replyToMessageId = null;
@@ -195,7 +211,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     );
   }
 
-  Widget _buildMediaButton(IconData icon, String label, {required VoidCallback onMedia}) {
+  Widget _buildMediaButton(IconData icon, String label,
+      {required VoidCallback onMedia}) {
     return InkWell(
       onTap: onMedia,
       borderRadius: BorderRadius.circular(20),
@@ -211,7 +228,9 @@ class _MessageInputState extends ConsumerState<MessageInput> {
           children: [
             Icon(icon, size: 18, color: AppColors.primary),
             const SizedBox(width: 4),
-            Text(label, style: TextStyle(fontSize: 11, color: AppColors.surface.withOpacity(0.7))),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 11, color: AppColors.surface.withOpacity(0.7))),
           ],
         ),
       ),

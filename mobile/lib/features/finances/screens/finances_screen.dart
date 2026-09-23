@@ -36,7 +36,7 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final transactionsAsync = ref.watch(_transactionsProvider(_filterType, _filterCategory, _filterStatus));
+    final transactionsAsync = ref.watch(_transactionsProvider((_filterType, _filterCategory, _filterStatus)));
     final summaryAsync = ref.watch(_summaryProvider);
     final accountsAsync = ref.watch(_accountsProvider);
     final budgetsAsync = ref.watch(_budgetsProvider);
@@ -92,11 +92,11 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
               ),
               Expanded(
                 child: RefreshIndicator(
-                  onRefresh: () => ref.refresh(_transactionsProvider(_filterType, _filterCategory, _filterStatus).future),
+                  onRefresh: () => ref.refresh(_transactionsProvider((_filterType, _filterCategory, _filterStatus)).future),
                   child: transactionsAsync.when(
                     data: (transactions) {
                       if (transactions.isEmpty) {
-                        return _buildEmptyState();
+                        return _buildEmptyState(message: 'Aucune transaction');
                       }
                       return ListView.builder(
                         padding: const EdgeInsets.all(16),
@@ -391,7 +391,7 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
                 children: [
                   CircleAvatar(
                     backgroundColor: AppColors.primary.withOpacity(0.2),
-                    child: const Icon(Icons.group_rounded, color: AppColors.primary),
+                    child: Icon(Icons.group_rounded, color: AppColors.primary),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

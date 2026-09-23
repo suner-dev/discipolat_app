@@ -242,7 +242,7 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(children: [
-                          const Icon(Icons.edit_note, color: AppColors.defaultPrimary),
+                          Icon(Icons.edit_note, color: AppColors.defaultPrimary),
                           const SizedBox(width: 8),
                           const Text('Nouveau rapport',
                               style: TextStyle(fontWeight: FontWeight.w600)),

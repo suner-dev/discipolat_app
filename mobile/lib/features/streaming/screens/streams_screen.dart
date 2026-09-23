@@ -18,7 +18,7 @@ class StreamsScreen extends ConsumerStatefulWidget {
 
 class _StreamsScreenState extends ConsumerState<StreamsScreen> with SingleTickerProviderStateMixin {
   String _filter = 'all';
-  late final StreamService _service;
+  late final StreamingService _service;
 
   @override
   void initState() {

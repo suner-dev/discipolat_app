@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'task_model.freezed.dart';
@@ -28,6 +29,7 @@ class Task with _$Task {
     List<String>? tags,
     List<TaskAttachment>? attachments,
     List<TaskComment>? comments,
+    List<Task>? subtasks,
     List<TaskDependency>? dependencies,
     int? parentTaskId,
     String? parentTaskTitle,
@@ -40,8 +42,10 @@ class Task with _$Task {
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 
-  bool get isOverdue => dueDate != null && DateTime.now().isAfter(dueDate!) && status != TaskStatus.completed;
-  bool get isDueSoon => dueDate != null && DateTime.now().add(const Duration(days: 3)).isAfter(dueDate!) && status != TaskStatus.completed;
+  const Task._();
+
+  bool get isOverdue => dueDate != null && DateTime.now().isAfter(dueDate!) && status != TaskStatus.done;
+  bool get isDueSoon => dueDate != null && DateTime.now().add(const Duration(days: 3)).isAfter(dueDate!) && status != TaskStatus.done;
   int get daysUntilDue => dueDate != null ? dueDate!.difference(DateTime.now()).inDays : 0;
 }
 
@@ -181,7 +185,57 @@ enum TaskType {
   @JsonValue('CALL')
   call,
   @JsonValue('REVIEW')
-  review,
+  review;
+
+  String get displayName {
+    switch (this) {
+      case TaskType.task:
+        return 'Tâche';
+      case TaskType.subtask:
+        return 'Sous-tâche';
+      case TaskType.epic:
+        return 'Épopée';
+      case TaskType.story:
+        return 'Histoire';
+      case TaskType.bug:
+        return 'Bogue';
+      case TaskType.feature:
+        return 'Fonctionnalité';
+      case TaskType.chores:
+        return 'Corvée';
+      case TaskType.meeting:
+        return 'Réunion';
+      case TaskType.call:
+        return 'Appel';
+      case TaskType.review:
+        return 'Revue';
+    }
+  }
+
+  Color getColor() {
+    switch (this) {
+      case TaskType.task:
+        return Colors.blue;
+      case TaskType.subtask:
+        return Colors.teal;
+      case TaskType.epic:
+        return Colors.purple;
+      case TaskType.story:
+        return Colors.indigo;
+      case TaskType.bug:
+        return Colors.red;
+      case TaskType.feature:
+        return Colors.green;
+      case TaskType.chores:
+        return Colors.grey;
+      case TaskType.meeting:
+        return Colors.orange;
+      case TaskType.call:
+        return Colors.cyan;
+      case TaskType.review:
+        return Colors.amber;
+    }
+  }
 }
 
 enum TaskPriority {

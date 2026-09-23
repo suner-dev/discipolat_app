@@ -319,7 +319,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: Icon(conv.isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined_rounded, color: AppColors.primary),
+            leading: Icon(conv.isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined, color: AppColors.primary),
             title: Text(conv.isPinned ? 'Désépingler' : 'Épingler'),
             onTap: () {
               ref.read(messagesServiceProvider).updateConversation(conv.id, isPinned: !conv.isPinned);
@@ -344,7 +344,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
           ),
           if (conv.type == ConversationType.group)
             ListTile(
-              leading: const Icon(Icons.group_add_rounded, color: AppColors.success),
+              leading: Icon(Icons.group_add_rounded, color: AppColors.success),
               title: const Text('Gérer les membres'),
               onTap: () {
                 Navigator.pop(context);

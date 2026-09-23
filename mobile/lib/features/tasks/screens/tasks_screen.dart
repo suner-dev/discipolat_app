@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'
-    show ConsumerStatefulWidget, ConsumerState, ref, ProviderScope, ProviderListenable;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:discipolat_mobile/features/tasks/models/task_model.dart';
-import 'package:discipolat_mobile/features/tasks/services/tasks_service.dart';
+import 'package:discipolat_mobile/features/tasks/services/tasks_service.dart'
+    as tasks_service;
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart'
     show AppColors;
 import 'package:discipolat_mobile/features/tasks/widgets/task_card.dart';
@@ -117,7 +117,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProv
                   child: tasksAsync.when(
                     data: (tasks) {
                       if (tasks.isEmpty) {
-                        return _buildEmptyState();
+                        return _buildEmptyState(message: 'Aucune tâche');
                       }
                       return ListView.builder(
                         padding: const EdgeInsets.all(16),
@@ -223,9 +223,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProv
                                   ),
                                 );
                               },
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        );
+                      },
                         loading: () => const Center(child: CircularProgressIndicator()),
                         error: (error, _) => Center(child: Text('Erreur: $error')),
                       ),
@@ -234,7 +235,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProv
                 ),
               );
             }).toList(),
-          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -276,7 +276,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProv
               final count = (stats['byStatus'] as Map<String, dynamic>?)?[status.name] ?? 0;
               return _buildStatusBar(status.displayName, count, status.getColor());
             }).toList(),
-          ),
+          ],
         ),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -357,7 +357,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProv
   }
 
   void _moveTaskToColumn(Task task, TaskStatus newStatus) {
-    ref.read(tasks_service.TasksServiceProvider).updateTaskStatus(task.id, newStatus);
+    ref.read(tasks_service.tasksServiceProvider).updateTaskStatus(task.id, newStatus);
     ref.invalidate(_kanbanProvider);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Tâche déplacée vers ${newStatus.displayName}')));
   }
@@ -371,21 +371,21 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProv
 // Providers
 final _tasksProvider = FutureProvider.family<List<Task>, (TaskStatus?, TaskPriority?, TaskType?)>((ref, params) async {
   final (status, priority, type) = params;
-  final service = ref.watch(tasks_service.TasksServiceProvider);
+  final service = ref.watch(tasks_service.tasksServiceProvider);
   return service.getTasks(status: status, priority: priority, type: type);
 });
 
 final _kanbanProvider = FutureProvider<List<KanbanColumn>>((ref) async {
-  final service = ref.watch(tasks_service.TasksServiceProvider);
+  final service = ref.watch(tasks_service.tasksServiceProvider);
   return service.getKanbanColumns();
 });
 
 final _kanbanTasksProvider = FutureProvider.family<List<Task>, TaskStatus>((ref, status) async {
-  final service = ref.watch(tasks_service.TasksServiceProvider);
+  final service = ref.watch(tasks_service.tasksServiceProvider);
   return service.getTasks(status: status);
 });
 
 final _statsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final service = ref.watch(tasks_service.TasksServiceProvider);
+  final service = ref.watch(tasks_service.tasksServiceProvider);
   return service.getTaskStatistics();
 });

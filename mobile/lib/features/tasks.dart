@@ -1,5 +1,5 @@
-export 'models/task_model.dart';
-export 'services/tasks_service.dart';
-export 'screens/tasks_screen.dart';
-export 'widgets/task_card.dart';
-export 'widgets/task_filter_chips.dart';
+export 'tasks/models/task_model.dart';
+export 'tasks/services/tasks_service.dart';
+export 'tasks/screens/tasks_screen.dart';
+export 'tasks/widgets/task_card.dart';
+export 'tasks/widgets/task_filter_chips.dart';

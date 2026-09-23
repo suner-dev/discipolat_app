@@ -321,7 +321,22 @@ enum TontineStatus {
   @JsonValue('COMPLETED')
   completed,
   @JsonValue('CANCELLED')
-  cancelled,
+  cancelled;
+
+  String get displayName {
+    switch (this) {
+      case TontineStatus.draft:
+        return 'Brouillon';
+      case TontineStatus.recruiting:
+        return 'Recrutement';
+      case TontineStatus.active:
+        return 'Active';
+      case TontineStatus.completed:
+        return 'Terminée';
+      case TontineStatus.cancelled:
+        return 'Annulée';
+    }
+  }
 }
 
 enum TontineMemberRole {

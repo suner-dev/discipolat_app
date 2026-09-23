@@ -36,7 +36,7 @@ class DiscipleshipStage with _$DiscipleshipStage {
     List<StageRequirement>? requirements,
     List<StageReward>? rewards,
     int? durationDays,
-    bool isOptional,
+    required bool isOptional,
     required DateTime createdAt,
     DateTime? updatedAt,
   }) = _DiscipleshipStage;
@@ -53,8 +53,8 @@ class StageRequirement with _$StageRequirement {
     String? description,
     String? referenceId,
     String? referenceName,
-    bool isRequired,
-    int order,
+    required bool isRequired,
+    required int order,
   }) = _StageRequirement;
 
   factory StageRequirement.fromJson(Map<String, dynamic> json) => _$StageRequirementFromJson(json);
@@ -88,15 +88,15 @@ class DiscipleProgress with _$DiscipleProgress {
     required String journeyName,
     required int currentStageId,
     required String currentStageName,
-    int currentStageOrder,
+    required int currentStageOrder,
     @Default(0) int completedStages,
-    int totalStages,
+    required int totalStages,
     @Default(0) int completedRequirements,
-    int totalRequirements,
+    required int totalRequirements,
     DateTime? startedAt,
     DateTime? lastActivityAt,
     DateTime? completedAt,
-    ProgressStatus status,
+    required ProgressStatus status,
     Map<int, RequirementProgress>? requirementProgress,
     DateTime? nextMilestoneDate,
     String? nextMilestoneName,
@@ -105,6 +105,8 @@ class DiscipleProgress with _$DiscipleProgress {
   }) = _DiscipleProgress;
 
   factory DiscipleProgress.fromJson(Map<String, dynamic> json) => _$DiscipleProgressFromJson(json);
+
+  const DiscipleProgress._();
 
   double get completionPercentage => totalStages > 0 ? (completedStages / totalStages) * 100 : 0;
   double get requirementsPercentage => totalRequirements > 0 ? (completedRequirements / totalRequirements) * 100 : 0;
@@ -115,7 +117,7 @@ class RequirementProgress with _$RequirementProgress {
   const factory RequirementProgress({
     required int requirementId,
     required String requirementName,
-    RequirementStatus status,
+    required RequirementStatus status,
     DateTime? completedAt,
     String? evidence,
     String? notes,
@@ -135,9 +137,9 @@ class MentorAssignment with _$MentorAssignment {
     required int discipleId,
     required String discipleName,
     required int journeyId,
-    DateTime assignedAt,
+    required DateTime assignedAt,
     DateTime? endedAt,
-    AssignmentStatus status,
+    required AssignmentStatus status,
     String? notes,
     @Default(7) int meetingFrequencyDays,
     DateTime? lastMeetingAt,
@@ -156,12 +158,15 @@ class MentorMeeting with _$MentorMeeting {
     required int discipleId,
     required DateTime scheduledAt,
     DateTime? actualAt,
-    MeetingStatus status,
+    required MeetingStatus status,
     String? notes,
     String? actionItems,
     String? nextSteps,
     int? durationMinutes,
     String? location,
+    String? mentorName,
+    String? discipleName,
+    @Default(false) bool isGroup,
   }) = _MentorMeeting;
 
   factory MentorMeeting.fromJson(Map<String, dynamic> json) => _$MentorMeetingFromJson(json);
@@ -173,16 +178,16 @@ class DiscipleshipReport with _$DiscipleshipReport {
     required int journeyId,
     required String journeyName,
     required int totalDisciples,
-    int activeDisciples,
-    int completedDisciples,
-    int stalledDisciples,
-    double averageCompletion,
-    int totalMeetings,
-    int completedMeetings,
-    Map<String, int> stageDistribution,
-    Map<String, int> statusDistribution,
-    List<TopMentor> topMentors,
-    DateTime generatedAt,
+    required int activeDisciples,
+    required int completedDisciples,
+    required int stalledDisciples,
+    required double averageCompletion,
+    required int totalMeetings,
+    required int completedMeetings,
+    required Map<String, int> stageDistribution,
+    required Map<String, int> statusDistribution,
+    required List<TopMentor> topMentors,
+    required DateTime generatedAt,
   }) = _DiscipleshipReport;
 
   factory DiscipleshipReport.fromJson(Map<String, dynamic> json) => _$DiscipleshipReportFromJson(json);
@@ -193,9 +198,9 @@ class TopMentor with _$TopMentor {
   const factory TopMentor({
     required int mentorId,
     required String mentorName,
-    int discipleCount,
-    int meetingCount,
-    double averageCompletion,
+    required int discipleCount,
+    required int meetingCount,
+    required double averageCompletion,
   }) = _TopMentor;
 
   factory TopMentor.fromJson(Map<String, dynamic> json) => _$TopMentorFromJson(json);
@@ -263,6 +268,17 @@ enum ProgressStatus {
   completed,
   @JsonValue('ABANDONED')
   abandoned;
+}
+
+enum AssignmentStatus {
+  @JsonValue('PENDING')
+  pending,
+  @JsonValue('ACTIVE')
+  active,
+  @JsonValue('ENDED')
+  ended,
+  @JsonValue('CANCELLED')
+  cancelled;
 }
 
 enum RequirementStatus {

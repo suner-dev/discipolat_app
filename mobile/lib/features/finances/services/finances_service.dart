@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
+import 'package:discipolat_mobile/data/services/providers.dart';
 import 'package:discipolat_mobile/features/finances/models/finance_model.dart';
 
 part 'finances_service.g.dart';

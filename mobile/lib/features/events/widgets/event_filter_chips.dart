@@ -67,8 +67,8 @@ class EventFilterChips extends StatelessWidget {
                       backgroundColor: AppColors.cardDark,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
-                  ),
-                ),
+                  );
+                }),
               ],
             ),
           ),
@@ -116,8 +116,8 @@ class EventFilterChips extends StatelessWidget {
                       backgroundColor: AppColors.cardDark,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
-                  ),
-                ),
+                  );
+                }),
               ],
             ),
           ),

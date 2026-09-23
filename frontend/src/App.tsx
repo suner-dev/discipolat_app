@@ -234,6 +234,7 @@ const TestimonyDetailPage = lazy(() => import('@/pages/TestimonyDetailPage'));
 const RewardsClaimsPage = lazy(() => import('@/pages/RewardsClaimsPage'));
 const UserRolesPage = lazy(() => import('@/pages/UserRolesPage'));
 const ComplianceExportsPage = lazy(() => import('@/pages/ComplianceExportsPage'));
+const PricingPage = lazy(() => import('@/pages/PricingPage'));
 const SpaceImportExportPage = lazy(() => import('@/pages/SpaceImportExportPage'));
 const ConversationsPage = lazy(() => import('@/pages/ConversationsPage'));
 const CoursesPage = lazy(() => import('@/pages/CoursesPage'));
@@ -873,6 +874,7 @@ export default function App() {
               <ComplianceDashboardPage />
             </ProtectedRoute>
           } />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/api-docs" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <ApiDocsPage />

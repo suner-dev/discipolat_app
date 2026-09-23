@@ -43,7 +43,6 @@ class _HealthScreenState extends ConsumerState<HealthScreen> with SingleTickerPr
     final consultationsAsync = ref.watch(_consultationsProvider(_filterConsultationStatus));
     final stockAsync = ref.watch(_stockProvider);
     final campaignsAsync = ref.watch(_campaignsProvider(_filterCampaignStatus));
-    final statsAsync = ref.watch(_statsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.surfaceDark,
@@ -144,8 +143,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> with SingleTickerPr
               error: (error, _) => Center(child: Text('Erreur: $error')),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -182,8 +181,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> with SingleTickerPr
               error: (error, _) => Center(child: Text('Erreur: $error')),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -242,8 +241,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> with SingleTickerPr
               error: (error, _) => Center(child: Text('Erreur: $error')),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -326,8 +325,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> with SingleTickerPr
                 selectedColor: Colors.red.withOpacity(0.2),
                 checkmarkColor: Colors.red,
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
@@ -358,8 +357,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> with SingleTickerPr
                 selectedColor: Colors.blue.withOpacity(0.2),
                 checkmarkColor: Colors.blue,
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
@@ -390,8 +389,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> with SingleTickerPr
                 selectedColor: Colors.green.withOpacity(0.2),
                 checkmarkColor: Colors.green,
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );

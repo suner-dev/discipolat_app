@@ -189,10 +189,10 @@ class _DiscipleshipScreenState extends ConsumerState<DiscipleshipScreen> with Si
             padding: const EdgeInsets.all(16),
             itemCount: progress.length,
             itemBuilder: (context, index) {
-              final progress = progress[index];
+              final item = progress[index];
               return ProgressCard(
-                progress: progress,
-                onTap: () => context.push('/discipleship/progress/${progress.id}'),
+                progress: item,
+                onTap: () => context.push('/discipleship/progress/${item.id}'),
               );
             },
           );
@@ -285,21 +285,21 @@ class _DiscipleshipScreenState extends ConsumerState<DiscipleshipScreen> with Si
 
 // Providers
 final _journeysProvider = FutureProvider<List<DiscipleshipJourney>>((ref) async {
-  final service = ref.watch(discipleship_service.DiscipleshipServiceProvider);
+  final service = ref.watch(discipleship_service.discipleshipServiceProvider);
   return service.getJourneys();
 });
 
 final _progressProvider = FutureProvider<List<DiscipleProgress>>((ref) async {
-  final service = ref.watch(discipleship_service.DiscipleshipServiceProvider);
+  final service = ref.watch(discipleship_service.discipleshipServiceProvider);
   return service.getProgress();
 });
 
 final _assignmentsProvider = FutureProvider<List<MentorAssignment>>((ref) async {
-  final service = ref.watch(discipleship_service.DiscipleshipServiceProvider);
+  final service = ref.watch(discipleship_service.discipleshipServiceProvider);
   return service.getMentorAssignments();
 });
 
 final _meetingsProvider = FutureProvider<List<MentorMeeting>>((ref) async {
-  final service = ref.watch(discipleship_service.DiscipleshipServiceProvider);
+  final service = ref.watch(discipleship_service.discipleshipServiceProvider);
   return service.getMeetings();
 });

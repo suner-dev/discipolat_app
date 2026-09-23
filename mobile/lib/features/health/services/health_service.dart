@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
+import 'package:discipolat_mobile/data/services/providers.dart';
 import 'package:discipolat_mobile/features/health/models/health_model.dart';
 
 part 'health_service.g.dart';
@@ -220,7 +221,7 @@ class HealthService {
 
   Future<List<CampaignParticipant>> getCampaignParticipants(int campaignId) async {
     try {
-      final response = await _api.get('/health/campaigns/$id/participants');
+      final response = await _api.get('/health/campaigns/$campaignId/participants');
       final data = response.data as List;
       return data.map((json) => CampaignParticipant.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {

@@ -5,6 +5,7 @@ import 'package:web_socket_channel/status.dart' as status;
 import 'dart:convert';
 import 'dart:async';
 import '../../../data/services/api_service.dart';
+import '../../../tenant_config.dart';
 import '../../../data/services/api_config.dart';
 import '../../../../l10n/app_localizations.dart';
 
@@ -229,7 +230,7 @@ class _StreamingChatScreenState extends State<StreamingChatScreen> {
 
   String _formatTime(DateTime? dt) {
     if (dt == null) return '';
-    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}'
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -402,7 +403,8 @@ class _StreamingChatScreenState extends State<StreamingChatScreen> {
                                 ),
                             ],
                           ),
-                        );
+                        ),
+                      );
                     },
                   ),
                 ),

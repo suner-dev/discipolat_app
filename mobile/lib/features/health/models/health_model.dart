@@ -33,6 +33,8 @@ class Patient with _$Patient {
 
   factory Patient.fromJson(Map<String, dynamic> json) => _$PatientFromJson(json);
 
+  const Patient._();
+
   String get fullName => '$firstName $lastName';
   int get age => DateTime.now().year - dateOfBirth.year - (DateTime.now().month < dateOfBirth.month || (DateTime.now().month == dateOfBirth.month && DateTime.now().day < dateOfBirth.day) ? 1 : 0);
 }
@@ -53,7 +55,7 @@ class Consultation with _$Consultation {
     String? notes,
     List<VitalSigns>? vitalSigns,
     List<Prescription>? prescriptions,
-    ConsultationStatus status,
+    required ConsultationStatus status,
     double? fee,
     String? paymentStatus,
     DateTime? nextAppointment,
@@ -141,6 +143,8 @@ class PharmacyStock with _$PharmacyStock {
 
   factory PharmacyStock.fromJson(Map<String, dynamic> json) => _$PharmacyStockFromJson(json);
 
+  const PharmacyStock._();
+
   bool get isLowStock => quantity <= minStockLevel;
   bool get isExpired => DateTime.now().isAfter(expiryDate);
   int get availableQuantity => quantity - reservedQuantity;
@@ -159,7 +163,7 @@ class HealthCampaign with _$HealthCampaign {
     int? targetPopulation,
     @Default(0) int registeredCount,
     @Default(0) int attendedCount,
-    CampaignStatus status,
+    required CampaignStatus status,
     int? coordinatorId,
     String? coordinatorName,
     List<String>? targetGroups,
@@ -170,6 +174,8 @@ class HealthCampaign with _$HealthCampaign {
   }) = _HealthCampaign;
 
   factory HealthCampaign.fromJson(Map<String, dynamic> json) => _$HealthCampaignFromJson(json);
+
+  const HealthCampaign._();
 
   bool get isActive => status == CampaignStatus.active && DateTime.now().isBefore(endDate) && DateTime.now().isAfter(startDate);
   bool get isUpcoming => status == CampaignStatus.planned && DateTime.now().isBefore(startDate);
@@ -185,7 +191,7 @@ class CampaignParticipant with _$CampaignParticipant {
     required String patientName,
     required DateTime registrationDate,
     DateTime? attendanceDate,
-    ParticipationStatus status,
+    required ParticipationStatus status,
     String? notes,
   }) = _CampaignParticipant;
 
@@ -205,13 +211,15 @@ class MedicalKit with _$MedicalKit {
     String? assignedToName,
     DateTime? lastInspectionDate,
     DateTime? nextInspectionDate,
-    KitStatus status,
+    required KitStatus status,
     String? notes,
     required DateTime createdAt,
     DateTime? updatedAt,
   }) = _MedicalKit;
 
   factory MedicalKit.fromJson(Map<String, dynamic> json) => _$MedicalKitFromJson(json);
+
+  const MedicalKit._();
 
   bool get needsInspection => nextInspectionDate != null && DateTime.now().isAfter(nextInspectionDate!);
   bool get isComplete => items.every((item) => item.currentQuantity >= item.requiredQuantity);
@@ -230,6 +238,8 @@ class KitItem with _$KitItem {
   }) = _KitItem;
 
   factory KitItem.fromJson(Map<String, dynamic> json) => _$KitItemFromJson(json);
+
+  const KitItem._();
 
   bool get isSufficient => currentQuantity >= requiredQuantity;
 }
@@ -261,7 +271,20 @@ enum PatientStatus {
   @JsonValue('DISCHARGED')
   discharged,
   @JsonValue('DECEASED')
-  deceased,
+  deceased;
+
+  String get displayName {
+    switch (this) {
+      case PatientStatus.active:
+        return 'Actif';
+      case PatientStatus.inactive:
+        return 'Inactif';
+      case PatientStatus.discharged:
+        return 'Sorti';
+      case PatientStatus.deceased:
+        return 'Décédé';
+    }
+  }
 }
 
 enum ConsultationType {
@@ -278,7 +301,26 @@ enum ConsultationType {
   @JsonValue('PRENATAL')
   prenatal,
   @JsonValue('VACCINATION')
-  vaccination,
+  vaccination;
+
+  String get displayName {
+    switch (this) {
+      case ConsultationType.general:
+        return 'Générale';
+      case ConsultationType.specialist:
+        return 'Spécialiste';
+      case ConsultationType.emergency:
+        return 'Urgence';
+      case ConsultationType.followUp:
+        return 'Suivi';
+      case ConsultationType.preventive:
+        return 'Préventive';
+      case ConsultationType.prenatal:
+        return 'Prénatale';
+      case ConsultationType.vaccination:
+        return 'Vaccination';
+    }
+  }
 }
 
 enum ConsultationStatus {
@@ -291,7 +333,22 @@ enum ConsultationStatus {
   @JsonValue('CANCELLED')
   cancelled,
   @JsonValue('NO_SHOW')
-  noShow,
+  noShow;
+
+  String get displayName {
+    switch (this) {
+      case ConsultationStatus.scheduled:
+        return 'Planifiée';
+      case ConsultationStatus.inProgress:
+        return 'En cours';
+      case ConsultationStatus.completed:
+        return 'Terminée';
+      case ConsultationStatus.cancelled:
+        return 'Annulée';
+      case ConsultationStatus.noShow:
+        return 'Absent';
+    }
+  }
 }
 
 enum CampaignType {
@@ -308,7 +365,26 @@ enum CampaignType {
   @JsonValue('NUTRITION')
   nutrition,
   @JsonValue('MATERNAL_CHILD')
-  maternalChild,
+  maternalChild;
+
+  String get displayName {
+    switch (this) {
+      case CampaignType.vaccination:
+        return 'Vaccination';
+      case CampaignType.screening:
+        return 'Dépistage';
+      case CampaignType.awareness:
+        return 'Sensibilisation';
+      case CampaignType.bloodDonation:
+        return 'Don de sang';
+      case CampaignType.healthCheck:
+        return 'Bilan de santé';
+      case CampaignType.nutrition:
+        return 'Nutrition';
+      case CampaignType.maternalChild:
+        return 'Mère-enfant';
+    }
+  }
 }
 
 enum CampaignStatus {
@@ -319,7 +395,20 @@ enum CampaignStatus {
   @JsonValue('COMPLETED')
   completed,
   @JsonValue('CANCELLED')
-  cancelled,
+  cancelled;
+
+  String get displayName {
+    switch (this) {
+      case CampaignStatus.planned:
+        return 'Planifiée';
+      case CampaignStatus.active:
+        return 'Active';
+      case CampaignStatus.completed:
+        return 'Terminée';
+      case CampaignStatus.cancelled:
+        return 'Annulée';
+    }
+  }
 }
 
 enum ParticipationStatus {

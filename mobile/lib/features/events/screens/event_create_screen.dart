@@ -472,6 +472,7 @@ class _EventCreateScreenState extends ConsumerState<EventCreateScreen> {
                 ],
               )
             : _buildPlaceholder(),
+      ),
     );
   }
 
@@ -522,7 +523,6 @@ class _EventCreateScreenState extends ConsumerState<EventCreateScreen> {
         id: widget.event?.id ?? 0,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
-        type: _selectedType,
         startAt: _startAt!,
         endAt: _endAt!,
         location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),

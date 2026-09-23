@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:discipolat_mobile/features/messages/models/message_model.dart';
+import 'package:discipolat_mobile/features/messages/models/typing_indicator.dart';
 import 'package:discipolat_mobile/features/messages/services/messages_service.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 import 'package:discipolat_mobile/features/messages/widgets/message_bubble.dart';
@@ -54,11 +55,8 @@ class _ConversationDetailScreenState extends ConsumerState<ConversationDetailScr
   Future<void> _loadMoreMessages() async {
     setState(() => _isLoadingMore = true);
     try {
-      final messagesAsync = ref.read(_messagesProvider(widget.conversationId, page: 1));
-      final messages = await messagesAsync;
-      if (messages.isNotEmpty) {
-        ref.invalidate(_messagesProvider(widget.conversationId, page: 1));
-      }
+      final messagesAsync = ref.read(_messagesProvider(widget.conversationId));
+      await messagesAsync;
     } catch (e) {
       // Ignore
     } finally {
@@ -136,7 +134,7 @@ class _ConversationDetailScreenState extends ConsumerState<ConversationDetailScr
                 // Typing indicator
                 typingAsync.when(
                   data: (typing) {
-                    if (typing.isTyping) {
+                    if (typing != null && typing.isTyping) {
                       return Positioned(
                         bottom: 80,
                         left: 16,
@@ -161,7 +159,7 @@ class _ConversationDetailScreenState extends ConsumerState<ConversationDetailScr
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                '${typing.userName} écrit...',
+                                '${typing?.userName ?? ''} écrit...',
                                 style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
                               ),
                             ],

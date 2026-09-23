@@ -71,8 +71,8 @@ class TaskFilterChips extends StatelessWidget {
                       backgroundColor: AppColors.cardDark,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
-                  ),
-                ),
+                  );
+                }),
               ],
             ),
           ),
@@ -127,8 +127,8 @@ class TaskFilterChips extends StatelessWidget {
                       backgroundColor: AppColors.cardDark,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
-                  ),
-                ),
+                  );
+                }),
               ],
             ),
           ),
