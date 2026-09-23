@@ -93,6 +93,7 @@ const PlatformModulesPage = lazy(() => import('@/pages/PlatformModulesPage'));
 const PlatformMenusPage = lazy(() => import('@/pages/PlatformMenusPage'));
 const PlatformPagesPage = lazy(() => import('@/pages/PlatformPagesPage'));
 const PlatformAdminDashboardPage = lazy(() => import('@/pages/PlatformAdminDashboard'));
+const PlatformOnboardingFlowPage = lazy(() => import('@/pages/PlatformOnboardingFlowPage'));
 const TenantAdminDashboardPage = lazy(() => import('@/pages/TenantAdminDashboard'));
 const TenantAdminMembersPage = lazy(() => import('@/pages/TenantAdminMembersPage'));
 const TenantAdminRolesPage = lazy(() => import('@/pages/TenantAdminRolesPage'));
@@ -1085,6 +1086,9 @@ export default function App() {
           {/* Platform Super Admin */}
           <Route path="/platform/dashboard" element={
             <ProtectedRoute scope="platform"><PlatformAdminDashboardPage /></ProtectedRoute>
+          } />
+          <Route path="/platform/onboarding" element={
+            <ProtectedRoute scope="platform"><PlatformOnboardingFlowPage /></ProtectedRoute>
           } />
           <Route path="/platform/tenants" element={
             <ProtectedRoute roles={['ADMIN']}><AdminTenantsPage /></ProtectedRoute>

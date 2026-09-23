@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
+import { Rocket } from "lucide-react";
 
 interface PlatformMetrics {
   totalTenants: number;
@@ -37,6 +39,7 @@ interface Tenant {
 
 export default function PlatformAdminDashboard() {
   const { hasPermission } = useTenant();
+  const navigate = useNavigate();
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -74,8 +77,15 @@ export default function PlatformAdminDashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Administration Plateforme</h1>
+        <button
+          onClick={() => navigate("/platform/onboarding")}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-medium shadow-lg hover:opacity-90 transition"
+        >
+          <Rocket className="w-4 h-4" />
+          Provisionner une organisation (guidé)
+        </button>
       </div>
 
       <div className="flex gap-4 border-b">
