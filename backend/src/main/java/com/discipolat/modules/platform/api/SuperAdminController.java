@@ -1,14 +1,21 @@
 package com.discipolat.modules.platform.api;
 
 import com.discipolat.common.infrastructure.api.PageResponse;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.platform.domain.ImpersonationService;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlag;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.tenants.domain.*;
+import com.discipolat.modules.tenants.enums.SubscriptionStatus;
+import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.audit.domain.AuditLogRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,95 +23,184 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/platform/admin")
+@PreAuthorize("@authz.isPlatformSuperAdmin()")
 public class SuperAdminController {
 
     private final TenantRepository tenantRepository;
     private final TenantMembershipRepository membershipRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final SaasPlanRepository planRepository;
+    private final TenantSubscriptionRepository subscriptionRepository;
+    private final OrganizationNodeRepository orgNodeRepository;
     private final TenantService tenantService;
     private final SaasPlanService saasPlanService;
     private final ImpersonationService impersonationService;
     private final AuditService auditService;
+    private final AuditLogRepository auditLogRepository;
+    private final PlatformFeatureFlagService featureFlagService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public SuperAdminController(TenantRepository tenantRepository,
                                 TenantMembershipRepository membershipRepository,
                                 UserRepository userRepository,
+                                RoleRepository roleRepository,
+                                SaasPlanRepository planRepository,
+                                TenantSubscriptionRepository subscriptionRepository,
+                                OrganizationNodeRepository orgNodeRepository,
                                 TenantService tenantService,
                                 SaasPlanService saasPlanService,
                                 ImpersonationService impersonationService,
-                                AuditService auditService) {
+                                AuditService auditService,
+                                AuditLogRepository auditLogRepository,
+                                PlatformFeatureFlagService featureFlagService) {
         this.tenantRepository = tenantRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.planRepository = planRepository;
+        this.subscriptionRepository = subscriptionRepository;
+        this.orgNodeRepository = orgNodeRepository;
         this.tenantService = tenantService;
         this.saasPlanService = saasPlanService;
         this.impersonationService = impersonationService;
         this.auditService = auditService;
+        this.auditLogRepository = auditLogRepository;
+        this.featureFlagService = featureFlagService;
     }
 
     @GetMapping("/dashboard")
-    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> getAdminDashboard() {
         long totalTenants = tenantRepository.count();
         long activeTenants = tenantRepository.countByStatus(TenantStatus.ACTIVE);
+        long suspendedTenants = tenantRepository.countByStatus(TenantStatus.SUSPENDED);
+        long cancelledTenants = tenantRepository.countByStatus(TenantStatus.CANCELLED);
+        long pendingSetupTenants = tenantRepository.countByStatus(TenantStatus.PENDING_SETUP);
+
         long totalUsers = userRepository.count();
         long activeUsers = userRepository.countByStatut(UserStatus.ACTIVE);
+        long inactiveUsers = userRepository.countByStatut(UserStatus.INACTIVE);
+
         long totalMemberships = membershipRepository.count();
+        long activeMemberships = membershipRepository.countByStatus(MembershipStatus.ACTIVE);
 
-        List<SaasPlan> plans = saasPlanService.getAllPlans();
-        List<TenantSubscription> subscriptions = saasPlanService.getAllSubscriptions();
+        Map<String, Long> tenantsByPlan = tenantRepository.findAll().stream()
+                .collect(Collectors.groupingBy(Tenant::getPlan, Collectors.counting()));
 
-        Map<String, Long> tenantsByPlan = new HashMap<>();
-        tenantRepository.findAll().forEach(t ->
-            tenantsByPlan.merge(t.getPlan(), 1L, Long::sum));
+        Map<String, Long> tenantsByStatus = tenantRepository.findAll().stream()
+                .collect(Collectors.groupingBy(t -> t.getStatus().name(), Collectors.counting()));
+
+        Instant thirtyDaysAgo = Instant.now().minus(30, ChronoUnit.DAYS);
+        long recentTenants = tenantRepository.findAll().stream()
+                .filter(t -> t.getCreatedAt().isAfter(thirtyDaysAgo))
+                .count();
+
+        long activeSubscriptions = subscriptionRepository.countByStatus(SubscriptionStatus.ACTIVE);
+        long trialSubscriptions = subscriptionRepository.countByStatus(SubscriptionStatus.TRIAL);
+        long pastDueSubscriptions = subscriptionRepository.countByStatus(SubscriptionStatus.PAST_DUE);
+        long canceledSubscriptions = subscriptionRepository.countByStatus(SubscriptionStatus.CANCELED);
+
+        long totalChurches = orgNodeRepository.countByType(OrganizationNodeType.ROOT_CHURCH);
+        long totalCampuses = orgNodeRepository.countByType(OrganizationNodeType.CAMPUS);
+        long totalSubChurches = orgNodeRepository.countByType(OrganizationNodeType.SUB_CHURCH);
+        long totalDepartments = orgNodeRepository.countByType(OrganizationNodeType.DEPARTMENT);
+        long totalGroups = orgNodeRepository.countByType(OrganizationNodeType.GROUP);
+
+        LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+        long recentAuditLogs = auditLogRepository.countByCreatedAtGreaterThan(weekAgo);
 
         Map<String, Object> dashboard = new LinkedHashMap<>();
-        dashboard.put("totalTenants", totalTenants);
-        dashboard.put("activeTenants", activeTenants);
-        dashboard.put("suspendedTenants", totalTenants - activeTenants);
-        dashboard.put("totalUsers", totalUsers);
-        dashboard.put("activeUsers", activeUsers);
-        dashboard.put("totalMemberships", totalMemberships);
-        dashboard.put("tenantsByPlan", tenantsByPlan);
-        dashboard.put("plans", plans.stream().map(this::toPlanMap).collect(Collectors.toList()));
-        dashboard.put("subscriptions", subscriptions.stream().map(this::toSubscriptionMap).collect(Collectors.toList()));
         dashboard.put("generatedAt", Instant.now().toString());
+
+        dashboard.put("tenants", Map.of(
+                "total", totalTenants,
+                "active", activeTenants,
+                "suspended", suspendedTenants,
+                "cancelled", cancelledTenants,
+                "pendingSetup", pendingSetupTenants,
+                "recent30Days", recentTenants,
+                "byPlan", tenantsByPlan,
+                "byStatus", tenantsByStatus
+        ));
+
+        dashboard.put("users", Map.of(
+                "total", totalUsers,
+                "active", activeUsers,
+                "inactive", inactiveUsers,
+                "totalMemberships", totalMemberships,
+                "activeMemberships", activeMemberships
+        ));
+
+        dashboard.put("subscriptions", Map.of(
+                "active", activeSubscriptions,
+                "trial", trialSubscriptions,
+                "pastDue", pastDueSubscriptions,
+                "canceled", canceledSubscriptions
+        ));
+
+        dashboard.put("organizations", Map.of(
+                "churches", totalChurches,
+                "campuses", totalCampuses,
+                "subChurches", totalSubChurches,
+                "departments", totalDepartments,
+                "groups", totalGroups
+        ));
+
+        dashboard.put("activity", Map.of(
+                "auditLogsLast7Days", recentAuditLogs
+        ));
 
         return ResponseEntity.ok(dashboard);
     }
 
+    @GetMapping("/dashboard/overview")
+    public ResponseEntity<Map<String, Object>> getOverview() {
+        return getAdminDashboard();
+    }
+
     @GetMapping("/tenants")
-    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<PageResponse<Map<String, Object>>> listTenants(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String plan) {
+            @RequestParam(required = false) String plan,
+            @RequestParam(required = false) String search) {
 
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Tenant> tenantPage;
 
-        if (status != null || plan != null) {
-            List<Map<String, Object>> content = tenantRepository.findAll().stream()
-                .filter(t -> status == null || t.getStatus().name().equalsIgnoreCase(status))
-                .filter(t -> plan == null || t.getPlan().equalsIgnoreCase(plan))
-                .map(this::toTenantMap)
-                .collect(Collectors.toList());
-            return ResponseEntity.ok(PageResponse.of(content, page, size, content.size(), 1));
+        if (status != null || plan != null || (search != null && !search.isBlank())) {
+            List<Tenant> all = tenantRepository.findAll();
+            all = all.stream()
+                    .filter(t -> status == null || t.getStatus().name().equalsIgnoreCase(status))
+                    .filter(t -> plan == null || t.getPlan().equalsIgnoreCase(plan))
+                    .filter(t -> search == null || search.isBlank() ||
+                            t.getName().toLowerCase().contains(search.toLowerCase()) ||
+                            t.getSlug().toLowerCase().contains(search.toLowerCase()))
+                    .toList();
+
+            int start = (int) Math.min(page * size, all.size());
+            int end = Math.min(start + size, all.size());
+            List<Tenant> pageContent = all.subList(start, end);
+
+            List<Map<String, Object>> content = pageContent.stream().map(this::toTenantMap).toList();
+            return ResponseEntity.ok(PageResponse.of(content, page, size, all.size(), (int) Math.ceil((double) all.size() / size)));
         }
 
-        Page<Tenant> tenantPage = tenantRepository.findAll(pageRequest);
+        tenantPage = tenantRepository.findAll(pageable);
         List<Map<String, Object>> content = tenantPage.getContent().stream()
-            .map(this::toTenantMap)
-            .collect(Collectors.toList());
+                .map(this::toTenantMap)
+                .collect(Collectors.toList());
 
         return ResponseEntity.ok(PageResponse.of(content, page, size,
-            tenantPage.getTotalElements(), tenantPage.getTotalPages()));
+                tenantPage.getTotalElements(), tenantPage.getTotalPages()));
     }
 
     @PostMapping("/tenants")
@@ -152,6 +248,35 @@ public class SuperAdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toTenantMap(tenant));
     }
 
+    @PutMapping("/tenants/{id}")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
+    public ResponseEntity<Map<String, Object>> updateTenant(@PathVariable UUID id,
+                                                           @RequestBody Map<String, Object> request) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("Tenant non trouvé: " + id));
+
+        if (request.get("name") != null && !String.valueOf(request.get("name")).isBlank()) {
+            tenant.setName(String.valueOf(request.get("name")).trim());
+        }
+        if (request.get("plan") != null && !String.valueOf(request.get("plan")).isBlank()) {
+            tenant.setPlan(String.valueOf(request.get("plan")).trim());
+        }
+        if (request.get("locale") != null && !String.valueOf(request.get("locale")).isBlank()) {
+            tenant.setLocale(String.valueOf(request.get("locale")).trim());
+        }
+        if (request.get("timezone") != null && !String.valueOf(request.get("timezone")).isBlank()) {
+            tenant.setTimezone(String.valueOf(request.get("timezone")).trim());
+        }
+        tenant = tenantRepository.save(tenant);
+
+        auditService.log(UUID.randomUUID(), tenant.getId(), "TENANT_UPDATED",
+                "TENANT", tenant.getId(), "SUCCESS",
+                Map.of("name", tenant.getName(), "plan", tenant.getPlan()),
+                null, null, null);
+
+        return ResponseEntity.ok(toTenantMap(tenant));
+    }
+
     @PostMapping("/tenants/{id}/suspend")
     @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Void> suspendTenant(@PathVariable UUID id) {
@@ -174,20 +299,13 @@ public class SuperAdminController {
     @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Void> archiveTenant(@PathVariable UUID id) {
         Tenant tenant = tenantRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
+                .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
         tenant.setStatus(TenantStatus.CANCELLED);
         tenantRepository.save(tenant);
         auditService.log(UUID.randomUUID(), id, "TENANT_ARCHIVED",
-            "TENANT", id, "SUCCESS", Map.of("tenantId", id.toString()),
-            null, null, null);
+                "TENANT", id, "SUCCESS", Map.of("tenantId", id.toString()),
+                null, null, null);
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/plans")
-    @PreAuthorize("@authz.isPlatformSuperAdmin()")
-    public ResponseEntity<List<Map<String, Object>>> listPlans() {
-        return ResponseEntity.ok(saasPlanService.getAllPlans().stream()
-            .map(this::toPlanMap).collect(Collectors.toList()));
     }
 
     @PostMapping("/plans")
@@ -204,6 +322,7 @@ public class SuperAdminController {
             if (request.get("description") != null) existingPlan.setDescription((String) request.get("description"));
             if (request.get("priceMonthly") != null) existingPlan.setPriceMonthly(((Number) request.get("priceMonthly")).longValue());
             if (request.get("priceYearly") != null) existingPlan.setPriceYearly(((Number) request.get("priceYearly")).longValue());
+            if (request.get("isActive") != null) existingPlan.setIsActive(Boolean.parseBoolean(String.valueOf(request.get("isActive"))));
             plan = saasPlanService.savePlan(existingPlan);
         } else {
             plan = SaasPlan.builder()
@@ -222,24 +341,57 @@ public class SuperAdminController {
     }
 
     @GetMapping("/feature-flags")
-    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> getFeatureFlags() {
-        Map<String, Object> flags = new LinkedHashMap<>();
-        flags.put("aiEnabled", true);
-        flags.put("mobileMoneyEnabled", true);
-        flags.put("whatsappEnabled", true);
-        flags.put("analyticsEnabled", true);
-        flags.put("docsEnabled", true);
-        return ResponseEntity.ok(flags);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("flags", featureFlagService.getAllAsMap());
+        result.put("details", featureFlagService.getAll().stream().map(f -> Map.of(
+                "key", f.getKey(),
+                "name", f.getName(),
+                "description", f.getDescription(),
+                "enabled", f.isEnabled(),
+                "category", f.getCategory()
+        )).toList());
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/feature-flags/{key}")
-    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> setFeatureFlag(
             @PathVariable String key,
             @RequestBody Map<String, Boolean> request) {
         boolean value = request.get("enabled");
-        return ResponseEntity.ok(Map.of("key", key, "enabled", value));
+        PlatformFeatureFlag flag = featureFlagService.toggle(key, value);
+        return ResponseEntity.ok(Map.of(
+                "key", flag.getKey(),
+                "name", flag.getName(),
+                "description", flag.getDescription(),
+                "enabled", flag.isEnabled(),
+                "category", flag.getCategory()
+        ));
+    }
+
+    @PostMapping("/feature-flags")
+    public ResponseEntity<Map<String, Object>> createFeatureFlag(
+            @RequestBody Map<String, Object> request) {
+        String key = (String) request.get("key");
+        String name = (String) request.get("name");
+        String description = (String) request.get("description");
+        Boolean enabled = (Boolean) request.getOrDefault("enabled", false);
+        String category = (String) request.getOrDefault("category", "GENERAL");
+
+        PlatformFeatureFlag flag = featureFlagService.createOrUpdate(key, name, description, enabled, category);
+        return ResponseEntity.ok(Map.of(
+                "key", flag.getKey(),
+                "name", flag.getName(),
+                "description", flag.getDescription(),
+                "enabled", flag.isEnabled(),
+                "category", flag.getCategory()
+        ));
+    }
+
+    @DeleteMapping("/feature-flags/{key}")
+    public ResponseEntity<Void> deleteFeatureFlag(@PathVariable String key) {
+        featureFlagService.delete(key);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/impersonate")
@@ -285,26 +437,91 @@ public class SuperAdminController {
     }
 
     @GetMapping("/tenants/{id}")
-    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> getTenantDetails(@PathVariable UUID id) {
         Tenant tenant = tenantRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
+                .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
 
-        Optional<TenantSubscription> subscription = saasPlanService.getTenantSubscription(id);
-        long memberCount = membershipRepository.countByTenantId(id);
+        Optional<TenantSubscription> subscription = subscriptionRepository.findByTenantId(id);
+        List<TenantMembership> memberships = membershipRepository.findByTenantIdAndStatus(id, MembershipStatus.ACTIVE);
+
+        Map<String, Long> membershipsByRole = memberships.stream()
+                .collect(Collectors.groupingBy(m -> m.getRole().getKey(), Collectors.counting()));
+
+        long orgNodes = orgNodeRepository.countByTenantId(id);
 
         Map<String, Object> details = new LinkedHashMap<>(toTenantMap(tenant));
-        details.put("memberCount", memberCount);
-        details.put("subscription", subscription.map(s -> {
-            Map<String, Object> sub = new LinkedHashMap<>();
-            sub.put("planKey", s.getPlanKey());
-            sub.put("status", s.getStatus().name());
-            sub.put("currentPeriodEnd", s.getCurrentPeriodEnd());
-            sub.put("cancelAtPeriodEnd", s.getCancelAtPeriodEnd());
-            return sub;
-        }).orElse(null));
+        details.put("subscription", subscription.map(s -> Map.of(
+                "planKey", s.getPlanKey(),
+                "status", s.getStatus().name(),
+                "billingCycle", s.getBillingCycle(),
+                "currentPeriodStart", s.getCurrentPeriodStart(),
+                "currentPeriodEnd", s.getCurrentPeriodEnd(),
+                "cancelAtPeriodEnd", s.getCancelAtPeriodEnd(),
+                "canceledAt", s.getCanceledAt(),
+                "trialEndsAt", s.getTrialEndsAt()
+        )).orElse(null));
+        details.put("membershipsCount", memberships.size());
+        details.put("membershipsByRole", membershipsByRole);
+        details.put("organizationNodesCount", orgNodes);
+        details.put("branding", parseJson(tenant.getBrandingJson()));
+        details.put("features", parseJson(tenant.getFeaturesJson()));
+        details.put("settings", parseJson(tenant.getSettingsJson()));
 
         return ResponseEntity.ok(details);
+    }
+
+    @GetMapping("/plans")
+    public ResponseEntity<List<Map<String, Object>>> listPlans() {
+        return ResponseEntity.ok(planRepository.findAll().stream()
+                .map(this::toPlanSummary)
+                .toList());
+    }
+
+    @GetMapping("/subscriptions")
+    public ResponseEntity<PageResponse<Map<String, Object>>> getSubscriptions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<TenantSubscription> subPage;
+
+        if (status != null && !status.isBlank()) {
+            subPage = subscriptionRepository.findByStatus(
+                    SubscriptionStatus.valueOf(status.toUpperCase()), pageable);
+        } else {
+            subPage = subscriptionRepository.findAll(pageable);
+        }
+
+        List<Map<String, Object>> content = subPage.getContent().stream().map(s -> {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", s.getId().toString());
+            map.put("tenantId", s.getTenantId().toString());
+            map.put("planKey", s.getPlanKey());
+            map.put("status", s.getStatus().name());
+            map.put("billingCycle", s.getBillingCycle());
+            map.put("currentPeriodStart", s.getCurrentPeriodStart());
+            map.put("currentPeriodEnd", s.getCurrentPeriodEnd());
+            map.put("cancelAtPeriodEnd", s.getCancelAtPeriodEnd());
+            map.put("canceledAt", s.getCanceledAt());
+            return map;
+        }).toList();
+
+        return ResponseEntity.ok(PageResponse.of(content, page, size,
+                subPage.getTotalElements(), subPage.getTotalPages()));
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> getSystemHealth() {
+        Map<String, Object> health = new LinkedHashMap<>();
+        health.put("status", "UP");
+        health.put("timestamp", Instant.now().toString());
+        Map<String, Object> dbHealth = new LinkedHashMap<>();
+        dbHealth.put("status", "UP");
+        dbHealth.put("tenants", tenantRepository.count());
+        health.put("database", dbHealth);
+        health.put("version", "1.0.0");
+        return ResponseEntity.ok(health);
     }
 
     private Map<String, Object> toTenantMap(Tenant tenant) {
@@ -338,6 +555,24 @@ public class SuperAdminController {
         return map;
     }
 
+    private Map<String, Object> toPlanSummary(SaasPlan plan) {
+        Map<String, Object> limits = parseJson(plan.getLimitsJson());
+        Map<String, Object> features = parseJson(plan.getFeaturesJson());
+
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("key", plan.getKey());
+        map.put("name", plan.getName());
+        map.put("description", plan.getDescription());
+        map.put("priceMonthly", plan.getPriceMonthly());
+        map.put("priceYearly", plan.getPriceYearly());
+        map.put("currency", plan.getCurrency());
+        map.put("limits", limits);
+        map.put("features", features);
+        map.put("isActive", plan.getIsActive());
+        map.put("sortOrder", plan.getSortOrder());
+        return map;
+    }
+
     private Map<String, Object> toSubscriptionMap(TenantSubscription s) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", s.getId().toString());
@@ -347,5 +582,14 @@ public class SuperAdminController {
         map.put("billingCycle", s.getBillingCycle());
         map.put("currentPeriodEnd", s.getCurrentPeriodEnd());
         return map;
+    }
+
+    private Map<String, Object> parseJson(String json) {
+        if (json == null || json.isBlank()) return Map.of();
+        try {
+            return objectMapper.readValue(json, Map.class);
+        } catch (Exception e) {
+            return Map.of();
+        }
     }
 }

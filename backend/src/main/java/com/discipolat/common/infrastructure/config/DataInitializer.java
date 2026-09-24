@@ -167,6 +167,10 @@ public class DataInitializer implements CommandLineRunner {
 
         // Multi-tenant: seed organisations, subscriptions
         seedDefaultMemberships();
+
+        // Super Admin plateforme — seul compte habilité à @authz.isPlatformSuperAdmin()
+        // (gestion des tenants, provisionnement, impersonation). Idempotent.
+        seedPlatformSuperAdmin();
     }
 
     /**
@@ -363,6 +367,62 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
         userRepository.save(user);
         log.info("✅ Created {} (roles={}) user: {}", primaryRole, roles, email);
+    }
+
+    /**
+     * Crée le compte Super Admin de la PLATEFORME (rôle global
+     * {@code PLATFORM_SUPER_ADMIN}, tenant_id = null).
+     *
+     * <p>Sans ce compte, aucun endpoint {@code @authz.isPlatformSuperAdmin()}
+     * (tenants, provisionnement, impersonation) n'est atteignable : les
+     * utilisateurs légitimes (ADMIN/PASTEUR d'une église) en sont
+     * volontairement exclus depuis le verrouillage de l'API tenants.
+     *
+     * <p>Le compte est rattaché au premier tenant actif (colonne
+     * {@code users.tenant_id} NOT NULL) mais sa MEMBERSHIP porte le rôle
+     * global : il n'appartient donc pas à l'église d'un point de vue RBAC.
+     */
+    private void seedPlatformSuperAdmin() {
+        final String email = "superadmin@discipolat.com";
+        Role platformRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN").orElse(null);
+        if (platformRole == null) {
+            log.warn("Rôle PLATFORM_SUPER_ADMIN absent — super admin plateforme non créé");
+            return;
+        }
+        User admin = userRepository.findByEmail(email).orElse(null);
+        UUID tenantId = tenantRepository.findFirstByStatusOrderByCreatedAtAsc(TenantStatus.ACTIVE)
+                .map(Tenant::getId)
+                .orElse(null);
+        if (admin == null) {
+            if (tenantId == null) {
+                log.warn("Aucun tenant actif — super admin plateforme non créé");
+                return;
+            }
+            admin = User.builder()
+                    .tenantId(tenantId)
+                    .email(email)
+                    .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
+                    .firstName("Super")
+                    .lastName("Admin")
+                    .role(UserRole.ADMIN)
+                    .roles(Set.of(UserRole.ADMIN))
+                    .activeRole(UserRole.ADMIN)
+                    .statut(UserStatus.ACTIVE)
+                    .estChefDeFamille(false)
+                    .build();
+            admin = userRepository.save(admin);
+            log.info("✅ Compte Super Admin Plateforme créé: {}", email);
+        }
+        if (!membershipRepository.existsByUserIdAndRoleIdAndStatus(
+                admin.getId(), platformRole.getId(), MembershipStatus.ACTIVE)) {
+            membershipRepository.save(TenantMembership.builder()
+                    .tenantId(admin.getTenantId())
+                    .userId(admin.getId())
+                    .role(platformRole)
+                    .status(MembershipStatus.ACTIVE)
+                    .build());
+            log.info("✅ Membership PLATFORM_SUPER_ADMIN attribuée à {}", email);
+        }
     }
 
     // ==================== MULTI-TENANT SEED ====================

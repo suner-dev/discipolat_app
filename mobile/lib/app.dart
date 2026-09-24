@@ -431,7 +431,7 @@ Map<String, List<String>> _routeRoles = {
   '/admin/custom-fields': ['ADMIN'],
   '/admin/dictionaries': ['ADMIN'],
   '/admin/integrations': ['ADMIN'],
-  '/admin/tenants': ['ADMIN'],
+  '/admin/tenants': ['PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN'],
   '/admin/payments': ['ADMIN', 'PASTEUR'],
   '/admin/webhook-logs': ['ADMIN', 'PASTEUR'],
   '/security-settings': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],

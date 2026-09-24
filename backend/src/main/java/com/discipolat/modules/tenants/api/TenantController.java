@@ -31,19 +31,19 @@ public class TenantController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<List<TenantResponse>> list() {
         return ResponseEntity.ok(tenantService.list());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<TenantResponse> get(@PathVariable UUID id) {
         return ResponseEntity.ok(tenantService.get(id));
     }
 
     @GetMapping("/by-slug/{slug}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<TenantResponse> getBySlug(@PathVariable String slug) {
         return tenantService.findBySlug(slug)
                 .map(TenantResponse::from)
@@ -52,28 +52,28 @@ public class TenantController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<TenantResponse> create(@Valid @RequestBody CreateTenantRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tenantService.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<TenantResponse> update(@PathVariable UUID id,
                                                  @Valid @RequestBody UpdateTenantRequest request) {
         return ResponseEntity.ok(tenantService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         tenantService.deactivate(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/reactivate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Void> reactivate(@PathVariable UUID id) {
         tenantService.reactivate(id);
         return ResponseEntity.ok().build();

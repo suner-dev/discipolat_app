@@ -45,6 +45,14 @@ export default function PlatformAdminDashboard() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"dashboard" | "tenants" | "plans">("dashboard");
+  const [saving, setSaving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  // Édition d'un tenant (nom / plan / langue / fuseau)
+  const [editTenant, setEditTenant] = useState<Tenant | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", plan: "free", locale: "fr", timezone: "Africa/Douala" });
+  // Création / édition d'un plan SaaS
+  const [planModal, setPlanModal] = useState<Plan | null>(null);
+  const [planForm, setPlanForm] = useState({ key: "", name: "", description: "", priceMonthly: 0, priceYearly: 0, isActive: true });
 
   useEffect(() => {
     if (!hasPermission("TENANT_VIEW")) {
@@ -74,6 +82,87 @@ export default function PlatformAdminDashboard() {
   if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
   }
+
+  // ===== Actions super admin (toutes câblées sur l'API réelle) =====
+
+  const openTenantEdit = (tenant: Tenant) => {
+    setEditTenant(tenant);
+    setEditForm({ name: tenant.name, plan: tenant.plan, locale: tenant.locale, timezone: tenant.timezone });
+    setActionError(null);
+  };
+
+  const saveTenant = async () => {
+    if (!editTenant || !editForm.name.trim()) return;
+    setSaving(true);
+    setActionError(null);
+    try {
+      await api.put(`/platform/admin/tenants/${editTenant.id}`, editForm);
+      setEditTenant(null);
+      await fetchData();
+    } catch (e: any) {
+      setActionError(e?.response?.data?.error || "Mise à jour du tenant impossible");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openPlanModal = (plan?: Plan) => {
+    if (plan) {
+      setPlanModal(plan);
+      setPlanForm({
+        key: plan.key, name: plan.name, description: "",
+        priceMonthly: plan.priceMonthly, priceYearly: plan.priceYearly, isActive: true,
+      });
+    } else {
+      setPlanModal({ id: "", key: "", name: "", priceMonthly: 0, priceYearly: 0, usersLimit: 0, churchesLimit: 0 });
+      setPlanForm({ key: "", name: "", description: "", priceMonthly: 0, priceYearly: 0, isActive: true });
+    }
+    setActionError(null);
+  };
+
+  const savePlan = async () => {
+    if (!planForm.key.trim() || !planForm.name.trim()) {
+      setActionError("Clé et nom du plan sont requis");
+      return;
+    }
+    setSaving(true);
+    setActionError(null);
+    try {
+      await api.post("/platform/admin/plans", planForm);
+      setPlanModal(null);
+      await fetchData();
+    } catch (e: any) {
+      setActionError(e?.response?.data?.error || "Enregistrement du plan impossible");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setPlanActive = async (plan: Plan, isActive: boolean) => {
+    setSaving(true);
+    setActionError(null);
+    try {
+      await api.post("/platform/admin/plans", { key: plan.key, isActive });
+      await fetchData();
+    } catch (e: any) {
+      setActionError(e?.response?.data?.error || "Mise à jour du plan impossible");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setTenantStatus = async (tenant: Tenant, action: "suspend" | "reactivate") => {
+    setSaving(true);
+    setActionError(null);
+    try {
+      await api.post(`/platform/admin/tenants/${tenant.id}/${action}`);
+      await fetchData();
+    } catch (e: any) {
+      setActionError(e?.response?.data?.error || "Action impossible");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -142,7 +231,10 @@ export default function PlatformAdminDashboard() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Tenants ({tenants.length})</h2>
-            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            <button
+              onClick={() => navigate("/platform/onboarding")}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
               + Nouveau Tenant
             </button>
           </div>
@@ -184,9 +276,31 @@ export default function PlatformAdminDashboard() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">{tenant.country}</td>
                     <td className="px-6 py-4">
-                      <button className="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
-                        Editer
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => openTenantEdit(tenant)}
+                          className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                        >
+                          Editer
+                        </button>
+                        {tenant.status === "ACTIVE" ? (
+                          <button
+                            onClick={() => setTenantStatus(tenant, "suspend")}
+                            disabled={saving}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
+                          >
+                            Suspendre
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setTenantStatus(tenant, "reactivate")}
+                            disabled={saving}
+                            className="text-emerald-600 hover:text-emerald-800 text-sm font-medium disabled:opacity-50"
+                          >
+                            Réactiver
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -200,7 +314,10 @@ export default function PlatformAdminDashboard() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Plans SaaS</h2>
-            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            <button
+              onClick={() => openPlanModal()}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
               + Nouveau Plan
             </button>
           </div>
@@ -234,15 +351,126 @@ export default function PlatformAdminDashboard() {
                   </li>
                 </ul>
                 <div className="flex gap-2">
-                  <button className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
+                  <button
+                    onClick={() => openPlanModal(plan)}
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+                  >
                     Editer
                   </button>
-                  <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                  <button
+                    onClick={() => setPlanActive(plan, false)}
+                    disabled={saving || plan.key === 'free'}
+                    title={plan.key === 'free' ? "Le plan gratuit ne peut pas être désactivé" : undefined}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     Désactiver
                   </button>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Erreur d'action */}
+      {actionError && (
+        <div role="alert" className="rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+          {actionError}
+        </div>
+      )}
+
+      {/* Modale — édition d'un tenant */}
+      {editTenant && (
+        <div role="dialog" aria-modal="true" aria-label="Modifier l'organisation"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <h3 className="text-lg font-semibold">Modifier « {editTenant.name} »</h3>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Nom</label>
+              <input className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Plan</label>
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                value={editForm.plan} onChange={(e) => setEditForm((f) => ({ ...f, plan: e.target.value }))}>
+                {plans.map((p) => (
+                  <option key={p.key} value={p.key}>{p.name} ({p.key})</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Langue</label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  value={editForm.locale} onChange={(e) => setEditForm((f) => ({ ...f, locale: e.target.value }))}>
+                  <option value="fr">Français</option>
+                  <option value="en">English</option>
+                  <option value="pt">Português</option>
+                  <option value="es">Español</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Fuseau horaire</label>
+                <input className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  value={editForm.timezone} onChange={(e) => setEditForm((f) => ({ ...f, timezone: e.target.value }))} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setEditTenant(null)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+                Annuler
+              </button>
+              <button onClick={saveTenant} disabled={saving}
+                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                {saving ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale — création / édition d'un plan SaaS */}
+      {planModal && (
+        <div role="dialog" aria-modal="true" aria-label="Plan SaaS"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <h3 className="text-lg font-semibold">{planModal.key ? `Modifier le plan ${planModal.key}` : 'Nouveau plan'}</h3>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Clé *</label>
+              <input disabled={!!planModal.key} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-100"
+                value={planForm.key} onChange={(e) => setPlanForm((f) => ({ ...f, key: e.target.value.toLowerCase() }))} placeholder="starter" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Nom *</label>
+              <input className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                value={planForm.name} onChange={(e) => setPlanForm((f) => ({ ...f, name: e.target.value }))} placeholder="Starter" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+              <input className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                value={planForm.description} onChange={(e) => setPlanForm((f) => ({ ...f, description: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Prix / mois</label>
+                <input type="number" min={0} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  value={planForm.priceMonthly} onChange={(e) => setPlanForm((f) => ({ ...f, priceMonthly: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Prix / an</label>
+                <input type="number" min={0} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  value={planForm.priceYearly} onChange={(e) => setPlanForm((f) => ({ ...f, priceYearly: Number(e.target.value) }))} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setPlanModal(null)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+                Annuler
+              </button>
+              <button onClick={savePlan} disabled={saving}
+                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                {saving ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </div>
           </div>
         </div>
       )}

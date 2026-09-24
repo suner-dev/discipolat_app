@@ -137,7 +137,53 @@ PLATFORM_*), même flux 4 étapes :
 5. `ccc8b0b4` — mobile : écran super admin + route + drawer + tests.
 6. `1813b722` — landing : menu mobile corrigé + script E2E responsive.
 
-## 7. Points restant à traiter (documentés, non corrigés volontairement)
+## 7. Audit de sécurité — failles trouvées et corrigées (2026-09-24)
+
+Audit ciblé « isolation inter-églises » demandé par le client. **Deux failles
+réelles ont été trouvées (préexistantes) et corrigées** :
+
+| Faille | Impact | Correction |
+|--------|--------|------------|
+| `TenantController` (`/api/v1/tenants`) protégé par `hasAnyRole('ADMIN','PASTEUR')` | **Tout admin ou pasteur d'église pouvait lister, lire, modifier, supprimer et réactiver TOUS les tenants** (et l'inscription auto-provisionnée crée un compte `ADMIN` — `AuthService:543` : la faille était exploitable par tout nouvel inscrit) | Les 7 endpoints sont passés à `@PreAuthorize("@authz.isPlatformSuperAdmin()")` |
+| `SuperAdminController.archiveTenant` **sans aucun `@PreAuthorize`** | **Tout utilisateur authentifié pouvait archiver n'importe quelle église** (statut → CANCELLED) | Ajout de `@PreAuthorize("@authz.isPlatformSuperAdmin()")` |
+
+Conséquences traitées en cascade :
+- Web : la route `/admin/tenants` est passée de `roles={['ADMIN','PASTEUR']}` à
+  `scope="platform"` (le tenant admin ne peut plus ouvrir l'onglet « Églises »).
+- Mobile : `/admin/tenants` passe à `['PLATFORM_SUPER_ADMIN','PLATFORM_BILLING_ADMIN']`,
+  et le drawer expose une navigation **plateforme** séparée
+  (`_platformNav` : provisionnement + tenants) visible **uniquement** pour les
+  rôles `PLATFORM_*` ; l'admin d'église n'y a plus accès.
+- **Aucun compte `PLATFORM_SUPER_ADMIN` n'existait** (le rôle est créé par le
+  seed, mais pas le user) : le flow super admin était donc inutilisable en l'état.
+  `DataInitializer.seedPlatformSuperAdmin()` crée désormais
+  `superadmin@discipolat.com` (mot de passe de dev `password123`, à changer en
+  prod) avec une membership du rôle global `PLATFORM_SUPER_ADMIN`, de façon
+  idempotente.
+
+Boutons morts de l'interface super admin (superdashboard) : « + Nouveau Tenant »,
+« Éditer » (tenant), « + Nouveau Plan », « Éditer »/« Désactiver » (plan) étaient
+des boutons **sans handler**. Tous sont câblés :
+- « + Nouveau Tenant » → wizard de provisionnement ;
+- « Éditer » (tenant) → modale nom/plan/langue/fuseau → `PUT /platform/admin/tenants/{id}` (endpoint ajouté) ;
+- « Suspendre / Réactiver » → endpoints existants ;
+- Plans → modale (clé, nom, description, prix mensuel/annuel) → `POST /platform/admin/plans`
+  (l'upsert gère désormais `isActive`, ajoutée) ; « Désactiver » protégé pour
+  ne pas pouvoir désactiver le plan `free`.
+
+**Recette après correctifs** : `mvn test` = 1188 tests verts (EXIT=0),
+`tsc` = 0, `vitest` = 321/321, `flutter analyze` = 0 erreur, tests mobile verts.
+
+## 8. État réel de l'IA / chat / vocal / paiements (sans promesse « parfait »)
+
+| Domaine | Présence vérifiée dans le code | Ce qui n'est PAS vérifié |
+|---------|--------------------------------|--------------------------|
+| IA | Backend `modules/ai` (AiAssistantController/Module/Credits + AiAssistantService, aiPredictions, aiVisitNotes), web `AiAssistantPage`/`AiPredictionsPage`/`AiVisitNotesPage`, mobile `ai_assistant`/`ai_predictions`/`ai_visit_notes` | Le service IA pointe sur **Ollama local** (`app.ai.ollama-url:http://localhost:11434`, modèle `llama3`) et le STT/TTS sur l'API OpenAI (`APP_SPEECH_API_URL`, `APP_TTS_API_URL`) : **sans serveur Ollama et sans clés API en prod, l'IA ne répond pas**. Aucune exécution réelle n'a été faite. |
+| Chat / streaming | Backend `modules/messages` + `modules/streaming` (`LiveStreamController /api/v1/streams`, `StreamChatController /api/stream-chat`), web `MessagesPage`/`ConversationsPage`/`StreamingChat`, mobile `messages`/`group_messages`/`streaming` | Aucun test de bout en bout (WebSocket, temps réel) n'a été exécuté. |
+| Assistant vocal | Backend `modules/prophetic/api/VoiceAssistantController` → `/api/v1/voice/{process,commands,tts,tts-status}` + providers `WhisperSpeechToTextProvider`, `OpenAiTextToSpeechProvider` ; **le mobile et le web appellent bien ces endpoints** | Dépend des clés STT/TTS ; jamais exécuté avec une vraie clé. |
+| Paiements | Backend `modules/payments` : providers **MTN MoMo, Orange Money, M-Pesa**, `PaymentGatewayService`, webhooks + scheduler + signature, dons récurrents, reçus fiscaux, `PaymentController` + `PaymentWebhookController` ; web `AdminPaymentDashboardPage`/`PricingPage`/`GivingPage` ; mobile `giving` | Les clés (`MTN_CLIENT_ID/SECRET`, `ORANGE_API_KEY`…) sont **vides** dans `.env.example` et `MTN_BASE_URL` pointe par défaut sur le **sandbox MTN** : le « paiement en prod » exige le remplissage des secrets et le basculement hors sandbox. **Non vérifié en prod.** |
+
+## 9. Points restant à traiter (documentés, non corrigés volontairement)
 
 - Les 339 warnings ESLint (`any`, hooks) sont préexistants et sans impact
   fonctionnel ; les traiter relève d'un chantier de refactor dédié.

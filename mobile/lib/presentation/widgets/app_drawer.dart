@@ -82,8 +82,6 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.text_fields_rounded, 'title': 'Champs personnalisés', 'route': '/admin/custom-fields'},
     {'icon': Icons.book_rounded, 'title': 'Dictionnaires', 'route': '/admin/dictionaries'},
     {'icon': Icons.language_rounded, 'title': 'Intégrations', 'route': '/admin/integrations'},
-    {'icon': Icons.business_rounded, 'title': 'Églises (tenants)', 'route': '/admin/tenants'},
-    {'icon': Icons.rocket_launch_rounded, 'title': 'Provisionnement guidé', 'route': '/platform/onboarding'},
     {'icon': Icons.security_rounded, 'title': 'Sécurité', 'route': '/security-settings'},
     {'icon': Icons.people_rounded, 'title': 'Utilisateurs', 'route': '/users'},
     {'icon': Icons.shield_rounded, 'title': 'Permissions', 'route': '/permissions'},
@@ -105,6 +103,13 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.location_on_rounded, 'title': 'Santé quartiers', 'route': '/neighborhood-health'},
     {'icon': Icons.follow_the_signs_rounded, 'title': 'Demandes suivi', 'route': '/follow-up-requests'},
     {'icon': Icons.route_rounded, 'title': 'Parcours spirituel', 'route': '/discipleship-path'},
+  ];
+
+  // Navigation PLATEFORME (Super Admin SaaS) — réservée aux rôles PLATFORM_*.
+  // Ces écrans pilotent TOUS les tenants : un admin d'église ne doit pas y accéder.
+  static const List<Map<String, Object>> _platformNav = [
+    {'icon': Icons.rocket_launch_rounded, 'title': 'Provisionnement guidé', 'route': '/platform/onboarding'},
+    {'icon': Icons.business_rounded, 'title': 'Églises (tenants)', 'route': '/admin/tenants'},
   ];
 
   // Computed: main + admin pour ADMIN ; main seul pour Pasteur
@@ -308,8 +313,13 @@ class _AppDrawerState extends State<AppDrawer> {
         // Pasteur = vue complète, sans la configuration plateforme réservée Admin
         // (matrice des permissions, modules, menus, pages).
         return _fullNav.where((item) => !const {'/permissions', '/admin/modules', '/admin/menus', '/admin/pages', '/admin/transfers'}.contains(item['route'])).toList();
+      case 'PLATFORM_SUPER_ADMIN':
+      case 'PLATFORM_BILLING_ADMIN':
+        // Super Admin SaaS : admin d'église + navigation plateforme (tenants,
+        // provisionnement) — la seule qui donne accès à l'ensemble des églises.
+        return [..._fullNav, ..._platformNav];
       default:
-        return _fullNav; // ADMIN
+        return _fullNav; // ADMIN (admin d'une église — PAS d'accès plateforme)
     }
   }
 

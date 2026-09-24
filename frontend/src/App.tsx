@@ -796,9 +796,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/tenants" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
-              <AdminTenantsPage />
-            </ProtectedRoute>
+            <ProtectedRoute scope="platform"><AdminTenantsPage /></ProtectedRoute>
           } />
           <Route path="/admin/notifications" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
@@ -1091,7 +1089,7 @@ export default function App() {
             <ProtectedRoute scope="platform"><PlatformOnboardingFlowPage /></ProtectedRoute>
           } />
           <Route path="/platform/tenants" element={
-            <ProtectedRoute roles={['ADMIN']}><AdminTenantsPage /></ProtectedRoute>
+            <ProtectedRoute scope="platform"><AdminTenantsPage /></ProtectedRoute>
           } />
           <Route path="/platform/saas/plans" element={
             <ProtectedRoute scope="platform"><AdminTenantsPage /></ProtectedRoute>
