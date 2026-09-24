@@ -22,6 +22,7 @@ class _UsageAnalyticsScreenState extends State<UsageAnalyticsScreen> {
   bool _disabled = false;
   bool _unavailable = false;
   String _period = '7d';
+  int _requestId = 0;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _UsageAnalyticsScreenState extends State<UsageAnalyticsScreen> {
   }
 
   Future<void> _loadSummary() async {
+    final requestId = ++_requestId;
     if (mounted) {
       setState(() {
         _loading = true;
@@ -41,39 +43,39 @@ class _UsageAnalyticsScreenState extends State<UsageAnalyticsScreen> {
 
     try {
       final analyticsEnabled = await _service.fetchAnalyticsEnabled();
+      if (!_isCurrent(requestId)) return;
       if (analyticsEnabled == false) {
-        if (mounted) {
-          setState(() {
-            _disabled = true;
-            _loading = false;
-          });
-        }
+        setState(() {
+          _disabled = true;
+          _loading = false;
+        });
         return;
       }
       if (analyticsEnabled != true) {
-        if (mounted) {
-          setState(() {
-            _unavailable = true;
-            _loading = false;
-          });
-        }
+        setState(() {
+          _unavailable = true;
+          _loading = false;
+        });
         return;
       }
-      final summary =
-          await _service.fetchSummary(days: _daysForPeriod(_period));
-      if (!mounted) return;
+      final summary = await _service.fetchSummary(
+        days: _daysForPeriod(_period),
+      );
+      if (!_isCurrent(requestId)) return;
       setState(() {
         _summary = summary;
         _loading = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!_isCurrent(requestId)) return;
       setState(() {
         _unavailable = true;
         _loading = false;
       });
     }
   }
+
+  bool _isCurrent(int requestId) => mounted && requestId == _requestId;
 
   @override
   Widget build(BuildContext context) {

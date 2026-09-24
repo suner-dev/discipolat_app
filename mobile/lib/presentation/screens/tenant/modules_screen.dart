@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import '../../../api/api_service.dart';
+import '../../../data/services/api_service.dart';
 
 /// Écran de gestion des modules et fonctionnalités (TenantFeature API)
 class TenantModulesScreen extends ConsumerStatefulWidget {
   const TenantModulesScreen({super.key});
 
   @override
-  ConsumerState<TenantModulesScreen> createState() => _TenantModulesScreenState();
+  ConsumerState<TenantModulesScreen> createState() =>
+      _TenantModulesScreenState();
 }
 
 class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
+  final ApiService _apiService = ApiService();
   bool _loading = true;
   bool _saving = false;
   List<_ModuleInfo> _modules = [];
@@ -26,9 +28,16 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
 
   Future<void> _loadModules() async {
     try {
-      final response = await apiService.get('/admin/tenant-features');
+      final response = await _apiService.get('/admin/tenant-features');
+      final values = response.data is List
+          ? (response.data as List).whereType<Map>()
+          : const <Map>[];
       setState(() {
-        _modules = (response as List).map((e) => _ModuleInfo.fromJson(e)).toList();
+        _modules = values
+            .map((item) => _ModuleInfo.fromJson(
+                  Map<String, dynamic>.from(item),
+                ))
+            .toList();
         _loading = false;
       });
     } catch (e) {
@@ -45,7 +54,10 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
     setState(() => _saving = true);
     try {
       final newEnabled = !mod.enabled;
-      await apiService.put('/admin/tenant-features/${mod.key}', {'enabled': newEnabled});
+      await _apiService.put(
+        '/admin/tenant-features/${mod.key}',
+        data: {'enabled': newEnabled},
+      );
       setState(() {
         _message = newEnabled ? 'Module activé' : 'Module désactivé';
         _messageType = 'success';
@@ -87,11 +99,13 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
                         Center(
                           child: Column(
                             children: [
-                              const Icon(Icons.extension_off, size: 64, color: Colors.grey),
+                              const Icon(Icons.extension_off,
+                                  size: 64, color: Colors.grey),
                               const SizedBox(height: 16),
                               const Text(
                                 'Aucun module configuré',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w500),
                               ),
                               const SizedBox(height: 8),
                               const Padding(
@@ -130,17 +144,14 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _messageType == 'success'
-            ? Colors.green[100]
-            : Colors.red[100],
+        color: _messageType == 'success' ? Colors.green[100] : Colors.red[100],
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         _message!,
         style: TextStyle(
-          color: _messageType == 'success'
-              ? Colors.green[800]
-              : Colors.red[800],
+          color:
+              _messageType == 'success' ? Colors.green[800] : Colors.red[800],
           fontSize: 14,
         ),
       ),
@@ -180,7 +191,9 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
                       if (mod.limits.isNotEmpty) ...[
                         const SizedBox(width: 8),
                         Text(
-                          mod.limits.entries.map((e) => '${e.key}: ${e.value}').join(', '),
+                          mod.limits.entries
+                              .map((e) => '${e.key}: ${e.value}')
+                              .join(', '),
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey[600],
@@ -204,7 +217,7 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
             Switch(
               value: mod.enabled,
               onChanged: _saving ? null : (value) => _toggleModule(mod),
-              activeColor: Theme.of(context).primaryColor,
+              activeThumbColor: Theme.of(context).primaryColor,
             ),
           ],
         ),
@@ -260,7 +273,8 @@ class _ModuleInfo {
         key
             .replaceAll('_', ' ')
             .split(' ')
-            .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w)
+            .map((w) =>
+                w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w)
             .join(' ');
   }
 

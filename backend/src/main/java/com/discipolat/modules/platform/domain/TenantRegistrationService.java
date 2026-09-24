@@ -133,13 +133,13 @@ public class TenantRegistrationService {
                                 .build()
                 );
             }
-            Role pasteurRole = roleRepository.findGlobalByKey("PASTEUR")
-                    .orElseThrow(() -> new BusinessRuleException("Le rôle PASTEUR est introuvable", "ROLE_MISSING"));
+            Role ownerRole = roleRepository.findGlobalByKey("TENANT_OWNER")
+                    .orElseThrow(() -> new BusinessRuleException("Le rôle TENANT_OWNER est introuvable", "ROLE_MISSING"));
             membershipRepository.save(TenantMembership.builder()
                     .tenantId(tenantId)
                     .userId(owner.getId())
-                    .role(pasteurRole)
-                    .roleLegacy("PASTEUR")
+                    .role(ownerRole)
+                    .roleLegacy("TENANT_OWNER")
                     .scopeType(MembershipScopeType.TENANT)
                     .status(MembershipStatus.ACTIVE)
                     .build());

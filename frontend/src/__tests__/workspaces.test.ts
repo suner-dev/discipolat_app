@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { navForRole } from '@/workspaces';
+import { isTenantAdmin, navForRole } from '@/workspaces';
 
 /* ============================================================================
  * Espaces métiers — chaque rôle ne voit que les menus dont les routes lui
@@ -8,6 +8,16 @@ import { navForRole } from '@/workspaces';
 
 const allHrefs = (role: string) =>
   navForRole(role).flatMap((s) => s.items.map((i) => i.href));
+
+describe('isTenantAdmin — contrat du rôle actif', () => {
+  it('accepte uniquement les rôles tenant autorisés par le backend', () => {
+    expect(isTenantAdmin('TENANT_ADMIN')).toBe(true);
+    expect(isTenantAdmin('TENANT_OWNER')).toBe(true);
+    expect(isTenantAdmin('ADMIN')).toBe(true);
+    expect(isTenantAdmin('PASTEUR')).toBe(true);
+    expect(isTenantAdmin('TENANT_SUPER_ADMIN')).toBe(false);
+  });
+});
 
 describe('navForRole — cohérence menus / gardes de routes', () => {
   it('PASTEUR voit tous les écrans admin accessibles (configuration plateforme)', () => {

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -52,7 +54,7 @@ class Subscription {
       trialEndsAt: json['trialEndsAt'] != null
           ? DateTime.tryParse(json['trialEndsAt'])
           : null,
-      quotas: Quotas.fromJson(json['quotas'] ?? {}),
+      quotas: Quotas.fromJson(json['quotas'] ?? json['limits'] ?? {}),
       plan: json['plan'] != null ? Plan.fromJson(json['plan']) : null,
     );
   }
@@ -86,6 +88,17 @@ class Plan {
   });
 
   factory Plan.fromJson(Map<String, dynamic> json) {
+    dynamic rawFeatures = json['features'];
+    if (rawFeatures is String) {
+      try {
+        rawFeatures = jsonDecode(rawFeatures);
+      } catch (_) {
+        rawFeatures = null;
+      }
+    }
+    final features = rawFeatures is Map
+        ? Map<String, dynamic>.from(rawFeatures)
+        : const <String, dynamic>{};
     return Plan(
       id: json['id'] ?? '',
       key: json['key'] ?? '',
@@ -94,7 +107,10 @@ class Plan {
       priceMonthly: json['priceMonthly'] ?? 0,
       priceYearly: json['priceYearly'] ?? 0,
       currency: json['currency'] ?? 'XAF',
-      features: Map<String, bool>.from(json['features'] ?? {}),
+      features: {
+        for (final entry in features.entries)
+          if (entry.value is bool) entry.key: entry.value as bool,
+      },
     );
   }
 }
@@ -134,30 +150,58 @@ class Quotas {
   });
 
   factory Quotas.fromJson(dynamic value) {
-    final json = value is Map
-        ? Map<String, dynamic>.from(value)
+    dynamic decoded = value;
+    if (value is String) {
+      try {
+        decoded = jsonDecode(value);
+      } catch (_) {
+        decoded = null;
+      }
+    }
+    final json = decoded is Map
+        ? Map<String, dynamic>.from(decoded)
         : const <String, dynamic>{};
     return Quotas(
-      maxUsers: _number(json['maxUsers']),
-      maxChurches: _number(json['maxChurches']),
-      maxDepartments: _number(json['maxDepartments']),
-      maxStorageMb: _number(json['maxStorageMb']),
-      maxAiRequestsMonth: _number(json['maxAiRequestsMonth']),
-      maxCourses: _number(json['maxCourses']),
-      maxMessagesMonth: _number(json['maxMessagesMonth']),
-      currentUsers: _number(json['currentUsers']),
-      currentChurches: _number(json['currentChurches']),
-      currentDepartments: _number(json['currentDepartments']),
-      currentStorageMb: _number(json['currentStorageMb']),
-      currentAiRequestsMonth: _number(json['currentAiRequestsMonth']),
-      currentCourses: _number(json['currentCourses']),
-      currentMessagesMonth: _number(json['currentMessagesMonth']),
+      maxUsers:
+          _numberForKeys(json, const ['maxUsers', 'max_users', 'members']),
+      maxChurches: _numberForKeys(json, const ['maxChurches', 'max_churches']),
+      maxDepartments:
+          _numberForKeys(json, const ['maxDepartments', 'max_departments']),
+      maxStorageMb: _numberForKeys(
+          json, const ['maxStorageMb', 'max_storage_mb', 'storage_mb']),
+      maxAiRequestsMonth: _numberForKeys(json,
+          const ['maxAiRequestsMonth', 'max_ai_requests_month', 'ai_credits']),
+      maxCourses: _numberForKeys(json, const ['maxCourses', 'max_courses']),
+      maxMessagesMonth: _numberForKeys(
+          json, const ['maxMessagesMonth', 'max_messages_month']),
+      currentUsers:
+          _numberForKeys(json, const ['currentUsers', 'current_users']),
+      currentChurches:
+          _numberForKeys(json, const ['currentChurches', 'current_churches']),
+      currentDepartments: _numberForKeys(
+          json, const ['currentDepartments', 'current_departments']),
+      currentStorageMb: _numberForKeys(
+          json, const ['currentStorageMb', 'current_storage_mb']),
+      currentAiRequestsMonth: _numberForKeys(
+          json, const ['currentAiRequestsMonth', 'current_ai_requests_month']),
+      currentCourses:
+          _numberForKeys(json, const ['currentCourses', 'current_courses']),
+      currentMessagesMonth: _numberForKeys(
+          json, const ['currentMessagesMonth', 'current_messages_month']),
     );
   }
 
-  static int? _number(dynamic value) {
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
+  static int? _numberForKeys(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      if (!json.containsKey(key)) continue;
+      final value = json[key];
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value);
+      return null;
+    }
     return null;
   }
 
@@ -334,7 +378,11 @@ class TenantSession extends ChangeNotifier {
     _scopeType = prefs.getString('scope_type');
     _scopeId = prefs.getString('scope_id');
     _isLoaded = true;
-    if (_activeTenantId != null) TenantConfig.setOrgId(_activeTenantId!);
+    if (_activeTenantId == null) {
+      await TenantConfig.clearOrgId();
+    } else {
+      await TenantConfig.setOrgId(_activeTenantId!);
+    }
     notifyListeners();
   }
 
@@ -342,79 +390,92 @@ class TenantSession extends ChangeNotifier {
   Future<void> loadContext(Map<String, dynamic> context) async {
     if (context['requiresSelection'] == true) {
       _multipleTenants = true;
-      _tenants =
-          List<Map<String, dynamic>>.from(context['availableTenants'] ?? []);
-      _activeTenantId = null;
-      _activeOrgNodeId = null;
-      _subscription = null;
-      _quotas = null;
-      _features = {};
-      _branding = null;
-      _settings = null;
-      _accessibleNodes = [];
-      _activeOrgNode = null;
-    } else if (context['tenantId'] != null) {
-      _activeTenantId = context['tenantId'];
-      _tenantName = context['tenantName'];
-      _userRole = context['role'];
-      _scopeType = context['scopeType'];
-      _scopeId = context['scopeId'];
-      _subscription = null;
-      _quotas = null;
-
-      if (context['subscription'] != null) {
-        _subscription = Subscription.fromJson(context['subscription']);
-        _quotas = _subscription!.quotas;
-      }
-
-      // Features & branding
-      _features = Map<String, bool>.from(context['features'] ?? {});
-      _branding = context['branding'] != null
-          ? Map<String, dynamic>.from(context['branding'])
-          : null;
-      _settings = context['settings'] != null
-          ? Map<String, dynamic>.from(context['settings'])
-          : null;
-
-      // Accessible nodes
-      if (context['accessibleNodes'] != null) {
-        _accessibleNodes = (context['accessibleNodes'] as List)
-            .map((n) => OrganizationNode.fromJson(n))
-            .toList();
-      }
-
-      // Permissions
-      if (context['permissions'] != null) {
-        _permissions = Map<String, dynamic>.from(context['permissions']);
-      }
-
-      // Save to prefs
+      _tenants = _mapList(context['availableTenants']);
+      _clearTenantContext();
+      await TenantConfig.clearOrgId();
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('active_tenant_id', _activeTenantId!);
-      await prefs.setString('tenant_name', _tenantName ?? '');
-      await prefs.setString('user_role', _userRole ?? '');
-      await prefs.setString('scope_type', _scopeType ?? 'TENANT');
-      if (_scopeId != null) {
-        await prefs.setString('scope_id', _scopeId!);
-      }
-
-      _multipleTenants =
-          ((context['availableTenants'] as List?)?.length ?? 0) > 1;
+      await _removePersistedTenantContext(prefs);
+      _isLoaded = true;
+      notifyListeners();
+      return;
     }
+
+    if (context['tenantId'] == null) {
+      _clearTenantContext();
+      await TenantConfig.clearOrgId();
+      final prefs = await SharedPreferences.getInstance();
+      await _removePersistedTenantContext(prefs);
+      _isLoaded = true;
+      notifyListeners();
+      return;
+    }
+
+    final nextTenantId = context['tenantId'].toString();
+    final tenantChanged = _activeTenantId != nextTenantId;
+    if (tenantChanged) _clearTenantContext();
+    _activeTenantId = nextTenantId;
+    _tenantName = context['tenantName']?.toString();
+    _userRole = context['role']?.toString();
+    _scopeType = context['scopeType']?.toString();
+    _scopeId = context['scopeId']?.toString();
+    _subscription = null;
+    _quotas = null;
+    if (context['subscription'] is Map) {
+      _subscription = Subscription.fromJson(
+        Map<String, dynamic>.from(context['subscription'] as Map),
+      );
+      _quotas = _subscription!.quotas;
+    }
+
+    _features = _booleanMap(context['features']);
+    _branding = _nullableMap(context['branding']);
+    _settings = _nullableMap(context['settings']);
+    _accessibleNodes = context['accessibleNodes'] is List
+        ? (context['accessibleNodes'] as List)
+            .whereType<Map>()
+            .map((node) => OrganizationNode.fromJson(
+                  Map<String, dynamic>.from(node),
+                ))
+            .toList()
+        : [];
+    _permissions = _permissionMap(context['permissions']);
+    _multipleTenants = _mapList(context['availableTenants']).length > 1;
+
+    if (tenantChanged) await TenantConfig.clearOrgId();
+    await TenantConfig.setOrgId(nextTenantId);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('active_tenant_id', nextTenantId);
+    await prefs.setString('tenant_name', _tenantName ?? '');
+    await prefs.setString('user_role', _userRole ?? '');
+    await prefs.setString('scope_type', _scopeType ?? 'TENANT');
+    await prefs.remove('active_org_node_id');
+    await prefs.remove('org_name');
+    if (_scopeId == null) {
+      await prefs.remove('scope_id');
+    } else {
+      await prefs.setString('scope_id', _scopeId!);
+    }
+
     _isLoaded = true;
     notifyListeners();
   }
 
   /// Définir le tenant actif
   Future<void> setActiveTenant(
-      String tenantId, String tenantName, String role) async {
+    String tenantId,
+    String tenantName,
+    String role, {
+    String? scopeType,
+    String? scopeId,
+  }) async {
     _activeTenantId = tenantId;
     _tenantName = tenantName;
     _userRole = role;
     _activeOrgNodeId = null;
     _orgName = null;
-    _scopeType = 'TENANT';
-    _scopeId = null;
+    _scopeType = scopeType ?? 'TENANT';
+    _scopeId = scopeId;
+    _permissions = null;
     _activeOrgNode = null;
     _subscription = null;
     _quotas = null;
@@ -422,16 +483,20 @@ class TenantSession extends ChangeNotifier {
     _branding = null;
     _settings = null;
     _accessibleNodes = [];
-    TenantConfig.setOrgId(tenantId);
+    await TenantConfig.setOrgId(tenantId);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('active_tenant_id', tenantId);
     await prefs.setString('tenant_name', tenantName);
     await prefs.setString('user_role', role);
-    await prefs.setString('scope_type', 'TENANT');
+    await prefs.setString('scope_type', _scopeType!);
     await prefs.remove('active_org_node_id');
     await prefs.remove('org_name');
-    await prefs.remove('scope_id');
+    if (scopeId == null) {
+      await prefs.remove('scope_id');
+    } else {
+      await prefs.setString('scope_id', scopeId);
+    }
 
     _multipleTenants = _tenants.length > 1;
     notifyListeners();
@@ -480,12 +545,12 @@ class TenantSession extends ChangeNotifier {
     );
 
     await setActiveTenant(
-      tenant['id'],
-      tenant['name'],
-      tenant['role'],
+      tenant['id'].toString(),
+      tenant['name']?.toString() ?? 'Organisation',
+      tenant['role']?.toString() ?? 'MEMBRE',
+      scopeType: tenant['scopeType']?.toString(),
+      scopeId: tenant['scopeId']?.toString(),
     );
-
-    notifyListeners();
   }
 
   /// Mettre à jour les données de subscription/quotas/features
@@ -561,6 +626,79 @@ class TenantSession extends ChangeNotifier {
     return _features[feature] == true;
   }
 
+  void _clearTenantContext() {
+    _activeTenantId = null;
+    _activeOrgNodeId = null;
+    _tenantName = null;
+    _orgName = null;
+    _userRole = null;
+    _scopeType = null;
+    _scopeId = null;
+    _permissions = null;
+    _subscription = null;
+    _quotas = null;
+    _features = {};
+    _branding = null;
+    _settings = null;
+    _activeOrgNode = null;
+    _accessibleNodes = [];
+  }
+
+  Future<void> _removePersistedTenantContext(SharedPreferences prefs) async {
+    await prefs.remove('active_tenant_id');
+    await prefs.remove('active_org_node_id');
+    await prefs.remove('tenant_name');
+    await prefs.remove('org_name');
+    await prefs.remove('user_role');
+    await prefs.remove('scope_type');
+    await prefs.remove('scope_id');
+  }
+
+  static List<Map<String, dynamic>> _mapList(dynamic value) {
+    if (value is! List) return [];
+    return value
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
+
+  static Map<String, bool> _booleanMap(dynamic value) {
+    final map = _nullableMap(value);
+    if (map == null) return {};
+    return {
+      for (final entry in map.entries)
+        if (entry.value is bool) entry.key: entry.value as bool,
+    };
+  }
+
+  static Map<String, dynamic>? _nullableMap(dynamic value) {
+    if (value is Map) return Map<String, dynamic>.from(value);
+    if (value is String) {
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  static Map<String, dynamic>? _permissionMap(dynamic value) {
+    if (value is Map) {
+      return {
+        for (final entry in value.entries) entry.key.toString(): entry.value,
+      };
+    }
+    if (value is Iterable) {
+      return {
+        for (final permission in value)
+          if (permission != null) permission.toString(): true,
+      };
+    }
+    return null;
+  }
+
   /// Vérifier si un quota est dépassé
   bool isQuotaExceeded(String quotaKey) {
     return _quotas?.isExceeded(quotaKey) ?? false;
@@ -573,7 +711,7 @@ class TenantSession extends ChangeNotifier {
 
   /// Permissions de l'utilisateur dans le tenant courant
   void setPermissions(Map<String, dynamic> permissions) {
-    _permissions = permissions;
+    _permissions = _permissionMap(permissions);
     notifyListeners();
   }
 }

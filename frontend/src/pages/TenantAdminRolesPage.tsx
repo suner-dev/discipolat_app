@@ -25,7 +25,7 @@ export default function TenantAdminRolesPage() {
 
   const fetchRoles = async () => {
     try {
-      const res = await api.get("/admin/roles");
+      const res = await api.get("/admin/roles/overview");
       setRoles(res.data);
     } catch (error) {
       console.error("Erreur:", error);

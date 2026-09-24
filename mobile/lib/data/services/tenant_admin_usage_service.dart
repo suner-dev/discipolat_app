@@ -32,7 +32,7 @@ class TenantAdminUsageService {
   }
 
   Future<TenantAdminDashboardData> fetchDashboard() async {
-    final response = await _apiService.get('/admin/dashboard');
+    final response = await _apiService.get('/admin/dashboard/overview');
     return TenantAdminDashboardData.fromJson(response.data);
   }
 
@@ -93,7 +93,7 @@ class TenantAdminUsageService {
       final value = await request();
       return _EndpointResult<T>(value: identity(value));
     } catch (_) {
-      return const _EndpointResult<T>.failed();
+      return _EndpointResult<T>.failed();
     }
   }
 }

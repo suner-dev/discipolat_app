@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api, { getErrorMessage } from "@/lib/api";
 import { QuotaUsageCards } from "@/components/admin/QuotaUsageCards";
@@ -63,6 +63,7 @@ export default function PlatformAdminDashboardPage() {
   const [tenantUsage, setTenantUsage] = useState<QuotaUsage | null>(null);
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
+  const usageRequestIdRef = useRef(0);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   // Édition d'un tenant (nom / plan / langue / fuseau)
@@ -74,6 +75,9 @@ export default function PlatformAdminDashboardPage() {
 
   useEffect(() => {
     fetchData();
+    return () => {
+      usageRequestIdRef.current += 1;
+    };
   }, []);
 
   const fetchData = async () => {
@@ -227,18 +231,22 @@ export default function PlatformAdminDashboardPage() {
     }
   };
 
-  const loadTenantUsage = async () => {
-    if (!selectedUsageTenantId) return;
+  const loadTenantUsage = async (tenantId: string) => {
+    if (!tenantId) return;
+    const requestId = usageRequestIdRef.current + 1;
+    usageRequestIdRef.current = requestId;
     setUsageLoading(true);
     setUsageError(null);
     try {
-      const response = await api.get(`/platform/admin/quota-usage/tenants/${encodeURIComponent(selectedUsageTenantId)}`);
+      const response = await api.get(`/platform/admin/quota-usage/tenants/${encodeURIComponent(tenantId)}`);
+      if (usageRequestIdRef.current !== requestId) return;
       setTenantUsage(normalizeQuotaUsage(response.data));
     } catch (error: unknown) {
+      if (usageRequestIdRef.current !== requestId) return;
       setTenantUsage(null);
       setUsageError(getErrorMessage(error));
     } finally {
-      setUsageLoading(false);
+      if (usageRequestIdRef.current === requestId) setUsageLoading(false);
     }
   };
 
@@ -430,8 +438,10 @@ export default function PlatformAdminDashboardPage() {
               <select
                 value={selectedUsageTenantId}
                 onChange={(event) => {
+                  usageRequestIdRef.current += 1;
                   setSelectedUsageTenantId(event.target.value);
                   setTenantUsage(null);
+                  setUsageLoading(false);
                   setUsageError(null);
                 }}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2"
@@ -444,8 +454,8 @@ export default function PlatformAdminDashboardPage() {
             </label>
             <button
               type="button"
-              onClick={() => { void loadTenantUsage(); }}
-              disabled={!selectedUsageTenantId || usageLoading}
+              onClick={() => { void loadTenantUsage(selectedUsageTenantId); }}
+              disabled={!selectedUsageTenantId}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {usageLoading ? 'Chargement...' : 'Charger l\'usage'}
@@ -460,7 +470,7 @@ export default function PlatformAdminDashboardPage() {
                 title="Limites du tenant"
                 loading={usageLoading}
                 error={usageError}
-                onRetry={() => { void loadTenantUsage(); }}
+                onRetry={() => { void loadTenantUsage(selectedUsageTenantId); }}
               />
               <p className="text-xs text-gray-500">Les compteurs d'usage absents de la réponse restent indiqués comme indisponibles.</p>
             </>

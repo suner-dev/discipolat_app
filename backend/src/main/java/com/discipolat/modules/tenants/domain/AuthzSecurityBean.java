@@ -54,4 +54,12 @@ public class AuthzSecurityBean {
             return false;
         }
     }
+
+    public boolean isTenantAdmin() {
+        try {
+            return authzService.isTenantAdmin();
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

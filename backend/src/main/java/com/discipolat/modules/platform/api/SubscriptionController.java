@@ -19,7 +19,7 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/v1/admin/subscription")
-@PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+@PreAuthorize("@authz.isTenantAdmin()")
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
@@ -41,7 +41,7 @@ public class SubscriptionController {
     }
 
     @GetMapping("/plans")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.isTenantAdmin()")
     public ResponseEntity<List<Map<String, Object>>> getAvailablePlans() {
         List<Map<String, Object>> plans = planRepository.findByIsActiveTrueOrderBySortOrderAsc().stream()
                 .map(p -> {

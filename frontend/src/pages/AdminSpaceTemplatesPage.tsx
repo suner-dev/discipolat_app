@@ -43,7 +43,7 @@ const AdminSpaceTemplatesPage: React.FC = () => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const res = await api.get<SpaceTemplate[]>('/api/v1/space-templates/list');
+      const res = await api.get<SpaceTemplate[]>('/space-templates/list');
       setTemplates(res.data);
       setError(null);
     } catch (e: any) {
@@ -61,9 +61,9 @@ const AdminSpaceTemplatesPage: React.FC = () => {
     e.preventDefault();
     try {
       if (editing) {
-        await api.put(`/api/v1/space-templates/${editing.id}`, formData);
+        await api.put(`/space-templates/${editing.id}`, formData);
       } else {
-        await api.post('/api/v1/space-templates', formData);
+        await api.post('/space-templates', formData);
       }
       setShowForm(false);
       setEditing(null);
@@ -93,7 +93,7 @@ const AdminSpaceTemplatesPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Supprimer ce template ? Cette action est irréversible.')) return;
     try {
-      await api.delete(`/api/v1/space-templates/${id}`);
+      await api.delete(`/space-templates/${id}`);
       fetchTemplates();
     } catch (e: any) {
       setError(e.response?.data?.message || 'Erreur lors de la suppression');
@@ -106,7 +106,7 @@ const AdminSpaceTemplatesPage: React.FC = () => {
       delete (newTemplate as any).id;
       delete (newTemplate as any).createdAt;
       delete (newTemplate as any).updatedAt;
-      await api.post('/api/v1/space-templates', newTemplate);
+      await api.post('/space-templates', newTemplate);
       fetchTemplates();
     } catch (e: any) {
       setError(e.response?.data?.message || 'Erreur lors de la duplication');

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../api/api_service.dart';
+import '../../../data/services/api_service.dart';
 
 // ignore: unused_import
 import '../../../core/tenant_session.dart';
@@ -10,10 +10,12 @@ class OrganizationsScreen extends ConsumerStatefulWidget {
   const OrganizationsScreen({super.key});
 
   @override
-  ConsumerState<OrganizationsScreen> createState() => _OrganizationsScreenState();
+  ConsumerState<OrganizationsScreen> createState() =>
+      _OrganizationsScreenState();
 }
 
 class _OrganizationsScreenState extends ConsumerState<OrganizationsScreen> {
+  final ApiService _apiService = ApiService();
   bool _loading = true;
   List<Map<String, dynamic>> _nodes = [];
 
@@ -25,9 +27,16 @@ class _OrganizationsScreenState extends ConsumerState<OrganizationsScreen> {
 
   Future<void> _loadOrganizations() async {
     try {
-      final response = await apiService.get('/admin/org/tree');
+      final response = await _apiService.get('/admin/org/tree');
+      final data = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : const <String, dynamic>{};
       setState(() {
-        _nodes = List<Map<String, dynamic>>.from(response['allNodes'] ?? []);
+        _nodes = (data['allNodes'] is List
+                ? (data['allNodes'] as List).whereType<Map>()
+                : const <Map>[])
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
         _loading = false;
       });
     } catch (e) {
@@ -74,7 +83,8 @@ class _OrganizationsScreenState extends ConsumerState<OrganizationsScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: Text(
                         '${node['type'] ?? ''} - Niveau ${node['level'] ?? 0}',
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        style:
+                            const TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {

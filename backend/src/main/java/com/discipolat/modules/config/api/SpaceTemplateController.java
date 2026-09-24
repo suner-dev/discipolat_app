@@ -1,8 +1,15 @@
 package com.discipolat.modules.config.api;
 
 import com.discipolat.common.infrastructure.api.PageResponse;
+import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.config.domain.SpaceTemplate;
 import com.discipolat.modules.config.service.SpaceTemplateService;
+import com.discipolat.modules.spaces.domain.Space;
+import com.discipolat.modules.spaces.domain.SpaceService;
+import com.discipolat.modules.spaces.domain.SpaceStatus;
+import com.discipolat.modules.spaces.domain.SpaceType;
+import com.discipolat.modules.spaces.domain.VisiblePeopleScope;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,9 +29,11 @@ import java.util.UUID;
 public class SpaceTemplateController {
 
     private final SpaceTemplateService spaceTemplateService;
+    private final SpaceService spaceService;
 
-    public SpaceTemplateController(SpaceTemplateService spaceTemplateService) {
+    public SpaceTemplateController(SpaceTemplateService spaceTemplateService, SpaceService spaceService) {
         this.spaceTemplateService = spaceTemplateService;
+        this.spaceService = spaceService;
     }
 
     @GetMapping
@@ -79,13 +89,31 @@ public class SpaceTemplateController {
     public ResponseEntity<Map<String, Object>> createSpaceFromTemplate(
             @PathVariable String code,
             @RequestBody Map<String, Object> request) {
-        // TODO: Implémenter la création d'espace depuis template
-        // Nécessite SpaceService, OrganizationNode, etc.
-        // Pour l'instant, retourner le template pour que le frontend puisse l'utiliser
         SpaceTemplate template = spaceTemplateService.getTemplateByCode(code);
-        return ResponseEntity.ok(Map.of(
+        UUID organizationUnitId = UUID.fromString(String.valueOf(request.get("organizationUnitId")));
+        String name = String.valueOf(request.getOrDefault("name", template.getName()));
+        String spaceCode = String.valueOf(request.getOrDefault("code", template.getCode()));
+        SpaceType type;
+        try {
+            type = SpaceType.valueOf(String.valueOf(request.getOrDefault("spaceType", "DEPARTMENT"))
+                    .toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("Type d'espace invalide", exception);
+        }
+        Map<String, Object> configuration = new LinkedHashMap<>();
+        configuration.put("templateCode", template.getCode());
+        configuration.put("modules", template.getModulesJson());
+        configuration.put("workflows", template.getDefaultWorkflowsJson());
+        configuration.put("statuses", template.getDefaultStatusesJson());
+        configuration.put("dashboards", template.getDefaultDashboardsJson());
+        Space created = spaceService.createSpace(TenantContext.requireTenantId(), SecurityUtils.getCurrentUserId(),
+                new SpaceService.SpaceCommand(organizationUnitId, type, template.getCode(), name, spaceCode,
+                        template.getIcon(), template.getColor(), template.getDescription(), SpaceStatus.ACTIVE,
+                        VisiblePeopleScope.CHURCH, configuration));
+        return ResponseEntity.status(201).body(Map.of(
+                "space", created,
                 "template", template,
-                "message", "Template récupéré. Implémentation création espace à faire dans SpaceService."
+                "message", "Espace créé depuis le template"
         ));
     }
 }

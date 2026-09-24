@@ -128,13 +128,52 @@ class ApiService {
     required Uint8List fileBytes,
     required String filename,
     Map<String, dynamic>? data,
-  }) async {
+  }) {
+    return postFile(
+      path,
+      fieldName: fieldName,
+      fileBytes: fileBytes,
+      filename: filename,
+      contentType: DioMediaType('audio', 'wav'),
+      data: data,
+    );
+  }
+
+  Future<Response> postImage(
+    String path, {
+    required String fieldName,
+    required Uint8List fileBytes,
+    required String filename,
+    Map<String, dynamic>? data,
+  }) {
+    final extension =
+        filename.contains('.') ? filename.split('.').last.toLowerCase() : 'jpg';
+    final contentType =
+        DioMediaType('image', extension == 'jpg' ? 'jpeg' : extension);
+    return postFile(
+      path,
+      fieldName: fieldName,
+      fileBytes: fileBytes,
+      filename: filename,
+      contentType: contentType,
+      data: data,
+    );
+  }
+
+  Future<Response> postFile(
+    String path, {
+    required String fieldName,
+    required Uint8List fileBytes,
+    required String filename,
+    required DioMediaType contentType,
+    Map<String, dynamic>? data,
+  }) {
     final form = FormData.fromMap({
       if (data != null) ...data,
       fieldName: MultipartFile.fromBytes(
         fileBytes,
         filename: filename,
-        contentType: DioMediaType('audio', 'wav'),
+        contentType: contentType,
       ),
     });
     return _dio.post(path, data: form);

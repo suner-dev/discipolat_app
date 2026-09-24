@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../api/api_service.dart';
+import '../../../data/services/api_service.dart';
 
 class TenantRolesScreen extends ConsumerStatefulWidget {
   const TenantRolesScreen({super.key});
@@ -10,6 +10,7 @@ class TenantRolesScreen extends ConsumerStatefulWidget {
 }
 
 class _TenantRolesScreenState extends ConsumerState<TenantRolesScreen> {
+  final ApiService _apiService = ApiService();
   bool _loading = true;
   List<Map<String, dynamic>> _roles = [];
 
@@ -21,9 +22,13 @@ class _TenantRolesScreenState extends ConsumerState<TenantRolesScreen> {
 
   Future<void> _loadRoles() async {
     try {
-      final response = await apiService.get('/admin/roles');
+      final response = await _apiService.get('/admin/roles/overview');
       setState(() {
-        _roles = List<Map<String, dynamic>>.from(response);
+        _roles = (response.data is List
+                ? (response.data as List).whereType<Map>()
+                : const <Map>[])
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
         _loading = false;
       });
     } catch (e) {
@@ -53,11 +58,12 @@ class _TenantRolesScreenState extends ConsumerState<TenantRolesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(role['key'] ?? '',
-                              style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                              style: const TextStyle(
+                                  color: Colors.grey, fontSize: 12)),
                           if (role['permissions'] != null)
-                            Text(
-                              '${role['permissions'].length} permissions',
-                              style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                            Text('${role['permissions'].length} permissions',
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                       trailing: role['isSystem'] == true

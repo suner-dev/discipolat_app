@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-import '../../../api/api_service.dart';
+import '../../../data/services/api_service.dart';
 import '../../../core/tenant_session.dart';
 
 /// Écran de personnalisation du branding (couleurs, polices, assets)
@@ -11,7 +9,8 @@ class TenantBrandingScreen extends ConsumerStatefulWidget {
   const TenantBrandingScreen({super.key});
 
   @override
-  ConsumerState<TenantBrandingScreen> createState() => _TenantBrandingScreenState();
+  ConsumerState<TenantBrandingScreen> createState() =>
+      _TenantBrandingScreenState();
 }
 
 class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
@@ -22,6 +21,7 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
   String? _messageType;
   String? _uploadingAsset;
   final ImagePicker _picker = ImagePicker();
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -31,9 +31,10 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
 
   Future<void> _loadBranding() async {
     try {
-      final response = await apiService.get('/admin/branding');
+      final response = await _apiService.get('/admin/branding');
+      final data = Map<String, dynamic>.from(response.data as Map);
       setState(() {
-        _branding = Map<String, dynamic>.from(response);
+        _branding = data;
         _loading = false;
       });
     } catch (e) {
@@ -49,7 +50,7 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
     setState(() => _saving = true);
 
     try {
-      await apiService.put('/admin/branding', _branding);
+      await _apiService.put('/admin/branding', data: _branding);
       setState(() {
         _saving = false;
         _message = 'Branding mis a jour avec succes';
@@ -77,22 +78,14 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
 
       setState(() => _uploadingAsset = assetType);
 
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${apiService.baseUrl}/api/v1/admin/branding/assets'),
+      final response = await _apiService.postImage(
+        '/admin/branding/assets',
+        fieldName: 'file',
+        fileBytes: await image.readAsBytes(),
+        filename: image.name,
+        data: {'assetType': assetType},
       );
-      request.headers.addAll(apiService.headers);
-      request.fields['assetType'] = assetType;
-      request.files.add(await http.MultipartFile.fromPath('file', image.path));
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode >= 400) {
-        throw Exception('Erreur upload: ${response.statusCode}');
-      }
-
-      final data = json.decode(response.body);
+      final data = Map<String, dynamic>.from(response.data as Map);
       final url = data['url'] as String;
 
       setState(() {
@@ -129,7 +122,8 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -139,16 +133,22 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
                 decoration: InputDecoration(
                   hintText: currentUrl ?? 'Aucun fichier',
                   border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 controller: TextEditingController(text: currentUrl ?? ''),
               ),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
-              onPressed: _uploadingAsset == assetType ? null : () => _uploadAsset(assetType),
+              onPressed: _uploadingAsset == assetType
+                  ? null
+                  : () => _uploadAsset(assetType),
               icon: _uploadingAsset == assetType
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.cloud_upload, size: 18),
               label: const Text('Upload'),
             ),
@@ -213,17 +213,14 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _messageType == 'success'
-            ? Colors.green[100]
-            : Colors.red[100],
+        color: _messageType == 'success' ? Colors.green[100] : Colors.red[100],
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         _message!,
         style: TextStyle(
-          color: _messageType == 'success'
-              ? Colors.green[800]
-              : Colors.red[800],
+          color:
+              _messageType == 'success' ? Colors.green[800] : Colors.red[800],
           fontSize: 14,
         ),
       ),
@@ -268,10 +265,12 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
       Wrap(
         spacing: 16,
         runSpacing: 16,
-        children: colorFields.map((field) => SizedBox(
-          width: 120,
-          child: _colorField(field[0], field[1]),
-        )).toList(),
+        children: colorFields
+            .map((field) => SizedBox(
+                  width: 120,
+                  child: _colorField(field[0], field[1]),
+                ))
+            .toList(),
       ),
     ]);
   }
@@ -315,7 +314,7 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
     );
     if (picked != null) {
       setState(() {
-        _branding[key] = '#${picked.value.toRadixString(16).substring(2)}';
+        _branding[key] = '#${picked.toARGB32().toRadixString(16).substring(2)}';
       });
     }
   }
@@ -336,7 +335,8 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
     return _buildSectionCard('Assets', [
       _buildAssetField('Logo principal', 'logo', _branding['logoUrl']),
       const SizedBox(height: 16),
-      _buildAssetField('Logo mode sombre', 'logo-dark', _branding['logoDarkUrl']),
+      _buildAssetField(
+          'Logo mode sombre', 'logo-dark', _branding['logoDarkUrl']),
       const SizedBox(height: 16),
       _buildAssetField('Couverture', 'cover', _branding['coverUrl']),
       const SizedBox(height: 16),
@@ -354,11 +354,14 @@ class _TenantBrandingScreenState extends ConsumerState<TenantBrandingScreen> {
 
   Widget _buildContactSection() {
     return _buildSectionCard('Contact', [
-      _buildTextField('email', 'Email', 'contact@eglise.org', keyboardType: TextInputType.emailAddress),
+      _buildTextField('email', 'Email', 'contact@eglise.org',
+          keyboardType: TextInputType.emailAddress),
       const SizedBox(height: 16),
-      _buildTextField('phone', 'Telephone', '+225 07 07 07 07 07', keyboardType: TextInputType.phone),
+      _buildTextField('phone', 'Telephone', '+225 07 07 07 07 07',
+          keyboardType: TextInputType.phone),
       const SizedBox(height: 16),
-      _buildTextField('website', 'Site web', 'https://eglise.org', keyboardType: TextInputType.url),
+      _buildTextField('website', 'Site web', 'https://eglise.org',
+          keyboardType: TextInputType.url),
       const SizedBox(height: 16),
       _buildTextField('address', 'Adresse', 'Abidjan, Cocody'),
     ]);

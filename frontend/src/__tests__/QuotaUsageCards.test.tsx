@@ -86,14 +86,29 @@ describe('QuotaUsage', () => {
       metrics: [
         { key: 'users', usage: 12, limit: null, unlimited: true, source: 'user_repository', enforced: false },
         { key: 'churches', usage: null, limit: 1, enforced: false },
+        { key: 'ai_requests', usage: 3, limit: null, label: 'Requêtes IA', enforced: true },
       ],
     });
 
     render(<QuotaUsageCards metrics={usage.metrics} />);
 
     expect(screen.getByText(/Illimité/)).toBeInTheDocument();
+    expect(screen.getByText('Crédits IA')).toBeInTheDocument();
+    expect(screen.queryByText('Requêtes IA')).not.toBeInTheDocument();
     expect(screen.getAllByText('Limite non appliquée')).toHaveLength(2);
-    expect(screen.getByText('Indisponible')).toBeInTheDocument();
+    expect(screen.getAllByText('Indisponible').length).toBeGreaterThan(0);
+  });
+
+  it('associe chaque section à un titre unique', () => {
+    render(
+      <>
+        <QuotaUsageCards metrics={[]} title="Quotas A" />
+        <QuotaUsageCards metrics={[]} title="Quotas B" />
+      </>
+    );
+
+    const sections = screen.getAllByRole('region', { name: /Quotas [AB]/ });
+    expect(sections[0].getAttribute('aria-labelledby')).not.toBe(sections[1].getAttribute('aria-labelledby'));
   });
 
   it('affiche une erreur lorsque la requête échoue', async () => {

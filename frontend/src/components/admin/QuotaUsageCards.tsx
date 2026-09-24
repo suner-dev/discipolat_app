@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
@@ -36,10 +37,12 @@ const formatLimit = (metric: QuotaUsageMetric): string => {
 };
 
 export function QuotaUsageCards({ metrics, title = 'Quotas et usage', loading = false, error = null, onRetry }: QuotaUsageCardsProps) {
+  const titleId = useId();
+
   return (
-    <section className="space-y-4" aria-labelledby="quota-usage-title">
+    <section className="space-y-4" aria-labelledby={titleId}>
       <div className="flex items-center justify-between gap-4">
-        <h2 id="quota-usage-title" className="text-lg font-semibold">{title}</h2>
+        <h2 id={titleId} className="text-lg font-semibold">{title}</h2>
         {onRetry && !loading && (
           <button type="button" onClick={onRetry} className="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800">
             <RefreshCw className="h-4 w-4" /> Réessayer

@@ -65,7 +65,7 @@ public class QuotaService {
         LockedPlan locked = lockPlan(tenantId);
         OptionalLong limit = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.USERS);
         if (!locked.enforced() || limit.isEmpty()) {
-            return;
+            throw invalidConfiguration();
         }
         long currentUsers = userRepository.countByTenantIdAndDeletedFalse(tenantId);
         if (currentUsers >= limit.getAsLong()) {
@@ -75,9 +75,9 @@ public class QuotaService {
 
     public void checkCanCreateChurch(UUID tenantId, OrganizationNodeType type) {
         LockedPlan locked = lockPlan(tenantId);
-        Long limit = rawLimit(locked.plan(), "max_churches");
+        Long limit = organizationLimit(locked.plan(), "churches");
         if (!locked.enforced() || limit == null) {
-            return;
+            throw invalidConfiguration();
         }
         long current = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH)
                 + orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.SUB_CHURCH);
@@ -88,9 +88,9 @@ public class QuotaService {
 
     public void checkCanCreateDepartment(UUID tenantId) {
         LockedPlan locked = lockPlan(tenantId);
-        Long limit = rawLimit(locked.plan(), "max_departments");
+        Long limit = organizationLimit(locked.plan(), "departments");
         if (!locked.enforced() || limit == null) {
-            return;
+            throw invalidConfiguration();
         }
         long current = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT);
         if (current >= limit) {
@@ -102,7 +102,7 @@ public class QuotaService {
         LockedPlan locked = lockPlan(tenantId);
         OptionalLong limit = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.COURSES);
         if (!locked.enforced() || limit.isEmpty()) {
-            return;
+            throw invalidConfiguration();
         }
         long current = courseRepository.countByTenantId(tenantId);
         if (current >= limit.getAsLong()) {
@@ -117,13 +117,13 @@ public class QuotaService {
         LockedPlan locked = lockPlan(tenantId);
         OptionalLong megabytes = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.STORAGE_MB);
         if (!locked.enforced() || megabytes.isEmpty()) {
-            return;
+            throw invalidConfiguration();
         }
         Long limit;
         try {
             limit = Math.multiplyExact(megabytes.getAsLong(), BYTES_PER_MEGABYTE);
         } catch (ArithmeticException ignored) {
-            return;
+            throw invalidConfiguration();
         }
         long current = fileRepository.sumSizeBytesByTenantIdAndDeletedFalse(tenantId);
         try {
@@ -157,7 +157,7 @@ public class QuotaService {
         }
         OptionalLong limit = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.AI_CREDITS);
         if (limit.isEmpty()) {
-            return;
+            throw invalidConfiguration();
         }
         LocalDate month = LocalDate.now(clock);
         long used = aiUsageRepository.sumCreditsConsumedByTenantIdAndUsageDateGreaterThanEqualAndUsageDateLessThan(
@@ -171,7 +171,7 @@ public class QuotaService {
         LockedPlan locked = lockPlan(tenantId);
         OptionalLong limit = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.MESSAGES);
         if (!locked.enforced() || limit.isEmpty()) {
-            return;
+            throw invalidConfiguration();
         }
         LocalDateTime from = LocalDate.now(clock).atStartOfDay();
         LocalDateTime to = from.plusMonths(1);
@@ -242,7 +242,7 @@ public class QuotaService {
                                        String key,
                                        TenantPlanPolicy.ResolvedPlan resolvedPlan,
                                        long used) {
-        Long limit = rawLimit(resolvedPlan, "max_" + key);
+        Long limit = organizationLimit(resolvedPlan, key);
         if (limit != null) {
             target.put(key, Map.of("used", used, "limit", limit,
                     "percent", limit == 0 ? 0.0 : Math.round(used * 10000.0 / limit) / 100.0));
@@ -253,15 +253,51 @@ public class QuotaService {
         Tenant tenant = tenantRepository.findByIdForUpdate(tenantId)
                 .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
         TenantPlanPolicy.ResolvedPlan resolvedPlan = planPolicy.resolve(tenant);
-        return new LockedPlan(resolvedPlan, resolvedPlan.enforcementEnabled());
+        if (resolvedPlan == null || !resolvedPlan.hasCatalogPlan() || resolvedPlan.subscription() == null
+                || resolvedPlan.subscription().getPlanKey() == null
+                || resolvedPlan.subscription().getPlanKey().isBlank()
+                || !planPolicy.isEnabledSubscription(resolvedPlan.subscription().getStatus())
+                || !resolvedPlan.enforcementEnabled() || !resolvedPlan.limitsValid()
+                || !resolvedPlan.featuresValid()) {
+            throw invalidConfiguration();
+        }
+        return new LockedPlan(resolvedPlan, true);
+    }
+
+    private Long organizationLimit(TenantPlanPolicy.ResolvedPlan resolvedPlan, String resource) {
+        String key = switch (resource) {
+            case "churches" -> "max_churches";
+            case "departments" -> "max_departments";
+            case "campuses" -> "max_campuses";
+            case "groups" -> "max_groups";
+            default -> null;
+        };
+        Long limit = key == null ? null : rawLimit(resolvedPlan, key);
+        return limit != null ? limit : rawLimit(resolvedPlan, "spaces");
     }
 
     private Long rawLimit(TenantPlanPolicy.ResolvedPlan resolvedPlan, String key) {
-        if (resolvedPlan == null || !resolvedPlan.enforcementEnabled()) {
+        if (resolvedPlan == null || !resolvedPlan.enforcementEnabled() || !resolvedPlan.limitsValid()) {
             return null;
         }
         Object value = resolvedPlan.limits().get(key);
-        return value instanceof Number number ? number.longValue() : null;
+        if (value instanceof Number number) {
+            long limit = number.longValue();
+            return limit < 0 ? null : limit;
+        }
+        if (value instanceof String text) {
+            try {
+                long limit = Long.parseLong(text.trim());
+                return limit < 0 ? null : limit;
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private BusinessRuleException invalidConfiguration() {
+        return new BusinessRuleException("Quota configuration is unavailable or invalid", "QUOTA_CONFIGURATION_INVALID");
     }
 
     private BusinessRuleException exceeded(String resource, long used, long limit) {

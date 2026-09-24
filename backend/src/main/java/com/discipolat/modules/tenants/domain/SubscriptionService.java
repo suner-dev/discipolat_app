@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import org.springframework.scheduling.annotation.Scheduled;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -182,13 +183,36 @@ sub.setStatus(SubscriptionStatus.CANCELED);
 
         newSub = subscriptionRepository.save(newSub);
 
-        // Update tenant plan immediately for feature access
-        tenant.setPlan(newPlanKey);
-        Map<String, Object> features = parseJson(newPlan.getFeaturesJson());
-        tenant.setFeaturesJson(toJson(features));
-        tenantRepository.save(tenant);
-
+        // Le tenant conserve son plan courant jusqu'à la prise d'effet programmée.
         return newSub;
+    }
+
+    @Scheduled(fixedDelay = 60_000, initialDelay = 60_000)
+    @Transactional
+    public void activateDuePlanChanges() {
+        Instant now = Instant.now();
+        for (TenantSubscription pending : subscriptionRepository
+                .findByStatusAndCurrentPeriodStartLessThanEqual(SubscriptionStatus.PENDING_CHANGE, now)) {
+            TenantSubscription current = subscriptionRepository.findCurrentByTenantId(pending.getTenantId())
+                    .orElse(null);
+            if (current != null && current.getId() != null && !current.getId().equals(pending.getId())
+                    && current.getStatus() != SubscriptionStatus.PENDING_CHANGE) {
+                current.setStatus(SubscriptionStatus.CANCELED);
+                current.setCanceledAt(now);
+                current.setCancelAtPeriodEnd(false);
+                subscriptionRepository.save(current);
+            }
+            SaasPlan plan = planRepository.findById(pending.getPlanKey())
+                    .orElseThrow(() -> new BusinessRuleException("Plan not found: " + pending.getPlanKey(), "PLAN_NOT_FOUND"));
+            pending.setStatus(SubscriptionStatus.ACTIVE);
+            pending.setCancelAtPeriodEnd(false);
+            subscriptionRepository.save(pending);
+            Tenant tenant = tenantRepository.findById(pending.getTenantId())
+                    .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
+            tenant.setPlan(plan.getKey());
+            tenant.setFeaturesJson(plan.getFeaturesJson());
+            tenantRepository.save(tenant);
+        }
     }
 
     /**
@@ -266,23 +290,50 @@ sub.setStatus(SubscriptionStatus.CANCELED);
     }
 
     private void validateQuotasForDowngrade(UUID tenantId, Map<String, Object> newLimits) {
-        // Check current usage against new limits
         Map<String, Object> usage = quotaService.getQuotaUsage(tenantId);
+        validateDowngrade(usage, newLimits, "users", "used", "max_users", "members");
+        validateDowngrade(usage, newLimits, "storage", "usedMb", "max_storage_mb", "storage_mb");
+        validateDowngrade(usage, newLimits, "aiRequests", "used", "max_ai_requests_month", "ai_credits");
+        validateDowngrade(usage, newLimits, "courses", "used", "max_courses");
+        validateDowngrade(usage, newLimits, "messages", "used", "max_messages_month");
+        validateDowngrade(usage, newLimits, "churches", "used", "max_churches");
+        validateDowngrade(usage, newLimits, "departments", "used", "max_departments");
+        validateDowngrade(usage, newLimits, "campuses", "used", "max_campuses");
+        validateDowngrade(usage, newLimits, "groups", "used", "max_groups");
+    }
 
-        for (Map.Entry<String, Object> entry : newLimits.entrySet()) {
-            String key = entry.getKey();
-            long newLimit = ((Number) entry.getValue()).longValue();
+    private void validateDowngrade(Map<String, Object> usage,
+                                   Map<String, Object> limits,
+                                   String metricKey,
+                                   String usageKey,
+                                   String... limitKeys) {
+        Long limit = firstNumeric(limits, limitKeys);
+        Object metricValue = usage.get(metricKey);
+        if (limit == null || !(metricValue instanceof Map<?, ?> metric)) {
+            return;
+        }
+        Object usedValue = metric.get(usageKey);
+        if (usedValue instanceof Number used && used.doubleValue() > limit) {
+            throw new BusinessRuleException(
+                    "Impossible de rétrograder: usage actuel (" + used + ") dépasse la nouvelle limite (" + limit + ") pour " + metricKey,
+                    "QUOTA_EXCEEDS_DOWNGRADE_LIMIT");
+        }
+    }
 
-            if (usage.containsKey(key)) {
-                Map<String, Object> usageInfo = (Map<String, Object>) usage.get(key);
-                long used = ((Number) usageInfo.get("used")).longValue();
-                if (used > newLimit) {
-                    throw new BusinessRuleException(
-                            "Impossible de rétrograder: usage actuel (" + used + ") dépasse la nouvelle limite (" + newLimit + ") pour " + key,
-                            "QUOTA_EXCEEDS_DOWNGRADE_LIMIT");
+    private Long firstNumeric(Map<String, Object> values, String... keys) {
+        for (String key : keys) {
+            Object value = values.get(key);
+            if (value instanceof Number number) {
+                return number.longValue();
+            }
+            if (value instanceof String text) {
+                try {
+                    return Long.parseLong(text.trim());
+                } catch (NumberFormatException ignored) {
                 }
             }
         }
+        return null;
     }
 
     private Map<String, Object> parseJson(String json) {

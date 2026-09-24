@@ -59,6 +59,18 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.beta-testing.seed-demo-accounts:false}")
     private boolean seedDemoAccounts;
 
+    @Value("${app.environment:dev}")
+    private String environment;
+
+    @Value("${app.bootstrap.superadmin-enabled:false}")
+    private boolean superadminBootstrapEnabled;
+
+    @Value("${app.bootstrap.superadmin-email:}")
+    private String superadminEmail;
+
+    @Value("${app.bootstrap.superadmin-secret:}")
+    private String superadminSecret;
+
     public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder,
                            SoulRepository soulRepository,
                            DepartmentRepository departmentRepository,
@@ -87,7 +99,9 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        String encodedPassword = passwordEncoder.encode(DEFAULT_PASSWORD);
+        boolean demoOrBeta = !isProductionEnvironment()
+                && (seedDemoAccounts || "beta".equalsIgnoreCase(environment));
+        String encodedPassword = demoOrBeta ? passwordEncoder.encode(DEFAULT_PASSWORD) : null;
         int updatedCount = 0;
 
         // Migration de données (applicable dans tous les environnements) :
@@ -115,15 +129,15 @@ public class DataInitializer implements CommandLineRunner {
         // endpoint @authz.isPlatformSuperAdmin() (tenants, provisionnement,
         // impersonation) n'est atteignable. Sans compte démo, ce rôle est la
         // seule porte d'entrée de l'administration plateforme.
-        seedPlatformSuperAdmin();
+        seedPlatformSuperAdmin(demoOrBeta);
 
-        if (!seedDemoAccounts) {
+        if (!demoOrBeta || !seedDemoAccounts) {
             log.info("ℹ️ Comptes de démonstration désactivés sur cet environnement (seed-demo-accounts=false).");
             return;
         }
 
         for (User user : userRepository.findAll()) {
-            if ("PLACEHOLDER".equals(user.getPasswordHash())) {
+            if (encodedPassword != null && "PLACEHOLDER".equals(user.getPasswordHash())) {
                 user.setPasswordHash(encodedPassword);
                 userRepository.save(user);
                 updatedCount++;
@@ -385,51 +399,72 @@ public class DataInitializer implements CommandLineRunner {
      * {@code users.tenant_id} NOT NULL) mais sa MEMBERSHIP porte le rôle
      * global : il n'appartient donc pas à l'église d'un point de vue RBAC.
      */
-    private void seedPlatformSuperAdmin() {
-        final String email = "superadmin@discipolat.com";
-        Role platformRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN").orElse(null);
+    private void seedPlatformSuperAdmin(boolean demoOrBeta) {
+        boolean bootstrapConfigured = superadminBootstrapEnabled
+                && hasText(superadminEmail)
+                && hasText(superadminSecret);
+        if (!demoOrBeta && !bootstrapConfigured) {
+            log.info("Bootstrap du Super Admin plateforme désactivé");
+            return;
+        }
+
+        String email = demoOrBeta ? "superadmin@discipolat.com" : superadminEmail.trim();
+        String rawPassword = demoOrBeta ? DEFAULT_PASSWORD : superadminSecret;
+        if (!demoOrBeta && DEFAULT_PASSWORD.equals(rawPassword)) {
+            log.warn("Bootstrap du Super Admin plateforme refusé : secret interdit hors mode démo");
+            return;
+        }
+
+        Role platformRole = roleRepository.findGlobalByKey("PLATFORM_SUPER_ADMIN").orElse(null);
         if (platformRole == null) {
             log.warn("Rôle PLATFORM_SUPER_ADMIN absent — super admin plateforme non créé");
             return;
         }
-        User admin = userRepository.findByEmail(email).orElse(null);
+
+        User existing = userRepository.findGlobalByEmail(email).orElse(null);
+        if (existing != null) {
+            log.warn("Compte de bootstrap déjà présent — aucune attribution de rôle effectuée: {}", email);
+            return;
+        }
+
         UUID tenantId = tenantRepository.findFirstByStatusOrderByCreatedAtAsc(TenantStatus.ACTIVE)
                 .map(Tenant::getId)
                 .orElse(null);
-        if (admin == null) {
-            if (tenantId == null) {
-                log.warn("Aucun tenant actif — super admin plateforme non créé");
-                return;
-            }
-            admin = User.builder()
-                    .tenantId(tenantId)
-                    .email(email)
-                    .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
-                    .firstName("Super")
-                    .lastName("Admin")
-                    .role(UserRole.ADMIN)
-                    .roles(Set.of(UserRole.ADMIN))
-                    .activeRole(UserRole.ADMIN)
-                    .statut(UserStatus.ACTIVE)
-                    .estChefDeFamille(false)
-                    .build();
-            admin = userRepository.save(admin);
-            log.info("✅ Compte Super Admin Plateforme créé: {}", email);
+        if (tenantId == null) {
+            log.warn("Aucun tenant actif — super admin plateforme non créé");
+            return;
         }
-        if (!membershipRepository.existsByUserIdAndRoleIdAndStatus(
-                admin.getId(), platformRole.getId(), MembershipStatus.ACTIVE)) {
-            membershipRepository.save(TenantMembership.builder()
-                    .tenantId(admin.getTenantId())
-                    .userId(admin.getId())
-                    .role(platformRole)
-                    // `role_legacy` est NOT NULL en base : on renseigne la clé
-                    // du rôle, comme InvitationService / TenantRegistrationService.
-                    .roleLegacy(platformRole.getKey())
-                    .scopeType(MembershipScopeType.TENANT)
-                    .status(MembershipStatus.ACTIVE)
-                    .build());
-            log.info("✅ Membership PLATFORM_SUPER_ADMIN attribuée à {}", email);
-        }
+
+        User admin = User.builder()
+                .tenantId(tenantId)
+                .email(email)
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .firstName("Super")
+                .lastName("Admin")
+                .role(UserRole.ADMIN)
+                .roles(Set.of(UserRole.ADMIN))
+                .activeRole(UserRole.ADMIN)
+                .statut(UserStatus.ACTIVE)
+                .estChefDeFamille(false)
+                .build();
+        admin = userRepository.save(admin);
+        membershipRepository.save(TenantMembership.builder()
+                .tenantId(tenantId)
+                .userId(admin.getId())
+                .role(platformRole)
+                .roleLegacy(platformRole.getKey())
+                .scopeType(MembershipScopeType.TENANT)
+                .status(MembershipStatus.ACTIVE)
+                .build());
+        log.info("Compte Super Admin Plateforme créé: {}", email);
+    }
+
+    private boolean isProductionEnvironment() {
+        return "prod".equalsIgnoreCase(environment) || "production".equalsIgnoreCase(environment);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     // ==================== MULTI-TENANT SEED ====================

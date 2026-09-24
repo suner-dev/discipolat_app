@@ -37,11 +37,14 @@ public interface OrganizationNodeRepository extends TenantAwareRepository<Organi
 
     Optional<OrganizationNode> findRootByTenantId(UUID tenantId);
 
-    long countByTenantIdAndType(UUID tenantId, OrganizationNodeType type);
+    @Query(value = "SELECT COUNT(*) FROM organization_nodes WHERE tenant_id = :tenantId AND type = :type", nativeQuery = true)
+    long countByTenantIdAndType(@Param("tenantId") UUID tenantId, @Param("type") OrganizationNodeType type);
 
-    long countByTenantId(UUID tenantId);
+    @Query(value = "SELECT COUNT(*) FROM organization_nodes WHERE tenant_id = :tenantId", nativeQuery = true)
+    long countByTenantId(@Param("tenantId") UUID tenantId);
 
-    long countByType(OrganizationNodeType type);
+    @Query(value = "SELECT COUNT(*) FROM organization_nodes WHERE type = :type", nativeQuery = true)
+    long countByType(@Param("type") OrganizationNodeType type);
 
     @Query("SELECT CASE WHEN COUNT(n) > 0 THEN true ELSE false END FROM OrganizationNode n WHERE n.id = :nodeId AND EXISTS (SELECT a FROM OrganizationNode a WHERE a.id = :ancestorId AND n.path LIKE CONCAT(a.path, '%'))")
     boolean isDescendantOf(@Param("nodeId") UUID nodeId, @Param("ancestorId") UUID ancestorId);

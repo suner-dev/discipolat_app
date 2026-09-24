@@ -41,7 +41,7 @@ class TenantUsageSnapshotServiceTest {
 
     private TenantUsageSnapshotService service;
     private final UUID tenantId = UUID.randomUUID();
-    private final Instant now = Instant.parse("2026-09-24T12:00:00Z");
+    private final Instant now = Instant.parse("2026-09-01T12:00:00Z");
     private final LocalDate month = LocalDate.of(2026, 9, 1);
     private final LocalDateTime from = month.atStartOfDay();
     private final LocalDateTime to = month.plusMonths(1).atStartOfDay();
@@ -89,11 +89,11 @@ class TenantUsageSnapshotServiceTest {
         assertEquals(3L, snapshot.courses().used());
         assertEquals(9L, snapshot.messages().used());
         assertEquals(500L, snapshot.users().limit());
-        assertEquals(20_971_520L, snapshot.storageBytes().limit());
+        assertEquals(20_971_520_000L, snapshot.storageBytes().limit());
         assertEquals(2000L, snapshot.aiCredits().limit());
         assertEquals(TenantUsageSnapshot.MetricSource.PERSISTED_FILES, snapshot.storageBytes().source());
         assertTrue(snapshot.plan().enforcementEnabled());
-        assertEquals(now, snapshot.generatedAt());
+        assertEquals(Instant.parse("2026-09-01T12:00:00Z"), snapshot.generatedAt());
         assertEquals(Instant.parse("2026-09-01T00:00:00Z"), snapshot.aiCredits().periodStart());
         assertEquals(Instant.parse("2026-10-01T00:00:00Z"), snapshot.aiCredits().periodEnd());
     }
@@ -152,7 +152,7 @@ class TenantUsageSnapshotServiceTest {
     void keepsCountersScopedToRequestedTenant() {
         UUID otherTenantId = UUID.randomUUID();
         Tenant first = tenant("STARTUP");
-        Tenant second = tenant("GROWTH");
+        Tenant second = tenant(otherTenantId, "GROWTH");
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(first));
         when(tenantRepository.findById(otherTenantId)).thenReturn(Optional.of(second));
         when(subscriptionRepository.findCurrentByTenantId(tenantId)).thenReturn(Optional.empty());
@@ -186,7 +186,11 @@ class TenantUsageSnapshotServiceTest {
     }
 
     private Tenant tenant(String plan) {
-        return Tenant.builder().id(tenantId).name("Tenant").slug("tenant").plan(plan)
+        return tenant(tenantId, plan);
+    }
+
+    private Tenant tenant(UUID id, String plan) {
+        return Tenant.builder().id(id).name("Tenant").slug("tenant").plan(plan)
                 .status(TenantStatus.ACTIVE).build();
     }
 

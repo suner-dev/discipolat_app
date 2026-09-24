@@ -39,20 +39,26 @@ public class TenantPlanPolicy {
 
     public ResolvedPlan resolve(Tenant tenant) {
         TenantSubscription subscription = subscriptionRepository.findCurrentByTenantId(tenant.getId()).orElse(null);
-        String persistedKey = subscription != null ? subscription.getPlanKey() : tenant.getPlan();
+        String persistedKey = subscription != null && subscription.getPlanKey() != null
+                ? subscription.getPlanKey() : tenant.getPlan();
         if (persistedKey == null || persistedKey.isBlank()) {
-            // 6e composant du record = TenantSubscription : `null` (et non `false`),
-            // sinon le plan résolu ne tient pas compte de l'abonnement courant.
-            return new ResolvedPlan(null, null, null, Map.of(), false, null);
+            return new ResolvedPlan(null, null, null, Map.of(), false, false, false, null);
         }
-        SaasPlan plan = planRepository.findById(persistedKey).orElse(null);
         String canonicalKey = normalizePlanKey(persistedKey);
+        SaasPlan plan = canonicalKey == null ? null : planRepository.findById(canonicalKey)
+                .orElseGet(() -> planRepository.findByKeyIgnoreCaseAndIsActiveTrue(canonicalKey).orElse(null));
+        ParsedObject parsedLimits = plan == null ? ParsedObject.invalid() : parseObject(plan.getLimitsJson());
+        ParsedObject parsedFeatures = plan == null ? ParsedObject.invalid() : parseObject(plan.getFeaturesJson());
         boolean catalogActive = plan != null && Boolean.TRUE.equals(plan.getIsActive())
                 && !isDisabledPlanStatus(plan.getStatus());
+        boolean limitsValid = parsedLimits.valid() && validLimits(plan, parsedLimits.value());
+        boolean featuresValid = parsedFeatures.valid();
+        boolean subscriptionPlanValid = subscription == null || hasText(subscription.getPlanKey());
         boolean subscriptionActive = subscription == null || isEnabledSubscription(subscription.getStatus());
-        Map<String, Object> limits = plan == null ? Map.of() : readObject(plan.getLimitsJson());
-        return new ResolvedPlan(persistedKey, canonicalKey, plan, limits,
-                catalogActive && subscriptionActive, subscription);
+        return new ResolvedPlan(persistedKey, canonicalKey, plan,
+                parsedLimits.value(), catalogActive && subscriptionPlanValid && subscriptionActive
+                        && limitsValid && featuresValid,
+                limitsValid, featuresValid, subscription);
     }
 
     public String normalizePlanKey(String key) {
@@ -64,7 +70,7 @@ public class TenantPlanPolicy {
     }
 
     public OptionalLong limit(ResolvedPlan resolvedPlan, Limit limit) {
-        if (resolvedPlan == null || resolvedPlan.plan() == null) {
+        if (resolvedPlan == null || resolvedPlan.plan() == null || !resolvedPlan.limitsValid()) {
             return OptionalLong.empty();
         }
         Long value = switch (limit) {
@@ -78,7 +84,7 @@ public class TenantPlanPolicy {
     }
 
     public Optional<Boolean> feature(ResolvedPlan resolvedPlan, String... keys) {
-        if (resolvedPlan == null || resolvedPlan.plan() == null) {
+        if (resolvedPlan == null || resolvedPlan.plan() == null || !resolvedPlan.featuresValid()) {
             return Optional.empty();
         }
         Map<String, Object> features = readObject(resolvedPlan.plan().getFeaturesJson());
@@ -107,30 +113,78 @@ public class TenantPlanPolicy {
             return dedicated.longValue();
         }
         for (String key : keys) {
-            Object value = limits.get(key);
-            if (value instanceof Number number) {
-                return number.longValue();
-            }
-            if (value instanceof String text) {
-                try {
-                    return Long.parseLong(text);
-                } catch (NumberFormatException ignored) {
-                }
+            Long value = numericValue(limits.get(key));
+            if (value != null) {
+                return value;
             }
         }
         return null;
     }
 
-    private Map<String, Object> readObject(String json) {
+    private boolean validLimits(SaasPlan plan, Map<String, Object> limits) {
+        if (plan == null || plan.getSeatsLimit() != null && plan.getSeatsLimit() < 0
+                || plan.getStorageLimitMb() != null && plan.getStorageLimitMb() < 0
+                || plan.getAiCreditsLimit() != null && plan.getAiCreditsLimit() < 0) {
+            return false;
+        }
+        for (Map.Entry<String, Object> entry : limits.entrySet()) {
+            if (isLimitKey(entry.getKey())) {
+                Long value = numericValue(entry.getValue());
+                if (value == null || value < 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean isLimitKey(String key) {
+        return switch (key) {
+            case "max_users", "members", "max_storage_mb", "storage_mb", "max_ai_requests_month",
+                    "ai_credits", "max_courses", "max_messages_month", "max_churches", "max_departments",
+                    "max_campuses", "max_groups", "spaces", "events" -> true;
+            default -> false;
+        };
+    }
+
+    private Long numericValue(Object value) {
+        if (value instanceof Number number) {
+            double decimal = number.doubleValue();
+            if (!Double.isFinite(decimal) || decimal != Math.rint(decimal)) {
+                return null;
+            }
+            return number.longValue();
+        }
+        if (value instanceof String text) {
+            try {
+                return Long.parseLong(text.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private ParsedObject parseObject(String json) {
         if (json == null || json.isBlank()) {
-            return Map.of();
+            return ParsedObject.invalid();
         }
         try {
-            return objectMapper.readValue(json, new TypeReference<>() {
+            Map<String, Object> value = objectMapper.readValue(json, new TypeReference<>() {
             });
+            return value == null ? ParsedObject.invalid() : new ParsedObject(value, true);
         } catch (Exception ignored) {
-            return Map.of();
+            return ParsedObject.invalid();
         }
+    }
+
+    private Map<String, Object> readObject(String json) {
+        ParsedObject parsed = parseObject(json);
+        return parsed.valid() ? parsed.value() : Map.of();
     }
 
     public enum Limit {
@@ -147,10 +201,18 @@ public class TenantPlanPolicy {
             SaasPlan plan,
             Map<String, Object> limits,
             boolean enforcementEnabled,
+            boolean limitsValid,
+            boolean featuresValid,
             TenantSubscription subscription
     ) {
         public boolean hasCatalogPlan() {
             return plan != null;
+        }
+    }
+
+    private record ParsedObject(Map<String, Object> value, boolean valid) {
+        private static ParsedObject invalid() {
+            return new ParsedObject(Map.of(), false);
         }
     }
 }

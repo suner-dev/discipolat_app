@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +20,8 @@ import java.util.UUID;
 @Service
 @Transactional
 public class SaasPlanService {
+
+    public static final List<String> PUBLIC_PLAN_KEYS = List.of("DISCOVERY", "STARTUP", "GROWTH", "NETWORK");
 
     private final SaasPlanRepository planRepository;
     private final TenantSubscriptionRepository subscriptionRepository;
@@ -35,6 +38,21 @@ public class SaasPlanService {
     @Transactional(readOnly = true)
     public List<SaasPlan> getActivePlans() {
         return planRepository.findByIsActiveTrueOrderBySortOrderAsc();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SaasPlan> getPublicPlans() {
+        return planRepository.findByIsActiveTrueAndIsPublicTrueOrderBySortOrderAsc().stream()
+                .filter(plan -> PUBLIC_PLAN_KEYS.contains(normalizePublicKey(plan.getKey())))
+                .filter(plan -> plan.getStatus() == null
+                        || !(plan.getStatus().equalsIgnoreCase("INACTIVE")
+                        || plan.getStatus().equalsIgnoreCase("DEPRECATED")))
+                .sorted(Comparator.comparingInt(plan -> PUBLIC_PLAN_KEYS.indexOf(normalizePublicKey(plan.getKey()))))
+                .toList();
+    }
+
+    private String normalizePublicKey(String key) {
+        return key == null ? "" : key.trim().toUpperCase(java.util.Locale.ROOT);
     }
 
     @Transactional(readOnly = true)

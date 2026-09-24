@@ -31,7 +31,7 @@ const METRIC_DEFINITIONS: Record<string, MetricDefinition> = {
   campuses: { label: 'Campus' },
   groups: { label: 'Groupes' },
   storage: { label: 'Stockage' },
-  aiRequests: { label: 'Requêtes IA / mois' },
+  aiRequests: { label: 'Crédits IA' },
   courses: { label: 'Cours' },
   messages: { label: 'Messages / mois' },
 };
@@ -107,6 +107,7 @@ const canonicalMetricKey = (key: string): string | null => {
 };
 
 const metricLabel = (key: string, raw: unknown): string => {
+  if (key === 'aiRequests') return METRIC_DEFINITIONS[key].label;
   if (isRecord(raw)) {
     const label = toStringValue(raw.label);
     if (label) return label;

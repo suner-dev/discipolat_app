@@ -92,12 +92,12 @@ class TenantRegistrationServiceTest {
                 .name("Owner Test").type(OrganizationNodeType.ROOT_CHURCH).code("ROOT")
                 .path("ROOT").level(0).status(OrganizationNodeStatus.ACTIVE).build();
         User owner = User.builder().id(userId).email("owner@example.com").tenantId(tenantId).build();
-        Role pasteur = Role.builder().id(UUID.randomUUID()).key("PASTEUR").build();
+        Role ownerRole = Role.builder().id(UUID.randomUUID()).key("TENANT_OWNER").build();
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(tenantService.create(any())).thenReturn(tenant);
         when(organizationNodeService.createRootChurch(any(), any(), any(), any())).thenReturn(church);
         when(userRepository.findGlobalByEmail("owner@example.com")).thenReturn(Optional.of(owner));
-        when(roleRepository.findGlobalByKey("PASTEUR")).thenReturn(Optional.of(pasteur));
+        when(roleRepository.findGlobalByKey("TENANT_OWNER")).thenReturn(Optional.of(ownerRole));
 
         TenantRegistrationService.ApprovalResult result = service().approve(requestId, "approved");
 

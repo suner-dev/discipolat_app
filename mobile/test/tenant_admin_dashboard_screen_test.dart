@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/tenant/tenant_admin_dashboard_screen.dart';
@@ -28,7 +29,7 @@ class _FakeApiService extends ApiService {
       throw DioException(requestOptions: RequestOptions(path: path));
     }
     final data = switch (path) {
-      '/admin/dashboard' => dashboard,
+      '/admin/dashboard/overview' => dashboard,
       '/admin/quotas/usage' => quotas,
       '/admin/settings' => settings,
       _ => <String, dynamic>{},
@@ -47,6 +48,7 @@ Future<void> _pump(
 ) async {
   await tester.binding.setSurfaceSize(const Size(800, 1600));
   addTearDown(() => tester.binding.setSurfaceSize(null));
+  SharedPreferences.setMockInitialValues({});
   await tester.pumpWidget(
     MaterialApp(home: TenantAdminDashboardScreen(apiService: api)),
   );
@@ -54,7 +56,9 @@ Future<void> _pump(
 }
 
 void main() {
-  testWidgets('renders finite and unlimited persisted metrics', (tester) async {
+  testWidgets('renders finite, explicit unlimited and unknown quotas', (
+    tester,
+  ) async {
     await _pump(
       tester,
       _FakeApiService(
@@ -67,6 +71,8 @@ void main() {
         quotas: {
           'users': {'used': 12, 'limit': 20, 'percent': 60},
           'storage': {'usedMb': 5, 'limitMb': null},
+          'aiRequests': {'used': 8, 'limit': null, 'unlimited': true},
+          'courses': {'used': 3, 'limit': 0},
         },
         settings: {'analyticsEnabled': true},
       ),
@@ -75,11 +81,19 @@ void main() {
     expect(find.text('Église réelle'), findsOneWidget);
     expect(find.text('12'), findsWidgets);
     expect(find.text('12 / 20'), findsOneWidget);
-    expect(find.text('5 / Illimité'), findsOneWidget);
+    expect(find.text('Crédits IA'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('5 Mo / Limite inconnue'), 300,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('5 Mo / Limite inconnue'), findsOneWidget);
+    expect(find.text('8 / Illimité'), findsOneWidget);
+    expect(find.text('3 / 0'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Analytics disponibles'), 300,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text('Analytics disponibles'), findsOneWidget);
   });
 
-  testWidgets('renders disabled analytics without requesting usage data', (tester) async {
+  testWidgets('renders disabled analytics without requesting usage data',
+      (tester) async {
     final api = _FakeApiService(
       quotas: const {},
       settings: const {'analyticsEnabled': false},
@@ -87,11 +101,15 @@ void main() {
 
     await _pump(tester, api);
 
+    await tester.scrollUntilVisible(
+        find.text('Analytics désactivés par le tenant'), 300,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text('Analytics désactivés par le tenant'), findsOneWidget);
-    expect(find.text('Données de consommation indisponibles'), findsOneWidget);
+    expect(find.text('Données de consommation indisponibles'), findsNothing);
   });
 
-  testWidgets('renders explicit unavailable states for missing fields', (tester) async {
+  testWidgets('renders explicit unavailable states for missing fields',
+      (tester) async {
     await _pump(
       tester,
       _FakeApiService(
@@ -104,23 +122,31 @@ void main() {
     expect(find.text('Indisponible'), findsWidgets);
     expect(find.text('Données du tableau de bord indisponibles'), findsNothing);
     expect(find.text('Données de consommation indisponibles'), findsNothing);
+    await tester.scrollUntilVisible(
+        find.text('Statut des analytics indisponible'), 300,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text('Statut des analytics indisponible'), findsWidgets);
   });
 
-  testWidgets('renders explicit error states when endpoints fail', (tester) async {
+  testWidgets('renders explicit error states when endpoints fail',
+      (tester) async {
     await _pump(
       tester,
       _FakeApiService(
         failPaths: const {
-          '/admin/dashboard',
+          '/admin/dashboard/overview',
           '/admin/quotas/usage',
           '/admin/settings',
         },
       ),
     );
 
-    expect(find.text('Données du tableau de bord indisponibles'), findsOneWidget);
+    expect(
+        find.text('Données du tableau de bord indisponibles'), findsOneWidget);
     expect(find.text('Données de consommation indisponibles'), findsOneWidget);
+    await tester.scrollUntilVisible(
+        find.text('Statut des analytics indisponible').first, 300,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text('Statut des analytics indisponible'), findsWidgets);
   });
 }

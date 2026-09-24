@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../api/api_service.dart';
+import '../../../data/services/api_service.dart';
 
 /// Écran de gestion des utilisateurs
 class TenantUsersScreen extends ConsumerStatefulWidget {
@@ -11,6 +11,7 @@ class TenantUsersScreen extends ConsumerStatefulWidget {
 }
 
 class _TenantUsersScreenState extends ConsumerState<TenantUsersScreen> {
+  final ApiService _apiService = ApiService();
   bool _loading = true;
   List<Map<String, dynamic>> _users = [];
 
@@ -22,9 +23,16 @@ class _TenantUsersScreenState extends ConsumerState<TenantUsersScreen> {
 
   Future<void> _loadUsers() async {
     try {
-      final response = await apiService.get('/admin/members?size=100');
+      final response = await _apiService.get('/admin/members?size=100');
+      final data = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : const <String, dynamic>{};
       setState(() {
-        _users = List<Map<String, dynamic>>.from(response['content'] ?? []);
+        _users = (data['content'] is List
+                ? (data['content'] as List).whereType<Map>()
+                : const <Map>[])
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
         _loading = false;
       });
     } catch (e) {
@@ -60,12 +68,13 @@ class _TenantUsersScreenState extends ConsumerState<TenantUsersScreen> {
                     child: ListTile(
                       leading: CircleAvatar(
                         child: Text(
-                          (user['firstName']?.toString() ?? '')+
+                          (user['firstName']?.toString() ?? '') +
                               (user['lastName']?.toString() ?? '')[0]
                                   .toUpperCase(),
                         ),
                       ),
-                      title: Text('${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'),
+                      title: Text(
+                          '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'),
                       subtitle: Text(user['email'] ?? ''),
                       trailing: Chip(
                         label: Text(user['role'] ?? 'Membre',

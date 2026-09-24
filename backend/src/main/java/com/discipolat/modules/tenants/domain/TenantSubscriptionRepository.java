@@ -5,6 +5,8 @@ import com.discipolat.modules.tenants.enums.SubscriptionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -15,6 +17,9 @@ import java.util.UUID;
 public interface TenantSubscriptionRepository extends TenantAwareRepository<TenantSubscription, UUID> {
 
     Optional<TenantSubscription> findByTenantId(UUID tenantId);
+
+    List<TenantSubscription> findByStatusAndCurrentPeriodStartLessThanEqual(
+            SubscriptionStatus status, java.time.Instant effectiveAt);
 
     @Query(value = "SELECT * FROM tenant_subscriptions WHERE tenant_id = :tenantId " +
             "ORDER BY CASE status WHEN 'ACTIVE' THEN 0 WHEN 'TRIAL' THEN 0 WHEN 'PAST_DUE' THEN 0 " +

@@ -26,6 +26,10 @@ public class AuthorizationService {
     private final OrganizationNodeRepository orgNodeRepository;
     private final UserRepository userRepository;
 
+    private static final Set<String> TENANT_ADMIN_ROLE_KEYS = Set.of(
+            "ADMIN", "PASTEUR", "TENANT_OWNER", "TENANT_ADMIN"
+    );
+
     /**
      * Check if current user has a specific permission within a scope.
      * This is the main entry point for authorization checks.
@@ -121,6 +125,26 @@ public class AuthorizationService {
         if (!can(userId, tenantId, permissionKey, scopeType, scopeId)) {
             throw new ForbiddenException("Permission denied: " + permissionKey + " on " + scopeType + (scopeId != null ? ":" + scopeId : ""));
         }
+    }
+
+    /** True when the active user has an administrator membership in the current tenant. */
+    public boolean isTenantAdmin() {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        UUID tenantId = TenantContext.requireTenantId();
+        return isTenantAdmin(userId, tenantId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isTenantAdmin(UUID userId, UUID tenantId) {
+        return membershipRepository.findAllByUserIdAndTenantIdAndStatus(
+                        userId, tenantId, MembershipStatus.ACTIVE).stream()
+                .filter(membership -> membership.getScopeType() == MembershipScopeType.TENANT)
+                .anyMatch(membership -> {
+                    String roleKey = membership.getRole() != null
+                            ? membership.getRole().getKey() : membership.getRoleLegacy();
+                    return roleKey != null
+                            && TENANT_ADMIN_ROLE_KEYS.contains(roleKey.trim().toUpperCase(Locale.ROOT));
+                });
     }
 
     /**

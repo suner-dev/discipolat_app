@@ -7,6 +7,7 @@ import com.discipolat.modules.files.domain.FileEntityRepository;
 import com.discipolat.modules.messages.domain.ConversationMessageRepository;
 import com.discipolat.modules.trainings.domain.CourseRepository;
 import com.discipolat.modules.users.domain.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class TenantUsageSnapshotService {
     private final TenantPlanPolicy planPolicy;
     private final Clock clock;
 
+    @Autowired
     public TenantUsageSnapshotService(TenantRepository tenantRepository,
                                       UserRepository userRepository,
                                       FileEntityRepository fileRepository,

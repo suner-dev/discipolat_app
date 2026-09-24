@@ -3,22 +3,27 @@ package com.discipolat.common.infrastructure.config;
 import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class FeatureModuleInterceptor implements HandlerInterceptor {
 
-    private final PlatformFeatureFlagService featureFlagService;
+    private final ObjectProvider<PlatformFeatureFlagService> featureFlagServiceProvider;
 
-    public FeatureModuleInterceptor(PlatformFeatureFlagService featureFlagService) {
-        this.featureFlagService = featureFlagService;
+    public FeatureModuleInterceptor(ObjectProvider<PlatformFeatureFlagService> featureFlagServiceProvider) {
+        this.featureFlagServiceProvider = featureFlagServiceProvider;
     }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (isDocumentationRequest(request.getRequestURI())) {
-            featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
+            PlatformFeatureFlagService service = featureFlagServiceProvider.getIfAvailable();
+            if (service == null) {
+                throw new IllegalStateException("Documentation feature flag service unavailable");
+            }
+            service.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         }
         return true;
     }

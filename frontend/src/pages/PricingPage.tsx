@@ -1,13 +1,46 @@
-import { useI18n } from '@/i18n';
-import { tText } from '@/i18n';
-import { Check, X, ArrowRight, Zap, Shield, Bot } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Check, X, ArrowRight, Zap, Shield, Bot, AlertCircle } from 'lucide-react';
+import { tText, useI18n, type Locale } from '@/i18n';
+import api, { getErrorMessage } from '@/lib/api';
 
-const PLANS = [
+interface PriceView {
+  amount: number;
+  currency: string;
+}
+
+interface PlanView {
+  id: string;
+  name: string;
+  description: string;
+  prices: PriceView[];
+  period: string;
+  popular: boolean;
+  features: Array<{ text: string; included: boolean }>;
+}
+
+interface PublicPlan {
+  key: string;
+  name: string;
+  description: string | null;
+  priceMonthly: number | null;
+  priceEur: number | null;
+  priceXaf: number | null;
+  priceUsd: number | null;
+  currency: string | null;
+  seatsLimit: number | null;
+  storageLimitMb: number | null;
+  aiCreditsLimit: number | null;
+  billingPeriod: string | null;
+  sortOrder: number | null;
+}
+
+const FALLBACK_PLANS: PlanView[] = [
   {
     id: 'discovery',
     name: 'Découverte',
     description: 'Parfait pour démarrer et tester la plateforme',
-    price: 0,
+    prices: [{ amount: 0, currency: 'EUR' }],
     period: 'Gratuit',
     popular: false,
     features: [
@@ -27,8 +60,8 @@ const PLANS = [
     id: 'startup',
     name: 'Démarrage',
     description: 'Idéal pour les églises en croissance',
-    price: 9,
-    period: '9 €/mois',
+    prices: [{ amount: 9, currency: 'EUR' }],
+    period: '/mois',
     popular: true,
     features: [
       { text: 'Jusqu\'à 250 membres', included: true },
@@ -47,8 +80,8 @@ const PLANS = [
     id: 'growth',
     name: 'Croissance',
     description: 'Pour les églises dynamiques et en expansion',
-    price: 29,
-    period: '29 €/mois',
+    prices: [{ amount: 29, currency: 'EUR' }],
+    period: '/mois',
     popular: false,
     features: [
       { text: 'Jusqu\'à 2 000 membres', included: true },
@@ -69,8 +102,8 @@ const PLANS = [
     id: 'network',
     name: 'Réseau & Campus',
     description: 'Pour les réseaux d\'églises et campuses multinationaux',
-    price: 79,
-    period: '79 €/mois',
+    prices: [{ amount: 79, currency: 'EUR' }],
+    period: '/mois',
     popular: false,
     features: [
       { text: 'Jusqu\'à 10 000 membres', included: true },
@@ -90,13 +123,148 @@ const PLANS = [
   },
 ];
 
+const formatStorage = (megabytes: number | null, locale: Locale): string => {
+  if (megabytes == null) return 'Stockage non précisé';
+  if (megabytes >= 1024) return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(megabytes / 1024)} Go`;
+  return `${new Intl.NumberFormat(locale).format(megabytes)} Mo`;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+);
+
+const toNullableNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const toNullableString = (value: unknown): string | null => (
+  typeof value === 'string' && value.trim() ? value.trim() : null
+);
+
+const normalizeCurrency = (value: unknown): string | null => {
+  const currency = toNullableString(value)?.toUpperCase();
+  return currency && /^[A-Z]{3}$/.test(currency) ? currency : null;
+};
+
+const parsePublicPlans = (payload: unknown): PublicPlan[] => {
+  if (!Array.isArray(payload)) return [];
+  return payload.flatMap((item): PublicPlan[] => {
+    if (!isRecord(item)) return [];
+    const key = toNullableString(item.key);
+    const name = toNullableString(item.name);
+    if (!key || !name) return [];
+    return [{
+      key,
+      name,
+      description: toNullableString(item.description),
+      priceMonthly: toNullableNumber(item.priceMonthly),
+      priceEur: toNullableNumber(item.priceEur),
+      priceXaf: toNullableNumber(item.priceXaf),
+      priceUsd: toNullableNumber(item.priceUsd),
+      currency: toNullableString(item.currency),
+      seatsLimit: toNullableNumber(item.seatsLimit),
+      storageLimitMb: toNullableNumber(item.storageLimitMb),
+      aiCreditsLimit: toNullableNumber(item.aiCreditsLimit),
+      billingPeriod: toNullableString(item.billingPeriod),
+      sortOrder: toNullableNumber(item.sortOrder),
+    }];
+  });
+};
+
+const toPlanPrices = (plan: PublicPlan): PriceView[] => {
+  const specificPrices: PriceView[] = [
+    { amount: plan.priceEur, currency: 'EUR' },
+    { amount: plan.priceXaf, currency: 'XAF' },
+    { amount: plan.priceUsd, currency: 'USD' },
+  ].filter((price): price is PriceView => price.amount !== null);
+  if (specificPrices.length > 0) return specificPrices;
+  const currency = normalizeCurrency(plan.currency);
+  return plan.priceMonthly !== null && currency ? [{ amount: plan.priceMonthly, currency }] : [];
+};
+
+const formatPrice = (price: PriceView, locale: Locale): string => (
+  new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: price.currency,
+    maximumFractionDigits: 0,
+  }).format(price.amount)
+);
+
+const toPlanView = (plan: PublicPlan, locale: Locale): PlanView => {
+  const formatter = new Intl.NumberFormat(locale);
+  const seats = plan.seatsLimit === null
+    ? 'Utilisateurs non précisés'
+    : `Jusqu'à ${formatter.format(plan.seatsLimit)} utilisateurs`;
+  const aiCredits = plan.aiCreditsLimit === null
+    ? 'Crédits IA non précisés'
+    : `${formatter.format(plan.aiCreditsLimit)} crédits IA / mois`;
+
+  return {
+    id: plan.key.toLowerCase(),
+    name: plan.name,
+    description: plan.description ?? 'Offre Discipolat',
+    prices: toPlanPrices(plan),
+    period: plan.billingPeriod?.toUpperCase() === 'YEARLY' ? '/an' : '/mois',
+    popular: plan.sortOrder === 1,
+    features: [
+      { text: seats, included: true },
+      { text: formatStorage(plan.storageLimitMb, locale), included: true },
+      { text: aiCredits, included: true },
+    ],
+  };
+};
+
 export default function PricingPage() {
-  const { t } = useI18n();
+  const { locale } = useI18n();
+  const [plans, setPlans] = useState<PlanView[]>(FALLBACK_PLANS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [usingFallback, setUsingFallback] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+    api.get<unknown>('/public/plans')
+      .then(({ data }) => {
+        if (!active) return;
+        const publicPlans = parsePublicPlans(data);
+        if (publicPlans.length > 0) {
+          setPlans(publicPlans.map((plan) => toPlanView(plan, locale)));
+          setUsingFallback(false);
+        } else {
+          setPlans(FALLBACK_PLANS);
+          setUsingFallback(true);
+        }
+      })
+      .catch((requestError) => {
+        if (!active) return;
+        setPlans(FALLBACK_PLANS);
+        setError(getErrorMessage(requestError));
+        setUsingFallback(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [locale]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
       {/* Header */}
       <div className="py-16 px-4 text-center">
+        {loading && <p role="status" className="mb-4 text-sm text-gray-500">Chargement du catalogue…</p>}
+        {error && (
+          <div role="alert" className="mx-auto mb-4 flex max-w-2xl items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>Catalogue momentanément indisponible : {error}</span>
+          </div>
+        )}
+        {!loading && !error && usingFallback && (
+          <p role="status" className="mb-4 text-sm text-amber-700">Catalogue de secours affiché ; les tarifs en vigueur seront confirmés lors de l'inscription.</p>
+        )}
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
           Plans et Tarifs
         </h1>
@@ -109,8 +277,8 @@ export default function PricingPage() {
       {/* Plans Grid */}
       <div className="max-w-6xl mx-auto px-4 pb-20">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {PLANS.map((plan) => (
-            <div
+          {plans.map((plan) => (
+            <article
               key={plan.id}
               className={`relative rounded-2xl p-6 border-2 transition-all hover:shadow-xl ${
                 plan.popular
@@ -130,19 +298,26 @@ export default function PricingPage() {
               {/* Plan Name & Price */}
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {plan.name}
+                  {tText(plan.name)}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  {plan.description}
+                  {tText(plan.description)}
                 </p>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                    {plan.price === 0 ? '0' : plan.price}
-                  </span>
-                  <span className="text-gray-500 dark:text-gray-400">
-                    {plan.price === 0 ? '' : '/mois'}
-                  </span>
-                </div>
+                {plan.prices.length > 0 ? (
+                  <div className="mt-4 space-y-1">
+                    {plan.prices.map((price) => (
+                      <div key={price.currency} className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                          {formatPrice(price, locale)}
+                        </span>
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{price.currency}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{plan.period}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-lg text-gray-500">Tarif non communiqué</p>
+                )}
               </div>
 
               {/* Features */}
@@ -171,17 +346,18 @@ export default function PricingPage() {
               </ul>
 
               {/* CTA */}
-              <button
-                className={`w-full py-3 px-6 rounded-xl font-semibold transition-all ${
+              <Link
+                to={`/register?plan=${encodeURIComponent(plan.id)}`}
+                className={`inline-flex w-full items-center justify-center py-3 px-6 rounded-xl font-semibold transition-all ${
                   plan.popular
                     ? 'bg-violet-500 hover:bg-violet-600 text-white shadow-lg shadow-violet-500/25'
                     : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
                 }`}
               >
-                Choisir {plan.name}
+                Choisir {tText(plan.name)}
                 <ArrowRight className="inline ml-2 w-4 h-4" />
-              </button>
-            </div>
+              </Link>
+            </article>
           ))}
         </div>
 

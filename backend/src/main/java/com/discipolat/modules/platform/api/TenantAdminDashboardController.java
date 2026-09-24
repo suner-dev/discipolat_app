@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
-@PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+@PreAuthorize("@authz.isTenantAdmin()")
 public class TenantAdminDashboardController {
 
     private final TenantRepository tenantRepository;

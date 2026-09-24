@@ -33,18 +33,57 @@ void main() {
       expect(usage.metric('churches'), isNull);
     });
 
-    test('preserves unlimited and missing states', () {
+    test('distinguishes explicit unlimited, null and zero limits', () {
       final usage = QuotaUsage.fromJson({
         'users': {'used': 7, 'limit': null},
-        'storage': {'usedMb': 3, 'limitMb': 0},
-        'courses': <String, dynamic>{},
+        'storage': {'usedMb': 3, 'limitMb': 0, 'percent': 0},
+        'courses': {'used': 8, 'limit': null, 'unlimited': true},
+        'messages': {'used': 2, 'limit': 'unlimited'},
       });
 
-      expect(usage.metric('users')?.isUnlimited, isTrue);
+      expect(usage.metric('users')?.isUnlimited, isFalse);
       expect(usage.metric('users')?.usagePercent, isNull);
-      expect(usage.metric('storage')?.isUnlimited, isTrue);
-      expect(usage.metric('courses')?.hasData, isFalse);
-      expect(usage.metric('messages'), isNull);
+      expect(usage.metric('storage')?.isUnlimited, isFalse);
+      expect(usage.metric('storage')?.usagePercent, isNull);
+      expect(usage.metric('courses')?.isUnlimited, isTrue);
+      expect(usage.metric('messages')?.isUnlimited, isTrue);
+      expect(usage.metric('courses')?.hasData, isTrue);
+    });
+
+    test('parses the persisted usage snapshot and converts bytes to MB', () {
+      final usage = QuotaUsage.fromJson({
+        'snapshot': {
+          'users': {
+            'used': 7,
+            'limit': 20,
+            'utilizationPercent': 35,
+            'unit': 'USERS',
+            'serverEnforced': true,
+          },
+          'storageBytes': {
+            'used': 2 * 1024 * 1024,
+            'limit': 4 * 1024 * 1024,
+            'utilizationPercent': 50,
+            'unit': 'BYTES',
+          },
+          'aiCredits': {
+            'used': 11,
+            'limit': null,
+            'utilizationPercent': null,
+            'unit': 'AI_CREDITS',
+          },
+        },
+        'churches': {'used': 2, 'limit': 5, 'percent': 40},
+      });
+
+      expect(usage.metric('users')?.used, 7);
+      expect(usage.metric('users')?.limit, 20);
+      expect(usage.metric('users')?.usagePercent, 35);
+      expect(usage.metric('storage')?.used, 2);
+      expect(usage.metric('storage')?.limit, 4);
+      expect(usage.metric('aiRequests')?.used, 11);
+      expect(usage.metric('aiRequests')?.isUnlimited, isFalse);
+      expect(usage.metric('churches')?.limit, 5);
     });
 
     test('serializes only fields supplied by the response', () {

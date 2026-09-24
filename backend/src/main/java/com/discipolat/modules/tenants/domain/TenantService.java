@@ -8,9 +8,12 @@ import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.tenants.api.CreateTenantRequest;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.api.UpdateTenantRequest;
+import com.discipolat.modules.tenants.enums.SubscriptionStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -39,14 +42,20 @@ public class TenantService {
     private final AuditService auditService;
     private final EntityPropagationPublisher propagationPublisher;
     private final TenantFeatureService featureService;
+    private final TenantPlanPolicy planPolicy;
+    private final TenantSubscriptionRepository subscriptionRepository;
 
     public TenantService(TenantRepository tenantRepository, AuditService auditService,
                          EntityPropagationPublisher propagationPublisher,
-                         TenantFeatureService featureService) {
+                         TenantFeatureService featureService,
+                         TenantPlanPolicy planPolicy,
+                         TenantSubscriptionRepository subscriptionRepository) {
         this.tenantRepository = tenantRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
         this.featureService = featureService;
+        this.planPolicy = planPolicy;
+        this.subscriptionRepository = subscriptionRepository;
     }
 
     @Transactional(readOnly = true)
@@ -83,6 +92,7 @@ public class TenantService {
         if (tenant.getId() == null) {
             return TenantResponse.from(tenant);
         }
+        ensureInitialSubscription(tenant);
         UUID previousTenantId = TenantContext.getTenantId();
         try {
             TenantContext.setTenantId(tenant.getId());
@@ -98,6 +108,31 @@ public class TenantService {
             }
         }
         return TenantResponse.from(tenant);
+    }
+
+    private void ensureInitialSubscription(Tenant tenant) {
+        if (subscriptionRepository.findCurrentByTenantId(tenant.getId()).isPresent()) {
+            return;
+        }
+        TenantPlanPolicy.ResolvedPlan resolved = planPolicy.resolve(tenant);
+        if (!resolved.hasCatalogPlan() || !resolved.limitsValid() || !resolved.featuresValid()
+                || !Boolean.TRUE.equals(resolved.plan().getIsActive())) {
+            throw new BusinessRuleException("Plan catalogue indisponible pour le nouveau tenant", "PLAN_CONFIGURATION_INVALID");
+        }
+        Instant now = Instant.now();
+        subscriptionRepository.save(TenantSubscription.builder()
+                .tenantId(tenant.getId())
+                .planKey(resolved.plan().getKey())
+                .status(SubscriptionStatus.ACTIVE)
+                .billingCycle("monthly")
+                .currentPeriodStart(now)
+                .currentPeriodEnd(now.plus(30, ChronoUnit.DAYS))
+                .cancelAtPeriodEnd(false)
+                .quotasJson(resolved.plan().getLimitsJson())
+                .build());
+        tenant.setPlan(resolved.plan().getKey());
+        tenant.setFeaturesJson(resolved.plan().getFeaturesJson());
+        tenantRepository.save(tenant);
     }
 
     private void seedDefaultModules(UUID tenantId) {

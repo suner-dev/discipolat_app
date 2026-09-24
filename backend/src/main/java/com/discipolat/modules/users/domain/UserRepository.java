@@ -55,11 +55,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByTenantIdAndPhone(UUID tenantId, String phone);
 
-    long countByTenantId(UUID tenantId);
+    @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId", nativeQuery = true)
+    long countByTenantId(@Param("tenantId") UUID tenantId);
 
-    long countByTenantIdAndDeletedFalse(UUID tenantId);
+    @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId AND deleted = false", nativeQuery = true)
+    long countByTenantIdAndDeletedFalse(@Param("tenantId") UUID tenantId);
 
-    long countByTenantIdAndStatut(UUID tenantId, UserStatus status);
+    @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId AND statut = :status", nativeQuery = true)
+    long countByTenantIdAndStatut(@Param("tenantId") UUID tenantId, @Param("status") UserStatus status);
 
     long countByStatut(UserStatus status);
 

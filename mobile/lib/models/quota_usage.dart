@@ -3,6 +3,7 @@ class QuotaMetric {
     this.used,
     this.limit,
     this.percent,
+    this.unlimited,
     this.hasUsed = false,
     this.hasLimit = false,
     this.hasPercent = false,
@@ -11,29 +12,54 @@ class QuotaMetric {
   final num? used;
   final num? limit;
   final num? percent;
+  final bool? unlimited;
   final bool hasUsed;
   final bool hasLimit;
   final bool hasPercent;
 
-  factory QuotaMetric.fromJson(Map<String, dynamic> json) {
+  factory QuotaMetric.fromJson(
+    Map<String, dynamic> json, {
+    num divisor = 1,
+  }) {
+    final rawLimit = _valueForKeys(json, const [
+      'limit',
+      'max',
+      'quota',
+      'limitMb',
+      'maxMb',
+    ]);
+    final explicitUnlimited = _booleanForKeys(
+      json,
+      const ['unlimited', 'isUnlimited'],
+    );
     return QuotaMetric(
-      used: _numberForKeys(json, const [
-        'used',
-        'current',
-        'currentValue',
-        'value',
-        'usedMb',
-        'currentMb',
-      ]),
-      limit: _numberForKeys(json, const [
-        'limit',
-        'max',
-        'quota',
-        'limitMb',
-        'maxMb',
-      ]),
+      used: _scaledNumberForKeys(
+          json,
+          const [
+            'used',
+            'current',
+            'currentValue',
+            'value',
+            'usedMb',
+            'currentMb',
+          ],
+          divisor),
+      limit: _scaledNumberForKeys(
+          json,
+          const [
+            'limit',
+            'max',
+            'quota',
+            'limitMb',
+            'maxMb',
+          ],
+          divisor),
       percent:
           _numberForKeys(json, const ['percent', 'percentage', 'usagePercent']),
+      unlimited: explicitUnlimited ??
+          (rawLimit is String && rawLimit.toLowerCase() == 'unlimited'
+              ? true
+              : null),
       hasUsed: _containsAny(json, const [
         'used',
         'current',
@@ -56,18 +82,16 @@ class QuotaMetric {
 
   bool get hasData => hasUsed || hasLimit || hasPercent;
 
-  bool get isUnlimited {
-    if (!hasLimit) return false;
-    final value = limit;
-    return value == null || value <= 0;
-  }
+  bool get isUnlimited => unlimited == true;
 
   double? get usagePercent {
+    if (isUnlimited) return null;
+    final limitValue = limit;
+    if (limitValue == 0) return null;
     final value = percent;
     if (value != null) return value.toDouble();
     final usedValue = used;
-    final limitValue = limit;
-    if (usedValue == null || limitValue == null || limitValue <= 0) {
+    if (usedValue == null || limitValue == null || limitValue < 0) {
       return null;
     }
     return usedValue / limitValue * 100;
@@ -77,6 +101,7 @@ class QuotaMetric {
     return {
       if (hasUsed) 'used': used,
       if (hasLimit) 'limit': limit,
+      if (unlimited != null) 'unlimited': unlimited,
       if (hasPercent || usagePercent != null) 'percent': usagePercent,
     };
   }
@@ -85,13 +110,40 @@ class QuotaMetric {
     return keys.any(json.containsKey);
   }
 
+  static num? _scaledNumberForKeys(
+    Map<String, dynamic> json,
+    List<String> keys,
+    num divisor,
+  ) {
+    final value = _numberForKeys(json, keys);
+    if (value == null || divisor == 1) return value;
+    return value / divisor;
+  }
+
   static num? _numberForKeys(Map<String, dynamic> json, List<String> keys) {
+    final value = _valueForKeys(json, keys);
+    if (value is num) return value;
+    if (value is String) return num.tryParse(value);
+    return null;
+  }
+
+  static bool? _booleanForKeys(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    final value = _valueForKeys(json, keys);
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      if (value.toLowerCase() == 'true' || value == '1') return true;
+      if (value.toLowerCase() == 'false' || value == '0') return false;
+    }
+    return null;
+  }
+
+  static dynamic _valueForKeys(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {
-      if (!json.containsKey(key)) continue;
-      final value = json[key];
-      if (value is num) return value;
-      if (value is String) return num.tryParse(value);
-      return null;
+      if (json.containsKey(key)) return json[key];
     }
     return null;
   }
@@ -121,8 +173,15 @@ class QuotaUsage {
     final unwrapped =
         _firstMap(root, const ['data', 'usage', 'quotas']) ?? root;
     final values = <String, QuotaMetric>{};
+    final snapshot = _firstMap(unwrapped, const ['snapshot']) ??
+        _firstMap(root, const ['snapshot']);
 
     for (final key in resourceKeys) {
+      final snapshotMetric = _snapshotMetric(snapshot, key);
+      if (snapshotMetric != null) {
+        values[key] = snapshotMetric;
+        continue;
+      }
       final raw = _firstValue(unwrapped, _aliasesFor(key));
       if (raw is Map) {
         values[key] = QuotaMetric.fromJson(Map<String, dynamic>.from(raw));
@@ -163,6 +222,33 @@ class QuotaUsage {
       default:
         return [key, _snakeCase(key)];
     }
+  }
+
+  static List<String> _snapshotAliasesFor(String key) {
+    switch (key) {
+      case 'aiRequests':
+        return const ['aiCredits', 'aiRequests', 'ai_requests'];
+      case 'storage':
+        return const ['storageBytes', 'storage'];
+      default:
+        return [key, _snakeCase(key)];
+    }
+  }
+
+  static QuotaMetric? _snapshotMetric(
+    Map<String, dynamic>? snapshot,
+    String key,
+  ) {
+    if (snapshot == null) return null;
+    for (final alias in _snapshotAliasesFor(key)) {
+      final value = snapshot[alias];
+      if (value is! Map) continue;
+      final map = Map<String, dynamic>.from(value);
+      final divisor =
+          alias == 'storageBytes' || map['unit'] == 'BYTES' ? 1024 * 1024 : 1;
+      return QuotaMetric.fromJson(map, divisor: divisor);
+    }
+    return null;
   }
 
   static void _readLegacy(

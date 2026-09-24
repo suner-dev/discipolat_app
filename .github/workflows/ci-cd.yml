@@ -10,13 +10,13 @@ on:
     branches: [main]
 
 env:
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '21'
   NODE_VERSION: '20'
 
 jobs:
   # ── Backend Tests & Build ──────────────────────────────
   backend:
-    name: Backend (Java 17)
+    name: Backend (Java 21)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -80,10 +80,10 @@ jobs:
         run: cd frontend && npx tsc --noEmit
 
       - name: Lint
-        run: cd frontend && npm run lint || true
+        run: cd frontend && npm run lint
 
       - name: Unit Tests
-        run: cd frontend && npm test -- --watchAll=false || true
+        run: cd frontend && npm test -- --watchAll=false
 
       - name: Build
         run: cd frontend && npm run build
@@ -112,7 +112,7 @@ jobs:
         run: cd mobile && flutter analyze --no-pub
 
       - name: Test
-        run: cd mobile && flutter test --no-pub || true
+        run: cd mobile && flutter test --no-pub
 
       - name: Build APK (debug)
         run: cd mobile && flutter build apk --debug --no-pub

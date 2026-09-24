@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +32,8 @@ class TenantServiceTest {
     @Mock private AuditService auditService;
     @Mock private com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher propagationPublisher;
     @Mock private TenantFeatureService featureService;
+    @Mock private TenantPlanPolicy planPolicy;
+    @Mock private TenantSubscriptionRepository subscriptionRepository;
 
     @InjectMocks private TenantService tenantService;
 
@@ -54,13 +57,22 @@ class TenantServiceTest {
             t.setId(UUID.randomUUID());
             return t;
         });
+        SaasPlan discovery = SaasPlan.builder().key("DISCOVERY").isActive(true)
+                .limitsJson("{\"max_users\":50}").featuresJson("{\"ai\":false}").build();
+        when(subscriptionRepository.findCurrentByTenantId(any())).thenReturn(Optional.empty());
+        when(planPolicy.resolve(any(Tenant.class))).thenAnswer(inv -> {
+            Tenant created = inv.getArgument(0);
+            return new TenantPlanPolicy.ResolvedPlan(created.getPlan(), "DISCOVERY", discovery,
+                    Map.of("max_users", 50L), false, true, true, null);
+        });
 
         TenantResponse created = tenantService.create(req);
 
         assertEquals("Église Nouvelle", created.name());
         assertEquals("nouvelle-eglise", created.slug());
         assertEquals(TenantStatus.ACTIVE, created.status());
-        assertEquals("free", created.plan());
+        assertEquals("DISCOVERY", created.plan());
+        verify(subscriptionRepository).save(any(TenantSubscription.class));
         verify(propagationPublisher).publishCreated(eq("TENANT"), eq(created.id()), any(), anyString());
     }
 

@@ -41,6 +41,8 @@ class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
               'name': data['tenantName']?.toString() ?? 'Organisation',
               'slug': data['tenantSlug']?.toString() ?? '',
               'role': data['role']?.toString() ?? 'MEMBRE',
+              'scopeType': data['scopeType']?.toString() ?? 'TENANT',
+              'scopeId': data['scopeId']?.toString(),
               'status': data['status']?.toString() ?? 'ACTIVE',
             };
           })
@@ -70,9 +72,16 @@ class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
       final response = await _api
           .post('/tenant-switcher/switch', data: {'tenantId': tenantId});
       if (response.data is Map && response.data['accessToken'] != null) {
-        await _api.saveTokens(response.data as Map<String, dynamic>);
+        await _api.saveTokens(Map<String, dynamic>.from(response.data as Map));
       }
-      await ref.read(tenantSessionProvider).switchTenant(tenantId);
+      final session = ref.read(tenantSessionProvider);
+      await session.switchTenant(tenantId);
+      final contextResponse = await _api.get('/tenant-switcher/context');
+      if (contextResponse.data is Map) {
+        await session.loadContext(
+          Map<String, dynamic>.from(contextResponse.data as Map),
+        );
+      }
       if (!mounted) return;
       final auth = AuthState();
       context.go(roleHome(auth.activeRole,

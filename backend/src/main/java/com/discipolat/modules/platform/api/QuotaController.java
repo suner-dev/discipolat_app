@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/quotas")
-@PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+@PreAuthorize("@authz.isTenantAdmin()")
 public class QuotaController {
 
     private final QuotaService quotaService;
@@ -60,7 +60,7 @@ public class QuotaController {
     }
 
     @PostMapping("/features/{featureKey}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.isTenantAdmin()")
     public ResponseEntity<Map<String, Object>> toggleFeature(
             @PathVariable String featureKey,
             @RequestBody Map<String, Boolean> request) {

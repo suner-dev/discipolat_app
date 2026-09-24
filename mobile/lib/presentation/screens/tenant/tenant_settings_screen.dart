@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-import '../../../api/api_service.dart';
+import '../../../data/services/api_service.dart';
 import '../../../core/tenant_session.dart';
 
 /// Écran de parametres du tenant (identité, branding, contact, avancé)
@@ -11,7 +9,8 @@ class TenantSettingsScreen extends ConsumerStatefulWidget {
   const TenantSettingsScreen({super.key});
 
   @override
-  ConsumerState<TenantSettingsScreen> createState() => _TenantSettingsScreenState();
+  ConsumerState<TenantSettingsScreen> createState() =>
+      _TenantSettingsScreenState();
 }
 
 class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
@@ -22,6 +21,7 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
   String? _messageType;
   String? _uploadingAsset;
   final ImagePicker _picker = ImagePicker();
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -37,9 +37,10 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
 
   Future<void> _loadSettings() async {
     try {
-      final response = await apiService.get('/admin/settings');
+      final response = await _apiService.get('/admin/settings');
+      final data = Map<String, dynamic>.from(response.data as Map);
       setState(() {
-        _settings = Map<String, dynamic>.from(response);
+        _settings = data;
         _loading = false;
       });
     } catch (e) {
@@ -55,7 +56,7 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
     setState(() => _saving = true);
 
     try {
-      await apiService.put('/admin/settings', _settings);
+      await _apiService.put('/admin/settings', data: _settings);
       setState(() {
         _saving = false;
         _message = 'Parametres mis a jour avec succes';
@@ -83,22 +84,14 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
 
       setState(() => _uploadingAsset = assetType);
 
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${apiService.baseUrl}/api/v1/admin/settings/branding/assets'),
+      final response = await _apiService.postImage(
+        '/admin/settings/branding/assets',
+        fieldName: 'file',
+        fileBytes: await image.readAsBytes(),
+        filename: image.name,
+        data: {'assetType': assetType},
       );
-      request.headers.addAll(apiService.headers);
-      request.fields['assetType'] = assetType;
-      request.files.add(await http.MultipartFile.fromPath('file', image.path));
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode >= 400) {
-        throw Exception('Erreur upload: ${response.statusCode}');
-      }
-
-      final data = json.decode(response.body);
+      final data = Map<String, dynamic>.from(response.data as Map);
       final url = data['url'] as String;
 
       setState(() {
@@ -135,7 +128,8 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -145,16 +139,22 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
                 decoration: InputDecoration(
                   hintText: currentUrl ?? 'Aucun fichier',
                   border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 controller: TextEditingController(text: currentUrl ?? ''),
               ),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
-              onPressed: _uploadingAsset == assetType ? null : () => _uploadAsset(assetType),
+              onPressed: _uploadingAsset == assetType
+                  ? null
+                  : () => _uploadAsset(assetType),
               icon: _uploadingAsset == assetType
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.cloud_upload, size: 18),
               label: const Text('Upload'),
             ),
@@ -221,17 +221,14 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _messageType == 'success'
-            ? Colors.green[100]
-            : Colors.red[100],
+        color: _messageType == 'success' ? Colors.green[100] : Colors.red[100],
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         _message!,
         style: TextStyle(
-          color: _messageType == 'success'
-              ? Colors.green[800]
-              : Colors.red[800],
+          color:
+              _messageType == 'success' ? Colors.green[800] : Colors.red[800],
           fontSize: 14,
         ),
       ),
@@ -273,7 +270,8 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
     return _buildSectionCard('Assets de branding', [
       _buildAssetField('Logo principal', 'logo', _settings['logoUrl']),
       const SizedBox(height: 16),
-      _buildAssetField('Logo mode sombre', 'logo-dark', _settings['logoDarkUrl']),
+      _buildAssetField(
+          'Logo mode sombre', 'logo-dark', _settings['logoDarkUrl']),
       const SizedBox(height: 16),
       _buildAssetField('Couverture', 'cover', _settings['coverUrl']),
       const SizedBox(height: 16),
@@ -300,10 +298,12 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
       Wrap(
         spacing: 16,
         runSpacing: 16,
-        children: colorFields.map((field) => SizedBox(
-          width: 120,
-          child: _colorField(field[0], field[1]),
-        )).toList(),
+        children: colorFields
+            .map((field) => SizedBox(
+                  width: 120,
+                  child: _colorField(field[0], field[1]),
+                ))
+            .toList(),
       ),
     ]);
   }
@@ -347,7 +347,7 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
     );
     if (picked != null) {
       setState(() {
-        _settings[key] = '#${picked.value.toRadixString(16).substring(2)}';
+        _settings[key] = '#${picked.toARGB32().toRadixString(16).substring(2)}';
       });
     }
   }
@@ -366,17 +366,23 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
 
   Widget _buildContactSection() {
     return _buildSectionCard('Contact & Localisation', [
-      _buildTextField('email', 'Email', 'contact@eglise.org', keyboardType: TextInputType.emailAddress),
+      _buildTextField('email', 'Email', 'contact@eglise.org',
+          keyboardType: TextInputType.emailAddress),
       const SizedBox(height: 16),
-      _buildTextField('phone', 'Telephone', '+225 07 07 07 07 07', keyboardType: TextInputType.phone),
+      _buildTextField('phone', 'Telephone', '+225 07 07 07 07 07',
+          keyboardType: TextInputType.phone),
       const SizedBox(height: 16),
-      _buildTextField('website', 'Site web', 'https://eglise.org', keyboardType: TextInputType.url),
+      _buildTextField('website', 'Site web', 'https://eglise.org',
+          keyboardType: TextInputType.url),
       const SizedBox(height: 16),
       _buildDropdown('currency', 'Devise', ['XAF', 'EUR', 'USD']),
       const SizedBox(height: 16),
       _buildDropdown('timezone', 'Fuseau horaire', [
-        'Africa/Douala', 'Africa/Lagos', 'Africa/Kinshasa',
-        'Europe/Paris', 'UTC'
+        'Africa/Douala',
+        'Africa/Lagos',
+        'Africa/Kinshasa',
+        'Europe/Paris',
+        'UTC'
       ]),
       const SizedBox(height: 16),
       _buildTextField('address', 'Adresse', 'Abidjan, Cocody'),
@@ -389,15 +395,20 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
 
   Widget _buildAdvancedSection() {
     return _buildSectionCard('Avance', [
-      _buildTextField('customCss', 'CSS personnalise', ':root { --brand-radius: 12px; }'),
+      _buildTextField(
+          'customCss', 'CSS personnalise', ':root { --brand-radius: 12px; }'),
       const SizedBox(height: 16),
-      _buildTextField('customHeadHtml', 'HTML dans <head>', '<meta name="theme-color" content="#6366F1">'),
+      _buildTextField('customHeadHtml', 'HTML dans <head>',
+          '<meta name="theme-color" content="#6366F1">'),
       const SizedBox(height: 16),
-      _buildTextField('footerText', 'Pied de page', '© {{year}} {{tenant_name}}'),
+      _buildTextField(
+          'footerText', 'Pied de page', '© {{year}} {{tenant_name}}'),
       const SizedBox(height: 16),
-      _buildDropdown('locale', 'Langue par defaut', ['fr', 'en', 'pt', 'es', 'ar']),
+      _buildDropdown(
+          'locale', 'Langue par defaut', ['fr', 'en', 'pt', 'es', 'ar']),
       const SizedBox(height: 16),
-      _buildDropdown('dateFormat', 'Format de date', ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']),
+      _buildDropdown('dateFormat', 'Format de date',
+          ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']),
       const SizedBox(height: 16),
       _buildDropdown('timeFormat', 'Format d\'heure', ['HH:mm', 'hh:mm a']),
     ]);
@@ -422,18 +433,21 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: options.contains(value) ? value : options.first,
+          initialValue: options.contains(value) ? value : options.first,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
-          items: options.map((opt) => DropdownMenuItem(
-            value: opt,
-            child: Text(opt),
-          )).toList(),
+          items: options
+              .map((opt) => DropdownMenuItem(
+                    value: opt,
+                    child: Text(opt),
+                  ))
+              .toList(),
           onChanged: (v) => setState(() => _settings[key] = v),
         ),
       ],

@@ -42,7 +42,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessRuleException.class)
     public ProblemDetail handleBusinessRule(BusinessRuleException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        HttpStatus status = ex.getCode().startsWith("FEATURE_DISABLED_")
+                || ex.getCode().startsWith("QUOTA_")
+                ? HttpStatus.FORBIDDEN : HttpStatus.BAD_REQUEST;
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
         problem.setTitle(ex.getCode());
         problem.setType(URI.create("https://api.discipolat.com/errors/" + ex.getCode()));
         return problem;

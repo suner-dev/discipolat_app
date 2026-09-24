@@ -10,6 +10,9 @@ import java.util.Optional;
 public interface SaasPlanRepository extends JpaRepository<SaasPlan, String> {
 
     List<SaasPlan> findByIsActiveTrueOrderBySortOrderAsc();
+    List<SaasPlan> findByIsActiveTrueAndIsPublicTrueOrderBySortOrderAsc();
+
+    Optional<SaasPlan> findByKeyIgnoreCaseAndIsActiveTrue(String key);
 
     Optional<SaasPlan> findByKeyAndIsActiveTrue(String key);
 

@@ -94,7 +94,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         }
 
         // Load roles
-        const rolesRes = await api.get('/admin/roles').catch(() => null);
+        const rolesRes = await api.get('/admin/roles/overview').catch(() => null);
         if (rolesRes?.data) {
           setRoles(rolesRes.data);
         }

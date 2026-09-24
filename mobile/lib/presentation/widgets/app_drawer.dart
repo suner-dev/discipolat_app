@@ -211,6 +211,11 @@ class _AppDrawerState extends State<AppDrawer> {
   // ── Section Administration (groupée dans le drawer) ──
   static const List<Map<String, Object>> _adminNav = [
     {
+      'icon': Icons.dashboard_rounded,
+      'title': 'Dashboard tenant',
+      'route': '/admin/dashboard'
+    },
+    {
       'icon': Icons.auto_fix_high_rounded,
       'title': 'Workflows',
       'route': '/admin/transfers'
@@ -233,7 +238,7 @@ class _AppDrawerState extends State<AppDrawer> {
     {
       'icon': Icons.settings_rounded,
       'title': 'Paramètres église',
-      'route': '/admin/settings'
+      'route': '/tenant/settings'
     },
     {
       'icon': Icons.text_fields_rounded,
@@ -346,34 +351,6 @@ class _AppDrawerState extends State<AppDrawer> {
       'icon': Icons.route_rounded,
       'title': 'Parcours spirituel',
       'route': '/discipleship-path'
-    },
-  ];
-
-  static const List<Map<String, Object>> _tenantAdminNav = [
-    {
-      'icon': Icons.dashboard_rounded,
-      'title': 'Tableau de bord',
-      'route': '/admin/dashboard'
-    },
-    {
-      'icon': Icons.settings_rounded,
-      'title': 'Paramètres église',
-      'route': '/admin/settings'
-    },
-    {
-      'icon': Icons.extension_rounded,
-      'title': 'Modules',
-      'route': '/tenant/modules'
-    },
-    {
-      'icon': Icons.people_rounded,
-      'title': 'Utilisateurs',
-      'route': '/tenant/users'
-    },
-    {
-      'icon': Icons.account_tree_rounded,
-      'title': 'Organisations',
-      'route': '/tenant/organizations'
     },
   ];
 
@@ -869,8 +846,10 @@ class _AppDrawerState extends State<AppDrawer> {
       case '/admin/pages':
         return l10n.navCustomPages;
       case '/admin/dashboard':
-        return 'Tableau de bord administrateur';
-      case '/admin/settings':
+        return 'Dashboard tenant';
+      case '/tenant-selection':
+        return 'Changer d’organisation';
+      case '/tenant/settings':
         return l10n.navChurchSettings;
       case '/admin/custom-fields':
         return l10n.navCustomFields;
@@ -940,9 +919,6 @@ class _AppDrawerState extends State<AppDrawer> {
       {bool isPlatformSuperAdmin = false}) {
     if (isPlatformSuperAdmin) return _platformNav;
     switch (role) {
-      case 'TENANT_ADMIN':
-      case 'TENANT_OWNER':
-        return _tenantAdminNav;
       case 'RESPONSABLE':
         return _responsableNav;
       case 'FAISEUR':
@@ -952,24 +928,17 @@ class _AppDrawerState extends State<AppDrawer> {
       case 'MEMBRE':
         return _membreNav;
       case 'PASTEUR':
-        // Pasteur = vue complète, sans la configuration plateforme réservée Admin
-        // (matrice des permissions, modules, menus, pages).
-        return _fullNav
-            .where((item) => !const {
-                  '/permissions',
-                  '/admin/modules',
-                  '/admin/menus',
-                  '/admin/pages',
-                  '/admin/transfers'
-                }.contains(item['route']))
-            .toList();
+        return [
+          ..._mainNav,
+          _adminNav.first,
+          _adminNav.firstWhere((item) => item['route'] == '/tenant/settings'),
+        ];
+      case 'ADMIN':
+        return _fullNav;
       case 'PLATFORM_SUPER_ADMIN':
-      case 'PLATFORM_BILLING_ADMIN':
-        // Super Admin SaaS : admin d'église + navigation plateforme (tenants,
-        // provisionnement) — la seule qui donne accès à l'ensemble des églises.
-        return [..._fullNav, ..._platformNav];
+        return _platformNav;
       default:
-        return _fullNav; // ADMIN (admin d'une église — PAS d'accès plateforme)
+        return const [];
     }
   }
 
@@ -1070,10 +1039,10 @@ class _AppDrawerState extends State<AppDrawer> {
     final allRoles = auth.roles;
 
     // Filtre STRICT par rôle actif : seul l'espace métier du rôle est affiché.
-    final filteredItems = activeRole.isNotEmpty
-        ? _navForRole(activeRole,
-            isPlatformSuperAdmin: auth.isPlatformSuperAdmin)
-        : _fullNav;
+    final filteredItems = _navForRole(
+      activeRole,
+      isPlatformSuperAdmin: auth.isPlatformSuperAdmin,
+    );
 
     return Drawer(
       child: Container(
@@ -1327,7 +1296,8 @@ class _AppDrawerState extends State<AppDrawer> {
     }
 
     // Admin section header (only if admin items exist and role is ADMIN)
-    if (adminItems.isNotEmpty && activeRole == 'ADMIN') {
+    if (adminItems.isNotEmpty &&
+        (activeRole == 'ADMIN' || activeRole == 'PASTEUR')) {
       widgets.add(Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
         child: Row(
@@ -1354,13 +1324,18 @@ class _AppDrawerState extends State<AppDrawer> {
     return widgets;
   }
 
+  String? _currentLocation(BuildContext context) {
+    try {
+      return GoRouterState.of(context).uri.path;
+    } catch (_) {
+      return ModalRoute.of(context)?.settings.name?.toString();
+    }
+  }
+
   Widget _navItem(
       BuildContext context, IconData icon, String title, String route) {
-    final isActive = ModalRoute.of(context)?.settings.name == route ||
-        (route != '/dashboard' &&
-            ModalRoute.of(context)?.settings.name?.toString().contains(route) ==
-                true);
-
+    final currentLocation = _currentLocation(context);
+    final isActive = currentLocation == route;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(

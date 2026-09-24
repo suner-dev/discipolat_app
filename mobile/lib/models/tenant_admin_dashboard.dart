@@ -67,8 +67,11 @@ class TenantAdminDashboardData {
       groupCount: _number(unwrapped, 'groupCount') ??
           _number(organizations, 'groups') ??
           _number(unwrapped, 'groups'),
-      membersByRole:
-          _numbers(_firstMap(unwrapped, const ['membersByRole']) ?? const {}),
+      membersByRole: _numbers(
+        _firstMap(unwrapped, const ['membersByRole']) ??
+            _firstMap(users, const ['membersByRole']) ??
+            const {},
+      ),
       subscription: _firstMap(unwrapped, const ['subscription']) == null
           ? null
           : TenantSubscriptionSummary.fromJson(

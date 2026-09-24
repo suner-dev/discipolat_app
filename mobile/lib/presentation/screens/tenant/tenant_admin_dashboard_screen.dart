@@ -5,6 +5,7 @@ import '../../../data/services/tenant_admin_usage_service.dart';
 import '../../../models/quota_usage.dart';
 import '../../../models/tenant_admin_dashboard.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/secure_screen.dart';
 
 class TenantAdminDashboardScreen extends StatefulWidget {
   const TenantAdminDashboardScreen({super.key, this.apiService, this.service});
@@ -46,20 +47,24 @@ class _TenantAdminDashboardScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tableau de bord administrateur'),
-        actions: [
-          IconButton(
-            onPressed: _loading ? null : _load,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
+    return SecureScreen(
+      screenName: 'TenantAdminDashboardScreen',
+      auditAction: AuditActions.viewAdmin,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Tableau de bord administrateur'),
+          actions: [
+            IconButton(
+              onPressed: _loading ? null : _load,
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
+        ),
+        drawer: const AppDrawer(),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _buildContent(context),
       ),
-      drawer: const AppDrawer(),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildContent(context),
     );
   }
 
@@ -156,7 +161,7 @@ class _TenantAdminDashboardScreenState
         _quotaCard('Campus', usage.metric('campuses')),
         _quotaCard('Groupes', usage.metric('groups')),
         _quotaCard('Stockage', usage.metric('storage'), suffix: ' Mo'),
-        _quotaCard('Requêtes IA', usage.metric('aiRequests')),
+        _quotaCard('Crédits IA', usage.metric('aiRequests')),
         _quotaCard('Cours', usage.metric('courses')),
         _quotaCard('Messages', usage.metric('messages')),
       ],
@@ -224,7 +229,9 @@ class _TenantAdminDashboardScreenState
             ),
             if (progress != null) ...[
               const SizedBox(height: 6),
-              LinearProgressIndicator(value: (progress / 100).clamp(0, 1)),
+              LinearProgressIndicator(
+                value: (progress / 100).clamp(0.0, 1.0).toDouble(),
+              ),
             ],
           ],
         ),
@@ -238,13 +245,15 @@ class _TenantAdminDashboardScreenState
     }
     final used = '${metric.used}$suffix';
     if (metric.isUnlimited) return '$used / Illimité';
-    if (metric.limit == null) return 'Indisponible';
+    if (metric.limit == null) return '$used / Limite inconnue';
     return '$used / ${metric.limit}$suffix';
   }
 
   String _quotaDetail(QuotaMetric? metric) {
     if (metric == null || !metric.hasData) return 'Donnée non fournie';
-    if (metric.isUnlimited) return 'Aucune limite fournie';
+    if (metric.isUnlimited) return 'Limite illimitée explicitement';
+    if (metric.limit == null) return 'Limite non fournie';
+    if (metric.limit == 0) return 'Limite nulle';
     final percent = metric.usagePercent;
     if (percent == null) return 'Pourcentage indisponible';
     return '${percent.toStringAsFixed(1)}% utilisé';

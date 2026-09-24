@@ -161,7 +161,7 @@ export function isSuperUser(role: string | null | undefined): boolean {
  * donc AUTORISE implicitement à tout (backward compat avec le système legacy).
  */
 export const PLATFORM_ROLES = ['PLATFORM_SUPER_ADMIN', 'PLATFORM_BILLING_ADMIN'];
-export const TENANT_ADMIN_ROLES = ['TENANT_SUPER_ADMIN', 'TENANT_ADMIN', 'TENANT_OWNER'];
+export const TENANT_ADMIN_ROLES = ['TENANT_ADMIN', 'TENANT_OWNER', 'ADMIN', 'PASTEUR'];
 
 /** L'utilisateur courant a-t-il les droits Super Admin de la plateforme ? */
 export function isPlatformAdmin(role: string | null | undefined): boolean {
@@ -170,7 +170,7 @@ export function isPlatformAdmin(role: string | null | undefined): boolean {
 
 /** L'utilisateur courant administre-t-il un tenant (église) ? */
 export function isTenantAdmin(role: string | null | undefined): boolean {
-  return role === 'ADMIN' || role === 'PASTEUR' || TENANT_ADMIN_ROLES.includes(role || '');
+  return TENANT_ADMIN_ROLES.includes(role || '');
 }
 
 /* ----------------------------------------------------------------------------

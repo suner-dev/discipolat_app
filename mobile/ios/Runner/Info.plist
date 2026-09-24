@@ -28,6 +28,14 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Discipolat utilise l’appareil photo pour le check-in, les signatures visuelles et les ressources terrain.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Discipolat utilise le micro pour l’enregistrement des rapports et l’assistant vocal.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Discipolat utilise votre position pour le géoreferencement et le pointage lors des activités.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Discipolat utilise Face ID pour sécuriser l’accès à votre espace.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

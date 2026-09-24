@@ -61,10 +61,7 @@ public class WhatsAppWebhookController {
             return ResponseEntity.status(403).body("verify_token inconnu");
         }
         UUID tid = tenantId.get();
-        TenantContext.runAsTenant(tid, () -> {
-            featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
-            log.info("Webhook WhatsApp vérifié pour le tenant {}", tid);
-        });
+        TenantContext.runAsTenant(tid, () -> log.info("Webhook WhatsApp vérifié pour le tenant {}", tid));
         return ResponseEntity.ok(challenge);
     }
 
@@ -94,10 +91,7 @@ public class WhatsAppWebhookController {
             return ResponseEntity.ok(Map.of("received", false, "reason", "tenant inconnu"));
         }
         UUID tenantId = tenantOpt.get();
-        TenantContext.runAsTenant(tenantId, () -> {
-            featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
-            whatsAppService.handleWebhook(tenantId, payload);
-        });
+        TenantContext.runAsTenant(tenantId, () -> whatsAppService.handleWebhook(tenantId, payload));
         return ResponseEntity.ok(Map.of("received", true));
     }
 

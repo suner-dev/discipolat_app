@@ -300,7 +300,7 @@ export default function Navbar({ onMenuClick, openPalette }: NavbarProps) {
                   </Link>
 
                   {/* SAAS multi-tenant — sélecteur d'organisation/église */}
-                  {isTenantAdmin(user?.role || activeRole || '') && (
+                  {isTenantAdmin(activeRole || user?.role || '') && (
                     <Link
                       to="/tenant-switcher"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300

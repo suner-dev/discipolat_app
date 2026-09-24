@@ -16,6 +16,8 @@ import com.discipolat.modules.people.repository.MembershipRepository;
 import com.discipolat.modules.people.repository.PersonRepository;
 import com.discipolat.modules.people.repository.RoleAssignmentRepository;
 import com.discipolat.modules.people.repository.SpaceMembershipRepository;
+import com.discipolat.modules.tenants.domain.Role;
+import com.discipolat.modules.tenants.domain.RoleRepository;
 import com.discipolat.modules.spaces.domain.Space;
 import com.discipolat.modules.spaces.domain.SpaceRepository;
 import com.discipolat.modules.spaces.domain.SpaceService;
@@ -46,6 +48,7 @@ public class PeopleService {
     private final AuditEventService auditEventService;
     private final OutboxPublisher outboxPublisher;
     private final PermissionVersionRepository permissionVersionRepository;
+    private final RoleRepository roleRepository;
 
     // ========== G3.1 : PEOPLE ENGINE ==========
 
@@ -357,17 +360,19 @@ public class PeopleService {
             }
         }
 
-        // Créer nouveau rôle PASTOR_CAMPUS sur nouvelle org_unit
-        // TODO: récupérer roleId pour PASTOR_CAMPUS
-        // RoleAssignment newRa = assignRole(...)
-        
-        outboxPublisher.publish("ROLE_ASSIGNMENT", personId, "PastorAppointed",
-                Map.of("personId", personId.toString(), "newOrgUnitId", newOrgUnitId.toString(), "reason", reason));
+        Role pastorCampus = roleRepository.findByTenantIdAndKey(tenantId, "PASTOR_CAMPUS")
+                .orElseGet(() -> roleRepository.findGlobalByKey("PASTOR_CAMPUS").orElse(null));
+        if (pastorCampus == null) {
+            throw new EntityNotFoundException("Role", "key", "PASTOR_CAMPUS");
+        }
+        String appointmentReason = reason == null ? "Transfert pasteur" : reason;
+        RoleAssignment newAssignment = assignRole(tenantId, actorId, personId, pastorCampus.getId(),
+                newOrgUnitId, null, appointmentReason);
 
-        // G4.4 : propager le changement de permission (rôle vivant)
-        notifyPermissionChange(personId, "PASTOR_APPOINTED");
+        outboxPublisher.publish("ROLE_ASSIGNMENT", newAssignment.getId(), "PastorAppointed",
+                Map.of("personId", personId.toString(), "newOrgUnitId", newOrgUnitId.toString(), "reason", appointmentReason));
 
-        return null; // TODO: retourner le nouveau RoleAssignment
+        return newAssignment;
     }
 
         /**

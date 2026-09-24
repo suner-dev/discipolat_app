@@ -29,7 +29,7 @@ class _FakeApiService extends ApiService {
       throw DioException(requestOptions: RequestOptions(path: path));
     }
     final data = switch (path) {
-      '/admin/dashboard' => dashboard,
+      '/admin/dashboard/overview' => dashboard,
       '/admin/quotas/usage' => quotas,
       '/admin/settings' => settings,
       _ => <String, dynamic>{},
@@ -47,10 +47,15 @@ void main() {
     final api = _FakeApiService(
       dashboard: {
         'tenantName': 'Église test',
-        'totalUsers': 12,
-        'activeUsers': 10,
-        'churchCount': 2,
-        'departmentCount': 4,
+        'users': {
+          'total': 12,
+          'active': 10,
+          'membersByRole': {'ADMIN': 2, 'PASTEUR': 1},
+        },
+        'organizations': {
+          'churches': 2,
+          'departments': 4,
+        },
       },
       quotas: {
         'users': {'used': 12, 'limit': 20, 'percent': 60},
@@ -63,14 +68,19 @@ void main() {
 
     expect(snapshot.dashboard?.tenantName, 'Église test');
     expect(snapshot.dashboard?.totalUsers, 12);
+    expect(snapshot.dashboard?.activeUsers, 10);
+    expect(snapshot.dashboard?.membersByRole['ADMIN'], 2);
     expect(snapshot.quotaUsage?.metric('users')?.used, 12);
     expect(snapshot.quotaUsage?.metric('storage')?.limit, 10);
     expect(snapshot.analyticsEnabled, isTrue);
-    expect(api.paths, containsAll([
-      '/admin/dashboard',
-      '/admin/quotas/usage',
-      '/admin/settings',
-    ]));
+    expect(
+      api.paths,
+      unorderedEquals(const [
+        '/admin/dashboard/overview',
+        '/admin/quotas/usage',
+        '/admin/settings',
+      ]),
+    );
   });
 
   test('keeps missing quota fields unavailable', () async {
@@ -87,10 +97,11 @@ void main() {
     expect(snapshot.quotaFailed, isFalse);
   });
 
-  test('reports endpoint failures without replacing them with values', () async {
+  test('reports endpoint failures without replacing them with values',
+      () async {
     final api = _FakeApiService(
       failPaths: const {
-        '/admin/dashboard',
+        '/admin/dashboard/overview',
         '/admin/quotas/usage',
         '/admin/settings',
       },

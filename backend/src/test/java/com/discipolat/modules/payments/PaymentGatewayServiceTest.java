@@ -28,6 +28,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -70,6 +71,23 @@ class PaymentGatewayServiceTest {
         assertThat(intent.getProviderReference()).startsWith("OM-");
         assertThat(intent.getStatus()).isEqualTo(PaymentIntent.Status.PENDING);
         assertThat(intent.getUserId()).isNotNull();
+    }
+
+    @Test
+    void signedWebhookIsProcessedWhenOutboundFeatureIsDisabled() {
+        PaymentIntent pending = PaymentIntent.builder()
+                .tenantId(tenantId)
+                .operator(PaymentIntent.Operator.M_PESA)
+                .amount(BigDecimal.TEN)
+                .status(PaymentIntent.Status.PENDING)
+                .providerReference("MP-DISABLED")
+                .build();
+        when(repository.findByProviderReference("MP-DISABLED")).thenReturn(Optional.of(pending));
+
+        service.handleWebhook("MP-DISABLED", true, null);
+
+        verify(featureFlagService, never()).requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
+        assertThat(pending.getStatus()).isEqualTo(PaymentIntent.Status.CONFIRMED);
     }
 
     @Test

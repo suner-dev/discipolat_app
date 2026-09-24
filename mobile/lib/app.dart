@@ -246,6 +246,29 @@ class AuthState {
   factory AuthState() => _instance;
   AuthState._internal();
 
+  static const Set<String> _contractRoles = {
+    'ADMIN',
+    'PASTEUR',
+    'RESPONSABLE',
+    'CHEF_DE_FAMILLE',
+    'FAISEUR',
+    'MEMBRE',
+  };
+
+  static String? _contractRole(dynamic value) {
+    if (value is! String) return null;
+    final role = value.toUpperCase();
+    return _contractRoles.contains(role) ? role : null;
+  }
+
+  static List<String> _contractRoleList(dynamic value, String? fallback) {
+    final values = value is List ? value : const <dynamic>[];
+    final roles =
+        values.map(_contractRole).whereType<String>().toSet().toList();
+    if (roles.isNotEmpty) return roles;
+    return fallback == null ? const [] : [fallback];
+  }
+
   bool _isAuthenticated = false;
   String? _userId;
   String? _email;
@@ -291,21 +314,23 @@ class AuthState {
     if (userData != null) {
       _userId = userData['userId'] as String?;
       _email = userData['email'] as String?;
-      _userRole = userData['role'] as String?;
-      _roles = userData['roles'] != null
-          ? List<String>.from(userData['roles'] as List)
-          : (_userRole != null ? [_userRole!] : []);
+      _userRole = _contractRole(userData['role']);
+      _roles = _contractRoleList(userData['roles'], _userRole);
       _platformRoles = userData['platformRoles'] != null
           ? List<String>.from(userData['platformRoles'] as List)
           : <String>[];
       _isPlatformSuperAdmin = userData['platformSuperAdmin'] == true ||
           _platformRoles.contains('PLATFORM_SUPER_ADMIN');
-      _activeRole = userData['activeRole'] as String? ?? _userRole ?? '';
+      _activeRole = _contractRole(userData['activeRole']) ?? _userRole ?? '';
       _firstName = userData['firstName'] as String?;
       _lastName = userData['lastName'] as String?;
       _estChefDeFamille = userData['estChefDeFamille'] as bool? ?? false;
       _familleGereeId = userData['familleGereeId'] as String?;
       _orgId = userData['orgId'] as String?;
+      if (_activeRole.isEmpty && !_isPlatformSuperAdmin) {
+        logout();
+        return;
+      }
       // Persist orgId for tenant-aware API calls
       if (_orgId != null) {
         TenantConfig.setOrgId(_orgId!);
@@ -315,9 +340,10 @@ class AuthState {
 
   /// Switch the active role (does NOT call the API ; caller must call POST /auth/switch-role)
   void switchActiveRole(String newRole) {
-    if (_roles.contains(newRole)) {
-      _activeRole = newRole;
-      _userRole = newRole;
+    final role = _contractRole(newRole);
+    if (role != null && _roles.contains(role)) {
+      _activeRole = role;
+      _userRole = role;
     }
   }
 
@@ -355,9 +381,6 @@ class AuthState {
 String roleHome(String role, {bool isPlatformSuperAdmin = false}) {
   if (isPlatformSuperAdmin) return '/platform/dashboard';
   switch (role) {
-    case 'TENANT_ADMIN':
-    case 'TENANT_OWNER':
-      return '/admin/dashboard';
     case 'FAISEUR':
       return '/crm-faiseur';
     case 'RESPONSABLE':
@@ -1169,15 +1192,11 @@ Map<String, List<String>> _routeRoles = {
   '/user-roles': ['ADMIN'],
   '/compliance-exports': ['ADMIN'],
   // SAAS multi-tenant — routes platform & tenant admin
-  '/admin/dashboard': ['TENANT_OWNER', 'TENANT_ADMIN'],
+  '/admin/dashboard': ['ADMIN', 'PASTEUR'],
   '/tenant-selection': [
     'ADMIN',
     'PASTEUR',
     'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_SUPER_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER',
     'RESPONSABLE',
     'CHEF_DE_FAMILLE',
     'FAISEUR',
@@ -1188,55 +1207,13 @@ Map<String, List<String>> _routeRoles = {
   '/platform/onboarding': ['PLATFORM_SUPER_ADMIN'],
   '/platform/registration-requests': ['PLATFORM_SUPER_ADMIN'],
   '/platform/impersonation': ['PLATFORM_SUPER_ADMIN'],
-  '/tenant/modules': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/tenant/roles': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/tenant/users': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
+  '/tenant/modules': const [],
+  '/tenant/roles': const [],
+  '/tenant/users': const [],
   '/space-config-transfer': ['ADMIN', 'PASTEUR'],
-  '/tenant/organizations': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/tenant/settings': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
-  '/tenant/branding': [
-    'ADMIN',
-    'PASTEUR',
-    'PLATFORM_SUPER_ADMIN',
-    'PLATFORM_BILLING_ADMIN',
-    'TENANT_ADMIN',
-    'TENANT_OWNER'
-  ],
+  '/tenant/organizations': const [],
+  '/tenant/settings': ['ADMIN', 'PASTEUR'],
+  '/tenant/branding': const [],
   '/discipleship-paths': [
     'ADMIN',
     'PASTEUR',
@@ -1342,6 +1319,15 @@ final appRouter = GoRouter(
       return null;
     }
 
+    final segments = state.matchedLocation.split('/');
+    final basePath = '/${segments.length > 1 ? segments[1] : ''}';
+    final allowedRoles =
+        _routeRoles[state.matchedLocation] ?? _routeRoles[basePath];
+    if (allowedRoles != null && allowedRoles.isEmpty) {
+      return roleHome(auth.activeRole,
+          isPlatformSuperAdmin: auth.isPlatformSuperAdmin);
+    }
+
     // Garde par rôle ACTIF — isolation stricte des espaces métiers.
     // Un utilisateur multi-rôles n'accède qu'à l'espace métier courant :
     // changer de rôle change complètement l'application.
@@ -1351,10 +1337,6 @@ final appRouter = GoRouter(
       // 1) Chaque route n'est accessible que si le rôle ACTIF est autorisé.
       //    Priorité à la route exacte (ex. /admin/modules réservé ADMIN), puis
       //    repli sur le premier segment (ex. /souls/:id/pastoral-360).
-      final segments = state.matchedLocation.split('/');
-      final basePath = '/${segments.length > 1 ? segments[1] : ''}';
-      final allowedRoles =
-          _routeRoles[state.matchedLocation] ?? _routeRoles[basePath];
       if (allowedRoles != null && !auth.hasActiveRole(allowedRoles)) {
         // L'Admin actif dispose des capacités du Pasteur (super-utilisateurs
         // qui partagent la vue complète de l'application).
