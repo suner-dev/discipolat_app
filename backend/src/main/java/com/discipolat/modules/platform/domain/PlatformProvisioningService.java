@@ -15,9 +15,9 @@ import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.domain.OrganizationNode;
 import com.discipolat.modules.tenants.domain.OrganizationNodeService;
 import com.discipolat.modules.tenants.domain.OrganizationNodeType;
-import com.discipolat.modules.tenants.domain.SaasPlan;
 import com.discipolat.modules.tenants.domain.SaasPlanRepository;
 import com.discipolat.modules.tenants.domain.SaasPlanService;
+import com.discipolat.modules.tenants.domain.TenantPlanPolicy;
 import com.discipolat.modules.tenants.domain.TenantService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,8 +55,12 @@ public class PlatformProvisioningService {
     @Transactional
     public ProvisioningResult provision(Command command) {
         validate(command);
-        String plan = command.plan() == null || command.plan().isBlank() ? "free" : command.plan().toLowerCase();
-        if (!"free".equals(plan) && planRepository.findById(plan).filter(SaasPlan::getIsActive).isEmpty()) {
+        String plan = TenantPlanPolicy.canonicalizePlanKey(command.plan());
+        if (plan == null) {
+            plan = "DISCOVERY";
+        }
+        if (!"DISCOVERY".equals(plan)
+                && planRepository.findByKeyIgnoreCaseAndIsActiveTrue(plan).isEmpty()) {
             throw new BusinessRuleException("Le plan sélectionné n'existe pas ou n'est pas actif", "INVALID_PLAN");
         }
 
@@ -74,7 +78,7 @@ public class PlatformProvisioningService {
                 null
         ));
         UUID tenantId = tenant.id();
-        if (!"free".equals(plan)) {
+        if (!"DISCOVERY".equals(plan)) {
             saasPlanService.subscribe(tenantId, plan, "monthly", actorId);
         }
 

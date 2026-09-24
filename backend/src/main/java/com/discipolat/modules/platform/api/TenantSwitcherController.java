@@ -114,7 +114,7 @@ public class TenantSwitcherController {
 
         // Get subscription
         Optional<TenantSubscription> subscription = subscriptionRepository.findCurrentByTenantId(tenantId);
-        Optional<SaasPlan> plan = subscription.flatMap(s -> planRepository.findById(s.getPlanKey()));
+        Optional<SaasPlan> plan = subscription.flatMap(s -> planRepository.findByKeyIgnoreCase(s.getPlanKey()));
 
         Map<String, Object> context = new LinkedHashMap<>();
         context.put("userId", userId.toString());

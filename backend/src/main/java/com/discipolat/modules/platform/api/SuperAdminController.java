@@ -245,7 +245,10 @@ public class SuperAdminController {
 
         String name = stringValue(request.get("name"));
         String slug = stringValue(request.get("slug")).toLowerCase(Locale.ROOT);
-        String plan = stringValueOrDefault(request.get("plan"), "free");
+        String plan = tenantPlanPolicy.normalizePlanKey(stringValueOrDefault(request.get("plan"), "DISCOVERY"));
+        if (plan == null) {
+            plan = "DISCOVERY";
+        }
         String country = stringValueOrDefault(request.get("country"), "CM");
         String currency = stringValueOrDefault(request.get("currency"), "XAF");
         String timezone = stringValueOrDefault(request.get("timezone"), "Africa/Douala");
@@ -266,7 +269,8 @@ public class SuperAdminController {
             return badRequest("Le fuseau horaire est invalide", "timezone");
         }
 
-        if (!"free".equalsIgnoreCase(plan) && planRepository.findById(plan).filter(SaasPlan::getIsActive).isEmpty()) {
+        if (!"DISCOVERY".equals(plan)
+                && planRepository.findByKeyIgnoreCaseAndIsActiveTrue(plan).isEmpty()) {
             return badRequest("Le plan sélectionné n'existe pas ou n'est pas actif", "plan");
         }
 
@@ -282,7 +286,7 @@ public class SuperAdminController {
         Tenant tenant = tenantRepository.findById(tenantResponse.id())
                 .orElseThrow(() -> new IllegalStateException("Tenant non trouvé après création"));
 
-        if (!"free".equals(plan)) {
+        if (!"DISCOVERY".equals(plan)) {
             saasPlanService.subscribe(tenant.getId(), plan, "monthly", null);
         }
 
@@ -305,7 +309,17 @@ public class SuperAdminController {
             tenant.setName(String.valueOf(request.get("name")).trim());
         }
         if (request.get("plan") != null && !String.valueOf(request.get("plan")).isBlank()) {
-            tenant.setPlan(String.valueOf(request.get("plan")).trim());
+            String canonicalPlan = tenantPlanPolicy.normalizePlanKey(String.valueOf(request.get("plan")));
+            if (canonicalPlan == null
+                    || planRepository.findByKeyIgnoreCaseAndIsActiveTrue(canonicalPlan).isEmpty()) {
+                return badRequest("Le plan sélectionné n'existe pas ou n'est pas actif", "plan");
+            }
+            String billingCycle = subscriptionRepository.findCurrentByTenantId(id)
+                    .map(subscription -> subscription.getBillingCycle())
+                    .orElse("monthly");
+            saasPlanService.subscribe(id, canonicalPlan, billingCycle, SecurityUtils.getCurrentUserId());
+            tenant = tenantRepository.findById(id)
+                    .orElseThrow(() -> new IllegalStateException("Tenant non trouvé après mise à jour"));
         }
         if (request.get("locale") != null && !String.valueOf(request.get("locale")).isBlank()) {
             tenant.setLocale(String.valueOf(request.get("locale")).trim());

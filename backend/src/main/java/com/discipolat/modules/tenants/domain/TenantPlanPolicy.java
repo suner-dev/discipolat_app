@@ -61,12 +61,16 @@ public class TenantPlanPolicy {
                 limitsValid, featuresValid, subscription);
     }
 
-    public String normalizePlanKey(String key) {
+    public static String canonicalizePlanKey(String key) {
         if (key == null || key.isBlank()) {
             return null;
         }
         String normalized = key.trim().toUpperCase(Locale.ROOT);
         return CANONICAL_KEYS.getOrDefault(normalized, normalized);
+    }
+
+    public String normalizePlanKey(String key) {
+        return canonicalizePlanKey(key);
     }
 
     public OptionalLong limit(ResolvedPlan resolvedPlan, Limit limit) {

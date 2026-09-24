@@ -67,7 +67,8 @@ public class AuthController {
         // Récupérer l'invite code depuis les headers (optionnel)
         String inviteCode = httpRequest.getHeader("X-Invite-Code");
         
-        authService.register(request.email(), request.password(), request.firstName(), request.lastName(), request.phone(), inviteCode);
+        authService.register(request.email(), request.password(), request.firstName(), request.lastName(),
+                request.phone(), inviteCode, request.plan());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "Demande d'église reçue. Elle sera examinée par un Super Admin.",

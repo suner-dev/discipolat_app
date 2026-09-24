@@ -79,6 +79,12 @@ public class AuthService {
 
     public TenantRegistrationRequest register(String email, String rawPassword, String firstName,
                                                 String lastName, String phone, String inviteCode) {
+        return register(email, rawPassword, firstName, lastName, phone, inviteCode, null);
+    }
+
+    public TenantRegistrationRequest register(String email, String rawPassword, String firstName,
+                                                String lastName, String phone, String inviteCode,
+                                                String requestedPlan) {
         if (inviteCode != null && !inviteCode.isBlank()) {
             throw new DomainException(
                     "Les invitations doivent être acceptées via leur lien dédié",
@@ -86,7 +92,7 @@ public class AuthService {
                     "INVITATION_ACCEPTANCE_REQUIRED"
             );
         }
-        return tenantRegistrationService.submit(email, rawPassword, firstName, lastName, phone);
+        return tenantRegistrationService.submit(email, rawPassword, firstName, lastName, phone, requestedPlan);
     }
 
     // ======================== LOGIN ========================

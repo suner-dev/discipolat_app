@@ -57,12 +57,18 @@ public class SaasPlanService {
 
     @Transactional(readOnly = true)
     public Optional<SaasPlan> getPlan(String key) {
-        return planRepository.findByKeyAndIsActiveTrue(key);
+        String canonicalKey = TenantPlanPolicy.canonicalizePlanKey(key);
+        return canonicalKey == null
+                ? Optional.empty()
+                : planRepository.findByKeyIgnoreCaseAndIsActiveTrue(canonicalKey);
     }
 
     @Transactional(readOnly = true)
     public Optional<SaasPlan> getPlanByKey(String key) {
-        return planRepository.findById(key);
+        String canonicalKey = TenantPlanPolicy.canonicalizePlanKey(key);
+        return canonicalKey == null
+                ? Optional.empty()
+                : planRepository.findByKeyIgnoreCase(canonicalKey);
     }
 
     /**
@@ -79,9 +85,9 @@ public class SaasPlanService {
     @Transactional(readOnly = true)
     public SaasPlan getCurrentPlan(UUID tenantId) {
         return subscriptionRepository.findCurrentByTenantId(tenantId)
-                .flatMap(sub -> planRepository.findById(sub.getPlanKey()))
+                .flatMap(sub -> getPlanByKey(sub.getPlanKey()))
                 .orElseGet(() -> tenantRepository.findById(tenantId)
-                        .flatMap(tenant -> planRepository.findById(tenant.getPlan()))
+                        .flatMap(tenant -> getPlanByKey(tenant.getPlan()))
                         .orElse(null));
     }
 
@@ -133,7 +139,11 @@ public class SaasPlanService {
      * Abonne un tenant à un plan
      */
     public TenantSubscription subscribe(UUID tenantId, String planKey, String billingCycle, UUID creatorId) {
-        SaasPlan plan = planRepository.findByKeyAndIsActiveTrue(planKey)
+        String canonicalKey = TenantPlanPolicy.canonicalizePlanKey(planKey);
+        if (canonicalKey == null) {
+            throw new EntityNotFoundException("SaasPlan", "key", planKey);
+        }
+        SaasPlan plan = planRepository.findByKeyIgnoreCaseAndIsActiveTrue(canonicalKey)
                 .orElseThrow(() -> new EntityNotFoundException("SaasPlan", "key", planKey));
 
         Tenant tenant = tenantRepository.findByIdForUpdate(tenantId)
@@ -145,7 +155,7 @@ public class SaasPlanService {
 
         if (existing.isPresent()) {
             subscription = existing.get();
-            subscription.setPlanKey(planKey);
+            subscription.setPlanKey(plan.getKey());
             subscription.setBillingCycle(billingCycle);
             subscription.setStatus(SubscriptionStatus.ACTIVE);
             subscription.setCurrentPeriodStart(periodStart);
@@ -156,7 +166,7 @@ public class SaasPlanService {
         } else {
             subscription = TenantSubscription.builder()
                     .tenantId(tenantId)
-                    .planKey(planKey)
+                    .planKey(plan.getKey())
                     .billingCycle(billingCycle)
                     .status(SubscriptionStatus.ACTIVE)
                     .currentPeriodStart(periodStart)
@@ -166,6 +176,7 @@ public class SaasPlanService {
         }
 
         tenant.setPlan(plan.getKey());
+        tenant.setFeaturesJson(plan.getFeaturesJson());
         tenantRepository.save(tenant);
         return subscriptionRepository.save(subscription);
     }

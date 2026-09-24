@@ -77,12 +77,6 @@ export default function PlatformOnboardingFlowPage() {
     setTenantForm((prev) => ({ ...prev, name: value, slug: slugTouched ? prev.slug : slugify(value) }));
   };
 
-  /** Étapes atteignables : 0 toujours, n>0 si l'étape n-1 est créée, 4 si tout créé. */
-  const reachable = [true, true, true, true, true];
-
-  const completedCount = [tenant, church, department, family].filter(Boolean).length;
-
-
   const validateStep = (index: number): string | null => {
     if (index === 0) {
       if (!tenantForm.name.trim()) return "Le nom de l'organisation est requis";
@@ -117,6 +111,18 @@ export default function PlatformOnboardingFlowPage() {
     }
     return null;
   };
+
+  const canReachStep = (index: number): boolean => {
+    if (index === 0) return true;
+    if (index === 4) return step === 4;
+    for (let prerequisite = 0; prerequisite < index; prerequisite += 1) {
+      if (validateStep(prerequisite) !== null) return false;
+    }
+    return true;
+  };
+
+  const reachable = [canReachStep(0), canReachStep(1), canReachStep(2), canReachStep(3), canReachStep(4)];
+  const completedCount = step === 4 ? 4 : step;
 
   const submitStep = async () => {
     const error = validateStep(step);
@@ -209,7 +215,8 @@ export default function PlatformOnboardingFlowPage() {
       <div className="glass-card p-4 mb-6 overflow-x-auto">
         <ol className="flex items-center gap-1 sm:gap-2 min-w-[520px] sm:min-w-0">
           {STEPS.map((s, idx) => {
-            const done = idx === 0 ? !!tenant : idx === 1 ? !!church : idx === 2 ? !!department : !!family;
+             const done = step > idx;
+
             const active = step === idx;
             const clickable = reachable[idx];
             const Icon = s.icon;
@@ -333,13 +340,14 @@ export default function PlatformOnboardingFlowPage() {
 
 
       {/* ============================ ÉTAPE 2 : ÉGLISE ============================ */}
-      {step === 1 && tenant && (
+      {step === 1 && (
         <div className="glass-card p-6">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">
             2. Église racine
           </h2>
           <p className="text-sm text-gray-500 mb-5">
-            Organisationne l'arborescence de <strong>{tenant.name}</strong> autour de son église racine.
+             Organisationne l'arborescence de <strong>{tenantForm.name.trim() || 'votre organisation'}</strong> autour de son église racine.
+
           </p>
           <div>
             <label className={labelCls}>Nom de l'église *</label>
@@ -361,13 +369,14 @@ export default function PlatformOnboardingFlowPage() {
       )}
 
       {/* ========================= ÉTAPE 3 : DÉPARTEMENT ========================= */}
-      {step === 2 && tenant && (
+      {step === 2 && (
         <div className="glass-card p-6">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">
             3. Département
           </h2>
           <p className="text-sm text-gray-500 mb-5">
-            Première structure de <strong>{tenant.name}</strong> — un responsable est obligatoire.
+             Première structure de <strong>{tenantForm.name.trim() || 'votre organisation'}</strong> — un responsable est obligatoire.
+
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
@@ -439,13 +448,14 @@ export default function PlatformOnboardingFlowPage() {
 
 
       {/* ============================ ÉTAPE 4 : FAMILLE ============================ */}
-      {step === 3 && tenant && (
+      {step === 3 && (
         <div className="glass-card p-6">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">
             4. Famille
           </h2>
           <p className="text-sm text-gray-500 mb-5">
-            Première famille de <strong>{tenant.name}</strong> — un chef de famille est obligatoire.
+             Première famille de <strong>{tenantForm.name.trim() || 'votre organisation'}</strong> — un chef de famille est obligatoire.
+
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">

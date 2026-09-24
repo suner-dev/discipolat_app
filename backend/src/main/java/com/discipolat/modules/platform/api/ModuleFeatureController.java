@@ -346,7 +346,7 @@ public class ModuleFeatureController {
             return new SubscriptionInfo("FREE", "Gratuit", null, null, null, null, false, false);
         }
         
-        SaasPlan plan = planRepository.findById(sub.get().getPlanKey()).orElse(null);
+        SaasPlan plan = planRepository.findByKeyIgnoreCase(sub.get().getPlanKey()).orElse(null);
         return new SubscriptionInfo(
                 sub.get().getPlanKey(),
                 plan != null ? plan.getName() : "Inconnu",

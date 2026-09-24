@@ -56,8 +56,12 @@ void main() {
     );
     tester.state<ScaffoldState>(find.byType(Scaffold)).openDrawer();
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Dashboard tenant'), 240,
+        scrollable: find.byType(Scrollable).first);
 
     expect(find.text('Dashboard tenant'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Paramètres église'), 240,
+        scrollable: find.byType(Scrollable).first);
     expect(find.text('Paramètres église'), findsOneWidget);
     expect(find.text('Modules'), findsNothing);
     expect(find.text('Utilisateurs'), findsNothing);

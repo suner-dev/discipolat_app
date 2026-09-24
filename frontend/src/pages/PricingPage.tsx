@@ -207,7 +207,7 @@ const toPlanView = (plan: PublicPlan, locale: Locale): PlanView => {
     description: plan.description ?? 'Offre Discipolat',
     prices: toPlanPrices(plan),
     period: plan.billingPeriod?.toUpperCase() === 'YEARLY' ? '/an' : '/mois',
-    popular: plan.sortOrder === 1,
+    popular: plan.key.toUpperCase() === 'STARTUP',
     features: [
       { text: seats, included: true },
       { text: formatStorage(plan.storageLimitMb, locale), included: true },

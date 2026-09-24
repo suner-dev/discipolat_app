@@ -63,7 +63,8 @@ public class SecurityStartupAudit implements ApplicationRunner {
         if (problems == 0) {
             log.info("[SecurityAudit] ✅ Configuration de sécurité conforme pour '{}'.", environment);
         } else {
-            log.error("[SecurityAudit] ❌ {} problème(s) de configuration de sécurité à corriger avant ouverture publique.", problems);
+            throw new IllegalStateException(
+                    "Configuration de sécurité incomplète pour " + environment + ": " + problems + " secret(s) requis");
         }
     }
 }

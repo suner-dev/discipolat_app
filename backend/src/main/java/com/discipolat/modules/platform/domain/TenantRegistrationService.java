@@ -13,8 +13,10 @@ import com.discipolat.modules.tenants.domain.OrganizationNode;
 import com.discipolat.modules.tenants.domain.OrganizationNodeService;
 import com.discipolat.modules.tenants.domain.Role;
 import com.discipolat.modules.tenants.domain.RoleRepository;
+import com.discipolat.modules.tenants.domain.SaasPlanService;
 import com.discipolat.modules.tenants.domain.TenantMembership;
 import com.discipolat.modules.tenants.domain.TenantMembershipRepository;
+import com.discipolat.modules.tenants.domain.TenantPlanPolicy;
 import com.discipolat.modules.tenants.domain.TenantService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -65,6 +67,12 @@ public class TenantRegistrationService {
     @Transactional
     public TenantRegistrationRequest submit(String email, String rawPassword, String firstName,
                                              String lastName, String phone) {
+        return submit(email, rawPassword, firstName, lastName, phone, null);
+    }
+
+    @Transactional
+    public TenantRegistrationRequest submit(String email, String rawPassword, String firstName,
+                                             String lastName, String phone, String requestedPlan) {
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         TenantRegistrationRequest request = requestRepository.findByEmail(normalizedEmail)
                 .orElseGet(() -> TenantRegistrationRequest.builder().email(normalizedEmail).build());
@@ -79,7 +87,14 @@ public class TenantRegistrationService {
         request.setPhone(phone == null ? null : phone.trim());
         request.setOrganizationName(organizationName);
         request.setSlug(slugify(organizationName));
-        request.setPlan("free");
+        String canonicalPlan = TenantPlanPolicy.canonicalizePlanKey(requestedPlan);
+        if (canonicalPlan == null) {
+            canonicalPlan = "DISCOVERY";
+        }
+        if (!SaasPlanService.PUBLIC_PLAN_KEYS.contains(canonicalPlan)) {
+            throw new BusinessRuleException("Le plan sélectionné n'est pas disponible", "INVALID_PLAN");
+        }
+        request.setPlan(canonicalPlan);
         request.setCountry("CM");
         request.setCurrency("XAF");
         request.setTimezone("Africa/Douala");

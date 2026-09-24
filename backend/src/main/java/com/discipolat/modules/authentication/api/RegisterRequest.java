@@ -25,6 +25,8 @@ public record RegisterRequest(
         @Size(max = 100)
         String lastName,
 
-        String phone
+        String phone,
+
+        String plan
 ) {
 }

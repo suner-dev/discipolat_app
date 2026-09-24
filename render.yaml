@@ -65,6 +65,8 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      - key: APP_ENVIRONMENT
+        value: prod
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: discipolat-db
@@ -85,6 +87,10 @@ services:
       - key: JWT_PRIVATE_KEY
         sync: false
       - key: JWT_PUBLIC_KEY
+        sync: false
+      - key: ENCRYPTION_AES_KEY
+        sync: false
+      - key: PAYMENTS_WEBHOOK_SECRET
         sync: false
       - key: MAIL_HOST
         value: smtp.mailgun.org
@@ -127,7 +133,8 @@ services:
     staticPublishPath: dist
     envVars:
       - key: NODE_VERSION
-        value: "22.11.0"
+         value: "22.15.1"
+
       # Évite le double install : Render auto-installerait les deps,
       # puis buildCommand rejouerait `npm ci`. SKIP_INSTALL_DEPS=true
       # laisse `npm ci` dans buildCommand gérer l'installation seule.
@@ -206,6 +213,10 @@ services:
         sync: false
       - key: JWT_PUBLIC_KEY
         sync: false
+      - key: ENCRYPTION_AES_KEY
+        sync: false
+      - key: PAYMENTS_WEBHOOK_SECRET
+        sync: false
       - key: MAIL_HOST
         value: smtp.mailgun.org
       - key: MAIL_PORT
@@ -238,7 +249,8 @@ services:
     staticPublishPath: dist
     envVars:
       - key: NODE_VERSION
-        value: "22.11.0"
+         value: "22.15.1"
+
       - key: SKIP_INSTALL_DEPS
         value: "true"
       - key: VITE_API_URL

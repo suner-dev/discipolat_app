@@ -74,6 +74,18 @@ class TenantRegistrationServiceTest {
     }
 
     @Test
+    void publicSubmissionNormalizesTheSelectedPublicPlan() {
+        when(requestRepository.findByEmail("growth@example.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("password123")).thenReturn("hashed-password");
+        when(requestRepository.save(any(TenantRegistrationRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        TenantRegistrationRequest request = service().submit(
+                "growth@example.com", "password123", "Jean", "Test", null, "growth");
+
+        assertThat(request.getPlan()).isEqualTo("GROWTH");
+    }
+
+    @Test
     void approvalCreatesOwnerAndTenantMembership() {
         UUID requestId = UUID.randomUUID();
         UUID tenantId = UUID.randomUUID();

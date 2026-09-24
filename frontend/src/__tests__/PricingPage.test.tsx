@@ -70,10 +70,13 @@ describe('PricingPage — catalogue public', () => {
     expect(within(growthCard as HTMLElement).getByText('EUR')).toBeInTheDocument();
     expect(within(growthCard as HTMLElement).getByText(/17.?500/)).toBeInTheDocument();
     expect(within(growthCard as HTMLElement).getByText('XAF')).toBeInTheDocument();
-    expect(within(growthCard as HTMLElement).getByText(/32/)).toBeInTheDocument();
-    expect(within(growthCard as HTMLElement).getByText('USD')).toBeInTheDocument();
+     expect(within(growthCard as HTMLElement).getByText(/32/)).toBeInTheDocument();
+     expect(within(growthCard as HTMLElement).getByText('USD')).toBeInTheDocument();
+     expect(within(growthCard as HTMLElement).getByRole('link', { name: /Choisir Croissance/i }))
+       .toHaveAttribute('href', '/register?plan=growth');
 
-    const customHeading = screen.getByRole('heading', { name: 'Sur mesure' });
+     const customHeading = screen.getByRole('heading', { name: 'Sur mesure' });
+
     const customCard = customHeading.closest('article') as HTMLElement;
     expect(within(customCard).getByText('Tarif non communiqué')).toBeInTheDocument();
     expect(within(customCard).queryByText(/^0/)).not.toBeInTheDocument();

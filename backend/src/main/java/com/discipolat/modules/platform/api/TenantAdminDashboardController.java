@@ -84,7 +84,7 @@ public class TenantAdminDashboardController {
         long groupCount = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.GROUP);
 
         Optional<TenantSubscription> subscription = subscriptionRepository.findCurrentByTenantId(tenantId);
-        Optional<SaasPlan> plan = subscription.flatMap(s -> planRepository.findById(s.getPlanKey()));
+        Optional<SaasPlan> plan = subscription.flatMap(s -> planRepository.findByKeyIgnoreCase(s.getPlanKey()));
 
         Map<String, Object> quotas = new HashMap<>();
         if (subscription.isPresent() && plan.isPresent()) {

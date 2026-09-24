@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,7 +23,9 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useI18n();
+  const requestedPlan = searchParams.get('plan')?.trim().toUpperCase() || 'DISCOVERY';
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -44,6 +46,7 @@ export default function RegisterPage() {
         firstName: data.firstName.trim(),
         lastName: data.lastName.trim(),
         phone: data.phone?.trim() || undefined,
+        plan: requestedPlan.toLowerCase(),
       });
       setSuccess(true);
     } catch (err) {
@@ -92,6 +95,11 @@ export default function RegisterPage() {
         <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '50ms' }}>
           {t('auth.registerSubtitle')}
         </p>
+        {requestedPlan !== 'DISCOVERY' && (
+          <p className="mt-3 text-xs font-medium text-violet-600 dark:text-violet-300">
+            Plan sélectionné : {requestedPlan}
+          </p>
+        )}
       </div>
 
       {/* Error */}

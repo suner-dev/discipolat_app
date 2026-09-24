@@ -28,6 +28,16 @@ class _AppDrawerState extends State<AppDrawer> {
       'route': '/dashboard'
     },
     {
+      'icon': Icons.admin_panel_settings_rounded,
+      'title': 'Dashboard tenant',
+      'route': '/admin/dashboard'
+    },
+    {
+      'icon': Icons.settings_rounded,
+      'title': 'Paramètres église',
+      'route': '/tenant/settings'
+    },
+    {
       'icon': Icons.dashboard_customize_rounded,
       'title': 'Pilotage Pasteur',
       'route': '/dashboard/pasteur'
@@ -211,11 +221,6 @@ class _AppDrawerState extends State<AppDrawer> {
   // ── Section Administration (groupée dans le drawer) ──
   static const List<Map<String, Object>> _adminNav = [
     {
-      'icon': Icons.dashboard_rounded,
-      'title': 'Dashboard tenant',
-      'route': '/admin/dashboard'
-    },
-    {
       'icon': Icons.auto_fix_high_rounded,
       'title': 'Workflows',
       'route': '/admin/transfers'
@@ -234,11 +239,6 @@ class _AppDrawerState extends State<AppDrawer> {
       'icon': Icons.dashboard_customize_rounded,
       'title': 'Pages personnalisées',
       'route': '/admin/pages'
-    },
-    {
-      'icon': Icons.settings_rounded,
-      'title': 'Paramètres église',
-      'route': '/tenant/settings'
     },
     {
       'icon': Icons.text_fields_rounded,
@@ -928,11 +928,11 @@ class _AppDrawerState extends State<AppDrawer> {
       case 'MEMBRE':
         return _membreNav;
       case 'PASTEUR':
-        return [
-          ..._mainNav,
-          _adminNav.first,
-          _adminNav.firstWhere((item) => item['route'] == '/tenant/settings'),
-        ];
+        return _mainNav
+            .where((item) =>
+                item['route'] == '/admin/dashboard' ||
+                item['route'] == '/tenant/settings')
+            .toList();
       case 'ADMIN':
         return _fullNav;
       case 'PLATFORM_SUPER_ADMIN':

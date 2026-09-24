@@ -78,7 +78,8 @@ public class SuperAdminSaasPlanController {
 
     @PutMapping("/{key}")
     public ResponseEntity<SaasPlanResponse> updatePlan(@PathVariable String key, @RequestBody UpdatePlanRequest request) {
-        SaasPlan plan = planRepository.findById(key).orElseThrow(() -> new RuntimeException("Plan not found: " + key));
+        SaasPlan plan = planService.getPlanByKey(key)
+                .orElseThrow(() -> new RuntimeException("Plan not found: " + key));
         if (request.name() != null) plan.setName(request.name());
         if (request.description() != null) plan.setDescription(request.description());
         if (request.priceMonthly() != null) plan.setPriceMonthly(request.priceMonthly());
@@ -105,7 +106,8 @@ public class SuperAdminSaasPlanController {
 
     @DeleteMapping("/{key}")
     public ResponseEntity<Void> deactivatePlan(@PathVariable String key) {
-        SaasPlan plan = planRepository.findById(key).orElseThrow(() -> new RuntimeException("Plan not found: " + key));
+        SaasPlan plan = planService.getPlanByKey(key)
+                .orElseThrow(() -> new RuntimeException("Plan not found: " + key));
         plan.setIsActive(false);
         plan.setStatus("INACTIVE");
         planRepository.save(plan);
@@ -144,7 +146,7 @@ public class SuperAdminSaasPlanController {
     }
 
     private SubscriptionResponse toSubscriptionResponse(TenantSubscription s) {
-        SaasPlan p = planRepository.findById(s.getPlanKey()).orElse(null);
+        SaasPlan p = planService.getPlanByKey(s.getPlanKey()).orElse(null);
         return new SubscriptionResponse(s.getId() != null ? s.getId().toString() : null, s.getTenantId(), s.getPlanKey(), p != null ? p.getName() : "Unknown", s.getBillingCycle(), s.getStatus() != null ? s.getStatus().name() : "UNKNOWN", s.getCancelAtPeriodEnd(), s.getCurrentPeriodStart() != null ? s.getCurrentPeriodStart().toString() : null, s.getCurrentPeriodEnd() != null ? s.getCurrentPeriodEnd().toString() : null);
     }
 }

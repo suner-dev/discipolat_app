@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import AuthLayout from '@/layouts/AuthLayout';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 
@@ -60,8 +61,10 @@ function renderJourney(initialPath = '/') {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<LoginPage />} />
+             <Route element={<AuthLayout />}>
+               <Route path="/login" element={<LoginPage />} />
+               <Route path="/register" element={<RegisterPage />} />
+
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
             </Route>
@@ -169,5 +172,30 @@ describe('Parcours d authentification — bout en bout', () => {
     });
     expect(localStorage.getItem('accessToken')).toBe('access-1');
     expect(localStorage.getItem('user')).toContain('"activeRole":"FAISEUR"');
+  });
+
+  it('inscription → transmet le plan sélectionné depuis le catalogue', async () => {
+    const user = userEvent.setup();
+    renderJourney('/register?plan=GROWTH');
+
+    await user.type(screen.getByPlaceholderText('Jean'), 'Jean');
+    await user.type(screen.getByPlaceholderText('Kouassi'), 'Kouassi');
+    await user.type(screen.getByPlaceholderText('vous@email.com'), 'jean@example.com');
+    await user.type(screen.getByLabelText(/mot de passe/i), 'Password123');
+    await user.type(screen.getByPlaceholderText('••••••••'), 'Password123');
+    const submitButton = screen.getAllByRole('button').at(-1);
+    expect(submitButton).toBeDefined();
+    await user.click(submitButton!);
+
+    await waitFor(() => {
+      expect(apiPost).toHaveBeenCalledWith('/auth/register', {
+        email: 'jean@example.com',
+        password: 'Password123',
+        firstName: 'Jean',
+        lastName: 'Kouassi',
+        phone: undefined,
+        plan: 'growth',
+      });
+    });
   });
 });

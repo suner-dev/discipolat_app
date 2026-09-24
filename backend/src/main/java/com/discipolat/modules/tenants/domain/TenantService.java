@@ -44,18 +44,21 @@ public class TenantService {
     private final TenantFeatureService featureService;
     private final TenantPlanPolicy planPolicy;
     private final TenantSubscriptionRepository subscriptionRepository;
+    private final SaasPlanService saasPlanService;
 
     public TenantService(TenantRepository tenantRepository, AuditService auditService,
                          EntityPropagationPublisher propagationPublisher,
                          TenantFeatureService featureService,
                          TenantPlanPolicy planPolicy,
-                         TenantSubscriptionRepository subscriptionRepository) {
+                         TenantSubscriptionRepository subscriptionRepository,
+                         SaasPlanService saasPlanService) {
         this.tenantRepository = tenantRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
         this.featureService = featureService;
         this.planPolicy = planPolicy;
         this.subscriptionRepository = subscriptionRepository;
+        this.saasPlanService = saasPlanService;
     }
 
     @Transactional(readOnly = true)
@@ -155,7 +158,14 @@ public class TenantService {
             tenant.setStatus(request.status());
         }
         if (request.plan() != null && !request.plan().isBlank()) {
-            tenant.setPlan(request.plan());
+            String canonicalPlan = planPolicy.normalizePlanKey(request.plan());
+            if (canonicalPlan == null || saasPlanService.getPlan(canonicalPlan).isEmpty()) {
+                throw new BusinessRuleException("Le plan sélectionné n'existe pas ou n'est pas actif", "INVALID_PLAN");
+            }
+            String billingCycle = subscriptionRepository.findCurrentByTenantId(id)
+                    .map(subscription -> subscription.getBillingCycle())
+                    .orElse("monthly");
+            saasPlanService.subscribe(id, canonicalPlan, billingCycle, null);
         }
         if (request.country() != null) {
             tenant.setCountry(request.country());

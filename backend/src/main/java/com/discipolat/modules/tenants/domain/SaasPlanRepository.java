@@ -14,6 +14,8 @@ public interface SaasPlanRepository extends JpaRepository<SaasPlan, String> {
 
     Optional<SaasPlan> findByKeyIgnoreCaseAndIsActiveTrue(String key);
 
+    Optional<SaasPlan> findByKeyIgnoreCase(String key);
+
     Optional<SaasPlan> findByKeyAndIsActiveTrue(String key);
 
     Optional<SaasPlan> findById(String id);

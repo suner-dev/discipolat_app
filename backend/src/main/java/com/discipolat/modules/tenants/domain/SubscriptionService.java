@@ -44,7 +44,11 @@ public class SubscriptionService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
 
-        SaasPlan plan = planRepository.findById(planKey)
+        String canonicalKey = TenantPlanPolicy.canonicalizePlanKey(planKey);
+        if (canonicalKey == null) {
+            throw new BusinessRuleException("Plan not found: " + planKey, "PLAN_NOT_FOUND");
+        }
+        SaasPlan plan = planRepository.findByKeyIgnoreCaseAndIsActiveTrue(canonicalKey)
                 .orElseThrow(() -> new BusinessRuleException("Plan not found: " + planKey, "PLAN_NOT_FOUND"));
 
         if (!plan.getIsActive()) {
@@ -69,7 +73,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
 
         TenantSubscription subscription = TenantSubscription.builder()
                 .tenantId(tenantId)
-                .planKey(planKey)
+                .planKey(plan.getKey())
                 .status(SubscriptionStatus.TRIAL)
                 .billingCycle(billingCycle)
                 .currentPeriodStart(now)
@@ -82,7 +86,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
         subscription = subscriptionRepository.save(subscription);
 
         // Update tenant plan and activate features
-        tenant.setPlan(planKey);
+        tenant.setPlan(plan.getKey());
         Map<String, Object> features = parseJson(plan.getFeaturesJson());
         tenant.setFeaturesJson(toJson(features));
         tenantRepository.save(tenant);
@@ -150,7 +154,11 @@ sub.setStatus(SubscriptionStatus.CANCELED);
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
 
-        SaasPlan newPlan = planRepository.findById(newPlanKey)
+        String canonicalKey = TenantPlanPolicy.canonicalizePlanKey(newPlanKey);
+        if (canonicalKey == null) {
+            throw new BusinessRuleException("Plan not found: " + newPlanKey, "PLAN_NOT_FOUND");
+        }
+        SaasPlan newPlan = planRepository.findByKeyIgnoreCaseAndIsActiveTrue(canonicalKey)
                 .orElseThrow(() -> new BusinessRuleException("Plan not found: " + newPlanKey, "PLAN_NOT_FOUND"));
 
         TenantSubscription sub = subscriptionRepository.findCurrentByTenantId(tenantId)
@@ -173,7 +181,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
 
         TenantSubscription newSub = TenantSubscription.builder()
                 .tenantId(tenantId)
-                .planKey(newPlanKey)
+                .planKey(newPlan.getKey())
                 .status(SubscriptionStatus.PENDING_CHANGE)
                 .billingCycle(sub.getBillingCycle())
                 .currentPeriodStart(newPeriodStart)
@@ -202,7 +210,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
                 current.setCancelAtPeriodEnd(false);
                 subscriptionRepository.save(current);
             }
-            SaasPlan plan = planRepository.findById(pending.getPlanKey())
+            SaasPlan plan = planRepository.findByKeyIgnoreCase(pending.getPlanKey())
                     .orElseThrow(() -> new BusinessRuleException("Plan not found: " + pending.getPlanKey(), "PLAN_NOT_FOUND"));
             pending.setStatus(SubscriptionStatus.ACTIVE);
             pending.setCancelAtPeriodEnd(false);
@@ -234,7 +242,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
         }
 
         TenantSubscription s = sub.get();
-        Optional<SaasPlan> plan = planRepository.findById(s.getPlanKey());
+        Optional<SaasPlan> plan = planRepository.findByKeyIgnoreCase(s.getPlanKey());
 
         return Map.of(
                 "hasSubscription", true,
