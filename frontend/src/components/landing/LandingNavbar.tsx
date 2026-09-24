@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Sun, Moon, Church, ArrowRight, ChevronDown } from 'lucide-react';
+import { Menu, X, Sun, Moon, Church, ArrowRight } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { useTheme } from '@/hooks/useTheme';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -24,7 +24,6 @@ export default function LandingNavbar({ onNavigate, onDemo }: LandingNavbarProps
   const { branding } = useSettings();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -105,7 +104,7 @@ export default function LandingNavbar({ onNavigate, onDemo }: LandingNavbarProps
                   className="w-full flex items-center justify-between py-3.5 text-base font-medium text-gray-800 dark:text-gray-100 text-left"
                 >
                   {t(item.key)}
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expanded === item.id ? 'rotate-180' : ''}`} onClick={(e) => { e.stopPropagation(); setExpanded(expanded === item.id ? null : item.id); }} />
+                  <ArrowRight className="w-4 h-4 text-gray-300 dark:text-gray-600" />
                 </button>
               </div>
             ))}
