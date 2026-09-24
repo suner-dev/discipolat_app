@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { WORKSPACE_HOME, isSuperUser, isPlatformAdmin, isTenantAdmin } from '@/workspaces';
+import { WORKSPACE_HOME, isSuperUser, isTenantAdmin } from '@/workspaces';
 import type { UserRole } from '@/types';
 import MainLayout from '@/layouts/MainLayout';
 import AuthLayout from '@/layouts/AuthLayout';
@@ -93,6 +93,10 @@ const PlatformModulesPage = lazy(() => import('@/pages/PlatformModulesPage'));
 const PlatformMenusPage = lazy(() => import('@/pages/PlatformMenusPage'));
 const PlatformPagesPage = lazy(() => import('@/pages/PlatformPagesPage'));
 const PlatformAdminDashboardPage = lazy(() => import('@/pages/PlatformAdminDashboard'));
+const PlatformAuditPage = lazy(() => import('@/pages/PlatformAuditPage'));
+const PlatformPlansPage = lazy(() => import('@/pages/PlatformPlansPage'));
+const PlatformImpersonationPage = lazy(() => import('@/pages/PlatformImpersonationPage'));
+const PlatformRegistrationRequestsPage = lazy(() => import('@/pages/PlatformRegistrationRequestsPage'));
 const PlatformOnboardingFlowPage = lazy(() => import('@/pages/PlatformOnboardingFlowPage'));
 const TenantAdminDashboardPage = lazy(() => import('@/pages/TenantAdminDashboard'));
 const TenantAdminMembersPage = lazy(() => import('@/pages/TenantAdminMembersPage'));
@@ -279,7 +283,7 @@ function ProtectedRoute({ children, roles, scope }: { children: React.ReactNode;
 
   // Scope multi-tenant : les rôles PLATFORM/TENANT sont hiérarchiques.
   // ADMIN = super-administrateur, AUTORISE implicitement tout.
-  if (scope === 'platform' && isPlatformAdmin(currentRole as string)) {
+  if (scope === 'platform' && user?.platformSuperAdmin === true) {
     return <>{children}</>;
   }
   if (scope === 'tenant' && isTenantAdmin(currentRole as string)) {
@@ -320,7 +324,7 @@ function DashboardGate() {
  * déjà authentifié.
  */
 function HomeGate() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -329,7 +333,7 @@ function HomeGate() {
     );
   }
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={user?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard'} replace />;
   }
   return <LandingPage />;
 }
@@ -746,22 +750,22 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/settings" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute scope="platform">
               <AdminSettingsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/modules" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute scope="platform">
               <PlatformModulesPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/menus" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute scope="platform">
               <PlatformMenusPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/pages" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute scope="platform">
               <PlatformPagesPage />
             </ProtectedRoute>
           } />
@@ -804,7 +808,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/system" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute scope="platform">
               <AdminSystemPage />
             </ProtectedRoute>
           } />
@@ -1085,6 +1089,15 @@ export default function App() {
           <Route path="/platform/dashboard" element={
             <ProtectedRoute scope="platform"><PlatformAdminDashboardPage /></ProtectedRoute>
           } />
+          <Route path="/platform/registration-requests" element={
+            <ProtectedRoute scope="platform"><PlatformRegistrationRequestsPage /></ProtectedRoute>
+          } />
+          <Route path="/platform/impersonation" element={
+            <ProtectedRoute scope="platform"><PlatformImpersonationPage /></ProtectedRoute>
+          } />
+          <Route path="/platform/audit" element={
+            <ProtectedRoute scope="platform"><PlatformAuditPage /></ProtectedRoute>
+          } />
           <Route path="/platform/onboarding" element={
             <ProtectedRoute scope="platform"><PlatformOnboardingFlowPage /></ProtectedRoute>
           } />
@@ -1092,7 +1105,7 @@ export default function App() {
             <ProtectedRoute scope="platform"><AdminTenantsPage /></ProtectedRoute>
           } />
           <Route path="/platform/saas/plans" element={
-            <ProtectedRoute scope="platform"><AdminTenantsPage /></ProtectedRoute>
+            <ProtectedRoute scope="platform"><PlatformPlansPage /></ProtectedRoute>
           } />
           <Route path="/platform/branding" element={
             <ProtectedRoute scope="platform"><TenantAdminBrandingPage /></ProtectedRoute>

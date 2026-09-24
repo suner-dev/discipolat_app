@@ -25,13 +25,13 @@ public class BetaAdminController {
     }
 
     @GetMapping("/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> status() {
         return ResponseEntity.ok(betaResetService.status());
     }
 
     @PostMapping("/reset")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<Map<String, Object>> reset() {
         return ResponseEntity.ok(betaResetService.reset());
     }

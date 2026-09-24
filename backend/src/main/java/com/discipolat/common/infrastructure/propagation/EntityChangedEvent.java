@@ -35,12 +35,21 @@ public class EntityChangedEvent extends ApplicationEvent {
     private final UUID actorId;
     private final LocalDateTime occurredAt;
     private final String description;
+    private final UUID tenantId;
 
     public EntityChangedEvent(Object source, String entityType, UUID entityId,
                               ChangeType changeType,
                               Map<String, Object> oldValues,
                               Map<String, Object> newValues,
                               UUID actorId, String description) {
+        this(source, entityType, entityId, changeType, oldValues, newValues, actorId, description, null);
+    }
+
+    public EntityChangedEvent(Object source, String entityType, UUID entityId,
+                              ChangeType changeType,
+                              Map<String, Object> oldValues,
+                              Map<String, Object> newValues,
+                              UUID actorId, String description, UUID tenantId) {
         super(source);
         this.entityType = entityType;
         this.entityId = entityId;
@@ -50,6 +59,7 @@ public class EntityChangedEvent extends ApplicationEvent {
         this.actorId = actorId;
         this.occurredAt = LocalDateTime.now();
         this.description = description;
+        this.tenantId = tenantId;
     }
 
     public String getEntityType() { return entityType; }
@@ -60,6 +70,7 @@ public class EntityChangedEvent extends ApplicationEvent {
     public UUID getActorId() { return actorId; }
     public LocalDateTime getOccurredAt() { return occurredAt; }
     public String getDescription() { return description; }
+    public UUID getTenantId() { return tenantId; }
 
     /**
      * Returns true if the given field was changed between old and new values.

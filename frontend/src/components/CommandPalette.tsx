@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -173,7 +173,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   };
 
   // Gestion clavier
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return undefined;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

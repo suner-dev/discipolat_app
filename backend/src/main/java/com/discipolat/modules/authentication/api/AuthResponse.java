@@ -17,5 +17,7 @@ public record AuthResponse(
         boolean estChefDeFamille,
         String firstName,
         String lastName,
-        Boolean twoFactorEnabled
+        Boolean twoFactorEnabled,
+        List<String> platformRoles,
+        boolean platformSuperAdmin
 ) {}

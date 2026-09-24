@@ -58,10 +58,10 @@ export default function RegisterPage() {
           <CheckCircle2 className="w-8 h-8 text-green-400" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
-          {t('auth.registerSuccess')}
+          Demande reçue
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {t('auth.registerRoleHint')}
+          Votre demande d'église sera examinée par un Super Admin avant toute création de compte.
         </p>
         <button
           onClick={() => navigate('/login')}

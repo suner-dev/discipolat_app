@@ -47,5 +47,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
             """)
     List<AuditLog> findSince(@Param("debut") LocalDateTime debut);
 
+    @Query(value = "SELECT * FROM audit_logs ORDER BY created_at DESC", nativeQuery = true)
+    Page<AuditLog> findPlatformAll(Pageable pageable);
+
     long countByCreatedAtGreaterThan(LocalDateTime debut);
 }

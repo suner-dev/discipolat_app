@@ -107,7 +107,7 @@ public class NotificationService {
 
         // Dispatch email asynchronously if canal is EMAIL
         if (effectiveCanal == CanalNotification.EMAIL) {
-            dispatchEmail(destinataireId, renderedTitre, renderedMessage);
+            dispatchEmail(tenantId, destinataireId, renderedTitre, renderedMessage);
         }
 
         return saved;
@@ -117,7 +117,12 @@ public class NotificationService {
      * Envoie un email asynchrone à l'utilisateur destinataire.
      */
     @Async
-    public void dispatchEmail(UUID destinataireId, String titre, String message) {
+    public void dispatchEmail(UUID tenantId, UUID destinataireId, String titre, String message) {
+        if (tenantId == null) return;
+        TenantContext.runAsTenant(tenantId, () -> sendEmail(destinataireId, titre, message));
+    }
+
+    private void sendEmail(UUID destinataireId, String titre, String message) {
         try {
             User user = userRepository.findById(destinataireId).orElse(null);
             if (user == null || user.getEmail() == null) return;

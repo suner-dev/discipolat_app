@@ -1,5 +1,6 @@
 package com.discipolat.common.infrastructure.security;
 
+import com.discipolat.modules.security.domain.TokenRevocationService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,9 +23,12 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenRevocationService tokenRevocationService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
+                                   TokenRevocationService tokenRevocationService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.tokenRevocationService = tokenRevocationService;
     }
 
     @Override
@@ -32,8 +36,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = extractToken(request);
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
+        if (token != null && jwtTokenProvider.validateToken(token) && !tokenRevocationService.isRevoked(token)) {
             Claims claims = jwtTokenProvider.getClaims(token);
+            String tokenType = claims.get("type", String.class);
+            if (!"access".equals(tokenType) && !"impersonation".equals(tokenType)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             UUID userId = UUID.fromString(claims.getSubject());
             String role = claims.get("role", String.class);
 

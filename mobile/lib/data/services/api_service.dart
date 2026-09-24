@@ -87,30 +87,37 @@ class ApiService {
     }
   }
 
-  Future<Response> get(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) =>
+  Future<Response> get(String path,
+          {Map<String, dynamic>? params,
+          Map<String, dynamic>? queryParameters}) =>
       _dio.get(path, queryParameters: params ?? queryParameters);
 
   Future<Response> getBytes(String path, {Map<String, dynamic>? params}) =>
-    _dio.get(path, queryParameters: params, options: Options(responseType: ResponseType.bytes));
+      _dio.get(path,
+          queryParameters: params,
+          options: Options(responseType: ResponseType.bytes));
 
   /// POST qui retourne des données binaires (ex: audio TTS). Utilisé pour
   /// les endpoints qui répondent en octets (audio/mpeg, pdf, etc.).
-  Future<Response> postBytes(String path, {dynamic data, Map<String, dynamic>? params}) =>
-    _dio.post(path,
-        data: data,
-        queryParameters: params,
-        options: Options(responseType: ResponseType.bytes));
+  Future<Response> postBytes(String path,
+          {dynamic data, Map<String, dynamic>? params}) =>
+      _dio.post(path,
+          data: data,
+          queryParameters: params,
+          options: Options(responseType: ResponseType.bytes));
 
   Future<Response> post(String path, {dynamic data}) =>
-    _dio.post(path, data: data);
+      _dio.post(path, data: data);
 
   Future<Response> put(String path, {dynamic data}) =>
-    _dio.put(path, data: data);
+      _dio.put(path, data: data);
 
   Future<Response> patch(String path, {dynamic data}) =>
-    _dio.patch(path, data: data);
+      _dio.patch(path, data: data);
 
-  Future<Response> delete(String path, {Map<String, dynamic>? params, Map<String, dynamic>? queryParameters}) =>
+  Future<Response> delete(String path,
+          {Map<String, dynamic>? params,
+          Map<String, dynamic>? queryParameters}) =>
       _dio.delete(path, queryParameters: params ?? queryParameters);
 
   /// Envoie un fichier (multipart/form-data) sur [path].
@@ -135,11 +142,21 @@ class ApiService {
 
   Future<void> saveTokens(Map<String, dynamic> data) async {
     if (data.containsKey('accessToken')) {
-      await _secureStorage.write(key: _accessTokenKey, value: data['accessToken'] as String);
+      await _secureStorage.write(
+          key: _accessTokenKey, value: data['accessToken'] as String);
     }
     if (data.containsKey('refreshToken')) {
-      await _secureStorage.write(key: _refreshTokenKey, value: data['refreshToken'] as String);
+      await _secureStorage.write(
+          key: _refreshTokenKey, value: data['refreshToken'] as String);
     }
+  }
+
+  Future<void> deleteRefreshToken() async {
+    await _secureStorage.delete(key: _refreshTokenKey);
+  }
+
+  Future<void> deleteAccessToken() async {
+    await _secureStorage.delete(key: _accessTokenKey);
   }
 
   Future<void> clearTokens() async {
@@ -148,5 +165,9 @@ class ApiService {
 
   Future<String?> getAccessToken() async {
     return await _secureStorage.read(key: _accessTokenKey);
+  }
+
+  Future<String?> getRefreshToken() async {
+    return await _secureStorage.read(key: _refreshTokenKey);
   }
 }

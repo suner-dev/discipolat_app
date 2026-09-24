@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../api/api_service.dart';
-import '../../../core/tenant_session.dart';
-import '../login/login_screen.dart';
-import '../main_scaffold.dart';
+import 'package:go_router/go_router.dart';
 
-/// Écran de sélection du tenant (affiché après connexion)
+import '../../../app.dart';
+import '../../../data/services/api_service.dart';
+import '../../../core/tenant_session.dart';
+
 class TenantSelectionScreen extends ConsumerStatefulWidget {
   const TenantSelectionScreen({super.key});
 
   @override
-  ConsumerState<TenantSelectionScreen> createState() => _TenantSelectionScreenState();
+  ConsumerState<TenantSelectionScreen> createState() =>
+      _TenantSelectionScreenState();
 }
 
 class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
+  final _api = ApiService();
   bool _loading = true;
-  // ignore: unused_field
   bool _switching = false;
   List<Map<String, dynamic>> _tenants = [];
   String? _error;
@@ -28,125 +29,119 @@ class _TenantSelectionScreenState extends ConsumerState<TenantSelectionScreen> {
 
   Future<void> _loadTenants() async {
     try {
-      final response = await apiService.get('/tenant-switcher/my-tenants');
-      setState(() {
-        _tenants = List<Map<String, dynamic>>.from(response);
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _loading = false;
-        _error = 'Impossible de charger vos organisations';
-      });
+      final response = await _api.get('/tenant-switcher/my-tenants');
+      final values =
+          response.data is List ? response.data as List : <dynamic>[];
+      final tenants = values
+          .whereType<Map>()
+          .map((item) {
+            final data = Map<String, dynamic>.from(item);
+            return <String, dynamic>{
+              'id': data['tenantId']?.toString() ?? '',
+              'name': data['tenantName']?.toString() ?? 'Organisation',
+              'slug': data['tenantSlug']?.toString() ?? '',
+              'role': data['role']?.toString() ?? 'MEMBRE',
+              'status': data['status']?.toString() ?? 'ACTIVE',
+            };
+          })
+          .where((tenant) => (tenant['id'] as String).isNotEmpty)
+          .toList();
+      await ref.read(tenantSessionProvider).loadTenants(tenants);
+      if (mounted) {
+        setState(() {
+          _tenants = tenants;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = 'Impossible de charger vos organisations';
+          _loading = false;
+        });
+      }
     }
   }
 
   Future<void> _switchTenant(String tenantId) async {
+    if (_switching) return;
     setState(() => _switching = true);
     try {
-      await apiService.post('/tenant-switcher/switch', {'tenantId': tenantId});
-      
-      // Mettre a jour la session
-      final session = ref.read(tenantSessionProvider);
-      await session.switchTenant(tenantId);
-      
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainScaffold()),
-        );
+      final response = await _api
+          .post('/tenant-switcher/switch', data: {'tenantId': tenantId});
+      if (response.data is Map && response.data['accessToken'] != null) {
+        await _api.saveTokens(response.data as Map<String, dynamic>);
       }
-    } catch (e) {
+      await ref.read(tenantSessionProvider).switchTenant(tenantId);
+      if (!mounted) return;
+      final auth = AuthState();
+      context.go(roleHome(auth.activeRole,
+          isPlatformSuperAdmin: auth.isPlatformSuperAdmin));
+    } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
         setState(() => _switching = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Impossible de changer d’organisation')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     if (_error != null) {
       return Scaffold(
         body: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  );
-                },
-                child: const Text('Reconnecter'),
-              ),
+                  onPressed: _loadTenants, child: const Text('Réessayer')),
             ],
           ),
         ),
       );
     }
-
-    if (_loading) {
+    if (_tenants.isEmpty) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+          body: Center(child: Text('Aucune organisation accessible')));
     }
-
-    // Si un seul tenant, redirection automatique
     if (_tenants.length == 1) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _switchTenant(_tenants[0]['id']);
-      });
-      return const Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Connexion a l\'organisation...'),
-            ],
-          ),
-        ),
-      );
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _switchTenant(_tenants[0]['id'] as String));
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Choisir votre organisation'),
-        centerTitle: true,
-      ),
+          title: const Text('Choisir votre organisation'), centerTitle: true),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _tenants.length,
         itemBuilder: (context, index) {
           final tenant = _tenants[index];
+          final name = tenant['name'] as String;
           return Card(
             elevation: 2,
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: Theme.of(context).primaryColor,
-                child: Text(
-                  (tenant['name']?.toString().isNotEmpty ?? false)
-                      ? tenant['name'].toString()[0].toUpperCase()
-                      : '?',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
+                child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
               ),
-              title: Text(
-                tenant['name'] ?? 'Organisation',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              subtitle: Text(
-                tenant['role'] ?? 'Membre',
-                style: const TextStyle(color: Colors.grey),
-              ),
-              onTap: () => _switchTenant(tenant['id']),
+              title: Text(name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16)),
+              subtitle: Text(tenant['role'] as String),
+              onTap: _switching
+                  ? null
+                  : () => _switchTenant(tenant['id'] as String),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             ),
           );

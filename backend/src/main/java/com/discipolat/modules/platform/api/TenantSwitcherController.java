@@ -1,7 +1,9 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.security.domain.RefreshTokenSessionService;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -27,6 +29,8 @@ public class TenantSwitcherController {
     private final TenantSubscriptionRepository subscriptionRepository;
     private final SaasPlanRepository planRepository;
     private final TenantService tenantService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenSessionService refreshTokenSessionService;
 
     public TenantSwitcherController(TenantRepository tenantRepository,
                                     TenantMembershipRepository membershipRepository,
@@ -36,8 +40,10 @@ public class TenantSwitcherController {
                                     OrganizationNodeRepository orgNodeRepository,
                                     OrganizationNodeService orgNodeService,
                                     TenantSubscriptionRepository subscriptionRepository,
-                                    SaasPlanRepository planRepository,
-                                    TenantService tenantService) {
+                                      SaasPlanRepository planRepository,
+                                      TenantService tenantService,
+                                      JwtTokenProvider jwtTokenProvider,
+                                      RefreshTokenSessionService refreshTokenSessionService) {
         this.tenantRepository = tenantRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
@@ -48,6 +54,8 @@ public class TenantSwitcherController {
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
         this.tenantService = tenantService;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.refreshTokenSessionService = refreshTokenSessionService;
     }
 
     // ==================== CONTEXTE COURANT ====================
@@ -197,14 +205,30 @@ public class TenantSwitcherController {
         Tenant tenant = tenantRepository.findById(newTenantId).orElseThrow();
         List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE);
         TenantMembership membership = memberships.get(0);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
+        String activeRole = user.getActiveRole() != null ? user.getActiveRole().name() : user.getRole().name();
+        Set<String> roles = user.getRoles() != null
+                ? user.getRoles().stream().map(Enum::name).collect(Collectors.toSet())
+                : Set.of(activeRole);
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                user.getId(), user.getEmail(), activeRole, roles,
+                user.isEstChefDeFamille(), newTenantId);
+        UUID familyId = UUID.randomUUID();
+        String refreshToken = jwtTokenProvider.generateRefreshToken(
+                user.getId(), user.getEmail(), activeRole, roles, newTenantId, familyId);
+        refreshTokenSessionService.register(
+                refreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(refreshToken));
 
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "tenantId", newTenantId.toString(),
-                "tenantName", tenant.getName(),
-                "role", membership.getRole() != null ? membership.getRole().getKey() : "UNKNOWN",
-                "message", "Contexte tenant changé avec succès"
-        ));
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("success", true);
+        response.put("tenantId", newTenantId.toString());
+        response.put("tenantName", tenant.getName());
+        response.put("role", membership.getRole() != null ? membership.getRole().getKey() : "UNKNOWN");
+        response.put("accessToken", accessToken);
+        response.put("refreshToken", refreshToken);
+        response.put("message", "Contexte tenant changé avec succès");
+        return ResponseEntity.ok(response);
     }
 
     // ==================== SWITCH ORGANIZATION NODE ====================

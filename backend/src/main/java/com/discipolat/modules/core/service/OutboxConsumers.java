@@ -233,7 +233,7 @@ public class OutboxConsumers {
                                 EntityChangedEvent.ChangeType.UPDATED,
                                 Map.of(),
                                 Map.of("changeType", payload.get("changeType")),
-                                null, "PermissionsChanged"));
+                                null, "PermissionsChanged", event.getTenantId()));
                     }
                 }
             default -> log.debug("REALTIME consumer (no handler): {}", event.getEventType());

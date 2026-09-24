@@ -56,7 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final message = e.response?.data?['detail'] as String?
           ?? e.response?.data?['error'] as String?
           ?? e.response?.data?['message'] as String?
-          ?? 'Échec de la création du compte. Vérifiez vos informations.';
+           ?? 'Échec de la demande. Vérifiez vos informations.';
       if (mounted) setState(() => _error = message);
     } catch (_) {
       if (mounted) setState(() => _error = 'Une erreur est survenue');
@@ -104,7 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Créer votre compte membre',
+                       'Demander la création d\'une église',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -112,7 +112,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Inscrivez-vous en tant que membre — un administrateur ou un pasteur pourra ensuite vous attribuer d\'autres rôles.',
+                       'Soumettez une demande. Un Super Admin approuvera l\'organisation avant la création du compte.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
                     ),
@@ -122,13 +122,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
                       const SizedBox(height: 12),
                       Text(
-                        'Compte créé ! Vérifiez votre email pour activer votre compte.',
+                         'Demande reçue. Elle sera examinée par un Super Admin.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Votre compte démarre avec le rôle Membre',
+                         'Aucun compte ne sera créé avant approbation.',
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
                       ),
                       const SizedBox(height: 24),

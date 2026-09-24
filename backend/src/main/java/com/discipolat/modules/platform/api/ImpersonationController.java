@@ -1,5 +1,6 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.platform.domain.ImpersonationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,9 +34,10 @@ public class ImpersonationController {
     public ResponseEntity<Map<String, Object>> startImpersonation(@RequestBody Map<String, Object> requestBody,
                                                                   HttpServletRequest httpRequest) {
         var currentUserId = com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId();
+        var tenantId = parseTenantId(requestBody.get("tenantId"));
         var session = impersonationService.start(
                 currentUserId,
-                requestBody.get("tenantId") != null ? java.util.UUID.fromString((String) requestBody.get("tenantId")) : null,
+                tenantId,
                 (String) requestBody.get("targetUserEmail"),
                 (String) requestBody.get("reason"),
                 httpRequest.getRemoteAddr(),
@@ -50,6 +52,17 @@ public class ImpersonationController {
         response.put("startTime", session.startTime().toString());
         response.put("expiresAt", session.expiresAt().toString());
         return ResponseEntity.ok(response);
+    }
+
+    private java.util.UUID parseTenantId(Object value) {
+        if (!(value instanceof String tenantId) || tenantId.isBlank()) {
+            throw new BusinessRuleException("Le tenant cible est requis", "IMPERSONATION_TENANT_REQUIRED");
+        }
+        try {
+            return java.util.UUID.fromString(tenantId);
+        } catch (IllegalArgumentException exception) {
+            throw new BusinessRuleException("Le tenant cible est invalide", "IMPERSONATION_TENANT_INVALID");
+        }
     }
 
     @PostMapping("/stop")

@@ -18,6 +18,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByTenantIdAndEmail(UUID tenantId, String email);
+
+    @Query(value = "SELECT * FROM users WHERE email = :email", nativeQuery = true)
+    Optional<User> findGlobalByEmail(@Param("email") String email);
+
     // Legacy single-role queries (still work for basic lookups)
     List<User> findByRole(UserRole role);
 

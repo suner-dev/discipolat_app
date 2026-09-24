@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/cache-stats")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.isPlatformSuperAdmin()")
 public class AdminCacheController {
 
     private final CacheManager cacheManager;

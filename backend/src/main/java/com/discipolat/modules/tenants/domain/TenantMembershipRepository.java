@@ -49,8 +49,23 @@ public interface TenantMembershipRepository extends JpaRepository<TenantMembersh
 
     Optional<TenantMembership> findByInvitedBy(UUID invitedBy);
 
+    @Query("SELECT CASE WHEN COUNT(tm) > 0 THEN true ELSE false END FROM TenantMembership tm " +
+            "WHERE tm.userId = :userId AND tm.tenantId = :tenantId AND tm.role.id = :roleId " +
+            "AND tm.status = :status AND tm.scopeType = :scopeType " +
+            "AND ((:scopeId IS NULL AND tm.scopeId IS NULL) OR tm.scopeId = :scopeId)")
+    boolean existsExactActiveMembership(
+            @Param("userId") UUID userId,
+            @Param("tenantId") UUID tenantId,
+            @Param("roleId") UUID roleId,
+            @Param("status") MembershipStatus status,
+            @Param("scopeType") MembershipScopeType scopeType,
+            @Param("scopeId") UUID scopeId);
+
     @Query("SELECT CASE WHEN COUNT(tm) > 0 THEN true ELSE false END FROM TenantMembership tm WHERE tm.userId = :userId AND tm.role.id = :roleId AND tm.status = :status")
     boolean existsByUserIdAndRoleIdAndStatus(@Param("userId") UUID userId, @Param("roleId") UUID roleId, @Param("status") MembershipStatus status);
+
+    @Query(value = "SELECT r.key FROM tenant_memberships tm JOIN roles r ON r.id = tm.role_id WHERE tm.user_id = :userId AND tm.status = :status AND r.tenant_id IS NULL AND r.key LIKE 'PLATFORM_%'", nativeQuery = true)
+    List<String> findPlatformRoleKeysByUserId(@Param("userId") UUID userId, @Param("status") String status);
 
     @Query("SELECT COUNT(tm) FROM TenantMembership tm WHERE tm.role.id = :roleId")
     long countByRoleId(@Param("roleId") UUID roleId);

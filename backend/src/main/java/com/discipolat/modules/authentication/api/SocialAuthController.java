@@ -2,6 +2,7 @@ package com.discipolat.modules.authentication.api;
 
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.modules.authentication.domain.AuthService;
+import com.discipolat.modules.security.domain.RefreshTokenSessionService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserService;
 import org.slf4j.Logger;
@@ -32,16 +33,19 @@ public class SocialAuthController {
     private final AuthService authService;
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenSessionService refreshTokenSessionService;
 
     @Value("${app.auth.google-client-id:}")
     private String googleClientId;
 
     public SocialAuthController(AuthService authService,
                                  UserService userService,
-                                 JwtTokenProvider jwtTokenProvider) {
+                                 JwtTokenProvider jwtTokenProvider,
+                                 RefreshTokenSessionService refreshTokenSessionService) {
         this.authService = authService;
         this.userService = userService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.refreshTokenSessionService = refreshTokenSessionService;
     }
 
     /**
@@ -90,19 +94,20 @@ public class SocialAuthController {
                         .role(com.discipolat.common.domain.UserRole.MEMBRE)
                         .build();
                 user = userService.create(user, UUID.randomUUID().toString());
-                log.info("New user created via Google OAuth: {}", email);
-            }
+                 log.info("New user created via Google OAuth: {}", email);
+             }
 
-            // Générer les tokens JWT (access + refresh) — même mécanique que le login classique
-            // afin que les utilisateurs social auth puissent rafraîchir leur session.
             String accessToken = jwtTokenProvider.generateAccessToken(
                     user.getId(), user.getEmail(), user.getRole().name(),
                     java.util.Set.of(user.getRole().name()),
                     user.isEstChefDeFamille(), user.getTenantId());
+            UUID familyId = UUID.randomUUID();
             String refreshToken = jwtTokenProvider.generateRefreshToken(
                     user.getId(), user.getEmail(), user.getRole().name(),
                     java.util.Set.of(user.getRole().name()),
-                    user.getTenantId());
+                    user.getTenantId(), familyId);
+            refreshTokenSessionService.register(
+                    refreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(refreshToken));
             return ResponseEntity.ok(Map.of(
                     "token", accessToken,
                     "refreshToken", refreshToken,
@@ -162,10 +167,13 @@ public class SocialAuthController {
                     user.getId(), user.getEmail(), user.getRole().name(),
                     java.util.Set.of(user.getRole().name()),
                     user.isEstChefDeFamille(), user.getTenantId());
+            UUID familyId = UUID.randomUUID();
             String refreshToken = jwtTokenProvider.generateRefreshToken(
                     user.getId(), user.getEmail(), user.getRole().name(),
                     java.util.Set.of(user.getRole().name()),
-                    user.getTenantId());
+                    user.getTenantId(), familyId);
+            refreshTokenSessionService.register(
+                    refreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(refreshToken));
             return ResponseEntity.ok(Map.of(
                     "token", accessToken,
                     "refreshToken", refreshToken,

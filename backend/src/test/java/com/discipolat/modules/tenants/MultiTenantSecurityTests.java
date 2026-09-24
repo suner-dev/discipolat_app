@@ -617,7 +617,6 @@ class MultiTenantSecurityTests {
 
             // Cible = AUTRE super admin plateforme (email quelconque) : la garde doit le refuser
             User otherSuperAdmin = createUser("g19.other.super@a.com", "Other Super Admin", tenantA, superAdminRole);
-            otherSuperAdmin.setTenantId(null);
             userRepository.save(otherSuperAdmin);
             membershipRepository.save(TenantMembership.builder()
                     .tenantId(null)
@@ -628,7 +627,7 @@ class MultiTenantSecurityTests {
                     .status(MembershipStatus.ACTIVE)
                     .build());
 
-            assertThatThrownBy(() -> impersonationService.start(superAdmin.getId(), null,
+            assertThatThrownBy(() -> impersonationService.start(superAdmin.getId(), tenantA.getId(),
                     otherSuperAdmin.getEmail(), "Diagnostic", "127.0.0.1", "JUnit"))
                     .isInstanceOf(BusinessRuleException.class)
                     .hasMessageContaining("super admin");
@@ -673,6 +672,33 @@ class MultiTenantSecurityTests {
         }
 
         @Test
+        @DisplayName("G1.9 : un email dupliqué est résolu dans le tenant demandé")
+        void impersonation_duplicateEmail_isScopedToRequestedTenant() {
+            UUID superAdminRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN").orElseThrow().getId();
+            User superAdmin = createUser("g19.duplicate.admin@a.com", "Super Admin Duplicate", tenantA, superAdminRole);
+            superAdmin.setTenantId(null);
+            userRepository.save(superAdmin);
+            membershipRepository.save(TenantMembership.builder()
+                    .tenantId(null)
+                    .userId(superAdmin.getId())
+                    .role(roleRepository.findById(superAdminRole).orElseThrow())
+                    .roleLegacy("PLATFORM_SUPER_ADMIN")
+                    .scopeType(MembershipScopeType.TENANT)
+                    .status(MembershipStatus.ACTIVE)
+                    .build());
+
+            UUID memberRole = roleRepository.findByTenantIdIsNullAndKey("MEMBER").orElseThrow().getId();
+            createUser("g19.duplicate.target@a.com", "Target A", tenantA, memberRole);
+            User targetB = createUser("g19.duplicate.target@a.com", "Target B", tenantB, memberRole);
+
+            var session = impersonationService.start(superAdmin.getId(), tenantB.getId(),
+                    targetB.getEmail(), "Diagnostic", "127.0.0.1", "JUnit");
+
+            assertThat(session.targetUserId()).isEqualTo(targetB.getId());
+            assertThat(session.tenantId()).isEqualTo(tenantB.getId());
+        }
+
+        @Test
         @DisplayName("G1.9 : la cible doit appartenir au tenant demandé (anti-IDOR)")
         void impersonation_targetTenantMismatch_refused() {
             UUID superAdminRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN").orElseThrow().getId();
@@ -695,7 +721,7 @@ class MultiTenantSecurityTests {
             assertThatThrownBy(() -> impersonationService.start(superAdmin.getId(), tenantA.getId(),
                     targetB.getEmail(), "Diagnostic", "127.0.0.1", "JUnit"))
                     .isInstanceOf(BusinessRuleException.class)
-                    .hasMessageContaining("tenant");
+                    .hasMessageContaining("introuvable");
         }
     }
 

@@ -69,17 +69,13 @@ class BetaAdminControllerTest {
     }
 
     @Test
-    @DisplayName("GET /admin/beta/status par PASTEUR → 200 (admin ouvert au pasteur)")
-    void status_parPasteur_200() throws Exception {
-        when(betaResetService.status()).thenReturn(Map.of(
-                "environment", "beta", "resetEnabled", true));
-
+    @DisplayName("GET /admin/beta/status par PASTEUR → 403")
+    void status_parPasteur_403() throws Exception {
         mockMvc.perform(get("/api/v1/admin/beta/status")
                         .header("Authorization", bearer("PASTEUR")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.environment").value("beta"));
+                .andExpect(status().isForbidden());
 
-        verify(betaResetService).status();
+        verify(betaResetService, never()).status();
     }
 
     // ======================== Reset ========================
@@ -98,17 +94,13 @@ class BetaAdminControllerTest {
     }
 
     @Test
-    @DisplayName("POST /admin/beta/reset par PASTEUR → 200 (admin ouvert au pasteur)")
-    void reset_parPasteur_200() throws Exception {
-        when(betaResetService.reset()).thenReturn(Map.of(
-                "status", "OK", "environment", "beta", "truncatedTables", 12));
-
+    @DisplayName("POST /admin/beta/reset par PASTEUR → 403")
+    void reset_parPasteur_403() throws Exception {
         mockMvc.perform(post("/api/v1/admin/beta/reset")
                         .header("Authorization", bearer("PASTEUR")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("OK"));
+                .andExpect(status().isForbidden());
 
-        verify(betaResetService).reset();
+        verify(betaResetService, never()).reset();
     }
 
     @Test

@@ -1,10 +1,12 @@
 package com.discipolat.modules.webhooks.domain;
 
 import com.discipolat.common.infrastructure.propagation.EntityChangedEvent;
+import com.discipolat.common.multitenancy.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -27,8 +29,16 @@ public class WebhookEntityEventListener {
     }
 
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onEntityChanged(EntityChangedEvent event) {
+        if (event.getTenantId() == null) {
+            log.warn("Événement {} sans tenant ignoré pour les webhooks", event.getEntityType());
+            return;
+        }
+        TenantContext.runAsTenant(event.getTenantId(), () -> dispatch(event));
+    }
+
+    private void dispatch(EntityChangedEvent event) {
         try {
             String eventType = event.getEntityType() + "." + event.getChangeType().name();
             Map<String, Object> payload = new HashMap<>();
@@ -48,7 +58,6 @@ public class WebhookEntityEventListener {
                 log.debug("Webhook {} notifié à {} abonné(s)", eventType, notified);
             }
         } catch (Exception e) {
-            // Ne jamais faire échouer la transaction métier à cause des webhooks
             log.warn("Déclenchement webhook échoué : {}", e.getMessage());
         }
     }

@@ -5,11 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * Public self-registration request.
- *
- * Anyone can create an account: the account always starts with the
- * MEMBRE role. An admin or pasteur can later assign additional roles
- * (and demote) via the users API.
+ * Demande publique de création d'une organisation.
+ * Le compte, le tenant et le rôle ne sont créés qu'après approbation Super Admin.
  */
 public record RegisterRequest(
         @NotBlank(message = "Email is required")

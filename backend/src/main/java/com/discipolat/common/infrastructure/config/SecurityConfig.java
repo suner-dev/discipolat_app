@@ -24,6 +24,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.discipolat.common.infrastructure.security.JwtAuthenticationFilter;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
+import com.discipolat.modules.security.domain.TokenRevocationService;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -36,6 +37,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenRevocationService tokenRevocationService;
 
     @Value("${app.environment:dev}")
     private String environment;
@@ -43,8 +45,9 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
     private String[] allowedOrigins;
 
-    public SecurityConfig(JwtTokenProvider jwtTokenProvider) {
+    public SecurityConfig(JwtTokenProvider jwtTokenProvider, TokenRevocationService tokenRevocationService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.tokenRevocationService = tokenRevocationService;
     }
 
     @Bean
@@ -95,7 +98,7 @@ public class SecurityConfig {
 
                 auth.anyRequest().authenticated();
             })
-            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, tokenRevocationService), UsernamePasswordAuthenticationFilter.class)
             // Security headers
             .headers(headers -> headers
                 .contentSecurityPolicy(csp -> csp

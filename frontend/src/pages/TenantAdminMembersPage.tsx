@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
-import { isPlatformAdmin } from "@/workspaces";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import api from "@/lib/api";
@@ -23,7 +22,7 @@ interface Member {
 }
 
 export default function TenantAdminMembersPage() {
-  const { hasPermission } = useTenant();
+  const { hasPermission, currentTenant } = useTenant();
   const { user } = useAuth();
   const { startImpersonation } = useImpersonation();
   const [members, setMembers] = useState<Member[]>([]);
@@ -151,7 +150,7 @@ export default function TenantAdminMembersPage() {
                       Modifier
                     </button>
                     {/* §G1.9 — Impersonation (super admin plateforme uniquement, motif requis + journalisé) */}
-                    {isPlatformAdmin(user?.activeRole ?? user?.role) && (
+                    {user?.platformSuperAdmin === true && (
                       <button
                         className="flex items-center gap-1 text-violet-600 hover:text-violet-800 text-sm font-medium"
                         title="Impersoner cet utilisateur (diagnostic)"
@@ -159,11 +158,15 @@ export default function TenantAdminMembersPage() {
                           const reason = window.prompt(
                             `Impersonation de ${member.email} — motif (obligatoire, journalisé) :`
                           );
-                          if (!reason || !reason.trim()) {
-                            toast.error("Un motif est requis pour impersoner");
-                            return;
-                          }
-                          await startImpersonation(member.email, reason.trim());
+                           if (!reason || !reason.trim()) {
+                             toast.error("Un motif est requis pour impersoner");
+                             return;
+                           }
+                           if (!currentTenant) {
+                             toast.error("Le tenant cible est requis pour impersoner");
+                             return;
+                           }
+                           await startImpersonation(member.email, reason.trim(), currentTenant.id);
                         }}
                       >
                         <Eye className="w-4 h-4" />

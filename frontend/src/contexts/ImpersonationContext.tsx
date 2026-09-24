@@ -27,7 +27,7 @@ interface ImpersonationContextType {
   tenantName: string | null;
   expiresAt: string | null;
   /** Démarre une impersonation (le motif est journalisé côté serveur). */
-  startImpersonation: (targetUserEmail: string, reason: string, tenantId?: string | null) => Promise<void>;
+  startImpersonation: (targetUserEmail: string, reason: string, tenantId: string) => Promise<void>;
   /** Termine la session et restaure la session admin réelle. */
   stopImpersonation: () => Promise<void>;
 }
@@ -48,10 +48,13 @@ function readState(): ImpersonationState | null {
 export function ImpersonationProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<ImpersonationState | null>(readState);
 
-  const startImpersonation = useCallback(async (targetUserEmail: string, reason: string, tenantId?: string | null) => {
+  const startImpersonation = useCallback(async (targetUserEmail: string, reason: string, tenantId: string) => {
     try {
-      const res = await api.post('/platform/admin/impersonation', {
-        tenantId: tenantId ?? undefined,
+      if (!tenantId.trim()) {
+        throw new Error('Le tenant cible est requis');
+      }
+      const res = await api.post('/platform/admin/impersonate', {
+        tenantId,
         targetUserEmail,
         reason,
       });
@@ -91,7 +94,7 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
     try {
       if (current?.token) {
         // Journalise la durée réelle côté serveur (IP, UA, durée).
-        await api.post('/platform/admin/impersonation/stop', { impersonationToken: current.token });
+        await api.post('/platform/admin/impersonate/stop', { impersonationToken: current.token });
       }
     } catch {
       // La trace serveur peut échouer (token expiré) : on restaure quand même l'admin.

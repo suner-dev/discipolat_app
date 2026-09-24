@@ -3,6 +3,7 @@ package com.discipolat.modules.platform.api;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.platform.domain.PlatformProvisioningService;
 import com.discipolat.modules.departments.api.CreateDepartmentRequest;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentService;
@@ -44,17 +45,54 @@ public class PlatformProvisioningController {
     private final DepartmentService departmentService;
     private final FamilyService familyService;
     private final AuditService auditService;
+    private final PlatformProvisioningService provisioningService;
 
     public PlatformProvisioningController(TenantRepository tenantRepository,
                                           OrganizationNodeService organizationNodeService,
-                                          DepartmentService departmentService,
-                                          FamilyService familyService,
-                                          AuditService auditService) {
+                                           DepartmentService departmentService,
+                                           FamilyService familyService,
+                                           AuditService auditService,
+                                           PlatformProvisioningService provisioningService) {
         this.tenantRepository = tenantRepository;
         this.organizationNodeService = organizationNodeService;
         this.departmentService = departmentService;
         this.familyService = familyService;
         this.auditService = auditService;
+        this.provisioningService = provisioningService;
+    }
+
+    @PostMapping
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
+    public ResponseEntity<Map<String, Object>> provisionOrganization(@RequestBody AtomicProvisioningRequest request) {
+        PlatformProvisioningService.ProvisioningResult result = provisioningService.provision(
+                new PlatformProvisioningService.Command(
+                        request.name(), request.slug(), request.plan(), request.country(), request.currency(),
+                        request.timezone(), request.locale(), request.churchName(), request.departmentName(),
+                        request.departmentDescription(), request.responsableId(), request.createNewResponsable(),
+                        request.newResponsableFirstName(), request.newResponsableLastName(),
+                        request.newResponsableEmail(), request.newResponsablePhone(), request.familyName(),
+                        request.chefFamilleId(), request.chefAdjointId(), request.createNewChef(),
+                        request.newChefFirstName(), request.newChefLastName(), request.newChefEmail(),
+                        request.newChefPhone(), request.newChefSexe(), request.newChefDateNaissance(),
+                        request.newChefAdresse()
+                ));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tenant", result.tenant());
+        body.put("church", toNodeMap(result.church()));
+        body.put("department", Map.of(
+                "id", result.department().getId().toString(),
+                "tenantId", result.department().getTenantId().toString(),
+                "nom", result.department().getNom(),
+                "responsableId", result.department().getResponsableId().toString()
+        ));
+        body.put("departmentNode", toNodeMap(result.departmentNode()));
+        body.put("family", Map.of(
+                "id", result.family().getId().toString(),
+                "tenantId", result.family().getTenantId().toString(),
+                "nom", result.family().getNom(),
+                "chefFamilleId", result.family().getChefFamilleId().toString()
+        ));
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
     // ==================== ÉTAPE 2 : ÉGLISE (ROOT_CHURCH) ====================
@@ -206,11 +244,54 @@ public class PlatformProvisioningController {
         }
     }
 
+    private Map<String, Object> toNodeMap(OrganizationNode node) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", node.getId().toString());
+        map.put("tenantId", node.getTenantId().toString());
+        map.put("name", node.getName());
+        map.put("type", node.getType().name());
+        map.put("code", node.getCode());
+        map.put("path", node.getPath());
+        map.put("level", node.getLevel());
+        map.put("status", node.getStatus().name());
+        return map;
+    }
+
     private ResponseEntity<Map<String, Object>> badRequest(String message, String field) {
         return ResponseEntity.badRequest().body(Map.of("error", message, "field", field));
     }
 
     // ==================== DTOs ====================
+
+    public record AtomicProvisioningRequest(
+            String name,
+            String slug,
+            String plan,
+            String country,
+            String currency,
+            String timezone,
+            String locale,
+            String churchName,
+            String departmentName,
+            String departmentDescription,
+            UUID responsableId,
+            Boolean createNewResponsable,
+            String newResponsableFirstName,
+            String newResponsableLastName,
+            String newResponsableEmail,
+            String newResponsablePhone,
+            String familyName,
+            UUID chefFamilleId,
+            UUID chefAdjointId,
+            Boolean createNewChef,
+            String newChefFirstName,
+            String newChefLastName,
+            String newChefEmail,
+            String newChefPhone,
+            String newChefSexe,
+            String newChefDateNaissance,
+            String newChefAdresse
+    ) {}
 
     /** Étape 2 — création de l'église racine du tenant. */
     public record ChurchProvisionRequest(

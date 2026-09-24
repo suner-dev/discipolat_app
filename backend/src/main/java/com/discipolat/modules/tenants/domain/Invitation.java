@@ -10,7 +10,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "invitations", indexes = {
         @Index(name = "idx_invitation_tenant", columnList = "tenant_id"),
-        @Index(name = "idx_invitation_token", columnList = "token", unique = true),
+        @Index(name = "idx_invitation_token_hash", columnList = "token_hash", unique = true),
         @Index(name = "idx_invitation_email", columnList = "email"),
         @Index(name = "idx_invitation_status", columnList = "status")
 })
@@ -33,8 +33,8 @@ public class Invitation {
     @Column(name = "email", nullable = false, length = 255)
     private String email;
 
-    @Column(name = "token", nullable = false, unique = true, length = 64)
-    private String token;
+    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+    private String tokenHash;
 
     @Column(name = "role", nullable = false, length = 50)
     private String role;

@@ -46,6 +46,8 @@ public class TenantFilter {
     private static final List<String> PUBLIC_PATH_PREFIXES = List.of(
             "/api/v1/auth",
             "/api/v1/public",
+            "/api/v1/admin/invitations/validate/",
+            "/api/v1/admin/invitations/accept/",
             "/actuator/health",
             "/actuator/health/"
     );
@@ -68,10 +70,10 @@ public class TenantFilter {
     public boolean enableFilter(HttpServletRequest request) {
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            String uri = request.getRequestURI();
-            if (isPublicPath(uri)) {
+            if (shouldBypassFilter(request)) {
                 return false;
             }
+            String uri = request.getRequestURI();
             log.warn("Missing tenantId for non-public request: {}", uri);
             throw new SecurityException("Authentication required: missing tenant context for " + uri);
         }
@@ -115,6 +117,10 @@ public class TenantFilter {
             TransactionSynchronizationManager.unbindResource(entityManagerFactory);
         }
         EntityManagerFactoryUtils.closeEntityManager(em);
+    }
+
+    public boolean shouldBypassFilter(HttpServletRequest request) {
+        return isPublicPath(request.getRequestURI());
     }
 
     private boolean isPublicPath(String uri) {

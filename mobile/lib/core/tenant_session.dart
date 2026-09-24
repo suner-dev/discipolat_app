@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../tenant_config.dart';
+
 /// Modèle pour la configuration d'abonnement
 class Subscription {
   final String id;
@@ -39,11 +41,17 @@ class Subscription {
       planKey: json['planKey'] ?? '',
       status: json['status'] ?? 'TRIAL',
       billingCycle: json['billingCycle'] ?? 'monthly',
-      currentPeriodStart: DateTime.tryParse(json['currentPeriodStart'] ?? '') ?? DateTime.now(),
-      currentPeriodEnd: DateTime.tryParse(json['currentPeriodEnd'] ?? '') ?? DateTime.now(),
+      currentPeriodStart:
+          DateTime.tryParse(json['currentPeriodStart'] ?? '') ?? DateTime.now(),
+      currentPeriodEnd:
+          DateTime.tryParse(json['currentPeriodEnd'] ?? '') ?? DateTime.now(),
       cancelAtPeriodEnd: json['cancelAtPeriodEnd'] ?? false,
-      canceledAt: json['canceledAt'] != null ? DateTime.tryParse(json['canceledAt']) : null,
-      trialEndsAt: json['trialEndsAt'] != null ? DateTime.tryParse(json['trialEndsAt']) : null,
+      canceledAt: json['canceledAt'] != null
+          ? DateTime.tryParse(json['canceledAt'])
+          : null,
+      trialEndsAt: json['trialEndsAt'] != null
+          ? DateTime.tryParse(json['trialEndsAt'])
+          : null,
       quotas: Quotas.fromJson(json['quotas'] ?? {}),
       plan: json['plan'] != null ? Plan.fromJson(json['plan']) : null,
     );
@@ -146,27 +154,47 @@ class Quotas {
 
   bool isExceeded(String quotaKey) {
     switch (quotaKey) {
-      case 'maxUsers': return currentUsers >= maxUsers;
-      case 'maxChurches': return currentChurches >= maxChurches;
-      case 'maxDepartments': return currentDepartments >= maxDepartments;
-      case 'maxStorageMb': return currentStorageMb >= maxStorageMb;
-      case 'maxAiRequestsMonth': return currentAiRequestsMonth >= maxAiRequestsMonth;
-      case 'maxCourses': return currentCourses >= maxCourses;
-      case 'maxMessagesMonth': return currentMessagesMonth >= maxMessagesMonth;
-      default: return false;
+      case 'maxUsers':
+        return currentUsers >= maxUsers;
+      case 'maxChurches':
+        return currentChurches >= maxChurches;
+      case 'maxDepartments':
+        return currentDepartments >= maxDepartments;
+      case 'maxStorageMb':
+        return currentStorageMb >= maxStorageMb;
+      case 'maxAiRequestsMonth':
+        return currentAiRequestsMonth >= maxAiRequestsMonth;
+      case 'maxCourses':
+        return currentCourses >= maxCourses;
+      case 'maxMessagesMonth':
+        return currentMessagesMonth >= maxMessagesMonth;
+      default:
+        return false;
     }
   }
 
   double usagePercent(String quotaKey) {
     switch (quotaKey) {
-      case 'maxUsers': return maxUsers > 0 ? currentUsers / maxUsers : 0;
-      case 'maxChurches': return maxChurches > 0 ? currentChurches / maxChurches : 0;
-      case 'maxDepartments': return maxDepartments > 0 ? currentDepartments / maxDepartments : 0;
-      case 'maxStorageMb': return maxStorageMb > 0 ? currentStorageMb / maxStorageMb : 0;
-      case 'maxAiRequestsMonth': return maxAiRequestsMonth > 0 ? currentAiRequestsMonth / maxAiRequestsMonth : 0;
-      case 'maxCourses': return maxCourses > 0 ? currentCourses / maxCourses : 0;
-      case 'maxMessagesMonth': return maxMessagesMonth > 0 ? currentMessagesMonth / maxMessagesMonth : 0;
-      default: return 0;
+      case 'maxUsers':
+        return maxUsers > 0 ? currentUsers / maxUsers : 0;
+      case 'maxChurches':
+        return maxChurches > 0 ? currentChurches / maxChurches : 0;
+      case 'maxDepartments':
+        return maxDepartments > 0 ? currentDepartments / maxDepartments : 0;
+      case 'maxStorageMb':
+        return maxStorageMb > 0 ? currentStorageMb / maxStorageMb : 0;
+      case 'maxAiRequestsMonth':
+        return maxAiRequestsMonth > 0
+            ? currentAiRequestsMonth / maxAiRequestsMonth
+            : 0;
+      case 'maxCourses':
+        return maxCourses > 0 ? currentCourses / maxCourses : 0;
+      case 'maxMessagesMonth':
+        return maxMessagesMonth > 0
+            ? currentMessagesMonth / maxMessagesMonth
+            : 0;
+      default:
+        return 0;
     }
   }
 }
@@ -221,7 +249,9 @@ class OrganizationNode {
       timezone: json['timezone'],
       country: json['country'],
       city: json['city'],
-      metadata: json['metadata'] != null ? Map<String, dynamic>.from(json['metadata']) : null,
+      metadata: json['metadata'] != null
+          ? Map<String, dynamic>.from(json['metadata'])
+          : null,
       responsibleId: json['responsibleId'],
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
     );
@@ -285,6 +315,7 @@ class TenantSession extends ChangeNotifier {
     _scopeType = prefs.getString('scope_type');
     _scopeId = prefs.getString('scope_id');
     _isLoaded = true;
+    if (_activeTenantId != null) TenantConfig.setOrgId(_activeTenantId!);
     notifyListeners();
   }
 
@@ -292,7 +323,8 @@ class TenantSession extends ChangeNotifier {
   Future<void> loadContext(Map<String, dynamic> context) async {
     if (context['requiresSelection'] == true) {
       _multipleTenants = true;
-      _tenants = List<Map<String, dynamic>>.from(context['availableTenants'] ?? []);
+      _tenants =
+          List<Map<String, dynamic>>.from(context['availableTenants'] ?? []);
       _activeTenantId = null;
       _activeOrgNodeId = null;
       _subscription = null;
@@ -317,8 +349,12 @@ class TenantSession extends ChangeNotifier {
 
       // Features & branding
       _features = Map<String, bool>.from(context['features'] ?? {});
-      _branding = context['branding'] != null ? Map<String, dynamic>.from(context['branding']) : null;
-      _settings = context['settings'] != null ? Map<String, dynamic>.from(context['settings']) : null;
+      _branding = context['branding'] != null
+          ? Map<String, dynamic>.from(context['branding'])
+          : null;
+      _settings = context['settings'] != null
+          ? Map<String, dynamic>.from(context['settings'])
+          : null;
 
       // Accessible nodes
       if (context['accessibleNodes'] != null) {
@@ -350,7 +386,8 @@ class TenantSession extends ChangeNotifier {
   }
 
   /// Définir le tenant actif
-  Future<void> setActiveTenant(String tenantId, String tenantName, String role) async {
+  Future<void> setActiveTenant(
+      String tenantId, String tenantName, String role) async {
     _activeTenantId = tenantId;
     _tenantName = tenantName;
     _userRole = role;
@@ -359,6 +396,7 @@ class TenantSession extends ChangeNotifier {
     _scopeType = 'TENANT';
     _scopeId = null;
     _activeOrgNode = null;
+    TenantConfig.setOrgId(tenantId);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('active_tenant_id', tenantId);
@@ -466,6 +504,7 @@ class TenantSession extends ChangeNotifier {
     _settings = null;
     _activeOrgNode = null;
     _accessibleNodes = [];
+    TenantConfig.clearOrgId();
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('active_tenant_id');
@@ -521,5 +560,6 @@ final tenantSessionProvider = ChangeNotifierProvider<TenantSession>((ref) {
 /// Extension pour utiliser le tenant session dans les widgets
 extension TenantSessionX on BuildContext {
   TenantSession get tenantSession =>
-      ProviderScope.containerOf(this, listen: false).read(tenantSessionProvider);
+      ProviderScope.containerOf(this, listen: false)
+          .read(tenantSessionProvider);
 }

@@ -16,6 +16,9 @@ public interface RoleRepository extends TenantAwareRepository<Role, UUID> {
 
     Optional<Role> findByTenantIdIsNullAndKey(String key);
 
+    @Query(value = "SELECT * FROM roles WHERE tenant_id IS NULL AND key = :key", nativeQuery = true)
+    Optional<Role> findGlobalByKey(@Param("key") String key);
+
     List<Role> findByTenantId(UUID tenantId);
 
     List<Role> findByTenantIdIsNull(); // System roles

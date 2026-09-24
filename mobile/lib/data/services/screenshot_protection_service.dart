@@ -14,11 +14,12 @@ import 'package:flutter/services.dart';
 /// await ScreenshotProtectionService.disable();
 /// ```
 class ScreenshotProtectionService {
-  static const _channel = MethodChannel('com.discipolat/screenshot_protection');
+  static const _channel = MethodChannel('discipolat/secure_screen');
   static bool _isEnabled = false;
 
   /// Singleton accessor for compatibility with callers using `.instance`.
-  static final ScreenshotProtectionService instance = ScreenshotProtectionService._();
+  static final ScreenshotProtectionService instance =
+      ScreenshotProtectionService._();
   ScreenshotProtectionService._();
 
   /// Initialise le service (compatibilité avec les appelants existants).
@@ -30,11 +31,10 @@ class ScreenshotProtectionService {
   static Future<void> enable() async {
     if (_isEnabled) return;
     try {
-      await _channel.invokeMethod('enableScreenshotProtection');
+      await _channel.invokeMethod('setSecureFlag', {'enabled': true});
       _isEnabled = true;
     } catch (_) {
-      // Platform non supportée (iOS gère nativement)
-      _isEnabled = true;
+      _isEnabled = false;
     }
   }
 
@@ -42,7 +42,7 @@ class ScreenshotProtectionService {
   static Future<void> disable() async {
     if (!_isEnabled) return;
     try {
-      await _channel.invokeMethod('disableScreenshotProtection');
+      await _channel.invokeMethod('setSecureFlag', {'enabled': false});
       _isEnabled = false;
     } catch (_) {
       _isEnabled = false;

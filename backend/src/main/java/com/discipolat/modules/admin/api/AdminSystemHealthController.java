@@ -20,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/system-health")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.isPlatformSuperAdmin()")
 public class AdminSystemHealthController {
 
     private final JdbcTemplate jdbc;

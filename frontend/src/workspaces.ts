@@ -165,7 +165,7 @@ export const TENANT_ADMIN_ROLES = ['TENANT_SUPER_ADMIN', 'TENANT_ADMIN', 'TENANT
 
 /** L'utilisateur courant a-t-il les droits Super Admin de la plateforme ? */
 export function isPlatformAdmin(role: string | null | undefined): boolean {
-  return role === 'ADMIN' || PLATFORM_ROLES.includes(role || '');
+  return PLATFORM_ROLES.includes(role || '');
 }
 
 /** L'utilisateur courant administre-t-il un tenant (église) ? */

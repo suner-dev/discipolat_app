@@ -11,6 +11,8 @@ export interface User {
   phone?: string;
   role: UserRole;
   roles: UserRole[];
+  platformRoles?: string[];
+  platformSuperAdmin?: boolean;
   activeRole: UserRole;
   tenantId?: string;
   estChefDeFamille: boolean;
@@ -33,6 +35,8 @@ export interface AuthResponse {
   email: string;
   role: string;
   roles: string[];
+  platformRoles?: string[];
+  platformSuperAdmin?: boolean;
   activeRole: string;
   estChefDeFamille: boolean;
   firstName?: string;

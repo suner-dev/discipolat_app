@@ -3,6 +3,7 @@ package com.discipolat.modules.platform.domain;
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.security.domain.TokenRevocationService;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -49,6 +50,7 @@ public class ImpersonationService {
     private final AuthorizationService authorizationService;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuditService auditService;
+    private final TokenRevocationService tokenRevocationService;
 
     public ImpersonationService(UserRepository userRepository,
                                 RoleRepository roleRepository,
@@ -56,7 +58,8 @@ public class ImpersonationService {
                                 TenantRepository tenantRepository,
                                 AuthorizationService authorizationService,
                                 JwtTokenProvider jwtTokenProvider,
-                                AuditService auditService) {
+                                AuditService auditService,
+                                TokenRevocationService tokenRevocationService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.membershipRepository = membershipRepository;
@@ -64,17 +67,21 @@ public class ImpersonationService {
         this.authorizationService = authorizationService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.auditService = auditService;
+        this.tokenRevocationService = tokenRevocationService;
     }
 
     /**
      * Démarre une session d'impersonation de {@code targetUserEmail} et renvoie
      * un JWT d'impersonation (identité cible, TTL court) + les métadonnées de session.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public ImpersonationSession start(UUID realAdminId, UUID tenantId, String targetUserEmail,
                                       String reason, String ipAddress, String userAgent) {
         if (targetUserEmail == null || targetUserEmail.isBlank()) {
             throw new BusinessRuleException("L'email de l'utilisateur cible est requis", "IMPERSONATION_TARGET_REQUIRED");
+        }
+        if (tenantId == null) {
+            throw new BusinessRuleException("Le tenant cible est requis", "IMPERSONATION_TENANT_REQUIRED");
         }
         if (reason == null || reason.isBlank()) {
             throw new BusinessRuleException("Un motif est requis pour démarrer une impersonation", "IMPERSONATION_REASON_REQUIRED");
@@ -85,7 +92,7 @@ public class ImpersonationService {
             throw new BusinessRuleException("Seul un super admin plateforme peut impersoner",
                     "IMPERSONATION_NOT_SUPER_ADMIN");
         }
-        User target = userRepository.findByEmail(targetUserEmail.trim().toLowerCase())
+        User target = userRepository.findByTenantIdAndEmail(tenantId, targetUserEmail.trim().toLowerCase())
                 .orElseThrow(() -> new BusinessRuleException("Utilisateur cible introuvable",
                         "IMPERSONATION_TARGET_NOT_FOUND"));
         // Garde-fou 2 (anti-escalade) : vérification PAR RÔLE en base — l'utilisateur
@@ -157,6 +164,11 @@ public class ImpersonationService {
         } catch (Exception e) {
             throw new BusinessRuleException("Token d'impersonation invalide", "IMPERSONATION_TOKEN_INVALID");
         }
+        if (!"impersonation".equals(jwtTokenProvider.getClaims(impersonationToken).get("type", String.class))) {
+            throw new BusinessRuleException("Token d'impersonation invalide", "IMPERSONATION_TOKEN_INVALID");
+        }
+        tokenRevocationService.revoke(impersonationToken, "impersonation",
+                jwtTokenProvider.getTokenExpiration(impersonationToken), "stopped");
         long durationMinutes = java.time.Duration.between(issuedAt, Instant.now()).toMinutes();
         Map<String, Object> details = new HashMap<>();
         details.put("targetUserId", targetUserId.toString());

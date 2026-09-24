@@ -129,9 +129,7 @@ public class AuthorizationExpressionRoot extends SecurityExpressionRoot
      * Check if current user is platform super admin.
      */
     public boolean isPlatformSuperAdmin() {
-        UUID userId = getCurrentUserId();
-        if (userId == null) return false;
-        return authzService.isPlatformSuperAdmin(userId);
+        return authzService.isPlatformSuperAdmin();
     }
 
     /**

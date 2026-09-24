@@ -4,6 +4,7 @@ import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.config.PerIpRateLimiter;
 import com.discipolat.common.infrastructure.config.RateLimitResult;
 import com.discipolat.modules.authentication.domain.AuthService;
+import com.discipolat.modules.tenants.domain.AuthorizationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -24,13 +25,16 @@ public class AuthController {
 
     private final AuthService authService;
     private final PerIpRateLimiter rateLimiter;
+    private final AuthorizationService authorizationService;
 
     public AuthController(
             AuthService authService,
-            PerIpRateLimiter rateLimiter
+            PerIpRateLimiter rateLimiter,
+            AuthorizationService authorizationService
     ) {
         this.authService = authService;
         this.rateLimiter = rateLimiter;
+        this.authorizationService = authorizationService;
     }
 
     @PostMapping("/login")
@@ -49,9 +53,8 @@ public class AuthController {
     }
 
     /**
-     * Public self-registration: creates an account with the MEMBRE role.
-     * An admin or pasteur can then assign other roles (and demote) via the
-     * users API. Rate-limited per IP to prevent abuse.
+     * Demande publique d’une nouvelle organisation. Aucun tenant, utilisateur
+     * ou rôle n’est créé avant l’approbation d’un Super Admin.
      */
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
@@ -66,17 +69,9 @@ public class AuthController {
         
         authService.register(request.email(), request.password(), request.firstName(), request.lastName(), request.phone(), inviteCode);
 
-        // Retourner le rôle approprié selon si c'est un nouveau pasteur
-        if (inviteCode != null && !inviteCode.isBlank()) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "message", "Account created. Check your email to activate it.",
-                    "role", "MEMBRE"
-            ));
-        }
-        
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "message", "Account created. Check your email to activate it.",
-                "role", "MEMBRE"
+                "message", "Demande d'église reçue. Elle sera examinée par un Super Admin.",
+                "status", "PENDING_APPROVAL"
         ));
     }
 
@@ -223,6 +218,7 @@ public class AuthController {
                 ? result.activeRole()
                 : result.user().getRole().name();
 
+        List<String> platformRoles = List.copyOf(authorizationService.getPlatformRoleKeys(result.user().getId()));
         return new AuthResponse(
                 result.accessToken(),
                 result.refreshToken(),
@@ -235,7 +231,9 @@ public class AuthController {
                 result.user().isEstChefDeFamille(),
                 result.user().getFirstName(),
                 result.user().getLastName(),
-                result.user().isTwoFactorEnabled()
+                result.user().isTwoFactorEnabled(),
+                platformRoles,
+                platformRoles.contains("PLATFORM_SUPER_ADMIN")
         );
     }
 }

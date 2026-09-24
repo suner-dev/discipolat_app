@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
@@ -11,8 +11,7 @@ import {
 /* ============================================================================
  * Super Admin — Flux de provisionnement guidé (pas à pas, 100 % cliquable) :
  *   1. Tenant → 2. Église → 3. Département → 4. Famille → Récapitulatif
- * Chaque étape appelle l'API réelle et valide la suivante seulement une fois
- * l'étape courante créée. Navigation arrière sur les étapes déjà complétées.
+ * Les quatre formulaires sont regroupés et envoyés dans une transaction serveur unique.
  * ========================================================================== */
 
 const STEPS = [
@@ -79,10 +78,7 @@ export default function PlatformOnboardingFlowPage() {
   };
 
   /** Étapes atteignables : 0 toujours, n>0 si l'étape n-1 est créée, 4 si tout créé. */
-  const reachable = useMemo(
-    () => [true, !!tenant, !!church, !!department, !!tenant && !!church && !!department && !!family],
-    [tenant, church, department, family],
-  );
+  const reachable = [true, true, true, true, true];
 
   const completedCount = [tenant, church, department, family].filter(Boolean).length;
 
@@ -127,57 +123,52 @@ export default function PlatformOnboardingFlowPage() {
     if (error) { toast.error(error); return; }
     setSubmitting(true);
     try {
-      if (step === 0) {
-        const { data } = await api.post('/platform/admin/tenants', {
-          ...tenantForm, slug: effectiveSlug,
-        });
-        setTenant(data as TenantResult);
-        if (!churchForm.name) setChurchForm({ name: `${tenantForm.name.trim()} — Église principale` });
-        toast.success('Organisation créée !');
-      } else if (step === 1) {
-        const { data } = await api.post('/platform/admin/provisioning/church', {
-          tenantId: tenant!.id, name: churchForm.name.trim(),
-        });
-        setChurch(data as ChurchResult);
-        toast.success('Église créée !');
-      } else if (step === 2) {
-        const { data } = await api.post('/platform/admin/provisioning/department', {
-          tenantId: tenant!.id,
-          nom: deptForm.nom.trim(),
-          description: deptForm.description.trim() || null,
-          ...(deptForm.mode === 'existing'
-            ? { responsableId: deptForm.responsableId.trim() }
-            : {
-                createNewResponsable: true,
-                newRespFirstName: deptForm.newRespFirstName.trim(),
-                newRespLastName: deptForm.newRespLastName.trim(),
-                newRespEmail: deptForm.newRespEmail.trim(),
-                newRespPhone: deptForm.newRespPhone.trim() || null,
-              }),
-        });
-        setDepartment(data as DepartmentResult);
-        toast.success('Département créé !');
-      } else if (step === 3) {
-        const { data } = await api.post('/platform/admin/provisioning/family', {
-          tenantId: tenant!.id,
-          nom: famForm.nom.trim(),
-          ...(famForm.mode === 'existing'
-            ? { chefFamilleId: famForm.chefFamilleId.trim() }
-            : {
-                createNewChef: true,
-                newChefFirstName: famForm.newChefFirstName.trim(),
-                newChefLastName: famForm.newChefLastName.trim(),
-                newChefEmail: famForm.newChefEmail.trim(),
-                newChefPhone: famForm.newChefPhone.trim() || null,
-                newChefSexe: famForm.newChefSexe || null,
-                newChefDateNaissance: famForm.newChefDateNaissance || null,
-                newChefAdresse: famForm.newChefAdresse.trim() || null,
-              }),
-        });
-        setFamily(data as FamilyResult);
-        toast.success('Famille créée — flux complet !');
+      if (step < 3) {
+        if (step === 0 && !churchForm.name) {
+          setChurchForm({ name: `${tenantForm.name.trim()} — Église principale` });
+        }
+        if (step === 2 && !famForm.nom) {
+          setFamForm((form) => ({ ...form, nom: `${tenantForm.name.trim()} — Famille modèle` }));
+        }
+        setStep((current) => Math.min(current + 1, 4));
+        return;
       }
-      setStep((s) => Math.min(s + 1, 4));
+
+      const { data } = await api.post('/platform/admin/provisioning', {
+        ...tenantForm,
+        slug: effectiveSlug,
+        churchName: churchForm.name.trim(),
+        departmentName: deptForm.nom.trim(),
+        departmentDescription: deptForm.description.trim() || null,
+        ...(deptForm.mode === 'existing'
+          ? { responsableId: deptForm.responsableId.trim() }
+          : {
+              createNewResponsable: true,
+              newResponsableFirstName: deptForm.newRespFirstName.trim(),
+              newResponsableLastName: deptForm.newRespLastName.trim(),
+              newResponsableEmail: deptForm.newRespEmail.trim(),
+              newResponsablePhone: deptForm.newRespPhone.trim() || null,
+            }),
+        familyName: famForm.nom.trim(),
+        ...(famForm.mode === 'existing'
+          ? { chefFamilleId: famForm.chefFamilleId.trim() }
+          : {
+              createNewChef: true,
+              newChefFirstName: famForm.newChefFirstName.trim(),
+              newChefLastName: famForm.newChefLastName.trim(),
+              newChefEmail: famForm.newChefEmail.trim(),
+              newChefPhone: famForm.newChefPhone.trim() || null,
+              newChefSexe: famForm.newChefSexe || null,
+              newChefDateNaissance: famForm.newChefDateNaissance || null,
+              newChefAdresse: famForm.newChefAdresse.trim() || null,
+            }),
+      });
+      setTenant(data.tenant as TenantResult);
+      setChurch(data.church as ChurchResult);
+      setDepartment(data.department as DepartmentResult);
+      setFamily(data.family as FamilyResult);
+      toast.success('Organisation provisionnée !');
+      setStep(4);
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally {
@@ -334,7 +325,7 @@ export default function PlatformOnboardingFlowPage() {
           <div className="flex justify-end mt-6">
             <button onClick={submitStep} disabled={submitting} className="btn-primary inline-flex items-center gap-2">
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-              Créer l'organisation
+              Continuer
             </button>
           </div>
         </div>
@@ -363,7 +354,7 @@ export default function PlatformOnboardingFlowPage() {
             </button>
             <button onClick={submitStep} disabled={submitting} className="btn-primary inline-flex items-center gap-2">
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-              Créer l'église
+              Continuer
             </button>
           </div>
         </div>
@@ -440,7 +431,7 @@ export default function PlatformOnboardingFlowPage() {
             </button>
             <button onClick={submitStep} disabled={submitting} className="btn-primary inline-flex items-center gap-2">
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-              Créer le département
+              Continuer
             </button>
           </div>
         </div>
@@ -524,7 +515,7 @@ export default function PlatformOnboardingFlowPage() {
             </button>
             <button onClick={submitStep} disabled={submitting} className="btn-primary inline-flex items-center gap-2">
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Créer la famille
+              Provisionner l'organisation
             </button>
           </div>
         </div>

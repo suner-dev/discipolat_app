@@ -1,6 +1,7 @@
 package com.discipolat.common.infrastructure.propagation;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -130,7 +131,7 @@ public class EntityPropagationPublisher {
 
         EntityChangedEvent event = new EntityChangedEvent(
                 this, entityType, entityId, changeType,
-                oldValues, newValues, actorId, description);
+                oldValues, newValues, actorId, description, TenantContext.getTenantId());
 
         log.debug("Publishing entity change: {} {} {} by actor {}",
                 changeType, entityType, entityId, actorId);

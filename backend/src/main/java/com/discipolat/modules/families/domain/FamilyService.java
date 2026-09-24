@@ -6,6 +6,7 @@ import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.families.api.CreateFamilyRequest;
@@ -93,7 +94,7 @@ public class FamilyService {
      */
     public Family create(CreateFamilyRequest request) {
         // US-06: Check for unique family name
-        if (familyRepository.findByNom(request.nom()).isPresent()) {
+        if (familyRepository.findByNomAndTenantId(request.nom(), TenantContext.requireTenantId()).isPresent()) {
             throw new BusinessRuleException("Une famille avec ce nom existe déjà: " + request.nom(),
                     "DUPLICATE_FAMILY_NAME");
         }
@@ -108,6 +109,12 @@ public class FamilyService {
             chefFamilleId = request.chefFamilleId();
             User chef = userRepository.findById(chefFamilleId)
                     .orElseThrow(() -> new EntityNotFoundException("User", chefFamilleId));
+            UUID currentTenantId = TenantContext.getTenantId();
+            if (currentTenantId != null && (chef.getTenantId() == null
+                    || !currentTenantId.equals(chef.getTenantId()))) {
+                throw new BusinessRuleException("Le chef de famille doit appartenir au tenant cible",
+                        "CHEF_TENANT_MISMATCH");
+            }
             chef.setEstChefDeFamille(true);
             userRepository.save(chef);
         } else {

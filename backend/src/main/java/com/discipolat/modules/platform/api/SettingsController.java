@@ -35,14 +35,14 @@ public class SettingsController {
     }
 
     @PutMapping("/api/v1/settings")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<ChurchSettingsResponse> update(@Valid @RequestBody UpdateChurchSettingsRequest request) {
         ChurchSettings settings = settingsService.update(request);
         return ResponseEntity.ok(ChurchSettingsResponse.from(settings));
     }
 
     @PostMapping("/api/v1/settings/reset")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.isPlatformSuperAdmin()")
     public ResponseEntity<ChurchSettingsResponse> reset() {
         return ResponseEntity.ok(ChurchSettingsResponse.from(settingsService.resetToDefaults()));
     }

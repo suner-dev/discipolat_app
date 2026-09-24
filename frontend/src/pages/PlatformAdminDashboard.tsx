@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 import { Rocket } from "lucide-react";
 
@@ -11,16 +10,27 @@ interface PlatformMetrics {
   totalUsers: number;
   activeUsers: number;
   tenantsByPlan: Record<string, number>;
+  organizations: { churches: number; departments: number };
+  activity: { auditLogsLast7Days: number };
 }
 
 interface Plan {
-  id: string;
   key: string;
   name: string;
+  description: string;
   priceMonthly: number;
   priceYearly: number;
-  usersLimit: number;
-  churchesLimit: number;
+  limits: Record<string, unknown>;
+  features: Record<string, unknown>;
+  isActive: boolean;
+}
+
+interface FeatureFlag {
+  key: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  category: string;
 }
 
 interface Tenant {
@@ -38,13 +48,14 @@ interface Tenant {
 }
 
 export default function PlatformAdminDashboard() {
-  const { hasPermission } = useTenant();
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "tenants" | "plans">("dashboard");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "tenants" | "plans" | "features">("dashboard");
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   // Édition d'un tenant (nom / plan / langue / fuseau)
@@ -55,25 +66,58 @@ export default function PlatformAdminDashboard() {
   const [planForm, setPlanForm] = useState({ key: "", name: "", description: "", priceMonthly: 0, priceYearly: 0, isActive: true });
 
   useEffect(() => {
-    if (!hasPermission("TENANT_VIEW")) {
-      return;
-    }
     fetchData();
-  }, [hasPermission]);
+  }, []);
 
   const fetchData = async () => {
     try {
-      const [metricsRes, plansRes, tenantsRes] = await Promise.all([
-        api.get("/platform/admin/dashboard").catch(() => ({ data: {} })),
-        api.get("/platform/admin/plans").catch(() => ({ data: [] })),
-        api.get("/platform/admin/tenants?size=100").catch(() => ({ data: { content: [] } }))
+      const [metricsRes, plansRes, tenantsRes, flagsRes] = await Promise.all([
+        api.get("/platform/admin/dashboard"),
+        api.get("/platform/admin/plans"),
+        api.get("/platform/admin/tenants?size=100"),
+        api.get("/platform/admin/feature-flags")
       ]);
 
-      setMetrics(metricsRes.data as unknown as PlatformMetrics);
-      setPlans(plansRes.data as unknown as Plan[]);
+      const data = metricsRes.data as {
+        tenants?: { total?: number; active?: number; suspended?: number; byPlan?: Record<string, number> };
+        users?: { total?: number; active?: number };
+        organizations?: { churches?: number; departments?: number };
+        activity?: { auditLogsLast7Days?: number };
+      };
+      setMetrics({
+        totalTenants: data.tenants?.total ?? 0,
+        activeTenants: data.tenants?.active ?? 0,
+        suspendedTenants: data.tenants?.suspended ?? 0,
+        totalUsers: data.users?.total ?? 0,
+        activeUsers: data.users?.active ?? 0,
+        tenantsByPlan: data.tenants?.byPlan ?? {},
+        organizations: {
+          churches: data.organizations?.churches ?? 0,
+          departments: data.organizations?.departments ?? 0,
+        },
+        activity: { auditLogsLast7Days: data.activity?.auditLogsLast7Days ?? 0 },
+      });
+      setPlans((plansRes.data as Array<Partial<Plan>>).map((plan) => ({
+        key: String(plan.key ?? ''),
+        name: String(plan.name ?? ''),
+        description: String(plan.description ?? ''),
+        priceMonthly: Number(plan.priceMonthly ?? 0),
+        priceYearly: Number(plan.priceYearly ?? 0),
+        limits: plan.limits ?? {},
+        features: plan.features ?? {},
+        isActive: plan.isActive !== false,
+      })));
       setTenants((tenantsRes.data.content || []) as unknown as Tenant[]);
-    } catch (error) {
-      console.error("Error fetching admin data:", error);
+      setFeatureFlags(((flagsRes.data as { details?: FeatureFlag[] }).details || []).map((flag) => ({
+        key: flag.key,
+        name: flag.name,
+        description: flag.description,
+        enabled: flag.enabled,
+        category: flag.category,
+      })));
+      setLoadError(null);
+    } catch (error: any) {
+      setLoadError(error?.response?.data?.error || "Impossible de charger les données de la plateforme");
     } finally {
       setLoading(false);
     }
@@ -81,6 +125,15 @@ export default function PlatformAdminDashboard() {
 
   if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-8 text-center space-y-4">
+        <p className="text-sm text-red-600">{loadError}</p>
+        <button onClick={fetchData} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Réessayer</button>
+      </div>
+    );
   }
 
   // ===== Actions super admin (toutes câblées sur l'API réelle) =====
@@ -110,11 +163,14 @@ export default function PlatformAdminDashboard() {
     if (plan) {
       setPlanModal(plan);
       setPlanForm({
-        key: plan.key, name: plan.name, description: "",
-        priceMonthly: plan.priceMonthly, priceYearly: plan.priceYearly, isActive: true,
+        key: plan.key, name: plan.name, description: plan.description,
+        priceMonthly: plan.priceMonthly, priceYearly: plan.priceYearly, isActive: plan.isActive,
       });
     } else {
-      setPlanModal({ id: "", key: "", name: "", priceMonthly: 0, priceYearly: 0, usersLimit: 0, churchesLimit: 0 });
+      setPlanModal({
+        key: "", name: "", description: "", priceMonthly: 0, priceYearly: 0,
+        limits: {}, features: {}, isActive: true,
+      });
       setPlanForm({ key: "", name: "", description: "", priceMonthly: 0, priceYearly: 0, isActive: true });
     }
     setActionError(null);
@@ -194,7 +250,31 @@ export default function PlatformAdminDashboard() {
           onClick={() => setActiveTab("plans")}
           className={`px-4 py-2 ${activeTab === "plans" ? "border-b-2 border-indigo-500" : ""}`}
         >
-          Plans
+        Plans
+        </button>
+        <button
+          onClick={() => setActiveTab("features")}
+          className={`px-4 py-2 ${activeTab === "features" ? "border-b-2 border-indigo-500" : ""}`}
+        >
+          Fonctionnalités
+        </button>
+        <button
+          onClick={() => navigate("/platform/registration-requests")}
+          className="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+        >
+          Demandes d'églises
+        </button>
+        <button
+          onClick={() => navigate("/platform/impersonation")}
+          className="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+        >
+          Impersonation
+        </button>
+        <button
+          onClick={() => navigate("/platform/audit")}
+          className="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+        >
+          Audit plateforme
         </button>
       </div>
 
@@ -315,6 +395,12 @@ export default function PlatformAdminDashboard() {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Plans SaaS</h2>
             <button
+              onClick={() => navigate("/platform/saas/plans")}
+              className="px-4 py-2 border border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-50"
+            >
+              Gérer la page plans
+            </button>
+            <button
               onClick={() => openPlanModal()}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
@@ -323,7 +409,7 @@ export default function PlatformAdminDashboard() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {plans.map((plan) => (
-              <div key={plan.id} className="border rounded-lg p-6">
+              <div key={plan.key} className="border rounded-lg p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-xl font-bold">{plan.name}</h3>
@@ -343,11 +429,11 @@ export default function PlatformAdminDashboard() {
                 <ul className="space-y-2 mb-4">
                   <li className="flex justify-between">
                     <span>Utilisateurs max</span>
-                    <span className="font-medium">{plan.usersLimit === 0 ? "Illimité" : plan.usersLimit}</span>
+                    <span className="font-medium">{Number(plan.limits.usersLimit ?? 0) === 0 ? "Illimité" : Number(plan.limits.usersLimit ?? 0)}</span>
                   </li>
                   <li className="flex justify-between">
                     <span>Eglises max</span>
-                    <span className="font-medium">{plan.churchesLimit === 0 ? "Illimité" : plan.churchesLimit}</span>
+                    <span className="font-medium">{Number(plan.limits.churchesLimit ?? 0) === 0 ? "Illimité" : Number(plan.limits.churchesLimit ?? 0)}</span>
                   </li>
                 </ul>
                 <div className="flex gap-2">
@@ -366,6 +452,43 @@ export default function PlatformAdminDashboard() {
                     Désactiver
                   </button>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "features" && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">Fonctionnalités plateforme</h2>
+            <p className="text-sm text-gray-500">Ces interrupteurs activent ou désactivent des capacités globales.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {featureFlags.map((flag) => (
+              <div key={flag.key} className="border rounded-lg p-4 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm">{flag.name}</p>
+                  <p className="text-xs text-gray-500 mt-1">{flag.description || flag.key}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-gray-400 mt-2">{flag.category}</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={flag.enabled}
+                  disabled={saving}
+                  onClick={() => {
+                    setSaving(true);
+                    setActionError(null);
+                    api.put(`/platform/admin/feature-flags/${encodeURIComponent(flag.key)}`, { enabled: !flag.enabled })
+                      .then(fetchData)
+                      .catch((error: any) => setActionError(error?.response?.data?.error || 'Mise à jour impossible'))
+                      .finally(() => setSaving(false));
+                  }}
+                  className={`relative h-6 w-11 rounded-full transition ${flag.enabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                >
+                  <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${flag.enabled ? 'right-1' : 'left-1'}`} />
+                </button>
               </div>
             ))}
           </div>

@@ -107,6 +107,11 @@ public class JwtTokenProvider {
     }
 
     public String generateRefreshToken(UUID userId, String email, String activeRole, java.util.Set<String> roles, UUID tenantId) {
+        return generateRefreshToken(userId, email, activeRole, roles, tenantId, null);
+    }
+
+    public String generateRefreshToken(UUID userId, String email, String activeRole, java.util.Set<String> roles,
+                                       UUID tenantId, UUID familyId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("role", activeRole);
@@ -115,6 +120,9 @@ public class JwtTokenProvider {
         claims.put("type", "refresh");
         if (tenantId != null) {
             claims.put("tenantId", tenantId.toString());
+        }
+        if (familyId != null) {
+            claims.put("familyId", familyId.toString());
         }
 
         return Jwts.builder()
@@ -186,6 +194,14 @@ public class JwtTokenProvider {
         return activeRole != null ? activeRole : getClaims(token).get("role", String.class);
     }
 
+    public boolean isAccessToken(String token) {
+        return "access".equals(getClaims(token).get("type", String.class));
+    }
+
+    public boolean isRefreshToken(String token) {
+        return "refresh".equals(getClaims(token).get("type", String.class));
+    }
+
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
@@ -210,6 +226,11 @@ public class JwtTokenProvider {
         return UUID.fromString(getClaims(token).getSubject());
     }
 
+    public UUID extractRefreshFamilyId(String token) {
+        String familyId = getClaims(token).get("familyId", String.class);
+        return familyId != null ? UUID.fromString(familyId) : null;
+    }
+
     public UUID extractTenantId(String token) {
         String tenantId = getClaims(token).get("tenantId", String.class);
         return tenantId != null ? UUID.fromString(tenantId) : null;
@@ -217,6 +238,10 @@ public class JwtTokenProvider {
 
     public String extractRole(String token) {
         return getClaims(token).get("role", String.class);
+    }
+
+    public java.time.Instant getTokenExpiration(String token) {
+        return getClaims(token).getExpiration().toInstant();
     }
 
     public boolean isTokenExpired(String token) {

@@ -222,6 +222,8 @@ export interface SwitchTenantResponse {
   tenantId: string;
   tenantName: string;
   role: string;
+  accessToken?: string;
+  refreshToken?: string;
   message: string;
 }
 

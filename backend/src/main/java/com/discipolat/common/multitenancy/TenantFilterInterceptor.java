@@ -33,7 +33,7 @@ public class TenantFilterInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (TenantContext.getTenantId() != null) {
             TenantFilter tenantFilter = tenantFilterProvider.getIfAvailable();
-            if (tenantFilter != null) {
+            if (tenantFilter != null && !tenantFilter.shouldBypassFilter(request)) {
                 tenantFilter.enableFilter(request);
             }
         }

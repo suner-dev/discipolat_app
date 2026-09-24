@@ -2,6 +2,7 @@ package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.tenants.api.CreateTenantRequest;
@@ -79,14 +80,23 @@ public class TenantService {
                 .locale(request.locale())
                 .build();
         tenant = tenantRepository.save(tenant);
-        
-        // Seed default modules for the new tenant
-        seedDefaultModules(tenant.getId());
-        
-        // ===== PROPAGATION CENTRALISÉE =====
-        propagationPublisher.publishCreated("TENANT", tenant.getId(),
-                Map.of("name", tenant.getName(), "slug", tenant.getSlug()),
-                "Tenant créé: " + tenant.getName());
+        if (tenant.getId() == null) {
+            return TenantResponse.from(tenant);
+        }
+        UUID previousTenantId = TenantContext.getTenantId();
+        try {
+            TenantContext.setTenantId(tenant.getId());
+            seedDefaultModules(tenant.getId());
+            propagationPublisher.publishCreated("TENANT", tenant.getId(),
+                    Map.of("name", tenant.getName(), "slug", tenant.getSlug()),
+                    "Tenant créé: " + tenant.getName());
+        } finally {
+            if (previousTenantId != null) {
+                TenantContext.setTenantId(previousTenantId);
+            } else {
+                TenantContext.clear();
+            }
+        }
         return TenantResponse.from(tenant);
     }
 

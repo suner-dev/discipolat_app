@@ -153,4 +153,15 @@ class WorkspaceIsolationIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    @DisplayName("Refresh token utilisé comme Bearer → 401")
+    void refreshTokenUtiliseCommeBearer_recoit401() throws Exception {
+        String token = jwtTokenProvider.generateRefreshToken(
+                MULTI_ROLE_USER_ID, EMAIL, "ADMIN", Set.of("ADMIN"), null);
+
+        mockMvc.perform(get("/api/v1/dashboard/responsable")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
 }

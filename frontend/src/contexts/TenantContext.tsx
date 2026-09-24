@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import type { 
   Tenant, 
@@ -17,6 +18,7 @@ import type {
 const TenantContext = createContext<TenantContextValue | null>(null);
 
 export function TenantProvider({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useAuth();
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [currentMembership, setCurrentMembership] = useState<TenantMembership | null>(null);
   const [currentOrganizationNode, setCurrentOrganizationNode] = useState<OrganizationNode | null>(null);
@@ -113,16 +115,28 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      setIsInitialized(true);
+      return;
+    }
     refreshContext();
-  }, [refreshContext]);
+  }, [isAuthenticated, refreshContext]);
 
   const switchTenant = useCallback(async (tenantId: string) => {
     try {
       const response = await api.post<SwitchTenantResponse>('/tenant-switcher/switch', { tenantId });
-      if (response.data.success) {
-        await refreshContext();
-        window.location.reload();
-      }
+       if (response.data.success) {
+         if (response.data.accessToken) {
+           localStorage.setItem('accessToken', response.data.accessToken);
+           api.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`;
+         }
+         if (response.data.refreshToken) {
+           localStorage.setItem('refreshToken', response.data.refreshToken);
+         }
+         await refreshContext();
+         window.location.reload();
+       }
     } catch (error) {
       console.error('Erreur changement tenant:', error);
       throw error;

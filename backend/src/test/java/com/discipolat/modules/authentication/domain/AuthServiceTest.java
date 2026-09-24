@@ -2,10 +2,15 @@ package com.discipolat.modules.authentication.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.UserRole;
+import com.discipolat.common.exception.DomainException;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.TenantService;
+import com.discipolat.modules.platform.domain.TenantRegistrationRequest;
+import com.discipolat.modules.platform.domain.TenantRegistrationService;
+import com.discipolat.modules.security.domain.RefreshTokenSessionService;
+import com.discipolat.modules.security.domain.TokenRevocationService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -44,7 +49,11 @@ class AuthServiceTest {
     @Mock
     private EmailService emailService;
     @Mock
-    private TenantService tenantService;
+    private TenantRegistrationService tenantRegistrationService;
+    @Mock
+    private TokenRevocationService tokenRevocationService;
+    @Mock
+    private RefreshTokenSessionService refreshTokenSessionService;
 
     private PasswordEncoder passwordEncoder;
     private AuthService authService;
@@ -58,8 +67,8 @@ class AuthServiceTest {
         TenantContext.setTenantId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         passwordEncoder = new BCryptPasswordEncoder(4);
         authService = new AuthService(userRepository, jwtTokenProvider, passwordEncoder, securityUtils,
-                activationTokenRepository, passwordResetTokenRepository, emailService,
-                tenantService, "http://localhost:5173");
+                 activationTokenRepository, passwordResetTokenRepository, emailService,
+                 tenantRegistrationService, tokenRevocationService, refreshTokenSessionService, "http://localhost:5173");
 
         userId = UUID.randomUUID();
         testUser = User.builder()
@@ -87,7 +96,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
         when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean(), any()))
                 .thenReturn("access-token");
-        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet(), any()))
+        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet(), any(), any()))
                 .thenReturn("refresh-token");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
@@ -155,11 +164,16 @@ class AuthServiceTest {
     void refreshToken_WithValidToken_ShouldReturnNewTokens() {
         String refreshToken = "valid-refresh-token";
         when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+        when(jwtTokenProvider.isRefreshToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.extractUserId(refreshToken)).thenReturn(userId);
+        UUID familyId = UUID.randomUUID();
+        when(jwtTokenProvider.extractRefreshFamilyId(refreshToken)).thenReturn(familyId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(refreshTokenSessionService.consume(refreshToken, userId, familyId))
+                .thenReturn(RefreshTokenSessionService.ConsumptionResult.ROTATED);
         when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean(), any()))
                 .thenReturn("new-access-token");
-        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet(), any()))
+        when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet(), any(), any()))
                 .thenReturn("new-refresh-token");
 
         AuthService.AuthResult result = authService.refreshToken(refreshToken);
@@ -179,52 +193,38 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_ShouldCreateMemberWithPendingActivationAndSendEmail() {
-        UUID newUserId = UUID.randomUUID();
-        when(userRepository.existsByEmail("new@member.com")).thenReturn(false);
-        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
-            User u = inv.getArgument(0);
-            if (u.getId() == null) u.setId(newUserId);
-            return u;
-        });
-        when(userRepository.findById(newUserId)).thenAnswer(inv ->
-                Optional.of(User.builder()
-                        .id(newUserId)
-                        .email("new@member.com")
-                        .passwordHash(testUser.getPasswordHash())
-                        .firstName("New")
-                        .lastName("Member")
-                        .role(UserRole.MEMBRE)
-                        .estChefDeFamille(false)
-                        .statut(UserStatus.PENDING_ACTIVATION)
-                        .failedLoginAttempts(0)
-                        .twoFactorEnabled(false)
-                        .build()));
-        when(activationTokenRepository.save(any(ActivationToken.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
-        doNothing().when(emailService).sendWelcomeEmail(anyString(), anyString(), anyString());
+    void register_ShouldCreatePendingRegistrationRequest() {
+        TenantRegistrationRequest request = TenantRegistrationRequest.builder()
+                .email("new@member.com")
+                .status(com.discipolat.modules.platform.domain.TenantRegistrationStatus.PENDING_APPROVAL)
+                .build();
+        when(tenantRegistrationService.submit("New@Member.com", "password123", "New", "Member", null))
+                .thenReturn(request);
 
-        User created = authService.register("New@Member.com", "password123", "New", "Member", null, null);
+        TenantRegistrationRequest created = authService.register("New@Member.com", "password123", "New", "Member", null, null);
 
-        assertEquals(UserRole.MEMBRE, created.getRole());
-        assertEquals(UserRole.MEMBRE, created.getActiveRole());
-        assertEquals(UserStatus.PENDING_ACTIVATION, created.getStatut());
-        assertEquals("new@member.com", created.getEmail());
-        assertTrue(created.getRoles().contains(UserRole.MEMBRE));
-        verify(userRepository).save(argThat(u ->
-                passwordEncoder.matches("password123", u.getPasswordHash())
-        ));
-        verify(emailService).sendWelcomeEmail(eq("new@member.com"), anyString(), anyString());
+        assertEquals(request, created);
+        verify(tenantRegistrationService).submit("New@Member.com", "password123", "New", "Member", null);
+        verifyNoInteractions(userRepository);
     }
 
     @Test
-    void register_WithExistingEmail_ShouldThrow() {
-        when(userRepository.existsByEmail("dup@member.com")).thenReturn(true);
+    void register_WithInviteCode_ShouldRequireDedicatedAcceptanceEndpoint() {
+        assertThrows(DomainException.class, () ->
+                authService.register("invitee@example.com", "password123", "Inv", "Itée", null, "invite-token")
+        );
+
+        verifyNoInteractions(tenantRegistrationService);
+    }
+
+    @Test
+    void register_WhenRequestAlreadyExists_ShouldThrow() {
+        when(tenantRegistrationService.submit("dup@member.com", "password123", "Dup", "Member", null))
+                .thenThrow(new BusinessRuleException("Une demande existe déjà"));
 
         assertThrows(BusinessRuleException.class, () ->
                 authService.register("dup@member.com", "password123", "Dup", "Member", null, null)
         );
-        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test

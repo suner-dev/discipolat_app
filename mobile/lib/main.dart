@@ -12,15 +12,20 @@ import 'data/services/providers.dart';
 import 'presentation/widgets/glass_theme.dart';
 import 'app.dart';
 import 'presentation/widgets/offline_banner.dart';
+import 'presentation/widgets/impersonation_banner.dart';
 import 'presentation/widgets/demo_data_overlay.dart';
 import 'data/services/push_notification_service.dart';
 import 'data/services/api_service.dart';
+import 'data/services/impersonation_service.dart';
 import 'data/services/data_saver_service.dart';
 import 'data/services/orientation_service.dart';
+import 'core/tenant_session.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try { await Firebase.initializeApp(); } catch (_) {}
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
 
   runApp(
     const ProviderScope(
@@ -46,13 +51,36 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
     super.initState();
     // Restaure la langue persistée (ou la langue système) dès le démarrage.
     ref.read(localeProvider.notifier).init();
+    ref.read(tenantSessionProvider).init();
     _initAccessibilityServices();
-    // Initialize push notifications
     try {
       final pushService = PushNotificationService(ApiService());
       pushService.initialize();
     } catch (e) {
       debugPrint('[Push] Init failed: $e');
+    }
+    _restoreSession();
+  }
+
+  Future<void> _restoreSession() async {
+    final api = ApiService();
+    final impersonation = ImpersonationService.instance;
+    await impersonation.restoreIfNeeded();
+    final token = await api.getAccessToken();
+    if (token == null || !mounted) return;
+    if (impersonation.isImpersonating) {
+      appRouter.refresh();
+      return;
+    }
+    try {
+      final response = await api.get('/auth/me');
+      if (!mounted) return;
+      AuthState().setAuthenticated(true,
+          userData: Map<String, dynamic>.from(response.data as Map));
+      appRouter.refresh();
+    } catch (_) {
+      await api.clearTokens();
+      AuthState().logout();
     }
   }
 
@@ -81,10 +109,10 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
             r == ConnectivityResult.mobile ||
             r == ConnectivityResult.ethernet);
         if (prev?.value?.any((r) =>
-                r != ConnectivityResult.wifi &&
-                r != ConnectivityResult.mobile &&
-                r != ConnectivityResult.ethernet) ==
-            true &&
+                    r != ConnectivityResult.wifi &&
+                    r != ConnectivityResult.mobile &&
+                    r != ConnectivityResult.ethernet) ==
+                true &&
             isOnline) {
           ref.read(syncServiceProvider).syncPending();
         }
@@ -118,9 +146,10 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
       ],
       locale: ref.watch(localeProvider),
       supportedLocales: kSupportedLocales,
-            builder: (context, child) {
+      builder: (context, child) {
         return Column(
           children: [
+            ImpersonationBanner(service: ImpersonationService.instance),
             const OfflineBanner(),
             Expanded(
               child: DemoDataOverlay(child: child ?? const SizedBox.shrink()),

@@ -1,6 +1,11 @@
 package com.discipolat.modules.tenants.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 import java.time.Instant;
 import java.util.List;
@@ -9,7 +14,15 @@ import java.util.UUID;
 
 public interface InvitationRepository extends JpaRepository<Invitation, UUID> {
 
-    Optional<Invitation> findByToken(String token);
+    Optional<Invitation> findByTokenHash(String tokenHash);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Invitation i WHERE i.id = :id")
+    Optional<Invitation> findByIdForUpdate(@Param("id") UUID id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Invitation i WHERE i.tokenHash = :tokenHash")
+    Optional<Invitation> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
 
     Optional<Invitation> findByEmailAndTenantIdAndStatus(String email, UUID tenantId, InvitationStatus status);
 

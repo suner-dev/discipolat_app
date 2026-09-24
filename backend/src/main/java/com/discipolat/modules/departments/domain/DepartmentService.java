@@ -4,6 +4,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.enums.StatutEntite;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.files.domain.EntityAttachment;
@@ -111,6 +112,14 @@ public class DepartmentService {
         if (request.shouldCreateNewResponsable()) {
             responsableId = createNewResponsable(request);
         } else if (request.responsableId() != null) {
+            UUID currentTenantId = TenantContext.getTenantId();
+            if (currentTenantId != null) {
+                User responsable = userRepository.findById(request.responsableId())
+                        .filter(user -> user.getTenantId() != null
+                                && currentTenantId.equals(user.getTenantId()))
+                        .orElseThrow(() -> new com.discipolat.common.domain.BusinessRuleException(
+                                "Le responsable doit appartenir au tenant cible", "RESPONSABLE_TENANT_MISMATCH"));
+            }
             responsableId = request.responsableId();
         } else {
             throw new com.discipolat.common.domain.BusinessRuleException(

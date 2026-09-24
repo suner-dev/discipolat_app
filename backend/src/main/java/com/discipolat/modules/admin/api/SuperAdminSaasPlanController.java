@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/saas/plans")
-@PreAuthorize("hasAnyRole('ADMIN')")
+@PreAuthorize("@authz.isPlatformSuperAdmin()")
 public class SuperAdminSaasPlanController {
 
     private final SaasPlanRepository planRepository;

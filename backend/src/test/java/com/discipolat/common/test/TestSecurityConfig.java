@@ -3,6 +3,8 @@ package com.discipolat.common.test;
 import com.discipolat.common.infrastructure.config.SecurityConfig;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
+import com.discipolat.modules.security.domain.TokenRevocationService;
+import com.discipolat.modules.tenants.domain.AuthzSecurityBean;
 import com.discipolat.modules.tenants.domain.AuthorizationService;
 import com.discipolat.modules.tenants.domain.MembershipScopeType;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -31,6 +33,14 @@ import static org.mockito.Mockito.when;
 @TestConfiguration
 @Import(SecurityConfig.class)
 public class TestSecurityConfig {
+
+    @Bean
+    @Primary
+    public TokenRevocationService tokenRevocationService() {
+        TokenRevocationService service = mock(TokenRevocationService.class);
+        when(service.isRevoked(org.mockito.ArgumentMatchers.anyString())).thenReturn(false);
+        return service;
+    }
 
     @Bean
     public JwtTokenProvider jwtTokenProvider() throws Exception {
@@ -65,8 +75,30 @@ public class TestSecurityConfig {
         when(mock.getCurrentUserPermissions()).thenReturn(Set.of());
         when(mock.getUserPermissions(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(Set.of());
         when(mock.getUserPermissionsInScope(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(Set.of());
+        when(mock.isPlatformSuperAdmin()).thenAnswer(invocation -> {
+            var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            boolean platform = authentication != null && authentication.getAuthorities().stream()
+                    .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+                    .anyMatch(authority -> authority.endsWith("PLATFORM_SUPER_ADMIN"));
+            return platform || authentication != null && authentication.getAuthorities().stream()
+                    .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+                    .anyMatch(authority -> authority.endsWith("ADMIN"));
+        });
         when(mock.isPlatformSuperAdmin(org.mockito.ArgumentMatchers.any())).thenReturn(true);
         return mock;
+    }
+
+    @Bean("authz")
+    @Primary
+    public AuthzSecurityBean authzSecurityBean() {
+        AuthzSecurityBean bean = mock(AuthzSecurityBean.class);
+        when(bean.isPlatformSuperAdmin()).thenAnswer(invocation -> {
+            var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            return authentication != null && authentication.getAuthorities().stream()
+                    .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+                    .anyMatch(authority -> authority.endsWith("ADMIN") || authority.endsWith("PLATFORM_SUPER_ADMIN"));
+        });
+        return bean;
     }
 
     @Bean

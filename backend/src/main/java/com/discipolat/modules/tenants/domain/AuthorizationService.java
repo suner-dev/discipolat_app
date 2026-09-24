@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 public class AuthorizationService {
 
     private final TenantMembershipRepository membershipRepository;
-    private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
     private final OrganizationNodeRepository orgNodeRepository;
     private final UserRepository userRepository;
@@ -174,17 +173,16 @@ public class AuthorizationService {
 
     // ==================== PRIVATE HELPERS ====================
 
-    public boolean isPlatformSuperAdmin(UUID userId) {
-        return isPlatformSuperAdminInternal(userId);
+    public boolean isPlatformSuperAdmin() {
+        return isPlatformSuperAdmin(SecurityUtils.getCurrentUserId());
     }
 
-    private boolean isPlatformSuperAdminInternal(UUID userId) {
-        // Check if user has PLATFORM_SUPER_ADMIN role in any tenant (global role)
-        Optional<Role> superAdminRole = roleRepository.findByTenantIdIsNullAndKey("PLATFORM_SUPER_ADMIN");
-        if (superAdminRole.isEmpty()) {
-            return false;
-        }
-        return membershipRepository.existsByUserIdAndRoleIdAndStatus(userId, superAdminRole.get().getId(), MembershipStatus.ACTIVE);
+    public Set<String> getPlatformRoleKeys(UUID userId) {
+        return new LinkedHashSet<>(membershipRepository.findPlatformRoleKeysByUserId(userId, MembershipStatus.ACTIVE.name()));
+    }
+
+    public boolean isPlatformSuperAdmin(UUID userId) {
+        return getPlatformRoleKeys(userId).contains("PLATFORM_SUPER_ADMIN");
     }
 
     private boolean membershipMatchesScope(TenantMembership membership, MembershipScopeType requiredScopeType, UUID requiredScopeId) {

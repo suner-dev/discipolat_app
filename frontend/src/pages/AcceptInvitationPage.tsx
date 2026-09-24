@@ -6,8 +6,9 @@ interface InvitationData {
   email: string;
   role: string;
   tenantName: string;
+  organizationName?: string | null;
   scopeType?: string;
-  scopeId?: string;
+  accountExists: boolean;
   expiresAt: string;
 }
 
@@ -37,50 +38,59 @@ export default function AcceptInvitationPage() {
   }, [token]);
 
   const loadInvitation = async () => {
+    if (!token) return;
     try {
-      const res = await api.post(`/admin/invitations/accept/${token}`, {});
+      const res = await api.get(`/admin/invitations/validate/${encodeURIComponent(token)}`);
       const data = res.data;
       if (data.email) {
         setInvitation({
           email: data.email,
           role: data.role,
           tenantName: data.tenantName || "Discipolat",
+          organizationName: data.organizationName,
           scopeType: data.scopeType,
-          scopeId: data.scopeId,
+          accountExists: data.accountExists === true,
           expiresAt: data.expiresAt,
         });
       } else {
         setError(data.message || "Invitation invalide");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Invitation invalide ou expirée");
+      setError(err.response?.data?.detail || err.response?.data?.error || "Invitation invalide ou expirée");
     } finally {
       setLoading(false);
     }
   };
 
   const handleAccept = async () => {
-    if (formData.password !== formData.confirmPassword) {
-      setError("Les mots de passe ne correspondent pas");
-      return;
-    }
-    if (formData.password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caractères");
-      return;
+    if (!token || !invitation) return;
+    if (!invitation.accountExists) {
+      if (formData.password !== formData.confirmPassword) {
+        setError("Les mots de passe ne correspondent pas");
+        return;
+      }
+      if (formData.password.length < 8) {
+        setError("Le mot de passe doit contenir au moins 8 caractères");
+        return;
+      }
     }
 
     setAccepting(true);
     setError(null);
     try {
-      await api.post(`/admin/invitations/accept/${token}`, {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        password: formData.password,
-      });
+      await api.post(`/admin/invitations/accept/${encodeURIComponent(token)}`,
+        invitation?.accountExists
+          ? {}
+          : {
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              password: formData.password,
+            }
+      );
       setSuccess(true);
-      setTimeout(() => navigate("/auth/login"), 3000);
+      setTimeout(() => navigate("/login"), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Erreur lors de l'acceptation");
+      setError(err.response?.data?.detail || err.response?.data?.error || "Erreur lors de l'acceptation");
     } finally {
       setAccepting(false);
     }
@@ -105,7 +115,7 @@ export default function AcceptInvitationPage() {
             <h1 className="mt-4 text-xl font-bold text-gray-900">Invitation invalide</h1>
             <p className="mt-2 text-gray-600">{error}</p>
             <button
-              onClick={() => navigate("/auth/login")}
+              onClick={() => navigate("/login")}
               className="mt-6 w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               Retour à la connexion
@@ -124,7 +134,9 @@ export default function AcceptInvitationPage() {
             <svg className="mx-auto h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h1 className="mt-4 text-xl font-bold text-gray-900">Compte créé avec succès !</h1>
+            <h1 className="mt-4 text-xl font-bold text-gray-900">
+              {invitation?.accountExists ? "Invitation acceptée avec succès !" : "Compte créé avec succès !"}
+            </h1>
             <p className="mt-2 text-gray-600">Vous êtes maintenant membre de <strong>{invitation?.tenantName}</strong>.</p>
             <p className="mt-2 text-sm text-gray-500">Redirection vers la connexion dans 3 secondes...</p>
           </div>
@@ -143,8 +155,13 @@ export default function AcceptInvitationPage() {
             </svg>
             <h1 className="mt-4 text-2xl font-bold text-gray-900">Rejoindre {invitation?.tenantName}</h1>
             <p className="mt-2 text-gray-600">
-              Vous avez été invité(e) en tant que <strong>{invitation?.role}</strong>
+              {invitation?.accountExists
+                ? "Un compte existe déjà. Acceptez l’invitation, puis connectez-vous."
+                : <>Vous avez été invité(e) en tant que <strong>{invitation?.role}</strong></>}
             </p>
+            {invitation?.organizationName && (
+              <p className="mt-1 text-sm text-gray-500">{invitation.organizationName}</p>
+            )}
             <p className="mt-1 text-sm text-gray-500">
               Lien expire le {new Date(invitation?.expiresAt || "").toLocaleDateString("fr-FR")}
             </p>
@@ -152,6 +169,7 @@ export default function AcceptInvitationPage() {
 
           <form onSubmit={(e) => { e.preventDefault(); handleAccept(); }}>
             <div className="space-y-4">
+              {!invitation?.accountExists && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
@@ -176,6 +194,7 @@ export default function AcceptInvitationPage() {
                   />
                 </div>
               </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -187,6 +206,8 @@ export default function AcceptInvitationPage() {
                 />
               </div>
 
+              {!invitation?.accountExists && (
+              <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
                 <input
@@ -211,6 +232,8 @@ export default function AcceptInvitationPage() {
                   placeholder="••••••••"
                 />
               </div>
+              </>
+              )}
 
               {error && (
                 <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
@@ -223,14 +246,18 @@ export default function AcceptInvitationPage() {
                 disabled={accepting}
                 className="w-full py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium transition-colors"
               >
-                {accepting ? "Création du compte..." : "Accepter l'invitation et créer mon compte"}
+                {accepting
+                  ? "Traitement..."
+                  : invitation?.accountExists
+                    ? "Accepter l'invitation"
+                    : "Accepter l'invitation et créer mon compte"}
               </button>
             </div>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Déjà un compte ?{" "}
-            <a href="/auth/login" className="text-indigo-600 hover:underline">Se connecter</a>
+            <a href="/login" className="text-indigo-600 hover:underline">Se connecter</a>
           </p>
         </div>
       </div>

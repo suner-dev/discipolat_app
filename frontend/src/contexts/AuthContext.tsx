@@ -42,6 +42,8 @@ function buildUserFromAuthResponse(d: any): User {
     email: d.email,
     role: activeRole,
     roles,
+    platformRoles: Array.isArray(d.platformRoles) ? d.platformRoles : [],
+    platformSuperAdmin: d.platformSuperAdmin === true || (Array.isArray(d.platformRoles) && d.platformRoles.includes('PLATFORM_SUPER_ADMIN')),
     activeRole,
     estChefDeFamille: d.estChefDeFamille || false,
     firstName: d.firstName || '',
@@ -77,10 +79,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    if (!token) {
+      setIsLoading(false);
+      return;
     }
+
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setIsLoading(false);
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return;
+    try {
+      const parsedUser = JSON.parse(storedUser) as User;
+      if (typeof parsedUser.platformSuperAdmin !== 'boolean') return;
+    } catch {
+      return;
+    }
+    let cancelled = false;
+
+    const hydrateIdentity = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        if (cancelled) return;
+        const userData = buildUserFromAuthResponse(response.data);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+      } catch {
+        if (!cancelled) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          delete api.defaults.headers.common['Authorization'];
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    void hydrateIdentity();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = useCallback(async (data: LoginRequest) => {

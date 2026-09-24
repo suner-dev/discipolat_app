@@ -790,6 +790,27 @@ class SchemaVerificationIntegrationTest {
         }
 
         @Test
+        @DisplayName("Event publication payload is not limited to 255 characters")
+        void eventPublicationPayloadSupportsLargeEvents() {
+            Long maximumLength = jdbcTemplate.queryForObject(
+                    "SELECT CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS " +
+                            "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = 'EVENT_PUBLICATION' " +
+                            "AND COLUMN_NAME = 'SERIALIZED_EVENT'",
+                    Long.class
+            );
+            assertNotNull(maximumLength);
+            assertTrue(maximumLength > 255,
+                    "serialized_event must not be limited to 255 characters; H2 reports " + maximumLength);
+        }
+
+        @Test
+        @DisplayName("Invitation tokens are stored only as hashes")
+        void invitationTokensHaveNoPlaintextColumn() {
+            assertColumnExists("invitations", "token_hash");
+            assertColumnDoesNotExist("invitations", "token");
+        }
+
+        @Test
         @DisplayName("All H2-compatible critical tables present")
         void allCriticalTablesPresent() {
             Set<String> tables = getAllTableNamesLowercase();
@@ -1050,6 +1071,16 @@ class SchemaVerificationIntegrationTest {
                 Integer.class, tableName.toUpperCase(), columnName.toUpperCase()
         );
         assertTrue(count != null && count >= 1, message);
+    }
+
+    private void assertColumnDoesNotExist(String tableName, String columnName) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS " +
+                        "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+                Integer.class, tableName.toUpperCase(), columnName.toUpperCase()
+        );
+        assertEquals(0, count,
+                "Column " + columnName + " should not exist in " + tableName);
     }
 
     private void assertColumnsExist(String tableName, List<String> columns) {
