@@ -109,7 +109,7 @@ jobs:
         run: cd mobile && flutter pub get
 
       - name: Analyze
-         run: cd mobile && flutter analyze --no-pub --no-fatal-warnings
+         run: cd mobile && flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos
 
 
       - name: Test

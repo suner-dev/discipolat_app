@@ -27,13 +27,14 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          charts: ['recharts'],
-          forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
-          query: ['@tanstack/react-query'],
-          icons: ['lucide-react'],
-          utils: ['axios', 'date-fns', 'clsx'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('/recharts/')) return 'charts';
+          if (id.includes('/react-hook-form/') || id.includes('/@hookform/') || id.includes('/zod/')) return 'forms';
+          if (id.includes('/@tanstack/react-query/')) return 'query';
+          if (id.includes('/lucide-react/')) return 'icons';
+          if (id.includes('/axios/') || id.includes('/date-fns/') || id.includes('/clsx/')) return 'utils';
+          return 'vendor';
         },
       },
     },

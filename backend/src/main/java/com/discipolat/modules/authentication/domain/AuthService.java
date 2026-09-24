@@ -92,6 +92,9 @@ public class AuthService {
                     "INVITATION_ACCEPTANCE_REQUIRED"
             );
         }
+        if (requestedPlan == null) {
+            return tenantRegistrationService.submit(email, rawPassword, firstName, lastName, phone);
+        }
         return tenantRegistrationService.submit(email, rawPassword, firstName, lastName, phone, requestedPlan);
     }
 

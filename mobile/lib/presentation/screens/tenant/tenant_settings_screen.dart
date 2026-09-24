@@ -27,12 +27,6 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
   void initState() {
     super.initState();
     _loadSettings();
-    _listenForBrandingChanges();
-  }
-
-  Future<void> _listenForBrandingChanges() async {
-    // TODO: Connect to WebSocket for real-time updates
-    // ref.read(tenantSessionProvider).updateBranding will be called from WebSocket handler
   }
 
   Future<void> _loadSettings() async {
@@ -128,8 +122,10 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -139,8 +135,10 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
                 decoration: InputDecoration(
                   hintText: currentUrl ?? 'Aucun fichier',
                   border: const OutlineInputBorder(),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
                 controller: TextEditingController(text: currentUrl ?? ''),
               ),
@@ -154,7 +152,8 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2))
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.cloud_upload, size: 18),
               label: const Text('Upload'),
             ),
@@ -227,8 +226,9 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
       child: Text(
         _message!,
         style: TextStyle(
-          color:
-              _messageType == 'success' ? Colors.green[800] : Colors.red[800],
+          color: _messageType == 'success'
+              ? Colors.green[800]
+              : Colors.red[800],
           fontSize: 14,
         ),
       ),
@@ -271,7 +271,10 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
       _buildAssetField('Logo principal', 'logo', _settings['logoUrl']),
       const SizedBox(height: 16),
       _buildAssetField(
-          'Logo mode sombre', 'logo-dark', _settings['logoDarkUrl']),
+        'Logo mode sombre',
+        'logo-dark',
+        _settings['logoDarkUrl'],
+      ),
       const SizedBox(height: 16),
       _buildAssetField('Couverture', 'cover', _settings['coverUrl']),
       const SizedBox(height: 16),
@@ -299,10 +302,10 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
         spacing: 16,
         runSpacing: 16,
         children: colorFields
-            .map((field) => SizedBox(
-                  width: 120,
-                  child: _colorField(field[0], field[1]),
-                ))
+            .map(
+              (field) =>
+                  SizedBox(width: 120, child: _colorField(field[0], field[1])),
+            )
             .toList(),
       ),
     ]);
@@ -366,14 +369,26 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
 
   Widget _buildContactSection() {
     return _buildSectionCard('Contact & Localisation', [
-      _buildTextField('email', 'Email', 'contact@eglise.org',
-          keyboardType: TextInputType.emailAddress),
+      _buildTextField(
+        'email',
+        'Email',
+        'contact@eglise.org',
+        keyboardType: TextInputType.emailAddress,
+      ),
       const SizedBox(height: 16),
-      _buildTextField('phone', 'Telephone', '+225 07 07 07 07 07',
-          keyboardType: TextInputType.phone),
+      _buildTextField(
+        'phone',
+        'Telephone',
+        '+225 07 07 07 07 07',
+        keyboardType: TextInputType.phone,
+      ),
       const SizedBox(height: 16),
-      _buildTextField('website', 'Site web', 'https://eglise.org',
-          keyboardType: TextInputType.url),
+      _buildTextField(
+        'website',
+        'Site web',
+        'https://eglise.org',
+        keyboardType: TextInputType.url,
+      ),
       const SizedBox(height: 16),
       _buildDropdown('currency', 'Devise', ['XAF', 'EUR', 'USD']),
       const SizedBox(height: 16),
@@ -382,7 +397,7 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
         'Africa/Lagos',
         'Africa/Kinshasa',
         'Europe/Paris',
-        'UTC'
+        'UTC',
       ]),
       const SizedBox(height: 16),
       _buildTextField('address', 'Adresse', 'Abidjan, Cocody'),
@@ -396,26 +411,47 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
   Widget _buildAdvancedSection() {
     return _buildSectionCard('Avance', [
       _buildTextField(
-          'customCss', 'CSS personnalise', ':root { --brand-radius: 12px; }'),
-      const SizedBox(height: 16),
-      _buildTextField('customHeadHtml', 'HTML dans <head>',
-          '<meta name="theme-color" content="#6366F1">'),
+        'customCss',
+        'CSS personnalise',
+        ':root { --brand-radius: 12px; }',
+      ),
       const SizedBox(height: 16),
       _buildTextField(
-          'footerText', 'Pied de page', '© {{year}} {{tenant_name}}'),
+        'customHeadHtml',
+        'HTML dans <head>',
+        '<meta name="theme-color" content="#6366F1">',
+      ),
       const SizedBox(height: 16),
-      _buildDropdown(
-          'locale', 'Langue par defaut', ['fr', 'en', 'pt', 'es', 'ar']),
+      _buildTextField(
+        'footerText',
+        'Pied de page',
+        '© {{year}} {{tenant_name}}',
+      ),
       const SizedBox(height: 16),
-      _buildDropdown('dateFormat', 'Format de date',
-          ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']),
+      _buildDropdown('locale', 'Langue par defaut', [
+        'fr',
+        'en',
+        'pt',
+        'es',
+        'ar',
+      ]),
+      const SizedBox(height: 16),
+      _buildDropdown('dateFormat', 'Format de date', [
+        'DD/MM/YYYY',
+        'MM/DD/YYYY',
+        'YYYY-MM-DD',
+      ]),
       const SizedBox(height: 16),
       _buildDropdown('timeFormat', 'Format d\'heure', ['HH:mm', 'hh:mm a']),
     ]);
   }
 
-  Widget _buildTextField(String key, String label, String hint,
-      {TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField(
+    String key,
+    String label,
+    String hint, {
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return TextField(
       decoration: InputDecoration(
         labelText: label,
@@ -433,8 +469,10 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           initialValue: options.contains(value) ? value : options.first,
@@ -443,10 +481,7 @@ class _TenantSettingsScreenState extends ConsumerState<TenantSettingsScreen> {
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           items: options
-              .map((opt) => DropdownMenuItem(
-                    value: opt,
-                    child: Text(opt),
-                  ))
+              .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
               .toList(),
           onChanged: (v) => setState(() => _settings[key] = v),
         ),

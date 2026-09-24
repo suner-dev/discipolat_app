@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.isNull;
 
 @ExtendWith(MockitoExtension.class)
 class TenantServiceTest {
@@ -34,6 +35,7 @@ class TenantServiceTest {
     @Mock private TenantFeatureService featureService;
     @Mock private TenantPlanPolicy planPolicy;
     @Mock private TenantSubscriptionRepository subscriptionRepository;
+    @Mock private SaasPlanService saasPlanService;
 
     @InjectMocks private TenantService tenantService;
 
@@ -100,14 +102,24 @@ class TenantServiceTest {
         UUID id = UUID.randomUUID();
         Tenant existing = tenant(id, "eglise-a", "free");
         when(tenantRepository.findById(id)).thenReturn(Optional.of(existing));
-        when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+         when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+         when(planPolicy.normalizePlanKey("STARTER")).thenReturn("STARTUP");
+         when(saasPlanService.getPlan("STARTUP")).thenReturn(Optional.of(
+                 SaasPlan.builder().key("STARTUP").isActive(true).build()));
+         when(saasPlanService.subscribe(eq(id), eq("STARTUP"), eq("monthly"), isNull(UUID.class)))
+                 .thenAnswer(invocation -> {
+                     existing.setPlan("STARTUP");
+                     return null;
+                 });
 
-        TenantResponse updated = tenantService.update(id,
+         TenantResponse updated = tenantService.update(id,
+
                 new UpdateTenantRequest("Église Renommée", TenantStatus.SUSPENDED, "STARTER", null, null, null, null, null, null, null));
 
         assertEquals("Église Renommée", updated.name());
         assertEquals(TenantStatus.SUSPENDED, updated.status());
-        assertEquals("STARTER", updated.plan());
+         assertEquals("STARTUP", updated.plan());
+
         verify(propagationPublisher).publishUpdated(eq("TENANT"), eq(id), any(), any(), anyString());
     }
 
