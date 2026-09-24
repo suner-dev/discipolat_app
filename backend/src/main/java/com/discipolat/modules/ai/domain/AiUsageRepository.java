@@ -36,6 +36,13 @@ public interface AiUsageRepository extends JpaRepository<AiUsage, UUID> {
     @Query("SELECT SUM(u.creditsConsumed) FROM AiUsage u WHERE u.tenantId = :tenantId AND u.usageDate BETWEEN :from AND :to")
     Integer getTotalCreditsConsumed(@Param("tenantId") UUID tenantId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 
+    @Query(value = "SELECT COALESCE(SUM(credits_consumed), 0) FROM ai_usage " +
+            "WHERE tenant_id = :tenantId AND usage_date >= :from AND usage_date < :to", nativeQuery = true)
+    long sumCreditsConsumedByTenantIdAndUsageDateGreaterThanEqualAndUsageDateLessThan(
+            @Param("tenantId") UUID tenantId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
+
     @Query("SELECT COUNT(u) FROM AiUsage u WHERE u.tenantId = :tenantId AND u.usageDate = :date")
     Long getDailyRequestCount(@Param("tenantId") UUID tenantId, @Param("date") LocalDate date);
 

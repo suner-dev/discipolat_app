@@ -1,6 +1,6 @@
 package com.discipolat.modules.platform.api;
 
-import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -11,9 +11,16 @@ import java.util.*;
 @RequestMapping("/api/v1/api-docs")
 public class ApiDocsController {
 
+    private final PlatformFeatureFlagService featureFlagService;
+
+    public ApiDocsController(PlatformFeatureFlagService featureFlagService) {
+        this.featureFlagService = featureFlagService;
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<Map<String, Object>> getApiDocs() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         Map<String, Object> docs = new LinkedHashMap<>();
         docs.put("title", "Discipolat API");
         docs.put("version", "1.0.0");
@@ -66,6 +73,7 @@ public class ApiDocsController {
     @GetMapping("/openapi.yaml")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
     public ResponseEntity<String> getOpenApiSpec() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         String yaml = """
                 openapi: 3.0.3
                 info:

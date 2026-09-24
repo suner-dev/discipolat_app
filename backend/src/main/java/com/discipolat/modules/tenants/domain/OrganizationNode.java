@@ -1,6 +1,8 @@
 package com.discipolat.modules.tenants.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 import org.hibernate.annotations.Filter;
 
@@ -85,6 +87,7 @@ public class OrganizationNode {
     private Integer sortOrder = 0;
 
     @Column(name = "metadata_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String metadataJson;
 
     // ===== G1.7 §53 — Héritage de configuration =====
@@ -97,6 +100,7 @@ public class OrganizationNode {
 
     /** Configuration résolue (cache), invalidée par l'événement config-changed. */
     @Column(name = "resolved_config_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String resolvedConfigJson;
 
     public enum ConfigSource {

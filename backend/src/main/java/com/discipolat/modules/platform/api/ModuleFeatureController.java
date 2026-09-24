@@ -229,7 +229,7 @@ public class ModuleFeatureController {
     // ==================== SERVICES PRIVÉS ====================
 
     private boolean isAiEnabled(UUID tenantId) {
-        Optional<TenantSubscription> sub = subscriptionRepository.findByTenantId(tenantId);
+        Optional<TenantSubscription> sub = subscriptionRepository.findCurrentByTenantId(tenantId);
         if (sub.isEmpty()) return false;
         
         try {
@@ -341,7 +341,7 @@ public class ModuleFeatureController {
     }
 
     private SubscriptionInfo getSubscriptionInfo(UUID tenantId) {
-        Optional<TenantSubscription> sub = subscriptionRepository.findByTenantId(tenantId);
+        Optional<TenantSubscription> sub = subscriptionRepository.findCurrentByTenantId(tenantId);
         if (sub.isEmpty()) {
             return new SubscriptionInfo("FREE", "Gratuit", null, null, null, null, false, false);
         }

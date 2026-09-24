@@ -1,6 +1,8 @@
 package com.discipolat.modules.tenants.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 
 import java.time.Instant;
@@ -41,9 +43,11 @@ public class SaasPlan {
     private String currency;
 
     @Column(name = "limits_json", columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String limitsJson;
 
     @Column(name = "features_json", columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String featuresJson;
 
     @Column(name = "stripe_price_id_monthly")
@@ -79,6 +83,7 @@ public class SaasPlan {
     private Integer storageLimitMb;
 
     @Column(name = "modules_included_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String modulesIncludedJson;
 
     @Column(name = "ai_credits_limit")
@@ -105,6 +110,7 @@ public class SaasPlan {
     private Integer annualDiscountPct = 17;
 
     @Column(name = "regions_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String regionsJson;
 
     @Column(name = "status", length = 20)

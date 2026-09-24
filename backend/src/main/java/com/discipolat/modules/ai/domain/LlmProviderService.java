@@ -1,5 +1,6 @@
 package com.discipolat.modules.ai.domain;
 
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +15,11 @@ public class LlmProviderService {
 
     private static final Logger log = LoggerFactory.getLogger(LlmProviderService.class);
     private final RestTemplate restTemplate = new RestTemplate();
+    private final PlatformFeatureFlagService featureFlagService;
+
+    public LlmProviderService(PlatformFeatureFlagService featureFlagService) {
+        this.featureFlagService = featureFlagService;
+    }
 
     @Value("${app.ai.groq-api-key:}") private String groqApiKey;
     @Value("${app.ai.gemini-api-key:}") private String geminiApiKey;
@@ -25,6 +31,7 @@ public class LlmProviderService {
     private static final String MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
 
     public String generateResponse(String systemPrompt, String userPrompt) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         String fullPrompt = systemPrompt + "\n\n" + userPrompt;
 
         if (isConfigured(groqApiKey)) {
@@ -55,6 +62,7 @@ public class LlmProviderService {
     }
 
     public Map<String, Boolean> getAvailableProviders() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         Map<String, Boolean> p = new LinkedHashMap<>();
         p.put("groq", isConfigured(groqApiKey));
         p.put("gemini", isConfigured(geminiApiKey));

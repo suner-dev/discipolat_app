@@ -1,6 +1,8 @@
 package com.discipolat.modules.tenants.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 import org.hibernate.annotations.Filter;
 
@@ -63,9 +65,11 @@ public class TenantSubscription {
     private String stripeCustomerId;
 
     @Column(name = "quotas_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String quotasJson;
 
     @Column(name = "metadata_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String metadataJson;
 
     @Column(name = "created_at", nullable = false, updatable = false)

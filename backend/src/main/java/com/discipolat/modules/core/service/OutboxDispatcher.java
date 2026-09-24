@@ -1,9 +1,12 @@
 package com.discipolat.modules.core.service;
 
+import com.discipolat.modules.core.repository.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.OffsetDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -11,11 +14,9 @@ import org.springframework.stereotype.Component;
 public class OutboxDispatcher {
 
     private final OutboxPublisher outboxPublisher;
+    private final OutboxEventRepository outboxEventRepository;
 
-    /**
-     * Polling toutes les 5 secondes pour traiter les événements en attente.
-     * Batch de 100 événements max par exécution.
-     */
+    /** Polling toutes les 5 secondes, avec un batch maximal de 100 événements. */
     @Scheduled(fixedDelay = 5000)
     public void dispatch() {
         try {
@@ -28,14 +29,14 @@ public class OutboxDispatcher {
         }
     }
 
-    /**
-     * Nettoyage quotidien des événements publiés anciens (> 30 jours).
-     */
+    /** Supprime uniquement les événements publiés depuis plus de 30 jours. */
     @Scheduled(cron = "0 0 3 * * *")
     public void cleanupPublishedEvents() {
         try {
-            // TODO: Implémenter la suppression des événements publiés > 30 jours
-            log.info("Nettoyage outbox événements publiés > 30 jours");
+            int deleted = outboxEventRepository.deletePublishedBefore(OffsetDateTime.now().minusDays(30));
+            if (deleted > 0) {
+                log.info("Suppression de {} événements outbox publiés depuis plus de 30 jours", deleted);
+            }
         } catch (Exception e) {
             log.error("Erreur nettoyage outbox: {}", e.getMessage(), e);
         }

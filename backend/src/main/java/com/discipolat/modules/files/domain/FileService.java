@@ -2,7 +2,9 @@ package com.discipolat.modules.files.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.modules.tenants.domain.QuotaService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,15 +21,18 @@ public class FileService {
     private final FileEntityRepository fileRepository;
     private final SecurityUtils securityUtils;
     private final WorkspaceScopeService workspaceScopeService;
+    private final QuotaService quotaService;
 
     public FileService(FileEntityRepository fileRepository, SecurityUtils securityUtils,
-                       WorkspaceScopeService workspaceScopeService) {
+                       WorkspaceScopeService workspaceScopeService, QuotaService quotaService) {
         this.fileRepository = fileRepository;
         this.securityUtils = securityUtils;
         this.workspaceScopeService = workspaceScopeService;
+        this.quotaService = quotaService;
     }
 
     public FileEntity upload(FileEntity file) {
+        quotaService.checkCanStoreFile(TenantContext.requireTenantId(), file.getTaille());
         if (file.getFamilleId() != null) assertFamilyAccessible(file.getFamilleId());
         file.setAuteurId(securityUtils.getCurrentUserId());
         return fileRepository.save(file);

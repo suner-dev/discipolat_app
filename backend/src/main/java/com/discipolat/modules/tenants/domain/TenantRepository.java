@@ -3,7 +3,11 @@ package com.discipolat.modules.tenants.domain;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -21,6 +25,10 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
     long countByStatus(TenantStatus status);
 
     Optional<Tenant> findFirstByStatusOrderByCreatedAtAsc(TenantStatus status);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM Tenant t WHERE t.id = :id")
+    Optional<Tenant> findByIdForUpdate(@Param("id") UUID id);
 
     @Query("SELECT COUNT(t) FROM Tenant t WHERE t.createdAt > :date")
     long countByCreatedAtAfter(Instant date);

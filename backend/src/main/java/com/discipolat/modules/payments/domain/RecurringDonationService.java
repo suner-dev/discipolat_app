@@ -4,6 +4,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.exception.UnauthorizedException;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -33,19 +34,23 @@ public class RecurringDonationService {
     private final PaymentGatewayService paymentGatewayService;
     private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
+    private final PlatformFeatureFlagService featureFlagService;
 
     public RecurringDonationService(RecurringDonationRepository repository,
                                      PaymentGatewayService paymentGatewayService,
                                      EntityPropagationPublisher propagationPublisher,
-                                     SecurityUtils securityUtils) {
+                                     SecurityUtils securityUtils,
+                                     PlatformFeatureFlagService featureFlagService) {
         this.repository = repository;
         this.paymentGatewayService = paymentGatewayService;
         this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
+        this.featureFlagService = featureFlagService;
     }
 
     /** Crée un don récurrent. */
     public RecurringDonation create(RecurringDonation donation) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         donation.setTenantId(securityUtils.getCurrentTenantId());
         if (donation.getUserId() == null) {
             donation.setUserId(securityUtils.getCurrentUserId());
@@ -63,6 +68,7 @@ public class RecurringDonationService {
 
     /** Annule un don récurrent. */
     public RecurringDonation cancel(UUID id) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         RecurringDonation donation = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("RecurringDonation", id));
         if (!securityUtils.isSuperUser()
@@ -77,12 +83,14 @@ public class RecurringDonationService {
     /** Dons récurrents de l'utilisateur courant. */
     @Transactional(readOnly = true)
     public List<RecurringDonation> mine() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         return repository.findByUserIdOrderByCreatedAtDesc(securityUtils.getCurrentUserId());
     }
 
     /** Stats globales (admin). */
     @Transactional(readOnly = true)
     public Map<String, Object> stats() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         UUID tenantId = securityUtils.getCurrentTenantId();
         return Map.of(
                 "activeRecurring", repository.countByTenantIdAndActiveTrue(tenantId),
@@ -97,6 +105,7 @@ public class RecurringDonationService {
     @Scheduled(cron = "0 30 6 * * *")
     @Transactional
     public void processDueDonations() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         List<RecurringDonation> due = repository.findDueDonations(LocalDate.now());
         log.info("[RecurringDonation] Processing {} due donations", due.size());
 

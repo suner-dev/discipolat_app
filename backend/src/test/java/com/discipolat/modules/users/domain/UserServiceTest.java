@@ -4,12 +4,14 @@ import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulExitRepository;
 import com.discipolat.modules.souls.domain.SoulHistoryRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.modules.tenants.domain.QuotaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,6 +62,8 @@ class UserServiceTest {
     private com.discipolat.modules.evaluations.domain.EvaluationService evaluationService;
     @Mock
     private com.discipolat.modules.departments.domain.DepartmentDossierService dossierService;
+    @Mock
+    private QuotaService quotaService;
 
     private UserService userService;
 
@@ -69,11 +73,12 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+        TenantContext.setTenantId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         userService = new UserService(userRepository, passwordEncoder, securityUtils,
                 soulRepository, soulExitRepository, soulHistoryRepository, auditService,
                 propagationPublisher, propagationListener,
                 workspaceScopeService, soulDepartmentRepository, familyRepository,
-                departmentRepository, evaluationService, dossierService);
+                departmentRepository, evaluationService, dossierService, quotaService);
     }
 
     private User userWithRole(UserRole role) {

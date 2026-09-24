@@ -1,6 +1,8 @@
 package com.discipolat.modules.workflow.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,6 +30,7 @@ public class WorkflowConfig {
     private Boolean enabled = true;
 
     @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String rules;
 
     @Column(name = "created_at", nullable = false)

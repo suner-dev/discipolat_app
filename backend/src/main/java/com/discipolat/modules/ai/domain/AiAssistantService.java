@@ -8,6 +8,7 @@ import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.members.domain.MemberPresenceRepository;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
@@ -67,6 +68,7 @@ public class AiAssistantService {
     private final SecurityUtils securityUtils;
     private final AiChatConversationRepository chatRepo;
     private final AiCreditsService aiCreditsService;
+    private final PlatformFeatureFlagService featureFlagService;
 
     /** Cache simple de l'historique chat par userId (session). */
     private final ConcurrentHashMap<UUID, List<Map<String, Object>>> chatHistories = new ConcurrentHashMap<>();
@@ -80,7 +82,8 @@ public class AiAssistantService {
                                WorkspaceScopeService workspaceScope,
                                SecurityUtils securityUtils,
                                AiChatConversationRepository chatRepo,
-                               AiCreditsService aiCreditsService) {
+                               AiCreditsService aiCreditsService,
+                               PlatformFeatureFlagService featureFlagService) {
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.familyRepository = familyRepository;
@@ -91,12 +94,14 @@ public class AiAssistantService {
         this.securityUtils = securityUtils;
         this.chatRepo = chatRepo;
         this.aiCreditsService = aiCreditsService;
+        this.featureFlagService = featureFlagService;
     }
 
     /**
      * Generate an executive report as markdown (for PDF generation).
      */
     public Map<String, Object> generateReport() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         Map<String, Object> context = buildChurchContext("rapport");
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("titre", "Rapport Exécutif — " + java.time.LocalDate.now());
@@ -135,6 +140,7 @@ public class AiAssistantService {
      * RAG context: enrich question with relevant member/family data.
      */
     public Map<String, Object> getRagContext(String query) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         Map<String, Object> rag = new LinkedHashMap<>();
         String q = query.toLowerCase();
 
@@ -159,6 +165,7 @@ public class AiAssistantService {
      */
     @Transactional
     public Map<String, Object> chat(String message, UUID userId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         // Check and consume AI credits (1 credit per chat message)
         try {
             aiCreditsService.consumeCredits(userId, "CHAT", 1, modelName);
@@ -244,6 +251,7 @@ public class AiAssistantService {
      * Vérifie la santé d'Ollama.
      */
     public Map<String, Object> checkHealth() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         try {
             RestTemplate rt = new RestTemplate();
             ResponseEntity<String> resp = rt.getForEntity(ollamaUrl + "/api/tags", String.class);
@@ -258,6 +266,7 @@ public class AiAssistantService {
      * Historique du chat pour un utilisateur.
      */
     public List<Map<String, Object>> getChatHistory(UUID userId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         // Return from DB first, fall back to in-memory
         List<AiChatConversation> dbHistory = chatRepo.findByUserIdOrderByCreatedAtDesc(userId);
         if (!dbHistory.isEmpty()) {
@@ -275,6 +284,7 @@ public class AiAssistantService {
      * Effacer l'historique.
      */
     public void clearChatHistory(UUID userId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         chatHistories.remove(userId);
     }
 
@@ -282,6 +292,7 @@ public class AiAssistantService {
      * Retourne le contexte pertinent pour une question donnée.
      */
     public Map<String, Object> getContextForQuery(String query) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         return buildChurchContext(query);
     }
 
@@ -291,6 +302,7 @@ public class AiAssistantService {
      */
     @Transactional
     public Map<String, Object> analyzeSoul(UUID soulId, UUID userId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         // Consume 2 credits for soul analysis (more complex operation)
         try {
             aiCreditsService.consumeCredits(userId, "ANALYZE", 2, modelName);
@@ -380,6 +392,7 @@ public class AiAssistantService {
      * Message d'encouragement personnalisé pour une âme.
      */
     public Map<String, Object> generateEncouragement(UUID soulId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Âme non trouvée : " + soulId));
         return Map.of("soulId", soul.getId().toString(), "encouragement", generateEncouragement(soul));

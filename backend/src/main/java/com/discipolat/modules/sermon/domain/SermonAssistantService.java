@@ -1,5 +1,6 @@
 package com.discipolat.modules.sermon.domain;
 
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -16,6 +17,12 @@ import java.util.*;
  */
 @Service
 public class SermonAssistantService {
+
+    private final PlatformFeatureFlagService featureFlagService;
+
+    public SermonAssistantService(PlatformFeatureFlagService featureFlagService) {
+        this.featureFlagService = featureFlagService;
+    }
 
     private static final List<String> ACCROCHES = List.of(
         "Imaginez la scène : %s. C'est exactement là que %s nous rejoint.",
@@ -65,6 +72,7 @@ public class SermonAssistantService {
      */
     public Map<String, Object> generateOutlines(String passage, String theme,
                                                 String audience, String durationMinutes) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         if (passage == null || passage.isBlank()) {
             throw new IllegalArgumentException("Le passage biblique est obligatoire");
         }

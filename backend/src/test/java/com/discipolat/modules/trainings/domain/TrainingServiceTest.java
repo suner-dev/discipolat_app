@@ -2,11 +2,14 @@ package com.discipolat.modules.trainings.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.tenants.domain.QuotaService;
 import com.discipolat.modules.trainings.api.CreateCourseRequest;
 import com.discipolat.modules.trainings.api.CreateModuleRequest;
 import com.discipolat.modules.trainings.api.QuizResultResponse;
 import com.discipolat.modules.trainings.api.SubmitQuizRequest;
 import com.discipolat.modules.users.domain.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,8 +36,14 @@ class TrainingServiceTest {
     @Mock private ModuleCompletionRepository completionRepository;
     @Mock private UserRepository userRepository;
     @Mock private SecurityUtils securityUtils;
+    @Mock private QuotaService quotaService;
 
     @InjectMocks private TrainingService trainingService;
+
+    @BeforeEach
+    void setUp() {
+        TenantContext.setTenantId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+    }
 
     private QuizQuestion question(int index) {
         return QuizQuestion.builder()

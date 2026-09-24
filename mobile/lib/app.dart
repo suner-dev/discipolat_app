@@ -231,6 +231,7 @@ import 'tenant_config.dart';
 
 /// Écrans d'administration multi-tenant (Super Admin & Tenant Admin).
 import 'presentation/screens/tenant/tenant_selection_screen.dart';
+import 'presentation/screens/tenant/tenant_admin_dashboard_screen.dart';
 import 'presentation/screens/tenant/branding_screen.dart';
 import 'presentation/screens/tenant/organizations_screen.dart';
 import 'presentation/screens/tenant/tenant_settings_screen.dart';
@@ -354,6 +355,9 @@ class AuthState {
 String roleHome(String role, {bool isPlatformSuperAdmin = false}) {
   if (isPlatformSuperAdmin) return '/platform/dashboard';
   switch (role) {
+    case 'TENANT_ADMIN':
+    case 'TENANT_OWNER':
+      return '/admin/dashboard';
     case 'FAISEUR':
       return '/crm-faiseur';
     case 'RESPONSABLE':
@@ -713,7 +717,11 @@ Map<String, List<String>> _routeRoles = {
   '/admin/modules': ['ADMIN'],
   '/admin/menus': ['ADMIN'],
   '/admin/pages': ['ADMIN'],
-  '/admin/settings': ['ADMIN'],
+  '/admin/settings': [
+    'ADMIN',
+    'TENANT_OWNER',
+    'TENANT_ADMIN',
+  ],
   '/admin/custom-fields': ['ADMIN'],
   '/admin/dictionaries': ['ADMIN'],
   '/admin/integrations': ['ADMIN'],
@@ -1161,6 +1169,7 @@ Map<String, List<String>> _routeRoles = {
   '/user-roles': ['ADMIN'],
   '/compliance-exports': ['ADMIN'],
   // SAAS multi-tenant — routes platform & tenant admin
+  '/admin/dashboard': ['TENANT_OWNER', 'TENANT_ADMIN'],
   '/tenant-selection': [
     'ADMIN',
     'PASTEUR',
@@ -1412,6 +1421,11 @@ final appRouter = GoRouter(
       path: '/dashboard',
       name: 'dashboard',
       builder: (context, state) => const MainScaffold(),
+    ),
+    GoRoute(
+      path: '/admin/dashboard',
+      name: 'tenant-admin-dashboard',
+      builder: (context, state) => const TenantAdminDashboardScreen(),
     ),
     GoRoute(
       path: '/dashboard/pasteur',

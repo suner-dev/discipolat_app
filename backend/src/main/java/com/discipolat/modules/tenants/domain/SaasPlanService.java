@@ -22,10 +22,14 @@ public class SaasPlanService {
 
     private final SaasPlanRepository planRepository;
     private final TenantSubscriptionRepository subscriptionRepository;
+    private final TenantRepository tenantRepository;
 
-    public SaasPlanService(SaasPlanRepository planRepository, TenantSubscriptionRepository subscriptionRepository) {
+    public SaasPlanService(SaasPlanRepository planRepository,
+                           TenantSubscriptionRepository subscriptionRepository,
+                           TenantRepository tenantRepository) {
         this.planRepository = planRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.tenantRepository = tenantRepository;
     }
 
     @Transactional(readOnly = true)
@@ -48,7 +52,7 @@ public class SaasPlanService {
      */
     @Transactional(readOnly = true)
     public Optional<TenantSubscription> getTenantSubscription(UUID tenantId) {
-        return subscriptionRepository.findByTenantId(tenantId);
+        return subscriptionRepository.findCurrentByTenantId(tenantId);
     }
 
     /**
@@ -56,9 +60,11 @@ public class SaasPlanService {
      */
     @Transactional(readOnly = true)
     public SaasPlan getCurrentPlan(UUID tenantId) {
-        return subscriptionRepository.findByTenantId(tenantId)
+        return subscriptionRepository.findCurrentByTenantId(tenantId)
                 .flatMap(sub -> planRepository.findById(sub.getPlanKey()))
-                .orElseGet(() -> planRepository.findByKeyAndIsActiveTrue("FREE").orElse(null));
+                .orElseGet(() -> tenantRepository.findById(tenantId)
+                        .flatMap(tenant -> planRepository.findById(tenant.getPlan()))
+                        .orElse(null));
     }
 
     /**
@@ -112,30 +118,37 @@ public class SaasPlanService {
         SaasPlan plan = planRepository.findByKeyAndIsActiveTrue(planKey)
                 .orElseThrow(() -> new EntityNotFoundException("SaasPlan", "key", planKey));
 
-        Optional<TenantSubscription> existing = subscriptionRepository.findByTenantId(tenantId);
+        Tenant tenant = tenantRepository.findByIdForUpdate(tenantId)
+                .orElseThrow(() -> new EntityNotFoundException("Tenant", tenantId));
+        Optional<TenantSubscription> existing = subscriptionRepository.findCurrentByTenantId(tenantId);
         TenantSubscription subscription;
+        java.time.Instant periodStart = java.time.Instant.now();
+        java.time.Instant periodEnd = calculatePeriodEnd(periodStart, billingCycle);
 
         if (existing.isPresent()) {
             subscription = existing.get();
             subscription.setPlanKey(planKey);
             subscription.setBillingCycle(billingCycle);
             subscription.setStatus(SubscriptionStatus.ACTIVE);
-            subscription.setCurrentPeriodStart(java.time.Instant.now());
-            subscription.setCurrentPeriodEnd(calculatePeriodEnd(billingCycle));
+            subscription.setCurrentPeriodStart(periodStart);
+            subscription.setCurrentPeriodEnd(periodEnd);
             subscription.setCancelAtPeriodEnd(false);
             subscription.setCanceledAt(null);
+            subscription.setQuotasJson(plan.getLimitsJson());
         } else {
             subscription = TenantSubscription.builder()
                     .tenantId(tenantId)
                     .planKey(planKey)
                     .billingCycle(billingCycle)
                     .status(SubscriptionStatus.ACTIVE)
-                    .currentPeriodStart(java.time.Instant.now())
-                    .currentPeriodEnd(calculatePeriodEnd(billingCycle))
+                    .currentPeriodStart(periodStart)
+                    .currentPeriodEnd(periodEnd)
                     .quotasJson(plan.getLimitsJson())
                     .build();
         }
 
+        tenant.setPlan(plan.getKey());
+        tenantRepository.save(tenant);
         return subscriptionRepository.save(subscription);
     }
 
@@ -143,7 +156,7 @@ public class SaasPlanService {
      * Annule l'abonnement à la fin de la période
      */
     public void cancelAtPeriodEnd(UUID tenantId) {
-        subscriptionRepository.findByTenantId(tenantId).ifPresent(sub -> {
+        subscriptionRepository.findCurrentByTenantId(tenantId).ifPresent(sub -> {
             sub.setCancelAtPeriodEnd(true);
             subscriptionRepository.save(sub);
         });
@@ -153,18 +166,18 @@ public class SaasPlanService {
      * Réactive un abonnement annulé
      */
     public void reactivate(UUID tenantId) {
-        subscriptionRepository.findByTenantId(tenantId).ifPresent(sub -> {
+        subscriptionRepository.findCurrentByTenantId(tenantId).ifPresent(sub -> {
             sub.setCancelAtPeriodEnd(false);
             sub.setStatus(SubscriptionStatus.ACTIVE);
             subscriptionRepository.save(sub);
         });
     }
 
-    private java.time.Instant calculatePeriodEnd(String billingCycle) {
-        if ("yearly".equals(billingCycle)) {
-            return java.time.Instant.now().plus(java.time.Duration.ofDays(365));
+    private java.time.Instant calculatePeriodEnd(java.time.Instant periodStart, String billingCycle) {
+        if ("yearly".equalsIgnoreCase(billingCycle)) {
+            return periodStart.plus(java.time.Duration.ofDays(365));
         }
-        return java.time.Instant.now().plus(java.time.Duration.ofDays(30));
+        return periodStart.plus(java.time.Duration.ofDays(30));
     }
 
     @Transactional(readOnly = true)

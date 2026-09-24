@@ -3,12 +3,13 @@ package com.discipolat.modules.ai.domain;
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.QuotaService;
-import com.discipolat.modules.tenants.domain.SaasPlanRepository;
-import com.discipolat.modules.tenants.domain.TenantRepository;
+import com.discipolat.modules.tenants.domain.TenantUsageSnapshot;
+import com.discipolat.modules.tenants.domain.TenantUsageSnapshotService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,17 +20,14 @@ public class AiCreditsService {
 
     private final AiUsageRepository aiUsageRepository;
     private final QuotaService quotaService;
-    private final SaasPlanRepository saasPlanRepository;
-    private final TenantRepository tenantRepository;
+    private final TenantUsageSnapshotService usageSnapshotService;
 
     public AiCreditsService(AiUsageRepository aiUsageRepository,
                             QuotaService quotaService,
-                            SaasPlanRepository saasPlanRepository,
-                            TenantRepository tenantRepository) {
+                            TenantUsageSnapshotService usageSnapshotService) {
         this.aiUsageRepository = aiUsageRepository;
         this.quotaService = quotaService;
-        this.saasPlanRepository = saasPlanRepository;
-        this.tenantRepository = tenantRepository;
+        this.usageSnapshotService = usageSnapshotService;
     }
 
     /**
@@ -39,34 +37,7 @@ public class AiCreditsService {
     public void consumeCredits(UUID userId, String requestType, Integer credits, String modelUsed) {
         UUID tenantId = TenantContext.requireTenantId();
         
-        // Check quota first
-        quotaService.checkCanMakeAiRequest(tenantId);
-        
-        // Get monthly limit from plan
-        Integer monthlyLimit = getMonthlyAiLimit(tenantId);
-        if (monthlyLimit == null) {
-            // No limit configured, allow
-            recordUsage(tenantId, userId, requestType, credits, modelUsed, null, null, null, true, null);
-            return;
-        }
-        
-        // Check current month usage
-        LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
-        LocalDate monthEnd = monthStart.plusMonths(1).minusDays(1);
-        Integer usedCredits = aiUsageRepository.getTotalCreditsConsumed(tenantId, monthStart, monthEnd);
-        if (usedCredits == null) usedCredits = 0;
-        
-        if (usedCredits + credits > monthlyLimit) {
-            // Record failed attempt
-            recordUsage(tenantId, userId, requestType, credits, modelUsed, null, null, null, false, 
-                    "Quota IA mensuel dépassé: " + usedCredits + "/" + monthlyLimit + " crédits utilisés");
-            throw new BusinessRuleException(
-                    "Quota IA mensuel dépassé: " + usedCredits + "/" + monthlyLimit + " crédits utilisés. " +
-                    "Veuillez mettre à jour votre plan pour plus de crédits IA.",
-                    "QUOTA_EXCEEDED_AI_CREDITS");
-        }
-        
-        // Record successful usage
+        quotaService.checkCanConsumeAiCredits(tenantId, credits);
         recordUsage(tenantId, userId, requestType, credits, modelUsed, null, null, null, true, null);
     }
 
@@ -92,32 +63,6 @@ public class AiCreditsService {
         aiUsageRepository.save(usage);
     }
 
-    /**
-     * Get monthly AI credits limit from tenant's plan.
-     */
-    private Integer getMonthlyAiLimit(UUID tenantId) {
-        // Le plan du tenant est porté par Tenant.plan ; TenantSubscription
-        // (tenants.subscription) est géré par SubscriptionService côté facturation.
-        var plan = tenantRepository.findById(tenantId)
-                .map(t -> t.getPlan())
-                .flatMap(planKey -> saasPlanRepository.findById(planKey));
-        if (plan.isPresent() && plan.get().getLimitsJson() != null) {
-            try {
-                Map<String, Object> limits = new com.fasterxml.jackson.databind.ObjectMapper()
-                        .readValue(plan.get().getLimitsJson(), Map.class);
-                if (limits.containsKey("max_ai_requests_month")) {
-                    return ((Number) limits.get("max_ai_requests_month")).intValue();
-                }
-            } catch (Exception e) {
-                // Ignore
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Get AI usage dashboard for admin.
-     */
     public Map<String, Object> getUsageDashboard(UUID tenantId, LocalDate from, LocalDate to) {
         Integer totalCredits = aiUsageRepository.getTotalCreditsConsumed(tenantId, from, to);
         Long totalRequests = aiUsageRepository.findByTenantIdAndUsageDateBetween(tenantId, from, to).stream().count();
@@ -125,25 +70,21 @@ public class AiCreditsService {
         List<Map<String, Object>> byType = aiUsageRepository.getUsageByType(tenantId, from, to);
         List<Map<String, Object>> byModel = aiUsageRepository.getUsageByModel(tenantId, from, to);
         
-        Integer monthlyLimit = getMonthlyAiLimit(tenantId);
-        Integer usedThisMonth = 0;
-        if (monthlyLimit != null) {
-            LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
-            usedThisMonth = aiUsageRepository.getTotalCreditsConsumed(tenantId, monthStart, LocalDate.now());
-            if (usedThisMonth == null) usedThisMonth = 0;
-        }
-        
-        return Map.of(
-                "period", Map.of("from", from.toString(), "to", to.toString()),
-                "totalCredits", totalCredits != null ? totalCredits : 0,
-                "totalRequests", totalRequests,
-                "monthlyLimit", monthlyLimit,
-                "usedThisMonth", usedThisMonth,
-                "remainingThisMonth", monthlyLimit != null ? Math.max(0, monthlyLimit - usedThisMonth) : null,
-                "byType", byType,
-                "byModel", byModel,
-                "dailyUsage", getDailyUsage(tenantId, from, to)
-        );
+        TenantUsageSnapshot snapshot = usageSnapshotService.getSnapshotForTenant(tenantId);
+        Long monthlyLimit = snapshot.aiCredits().limit();
+        long usedThisMonth = snapshot.aiCredits().used();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("period", Map.of("from", from.toString(), "to", to.toString()));
+        result.put("totalCredits", totalCredits != null ? totalCredits : 0);
+        result.put("totalRequests", totalRequests);
+        result.put("monthlyLimit", monthlyLimit);
+        result.put("usedThisMonth", usedThisMonth);
+        result.put("remainingThisMonth", monthlyLimit != null ? Math.max(0, monthlyLimit - usedThisMonth) : null);
+        result.put("byType", byType);
+        result.put("byModel", byModel);
+        result.put("dailyUsage", getDailyUsage(tenantId, from, to));
+        return result;
     }
 
     private List<Map<String, Object>> getDailyUsage(UUID tenantId, LocalDate from, LocalDate to) {

@@ -1,6 +1,7 @@
 package com.discipolat.modules.sermon;
 
 import com.discipolat.modules.sermon.domain.SermonAssistantService;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -11,7 +12,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class SermonAssistantServiceTest {
 
-    private final SermonAssistantService service = new SermonAssistantService();
+    private final SermonAssistantService service = new SermonAssistantService(
+            org.mockito.Mockito.mock(PlatformFeatureFlagService.class));
 
     @Test
     void genereTroisStructuresParDefaut() {

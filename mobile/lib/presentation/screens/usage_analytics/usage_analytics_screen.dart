@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
-import '../../../data/services/api_service.dart';
-import '../../widgets/glass_theme.dart';
 
-/// P3 #109 — Analytics d'usage mobile
+import '../../../data/services/api_service.dart';
+import '../../../data/services/usage_analytics_service.dart';
+import '../../../models/usage_analytics_summary.dart';
+
 class UsageAnalyticsScreen extends StatefulWidget {
-  const UsageAnalyticsScreen({super.key});
+  const UsageAnalyticsScreen({super.key, this.apiService, this.service});
+
+  final ApiService? apiService;
+  final UsageAnalyticsService? service;
 
   @override
   State<UsageAnalyticsScreen> createState() => _UsageAnalyticsScreenState();
 }
 
 class _UsageAnalyticsScreenState extends State<UsageAnalyticsScreen> {
-  final ApiService _api = ApiService();
-  Map<String, dynamic>? _summary;
-  bool _isLoading = true;
+  late final UsageAnalyticsService _service = widget.service ??
+      UsageAnalyticsService(apiService: widget.apiService ?? ApiService());
+  UsageAnalyticsSummary? _summary;
+  bool _loading = true;
+  bool _disabled = false;
+  bool _unavailable = false;
   String _period = '7d';
 
   @override
@@ -23,15 +30,48 @@ class _UsageAnalyticsScreenState extends State<UsageAnalyticsScreen> {
   }
 
   Future<void> _loadSummary() async {
-    setState(() => _isLoading = true);
-    try {
-      final res = await _api.get('/usage-analytics/summary', params: {'period': _period});
+    if (mounted) {
       setState(() {
-        _summary = res.data as Map<String, dynamic>?;
-        _isLoading = false;
+        _loading = true;
+        _disabled = false;
+        _unavailable = false;
+        _summary = null;
+      });
+    }
+
+    try {
+      final analyticsEnabled = await _service.fetchAnalyticsEnabled();
+      if (analyticsEnabled == false) {
+        if (mounted) {
+          setState(() {
+            _disabled = true;
+            _loading = false;
+          });
+        }
+        return;
+      }
+      if (analyticsEnabled != true) {
+        if (mounted) {
+          setState(() {
+            _unavailable = true;
+            _loading = false;
+          });
+        }
+        return;
+      }
+      final summary =
+          await _service.fetchSummary(days: _daysForPeriod(_period));
+      if (!mounted) return;
+      setState(() {
+        _summary = summary;
+        _loading = false;
       });
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() {
+        _unavailable = true;
+        _loading = false;
+      });
     }
   }
 
@@ -43,140 +83,201 @@ class _UsageAnalyticsScreenState extends State<UsageAnalyticsScreen> {
         actions: [
           PopupMenuButton<String>(
             initialValue: _period,
-            onSelected: (v) { setState(() => _period = v); _loadSummary(); },
-            itemBuilder: (_) => [
-              const PopupMenuItem(value: '1d', child: Text('24 heures')),
-              const PopupMenuItem(value: '7d', child: Text('7 jours')),
-              const PopupMenuItem(value: '30d', child: Text('30 jours')),
+            onSelected: (value) {
+              setState(() => _period = value);
+              _loadSummary();
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: '1d', child: Text('24 heures')),
+              PopupMenuItem(value: '7d', child: Text('7 jours')),
+              PopupMenuItem(value: '30d', child: Text('30 jours')),
             ],
           ),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadSummary),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loading ? null : _loadSummary,
+          ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _summary == null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.bar_chart, size: 64, color: Colors.white.withValues(alpha: 0.2)),
-                      const SizedBox(height: 12),
-                      Text('Aucune donnée disponible',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadSummary,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // ── Stats Grid ──
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1.5,
-                        children: [
-                          _statCard('Événements', '${_summary!['totalEvents'] ?? 0}', Icons.visibility, Colors.cyan),
-                          _statCard('Utilisateurs actifs', '${_summary!['activeUsers'] ?? 0}', Icons.people, Colors.green),
-                          _statCard('Mobile', '${_mobilePct()}%', Icons.phone_android, Colors.blue),
-                          _statCard('Desktop', '${_desktopPct()}%', Icons.computer, Colors.purple),
-                        ],
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // ── Top Pages ──
-                      const Text('Pages les plus vues',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(height: 8),
-                      ...(_topPages().map((p) => GlassCard(
-                        margin: const EdgeInsets.only(bottom: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Row(
-                          children: [
-                            Icon(Icons.pageview, color: Colors.cyan.withValues(alpha: 0.7), size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(p['page'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 12),
-                                  maxLines: 1, overflow: TextOverflow.ellipsis),
-                            ),
-                            Text('${p['views'] ?? 0}', style: const TextStyle(color: Colors.cyan, fontWeight: FontWeight.bold, fontSize: 12)),
-                          ],
-                        ),
-                      ))),
-
-                      const SizedBox(height: 20),
-
-                      // ── Top Actions ──
-                      const Text('Actions fréquentes',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(height: 8),
-                      ...(_topActions().map((a) => GlassCard(
-                        margin: const EdgeInsets.only(bottom: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Row(
-                          children: [
-                            Icon(Icons.touch_app, color: Colors.green.withValues(alpha: 0.7), size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(a['action'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 12),
-                                  maxLines: 1, overflow: TextOverflow.ellipsis),
-                            ),
-                            Text('${a['count'] ?? 0}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
-                          ],
-                        ),
-                      ))),
-                    ],
-                  ),
-                ),
+      body: _buildBody(),
     );
   }
 
-  int _mobilePct() {
-    final bd = _summary!['byDevice'] as Map<String, dynamic>? ?? {};
-    final m = (bd['mobile'] ?? 0) as int;
-    final d = (bd['desktop'] ?? 0) as int;
-    final t = (bd['tablet'] ?? 0) as int;
-    final total = m + d + t;
-    return total > 0 ? (m * 100 / total).round() : 0;
-  }
+  Widget _buildBody() {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_disabled) {
+      return const Center(
+        child: _UsageMessage(
+          text: 'Analytics désactivés par le tenant',
+          color: Colors.orange,
+        ),
+      );
+    }
+    if (_unavailable || _summary == null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const _UsageMessage(
+              text: 'Données d’analytics indisponibles',
+              color: Colors.red,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loadSummary,
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
+      );
+    }
 
-  int _desktopPct() {
-    final bd = _summary!['byDevice'] as Map<String, dynamic>? ?? {};
-    final m = (bd['mobile'] ?? 0) as int;
-    final d = (bd['desktop'] ?? 0) as int;
-    final t = (bd['tablet'] ?? 0) as int;
-    final total = m + d + t;
-    return total > 0 ? (d * 100 / total).round() : 0;
-  }
-
-  List<Map<String, dynamic>> _topPages() {
-    return (_summary!['topPages'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-  }
-
-  List<Map<String, dynamic>> _topActions() {
-    return (_summary!['topActions'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final summary = _summary!;
+    return RefreshIndicator(
+      onRefresh: _loadSummary,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.5,
+            children: [
+              _statCard(
+                'Événements',
+                _number(summary.totalEvents),
+                Icons.visibility,
+                Colors.cyan,
+              ),
+              _statCard(
+                'Pages vues',
+                _number(summary.pageViews),
+                Icons.pageview,
+                Colors.green,
+              ),
+              _statCard(
+                'Utilisateurs uniques',
+                _number(summary.activeUsers),
+                Icons.people,
+                Colors.blue,
+              ),
+              _statCard(
+                'Durée moyenne',
+                _duration(summary.averageDurationSeconds),
+                Icons.timer,
+                Colors.purple,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Pages les plus vues',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          if (summary.topPages.isEmpty)
+            const _UsageMessage(
+              text: 'Données des pages indisponibles',
+              color: Colors.orange,
+            )
+          else
+            ...summary.topPages.entries.map(
+              (entry) => Card(
+                child: ListTile(
+                  leading: const Icon(Icons.pageview, color: Colors.cyan),
+                  title: Text(entry.key),
+                  trailing: Text(entry.value.toString()),
+                ),
+              ),
+            ),
+          const SizedBox(height: 20),
+          const Text(
+            'Appareils',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          if (summary.byDevice.isEmpty)
+            const _UsageMessage(
+              text: 'Données des appareils indisponibles',
+              color: Colors.orange,
+            )
+          else
+            ...summary.byDevice.entries.map(
+              (entry) => ListTile(
+                title: Text(entry.key),
+                trailing:
+                    Text(_percentage(summary.percentageForDevice(entry.key))),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _statCard(String label, String value, IconData icon, Color color) {
-    return GlassCard(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color.withValues(alpha: 0.7), size: 18),
-          const Spacer(),
-          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 20)),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
-        ],
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(label, style: const TextStyle(fontSize: 10)),
+          ],
+        ),
       ),
+    );
+  }
+
+  String _number(num? value) =>
+      value == null ? 'Indisponible' : value.toString();
+
+  String _duration(num? value) {
+    return value == null ? 'Indisponible' : '${value.toString()} s';
+  }
+
+  String _percentage(double? value) {
+    return value == null ? 'Indisponible' : '${value.toStringAsFixed(1)}%';
+  }
+
+  int _daysForPeriod(String period) {
+    switch (period) {
+      case '1d':
+        return 1;
+      case '30d':
+        return 30;
+      default:
+        return 7;
+    }
+  }
+}
+
+class _UsageMessage extends StatelessWidget {
+  const _UsageMessage({required this.text, required this.color});
+
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Text(text,
+          textAlign: TextAlign.center, style: TextStyle(color: color)),
     );
   }
 }

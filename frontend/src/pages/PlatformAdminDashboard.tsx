@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "@/lib/api";
+import api, { getErrorMessage } from "@/lib/api";
+import { QuotaUsageCards } from "@/components/admin/QuotaUsageCards";
+import { normalizeQuotaUsage } from "@/types/quota";
+import type { QuotaUsage } from "@/types/quota";
 import { Rocket } from "lucide-react";
 
 interface PlatformMetrics {
@@ -47,7 +50,7 @@ interface Tenant {
   updatedAt: string;
 }
 
-export default function PlatformAdminDashboard() {
+export default function PlatformAdminDashboardPage() {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -55,7 +58,11 @@ export default function PlatformAdminDashboard() {
   const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "tenants" | "plans" | "features">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "tenants" | "usage" | "plans" | "features">("dashboard");
+  const [selectedUsageTenantId, setSelectedUsageTenantId] = useState("");
+  const [tenantUsage, setTenantUsage] = useState<QuotaUsage | null>(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [usageError, setUsageError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   // Édition d'un tenant (nom / plan / langue / fuseau)
@@ -220,6 +227,21 @@ export default function PlatformAdminDashboard() {
     }
   };
 
+  const loadTenantUsage = async () => {
+    if (!selectedUsageTenantId) return;
+    setUsageLoading(true);
+    setUsageError(null);
+    try {
+      const response = await api.get(`/platform/admin/quota-usage/tenants/${encodeURIComponent(selectedUsageTenantId)}`);
+      setTenantUsage(normalizeQuotaUsage(response.data));
+    } catch (error: unknown) {
+      setTenantUsage(null);
+      setUsageError(getErrorMessage(error));
+    } finally {
+      setUsageLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -245,6 +267,12 @@ export default function PlatformAdminDashboard() {
           className={`px-4 py-2 ${activeTab === "tenants" ? "border-b-2 border-indigo-500" : ""}`}
         >
           Tenants ({tenants.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("usage")}
+          className={`px-4 py-2 ${activeTab === "usage" ? "border-b-2 border-indigo-500" : ""}`}
+        >
+          Usage par tenant
         </button>
         <button
           onClick={() => setActiveTab("plans")}
@@ -387,6 +415,57 @@ export default function PlatformAdminDashboard() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {activeTab === "usage" && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">Usage par tenant</h2>
+            <p className="text-sm text-gray-500">Limites du plan et consommation réelle lorsqu'elles sont exposées par la plateforme.</p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <label className="flex-1 text-sm font-medium">
+              Tenant
+              <select
+                value={selectedUsageTenantId}
+                onChange={(event) => {
+                  setSelectedUsageTenantId(event.target.value);
+                  setTenantUsage(null);
+                  setUsageError(null);
+                }}
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2"
+              >
+                <option value="">Sélectionner un tenant</option>
+                {tenants.map((tenant) => (
+                  <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => { void loadTenantUsage(); }}
+              disabled={!selectedUsageTenantId || usageLoading}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {usageLoading ? 'Chargement...' : 'Charger l\'usage'}
+            </button>
+          </div>
+          {usageError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{usageError}</p>}
+          {tenantUsage && (
+            <>
+              <p className="text-sm text-gray-600">Plan : {tenantUsage.planName || 'Indisponible'}</p>
+              <QuotaUsageCards
+                metrics={tenantUsage.metrics}
+                title="Limites du tenant"
+                loading={usageLoading}
+                error={usageError}
+                onRetry={() => { void loadTenantUsage(); }}
+              />
+              <p className="text-xs text-gray-500">Les compteurs d'usage absents de la réponse restent indiqués comme indisponibles.</p>
+            </>
+          )}
+          {!tenantUsage && !usageLoading && !usageError && <p className="text-sm text-gray-500">Sélectionnez un tenant pour afficher ses limites.</p>}
         </div>
       )}
 

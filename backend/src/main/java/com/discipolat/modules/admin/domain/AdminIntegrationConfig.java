@@ -1,6 +1,8 @@
 package com.discipolat.modules.admin.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -20,6 +22,7 @@ public class AdminIntegrationConfig {
     private String category;
 
     @Column(name = "config_data", columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String configData = "{}";
 
     @Column(name = "created_at", nullable = false)

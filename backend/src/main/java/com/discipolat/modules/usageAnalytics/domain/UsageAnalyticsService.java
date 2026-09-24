@@ -1,6 +1,6 @@
 package com.discipolat.modules.usageAnalytics.domain;
 
-import com.discipolat.modules.usageAnalytics.domain.UsageEventRepository;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +18,16 @@ import java.util.stream.Collectors;
 public class UsageAnalyticsService {
 
     private final UsageEventRepository repository;
+    private final PlatformFeatureFlagService featureFlagService;
 
-    public UsageAnalyticsService(UsageEventRepository repository) {
+    public UsageAnalyticsService(UsageEventRepository repository,
+                                 PlatformFeatureFlagService featureFlagService) {
         this.repository = repository;
+        this.featureFlagService = featureFlagService;
     }
 
     public void track(UUID tenantId, UUID userId, List<UsageEvent> events) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.ANALYTICS_ENABLED);
         if (events == null) return;
         for (UsageEvent e : events) {
             e.setId(null);
@@ -36,6 +40,7 @@ public class UsageAnalyticsService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> summary(int days) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.ANALYTICS_ENABLED);
         UUID tenantId = com.discipolat.common.multitenancy.TenantContext.getCurrentTenantId();
         LocalDateTime from = LocalDate.now().minusDays(Math.max(1, Math.min(days, 90))).atStartOfDay();
         List<UsageEvent> events =

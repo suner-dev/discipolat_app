@@ -3,6 +3,8 @@ package com.discipolat.modules.files.domain;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
@@ -24,4 +26,7 @@ public interface FileEntityRepository extends JpaRepository<FileEntity, UUID> {
     Page<FileEntity> findByCategorieAndDeletedFalse(String categorie, Pageable pageable);
     Page<FileEntity> findByCategorieAndFamilleIdInAndDeletedFalse(String categorie, Collection<UUID> familleIds, Pageable pageable);
     long countByFamilleIdAndDeletedFalse(UUID familleId);
+
+    @Query(value = "SELECT COALESCE(SUM(taille), 0) FROM files WHERE tenant_id = :tenantId AND deleted = FALSE", nativeQuery = true)
+    long sumSizeBytesByTenantIdAndDeletedFalse(@Param("tenantId") UUID tenantId);
 }

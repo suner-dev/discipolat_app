@@ -349,6 +349,34 @@ class _AppDrawerState extends State<AppDrawer> {
     },
   ];
 
+  static const List<Map<String, Object>> _tenantAdminNav = [
+    {
+      'icon': Icons.dashboard_rounded,
+      'title': 'Tableau de bord',
+      'route': '/admin/dashboard'
+    },
+    {
+      'icon': Icons.settings_rounded,
+      'title': 'Paramètres église',
+      'route': '/admin/settings'
+    },
+    {
+      'icon': Icons.extension_rounded,
+      'title': 'Modules',
+      'route': '/tenant/modules'
+    },
+    {
+      'icon': Icons.people_rounded,
+      'title': 'Utilisateurs',
+      'route': '/tenant/users'
+    },
+    {
+      'icon': Icons.account_tree_rounded,
+      'title': 'Organisations',
+      'route': '/tenant/organizations'
+    },
+  ];
+
   // Navigation PLATEFORME (Super Admin SaaS) — réservée aux rôles PLATFORM_*.
   // Ces écrans pilotent TOUS les tenants : un admin d'église ne doit pas y accéder.
   static const List<Map<String, Object>> _platformNav = [
@@ -840,6 +868,8 @@ class _AppDrawerState extends State<AppDrawer> {
         return l10n.navMenus;
       case '/admin/pages':
         return l10n.navCustomPages;
+      case '/admin/dashboard':
+        return 'Tableau de bord administrateur';
       case '/admin/settings':
         return l10n.navChurchSettings;
       case '/admin/custom-fields':
@@ -910,6 +940,9 @@ class _AppDrawerState extends State<AppDrawer> {
       {bool isPlatformSuperAdmin = false}) {
     if (isPlatformSuperAdmin) return _platformNav;
     switch (role) {
+      case 'TENANT_ADMIN':
+      case 'TENANT_OWNER':
+        return _tenantAdminNav;
       case 'RESPONSABLE':
         return _responsableNav;
       case 'FAISEUR':
@@ -958,6 +991,10 @@ class _AppDrawerState extends State<AppDrawer> {
         return 'Super Admin plateforme';
       case 'PLATFORM_BILLING_ADMIN':
         return 'Billing plateforme';
+      case 'TENANT_ADMIN':
+        return 'Administrateur tenant';
+      case 'TENANT_OWNER':
+        return 'Propriétaire tenant';
       default:
         return role;
     }
@@ -972,6 +1009,8 @@ class _AppDrawerState extends State<AppDrawer> {
     'MEMBRE': Icons.person,
     'PLATFORM_SUPER_ADMIN': Icons.shield_rounded,
     'PLATFORM_BILLING_ADMIN': Icons.payments_rounded,
+    'TENANT_ADMIN': Icons.admin_panel_settings,
+    'TENANT_OWNER': Icons.shield_rounded,
   };
 
   Color _roleColor(String role) {
@@ -990,6 +1029,10 @@ class _AppDrawerState extends State<AppDrawer> {
         return Colors.indigo;
       case 'PLATFORM_BILLING_ADMIN':
         return Colors.blue;
+      case 'TENANT_ADMIN':
+        return Colors.red;
+      case 'TENANT_OWNER':
+        return Colors.deepOrange;
       default:
         return Colors.grey;
     }

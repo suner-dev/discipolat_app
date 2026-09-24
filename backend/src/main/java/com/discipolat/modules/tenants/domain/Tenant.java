@@ -2,6 +2,8 @@ package com.discipolat.modules.tenants.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -45,12 +47,21 @@ public class Tenant {
     @Column(name = "locale", length = 10)
     private String locale;
 
+    // Correctif 2026-09-24 : `columnDefinition = "jsonb"` ne suffit pas avec
+    // Hibernate 6 — sans type JDBC explicite, l'insert envoyait un VARCHAR et
+    // PostgreSQL rejetait la requête (« column "branding_json" is of type jsonb
+    // but expression is of type character varying »), ce qui rendait la création
+    // d'un tenant impossible en production. @JdbcTypeCode(SqlTypes.JSON) oblige
+    // Hibernate à binder réellement du JSON.
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "branding_json", columnDefinition = "jsonb")
     private String brandingJson;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "features_json", columnDefinition = "jsonb")
     private String featuresJson;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "settings_json", columnDefinition = "jsonb")
     private String settingsJson;
 

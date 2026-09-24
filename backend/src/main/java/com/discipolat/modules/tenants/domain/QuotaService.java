@@ -1,258 +1,287 @@
 package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
+import com.discipolat.modules.ai.domain.AiUsageRepository;
+import com.discipolat.modules.files.domain.FileEntityRepository;
+import com.discipolat.modules.messages.domain.ConversationMessageRepository;
+import com.discipolat.modules.trainings.domain.CourseRepository;
 import com.discipolat.modules.users.domain.UserRepository;
-import com.discipolat.modules.tenants.domain.OrganizationNodeRepository;
-import com.discipolat.modules.tenants.domain.TenantSubscriptionRepository;
-import com.discipolat.modules.tenants.domain.SaasPlanRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.UUID;
 
-/**
- * Service for enforcing tenant quotas based on their SaaS plan.
- * All entity creation that could exceed limits should call this service.
- */
 @Service
 @Transactional
 public class QuotaService {
 
+    private static final long BYTES_PER_MEGABYTE = 1024L * 1024L;
+
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final OrganizationNodeRepository orgNodeRepository;
-    private final TenantSubscriptionRepository subscriptionRepository;
-    private final SaasPlanRepository planRepository;
+    private final FileEntityRepository fileRepository;
+    private final CourseRepository courseRepository;
+    private final ConversationMessageRepository messageRepository;
+    private final AiUsageRepository aiUsageRepository;
+    private final TenantPlanPolicy planPolicy;
+    private final TenantUsageSnapshotService usageSnapshotService;
+    private final ObjectMapper objectMapper;
+    private final Clock clock = Clock.systemUTC();
 
     public QuotaService(TenantRepository tenantRepository,
                         UserRepository userRepository,
                         OrganizationNodeRepository orgNodeRepository,
-                        TenantSubscriptionRepository subscriptionRepository,
-                        SaasPlanRepository planRepository) {
+                        FileEntityRepository fileRepository,
+                        CourseRepository courseRepository,
+                        ConversationMessageRepository messageRepository,
+                        AiUsageRepository aiUsageRepository,
+                        TenantPlanPolicy planPolicy,
+                        TenantUsageSnapshotService usageSnapshotService,
+                        ObjectMapper objectMapper) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.orgNodeRepository = orgNodeRepository;
-        this.subscriptionRepository = subscriptionRepository;
-        this.planRepository = planRepository;
+        this.fileRepository = fileRepository;
+        this.courseRepository = courseRepository;
+        this.messageRepository = messageRepository;
+        this.aiUsageRepository = aiUsageRepository;
+        this.planPolicy = planPolicy;
+        this.usageSnapshotService = usageSnapshotService;
+        this.objectMapper = objectMapper;
     }
 
-    /**
-     * Check if tenant can create a new user.
-     * Throws BusinessRuleException if quota exceeded.
-     */
     public void checkCanCreateUser(UUID tenantId) {
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
-
-        Map<String, Object> limits = getEffectiveLimits(tenant);
-        if (limits == null || !limits.containsKey("max_users")) {
-            return; // No limit configured
+        LockedPlan locked = lockPlan(tenantId);
+        OptionalLong limit = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.USERS);
+        if (!locked.enforced() || limit.isEmpty()) {
+            return;
         }
-
-        long currentUsers = userRepository.countByTenantId(tenantId);
-        long maxUsers = ((Number) limits.get("max_users")).longValue();
-
-        if (currentUsers >= maxUsers) {
-            throw new BusinessRuleException(
-                    "Limite d'utilisateurs atteinte: " + currentUsers + "/" + maxUsers +
-                            ". Veuillez mettre à jour votre plan.",
-                    "QUOTA_EXCEEDED_USERS");
+        long currentUsers = userRepository.countByTenantIdAndDeletedFalse(tenantId);
+        if (currentUsers >= limit.getAsLong()) {
+            throw exceeded("users", currentUsers, limit.getAsLong());
         }
     }
 
-    /**
-     * Check if tenant can create a new church (ROOT_CHURCH or SUB_CHURCH).
-     */
     public void checkCanCreateChurch(UUID tenantId, OrganizationNodeType type) {
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
-
-        Map<String, Object> limits = getEffectiveLimits(tenant);
-        if (limits == null || !limits.containsKey("max_churches")) {
+        LockedPlan locked = lockPlan(tenantId);
+        Long limit = rawLimit(locked.plan(), "max_churches");
+        if (!locked.enforced() || limit == null) {
             return;
         }
-
-        long currentChurches = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH)
+        long current = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH)
                 + orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.SUB_CHURCH);
-        long maxChurches = ((Number) limits.get("max_churches")).longValue();
-
-        if (currentChurches >= maxChurches) {
-            throw new BusinessRuleException(
-                    "Limite d'églises atteinte: " + currentChurches + "/" + maxChurches +
-                            ". Veuillez mettre à jour votre plan.",
-                    "QUOTA_EXCEEDED_CHURCHES");
+        if (current >= limit) {
+            throw exceeded("churches", current, limit);
         }
     }
 
-    /**
-     * Check if tenant can create a new department.
-     */
     public void checkCanCreateDepartment(UUID tenantId) {
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
-
-        Map<String, Object> limits = getEffectiveLimits(tenant);
-        if (limits == null || !limits.containsKey("max_departments")) {
+        LockedPlan locked = lockPlan(tenantId);
+        Long limit = rawLimit(locked.plan(), "max_departments");
+        if (!locked.enforced() || limit == null) {
             return;
         }
-
-        long currentDepartments = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT);
-        long maxDepartments = ((Number) limits.get("max_departments")).longValue();
-
-        if (currentDepartments >= maxDepartments) {
-            throw new BusinessRuleException(
-                    "Limite de départements atteinte: " + currentDepartments + "/" + maxDepartments +
-                            ". Veuillez mettre à jour votre plan.",
-                    "QUOTA_EXCEEDED_DEPARTMENTS");
+        long current = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT);
+        if (current >= limit) {
+            throw exceeded("departments", current, limit);
         }
     }
 
-    /**
-     * Check if tenant can create a new course.
-     */
     public void checkCanCreateCourse(UUID tenantId) {
-        // Would need CourseRepository - placeholder for now
-        // Implement when CourseRepository is available
-    }
-
-    /**
-     * Check if tenant can make an AI request.
-     */
-    public void checkCanMakeAiRequest(UUID tenantId) {
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
-
-        Map<String, Object> limits = getEffectiveLimits(tenant);
-        if (limits == null || !limits.containsKey("max_ai_requests_month")) {
+        LockedPlan locked = lockPlan(tenantId);
+        OptionalLong limit = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.COURSES);
+        if (!locked.enforced() || limit.isEmpty()) {
             return;
         }
-
-        // TODO: Track current month AI requests from usage analytics
-        // For now, just check if feature is enabled
-        Map<String, Object> features = parseJson(tenant.getFeaturesJson());
-        Boolean aiEnabled = (Boolean) features.getOrDefault("ai_copilot", false);
-        if (!aiEnabled) {
-            throw new BusinessRuleException("Fonctionnalité IA non activée pour ce tenant", "FEATURE_DISABLED_AI");
+        long current = courseRepository.countByTenantId(tenantId);
+        if (current >= limit.getAsLong()) {
+            throw exceeded("courses", current, limit.getAsLong());
         }
     }
 
-    /**
-     * Check if tenant can send a message (monthly limit).
-     */
-    public void checkCanSendMessage(UUID tenantId) {
-        // Would need message count tracking - placeholder
+    public void checkCanStoreFile(UUID tenantId, long additionalBytes) {
+        if (additionalBytes < 0) {
+            throw new BusinessRuleException("File size cannot be negative", "INVALID_FILE_SIZE");
+        }
+        LockedPlan locked = lockPlan(tenantId);
+        OptionalLong megabytes = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.STORAGE_MB);
+        if (!locked.enforced() || megabytes.isEmpty()) {
+            return;
+        }
+        Long limit;
+        try {
+            limit = Math.multiplyExact(megabytes.getAsLong(), BYTES_PER_MEGABYTE);
+        } catch (ArithmeticException ignored) {
+            return;
+        }
+        long current = fileRepository.sumSizeBytesByTenantIdAndDeletedFalse(tenantId);
+        try {
+            if (Math.addExact(current, additionalBytes) > limit) {
+                throw new BusinessRuleException(
+                        "Storage quota exceeded: " + current + "/" + limit + " bytes",
+                        "QUOTA_EXCEEDED_STORAGE");
+            }
+        } catch (ArithmeticException ignored) {
+            throw new BusinessRuleException(
+                    "Storage quota exceeded: " + current + "/" + limit + " bytes",
+                    "QUOTA_EXCEEDED_STORAGE");
+        }
     }
 
-    /**
-     * Check if tenant has a specific feature enabled.
-     */
+    public void checkCanMakeAiRequest(UUID tenantId) {
+        checkCanConsumeAiCredits(tenantId, 1);
+    }
+
+    public void checkCanConsumeAiCredits(UUID tenantId, int credits) {
+        if (credits < 0) {
+            throw new BusinessRuleException("AI credits cannot be negative", "INVALID_AI_CREDITS");
+        }
+        LockedPlan locked = lockPlan(tenantId);
+        if (!locked.enforced()) {
+            return;
+        }
+        Optional<Boolean> aiFeature = planPolicy.feature(locked.plan(), "ai", "ai_copilot");
+        if (aiFeature.isPresent() && !aiFeature.get()) {
+            throw new BusinessRuleException("AI feature is disabled for this tenant", "FEATURE_DISABLED_AI");
+        }
+        OptionalLong limit = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.AI_CREDITS);
+        if (limit.isEmpty()) {
+            return;
+        }
+        LocalDate month = LocalDate.now(clock);
+        long used = aiUsageRepository.sumCreditsConsumedByTenantIdAndUsageDateGreaterThanEqualAndUsageDateLessThan(
+                tenantId, month, month.plusMonths(1));
+        if ((long) credits > limit.getAsLong() - Math.min(used, limit.getAsLong())) {
+            throw exceeded("ai_credits", used, limit.getAsLong());
+        }
+    }
+
+    public void checkCanSendMessage(UUID tenantId) {
+        LockedPlan locked = lockPlan(tenantId);
+        OptionalLong limit = planPolicy.limit(locked.plan(), TenantPlanPolicy.Limit.MESSAGES);
+        if (!locked.enforced() || limit.isEmpty()) {
+            return;
+        }
+        LocalDateTime from = LocalDate.now(clock).atStartOfDay();
+        LocalDateTime to = from.plusMonths(1);
+        long current = messageRepository.countByTenantIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanAndIsDeletedFalse(
+                tenantId, from, to);
+        if (current >= limit.getAsLong()) {
+            throw exceeded("messages", current, limit.getAsLong());
+        }
+    }
+
     public boolean isFeatureEnabled(UUID tenantId, String featureKey) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
-
-        Map<String, Object> features = parseJson(tenant.getFeaturesJson());
-        return Boolean.TRUE.equals(features.get(featureKey));
+        return Boolean.TRUE.equals(readObject(tenant.getFeaturesJson()).get(featureKey));
     }
 
-    /**
-     * Get all quota usage for a tenant.
-     */
     @Transactional(readOnly = true)
     public Map<String, Object> getQuotaUsage(UUID tenantId) {
+        TenantUsageSnapshot snapshot = usageSnapshotService.getSnapshotForTenant(tenantId);
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
-
-        Map<String, Object> limits = getEffectiveLimits(tenant);
-        Map<String, Object> usage = new java.util.HashMap<>();
-
-        if (limits != null) {
-            long users = userRepository.countByTenantId(tenantId);
-            long churches = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH)
-                    + orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.SUB_CHURCH);
-            long departments = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT);
-            long campuses = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.CAMPUS);
-            long groups = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.GROUP);
-
-            if (limits.containsKey("max_users")) {
-                long max = ((Number) limits.get("max_users")).longValue();
-                usage.put("users", Map.of("used", users, "limit", max, "percent", max > 0 ? (users * 100.0 / max) : 0));
-            }
-            if (limits.containsKey("max_churches")) {
-                long max = ((Number) limits.get("max_churches")).longValue();
-                usage.put("churches", Map.of("used", churches, "limit", max, "percent", max > 0 ? (churches * 100.0 / max) : 0));
-            }
-            if (limits.containsKey("max_departments")) {
-                long max = ((Number) limits.get("max_departments")).longValue();
-                usage.put("departments", Map.of("used", departments, "limit", max, "percent", max > 0 ? (departments * 100.0 / max) : 0));
-            }
-            if (limits.containsKey("max_campuses")) {
-                long max = ((Number) limits.get("max_campuses")).longValue();
-                usage.put("campuses", Map.of("used", campuses, "limit", max, "percent", max > 0 ? (campuses * 100.0 / max) : 0));
-            }
-            if (limits.containsKey("max_groups")) {
-                long max = ((Number) limits.get("max_groups")).longValue();
-                usage.put("groups", Map.of("used", groups, "limit", max, "percent", max > 0 ? (groups * 100.0 / max) : 0));
-            }
-            if (limits.containsKey("max_storage_mb")) {
-                usage.put("storage", Map.of("usedMb", 0, "limitMb", limits.get("max_storage_mb"), "percent", 0));
-            }
-            if (limits.containsKey("max_ai_requests_month")) {
-                usage.put("aiRequests", Map.of("used", 0, "limit", limits.get("max_ai_requests_month"), "percent", 0));
-            }
-            if (limits.containsKey("max_courses")) {
-                usage.put("courses", Map.of("used", 0, "limit", limits.get("max_courses"), "percent", 0));
-            }
-            if (limits.containsKey("max_messages_month")) {
-                usage.put("messages", Map.of("used", 0, "limit", limits.get("max_messages_month"), "percent", 0));
-            }
-        }
-
+        TenantPlanPolicy.ResolvedPlan resolvedPlan = planPolicy.resolve(tenant);
+        Map<String, Object> usage = new LinkedHashMap<>();
+        usage.put("snapshot", snapshot);
+        addMetric(usage, "users", snapshot.users());
+        addMetric(usage, "storage", snapshot.storageBytes(), BYTES_PER_MEGABYTE, "usedMb", "limitMb");
+        addMetric(usage, "aiRequests", snapshot.aiCredits());
+        addMetric(usage, "courses", snapshot.courses());
+        addMetric(usage, "messages", snapshot.messages());
+        addOrganizationMetric(usage, "churches", resolvedPlan,
+                orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH)
+                        + orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.SUB_CHURCH));
+        addOrganizationMetric(usage, "departments", resolvedPlan,
+                orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT));
+        addOrganizationMetric(usage, "campuses", resolvedPlan,
+                orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.CAMPUS));
+        addOrganizationMetric(usage, "groups", resolvedPlan,
+                orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.GROUP));
         return usage;
     }
 
-    /**
-     * Get effective limits for tenant (from subscription plan or tenant defaults).
-     */
-    private Map<String, Object> getEffectiveLimits(Tenant tenant) {
-        // Try subscription plan first
-        Optional<TenantSubscription> subscription = subscriptionRepository.findByTenantId(tenant.getId());
-        if (subscription.isPresent()) {
-            Optional<SaasPlan> plan = planRepository.findById(subscription.get().getPlanKey());
-            if (plan.isPresent() && plan.get().getLimitsJson() != null) {
-                return parseJson(plan.get().getLimitsJson());
-            }
+    private void addMetric(Map<String, Object> target, String key, TenantUsageSnapshot.Metric metric) {
+        if (metric.limit() != null) {
+            Map<String, Object> legacy = new LinkedHashMap<>();
+            legacy.put("used", metric.used());
+            legacy.put("limit", metric.limit());
+            legacy.put("percent", metric.utilizationPercent());
+            target.put(key, legacy);
         }
-
-        // Fallback to tenant's own limits_json (from V135)
-        if (tenant.getFeaturesJson() != null) {
-            Map<String, Object> features = parseJson(tenant.getFeaturesJson());
-            if (features.containsKey("limits")) {
-                return (Map<String, Object>) features.get("limits");
-            }
-        }
-
-        // Default FREE plan limits
-        return Map.of(
-                "max_users", 50L,
-                "max_churches", 1L,
-                "max_departments", 10L,
-                "max_campuses", 5L,
-                "max_groups", 20L,
-                "max_storage_mb", 100L,
-                "max_ai_requests_month", 100L,
-                "max_courses", 5L,
-                "max_messages_month", 1000L
-        );
     }
 
-    private Map<String, Object> parseJson(String json) {
-        if (json == null || json.isBlank()) return Map.of();
-        try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Map.class);
-        } catch (Exception e) {
+    private void addMetric(Map<String, Object> target,
+                           String key,
+                           TenantUsageSnapshot.Metric metric,
+                           long divisor,
+                           String usedKey,
+                           String limitKey) {
+        if (metric.limit() != null) {
+            Map<String, Object> legacy = new LinkedHashMap<>();
+            legacy.put(usedKey, metric.used() / (double) divisor);
+            legacy.put(limitKey, metric.limit() / (double) divisor);
+            legacy.put("percent", metric.utilizationPercent());
+            target.put(key, legacy);
+        }
+    }
+
+    private void addOrganizationMetric(Map<String, Object> target,
+                                       String key,
+                                       TenantPlanPolicy.ResolvedPlan resolvedPlan,
+                                       long used) {
+        Long limit = rawLimit(resolvedPlan, "max_" + key);
+        if (limit != null) {
+            target.put(key, Map.of("used", used, "limit", limit,
+                    "percent", limit == 0 ? 0.0 : Math.round(used * 10000.0 / limit) / 100.0));
+        }
+    }
+
+    private LockedPlan lockPlan(UUID tenantId) {
+        Tenant tenant = tenantRepository.findByIdForUpdate(tenantId)
+                .orElseThrow(() -> new BusinessRuleException("Tenant not found", "TENANT_NOT_FOUND"));
+        TenantPlanPolicy.ResolvedPlan resolvedPlan = planPolicy.resolve(tenant);
+        return new LockedPlan(resolvedPlan, resolvedPlan.enforcementEnabled());
+    }
+
+    private Long rawLimit(TenantPlanPolicy.ResolvedPlan resolvedPlan, String key) {
+        if (resolvedPlan == null || !resolvedPlan.enforcementEnabled()) {
+            return null;
+        }
+        Object value = resolvedPlan.limits().get(key);
+        return value instanceof Number number ? number.longValue() : null;
+    }
+
+    private BusinessRuleException exceeded(String resource, long used, long limit) {
+        return new BusinessRuleException(
+                "Quota exceeded for " + resource + ": " + used + "/" + limit,
+                "QUOTA_EXCEEDED_" + resource.toUpperCase(Locale.ROOT));
+    }
+
+    private Map<String, Object> readObject(String json) {
+        if (json == null || json.isBlank()) {
             return Map.of();
         }
+        try {
+            return objectMapper.readValue(json, new TypeReference<>() {
+            });
+        } catch (Exception ignored) {
+            return Map.of();
+        }
+    }
+
+    private record LockedPlan(TenantPlanPolicy.ResolvedPlan plan, boolean enforced) {
     }
 }

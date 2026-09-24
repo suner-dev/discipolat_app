@@ -7,7 +7,9 @@ import com.discipolat.common.exception.ForbiddenException;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.tenants.domain.QuotaService;
 import com.discipolat.modules.souls.domain.SoulHistory;
 import com.discipolat.modules.souls.domain.SoulHistoryRepository;
 import org.slf4j.Logger;
@@ -53,6 +55,7 @@ public class UserService {
     private final DepartmentRepository departmentRepository;
     private final EvaluationService evaluationService;
     private final DepartmentDossierService dossierService;
+    private final QuotaService quotaService;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        SecurityUtils securityUtils, SoulRepository soulRepository,
@@ -63,10 +66,11 @@ public class UserService {
                        EntityPropagationListener propagationListener,
                        WorkspaceScopeService workspaceScopeService,
                        SoulDepartmentRepository soulDepartmentRepository,
-                       FamilyRepository familyRepository,
-                       DepartmentRepository departmentRepository,
-                       EvaluationService evaluationService,
-                       DepartmentDossierService dossierService) {
+                        FamilyRepository familyRepository,
+                        DepartmentRepository departmentRepository,
+                        EvaluationService evaluationService,
+                        DepartmentDossierService dossierService,
+                        QuotaService quotaService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.securityUtils = securityUtils;
@@ -82,6 +86,7 @@ public class UserService {
         this.departmentRepository = departmentRepository;
         this.evaluationService = evaluationService;
         this.dossierService = dossierService;
+        this.quotaService = quotaService;
     }
 
     // ======================== US-12: PROMOTE TO FAISEUR ========================
@@ -179,6 +184,7 @@ public class UserService {
 
     public User create(User user, String rawPassword) {
         assertCanAssignRoles(user.getRole(), user.getRoles());
+        quotaService.checkCanCreateUser(TenantContext.requireTenantId());
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new BusinessRuleException("Email already exists: " + user.getEmail());
         }

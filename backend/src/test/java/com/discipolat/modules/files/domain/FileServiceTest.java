@@ -2,6 +2,7 @@ package com.discipolat.modules.files.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
+import com.discipolat.modules.tenants.domain.QuotaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,11 +48,14 @@ class FileServiceTest {
     @Mock
     private WorkspaceScopeService workspaceScopeService;
 
+    @Mock
+    private QuotaService quotaService;
+
     private FileService service;
 
     @BeforeEach
     void setUp() {
-        service = new FileService(repository, securityUtils, workspaceScopeService);
+        service = new FileService(repository, securityUtils, workspaceScopeService, quotaService);
     }
 
     private static final Pageable PAGEABLE = PageRequest.of(0, 20);

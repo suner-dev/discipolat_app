@@ -3,6 +3,7 @@ package com.discipolat.modules.ai.domain;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.members.domain.MemberPresenceRepository;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import org.springframework.stereotype.Service;
@@ -20,16 +21,20 @@ public class AiKpiNarrativeService {
     private final FamilyRepository familyRepo;
     private final MakerReportRepository reportRepo;
     private final MemberPresenceRepository presenceRepo;
+    private final PlatformFeatureFlagService featureFlagService;
 
     public AiKpiNarrativeService(SoulRepository soulRepo, FamilyRepository familyRepo,
-                                 MakerReportRepository reportRepo, MemberPresenceRepository presenceRepo) {
+                                 MakerReportRepository reportRepo, MemberPresenceRepository presenceRepo,
+                                 PlatformFeatureFlagService featureFlagService) {
         this.soulRepo = soulRepo;
         this.familyRepo = familyRepo;
         this.reportRepo = reportRepo;
         this.presenceRepo = presenceRepo;
+        this.featureFlagService = featureFlagService;
     }
 
     public Map<String, Object> generateNarrative() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         UUID tenantId = TenantContext.requireTenantId();
         LocalDate now = LocalDate.now();
         LocalDate weekStart = now.minusDays(7);

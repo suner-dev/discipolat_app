@@ -6,6 +6,7 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.finances.api.FinanceTransactionRequest;
 import com.discipolat.modules.finances.domain.FinanceService;
 import com.discipolat.modules.finances.domain.FinanceTransaction;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -39,19 +40,22 @@ public class PaymentGatewayService {
     private final EntityPropagationPublisher propagationPublisher;
     private final SecurityUtils securityUtils;
     private final MobileMoneyProviderRegistry providerRegistry;
+    private final PlatformFeatureFlagService featureFlagService;
 
     public PaymentGatewayService(PaymentIntentRepository repository,
                                  RecurringDonationRepository recurringDonationRepository,
                                  FinanceService financeService,
                                  EntityPropagationPublisher propagationPublisher,
                                  SecurityUtils securityUtils,
-                                 MobileMoneyProviderRegistry providerRegistry) {
+                                 MobileMoneyProviderRegistry providerRegistry,
+                                 PlatformFeatureFlagService featureFlagService) {
         this.repository = repository;
         this.recurringDonationRepository = recurringDonationRepository;
         this.financeService = financeService;
         this.propagationPublisher = propagationPublisher;
         this.securityUtils = securityUtils;
         this.providerRegistry = providerRegistry;
+        this.featureFlagService = featureFlagService;
     }
 
     /**
@@ -65,6 +69,7 @@ public class PaymentGatewayService {
      * webhook opérateur signé.</p>
      */
     public PaymentIntent initiate(PaymentIntent intent) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         intent.setTenantId(securityUtils.getCurrentTenantId());
         if (intent.getUserId() == null) {
             try {
@@ -113,6 +118,7 @@ public class PaymentGatewayService {
      * À la confirmation → création du reçu financier (module Finances).
      */
     public PaymentIntent handleWebhook(String providerReference, boolean success, String reason) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         PaymentIntent intent = repository.findByProviderReference(providerReference)
                 .orElseThrow(() -> new EntityNotFoundException("PaymentIntent", "providerReference", providerReference));
 
@@ -141,6 +147,7 @@ public class PaymentGatewayService {
 
     /** Annulation par l'utilisateur avant confirmation (son propre paiement uniquement). */
     public PaymentIntent cancel(UUID id) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         PaymentIntent intent = findByIdForCurrentUser(id);
         if (intent.getStatus() == PaymentIntent.Status.PENDING) {
             intent.setStatus(PaymentIntent.Status.CANCELLED);
@@ -151,12 +158,14 @@ public class PaymentGatewayService {
 
     @Transactional(readOnly = true)
     public List<PaymentIntent> recent() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         return repository.findTop50ByOrderByCreatedAtDesc();
     }
 
     /** Paiements de l'utilisateur courant — vue « Mes dons » (tous rôles). */
     @Transactional(readOnly = true)
     public List<PaymentIntent> mine() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         return repository.findTop50ByUserIdOrderByCreatedAtDesc(securityUtils.getCurrentUserId());
     }
 
@@ -178,6 +187,7 @@ public class PaymentGatewayService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> stats() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("pending", repository.countByStatus(PaymentIntent.Status.PENDING));
         stats.put("confirmed", repository.countByStatus(PaymentIntent.Status.CONFIRMED));
@@ -204,6 +214,7 @@ public class PaymentGatewayService {
 
     @Transactional(readOnly = true)
     public PaymentIntent findById(UUID id) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         return repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("PaymentIntent", id));
     }
@@ -215,6 +226,7 @@ public class PaymentGatewayService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> dashboard() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.MOBILE_MONEY_ENABLED);
         Map<String, Object> dashboard = new LinkedHashMap<>();
 
         // KPIs de base

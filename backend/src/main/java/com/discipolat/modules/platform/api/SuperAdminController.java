@@ -47,6 +47,7 @@ public class SuperAdminController {
     private final OrganizationNodeRepository orgNodeRepository;
     private final TenantService tenantService;
     private final SaasPlanService saasPlanService;
+    private final TenantPlanPolicy tenantPlanPolicy;
     private final ImpersonationService impersonationService;
     private final AuditService auditService;
     private final AuditLogRepository auditLogRepository;
@@ -60,10 +61,11 @@ public class SuperAdminController {
                                 RoleRepository roleRepository,
                                 SaasPlanRepository planRepository,
                                 TenantSubscriptionRepository subscriptionRepository,
-                                OrganizationNodeRepository orgNodeRepository,
-                                TenantService tenantService,
-                                SaasPlanService saasPlanService,
-                                ImpersonationService impersonationService,
+                                 OrganizationNodeRepository orgNodeRepository,
+                                 TenantService tenantService,
+                                 SaasPlanService saasPlanService,
+                                 TenantPlanPolicy tenantPlanPolicy,
+                                 ImpersonationService impersonationService,
                                  AuditService auditService,
                                  AuditLogRepository auditLogRepository,
                                  PlatformFeatureFlagService featureFlagService,
@@ -77,6 +79,7 @@ public class SuperAdminController {
         this.orgNodeRepository = orgNodeRepository;
         this.tenantService = tenantService;
         this.saasPlanService = saasPlanService;
+        this.tenantPlanPolicy = tenantPlanPolicy;
         this.impersonationService = impersonationService;
         this.auditService = auditService;
         this.auditLogRepository = auditLogRepository;
@@ -86,47 +89,60 @@ public class SuperAdminController {
 
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getAdminDashboard() {
-        long totalTenants = tenantRepository.count();
-        long activeTenants = tenantRepository.countByStatus(TenantStatus.ACTIVE);
-        long suspendedTenants = tenantRepository.countByStatus(TenantStatus.SUSPENDED);
-        long cancelledTenants = tenantRepository.countByStatus(TenantStatus.CANCELLED);
-        long pendingSetupTenants = tenantRepository.countByStatus(TenantStatus.PENDING_SETUP);
+        List<Tenant> tenants = tenantRepository.findAll();
+        long totalTenants = tenants.size();
+        long activeTenants = tenants.stream().filter(t -> t.getStatus() == TenantStatus.ACTIVE).count();
+        long suspendedTenants = tenants.stream().filter(t -> t.getStatus() == TenantStatus.SUSPENDED).count();
+        long cancelledTenants = tenants.stream().filter(t -> t.getStatus() == TenantStatus.CANCELLED).count();
+        long pendingSetupTenants = tenants.stream().filter(t -> t.getStatus() == TenantStatus.PENDING_SETUP).count();
 
-        long totalUsers = userRepository.count();
-        long activeUsers = userRepository.countByStatut(UserStatus.ACTIVE);
-        long inactiveUsers = userRepository.countByStatut(UserStatus.INACTIVE);
-
-        long totalMemberships = membershipRepository.count();
-        long activeMemberships = membershipRepository.countByStatus(MembershipStatus.ACTIVE);
-
-        Map<String, Long> tenantsByPlan = tenantRepository.findAll().stream()
-                .collect(Collectors.groupingBy(Tenant::getPlan, Collectors.counting()));
-
-        Map<String, Long> tenantsByStatus = tenantRepository.findAll().stream()
-                .collect(Collectors.groupingBy(t -> t.getStatus().name(), Collectors.counting()));
-
-        Instant thirtyDaysAgo = Instant.now().minus(30, ChronoUnit.DAYS);
-        long recentTenants = tenantRepository.findAll().stream()
-                .filter(t -> t.getCreatedAt().isAfter(thirtyDaysAgo))
-                .count();
-
-        long activeSubscriptions = subscriptionRepository.countByStatus(SubscriptionStatus.ACTIVE);
-        long trialSubscriptions = subscriptionRepository.countByStatus(SubscriptionStatus.TRIAL);
-        long pastDueSubscriptions = subscriptionRepository.countByStatus(SubscriptionStatus.PAST_DUE);
-        long canceledSubscriptions = subscriptionRepository.countByStatus(SubscriptionStatus.CANCELED);
-
-        long totalChurches = orgNodeRepository.countByType(OrganizationNodeType.ROOT_CHURCH);
-        long totalCampuses = orgNodeRepository.countByType(OrganizationNodeType.CAMPUS);
-        long totalSubChurches = orgNodeRepository.countByType(OrganizationNodeType.SUB_CHURCH);
-        long totalDepartments = orgNodeRepository.countByType(OrganizationNodeType.DEPARTMENT);
-        long totalGroups = orgNodeRepository.countByType(OrganizationNodeType.GROUP);
-
+        long totalUsers = 0;
+        long activeUsers = 0;
+        long inactiveUsers = 0;
+        long totalMemberships = 0;
+        long activeMemberships = 0;
+        long totalChurches = 0;
+        long totalCampuses = 0;
+        long totalSubChurches = 0;
+        long totalDepartments = 0;
+        long totalGroups = 0;
+        long[] subscriptionCounts = new long[4];
+        long recentAuditLogs = 0;
         LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
-        long recentAuditLogs = auditLogRepository.countByCreatedAtGreaterThan(weekAgo);
+
+        for (Tenant tenant : tenants) {
+            UUID tenantId = tenant.getId();
+            totalUsers += userRepository.countByTenantId(tenantId);
+            activeUsers += userRepository.countByTenantIdAndStatut(tenantId, UserStatus.ACTIVE);
+            inactiveUsers += userRepository.countByTenantIdAndStatut(tenantId, UserStatus.INACTIVE);
+            totalMemberships += membershipRepository.countByTenantId(tenantId);
+            activeMemberships += membershipRepository.countByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE);
+            totalChurches += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH);
+            totalCampuses += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.CAMPUS);
+            totalSubChurches += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.SUB_CHURCH);
+            totalDepartments += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT);
+            totalGroups += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.GROUP);
+            recentAuditLogs += auditLogRepository.countByTenantIdAndCreatedAtGreaterThan(tenantId, weekAgo);
+            subscriptionRepository.findCurrentByTenantId(tenantId).ifPresent(subscription -> {
+                switch (subscription.getStatus()) {
+                    case ACTIVE -> subscriptionCounts[0]++;
+                    case TRIAL -> subscriptionCounts[1]++;
+                    case PAST_DUE -> subscriptionCounts[2]++;
+                    case CANCELED -> subscriptionCounts[3]++;
+                    default -> {
+                    }
+                }
+            });
+        }
+
+        Map<String, Long> tenantsByPlan = tenants.stream()
+                .collect(Collectors.groupingBy(t -> tenantPlanPolicy.normalizePlanKey(t.getPlan()), Collectors.counting()));
+        Map<String, Long> tenantsByStatus = tenants.stream()
+                .collect(Collectors.groupingBy(t -> t.getStatus().name(), Collectors.counting()));
+        long recentTenants = tenantRepository.countByCreatedAtAfter(Instant.now().minus(30, ChronoUnit.DAYS));
 
         Map<String, Object> dashboard = new LinkedHashMap<>();
         dashboard.put("generatedAt", Instant.now().toString());
-
         dashboard.put("tenants", Map.of(
                 "total", totalTenants,
                 "active", activeTenants,
@@ -137,7 +153,6 @@ public class SuperAdminController {
                 "byPlan", tenantsByPlan,
                 "byStatus", tenantsByStatus
         ));
-
         dashboard.put("users", Map.of(
                 "total", totalUsers,
                 "active", activeUsers,
@@ -145,14 +160,12 @@ public class SuperAdminController {
                 "totalMemberships", totalMemberships,
                 "activeMemberships", activeMemberships
         ));
-
         dashboard.put("subscriptions", Map.of(
-                "active", activeSubscriptions,
-                "trial", trialSubscriptions,
-                "pastDue", pastDueSubscriptions,
-                "canceled", canceledSubscriptions
+                "active", subscriptionCounts[0],
+                "trial", subscriptionCounts[1],
+                "pastDue", subscriptionCounts[2],
+                "canceled", subscriptionCounts[3]
         ));
-
         dashboard.put("organizations", Map.of(
                 "churches", totalChurches,
                 "campuses", totalCampuses,
@@ -160,11 +173,7 @@ public class SuperAdminController {
                 "departments", totalDepartments,
                 "groups", totalGroups
         ));
-
-        dashboard.put("activity", Map.of(
-                "auditLogsLast7Days", recentAuditLogs
-        ));
-
+        dashboard.put("activity", Map.of("auditLogsLast7Days", recentAuditLogs));
         return ResponseEntity.ok(dashboard);
     }
 
@@ -457,7 +466,7 @@ public class SuperAdminController {
         Tenant tenant = tenantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tenant non trouvé"));
 
-        Optional<TenantSubscription> subscription = subscriptionRepository.findByTenantId(id);
+        Optional<TenantSubscription> subscription = subscriptionRepository.findCurrentByTenantId(id);
         List<TenantMembership> memberships = membershipRepository.findByTenantIdAndStatus(id, MembershipStatus.ACTIVE);
 
         Map<String, Long> membershipsByRole = memberships.stream()

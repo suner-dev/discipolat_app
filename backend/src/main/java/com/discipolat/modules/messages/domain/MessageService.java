@@ -3,6 +3,8 @@ package com.discipolat.modules.messages.domain;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.exception.BadRequestException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.tenants.domain.QuotaService;
 import com.discipolat.modules.messages.api.ConversationResponse;
 import com.discipolat.modules.messages.api.MessageResponse;
 import com.discipolat.modules.messages.api.SendMessageRequest;
@@ -28,15 +30,18 @@ public class MessageService {
     private final ConversationMessageRepository messageRepository;
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
+    private final QuotaService quotaService;
 
     public MessageService(ConversationRepository conversationRepository,
                           ConversationMessageRepository messageRepository,
                           UserRepository userRepository,
-                          SecurityUtils securityUtils) {
+                          SecurityUtils securityUtils,
+                          QuotaService quotaService) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
         this.securityUtils = securityUtils;
+        this.quotaService = quotaService;
     }
 
     /** Ouvre (ou récupère) une conversation avec un autre utilisateur. */
@@ -92,6 +97,7 @@ public class MessageService {
         Conversation conv = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new EntityNotFoundException("Conversation", conversationId));
         assertParticipant(conv, currentUserId);
+        quotaService.checkCanSendMessage(TenantContext.requireTenantId());
 
         ConversationMessage msg = messageRepository.save(ConversationMessage.builder()
                 .conversationId(conversationId)

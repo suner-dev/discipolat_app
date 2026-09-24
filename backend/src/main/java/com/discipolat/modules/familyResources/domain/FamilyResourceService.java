@@ -2,6 +2,7 @@ package com.discipolat.modules.familyResources.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import org.springframework.data.domain.Page;
@@ -19,23 +20,29 @@ public class FamilyResourceService {
 
     private final FamilyResourceRepository repository;
     private final SoulRepository soulRepository;
+    private final PlatformFeatureFlagService featureFlagService;
 
     public FamilyResourceService(FamilyResourceRepository repository,
-                                 SoulRepository soulRepository) {
+                                 SoulRepository soulRepository,
+                                 PlatformFeatureFlagService featureFlagService) {
         this.repository = repository;
         this.soulRepository = soulRepository;
+        this.featureFlagService = featureFlagService;
     }
 
     public List<FamilyResource> listByFamily(UUID familleId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         return repository.findByFamilleIdOrderByCreatedAtDesc(familleId);
     }
 
     public Page<FamilyResource> listByFamilyPage(UUID familleId, Pageable pageable) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         return repository.findByFamilleIdOrderByCreatedAtDesc(familleId, pageable);
     }
 
     /** Liste paginée des ressources de la famille de l'utilisateur donné. */
     public Page<FamilyResource> listForUser(UUID userId, Pageable pageable) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         UUID familleId = soulRepository.findAllByUserId(userId).stream()
                 .map(Soul::getFamilleId)
                 .filter(Objects::nonNull)
@@ -48,11 +55,13 @@ public class FamilyResourceService {
     }
 
     public FamilyResource getById(UUID id) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         return repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("FamilyResource", id));
     }
 
     public FamilyResource create(UUID familleId, String titre, String description, String type, String url, UUID userId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         FamilyResource resource = new FamilyResource();
         resource.setTenantId(TenantContext.getCurrentTenantId());
         resource.setFamilleId(familleId);
@@ -65,6 +74,7 @@ public class FamilyResourceService {
     }
 
     public void delete(UUID id) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         repository.delete(getById(id));
     }
 }

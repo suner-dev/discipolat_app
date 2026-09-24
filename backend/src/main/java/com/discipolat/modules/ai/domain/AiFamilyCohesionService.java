@@ -4,6 +4,7 @@ import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.members.domain.MemberPresenceRepository;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import org.springframework.stereotype.Service;
@@ -19,14 +20,19 @@ public class AiFamilyCohesionService {
     private final FamilyRepository familyRepo;
     private final SoulRepository soulRepo;
     private final MemberPresenceRepository presenceRepo;
+    private final PlatformFeatureFlagService featureFlagService;
 
-    public AiFamilyCohesionService(FamilyRepository familyRepo, SoulRepository soulRepo, MemberPresenceRepository presenceRepo) {
+    public AiFamilyCohesionService(FamilyRepository familyRepo, SoulRepository soulRepo,
+                                   MemberPresenceRepository presenceRepo,
+                                   PlatformFeatureFlagService featureFlagService) {
         this.familyRepo = familyRepo;
         this.soulRepo = soulRepo;
         this.presenceRepo = presenceRepo;
+        this.featureFlagService = featureFlagService;
     }
 
     public Map<String, Object> analyzeFamilyCohesion(UUID familyId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         UUID tenantId = TenantContext.requireTenantId();
         Family family = familyRepo.findByIdAndTenantId(familyId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Famille non trouvée"));
@@ -65,6 +71,7 @@ public class AiFamilyCohesionService {
     }
 
     public List<Map<String, Object>> analyzeAllFamilies() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         UUID tenantId = TenantContext.requireTenantId();
         List<Family> families = familyRepo.findByTenantId(tenantId);
         List<Map<String, Object>> results = new ArrayList<>();

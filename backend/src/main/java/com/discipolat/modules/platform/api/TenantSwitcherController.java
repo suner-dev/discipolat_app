@@ -113,7 +113,7 @@ public class TenantSwitcherController {
         List<OrganizationNode> accessibleNodes = getAccessibleNodes(userId, tenantId, activeMembership);
 
         // Get subscription
-        Optional<TenantSubscription> subscription = subscriptionRepository.findByTenantId(tenantId);
+        Optional<TenantSubscription> subscription = subscriptionRepository.findCurrentByTenantId(tenantId);
         Optional<SaasPlan> plan = subscription.flatMap(s -> planRepository.findById(s.getPlanKey()));
 
         Map<String, Object> context = new LinkedHashMap<>();

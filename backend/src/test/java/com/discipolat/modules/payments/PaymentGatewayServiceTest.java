@@ -8,9 +8,11 @@ import com.discipolat.modules.finances.api.FinanceTransactionRequest;
 import com.discipolat.modules.finances.domain.FinanceService;
 import com.discipolat.modules.payments.domain.MobileMoneyProviderRegistry;
 import com.discipolat.modules.payments.domain.PaymentGatewayService;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.payments.domain.PaymentIntent;
 import com.discipolat.modules.payments.domain.PaymentIntentRepository;
 import com.discipolat.modules.payments.domain.RecurringDonationRepository;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,13 +40,15 @@ class PaymentGatewayServiceTest {
     @Mock private EntityPropagationPublisher propagationPublisher;
     @Mock private SecurityUtils securityUtils;
     @Mock private MobileMoneyProviderRegistry providerRegistry;
+    @Mock private PlatformFeatureFlagService featureFlagService;
 
     private PaymentGatewayService service;
     private final UUID tenantId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        service = new PaymentGatewayService(repository, recurringDonationRepository, financeService, propagationPublisher, securityUtils, providerRegistry);
+        service = new PaymentGatewayService(repository, recurringDonationRepository, financeService,
+                propagationPublisher, securityUtils, providerRegistry, featureFlagService);
         TenantContext.setTenantId(tenantId);
         lenient().when(repository.save(any(PaymentIntent.class))).thenAnswer(inv -> inv.getArgument(0));
         Map<String, Object> txResult = new java.util.LinkedHashMap<>();

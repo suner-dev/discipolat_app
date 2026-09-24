@@ -1,6 +1,8 @@
 package com.discipolat.modules.core.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -34,6 +36,7 @@ public class PermissionVersion {
     private Long version = 1L;
 
     @Column(name = "permissions_json", columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private List<String> permissionsJson;
 
     @Column(name = "updated_at", nullable = false)

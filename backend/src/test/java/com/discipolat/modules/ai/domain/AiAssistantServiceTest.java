@@ -8,6 +8,7 @@ import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
 import com.discipolat.modules.members.domain.MemberPresenceRepository;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
@@ -45,6 +46,7 @@ class AiAssistantServiceTest {
     @Mock private SecurityUtils securityUtils;
     @Mock private AiChatConversationRepository chatRepo;
     @Mock private AiCreditsService aiCreditsService;
+    @Mock private PlatformFeatureFlagService featureFlagService;
 
     @InjectMocks private AiAssistantService aiService;
 

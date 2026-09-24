@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface CourseRepository extends JpaRepository<Course, UUID> {
     List<Course> findByActifTrueOrderByTitreAsc();
     List<Course> findByCategorieOrderByTitreAsc(String categorie);
+
+    long countByTenantId(UUID tenantId);
 }

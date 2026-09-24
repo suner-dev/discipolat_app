@@ -101,20 +101,20 @@ class Plan {
 
 /// Modèle pour les quotas
 class Quotas {
-  final int maxUsers;
-  final int maxChurches;
-  final int maxDepartments;
-  final int maxStorageMb;
-  final int maxAiRequestsMonth;
-  final int maxCourses;
-  final int maxMessagesMonth;
-  final int currentUsers;
-  final int currentChurches;
-  final int currentDepartments;
-  final int currentStorageMb;
-  final int currentAiRequestsMonth;
-  final int currentCourses;
-  final int currentMessagesMonth;
+  final int? maxUsers;
+  final int? maxChurches;
+  final int? maxDepartments;
+  final int? maxStorageMb;
+  final int? maxAiRequestsMonth;
+  final int? maxCourses;
+  final int? maxMessagesMonth;
+  final int? currentUsers;
+  final int? currentChurches;
+  final int? currentDepartments;
+  final int? currentStorageMb;
+  final int? currentAiRequestsMonth;
+  final int? currentCourses;
+  final int? currentMessagesMonth;
 
   Quotas({
     required this.maxUsers,
@@ -133,68 +133,87 @@ class Quotas {
     required this.currentMessagesMonth,
   });
 
-  factory Quotas.fromJson(Map<String, dynamic> json) {
+  factory Quotas.fromJson(dynamic value) {
+    final json = value is Map
+        ? Map<String, dynamic>.from(value)
+        : const <String, dynamic>{};
     return Quotas(
-      maxUsers: json['maxUsers'] ?? 50,
-      maxChurches: json['maxChurches'] ?? 1,
-      maxDepartments: json['maxDepartments'] ?? 10,
-      maxStorageMb: json['maxStorageMb'] ?? 100,
-      maxAiRequestsMonth: json['maxAiRequestsMonth'] ?? 100,
-      maxCourses: json['maxCourses'] ?? 5,
-      maxMessagesMonth: json['maxMessagesMonth'] ?? 1000,
-      currentUsers: json['currentUsers'] ?? 0,
-      currentChurches: json['currentChurches'] ?? 0,
-      currentDepartments: json['currentDepartments'] ?? 0,
-      currentStorageMb: json['currentStorageMb'] ?? 0,
-      currentAiRequestsMonth: json['currentAiRequestsMonth'] ?? 0,
-      currentCourses: json['currentCourses'] ?? 0,
-      currentMessagesMonth: json['currentMessagesMonth'] ?? 0,
+      maxUsers: _number(json['maxUsers']),
+      maxChurches: _number(json['maxChurches']),
+      maxDepartments: _number(json['maxDepartments']),
+      maxStorageMb: _number(json['maxStorageMb']),
+      maxAiRequestsMonth: _number(json['maxAiRequestsMonth']),
+      maxCourses: _number(json['maxCourses']),
+      maxMessagesMonth: _number(json['maxMessagesMonth']),
+      currentUsers: _number(json['currentUsers']),
+      currentChurches: _number(json['currentChurches']),
+      currentDepartments: _number(json['currentDepartments']),
+      currentStorageMb: _number(json['currentStorageMb']),
+      currentAiRequestsMonth: _number(json['currentAiRequestsMonth']),
+      currentCourses: _number(json['currentCourses']),
+      currentMessagesMonth: _number(json['currentMessagesMonth']),
     );
   }
 
+  static int? _number(dynamic value) {
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   bool isExceeded(String quotaKey) {
+    final current = _currentFor(quotaKey);
+    final max = _maxFor(quotaKey);
+    if (current == null || max == null || max <= 0) return false;
+    return current >= max;
+  }
+
+  double? usagePercent(String quotaKey) {
+    final current = _currentFor(quotaKey);
+    final max = _maxFor(quotaKey);
+    if (current == null || max == null || max <= 0) return null;
+    return current / max;
+  }
+
+  int? _currentFor(String quotaKey) {
     switch (quotaKey) {
       case 'maxUsers':
-        return currentUsers >= maxUsers;
+        return currentUsers;
       case 'maxChurches':
-        return currentChurches >= maxChurches;
+        return currentChurches;
       case 'maxDepartments':
-        return currentDepartments >= maxDepartments;
+        return currentDepartments;
       case 'maxStorageMb':
-        return currentStorageMb >= maxStorageMb;
+        return currentStorageMb;
       case 'maxAiRequestsMonth':
-        return currentAiRequestsMonth >= maxAiRequestsMonth;
+        return currentAiRequestsMonth;
       case 'maxCourses':
-        return currentCourses >= maxCourses;
+        return currentCourses;
       case 'maxMessagesMonth':
-        return currentMessagesMonth >= maxMessagesMonth;
+        return currentMessagesMonth;
       default:
-        return false;
+        return null;
     }
   }
 
-  double usagePercent(String quotaKey) {
+  int? _maxFor(String quotaKey) {
     switch (quotaKey) {
       case 'maxUsers':
-        return maxUsers > 0 ? currentUsers / maxUsers : 0;
+        return maxUsers;
       case 'maxChurches':
-        return maxChurches > 0 ? currentChurches / maxChurches : 0;
+        return maxChurches;
       case 'maxDepartments':
-        return maxDepartments > 0 ? currentDepartments / maxDepartments : 0;
+        return maxDepartments;
       case 'maxStorageMb':
-        return maxStorageMb > 0 ? currentStorageMb / maxStorageMb : 0;
+        return maxStorageMb;
       case 'maxAiRequestsMonth':
-        return maxAiRequestsMonth > 0
-            ? currentAiRequestsMonth / maxAiRequestsMonth
-            : 0;
+        return maxAiRequestsMonth;
       case 'maxCourses':
-        return maxCourses > 0 ? currentCourses / maxCourses : 0;
+        return maxCourses;
       case 'maxMessagesMonth':
-        return maxMessagesMonth > 0
-            ? currentMessagesMonth / maxMessagesMonth
-            : 0;
+        return maxMessagesMonth;
       default:
-        return 0;
+        return null;
     }
   }
 }
@@ -340,8 +359,9 @@ class TenantSession extends ChangeNotifier {
       _userRole = context['role'];
       _scopeType = context['scopeType'];
       _scopeId = context['scopeId'];
+      _subscription = null;
+      _quotas = null;
 
-      // Subscription & quotas
       if (context['subscription'] != null) {
         _subscription = Subscription.fromJson(context['subscription']);
         _quotas = _subscription!.quotas;
@@ -396,6 +416,12 @@ class TenantSession extends ChangeNotifier {
     _scopeType = 'TENANT';
     _scopeId = null;
     _activeOrgNode = null;
+    _subscription = null;
+    _quotas = null;
+    _features = {};
+    _branding = null;
+    _settings = null;
+    _accessibleNodes = [];
     TenantConfig.setOrgId(tenantId);
 
     final prefs = await SharedPreferences.getInstance();
@@ -541,8 +567,8 @@ class TenantSession extends ChangeNotifier {
   }
 
   /// Obtenir le pourcentage d'utilisation d'un quota
-  double getQuotaUsage(String quotaKey) {
-    return _quotas?.usagePercent(quotaKey) ?? 0.0;
+  double? getQuotaUsage(String quotaKey) {
+    return _quotas?.usagePercent(quotaKey);
   }
 
   /// Permissions de l'utilisateur dans le tenant courant

@@ -3,6 +3,8 @@ package com.discipolat.modules.messages.domain;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.exception.BadRequestException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.tenants.domain.QuotaService;
 import com.discipolat.modules.messages.api.SendMessageRequest;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -33,6 +35,8 @@ class MessageServiceTest {
     private UserRepository userRepository;
     @Mock
     private SecurityUtils securityUtils;
+    @Mock
+    private QuotaService quotaService;
 
     private MessageService messageService;
 
@@ -42,8 +46,9 @@ class MessageServiceTest {
     @BeforeEach
     void setUp() {
         SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+        TenantContext.setTenantId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         messageService = new MessageService(conversationRepository, messageRepository,
-                userRepository, securityUtils);
+                userRepository, securityUtils, quotaService);
         userA = UUID.fromString("10000000-0000-0000-0000-000000000001");
         userB = UUID.fromString("10000000-0000-0000-0000-000000000002");
     }

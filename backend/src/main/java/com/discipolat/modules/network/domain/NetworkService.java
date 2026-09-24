@@ -3,6 +3,7 @@ package com.discipolat.modules.network.domain;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -28,45 +29,54 @@ public class NetworkService {
     private final NetworkEventParticipantRepository participantRepository;
     private final NetworkDirectoryRepository directoryRepository;
     private final SecurityUtils securityUtils;
+    private final PlatformFeatureFlagService featureFlagService;
 
     public NetworkService(NetworkResourceRepository resourceRepository,
                           NetworkEventRepository eventRepository,
                           NetworkEventParticipantRepository participantRepository,
                           NetworkDirectoryRepository directoryRepository,
-                          SecurityUtils securityUtils) {
+                          SecurityUtils securityUtils,
+                          PlatformFeatureFlagService featureFlagService) {
         this.resourceRepository = resourceRepository;
         this.eventRepository = eventRepository;
         this.participantRepository = participantRepository;
         this.directoryRepository = directoryRepository;
         this.securityUtils = securityUtils;
+        this.featureFlagService = featureFlagService;
     }
 
     // ======================== RESSOURCES ========================
 
     /** Liste les ressources partagées par toutes les églises (visibles publiquement). */
     public List<NetworkResource> listSharedResources() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         return resourceRepository.findBySharedWithPublicTrueAndIsActiveTrueOrderByCreatedAtDesc();
     }
 
-    /** Liste les ressources d'une église spécifique. */
+    /** Liste des ressources d'une église spécifique. */
     public List<NetworkResource> listMyResources() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         UUID tenantId = TenantContext.requireTenantId();
+
         return resourceRepository.findByTenantIdAndIsActiveTrueOrderByCreatedAtDesc(tenantId);
     }
 
     /** Recherche dans les ressources partagées. */
     public List<NetworkResource> searchResources(String query) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         return resourceRepository.search(query);
     }
 
     /** Ressources par catégorie. */
     public List<NetworkResource> listByCategory(String category) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         return resourceRepository.findBySharedWithPublicTrueAndCategoryAndIsActiveTrueOrderByCreatedAtDesc(category);
     }
 
     /** Crée une ressource partagée. */
     @Transactional
     public NetworkResource createResource(NetworkResource resource) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         UUID tenantId = TenantContext.requireTenantId();
         UUID userId = securityUtils.getCurrentUserId();
         resource.setTenantId(tenantId);
@@ -82,6 +92,7 @@ public class NetworkService {
     /** Incrémente le compteur de téléchargements (accessible si public ou si propriétaire). */
     @Transactional
     public NetworkResource incrementDownloads(UUID resourceId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         UUID tenantId = TenantContext.requireTenantId();
         NetworkResource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new EntityNotFoundException("NetworkResource", resourceId));
@@ -93,6 +104,7 @@ public class NetworkService {
     /** Désactive une ressource (soft delete). */
     @Transactional
     public void deactivateResource(UUID resourceId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         UUID tenantId = TenantContext.requireTenantId();
         NetworkResource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new EntityNotFoundException("NetworkResource", resourceId));

@@ -3,6 +3,7 @@ package com.discipolat.modules.network.domain;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -24,6 +25,7 @@ class NetworkServiceTest {
     @Mock private NetworkEventParticipantRepository participantRepository;
     @Mock private NetworkDirectoryRepository directoryRepository;
     @Mock private SecurityUtils securityUtils;
+    @Mock private PlatformFeatureFlagService featureFlagService;
     @InjectMocks private NetworkService service;
 
     private UUID tenantId;

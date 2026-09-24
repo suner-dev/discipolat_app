@@ -92,13 +92,13 @@ const AdminSettingsPage = lazy(() => import('@/pages/AdminSettingsPage'));
 const PlatformModulesPage = lazy(() => import('@/pages/PlatformModulesPage'));
 const PlatformMenusPage = lazy(() => import('@/pages/PlatformMenusPage'));
 const PlatformPagesPage = lazy(() => import('@/pages/PlatformPagesPage'));
-const PlatformAdminDashboardPage = lazy(() => import('@/pages/PlatformAdminDashboard'));
+const PlatformAdminDashboardRoute = lazy(() => import('@/pages/PlatformAdminDashboard'));
 const PlatformAuditPage = lazy(() => import('@/pages/PlatformAuditPage'));
 const PlatformPlansPage = lazy(() => import('@/pages/PlatformPlansPage'));
 const PlatformImpersonationPage = lazy(() => import('@/pages/PlatformImpersonationPage'));
 const PlatformRegistrationRequestsPage = lazy(() => import('@/pages/PlatformRegistrationRequestsPage'));
 const PlatformOnboardingFlowPage = lazy(() => import('@/pages/PlatformOnboardingFlowPage'));
-const TenantAdminDashboardPage = lazy(() => import('@/pages/TenantAdminDashboard'));
+const TenantAdminDashboardRoute = lazy(() => import('@/pages/TenantAdminDashboard'));
 const TenantAdminMembersPage = lazy(() => import('@/pages/TenantAdminMembersPage'));
 const TenantAdminRolesPage = lazy(() => import('@/pages/TenantAdminRolesPage'));
 const TenantAdminInvitationsPage = lazy(() => import('@/pages/TenantAdminInvitationsPage'));
@@ -109,7 +109,7 @@ const DressCodePage = lazy(() => import('@/pages/DressCodePage'));
 const TenantSwitcherPage = lazy(() => import('@/pages/TenantSwitcherPage'));
 const CustomPageView = lazy(() => import('@/pages/CustomPageView'));
 const ModuleUnavailablePage = lazy(() => import('@/pages/ModuleUnavailablePage'));
-const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
+const AdminDashboardRoute = lazy(() => import('@/pages/AdminDashboardPage'));
 const AdminCustomFieldsPage = lazy(() => import('@/pages/AdminCustomFieldsPage'));
 const AdminFeedbackPage = lazy(() => import('@/pages/AdminFeedbackPage'));
 const AdminDictionariesPage = lazy(() => import('@/pages/AdminDictionariesPage'));
@@ -781,7 +781,7 @@ export default function App() {
           } />
           <Route path="/admin" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
-              <AdminDashboardPage />
+              <AdminDashboardRoute />
             </ProtectedRoute>
           } />
           <Route path="/admin/custom-fields" element={
@@ -1087,7 +1087,7 @@ export default function App() {
         <Route element={<MainLayout />}>
           {/* Platform Super Admin */}
           <Route path="/platform/dashboard" element={
-            <ProtectedRoute scope="platform"><PlatformAdminDashboardPage /></ProtectedRoute>
+            <ProtectedRoute scope="platform"><PlatformAdminDashboardRoute /></ProtectedRoute>
           } />
           <Route path="/platform/registration-requests" element={
             <ProtectedRoute scope="platform"><PlatformRegistrationRequestsPage /></ProtectedRoute>
@@ -1116,7 +1116,7 @@ export default function App() {
 
           {/* Tenant Admin — administration d'une église (tenant) */}
           <Route path="/admin/dashboard" element={
-            <ProtectedRoute scope="tenant"><TenantAdminDashboardPage /></ProtectedRoute>
+            <ProtectedRoute scope="tenant"><TenantAdminDashboardRoute /></ProtectedRoute>
           } />
           <Route path="/admin/members" element={
             <ProtectedRoute scope="tenant"><TenantAdminMembersPage /></ProtectedRoute>

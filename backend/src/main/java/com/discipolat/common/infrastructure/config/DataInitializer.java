@@ -110,6 +110,13 @@ public class DataInitializer implements CommandLineRunner {
         // si aucune table n'a encore été seedée, sinon les migrations l'ont fait).
         seedDefaultRolesAndPermissions();
 
+        // Super Admin plateforme — AUDIT STRUCTUREL, pas un compte de démo :
+        // il est créé AVANT le early-return des comptes démo, car sans lui aucun
+        // endpoint @authz.isPlatformSuperAdmin() (tenants, provisionnement,
+        // impersonation) n'est atteignable. Sans compte démo, ce rôle est la
+        // seule porte d'entrée de l'administration plateforme.
+        seedPlatformSuperAdmin();
+
         if (!seedDemoAccounts) {
             log.info("ℹ️ Comptes de démonstration désactivés sur cet environnement (seed-demo-accounts=false).");
             return;
@@ -167,10 +174,6 @@ public class DataInitializer implements CommandLineRunner {
 
         // Multi-tenant: seed organisations, subscriptions
         seedDefaultMemberships();
-
-        // Super Admin plateforme — seul compte habilité à @authz.isPlatformSuperAdmin()
-        // (gestion des tenants, provisionnement, impersonation). Idempotent.
-        seedPlatformSuperAdmin();
     }
 
     /**
@@ -419,6 +422,10 @@ public class DataInitializer implements CommandLineRunner {
                     .tenantId(admin.getTenantId())
                     .userId(admin.getId())
                     .role(platformRole)
+                    // `role_legacy` est NOT NULL en base : on renseigne la clé
+                    // du rôle, comme InvitationService / TenantRegistrationService.
+                    .roleLegacy(platformRole.getKey())
+                    .scopeType(MembershipScopeType.TENANT)
                     .status(MembershipStatus.ACTIVE)
                     .build());
             log.info("✅ Membership PLATFORM_SUPER_ADMIN attribuée à {}", email);

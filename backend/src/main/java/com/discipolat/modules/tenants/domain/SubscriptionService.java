@@ -51,7 +51,7 @@ public class SubscriptionService {
         }
 
         // Cancel existing subscription if any
-        Optional<TenantSubscription> existing = subscriptionRepository.findByTenantId(tenantId);
+        Optional<TenantSubscription> existing = subscriptionRepository.findCurrentByTenantId(tenantId);
         if (existing.isPresent()) {
             TenantSubscription sub = existing.get();
 sub.setStatus(SubscriptionStatus.CANCELED);
@@ -100,7 +100,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
      * Cancel subscription at period end.
      */
     public void cancelAtPeriodEnd(UUID tenantId, UUID adminId) {
-        TenantSubscription sub = subscriptionRepository.findByTenantId(tenantId)
+        TenantSubscription sub = subscriptionRepository.findCurrentByTenantId(tenantId)
                 .orElseThrow(() -> new BusinessRuleException("No active subscription", "NO_SUBSCRIPTION"));
 
         sub.setCancelAtPeriodEnd(true);
@@ -112,7 +112,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
      * Cancel subscription immediately.
      */
     public void cancelImmediately(UUID tenantId, UUID adminId) {
-        TenantSubscription sub = subscriptionRepository.findByTenantId(tenantId)
+        TenantSubscription sub = subscriptionRepository.findCurrentByTenantId(tenantId)
                 .orElseThrow(() -> new BusinessRuleException("No active subscription", "NO_SUBSCRIPTION"));
 
         sub.setStatus(SubscriptionStatus.CANCELED);
@@ -124,14 +124,14 @@ sub.setStatus(SubscriptionStatus.CANCELED);
         Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
         tenant.setPlan("FREE");
         tenant.setFeaturesJson("{}");
-        // tenantRepository.save(tenant);
+        tenantRepository.save(tenant);
     }
 
     /**
      * Reactivate a canceled subscription.
      */
     public void reactivate(UUID tenantId, UUID adminId) {
-        TenantSubscription sub = subscriptionRepository.findByTenantId(tenantId)
+        TenantSubscription sub = subscriptionRepository.findCurrentByTenantId(tenantId)
                 .orElseThrow(() -> new BusinessRuleException("No subscription found", "NO_SUBSCRIPTION"));
 
         if (sub.getStatus() == SubscriptionStatus.CANCELED) {
@@ -152,7 +152,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
         SaasPlan newPlan = planRepository.findById(newPlanKey)
                 .orElseThrow(() -> new BusinessRuleException("Plan not found: " + newPlanKey, "PLAN_NOT_FOUND"));
 
-        TenantSubscription sub = subscriptionRepository.findByTenantId(tenantId)
+        TenantSubscription sub = subscriptionRepository.findCurrentByTenantId(tenantId)
                 .orElseThrow(() -> new BusinessRuleException("No active subscription", "NO_SUBSCRIPTION"));
 
         // Check quotas before downgrade
@@ -186,7 +186,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
         tenant.setPlan(newPlanKey);
         Map<String, Object> features = parseJson(newPlan.getFeaturesJson());
         tenant.setFeaturesJson(toJson(features));
-        // tenantRepository.save(tenant);
+        tenantRepository.save(tenant);
 
         return newSub;
     }
@@ -196,7 +196,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
      */
     @Transactional(readOnly = true)
     public Optional<TenantSubscription> getCurrentSubscription(UUID tenantId) {
-        return subscriptionRepository.findByTenantId(tenantId);
+        return subscriptionRepository.findCurrentByTenantId(tenantId);
     }
 
     /**

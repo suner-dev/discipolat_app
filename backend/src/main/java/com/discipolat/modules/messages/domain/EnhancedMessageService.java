@@ -3,6 +3,8 @@ package com.discipolat.modules.messages.domain;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.exception.BadRequestException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.tenants.domain.QuotaService;
 import com.discipolat.modules.messages.api.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -31,6 +33,7 @@ public class EnhancedMessageService {
     private final MessageReactionRepository reactionRepository;
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
+    private final QuotaService quotaService;
 
     public EnhancedMessageService(
             ConversationRepository conversationRepository,
@@ -39,7 +42,8 @@ public class EnhancedMessageService {
             GroupConversationMemberRepository groupMemberRepository,
             MessageReactionRepository reactionRepository,
             UserRepository userRepository,
-            SecurityUtils securityUtils) {
+            SecurityUtils securityUtils,
+            QuotaService quotaService) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.groupConversationRepository = groupConversationRepository;
@@ -47,6 +51,7 @@ public class EnhancedMessageService {
         this.reactionRepository = reactionRepository;
         this.userRepository = userRepository;
         this.securityUtils = securityUtils;
+        this.quotaService = quotaService;
     }
 
     // ============================================================
@@ -148,6 +153,7 @@ public class EnhancedMessageService {
             }
         }
 
+        quotaService.checkCanSendMessage(TenantContext.requireTenantId());
         ConversationMessage msg = messageRepository.save(ConversationMessage.builder()
                 .tenantId(securityUtils.getCurrentTenantId())
                 .groupId(groupId)
@@ -211,6 +217,7 @@ public class EnhancedMessageService {
                 .orElseThrow(() -> new EntityNotFoundException("Conversation", conversationId));
         assertParticipant(conv, currentUserId);
 
+        quotaService.checkCanSendMessage(TenantContext.requireTenantId());
         ConversationMessage msg = messageRepository.save(ConversationMessage.builder()
                 .tenantId(securityUtils.getCurrentTenantId())
                 .conversationId(conversationId)
@@ -323,6 +330,7 @@ public class EnhancedMessageService {
         ConversationMessage replyMsg = messageRepository.findById(replyToId)
                 .orElseThrow(() -> new EntityNotFoundException("Message", replyToId));
 
+        quotaService.checkCanSendMessage(TenantContext.requireTenantId());
         ConversationMessage msg = messageRepository.save(ConversationMessage.builder()
                 .tenantId(securityUtils.getCurrentTenantId())
                 .conversationId(conversationId)
@@ -403,6 +411,7 @@ public class EnhancedMessageService {
             }
         }
 
+        quotaService.checkCanSendMessage(TenantContext.requireTenantId());
         ConversationMessage msg = messageRepository.save(ConversationMessage.builder()
                 .tenantId(securityUtils.getCurrentTenantId())
                 .conversationId(conversationId)

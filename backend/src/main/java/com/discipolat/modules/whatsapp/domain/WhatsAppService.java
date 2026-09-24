@@ -1,6 +1,7 @@
 package com.discipolat.modules.whatsapp.domain;
 
 import com.discipolat.common.infrastructure.security.CryptoService;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ public class WhatsAppService {
     private final SoulRepository soulRepository;
     private final RestClient restClient;
     private final CryptoService cryptoService;
+    private final PlatformFeatureFlagService featureFlagService;
 
     /** Abonnés WhatsApp par famille (numéro → set de families) */
     private final Map<String, Set<String>> familySubscribers = new ConcurrentHashMap<>();
@@ -44,17 +46,20 @@ public class WhatsAppService {
                            WhatsAppMessageRepository messageRepository,
                            WhatsAppReminderRepository reminderRepository,
                            SoulRepository soulRepository,
-                           CryptoService cryptoService) {
+                           CryptoService cryptoService,
+                           PlatformFeatureFlagService featureFlagService) {
         this.configRepository = configRepository;
         this.messageRepository = messageRepository;
         this.reminderRepository = reminderRepository;
         this.soulRepository = soulRepository;
         this.cryptoService = cryptoService;
+        this.featureFlagService = featureFlagService;
         this.restClient = RestClient.create();
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> getConfig(UUID tenantId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         Map<String, Object> result = new LinkedHashMap<>();
         Optional<WhatsAppConfig> cfg = configRepository.findByTenantId(tenantId);
         result.put("configured", cfg.isPresent());
@@ -69,6 +74,7 @@ public class WhatsAppService {
     public WhatsAppConfig saveConfig(UUID tenantId, String phoneNumberId, String displayPhoneNumber,
                                      String accessToken, String webhookVerifyToken,
                                      boolean enabled, String welcomeMessage) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         WhatsAppConfig cfg = configRepository.findByTenantId(tenantId).orElseGet(WhatsAppConfig::new);
         if (cfg.getTenantId() == null) { cfg.setTenantId(tenantId); cfg.setCreatedAt(LocalDateTime.now()); }
         if (phoneNumberId != null) cfg.setPhoneNumberId(phoneNumberId);
@@ -81,6 +87,7 @@ public class WhatsAppService {
     }
 
     public Map<String, Object> testConnection(UUID tenantId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         Map<String, Object> result = new LinkedHashMap<>();
         WhatsAppConfig cfg = requireConfig(tenantId);
         String token = cryptoService.decrypt(cfg.getAccessTokenEncrypted());
@@ -102,6 +109,7 @@ public class WhatsAppService {
 
     public WhatsAppMessage sendText(UUID tenantId, String phoneNumber, String body,
                                     String referenceType, UUID referenceId, WhatsAppMessage.Kind kind) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         WhatsAppConfig cfg = requireConfig(tenantId);
         WhatsAppMessage msg = new WhatsAppMessage();
         msg.setTenantId(tenantId);
@@ -141,6 +149,7 @@ public class WhatsAppService {
 
     public Map<String, Object> broadcastAnnouncement(UUID tenantId, String titre, String contenu,
                                                      String referenceType, UUID referenceId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         List<Soul> recipients = soulRepository.findAll();
         int sent = 0, failed = 0;
         for (Soul s : recipients) {
@@ -156,6 +165,7 @@ public class WhatsAppService {
     }
 
     public void handleWebhook(UUID tenantId, Map<String, Object> payload) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         try {
             Object entryObj = payload.get("entry");
             if (!(entryObj instanceof List<?> entries)) return;
@@ -270,6 +280,7 @@ public class WhatsAppService {
     /** Programme un rappel WhatsApp pour un événement ou suivi. */
     public WhatsAppReminder scheduleReminder(UUID tenantId, String referenceType, UUID referenceId,
                                               String phoneNumber, String message, LocalDateTime scheduledAt) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         WhatsAppReminder reminder = new WhatsAppReminder();
         reminder.setTenantId(tenantId);
         reminder.setReferenceType(referenceType);
@@ -284,6 +295,7 @@ public class WhatsAppService {
     @Scheduled(cron = "0 */5 * * * *")
     @Transactional
     public void sendPendingReminders() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         // Trouver tous les tenants qui ont des rappels en attente
         Set<UUID> tenants = new HashSet<>();
         reminderRepository.findAll().stream()
@@ -312,6 +324,7 @@ public class WhatsAppService {
     /** Rappel d'événement à envoyer 24h avant. */
     public void scheduleEventReminder(UUID tenantId, UUID eventId, String eventTitle,
                                        String phoneNumber, LocalDateTime eventDate) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         LocalDateTime remindAt = eventDate.minusHours(24);
         if (remindAt.isBefore(LocalDateTime.now())) {
             remindAt = LocalDateTime.now().plusMinutes(5); // Fallback : dans 5 min
@@ -349,12 +362,14 @@ public class WhatsAppService {
 
     @Transactional(readOnly = true)
     public List<WhatsAppMessage> recentMessages(UUID tenantId, int limit) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         return messageRepository.findByTenantIdOrderByCreatedAtDesc(tenantId,
                 org.springframework.data.domain.PageRequest.of(0, limit)).getContent();
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> stats(UUID tenantId) {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.WHATSAPP_ENABLED);
         List<WhatsAppMessage> all = messageRepository.findByTenantIdOrderByCreatedAtDesc(tenantId,
                 org.springframework.data.domain.PageRequest.of(0, 500)).getContent();
         long in = all.stream().filter(m -> m.getDirection() == WhatsAppMessage.Direction.INBOUND).count();

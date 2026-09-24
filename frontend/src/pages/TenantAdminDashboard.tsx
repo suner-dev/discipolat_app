@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
+import { QuotaUsagePanel } from "@/components/admin/QuotaUsageCards";
 import api from "@/lib/api";
 
 interface TenantDashboard {
@@ -21,7 +22,7 @@ interface TenantDashboard {
   };
 }
 
-export default function TenantAdminDashboard() {
+export default function TenantAdminDashboardPage() {
   const { hasPermission, hasRole: _hasRole, currentTenant } = useTenant();
   const [dashboard, setDashboard] = useState<TenantDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +95,8 @@ export default function TenantAdminDashboard() {
           </div>
         </>
       )}
+
+      <QuotaUsagePanel enabled={hasAccess} />
     </div>
   );
 }

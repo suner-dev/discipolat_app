@@ -72,7 +72,7 @@ public class SuperAdminSaasPlanController {
                 .sortOrder(request.sortOrder())
                 .build();
         SaasPlan saved = planRepository.save(plan);
-        auditService.logSimple("SAAS_PLAN_CREATED", "SAAS_PLAN", UUID.fromString(saved.getKey()));
+        auditService.logSimpleExternalKey("SAAS_PLAN_CREATED", "SAAS_PLAN", saved.getKey());
         return ResponseEntity.status(201).body(toResponse(saved));
     }
 

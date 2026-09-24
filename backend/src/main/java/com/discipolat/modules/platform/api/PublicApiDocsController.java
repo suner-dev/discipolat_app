@@ -1,5 +1,6 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +17,15 @@ import java.util.Map;
 @RequestMapping("/api/v1/public/docs")
 public class PublicApiDocsController {
 
+    private final PlatformFeatureFlagService featureFlagService;
+
+    public PublicApiDocsController(PlatformFeatureFlagService featureFlagService) {
+        this.featureFlagService = featureFlagService;
+    }
+
     @GetMapping
     public ResponseEntity<Map<String, Object>> getPublicDocs() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         Map<String, Object> docs = new LinkedHashMap<>();
         docs.put("title", "Discipolat API");
         docs.put("version", "2.0.0");
@@ -95,6 +103,7 @@ public class PublicApiDocsController {
 
     @GetMapping("/openapi.yaml")
     public ResponseEntity<String> getOpenApiYaml() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         String yaml = """
                 openapi: 3.0.3
                 info:

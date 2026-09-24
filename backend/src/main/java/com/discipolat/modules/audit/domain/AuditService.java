@@ -80,6 +80,24 @@ public class AuditService {
         extendHashChain(saved);
     }
 
+    /** Journal d'audit pour une entité dont l'identifiant métier n'est pas un UUID. */
+    public void logSimpleExternalKey(String action, String entiteType, String externalKey) {
+        AuditLog log = AuditLog.builder()
+                .action(action)
+                .entiteType(entiteType)
+                .nouvelleValeur(Map.of("externalKey", externalKey))
+                .build();
+
+        try {
+            log.setUtilisateurId(securityUtils.getCurrentUserId());
+        } catch (Exception e) {
+            // Opération système : l'acteur reste null.
+        }
+
+        AuditLog saved = auditLogRepository.save(log);
+        extendHashChain(saved);
+    }
+
     /** Journal d'audit immuable : chaque entrée est chaînée par hachage (feature #4). */
     private void extendHashChain(AuditLog saved) {
         try {

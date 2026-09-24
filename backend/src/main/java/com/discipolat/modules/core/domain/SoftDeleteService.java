@@ -9,7 +9,8 @@ import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -186,12 +187,14 @@ public class SoftDeleteService {
             query.setParameter("tenantId", tenantId);
             query.setParameter("entityType", entityType);
             query.setParameter("entityId", entityId);
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            var request = attributes != null ? attributes.getRequest() : null;
+            query.setParameter("ip", request != null ? request.getRemoteAddr() : null);
+            query.setParameter("userAgent", request != null ? request.getHeader("User-Agent") : null);
             query.setParameter("deletedBy", deletedBy);
             query.setParameter("deletedAt", Instant.now());
             query.setParameter("reason", reason);
             query.setParameter("previousValues", previousValues != null ? previousValues.toString() : null);
-            query.setParameter("ip", "127.0.0.1"); // TODO: get from request context
-            query.setParameter("userAgent", "Discipolat-Backend"); // TODO: get from request context
             
             query.executeUpdate();
         } catch (Exception e) {

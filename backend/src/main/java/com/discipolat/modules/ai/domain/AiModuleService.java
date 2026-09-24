@@ -4,6 +4,7 @@ import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.aiPredictions.domain.AiPrediction;
 import com.discipolat.modules.aiPredictions.domain.AiPredictionService;
 import com.discipolat.modules.families.domain.FamilyRepository;
+import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
@@ -20,6 +21,7 @@ import java.util.*;
 public class AiModuleService {
 
     private final FeatureAccessService featureAccess;
+    private final PlatformFeatureFlagService featureFlagService;
     private final TenantMembershipRepository membershipRepo;
     private final AiPredictionService predictionService;
     private final SoulRepository soulRepo;
@@ -27,12 +29,14 @@ public class AiModuleService {
     private final MakerReportRepository reportRepo;
 
     public AiModuleService(FeatureAccessService featureAccess,
+                           PlatformFeatureFlagService featureFlagService,
                            TenantMembershipRepository membershipRepo,
                            AiPredictionService predictionService,
                            SoulRepository soulRepo,
                            FamilyRepository familyRepo,
                            MakerReportRepository reportRepo) {
         this.featureAccess = featureAccess;
+        this.featureFlagService = featureFlagService;
         this.membershipRepo = membershipRepo;
         this.predictionService = predictionService;
         this.soulRepo = soulRepo;
@@ -41,11 +45,13 @@ public class AiModuleService {
     }
 
     public void requireAiAccess() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         UUID tenantId = TenantContext.requireTenantId();
         featureAccess.requireFeature(tenantId, "ai_copilot");
     }
 
     public void requireAiPermission() {
+        featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         UUID userId = TenantContext.getCurrentUserId();
         UUID tenantId = TenantContext.requireTenantId();
         if (userId == null) throw new SecurityException("Authentification requise");

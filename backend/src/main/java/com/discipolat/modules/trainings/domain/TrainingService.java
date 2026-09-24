@@ -2,6 +2,8 @@ package com.discipolat.modules.trainings.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.tenants.domain.QuotaService;
 import com.discipolat.modules.trainings.api.*;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ public class TrainingService {
     private final ModuleCompletionRepository completionRepository;
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
+    private final QuotaService quotaService;
 
     public TrainingService(CourseRepository courseRepository,
                            CourseModuleRepository moduleRepository,
@@ -34,7 +37,8 @@ public class TrainingService {
                            CourseEnrollmentRepository enrollmentRepository,                            TrainingCertificateRepository certificateRepository,
                            ModuleCompletionRepository completionRepository,
                            UserRepository userRepository,
-                           SecurityUtils securityUtils) {
+                           SecurityUtils securityUtils,
+                           QuotaService quotaService) {
         this.courseRepository = courseRepository;
         this.moduleRepository = moduleRepository;
         this.quizRepository = quizRepository;
@@ -43,6 +47,7 @@ public class TrainingService {
         this.completionRepository = completionRepository;
         this.userRepository = userRepository;
         this.securityUtils = securityUtils;
+        this.quotaService = quotaService;
     }
 
     // ============================================================
@@ -275,6 +280,7 @@ public class TrainingService {
     // ============================================================
 
     public Course createCourse(CreateCourseRequest request) {
+        quotaService.checkCanCreateCourse(TenantContext.requireTenantId());
         Course course = Course.builder()
                 .titre(request.titre())
                 .description(request.description())
