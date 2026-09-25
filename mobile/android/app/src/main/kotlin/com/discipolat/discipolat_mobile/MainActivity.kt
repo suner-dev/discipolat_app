@@ -2,6 +2,7 @@ package com.discipolat.discipolat_mobile
 
 import android.annotation.TargetApi
 import android.os.Build
+import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -50,10 +51,13 @@ class MainActivity : FlutterActivity() {
         val insetsController = window.insetsController
         if (enabled) {
             window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            insetsController?.hide(
-                WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_FROM_TOUCH,
-                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-            )
+            insetsController?.let { controller ->
+                controller.hide(WindowInsets.Type.systemBars())
+                controller.setSystemBarsAppearance(
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                )
+            }
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
