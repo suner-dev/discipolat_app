@@ -93,6 +93,55 @@ Amener Discipolat au niveau **production mondiale** :
 | M12 | **Écrans Flutter > 1000 lignes** — dette de maintenabilité. | `Etat_fonctionnalité.md:35` le reconnaît | 🟡 P2 |
 | M13 | **Aucun test d'isolation inter-tenant sur le flux complet HTTP** — tests unitaires seulement, pas de test bout-en-bout cross-tenant. | `TenantIsolationIntegrationTest.java` existe (couverture réelle) mais à étendre | 🟠 P1 |
 
+### 1.4 MATRICE DE COUVERTURE — à vérifier avant de déclarer quoi que ce soit "terminé"
+
+Chaque constat DOIT être traité par un prompt nommé. Si tu ajoutes un constat,
+ajoute sa ligne ici. Si une tâche est faite, coche la colonne **Fait**.
+
+| Constat | Prompt | Agent | Sév. | Fait |
+|---------|--------|-------|------|------|
+| M1 push FCM | **A1** | A | 🔴 P0 | ☐ |
+| M2 module Backup | **A2** | A | 🔴 P0 | ☐ |
+| M3 outbox notifications | **A1** | A | 🔴 P0 | ☐ |
+| M4 i18n qualité | **B1** | B | 🟠 P1 | ☐ |
+| M5 config STT | **A4** | A | 🟠 P1 | ☐ |
+| M6 Ollama fail-closed | **A4** | A | 🟡 P2 | ☐ |
+| M7 sharding | **A3** (partie 2) | A | 🔴 P0 | ☐ |
+| M8 paiements universels | **A3** (partie 1) | A | 🔴 P0 | ☐ |
+| M9 devises ISO-4217 | **A3** (partie 1+3) | A | 🔴 P0 | ☐ |
+| M10 E2E navigateur | **A5** | A | 🟠 P1 | ☐ |
+| M11 tests de charge | **A5** | A | 🟠 P1 | ☐ |
+| M12 écrans Flutter >1000 l. | **B4** | B | 🟡 P2 | ☐ |
+| M13 isolation cross-tenant | **A5** + **B4** | A+B | 🟠 P1 | ☐ |
+
+**Vérification rapide** (à relancer après toute édition de ce fichier) :
+`Select-String AGENT_ORCHESTRATION.md -Pattern "\bM1\b|\bM2\b|..." `
+Chaque code doit apparaître au moins 3 fois : tableau des manques,
+intitulé du prompt, message de commit. Un code qui n'apparaît qu'une seule
+fois est un constat orphelin.
+
+> **Historique de ce contrôle** : au premier passage, **M12 n'apparaissait
+> qu'une fois** (tableau seul) — aucun prompt ne le référençait, alors que
+> le travail était bien décrit dans B4. Le lien manquant a été ajouté et B4
+> porte désormais « traite le constat M12 » + une étape 0 de mesure.
+> Ce contrôle a détecté un vrai trou de traçabilité : il en détectera
+> d'autres.
+
+### 1.5 Ce qui n'est PAS un manque (ne pas refaire)
+
+Pour éviter qu'un agent futur ne « corrige » quelque chose de déjà fait :
+
+- **Sharding already prepared** : `RedisCacheConfig`, `TenantAwareRedisManager`
+  et `TenantFileIsolationConfigTest` montrent que l'isolation fichier par
+  tenant a déjà été travaillée — M7 concerne l'échelle DB, pas l'isolation.
+- **`Application` de contrôleur** : `@PreAuthorize` est déjà présent sur
+  l'ensemble des endpoints authentifiés (cf. `Etat_fonctionnalité.md` §P0).
+- **SSE** : le backend publie bien des événements (SSE + STOMP + WebSocket).
+  Ce qui manque est l'écoute côté client → traité en B2, pas côté backend.
+- **Les scripts shell de backup** (`scripts/backup*.sh`, `restore.sh`) sont
+  fonctionnels et doivent RESTER. M2 ajoute une couche applicative par-dessus,
+  il ne les remplace pas.
+
 ---
 
 ## 2. VISION MONDIALE — EXIGENCES STRUCTURANTES
@@ -862,11 +911,15 @@ PUSH : git push origin feat/clients-monde
 ```
 Tu es l'AGENT B. Contexte : AGENT_ORCHESTRATION.md, worktree agentB (branche feat/clients-monde).
 TÂCHE : mobile Flutter — dette de maintenabilité et robustesse.
+**Traite le constat M12** (et affine M13 côté mobile).
 
 CONTEXTE : 386 fichiers .dart, 135 399 lignes, 157 écrans, 159 routes
 GoRouter, 85 fichiers de test. L'IMPLEMENTATION_STATUS.md signale
 6 tests network_screen_test en échec (timeout pumpAndSettle) et
 4 écrans > 1000 lignes.
+
+0. MESURE D'ABORD (M12) : liste les écrans > 1000 lignes et dis
+   précisément lesquels. Un chiffre inventé fait perdre du temps.
 
 1. RÉPARE D'ABORD LES TESTS EN ÉCHEC. Les 6 tests
    mobile/test/network_screen_test.dart échouent sur un timeout
