@@ -870,7 +870,7 @@ mvn -B -o test     (suite complète)
    `application.yml`). Sans ce period, 3 requêtes/minute auraient laissé 15
    tentatives par fenêtre de 5 minutes — 5× plus permissif que le contrat.
 2. **Endpoint `429` : corps `status = NONE`** plutôt qu'un corps d'erreur vide.
-   Cohérent avec le fait que la réponse ne泄露 rien sur l'existence d'un compte :
+   Cohérent avec le fait que la réponse ne révèle rien sur l'existence d'un compte :
    un client qui reçoit `429` ne doit pas pouvoir déduire que l'email existe.
    `Retry-After` et `X-RateLimit-Remaining: 0` sont malgré tout fournis, comme
    pour les autres endpoints.
