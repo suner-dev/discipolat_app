@@ -164,3 +164,14 @@ Worktree : `/home/arise/discipolat/discipolat_app-agentB` (créé le 2026-09-28,
   provoquer un rendu indéfini (`switch` sans `default`).
 - **`getValues` ajouté** au destructuring de `useForm` dans `RegisterPage` (nécessaire pour
   pré-remplir l'email du lien ; vérifié à la compilation).
+
+### Régression globale (exécutée après B3)
+
+- `vitest run` (suite complète) → **EXIT 0**
+- **51 fichiers de test / 377 tests — 377 passés, 0 échec**
+- Une régression **mienne** a été détectée par cette suite et corrigée :
+  `getValues('email')` renvoie `undefined` tant que le champ n'a jamais été touché ;
+  j'appelais `.trim()` dessus → `AuthJourneys.test.tsx` échouait au premier rendu de
+  `RegisterPage`. Corrigé par `(getValues('email') ?? '').trim()`, puis re-vérifié
+  (`AuthJourneys` 5/5 + `RegistrationStatusPage` 10/10) et suite complète repassée.
+  **C'est exactement à cela que sert la suite complète** : mes tests ciblés étaient verts.

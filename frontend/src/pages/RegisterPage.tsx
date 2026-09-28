@@ -241,9 +241,11 @@ export default function RegisterPage() {
           déjà saisi un, pour lui éviter de le ressaisir. */}
       <div className="text-center animate-slide-up" style={{ animationDelay: '175ms' }}>
         <Link
-          to={getValues('email').trim()
-            ? `/registration-status?email=${encodeURIComponent(getValues('email').trim())}`
-            : '/registration-status'}
+          to={(() => {
+            // getValues() renvoie undefined tant que le champ n'a jamais été touché.
+            const current = (getValues('email') ?? '').trim();
+            return current ? `/registration-status?email=${encodeURIComponent(current)}` : '/registration-status';
+          })()}
           className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors min-h-[44px]"
         >
           {tText('Suivre ma demande')}
