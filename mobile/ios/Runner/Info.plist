@@ -53,5 +53,18 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.discipolat.discipolatMobile</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>discipolat</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

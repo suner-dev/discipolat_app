@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["<TEAM_ID>.com.discipolat.discipolatMobile"],
+        "components": [
+          { "/": "/accept-invitation*", "comment": "Deep link acceptation invitation (B8)" }
+        ]
+      }
+    ]
+  }
+}
