@@ -406,3 +406,74 @@ retrouve son **404 attendu** (et non 403) une fois le tenant réellement créé.
   (`status` est `NOT NULL`), mais traité en defense-in-depth.
 - **Aucun nouveau fichier hors de la liste de la tâche** : `TenantRepository` n'a
   pas été modifié (lecture via le `findById` existant, mis en cache 30 s).
+
+---
+
+## A2 — Audit des mutations tenant (constat M1)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `backend/src/main/java/com/discipolat/modules/tenants/domain/TenantService.java`
+  - MOD `backend/src/test/java/com/discipolat/modules/tenants/domain/TenantServiceTest.java` (+6 cas)
+- **Constat vérifié** : le champ `auditService` existait bien dans
+  `TenantService` mais n'était **appelé nulle part** (aucune occurrence de
+  `auditService.` dans le fichier avant cette tâche) : le cycle de vie complet du
+  tenant (création, changement de plan, suspension, réactivation) n'était
+  **aucunement tracé**.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest=TenantServiceTest -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.TenantServiceTest
+[INFO] BUILD SUCCESS
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1297, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+### Événements écrits (via `AuditService.logSimple(action, "TENANT", id)`)
+
+| Mutation | Événement(s) |
+|---|---|
+| `create` | `TENANT_CREATED` |
+| `update` | `TENANT_UPDATED` + `TENANT_PLAN_CHANGED` **uniquement si le plan a changé** |
+| `deactivate` | `TENANT_SUSPENDED` |
+| `reactivate` | `TENANT_REACTIVATED` |
+| `markOnboardingCompleted` (tâche A4) | `TENANT_ONBOARDING_COMPLETED` — **écrit en A4**, pas ici |
+
+L'acteur courant est capturé par `AuditService.logSimple` via
+`securityUtils.getCurrentUserId()` ; les écritures sont ensuite chaînées par
+hachage (`extendHashChain`) — la chaîne d'audit reste donc inaltérable.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Chaque mutation écrit **exactement** un événement d'audit | `verify(auditService, times(1)).logSimple(...)` + `verifyNoMoreInteractions(auditService)` dans les 5 tests de mutation |
+| Le changement de plan est tracé séparément | `update_withPlanChange_shouldAuditBothTenantUpdatedAndPlanChanged` (2 assertions, `verifyNoMoreInteractions`) |
+| **Aucun audit sur les lectures** | `reads_shouldNotWriteAnyAuditEvent` → `verifyNoInteractions(auditService)` après `list()` et `get()` |
+| Javadoc de la classe exact | Section « Audit (constat M1) » ajoutée dans `TenantService` |
+
+### Note sur un test existant ajusté
+
+`create_shouldAuditTenantCreatedExactlyOnce` exige que l'identifiant du tenant
+audit�� soit celui de la réponse. La fixture `tenantRepository.save(...)` de ce
+test attribuait un **nouveau** UUID à chaque appel, alors que `create` sauvegarde
+à nouveau le même tenant dans `ensureInitialSubscription` — l'identifiant est
+donc désormais attribué **une seule fois** (`if (t.getId() == null)`), ce qui
+reflète le comportement réel d'une base (identifiant généré et stable dans la
+transaction). Le test existant `create_shouldPersistWithActiveStatusAndDefaultPlan`
+n'est pas impacté.
+
+### Rappel de traçabilité
+
+L'événement `TENANT_ONBOARDING_COMPLETED` listé dans la spécification A2 dépend de
+`markOnboardingCompleted`, qui n'existe pas encore : il est créé en **A4** avec son
+audit. Ce décalage est assumé et sans impact (le critère « chaque mutation est
+auditée » reste vrai une fois A4 livrée).

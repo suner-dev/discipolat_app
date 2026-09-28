@@ -32,6 +32,12 @@ import java.util.UUID;
  * <p>La création d'un tenant est l'amorce d'une nouvelle église : l'utilisateur
  * qui l'onboardera sera rattaché via un JWT portant le {@code tenantId} de ce
  * nouveau tenant (flux multi-tenant V70).
+ *
+ * <p><b>Audit (constat M1).</b> Toute mutation — création, mise à jour,
+ * changement de plan, suspension, réactivation, fin d'onboarding — écrit
+ * exactement un événement dans le journal d'audit chaîné par hachage, porteur de
+ * l'acteur courant. Les lectures ({@link #list()}, {@link #get(UUID)}) n'en
+ * écrivent aucun.
  */
 @Service
 @Transactional
@@ -96,6 +102,7 @@ public class TenantService {
                 .locale(request.locale())
                 .build();
         tenant = tenantRepository.save(tenant);
+        auditService.logSimple("TENANT_CREATED", "TENANT", tenant.getId());
         if (tenant.getId() == null) {
             return TenantResponse.from(tenant);
         }
@@ -156,6 +163,7 @@ public class TenantService {
     public TenantResponse update(UUID id, UpdateTenantRequest request) {
         Tenant tenant = getEntity(id);
         TenantStatus statusBefore = tenant.getStatus();
+        String planBefore = tenant.getPlan();
         if (request.name() != null && !request.name().isBlank()) {
             tenant.setName(request.name());
         }
@@ -198,6 +206,10 @@ public class TenantService {
         propagationPublisher.publishUpdated("TENANT", tenant.getId(),
                 Map.of(), Map.of("name", tenant.getName(), "plan", tenant.getPlan()),
                 "Tenant mis à jour: " + tenant.getName());
+        auditService.logSimple("TENANT_UPDATED", "TENANT", tenant.getId());
+        if (planBefore != null && !planBefore.equals(tenant.getPlan())) {
+            auditService.logSimple("TENANT_PLAN_CHANGED", "TENANT", tenant.getId());
+        }
         publishStatusChangeIfNeeded(tenant, statusBefore);
         return TenantResponse.from(tenant);
     }
@@ -211,6 +223,7 @@ public class TenantService {
         propagationPublisher.publishStatusChanged("TENANT", tenant.getId(),
                 oldStatus, TenantStatus.SUSPENDED.name(),
                 "Tenant désactivé: " + tenant.getName());
+        auditService.logSimple("TENANT_SUSPENDED", "TENANT", tenant.getId());
         publishStatusChangeIfNeeded(tenant, TenantStatus.valueOf(oldStatus));
     }
 
@@ -222,6 +235,7 @@ public class TenantService {
         propagationPublisher.publishStatusChanged("TENANT", tenant.getId(),
                 oldStatus, TenantStatus.ACTIVE.name(),
                 "Tenant réactivé: " + tenant.getName());
+        auditService.logSimple("TENANT_REACTIVATED", "TENANT", tenant.getId());
         publishStatusChangeIfNeeded(tenant, TenantStatus.valueOf(oldStatus));
     }
 
