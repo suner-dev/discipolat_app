@@ -234,7 +234,8 @@ Les deux plans ne doivent **pas** tourner simultanément (conflits de merge sur
 
 - Les rapports `reports/COMMERCIALIZATION_AUDIT.md` (22/08) et
   `IMPLEMENTATION_STATUS.md` (31/08) sont **périmés** : i18n, auth sociale,
-  rate-limiting, onboarding et PWA existent déjà.
+  rate-limiting, onboarding et PWA existent déjà. Ils ont été **supprimés du
+  dépôt le 28/09** (ménage documentaire) — accessibles via `git log`.
 - Le plan `ONB-*` Supersède ces rapports pour le périmètre onboarding/tenant.
 - Toute affirmation « c'est fait » doit être **prouvée par une commande**,
   pas déduite d'un rapport.

@@ -229,11 +229,8 @@ DEFAULT (platform) → INHERITED (parent org unit) → OVERRIDDEN (local)
 
 ## 13. References
 
-- `docs/architecture/target-architecture.md` — Target architecture diagram
-- `docs/architecture/gap-analysis.md` — Gap analysis vs requirements
 - `docs/security/SECURITY_MATRIX.md` — Complete security matrix
-- `reports/SECURITY_AUDIT_REPORT.md` — Final security audit
-- `reports/QA_SCENARIOS.md` — QA scenarios (50 scenarios, all passing)
+- `docs/qa/QA_SCENARIOS.md` — QA scenarios
 - `docs/TENANT_ONBOARDING.md` — Detailed onboarding guide
 - `docs/ADMINISTRATION_MODEL.md` — Administration model
 - `docs/RBAC.md` — Role-based access control

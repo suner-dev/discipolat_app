@@ -303,4 +303,3 @@ TENANT > REGION > CHURCH > SUB_CHURCH > DEPARTMENT > FAMILY > ASSIGNED > OWN
 - `docs/ORGANIZATION_HIERARCHY.md` — Org unit management
 - `docs/TENANT_ONBOARDING.md` — Step-by-step onboarding
 - `docs/security/SECURITY_MATRIX.md` — Permission matrix
-- `reports/SECURITY_AUDIT_REPORT.md` — Security audit

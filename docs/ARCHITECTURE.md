@@ -1,7 +1,7 @@
 # Architecture Technique — Discipolat Church OS
 
 > Version 2.0 — 2026-09-22 · §72 / G6.8 · Statut : a jour.
-> References : [Multi-tenant](MULTI_TENANT_ARCHITECTURE.md) · [RBAC](RBAC.md) · [Administration](ADMINISTRATION_MODEL.md) · [Securite](SECURITY.md) · [Base de donnees](DATABASE.md) · [API](API.md) · [Deploiement](DEPLOYMENT.md) · [Cible](architecture/target-architecture.md) · [Gap analysis](architecture/gap-analysis.md) · [Mapping](architecture/multitenancy-mapping.md) · [Etat actuel](architecture/current-state.md)
+> References : [Multi-tenant](MULTI_TENANT_ARCHITECTURE.md) · [RBAC](RBAC.md) · [Administration](ADMINISTRATION_MODEL.md) · [Securite](SECURITY.md) · [Base de donnees](DATABASE.md) · [API](API.md) · [Deploiement](DEPLOYMENT.md) · [Etat factuel](../STATUS.md)
 
 ## 1. Vue d'ensemble
 
@@ -19,7 +19,7 @@ Postman / API publique┘                                                     �
 |---|---|
 | Multi-tenant natif | `tenant_id` partout, filtre Hibernate `tenantFilter`, `TenantContext` (ThreadLocal), RLS sur tables critiques — voir [MULTI_TENANT_ARCHITECTURE.md](MULTI_TENANT_ARCHITECTURE.md) |
 | Espaces (Spaces) | Unite de deploiement modulaire : `space` + `space_module` + `space_templates` (V148-V152). `ModuleRouter` → 403 si module desactive |
-| Moteurs transverses | People, Org, Events, Assets, Finance, Discipleship, Prayer, Media, Health, Workflow, Configuration (custom fields, statuts, permissions), Audit, Notification, Realtime, Offline — voir [cible](architecture/target-architecture.md) |
+| Moteurs transverses | People, Org, Events, Assets, Finance, Discipleship, Prayer, Media, Health, Workflow, Configuration (custom fields, statuts, permissions), Audit, Notification, Realtime, Offline |
 | Outbox transactionnel | `core.OutboxEvent` + `OutboxPublisher`/`OutboxDispatcher`/`OutboxConsumers` : publication puis propagation (WebSocket/SSE < 5 s, webhooks `webhook_delivery_logs` V108) |
 | RBAC hierarchique | `PLATFORM_SUPER_ADMIN` → `TENANT_OWNER` → `TENANT_ADMIN` → `REGION_ADMIN` → `CHURCH_ADMIN`/`CAMPUS_PASTOR` → `DEPARTMENT_ADMIN` → `FAMILY_LEADER` → `DISCIPLE_MAKER` → `MEMBER` ; scopes `TENANT > REGION > CHURCH > DEPARTMENT > FAMILY > ASSIGNED/OWN` — voir [RBAC.md](RBAC.md), [matrice](security/SECURITY_MATRIX.md) |
 | Configuration heritee | `DEFAULT → INHERITED → OVERRIDDEN`, `ConfigurationResolver` + cache + invalidation temps reel (V145) |
@@ -54,4 +54,4 @@ Local : `docker-compose.yml` (db, redis, api, mailhog, web, nginx). Prod : `rend
 - [MULTI_TENANT_ARCHITECTURE.md](MULTI_TENANT_ARCHITECTURE.md) · [ADMINISTRATION_MODEL.md](ADMINISTRATION_MODEL.md) · [RBAC.md](RBAC.md) · [security/SECURITY_MATRIX.md](security/SECURITY_MATRIX.md)
 - [DATABASE.md](DATABASE.md) · [API.md](API.md) · [DEPLOYMENT.md](DEPLOYMENT.md) · [ENV_TEMPLATE.md](ENV_TEMPLATE.md)
 - [GUIDE_UTILISATEUR.md](GUIDE_UTILISATEUR.md) · [GUIDE_BACK_OFFICE_COMMERCIAL.md](GUIDE_BACK_OFFICE_COMMERCIAL.md) · [RUNBOOK.md](RUNBOOK.md)
-- [architecture/target-architecture.md](architecture/target-architecture.md) · [architecture/gap-analysis.md](architecture/gap-analysis.md) · [architecture/multitenancy-mapping.md](architecture/multitenancy-mapping.md) · [architecture/current-state.md](architecture/current-state.md)
+- [qa/QA_SCENARIOS.md](qa/QA_SCENARIOS.md) · [../reports/GO_NO_GO_REPORT.md](../reports/GO_NO_GO_REPORT.md) · [../STATUS.md](../STATUS.md)

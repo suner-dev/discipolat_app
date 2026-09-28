@@ -372,6 +372,5 @@ if (await auth.can('events.CREATE')) {
 - `docs/security/SECURITY_MATRIX.md` — Complete 320-cell matrix
 - `docs/ADMINISTRATION_MODEL.md` — Admin workflows
 - `docs/TENANT_SECURITY.md` — Security hardening
-- `reports/SECURITY_AUDIT_REPORT.md` — Audit results
 - `backend/src/main/java/com/discipolat/common/infrastructure/security/AuthorizationService.java`
 - `backend/src/test/java/com/discipolat/modules/tenants/MultiTenantSecurityTests.java`

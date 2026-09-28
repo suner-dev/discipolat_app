@@ -1,4 +1,4 @@
-﻿# ORCHESTRATION AGENTS — DISCIPOLAT
+# ORCHESTRATION AGENTS — DISCIPOLAT
 
 > **Document de pilotage pour agents autonomes.** Tout agent (humain ou IA) doit lire
 > ce fichier AVANT de commencer, puis le mettre à jour après chaque tâche.
@@ -43,6 +43,8 @@ Amener Discipolat au niveau **production mondiale** :
 
 > ⚠️ **Les rapports `reports/COMMERCIALIZATION_AUDIT.md` (22/08/2026),
 > `IMPLEMENTATION_STATUS.md` (31/08/2026) et `CAHIER_DE_CHARGE.md` sont PÉRIMÉS.**
+> Les deux premiers ont été supprimés du dépôt le 28/09 (ménage documentaire,
+> accessibles via `git log`).
 > Ils listent comme "manquants" des éléments qui existent déjà. Vérifier par
 > `grep`/`glob` AVANT de conclure quoi que ce soit.
 
@@ -83,14 +85,14 @@ Amener Discipolat au niveau **production mondiale** :
 | M2 | **Module Backup Java absent** — aucun `backend/.../modules/backup/`. Le cahier de charge annonce `POST /backups/{id}/verify`. Seuls des scripts shell (`scripts/backup.sh`) existent. | `glob backend/**/modules/backup/**` → 0 fichier | 🔴 P0 |
 | M3 | **Notifications non câblées dans l'outbox** | `OutboxConsumers.java:141` → `// TODO: Déléguer à NotificationService` | 🔴 P0 |
 | M4 | **i18n : chaînes françaises non traduites** dans `sw.ts` (lignes ~1387, 1525, 1539, 1554-1556) et probablement `ar.ts`/`pt.ts`/`es.ts`. Traductions de mauvaise qualité. | `frontend/src/i18n/sw.ts` contient `'Aucun passeport émis'` | 🟠 P1 |
-| M5 | **Config STT/Whisper absente de `application.yml`** — `IMPLEMENTATION_STATUS.md` documente `app.speech.api-url/api-key/model` mais la config n'existe pas. | `grep "speech" backend/src/main/resources/application.yml` → 0 | 🟠 P1 |
+| M5 | **Config STT/Whisper absente de `application.yml`** — `IMPLEMENTATION_STATUS.md` (depuis supprimé, voir `git log`) documentait `app.speech.api-url/api-key/model` mais la config n'existe pas. | `grep "speech" backend/src/main/resources/application.yml` → 0 | 🟠 P1 |
 | M6 | **Ollama codé en dur sur localhost** | `application.yml:190` → `${OLLAMA_URL:http://localhost:11434}` | 🟡 P2 |
 | M7 | **Échelle : sharding / partitionnement absent** — mono-PostgreSQL. Objectif 10⁶-10⁸ tenants non atteignable. | `docker-compose.yml` = 1 service `db` | 🔴 P0 (bloquant commercial) |
 | M8 | **Fournisseurs de paiement hors Afrique absents** — uniquement MTN/Orange/M-Pesa. Aucun Stripe/PayPal/virement SEPA pour Europe/Amérique. | `grep -r "stripe\|paypal\|sepa" backend/` → 0 | 🔴 P0 (bloquant mondial) |
 | M9 | **Régllements non abstraits** — logique de don/transaction liée à XOF et pays africains. | inspecter `modules/payments` | 🔴 P0 |
 | M10 | **Aucun test E2E navigateur** — seulement `puppeteer-core` dans `scripts/`. Pas de suite CI bloquante. | `frontend/package.json` → pas de `playwright` | 🟠 P1 |
 | M11 | **Aucun test de charge exécuté en CI** — `performance-tests/` existe mais hors CI. | `.github/workflows/` sans k6 | 🟠 P1 |
-| M12 | **Écrans Flutter > 1000 lignes** — dette de maintenabilité. | `Etat_fonctionnalité.md:35` le reconnaît | 🟡 P2 |
+| M12 | **Écrans Flutter > 1000 lignes** — dette de maintenabilité. | `Etat_fonctionnalité.md:35` (depuis supprimé, `git log`) le reconnaissait | 🟡 P2 |
 | M13 | **Aucun test d'isolation inter-tenant sur le flux complet HTTP** — tests unitaires seulement, pas de test bout-en-bout cross-tenant. | `TenantIsolationIntegrationTest.java` existe (couverture réelle) mais à étendre | 🟠 P1 |
 
 ### 1.4 MATRICE DE COUVERTURE — à vérifier avant de déclarer quoi que ce soit "terminé"
@@ -135,7 +137,7 @@ Pour éviter qu'un agent futur ne « corrige » quelque chose de déjà fait :
   et `TenantFileIsolationConfigTest` montrent que l'isolation fichier par
   tenant a déjà été travaillée — M7 concerne l'échelle DB, pas l'isolation.
 - **`Application` de contrôleur** : `@PreAuthorize` est déjà présent sur
-  l'ensemble des endpoints authentifiés (cf. `Etat_fonctionnalité.md` §P0).
+  l'ensemble des endpoints authentifiés (cf. historique `Etat_fonctionnalité.md` §P0, supprimé — vérifier par grep).
 - **SSE** : le backend publie bien des événements (SSE + STOMP + WebSocket).
   Ce qui manque est l'écoute côté client → traité en B2, pas côté backend.
 - **Les scripts shell de backup** (`scripts/backup*.sh`, `restore.sh`) sont
@@ -269,7 +271,9 @@ STRICTEMENT les règles absolues de la section 3, en particulier :
 NE SUPPRIMER RIEN, migrations Flyway ADDITIVES uniquement, commit+push
 après chaque tâche, build vert obligatoire.
 
-CONTEXTE CRITIQUE : les rapports dans reports/ sont PÉRIMÉS. Ne t'y fie pas.
+CONTEXTE CRITIQUE : les rapports périmés de reports/ et docs/rapports/ ont été
+supprimés le 2026-09-28 (ménage) ; seul reports/GO_NO_GO_REPORT.md est conservé
+comme record de décision. Ne te fie pas aux historiques du git log.
 Vérifie toujours par grep/glob avant d'affirmer qu'un truc manque.
 
 TA MISSION IMMÉDIATE :
