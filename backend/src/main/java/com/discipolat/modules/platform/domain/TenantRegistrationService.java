@@ -5,6 +5,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.authentication.domain.EmailService;
 import com.discipolat.modules.tenants.api.CreateTenantRequest;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.domain.MembershipScopeType;
@@ -45,6 +46,8 @@ public class TenantRegistrationService {
     private final RoleRepository roleRepository;
     private final TenantMembershipRepository membershipRepository;
     private final AuditService auditService;
+    private final EmailService emailService;
+    private final String frontendUrl;
 
     public TenantRegistrationService(TenantRegistrationRequestRepository requestRepository,
                                      UserRepository userRepository,
@@ -53,7 +56,9 @@ public class TenantRegistrationService {
                                      OrganizationNodeService organizationNodeService,
                                      RoleRepository roleRepository,
                                      TenantMembershipRepository membershipRepository,
-                                     AuditService auditService) {
+                                     AuditService auditService,
+                                     EmailService emailService,
+                                     @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.requestRepository = requestRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -62,6 +67,8 @@ public class TenantRegistrationService {
         this.roleRepository = roleRepository;
         this.membershipRepository = membershipRepository;
         this.auditService = auditService;
+        this.emailService = emailService;
+        this.frontendUrl = frontendUrl;
     }
 
     @Transactional
@@ -74,7 +81,7 @@ public class TenantRegistrationService {
     public TenantRegistrationRequest submit(String email, String rawPassword, String firstName,
                                              String lastName, String phone, String requestedPlan) {
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
-        TenantRegistrationRequest request = requestRepository.findByEmail(normalizedEmail)
+        TenantRegistrationRequest request = requestRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseGet(() -> TenantRegistrationRequest.builder().email(normalizedEmail).build());
         if (request.getStatus() != null && request.getStatus() != TenantRegistrationStatus.REJECTED) {
             throw new BusinessRuleException("Une demande existe déjà pour cet email", "REGISTRATION_EXISTS");
@@ -104,7 +111,44 @@ public class TenantRegistrationService {
         request.setDecisionReason(null);
         request.setReviewedAt(null);
         request.setCreatedAt(Instant.now());
-        return requestRepository.save(request);
+        TenantRegistrationRequest saved = requestRepository.save(request);
+        // Constat M2 : la soumission était 100% silencieuse. L'appelant n'avait
+        // AUCUNE preuve que sa demande était arrivée.
+        emailService.sendRegistrationReceived(normalizedEmail, request.getFirstName());
+        return saved;
+    }
+
+    /**
+     * Constat M2 / contrat §3.3 — statut d'une demande d'inscription.
+     *
+     * <p>Ne divulgue ni mot de passe, ni nom d'organisation, ni compte : seul le
+     * statut de la demande. Une adresse inconnue renvoie {@code NONE}, ce qui est
+     * indistinguishable d'une adresse simplement pas encore demandée.
+     *
+     * <p>La recherche est <b>insensible à la casse</b> : l'email est une identité
+     * globale unique (constat B4 / migration V185).
+     */
+    @Transactional(readOnly = true)
+    public com.discipolat.modules.authentication.api.RegistrationStatusResponse registrationStatus(String email) {
+        if (email == null || email.isBlank()) {
+            return new com.discipolat.modules.authentication.api.RegistrationStatusResponse(
+                    "NONE", null, null, false);
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        TenantRegistrationRequest request = requestRepository
+                .findByEmailIgnoreCase(normalizedEmail)
+                .orElse(null);
+        if (request == null || request.getStatus() == null) {
+            return new com.discipolat.modules.authentication.api.RegistrationStatusResponse(
+                    "NONE", null, null, false);
+        }
+        TenantRegistrationStatus status = request.getStatus();
+        String reason = status == TenantRegistrationStatus.REJECTED ? request.getDecisionReason() : null;
+        return new com.discipolat.modules.authentication.api.RegistrationStatusResponse(
+                status.name(),
+                request.getReviewedAt(),
+                reason,
+                status == TenantRegistrationStatus.APPROVED);
     }
 
     @Transactional(readOnly = true)
@@ -165,6 +209,8 @@ public class TenantRegistrationService {
             requestRepository.save(request);
             auditService.log(actorId, tenantId, "TENANT_REGISTRATION_APPROVED", "TENANT", tenantId,
                     "SUCCESS", Map.of("requestId", requestId.toString(), "email", request.getEmail()), null, null, null);
+            emailService.sendRegistrationApproved(
+                    request.getEmail(), request.getFirstName(), frontendUrl + "/login");
             return new ApprovalResult(request, tenant, church, owner);
         } finally {
             if (previousTenantId != null) {
@@ -182,7 +228,10 @@ public class TenantRegistrationService {
         request.setReviewerId(SecurityUtils.getCurrentUserId());
         request.setDecisionReason(reason);
         request.setReviewedAt(Instant.now());
-        return requestRepository.save(request);
+        TenantRegistrationRequest rejected = requestRepository.save(request);
+        emailService.sendRegistrationRejected(
+                request.getEmail(), request.getFirstName(), reason);
+        return rejected;
     }
 
     private TenantRegistrationRequest requirePending(UUID requestId) {

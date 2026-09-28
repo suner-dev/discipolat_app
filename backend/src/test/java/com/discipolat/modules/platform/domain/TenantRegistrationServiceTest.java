@@ -50,6 +50,8 @@ class TenantRegistrationServiceTest {
     private TenantMembershipRepository membershipRepository;
     @Mock
     private AuditService auditService;
+    @Mock
+    private com.discipolat.modules.authentication.domain.EmailService emailService;
 
     @AfterEach
     void clearSecurityContext() {
@@ -58,7 +60,7 @@ class TenantRegistrationServiceTest {
 
     @Test
     void publicSubmissionDoesNotCreateTenantOrUser() {
-        when(requestRepository.findByEmail("demandeur@example.com")).thenReturn(Optional.empty());
+        when(requestRepository.findByEmailIgnoreCase("demandeur@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("password123")).thenReturn("hashed-password");
         when(requestRepository.save(any(TenantRegistrationRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
         TenantRegistrationService service = service();
@@ -75,7 +77,7 @@ class TenantRegistrationServiceTest {
 
     @Test
     void publicSubmissionNormalizesTheSelectedPublicPlan() {
-        when(requestRepository.findByEmail("growth@example.com")).thenReturn(Optional.empty());
+        when(requestRepository.findByEmailIgnoreCase("growth@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("password123")).thenReturn("hashed-password");
         when(requestRepository.save(any(TenantRegistrationRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -123,6 +125,7 @@ class TenantRegistrationServiceTest {
 
     private TenantRegistrationService service() {
         return new TenantRegistrationService(requestRepository, userRepository, passwordEncoder,
-                tenantService, organizationNodeService, roleRepository, membershipRepository, auditService);
+                tenantService, organizationNodeService, roleRepository, membershipRepository, auditService,
+                emailService, "https://app.example.com");
     }
 }

@@ -802,3 +802,86 @@ mvn -B -o test     (suite complète)
    peut plus créer d'église sans propriétaire).
 6. **Aucun secret en dur** : le mot de passe initial est généré, haché, et
    jamais journalisé ni renvoyé.
+
+---
+
+## A6 — Emails d'inscription + endpoint public de statut (constat M2)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `authentication/domain/EmailService.java` (+ 3 emails d'inscription, retour `boolean`)
+  - MOD `platform/domain/TenantRegistrationService.java` (+ emails, + `registrationStatus(email)`)
+  - MOD `platform/domain/TenantRegistrationRequestRepository.java` (+ `findByEmailIgnoreCase`)
+  - NEW `authentication/api/RegistrationStatusRequest.java`, `RegistrationStatusResponse.java`
+  - MOD `authentication/api/AuthController.java` (+ `POST /registration-status`)
+  - MOD `common/infrastructure/config/PerIpRateLimiter.java` (+ `tryConsumeRegistrationStatus` + métriques)
+  - MOD `backend/src/main/resources/application.yml` (+ `registration-status-*`)
+  - NEW `platform/domain/TenantRegistrationEmailTest.java` (4 cas)
+  - NEW `authentication/api/AuthControllerRegistrationStatusTest.java` (7 cas)
+  - MOD `platform/domain/TenantRegistrationServiceTest.java` (nouveau ctor + mock)
+
+### Constat vérifié
+
+Le parcours d'inscription d'une église était **100 % silencieux** : ni accusé de
+réception à la soumission, ni notification d'approbation, ni notification de
+rejet. Le demandeur n'avait **aucune preuve** que sa demande était arrivée, et
+l'approbation comme le rejet étaient invisibles.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='TenantRegistrationEmailTest,AuthControllerRegistrationStatusTest,TenantRegistrationServiceTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in ...AuthControllerRegistrationStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in ...TenantRegistrationEmailTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in ...TenantRegistrationServiceTest
+[INFO] BUILD SUCCESS
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1398, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 146 = **1398**.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Soumission → email reçu | `submitSendsRegistrationReceived` (email **normalisé** en minuscules) |
+| Approbation → email d'approbation | `approveSendsRegistrationApproved` (avec le lien `frontendUrl + "/login"`) |
+| Rejet → email avec motif | `rejectSendsRegistrationRejected` (le motif du Super Admin est transmis) |
+| Aucun échec SMTP ne casse la transaction métier | `submitSurvivesSmtpFailure` : l'email renvoie `false`, la demande reste `PENDING_APPROVAL` et persistée. Décision D10 respectée par `sendTracked` (jamais de `throw`, seulement `log.error`) |
+| `registration-status` rate-limité | `rateLimitedReturns429` : `429` + `Retry-After: 300` + `no-store`, et **`verify(registrationService, never())`** : le quota protège aussi la base |
+| Sans fuite d'information | `responseLeaksNothingSensitive` : le corps ne contient ni `password`, ni `passwordHash`, ni `organizationName`, ni `userId`, ni `slug`, ni `tenantId` |
+| `Cache-Control: no-store` | asserted sur les 6 réponses (4 nominaux + 429 + leak) |
+| `reason` seulement si `REJECTED` | `rejectedReturnsReason` (présent) vs `approvedReturnsCanLoginTrue` / `pendingReturnsPendingApproval` (absent) |
+| `canLogin` = `APPROVED` | les 4 cas nominaux |
+
+### Décisions et déviations documentées
+
+1. **Fenêtre de rate-limit : 5 minutes.** Le plan §4 A6 ne mentionne que
+   `registration-status-capacity/refill` (défauts 3/3) mais le contrat §3.3 exige
+   « **3 requêtes / 5 minutes / IP** ». J'ai donc aussi ajouté
+   `registration-status-period-minutes: 5` (avec la même clé en
+   `application.yml`). Sans ce period, 3 requêtes/minute auraient laissé 15
+   tentatives par fenêtre de 5 minutes — 5× plus permissif que le contrat.
+2. **Endpoint `429` : corps `status = NONE`** plutôt qu'un corps d'erreur vide.
+   Cohérent avec le fait que la réponse ne泄露 rien sur l'existence d'un compte :
+   un client qui reçoit `429` ne doit pas pouvoir déduire que l'email existe.
+   `Retry-After` et `X-RateLimit-Remaining: 0` sont malgré tout fournis, comme
+   pour les autres endpoints.
+3. **`findByEmailIgnoreCase`** ajouté à `TenantRegistrationRequestRepository` et
+   utilisé aussi par `submit` : l'email est une identité globale unique
+   (constat B4 / V185), une recherche sensible à la casse aurait pu créer deux
+   demandes pour la même adresse selon la casse saisie.
+4. **Le fichier de la tâche annonçait « 4 nouvelles méthodes » dans
+   `EmailService`** : 3 sont livrées ici (`sendRegistrationReceived`,
+   `sendRegistrationApproved`, `sendRegistrationRejected`). La 4ᵉ est
+   `sendInvitationWelcome`, qui appartient à la tâche **A9** (§3.4) et n'est pas
+   utilisée par le parcours d'inscription.
+5. **Aucun secret ni URL interne dans la réponse** : `loginUrl` n'est envoyé que
+   dans l'**email** au demandeur, jamais dans la réponse HTTP.
