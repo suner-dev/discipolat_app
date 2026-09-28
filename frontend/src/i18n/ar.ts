@@ -2879,6 +2879,12 @@ const ar: Record<string, string> = {
   'onboarding.v2.Étape_ignorée_': 'تم تخطي الخطوة.',
   'onboarding.v2.Étape_terminée': 'اكتملت الخطوة',
   'onboarding.v2.Étapes_de_configuration': 'خطوات الإعداد',
+  // ── B2 — Bannière d'onboarding (D8 : informative, jamais bloquante).
+  'onboarding.banner.Configuration incomplète': 'الإعداد غير مكتمل',
+  'onboarding.banner.Continuer': 'متابعة',
+  'onboarding.banner.Masquer cette bannière': 'إخفاء هذا الشريط',
+  'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'الخطوة الأخيرة جارية: أكمل الإعداد.',
+  'onboarding.banner.remainingSteps': 'تبقت بعض الخطوات لإعداد كنيستك.',
 };
 
 export default ar;

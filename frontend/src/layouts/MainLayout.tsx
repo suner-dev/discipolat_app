@@ -13,6 +13,7 @@ import { useCommandPalette } from '@/hooks/useKeyboardShortcuts';
 import CommandPalette from '@/components/CommandPalette';
 import { FlaskConical, X } from 'lucide-react';
 import ImpersonationBanner from '@/components/shared/ImpersonationBanner';
+import OnboardingBanner from '@/components/onboarding/OnboardingBanner';
 
 const TESTER_BANNER_KEY = 'discipolat:tester-banner-dismissed';
 
@@ -54,6 +55,9 @@ export default function MainLayout() {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64 transition-all duration-300">
         <Navbar onMenuClick={() => setSidebarOpen(true)} openPalette={openPalette} />
+
+        {/* B2 — Bannière d'onboarding (D8 : informative, jamais bloquante) */}
+        <OnboardingBanner />
 
         {/* §G1.9 — Bandeau permanent d'impersonation (au-dessus de tout contenu) */}
         <ImpersonationBanner />

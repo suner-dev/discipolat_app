@@ -2734,6 +2734,12 @@ const pt: Record<string, string> = {
   'onboarding.v2.Étape_ignorée_': 'Etapa ignorada.',
   'onboarding.v2.Étape_terminée': 'Etapa concluída',
   'onboarding.v2.Étapes_de_configuration': 'Etapas de configuração',
+  // ── B2 — Bannière d'onboarding (D8 : informative, jamais bloquante).
+  'onboarding.banner.Configuration incomplète': 'Configuração incompleta',
+  'onboarding.banner.Continuer': 'Continuar',
+  'onboarding.banner.Masquer cette bannière': 'Ocultar este banner',
+  'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'Última etapa em andamento: finalize a configuração.',
+  'onboarding.banner.remainingSteps': 'Ainda faltam etapas para concluir a configuração da sua igreja.',
 };
 
 export default pt;

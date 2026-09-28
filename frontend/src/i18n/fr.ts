@@ -2845,6 +2845,12 @@ const fr = {
   'onboarding.v2.Étape_ignorée_': 'Étape ignorée.',
   'onboarding.v2.Étape_terminée': 'Étape terminée',
   'onboarding.v2.Étapes_de_configuration': 'Étapes de configuration',
+  // ── B2 — Bannière d'onboarding (D8 : informative, jamais bloquante).
+  'onboarding.banner.Configuration incomplète': 'Configuration incomplète',
+  'onboarding.banner.Continuer': 'Continuer',
+  'onboarding.banner.Masquer cette bannière': 'Masquer cette bannière',
+  'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'Dernière étape en cours : finalisez la configuration.',
+  'onboarding.banner.remainingSteps': 'Il reste des étapes pour terminer la configuration de votre église.',
 };
 
 export default fr;

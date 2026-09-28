@@ -2949,6 +2949,12 @@ const sw: Record<string, string> = {
   'onboarding.v2.Étape_ignorée_': 'Hatua imerukwa.',
   'onboarding.v2.Étape_terminée': 'Hatua imekamilika',
   'onboarding.v2.Étapes_de_configuration': 'Hatua za usanidi',
+  // ── B2 — Bannière d'onboarding (D8 : informative, jamais bloquante).
+  'onboarding.banner.Configuration incomplète': 'Usanidi usiokamilika',
+  'onboarding.banner.Continuer': 'Endelea',
+  'onboarding.banner.Masquer cette bannière': 'Ficha banneri hii',
+  'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'Hatua ya mwisho inaendelea: kamilisha usanidi.',
+  'onboarding.banner.remainingSteps': 'Hatua zimebaki kukamilisha usanidi wa kanisa chako.',
 };
 
 export default sw;

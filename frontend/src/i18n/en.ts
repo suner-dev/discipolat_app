@@ -2788,6 +2788,12 @@ const en: Record<string, string> = {
   'onboarding.v2.Étape_ignorée_': 'Step skipped.',
   'onboarding.v2.Étape_terminée': 'Step completed',
   'onboarding.v2.Étapes_de_configuration': 'Setup steps',
+  // ── B2 — Bannière d'onboarding (D8 : informative, jamais bloquante).
+  'onboarding.banner.Configuration incomplète': 'Setup incomplete',
+  'onboarding.banner.Continuer': 'Continue',
+  'onboarding.banner.Masquer cette bannière': 'Hide this banner',
+  'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'Final step in progress: finish the setup.',
+  'onboarding.banner.remainingSteps': 'Some steps remain to finish setting up your church.',
 };
 
 export default en;

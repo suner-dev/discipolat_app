@@ -116,3 +116,26 @@ Worktree : `/home/arise/discipolat/discipolat_app-agentB` (créé le 2026-09-28,
   2. `useOnboardingSteps` faisait `retry: 1` **inconditionnel** → un `403 TENANT_SUSPENDED`
      (non transitoire) retardait l'écran d'erreur d'environ 1 s. Remplacé par `shouldRetry()`,
      qui ne rejoue que les erreurs réseau/5xx. Test de non-régression inclus.
+
+---
+
+## B2 — Bannière d'onboarding post-connexion
+
+- **Statut : DONE**
+- **Fichiers :**
+  - NEW `frontend/src/components/onboarding/OnboardingBanner.tsx`
+  - MOD `frontend/src/layouts/MainLayout.tsx` (montée au-dessus d'`ImpersonationBanner`)
+  - MOD `frontend/src/i18n/{fr,en,pt,es,sw,ar}.ts` (5 clés `onboarding.banner.*` par locale)
+  - NEW `frontend/src/__tests__/OnboardingBanner.test.tsx` (7 cas)
+- **Preuves :** `tsc -b` **EXIT 0** ; `eslint` **EXIT 0** ; `vitest` **7/7 verts**
+- **D8 respecté à la lettre :** **aucune redirection automatique**. `LoginPage.tsx` n'a **pas**
+  été modifié (ses 4 `navigate('/dashboard')` sont intacts) et `AuthContext.tsx` non plus.
+  Le seul signalement est la bannière, dismissible via `sessionStorage`.
+- **Silence sur erreur :** si `GET /status` échoue la bannière est masquée, avec `retry: 0`
+  → **un seul appel réseau**, aucune boucle (prouvé par un test).
+- **Défaut i18n trouvé et corrigé :** la première version **interpolait** le nombre d'étapes
+  restantes dans une chaîne traduite (`${remaining} étape(s)...`). Or `tText` indexe par
+  **valeur exacte** : une chaîne interpolée est absente de `fr.ts` et serait donc restée
+  en français dans les 5 autres locales. Remplacé par une clé stable
+  `onboarding.banner.remainingSteps` (le nombre exact est déjà lisible dans la barre de
+  progression du wizard). Clé présente dans les 6 locales.
