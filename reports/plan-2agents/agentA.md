@@ -1527,7 +1527,7 @@ ERROR: column on1_0.slug does not exist
 ```
 
 Impact : le **provisionnement atomique d'un tenant est cassé** sur toute base
-construite par les migrations, donc sur **tout déploiement neuf**. L'API组织
+construite par les migrations, donc sur **tout déploiement neuf**. L'API organisation
 (`OrganizationManagementController` lit et écrit `getSlug()`) est également
 inutilisable.
 
@@ -1749,6 +1749,6 @@ pas.** Aucun des deux n'est trivial.
    vers le schéma `event`, et `path` vers `ltree`. C'est le travail correct, mais
    c'est un refonte de module, hors périmètre d'A14.
 3. **Traiter H8 dans cette branche** (petit et isolé : une migration de type) et
-   **documenter H2 comme chantier séparé** — lToday's quick win honnête.
+   **documenter H2 comme chantier séparé** — le gain rapide honnête.
 
 Aucun des deux n'a été corrigé ici : les deux engagent des choix d'architecture.
