@@ -241,6 +241,8 @@ const RewardsClaimsPage = lazy(() => import('@/pages/RewardsClaimsPage'));
 const UserRolesPage = lazy(() => import('@/pages/UserRolesPage'));
 const ComplianceExportsPage = lazy(() => import('@/pages/ComplianceExportsPage'));
 const PricingPage = lazy(() => import('@/pages/PricingPage'));
+const LegalPage = lazy(() => import('@/pages/LegalPage'));
+const BillingPage = lazy(() => import('@/pages/BillingPage'));
 const SpaceImportExportPage = lazy(() => import('@/pages/SpaceImportExportPage'));
 const ConversationsPage = lazy(() => import('@/pages/ConversationsPage'));
 const CoursesPage = lazy(() => import('@/pages/CoursesPage'));
@@ -365,6 +367,11 @@ export default function App() {
             <TwoFactorChallengePage />
           </ProtectedRoute>
         } />
+
+        {/* Documents légaux versionnés (RGPD) — lecture publique, accessibles
+            depuis la landing et le formulaire d'inscription (hors shell auth) */}
+        <Route path="/legal" element={<LegalPage />} />
+        <Route path="/legal/:code" element={<LegalPage />} />
 
         {/* Protected routes */}
         <Route element={<MainLayout />}>
@@ -880,6 +887,8 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/pricing" element={<PricingPage />} />
+          {/* Facturation SaaS : abonnement courant + portail client Stripe */}
+          <Route path="/billing" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><BillingPage /></ProtectedRoute>} />
           <Route path="/api-docs" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
               <ApiDocsPage />

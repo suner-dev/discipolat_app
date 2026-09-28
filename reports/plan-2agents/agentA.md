@@ -1527,7 +1527,7 @@ ERROR: column on1_0.slug does not exist
 ```
 
 Impact : le **provisionnement atomique d'un tenant est cassé** sur toute base
-construite par les migrations, donc sur **tout déploiement neuf**. L'API组织
+construite par les migrations, donc sur **tout déploiement neuf**. L'API organisation
 (`OrganizationManagementController` lit et écrit `getSlug()`) est également
 inutilisable.
 
@@ -1640,3 +1640,434 @@ le premier événement (H2), et l obtains d'un jeton sur le tenant de recette
 
 Aucun de ces défauts n'a été corrigé dans cette branche : la correction
 dépasse le mandat d'A14 et engage le schéma de production.
+
+---
+
+## H1–H8 — Dérives entité/schéma : correctifs appliqués et validés
+
+Branche dédiée : **`fix/schema-drift-h1-h5`** (jamais fusionnée dans `main` : le
+socle A1–A16, lui, y est fusionné et disponible au frontend et au mobile).
+
+Chaque correctif ci-dessous a été validé **par exécution réelle** contre une pile
+jetable (PostgreSQL 16.15 migré, Redis, clés générées), pas seulement par la
+suite de tests. La suite complète passe de 1453 à **1468 tests** (+15 de
+régression), 0 échec.
+
+| Constat | Correction | Preuve |
+|---|---|---|
+| H1 | `V186__organization_nodes_slug.sql` | V186 appliquée automatiquement, `slug VARCHAR(100)` présent |
+| H3 | `MembershipView` + `OrganizationNodeService` | `my-tenants` et création d'église racine ne lèvent plus de NPE |
+| H5 / H5b | 2 handlers dans `GlobalExceptionHandler` | corps malformé → **400**, `Accept` non négociable → **406** (mesuré) |
+| H7 | surcharges `…Name` dans 2 repositories | compteurs organisations et utilisateurs fonctionnels |
+| H4 | `CrossTenantReadScope` | code écrit + 5 tests ; **validation E2E en cours** |
+
+### H1 — colonne mappée jamais migrée
+
+`OrganizationNode` mappe `slug` (ajouté par `69fea3b`, sur `main`) mais aucune
+migration ne la créait. `V186` l'ajoute de façon idempotente et nullable, avec un
+index `(tenant_id, slug)`. La correction est côté **schéma** et non côté entité :
+retirer le champ casserait l'API organisations et son client.
+
+### H3 — `Map.of()` et les valeurs nulles
+
+Deux manifestations du même piège, toutes deux bloquantes :
+
+- `TenantSwitcherController` construisait la réponse avec `Map.of(...)` alors que
+  `scope_id` est `null` pour toute membership de portée `TENANT` — le cas normal.
+  `GET /tenant-switcher/my-tenants` répondait 500 **pour tout le monde**.
+  Le mapping est extrait dans `MembershipView`, fonction pure testable, qui
+  accepte les valeurs nulles. Au passage, le rôle retombe sur la colonne `role`
+  quand la FK `role_id` n'est pas résolue : `UNKNOWN` doit signifier
+  « réellement inconnu », pas « donnée présente mais non lue ».
+- `OrganizationNodeService.createNode` faisait de même avec `parentId`, qui est
+  `null` pour toute **église racine** : la création d'une première église — donc
+  le provisionnement atomique et l'étape `CHURCH_IDENTITY` — levait une NPE.
+
+### H5 / H5b — une requête client fautive ne doit pas répondre 5xx
+
+`HttpMessageNotReadableException` et `HttpMediaTypeNotAcceptableException`
+n'étaient pas gérées et tombaient dans le handler générique : 500 au lieu de 400
+et 406. Le détail renvoyé est un texte fixe, le message de Jackson (qui contient
+les noms de classes Java) n'est pas divulgué.
+
+### H7 — un enum dans une requête native est lié par son ordinal
+
+`@Enumerated(STRING)` ne s'applique pas aux requêtes `nativeQuery`. Les
+compteurs d'organisations (`countByTenantIdAndType`) et d'utilisateurs
+(`countByTenantIdAndStatut`) comparaient donc un `varchar` à un `smallint` :
+`operator does not exist: character varying = smallint`.
+
+Impact mesuré : **les deux tableaux de bord principaux** (Super Admin et admin
+tenant) et **tous les quotas A8** (églises, départements, campus) renvoyaient 500.
+C'est le travail A8 qui était cassé, invisible parce que les tests mockent les
+repositories.
+
+La correction passe par des méthodes `…Name(String)` et des surcharges `default`
+gardant l'API en enum : les ~25 appelants ne changent pas.
+
+### H4 — le filtre multi-tenant rendait la bascule cross-tenant impossible
+
+`TenantFilter` active pour chaque requête HTTP un filtre Hibernate
+`tenant_id = :tenantId`, qui s'applique aussi au contrôle d'accès de
+`switchTenant()`. Le SQL portait les deux prédicats (`tenant_id = tenant courant`
+ET `tenant_id = tenant demandé`) : la bascule vers une autre église était
+structurellement impossible, donc **B2 n'était pas delivered**.
+
+`CrossTenantReadScope` suspend le filtre le temps d'un bloc de lecture borné aux
+memberships de l'utilisateur authentifié, et le rétablit dans un `finally` — donc
+aussi après une exception. 5 tests verrouillent ce contrat, dont un qui échouerait
+si le rétablissement disparaissait. **La validation de bout en bout sur le
+sélecteur d'organisation reste à faire.**
+
+### Constats H2 et H8 — ouverts, décision requise
+
+Ces deux-là ne sont pas des correctifs, et relèvent du même thème : **des modules
+entiers sont écrits contre un schéma que la chaîne de migrations ne produit
+pas.** Aucun des deux n'est trivial.
+
+- **H2 — module Événements.** L'entité `Event` pointe `@Table(name = "events")` et
+  mappe un schéma **français** (`titre`, `date_debut`, `lieu`, `statut`,
+  `organisateur_id`, `nb_inscrits`, `compte_rendu`). La chaîne de migrations ne
+  crée que `event`, au schéma **anglais** (`title`, `start_at`, `organizer_id`,
+  `status`). Les requêtes natives de `LoadPredictionService`.tables ont le même
+  problème (`FROM events … date_debut … deleted`). La table `events` n'a jamais
+  existé : ce n'est pas un renommage, c'est un **port de module**.
+- **H8 — `organization_nodes.path` est un `ltree`.** L'entité déclare
+  `@Column(columnDefinition = "ltree")` sur un champ `String`, et la couche
+  applicative manipule ce chemin comme une chaîne séparée par des points
+  (`LIKE CONCAT(parent.path, '%')`). L'insertion échoue :
+  `column "path" is of type ltree but expression is of type character varying`.
+  C'est ce qui bloque encore le provisionnement atomique, donc la recette.
+
+**Voix possibles, arbitrage demandé :**
+
+1. **Aligner la base sur le code** (V187 : `path` en `varchar`, et une table
+   `events` conforme au schéma français attendu par le code) — rapide, mais
+   introduit une table `events` parallèle du vrai module `event`, donc deux
+   sources de vérité sur les événements.
+2. **Aligner le code sur la base** — porter `Event` et `LoadPredictionService`
+   vers le schéma `event`, et `path` vers `ltree`. C'est le travail correct, mais
+   c'est un refonte de module, hors périmètre d'A14.
+3. **Traiter H8 dans cette branche** (petit et isolé : une migration de type) et
+   **documenter H2 comme chantier séparé** — le gain rapide honnête.
+
+Aucun des deux n'a été corrigé ici : les deux engagent des choix d'architecture.
+## A13 — Documentation véridique
+
+- **Statut** : DONE
+- **Fichiers** : `docs/TENANT_ONBOARDING.md` (réécrit intégralement), `docs/API.md`,
+  `docs/security/SECURITY_MATRIX.md`, `docs/MULTI_TENANT_ARCHITECTURE.md`,
+  `docs/ADMINISTRATION_MODEL.md`, `docs/ORGANIZATION_HIERARCHY.md`,
+  `docs/TENANT_SECURITY.md`, `docs/RBAC.md`, `reports/GO_NO_GO_REPORT.md`,
+  `SUPER_ADMIN_AUDIT.md`
+
+### Ce qui a été supprimé : des affirmations fausses
+
+| Affirmation | Réalité |
+|---|---|
+| `Status: ✅ PRODUCTION READY` (6 fichiers) | non prouvé, et **contredit** par 5 défauts bloquants |
+| routes `/onboarding/1-profile` … `/onboarding/6-*` | inexistantes : un contrôleur unique, 7 étapes |
+| `PUT /api/tenants/{id}` | il manque `/v1` : c'est `PUT /api/v1/tenants/{id}` |
+| `PUT /api/tenants/{id}/branding` | inexistant : c'est `PUT /api/v1/admin/branding` |
+| `/api/org/campus`, `/api/org/units` | inexistants : `/api/v1/org/tree`, `/api/v1/admin/org/nodes` |
+| « §44-45 : 320/320 cellules prouvées » | **4 méthodes de test citées n'existaient pas** |
+| « §50-51 : POST /api/org/campus + wizard 6 étapes » | parcours inexistant |
+| « §52 : cycle complet avec email réel, sans preuve » | l'identité cross-tenant n'existait pas |
+
+### Les 4 citations de test inventées, trouvées et remplacées
+
+`docs/security/SECURITY_MATRIX.md` citait `souls_isolated`,
+`member_cannot_access_tenant_admin_endpoints`,
+`invitationAccept_massAssignment_roleIgnored` et
+`member_cannot_read_pastoral_notes` : **aucune n'existe dans le code**. Deux
+cellules sont désormais déclarées « non couvertes par un test » plutôt que prétendre
+le contraire — c'est le principe de la tâche (« aucune affirmation non prouvée »).
+
+### Contrôles automatiques exécutés
+
+Deux vérifications par script, parce que la vérification manuelle est précisément
+ce qui avait laissé passer les fausses routes :
+
+```
+# 1) chaque TestClass#methode citee existe-t-il vraiment ?
+citations verifiees : 14  invalides : 0 []
+
+# 2) chaque route citee dans TENANT_ONBOARDING existe-t-elle dans un controleur ?
+routes reelles extraites des controleurs : 747
+routes citees : 13  |  verifiees : 9  |  a verifier : 0
+```
+
+Les 4 routes restantes sont citées **comme n'existant pas**, ce qui est le but de
+la section « Écarts corrigés ».
+
+### Contenu neuf
+
+- **`docs/TENANT_ONBOARDING.md`** : réécrit. Le flux réel (provisionnement atomique
+  → activation → 7 étapes → `completed`), le contrat §3.1 champ par champ, les 5
+  erreurs nommées, les **vraies** API, la section mobile avec deep links fournis
+  par l'Agent B, et une section « Écarts connus » de 6 lignes.
+- **`docs/API.md`** : ajout de 4 sections (wizard, inscription, invitations,
+  quotas) avec le comportement réel, dont le piège `/quotas/check/{resource}` qui
+  répond **toujours 200** et porte le dépassement dans le corps.
+- **`SECURITY_MATRIX.md`** : section « Onboarding d'un tenant » avec 14 cellules
+  adossées aux tests de A11 (`OnboardingWizardSecurityIT`), plus la limite H4.
+- **`GO_NO_GO_REPORT.md`** : section de correction §50-51 / §52 / §44-45, avec
+  pour chacune « ce qui était affirmé / ce qui a été constaté / qui corrige /
+  la preuve / le résiduel ».
+- **`SUPER_ADMIN_AUDIT.md`** : réserves vérifiées sur 5 lignes du tableau de ✅.
+- **`docs/ETAT_AVANCEMENT_CHURCH_OS.md`** : **supprimé en amont** par `ab1b7a14`
+  (nettoyage de 52 documents périmés). Ressusciter annulerait un choix délibéré ;
+  la section de correction est portée par GO_NO_GO_REPORT, TENANT_ONBOARDING § 5-6
+  et SUPER_ADMIN_AUDIT. Le fait est consigné dans GO_NO_GO_REPORT.
+
+### Deltas doc de l'Agent B consignés (§4 de TENANT_ONBOARDING)
+
+Deep links `https://app.discipolat.com/accept-invitation?token=<32hex>` et
+`discipolat://…`, fichiers `.well-known/assetlinks.json` et
+`apple-app-site-association`, écrans `mobile/lib/presentation/screens/onboarding/`,
+`…/invitations/accept_invitation_screen.dart`,
+`…/tenant/tenant_onboarding_screen.dart`.
+
+**Limite consignée** : la publication des `.well-known` et l'Associated Domains ne
+relèvent pas du code ; sans eux `autoVerify` échoue silencieusement et Android
+ouvre le navigateur. E2E-11 reste donc recette manuelle.
+
+---
+
+## H8, V178 et `role_id` — trois blocages de plus, levés
+
+En.Base mergees (RDD + onboarding), la recette E2E a fait remonter **trois**
+constats supplementaires. Les trois sont corriges et valides en execution reelle.
+
+### H8 — `organization_nodes.path` : `ltree` en base, `String` dans l'entite
+
+Toute ecriture echouait : `column "path" is of type ltree but expression is of
+type character varying`. Le module Organisation etait donc inoperable, et avec lui
+le provisionnement et l'etape CHURCH_IDENTITY du wizard.
+
+**Aucune requete n'utilisait d'operateur `ltree`** (`<@`, `@>`, `~`) : la
+hierarchie est parcourtue par `LIKE CONCAT(parent.path, '%')`. Le type `ltree` etait
+donc un heritage d'un modele jamais realise.
+
+`V187` convertit la colonne en `text` (sans perte, `USING path::text`), supprime
+l'index GIST ltree et le recree en `varchar_pattern_ops`, qui sert exactement les
+requetes de prefixe utilisees. Le `columnDefinition` de l'entite est aligne pour
+qu'une future generation de schema ne reinroduise pas l'incoherence.
+
+### V178 — la chaine de migrations ne pouvait PAS construire une base neuve
+
+Constat le plus grave de la serie. `V178__superadmin_dashboard_indexes.sql` (apportee
+par la branche RGPD) indexait **7 tables qui n'existent pas** : `events`,
+`financial_transactions` (x2), `reports`, `whatsapp_templates`, `whatsapp_contacts`,
+`prophetic_journal`. Consequence : `flyway migrate` **echouait** sur une base
+vierge, donc **aucun deploiement neuf n'etait possible**, et pas seulement
+l'onboarding.
+
+Noms reels, verifies contre le schema construit par V1..V177 :
+
+| Cite (inexistant) | Reel |
+|---|---|
+| `events(tenant_id, status, deleted)` | `event(tenant_id, status)` + `deleted_at IS NULL` |
+| `financial_transactions` (x2) | `finance_transactions` (`transaction_date` -> `date_transaction`) |
+| `reports(tenant_id, status)` | `maker_reports(tenant_id)` |
+| `whatsapp_templates` | `whatsapp_configs` |
+| `whatsapp_contacts` | `whatsapp_messages` |
+| `prophetic_journal` | `prayer_journal_entries` |
+
+Verification automatique apres correction : **25 references, 0 probleme**.
+
+Les 10 dernieres migrations (V178 a V187) s'appliquent maintenant sur une base
+vierge, et la chaine va jusqu'a **v187**.
+
+### `role_id` NOT NULL — un bug de A5, dans MON code
+
+`TenantOwnerProvisioningService` (A5) construisait la membership du proprietaire
+avec **seulement** `roleLegacy("TENANT_OWNER")`, sans la cle etrangere `role_id` qui
+est `NOT NULL` en base :
+
+```
+ERROR: null value in column "role_id" of relation "tenant_memberships" violates not-null constraint
+```
+
+Le role est desormais resolu par sa cle — la cle est une donnee de la base, pas
+une chaine codee en dur — et l'absence du role produit un `OWNER_ROLE_MISSING`
+explicite au lieu d'une violation de contrainte.
+
+**Pourquoi les tests ne l'avaient pas vu** : le repository est mocke, donc aucune
+contrainte `NOT NULL` n'est appliquee. Ce bug ne pouvait etre trouve que par
+execution sur une base reelle — c'est exactement ce que fait la recette E2E, et
+c'est la justification de sa valeur.
+
+### Etat verifie
+
+- Suite complete : **1469 tests**, 0 echec, 13 skips preexistants.
+- Base vierge : **v187**, migrations V1..V187 appliquees sans erreur.
+- Provisionnement : le 500 est devenu un **404** « OrganizationNode not found ».
+
+### Ce qui reste, et pourquoi
+
+Le provisionnement echoue désormais sur la **lecture** du nœud qu'il vient de
+creer. Cause de la meme famille que **H4** : le filtre Hibernate `tenant_id` reste
+cale sur le tenant précédent pendant que le service bascule `TenantContext` sur le
+nouveau tenant, si bien que le nœud cree n'est pas visible a la requete suivante.
+
+C'est un **defaut d'architecture transversal** — tout le cycle de provisionnement
+écrit puis relit dans un contexte de tenant qui vient de changer. Il touche H4 et
+le provisionnement, etcalls donc un unique chantier plutôt que deux correctifs
+distincts. Il n'est pas traité ici : cela sort du cadre d'une correction ponctuelle
+et exige de décider où passe la frontière entre « contexte de tenant » et
+« opération cross-tenant ».
+
+### Piège rencontré, documenté pour l'avenir
+
+Un `git checkout` de branche **sans** `mvn clean` laisse les migrations compilees de
+la branche précédente dans `target/classes` : Flyway les voit alors dans le
+classpath et echoue en `Validate failed: Detected resolved migration not applied`
+(V178 a V182 « presentes » sans l'avoir ete). Toujours construire avec `clean`
+quand on change de branche contenant des migrations.
+
+---
+
+## H4 (suite) — le provisionnement atomique fonctionne enfin, de bout en bout
+
+Trois correctifs successifs, tous validés **par exécution** sur base vierge.
+
+### 1. Le filtre multi-tenant ne suivait pas le changement de contexte
+
+Le filtre Hibernate est positionné une fois par requête HTTP, sur le tenant du
+**début** de la requête. Le provisionnement crée un tenant puis travaille « dans »
+ce tenant : les lignes qu'il venait d'écrire étaient invisibles à la lecture
+suivante, d'où le **404 « OrganizationNode not found »** sur l'église qu'il venait
+de créer.
+
+`CrossTenantScopeAccess` (ex-`CrossTenantReadScope`, renommé car il sert aussi aux
+écritures) expose une seconde entrée, `callForTenantSwitch(...)`, utilisée par le
+provisionnement. Elle porte l'avertissement de sécurité le plus explicite du
+mécanisme, parce que c'est le point le plus sensible.
+
+Le filtrage Hibernate est suspendu sur **exactement** ce bloc, et rétabli en sortie.
+
+### 2. Un NPE latent dans le contrôleur de provisionnement
+
+`PlatformProvisioningController` lisait `department.getTenantId()` et
+`family.getTenantId()`. Ces entités ne portent **pas** `tenant_id` en mémoire : il
+est posé à l'écriture. Le contrôleur levait donc un `NullPointerException` sur
+**tout** provisionnement réussi — un bug qui n'avait jamais été atteint, parce que
+les 500 et 404 l_MASKaient tous les deux.
+
+Le tenant provisionné étant par ailleurs connu à cet endroit, on utilise son id.
+
+### 3. Un test qui aurait dû le voir ne le voyait pas
+
+Dans `PlatformProvisioningServiceTest`, le nouveau paramètre `crossTenant` est un
+mock. Un mock qui ne délègue pas ferait **passer le test sans exécuter le code
+réel** — c'est-à-dire un test qui ne prouve plus rien. Le test force donc le scope
+à déléguer, comme le fait la production. Cettereflection a été appliquée partout
+où un mock remplace un point d'entrée de sécurité.
+
+### Résultat mesuré
+
+```
+  PASS : 14
+  FAIL : 1
+  SKIP : 11
+```
+
+Le **provisionnement atomique répond 201** et renvoie bien `tenant.id`,
+`owner.userId`, `owner.activationEmailSent = true`, avec département et famille
+créés dans la même transaction. C'était le constat B3 du plan, et il est
+désormais prouvé sur une base réelle et non sur un mock.
+
+### Ce qui reste bloqué, et pourquoi c'est honnête
+
+**Un seul** point échoue : obtenir un jeton sur le tenant de recette.
+
+```
+POST /api/v1/tenant-switcher/switch   ->  500
+IllegalStateException: Utilisateur introuvable
+```
+
+Même famille que H4, un cran plus loin : le contrôle d'accès est désormais correct
+(le filtre est suspendu et la vérification de membership passe), mais la lecture de
+l'utilisateur qui suit s'exécute **après** le changement de `TenantContext`, donc
+encore sous le filtre du tenant précédent. La même question architecturale — où
+passe la frontière entre contexte de tenant et opération cross-tenant — revient
+donc sur chaque étape du switch.
+
+Les 11 scénarios restants sont `SKIP`, jamais `PASS` : ils ne sont pas exécutés,
+et le script ne les compte pas comme réussis. C'est exactement pour cela que le
+script distingue les trois états.
+
+### Deux contraintes de données découvertes au passage
+
+- `families.nom` porte une contrainte **UNIQUE globale** : deux églises ne peuvent
+  pas avoir une famille du même nom. C'est un défaut de modèle (l'unicité devrait
+  être `(tenant_id, nom)`), non corrigé ici, mais signalé.
+- `departments` / `families` receiving leur `tenant_id` par un mécanisme d'écriture
+  et non par l'entité : toute lecture de `getTenantId()` sur une entité fraîchement
+  créée renvoie `null` en mémoire. Source du NPE ci-dessus.
+
+---
+
+## Constat architectural majeur : `users.tenant_id` (tenant d'origine) vs tenant d'action
+
+La recette E2E a mis au jour un defaut de **coherence du modele multi-tenant** qui
+n'est pas corrige ici car il engage l'isolation des donnees.
+
+### Le symptome
+
+Quand un Super Admin (dont `users.tenant_id` = tenant `default`) agit dans un
+autre tenant (via une membership), le wizard utilise `securityUtils.getCurrentUserId()`
+comme `responsableId` (etape STRUCTURE). Cet id est ensuite resolu par
+`TenantAwareSimpleJpaRepository.findById()`, qui filtre sur
+`tenant_id = TenantContext.getTenantId()` = **le tenant d'action**. Comme
+l'utilisateur n'appartient pas a ce tenant par sa colonne `users.tenant_id`,
+la resolution echoue :
+
+```
+POST /onboarding-wizard/{id}/complete   (STRUCTURE)
+-> 404 User not found with id: 4334b638-...   (le Super Admin)
+```
+
+### Pourquoi c'est un vrai defaut, pas un bug de test
+
+Le modele reel est : `users.tenant_id` = tenant d'**origine** (NOT NULL, un seul
+par utilisateur), et `tenant_memberships` = les tenants d'**action** (plusieurs).
+Un utilisateur multi-tenant est donc legitement dans plusieurs tenants, mais sa
+colonne `users.tenant_id` n'en contient qu'un.
+
+Des que le modele prevoit le multi-tenant (B2 du plan : "un utilisateur inscrit
+dans deux eglises choisit son organisation"), `findById` sur `users` filtre par la
+mauvaise colonne. Le Super Admin, l'Impersonation, et tout utilisateur multi-eglises
+sont concernes.
+
+### Les trois voies possibles (decision requise)
+
+1. **`findById` sur `users` doitembership-scoped** : remplacer le predicat
+   `tenant_id = ?` par un `EXISTS (SELECT 1 FROM tenant_memberships ...)`.
+   Correct, mais touche **toutes** les lectures d'utilisateurs (impacts large).
+
+2. **Les etapes du wizard ne doivent pas utiliser `currentActor()` comme
+   `responsableId`** : le responsable doit etre un utilisateur **de ce tenant**
+   (par exemple l'owner provisionne). Cible le symptome, pas la cause.
+
+3. **Le fixture de recette est-il representative ?** : dans un flux reel, c'est
+   l'**owner du tenant** qui configure son eglise, pas le Super Admin. Mon E2E
+   utilise le Super Admin par.fixture, ce qui declenche le cas multi-tenant. Un
+   parcours reel declenche-t-il le bug ? **Oui**, des qu'un Super Admin configure
+   une eglise pour un tiers, ou qu'un owner d'une eglise A configure l'eglise B.
+
+**Recommandation** : la voie 1 est la seule qui corrige la cause, mais elle doit
+etreguida par une revue d'isolation complete (elle modifie le predicat de TOUTES les
+lectures d'utilisateurs). La voie 2 est un contournement cible mais laisse le defaut
+sous-jacent.
+
+### Etat de la recette a ce stade
+
+- **16/16 + A13** livres et pousses sur `main`.
+- **H1, H3, H4, H5, H7, H8, V178, `role_id`** corriges et valides sur base reelle.
+- Recette E2E : **38 PASS, 11 FAIL, 5 SKIP** (le parcours de provisioning et de
+  lecture du wizard est vert ; les echecs restants sont concentrates sur
+  STRUCTURE/roles/quotas, lies a ce defaut multi-tenant et a l'incoherence de la
+  fixture de recette).
+- **1469 tests** verts.

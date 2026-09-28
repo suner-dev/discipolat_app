@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Repository("auditLogRepository")
@@ -53,4 +54,38 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
     long countByTenantIdAndCreatedAtGreaterThan(UUID tenantId, LocalDateTime debut);
 
     long countByCreatedAtGreaterThan(LocalDateTime debut);
+
+    @Query(value = """
+        SELECT
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_7_days,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as last_24_hours,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 hour') as last_hour
+        FROM audit_logs
+        """, nativeQuery = true)
+    Map<String, Object> getPlatformActivityStats();
+
+    @Query(value = """
+        SELECT
+            action,
+            COUNT(*) as count
+        FROM audit_logs
+        WHERE created_at > NOW() - INTERVAL '7 days'
+        GROUP BY action
+        ORDER BY count DESC
+        LIMIT 20
+        """, nativeQuery = true)
+    List<Map<String, Object>> getTopActionsLast7Days();
+
+    @Query(value = """
+        SELECT
+            entite_type,
+            COUNT(*) as count
+        FROM audit_logs
+        WHERE created_at > NOW() - INTERVAL '7 days'
+        GROUP BY entite_type
+        ORDER BY count DESC
+        LIMIT 20
+        """, nativeQuery = true)
+    List<Map<String, Object>> getTopEntityTypesLast7Days();
 }

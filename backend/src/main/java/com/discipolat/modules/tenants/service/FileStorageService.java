@@ -1,5 +1,6 @@
 package com.discipolat.modules.tenants.service;
 
+import com.discipolat.common.multitenancy.TenantContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,65 +26,133 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * Upload a file with tenant isolation.
+     * The file is stored under: {root}/{tenantId}/{relativePath}
+     */
     public String upload(MultipartFile file, String relativePath) {
+        return upload(file, relativePath, TenantContext.getCurrentTenantId());
+    }
+
+    /**
+     * Upload a file with explicit tenant ID (for webhooks, jobs, etc.)
+     */
+    public String upload(MultipartFile file, String relativePath, UUID tenantId) {
         try {
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("Fichier vide");
             }
-            // G6.6 — garde-fous génériques : taille max 10MB + relativePath contraint.
             if (file.getSize() > 10 * 1024 * 1024) {
                 throw new IllegalArgumentException("Fichier trop volumineux (max 10MB)");
             }
             if (relativePath == null || relativePath.isBlank()
                     || relativePath.contains("..")
-                    || java.nio.file.Paths.get(relativePath).isAbsolute()) {
+                    || Paths.get(relativePath).isAbsolute()) {
                 throw new SecurityException("Chemin de destination invalide");
             }
+            if (tenantId == null) {
+                throw new IllegalArgumentException("tenantId is required for file upload");
+            }
 
-            Path destinationFile = this.rootLocation.resolve(relativePath).normalize().toAbsolutePath();
-            
-            // Vérification de sécurité : le fichier doit être dans le dossier root
-            if (!destinationFile.startsWith(this.rootLocation)) {
+            // Tenant-isolated path: {root}/{tenantId}/{relativePath}
+            String tenantPrefix = tenantId.toString();
+            Path tenantRoot = this.rootLocation.resolve(tenantPrefix).normalize().toAbsolutePath();
+
+            // Security check: tenant root must be within the main root
+            if (!tenantRoot.startsWith(this.rootLocation)) {
                 throw new SecurityException("Tentative d'accès hors du dossier de stockage");
             }
 
-            // Créer les dossiers parents
+            Path destinationFile = tenantRoot.resolve(relativePath).normalize().toAbsolutePath();
+
+            // Security check: destination must be within tenant root
+            if (!destinationFile.startsWith(tenantRoot)) {
+                throw new SecurityException("Tentative d'accès hors du dossier du tenant");
+            }
+
+            // Create parent directories
             Files.createDirectories(destinationFile.getParent());
 
-            // Copier le fichier
+            // Copy the file
             Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
 
-            // Retourner l'URL relative (pour stockage en DB)
-            return "/api/v1/files/branding/" + relativePath;
+            // Return the relative URL (tenant-aware)
+            return "/api/v1/files/branding/" + tenantPrefix + "/" + relativePath;
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors de l'upload du fichier: " + relativePath, e);
         }
     }
 
+    /**
+     * Delete a file with tenant isolation.
+     */
     public void delete(String relativePath) {
+        delete(relativePath, TenantContext.getCurrentTenantId());
+    }
+
+    /**
+     * Delete a file with explicit tenant ID.
+     */
+    public void delete(String relativePath, UUID tenantId) {
         try {
-            Path filePath = this.rootLocation.resolve(relativePath).normalize().toAbsolutePath();
-            if (filePath.startsWith(this.rootLocation)) {
+            if (tenantId == null) {
+                throw new IllegalArgumentException("tenantId is required for file deletion");
+            }
+            Path tenantRoot = this.rootLocation.resolve(tenantId.toString()).normalize().toAbsolutePath();
+            Path filePath = tenantRoot.resolve(relativePath).normalize().toAbsolutePath();
+
+            if (filePath.startsWith(tenantRoot)) {
                 Files.deleteIfExists(filePath);
             }
         } catch (IOException e) {
-            // Log mais ne pas faire échouer
+            // Log but don't fail
         }
     }
 
+    /**
+     * Check if a file exists with tenant isolation.
+     */
     public boolean exists(String relativePath) {
-        Path filePath = this.rootLocation.resolve(relativePath).normalize().toAbsolutePath();
-        return Files.exists(filePath) && filePath.startsWith(this.rootLocation);
+        return exists(relativePath, TenantContext.getCurrentTenantId());
     }
 
+    /**
+     * Check if a file exists with explicit tenant ID.
+     */
+    public boolean exists(String relativePath, UUID tenantId) {
+        if (tenantId == null) {
+            return false;
+        }
+        Path tenantRoot = this.rootLocation.resolve(tenantId.toString()).normalize().toAbsolutePath();
+        Path filePath = tenantRoot.resolve(relativePath).normalize().toAbsolutePath();
+        return Files.exists(filePath) && filePath.startsWith(tenantRoot);
+    }
+
+    /**
+     * Get the absolute file path with tenant isolation.
+     */
     public Path getFilePath(String relativePath) {
-        Path filePath = this.rootLocation.resolve(relativePath).normalize().toAbsolutePath();
-        if (!filePath.startsWith(this.rootLocation)) {
+        return getFilePath(relativePath, TenantContext.getCurrentTenantId());
+    }
+
+    /**
+     * Get the absolute file path with explicit tenant ID.
+     */
+    public Path getFilePath(String relativePath, UUID tenantId) {
+        if (tenantId == null) {
+            throw new IllegalArgumentException("tenantId is required");
+        }
+        Path tenantRoot = this.rootLocation.resolve(tenantId.toString()).normalize().toAbsolutePath();
+        Path filePath = tenantRoot.resolve(relativePath).normalize().toAbsolutePath();
+        if (!filePath.startsWith(tenantRoot)) {
             throw new SecurityException("Accès non autorisé");
         }
         return filePath;
     }
 
+    /**
+     * Generate a unique filename.
+     */
     public String generateUniqueFilename(String originalFilename) {
         String extension = "";
         int dotIndex = originalFilename.lastIndexOf('.');
@@ -91,5 +160,24 @@ public class FileStorageService {
             extension = originalFilename.substring(dotIndex);
         }
         return UUID.randomUUID().toString() + extension;
+    }
+
+    /**
+     * Get the tenant-isolated root path for a given tenant.
+     */
+    public Path getTenantRoot(UUID tenantId) {
+        if (tenantId == null) {
+            throw new IllegalArgumentException("tenantId is required");
+        }
+        Path tenantRoot = this.rootLocation.resolve(tenantId.toString()).normalize().toAbsolutePath();
+        if (!tenantRoot.startsWith(this.rootLocation)) {
+            throw new SecurityException("Tentative d'accès hors du dossier de stockage");
+        }
+        try {
+            Files.createDirectories(tenantRoot);
+        } catch (IOException e) {
+            throw new RuntimeException("Impossible de créer le dossier du tenant: " + tenantId, e);
+        }
+        return tenantRoot;
     }
 }

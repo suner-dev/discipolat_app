@@ -1,7 +1,10 @@
 package com.discipolat.modules.platform.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityTestHelper;
+import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.compliance.domain.ComplianceService;
+import com.discipolat.modules.compliance.domain.LegalDocumentService;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.domain.OrganizationNode;
 import com.discipolat.modules.tenants.domain.OrganizationNodeService;
@@ -26,8 +29,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,11 +58,19 @@ class TenantRegistrationServiceTest {
     @Mock
     private AuditService auditService;
     @Mock
+    private ComplianceService complianceService;
+    @Mock
+    private LegalDocumentService legalDocumentService;
+    @Mock
     private com.discipolat.modules.authentication.domain.EmailService emailService;
 
     @AfterEach
     void clearSecurityContext() {
         SecurityContextHolder.clearContext();
+    }
+
+    private static TenantRegistrationService.ConsentInfo consentOk() {
+        return new TenantRegistrationService.ConsentInfo(true, true, true, "2026-09-01-v1", "127.0.0.1", "JUnit");
     }
 
     @Test
@@ -66,13 +81,35 @@ class TenantRegistrationServiceTest {
         TenantRegistrationService service = service();
 
         TenantRegistrationRequest request = service.submit(
-                "demandeur@example.com", "password123", "Jean", "Test", "0700000000");
+                "demandeur@example.com", "password123", "Jean", "Test", "0700000000", null, consentOk());
 
         assertThat(request.getStatus()).isEqualTo(TenantRegistrationStatus.PENDING_APPROVAL);
         assertThat(request.getPasswordHash()).isEqualTo("hashed-password");
         assertThat(request.getPasswordHash()).isNotEqualTo("password123");
+        // Preuve RGPD art. 7 capturée dès la demande
+        assertThat(request.isConsentCgu()).isTrue();
+        assertThat(request.isConsentPrivacy()).isTrue();
+        assertThat(request.isConsentArt9()).isTrue();
+        assertThat(request.getConsentTermsVersion()).isEqualTo("2026-09-01-v1");
         verify(tenantService, never()).create(any());
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void submissionWithoutConsentsIsRejected() {
+        // `findByEmailIgnoreCase` et non `findByEmail` : l'email est une identite
+        // globale unique insensible a la casse (constat B4 / V185).
+        when(requestRepository.findByEmailIgnoreCase("sans-consentement@example.com"))
+                .thenReturn(Optional.empty());
+        TenantRegistrationService service = service();
+
+        assertThatThrownBy(() -> service.submit(
+                "sans-consentement@example.com", "password123", "Jean", "Test", null, null, null))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("consentements");
+        // Aucune ecriture en base : une demande sans consentement ne doit pas
+        // laisser de trace, et son email de recu ne doit donc pas partir non plus.
+        verify(requestRepository, never()).save(any(TenantRegistrationRequest.class));
     }
 
     @Test
@@ -82,7 +119,7 @@ class TenantRegistrationServiceTest {
         when(requestRepository.save(any(TenantRegistrationRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         TenantRegistrationRequest request = service().submit(
-                "growth@example.com", "password123", "Jean", "Test", null, "growth");
+                "growth@example.com", "password123", "Jean", "Test", null, "growth", consentOk());
 
         assertThat(request.getPlan()).isEqualTo("GROWTH");
     }
@@ -107,6 +144,10 @@ class TenantRegistrationServiceTest {
                 .path("ROOT").level(0).status(OrganizationNodeStatus.ACTIVE).build();
         User owner = User.builder().id(userId).email("owner@example.com").tenantId(tenantId).build();
         Role ownerRole = Role.builder().id(UUID.randomUUID()).key("TENANT_OWNER").build();
+        request.setConsentCgu(true);
+        request.setConsentPrivacy(true);
+        request.setConsentArt9(true);
+        request.setConsentTermsVersion("2026-09-01-v1");
         when(requestRepository.findById(requestId)).thenReturn(Optional.of(request));
         when(tenantService.create(any())).thenReturn(tenant);
         when(organizationNodeService.createRootChurch(any(), any(), any(), any())).thenReturn(church);
@@ -120,12 +161,19 @@ class TenantRegistrationServiceTest {
         assertThat(request.getStatus()).isEqualTo(TenantRegistrationStatus.APPROVED);
         verify(membershipRepository).save(any());
         verify(requestRepository).save(request);
+        // Les consentements doivent être matérialisés dans le journal RGPD du tenant
+        // (3e paramètre : boolean primitif → anyBoolean, jamais any()).
+        verify(complianceService, times(3)).logConsent(any(), any(), anyBoolean(), any(), any(), any(), any());
+        verify(complianceService).logConsent(any(), eq("CGU"), eq(true), any(), any(), any(), any());
+        verify(complianceService).logConsent(any(), eq("PRIVACY"), eq(true), any(), any(), any(), any());
+        verify(complianceService).logConsent(any(), eq("CONSENT_ART9"), eq(true), any(), any(), any(), any());
         verify(auditService).log(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     private TenantRegistrationService service() {
         return new TenantRegistrationService(requestRepository, userRepository, passwordEncoder,
                 tenantService, organizationNodeService, roleRepository, membershipRepository, auditService,
+                complianceService, legalDocumentService,
                 emailService, "https://app.example.com");
     }
 }

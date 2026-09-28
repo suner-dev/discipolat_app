@@ -58,7 +58,7 @@ public class OrganizationNode {
     @Column(name = "status", nullable = false, length = 20)
     private OrganizationNodeStatus status;
 
-    @Column(name = "path", nullable = false, columnDefinition = "ltree")
+    @Column(name = "path", nullable = false, columnDefinition = "text")
     private String path;
 
     @Column(name = "level", nullable = false)

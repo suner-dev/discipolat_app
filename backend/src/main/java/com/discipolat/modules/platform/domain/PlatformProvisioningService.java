@@ -2,6 +2,7 @@ package com.discipolat.modules.platform.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.CrossTenantScopeAccess;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.departments.api.CreateDepartmentRequest;
@@ -30,6 +31,7 @@ public class PlatformProvisioningService {
 
     private final TenantService tenantService;
     private final SaasPlanRepository planRepository;
+    private final CrossTenantScopeAccess crossTenant;
     private final SaasPlanService saasPlanService;
     private final OrganizationNodeService organizationNodeService;
     private final DepartmentService departmentService;
@@ -44,9 +46,11 @@ public class PlatformProvisioningService {
                                       DepartmentService departmentService,
                                       FamilyService familyService,
                                       AuditService auditService,
-                                      TenantOwnerProvisioningService ownerProvisioningService) {
+                                      TenantOwnerProvisioningService ownerProvisioningService,
+                                      CrossTenantScopeAccess crossTenant) {
         this.tenantService = tenantService;
         this.planRepository = planRepository;
+        this.crossTenant = crossTenant;
         this.saasPlanService = saasPlanService;
         this.organizationNodeService = organizationNodeService;
         this.departmentService = departmentService;
@@ -61,17 +65,18 @@ public class PlatformProvisioningService {
         // Un tenant sans propriétaire ne doit jamais exister.
         validate(command);
         requireOwner(command);
-        String plan = TenantPlanPolicy.canonicalizePlanKey(command.plan());
-        if (plan == null) {
-            plan = "DISCOVERY";
+        String resolvedPlan = TenantPlanPolicy.canonicalizePlanKey(command.plan());
+        if (resolvedPlan == null) {
+            resolvedPlan = "DISCOVERY";
         }
+        final String plan = resolvedPlan;
         if (!"DISCOVERY".equals(plan)
                 && planRepository.findByKeyIgnoreCaseAndIsActiveTrue(plan).isEmpty()) {
             throw new BusinessRuleException("Le plan sélectionné n'existe pas ou n'est pas actif", "INVALID_PLAN");
         }
 
         UUID actorId = SecurityUtils.getCurrentUserId();
-        TenantResponse tenant = tenantService.create(new CreateTenantRequest(
+        final TenantResponse tenant = tenantService.create(new CreateTenantRequest(
                 command.name().trim(),
                 command.slug().trim().toLowerCase(),
                 plan,
@@ -83,12 +88,24 @@ public class PlatformProvisioningService {
                 null,
                 null
         ));
-        UUID tenantId = tenant.id();
+        final UUID tenantId = tenant.id();
         if (!"DISCOVERY".equals(plan)) {
             saasPlanService.subscribe(tenantId, plan, "monthly", actorId);
         }
 
-        UUID previousTenantId = TenantContext.getTenantId();
+        final UUID previousTenantId = TenantContext.getTenantId();
+        // H4 : le filtre Hibernate multi-tenant est positionne sur le tenant du
+        // DEBUT de la requete HTTP. Cette operation bascule volontairement sur le
+        // tenant qu'elle vient de creer : sans suspension du filtre, les lignes
+        // ecrites ici restent invisibles a la lecture suivante et le
+        // provisionnement echouait en 404 « OrganizationNode not found » sur
+        // l'eglise qu'il venait de creer. Le filtre est retabli en sortie.
+        return crossTenant.callForTenantSwitch(
+                () -> provisionInsideTenant(tenant, tenantId, command, plan, actorId, previousTenantId));
+    }
+
+    private ProvisioningResult provisionInsideTenant(TenantResponse tenant, UUID tenantId, Command command, String plan,
+                                                     UUID actorId, UUID previousTenantId) {
         try {
             TenantContext.setTenantId(tenantId);
             String churchCode = "ROOT_CHURCH_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();

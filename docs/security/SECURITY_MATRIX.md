@@ -81,15 +81,41 @@ un scope parent couvre ses enfants (testé : `tenantScope_coversChildren`, `assi
 
 | Cellule / risque | Test |
 |---|---|
-| Cross-tenant READ (members/âmes) | `souls_isolated` + `members_cross_tenant_idor_*` |
+| Cross-tenant READ (members/âmes) | `MultiTenantSecurityTests#members_isolated`, `families_isolated`, `reports_isolated`, `crossTenant_listQueries_isolated` |
 | Cross-scope (department admin → autre dept) | `departmentAdmin_otherDepartment_refused` |
-| Escalation membre → admin endpoint | `member_cannot_access_tenant_admin_endpoints` |
+| Escalation membre → admin endpoint | `MultiTenantSecurityTests#memberToAdminEndpoint_refused` |
 | Escalation DEPARTMENT_ADMIN → CHURCH_ADMIN | `departmentAdminCannotEscalateToChurchAdmin` |
 | Scopes ASSIGNED / OWN / TENANT | `assignedScope_onlyAssigned`, `ownScope_onlyOwnId`, `tenantScope_coversChildren` |
 | FAMILY_LEADER → autres familles | `familyLeaderCannotAccessOtherFamilies` |
 | Impersonation (élévation, anti-escalade, IDOR) | `impersonationToken_carriesTargetIdentityOnly`, `impersonatingPlatformSuperAdmin_isForbidden`, `nonSuperAdmin_cannotStartImpersonation`, `forgedActiveRole_doesNotBypassDatabaseCheck`, `impersonation_targetTenantMismatch_refused` |
-| Mass assignment (rôle forcé dans payload) | `invitationAccept_massAssignment_roleIgnored` |
+| Mass assignment (rôle forcé dans payload) | **non couvert par un test** — le rôle est résolu côté service à partir de l'invitation, pas du payload (`InvitationService.accept`) |
 | Module désactivé | `disabled_module_data_access_refused` |
-| Pastoral par un membre | `member_cannot_read_pastoral_notes` |
+| Pastoral par un membre | **non couvert par un test** — à écrire |
 
-**CI** : la matrice tourne dans `mvn verify` (tests `MultiTenantSecurityTests`). Une cellule ⚠️ restante = porte G1 non levée.
+## 6. Onboarding d'un tenant (A3, A4, A11)
+
+| Attaque / exigence | Preuve |
+|---|---|
+| Tenant B complète une étape du tenant A → 404 `STEP_NOT_FOUND` | `OnboardingWizardSecurityIT#tenantBCannotCompleteStepOfTenantA` |
+| Tenant B démarre ou saute une étape du tenant A → refusé | `OnboardingWizardSecurityIT#tenantBCannotStartNorSkipStepOfTenantA` |
+| Tenant B ne voit que ses propres étapes | `OnboardingWizardSecurityIT#tenantBSeesOnlyItsOwnSteps` |
+| Un membre (ni owner ni admin) ne mute pas une étape (403) | `OnboardingWizardSecurityIT#nonAdminMemberCannotMutate` |
+| Un membre non admin peut **lire** le wizard (lecture non bloquée) | `OnboardingWizardSecurityIT#nonAdminMemberCanRead` |
+| Anonyme → 401 | `OnboardingWizardSecurityIT#anonymousIsRejected` |
+| **Tenant suspendu ne peut plus appeler le wizard (403)** | `OnboardingWizardSecurityIT#suspendedTenantCannotCallTheWizard` |
+| La suspension ne fuit pas vers l'autre tenant | `OnboardingWizardSecurityIT#suspensionDoesNotLeakToTheOtherTenant` |
+| La réactivation rétablit l'accès | `OnboardingWizardSecurityIT#reactivationRestoresAccess` |
+| Étape hors ordre → 409 `STEP_ORDER_VIOLATION` | `OnboardingWizardSecurityIT` + `OnboardingWizardServiceTest#completeStep_rejectsAStepOutOfOrderWith409` |
+| Rejeu d'étape terminée → 409 `STEP_ALREADY_COMPLETED` | `OnboardingWizardServiceTest#completeStep_rejectsAnAlreadyCompletedStepWith409` |
+| Saut sans motif exigé → 400 `STEP_SKIP_REASON_REQUIRED` | `OnboardingWizardServiceTest#skipStep_requiresAReasonWhenTheStepDemandsOne` |
+| Échec de validation n'écrit **rien** | `OnboardingStepActionsTest#churchIdentityRejectsTooShortName`, `rolesRejectsInvalidEmail` |
+| Initialisation concurrente : un seul jeu d'étapes | `OnboardingWizardInitializeConcurrencyTest#concurrentInitializationNeverDuplicatesSteps` |
+| Un id inconnu et une étape d'autrui sont **indiscernables** | `OnboardingWizardTenantIsolationTest#unknownStepAndForeignStepAreIndistinguishable` |
+
+**Limite connue, à traiter ultérieurement** : le sélecteur d'église
+(`/tenant-switcher/switch`) était structurellement inopérant, le filtre
+multi-tenant s'appliquant au contrôle d'accès lui-même (constat H4). Corrigé dans
+`fix/schema-drift-h1-h5` (`CrossTenantReadScopeTest`), pas encore dans `main`.
+
+**CI** : la matrice tourne dans `mvn verify` (`MultiTenantSecurityTests`,
+`OnboardingWizardSecurityIT`). Une cellule ⚠️ restante = porte G1 non levée.

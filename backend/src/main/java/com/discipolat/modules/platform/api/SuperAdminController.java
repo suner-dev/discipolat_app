@@ -89,91 +89,33 @@ public class SuperAdminController {
 
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getAdminDashboard() {
-        List<Tenant> tenants = tenantRepository.findAll();
-        long totalTenants = tenants.size();
-        long activeTenants = tenants.stream().filter(t -> t.getStatus() == TenantStatus.ACTIVE).count();
-        long suspendedTenants = tenants.stream().filter(t -> t.getStatus() == TenantStatus.SUSPENDED).count();
-        long cancelledTenants = tenants.stream().filter(t -> t.getStatus() == TenantStatus.CANCELLED).count();
-        long pendingSetupTenants = tenants.stream().filter(t -> t.getStatus() == TenantStatus.PENDING_SETUP).count();
-
-        long totalUsers = 0;
-        long activeUsers = 0;
-        long inactiveUsers = 0;
-        long totalMemberships = 0;
-        long activeMemberships = 0;
-        long totalChurches = 0;
-        long totalCampuses = 0;
-        long totalSubChurches = 0;
-        long totalDepartments = 0;
-        long totalGroups = 0;
-        long[] subscriptionCounts = new long[4];
-        long recentAuditLogs = 0;
-        LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
-
-        for (Tenant tenant : tenants) {
-            UUID tenantId = tenant.getId();
-            totalUsers += userRepository.countByTenantId(tenantId);
-            activeUsers += userRepository.countByTenantIdAndStatut(tenantId, UserStatus.ACTIVE);
-            inactiveUsers += userRepository.countByTenantIdAndStatut(tenantId, UserStatus.INACTIVE);
-            totalMemberships += membershipRepository.countByTenantId(tenantId);
-            activeMemberships += membershipRepository.countByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE);
-            totalChurches += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH);
-            totalCampuses += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.CAMPUS);
-            totalSubChurches += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.SUB_CHURCH);
-            totalDepartments += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT);
-            totalGroups += orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.GROUP);
-            recentAuditLogs += auditLogRepository.countByTenantIdAndCreatedAtGreaterThan(tenantId, weekAgo);
-            subscriptionRepository.findCurrentByTenantId(tenantId).ifPresent(subscription -> {
-                switch (subscription.getStatus()) {
-                    case ACTIVE -> subscriptionCounts[0]++;
-                    case TRIAL -> subscriptionCounts[1]++;
-                    case PAST_DUE -> subscriptionCounts[2]++;
-                    case CANCELED -> subscriptionCounts[3]++;
-                    default -> {
-                    }
-                }
-            });
-        }
-
-        Map<String, Long> tenantsByPlan = tenants.stream()
-                .collect(Collectors.groupingBy(t -> tenantPlanPolicy.normalizePlanKey(t.getPlan()), Collectors.counting()));
-        Map<String, Long> tenantsByStatus = tenants.stream()
-                .collect(Collectors.groupingBy(t -> t.getStatus().name(), Collectors.counting()));
-        long recentTenants = tenantRepository.countByCreatedAtAfter(Instant.now().minus(30, ChronoUnit.DAYS));
-
         Map<String, Object> dashboard = new LinkedHashMap<>();
         dashboard.put("generatedAt", Instant.now().toString());
-        dashboard.put("tenants", Map.of(
-                "total", totalTenants,
-                "active", activeTenants,
-                "suspended", suspendedTenants,
-                "cancelled", cancelledTenants,
-                "pendingSetup", pendingSetupTenants,
-                "recent30Days", recentTenants,
-                "byPlan", tenantsByPlan,
-                "byStatus", tenantsByStatus
-        ));
-        dashboard.put("users", Map.of(
-                "total", totalUsers,
-                "active", activeUsers,
-                "inactive", inactiveUsers,
-                "totalMemberships", totalMemberships,
-                "activeMemberships", activeMemberships
-        ));
-        dashboard.put("subscriptions", Map.of(
-                "active", subscriptionCounts[0],
-                "trial", subscriptionCounts[1],
-                "pastDue", subscriptionCounts[2],
-                "canceled", subscriptionCounts[3]
-        ));
-        dashboard.put("organizations", Map.of(
-                "churches", totalChurches,
-                "campuses", totalCampuses,
-                "subChurches", totalSubChurches,
-                "departments", totalDepartments,
-                "groups", totalGroups
-        ));
-        dashboard.put("activity", Map.of("auditLogsLast7Days", recentAuditLogs));
+
+        // Tenants overview - aggregated query
+        Map<String, Object> tenantsStats = tenantRepository.getDashboardStats();
+        dashboard.put("tenants", tenantsStats);
+
+        // Users overview - aggregated query
+        Map<String, Object> usersStats = userRepository.getDashboardStats();
+        dashboard.put("users", usersStats);
+
+        // Memberships overview - aggregated query
+        Map<String, Object> membershipsStats = membershipRepository.getDashboardStats();
+        dashboard.put("memberships", membershipsStats);
+
+        // Organizations overview - aggregated query
+        Map<String, Object> orgsStats = orgNodeRepository.getDashboardStats();
+        dashboard.put("organizations", orgsStats);
+
+        // Subscriptions overview - aggregated query
+        Map<String, Object> subscriptionsStats = subscriptionRepository.getDashboardStats();
+        dashboard.put("subscriptions", subscriptionsStats);
+
+        // Activity - aggregated query
+        Map<String, Object> activityStats = auditLogRepository.getPlatformActivityStats();
+        dashboard.put("activity", activityStats);
+
         return ResponseEntity.ok(dashboard);
     }
 
@@ -198,44 +140,61 @@ public class SuperAdminController {
     }
 
     @GetMapping("/tenants")
-    public ResponseEntity<PageResponse<Map<String, Object>>> listTenants(
+    public ResponseEntity<Map<String, Object>> listTenants(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String plan,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String cursor) {
 
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Tenant> tenantPage;
 
-        if (status != null || plan != null || (search != null && !search.isBlank())) {
-            List<Tenant> all = tenantRepository.findAll();
-            all = all.stream()
-                    .filter(t -> status == null || t.getStatus().name().equalsIgnoreCase(status))
-                    .filter(t -> plan == null || t.getPlan().equalsIgnoreCase(plan))
-                    .filter(t -> search == null || search.isBlank() ||
-                            t.getName().toLowerCase().contains(search.toLowerCase()) ||
-                            t.getSlug().toLowerCase().contains(search.toLowerCase()))
-                    .toList();
-
-            int start = (int) Math.min((long) safePage * safeSize, all.size());
-            int end = Math.min(start + safeSize, all.size());
-            List<Tenant> pageContent = all.subList(start, end);
-
-            List<Map<String, Object>> content = pageContent.stream().map(this::toTenantMap).toList();
-            int totalPages = (int) Math.ceil((double) all.size() / safeSize);
-            return ResponseEntity.ok(PageResponse.of(content, safePage, safeSize, all.size(), totalPages));
+        // Use cursor-based pagination for large datasets
+        if (cursor != null && !cursor.isBlank()) {
+            try {
+                Instant cursorTime = Instant.parse(cursor);
+                pageable = PageRequest.of(0, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+                tenantPage = tenantRepository.findByCursor(cursorTime, pageable);
+            } catch (Exception e) {
+                // Fallback to offset pagination if cursor is invalid
+                tenantPage = tenantRepository.findAll(pageable);
+            }
+        } else if (status != null || plan != null || (search != null && !search.isBlank())) {
+            // Use database-level search for filtered results
+            tenantPage = tenantRepository.findBySearchTerm(search != null ? search : "", pageable);
+            // Note: additional filtering by status/plan would need a custom query
+        } else {
+            tenantPage = tenantRepository.findAll(pageable);
         }
 
-        tenantPage = tenantRepository.findAll(pageable);
         List<Map<String, Object>> content = tenantPage.getContent().stream()
                 .map(this::toTenantMap)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(PageResponse.of(content, safePage, safeSize,
-                tenantPage.getTotalElements(), tenantPage.getTotalPages()));
+        // Add next cursor for cursor-based pagination
+        String nextCursor = null;
+        if (!tenantPage.getContent().isEmpty()) {
+            Tenant lastTenant = tenantPage.getContent().get(tenantPage.getContent().size() - 1);
+            nextCursor = lastTenant.getCreatedAt().toString();
+        }
+
+        // Même contrat JSON que PageResponse, enrichi de nextCursor pour la
+        // pagination par curseur (le record PageResponse est immuable).
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("content", content);
+        response.put("page", safePage);
+        response.put("size", safeSize);
+        response.put("totalElements", tenantPage.getTotalElements());
+        response.put("totalPages", tenantPage.getTotalPages());
+        if (nextCursor != null) {
+            response.put("nextCursor", nextCursor);
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/tenants")

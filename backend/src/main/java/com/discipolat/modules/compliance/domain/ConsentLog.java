@@ -28,6 +28,16 @@ public class ConsentLog {
     @Column(columnDefinition = "TEXT")
     private String details;
 
+    /** Version du document légal accepté (ex: "1") — preuve RGPD art. 7. */
+    @Column(name = "policy_version", length = 20)
+    private String policyVersion;
+
+    @Column(name = "ip_address", length = 64)
+    private String ipAddress;
+
+    @Column(name = "user_agent", length = 255)
+    private String userAgent;
+
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -44,6 +54,12 @@ public class ConsentLog {
     public void setAccorde(boolean accorde) { this.accorde = accorde; }
     public String getDetails() { return details; }
     public void setDetails(String details) { this.details = details; }
+    public String getPolicyVersion() { return policyVersion; }
+    public void setPolicyVersion(String policyVersion) { this.policyVersion = policyVersion; }
+    public String getIpAddress() { return ipAddress; }
+    public void setIpAddress(String ipAddress) { this.ipAddress = ipAddress; }
+    public String getUserAgent() { return userAgent; }
+    public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

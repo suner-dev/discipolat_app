@@ -2,7 +2,7 @@
 
 Plateforme de gestion d'église (frontend React + backend Spring Boot + application mobile Flutter).
 
-- 📚 Documentation et rapports : [`docs/rapports/`](docs/rapports/)
+- 📚 Documentation : [`docs/`](docs/) — architecture, RBAC, déploiement, guides · état factuel : [`STATUS.md`](STATUS.md)
 - 🎨 Frontend : `frontend/` — React 19, Vite, TailwindCSS
 - ⚙️ Backend : `backend/` — Spring Boot, PostgreSQL
 - 📱 Mobile : `mobile/` — Flutter

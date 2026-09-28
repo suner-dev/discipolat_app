@@ -82,3 +82,67 @@
 | Public | `/public/**`, `/public/docs`, `/directory` (annuaire opt-in `public_directory_enabled`) |
 
 ## Pagination & erreurs : voir Conventions en tete.
+
+---
+
+## Onboarding tenant, inscriptions et invitations (ajouté 2026-09-28)
+
+Ces routes ont été refondues par le plan d'correctifs onboarding. Elles sont
+listées ici avec leur comportement **réel**, vérifié sur le code.
+
+### Wizard d'onboarding — `/api/v1/onboarding-wizard`
+
+| Methode | Endpoint | Role | Comportement réel |
+|---|---|---|---|
+| GET | `/onboarding-wizard` | authentifié | 7 étapes, contrat §3.1 exact |
+| GET | `/onboarding-wizard/progress` | authentifié | `percentage`, `completedSteps`, `skippedSteps` |
+| GET | `/onboarding-wizard/status` | authentifié | `completed`, `completedAt` |
+| POST | `/onboarding-wizard/initialize` | TENANT_ADMIN/OWNER | idempotent, sûr en concurrence |
+| POST | `/onboarding-wizard/{id}/start` | TENANT_ADMIN/OWNER | `PENDING` → `IN_PROGRESS` |
+| POST | `/onboarding-wizard/{id}/complete` | TENANT_ADMIN/OWNER | **corps facultatif** ; exécute l'action métier |
+| POST | `/onboarding-wizard/{id}/skip` | TENANT_ADMIN/OWNER | motif obligatoire selon l'étape |
+| GET | `/onboarding-wizard/templates/{role}` | authentifié | modèles par rôle |
+
+Erreurs : `409 STEP_ORDER_VIOLATION`, `409 STEP_ALREADY_COMPLETED`,
+`409 STEP_NOT_SKIPPABLE`, `400 STEP_SKIP_REASON_REQUIRED`,
+`400 STEP_DATA_INVALID` (+ champ fautif), `404 STEP_NOT_FOUND`,
+`403 TENANT_SUSPENDED`, `401` anonyme, `403` membre non administrateur.
+
+### Inscription et suivi public
+
+| Methode | Endpoint | Role | Comportement réel |
+|---|---|---|---|
+| POST | `/auth/registration-status` | Public | statut d'une demande ; `NONE` si inconnue ; `no-store` ; rate-limité. Ne divulgue ni mot de passe ni nom d'organisation |
+| POST | `/auth/activate` | Public | active le compte owner (token 48 h) |
+
+### Invitations — `/api/v1/admin/invitations`
+
+| Methode | Endpoint | Role | Comportement réel |
+|---|---|---|---|
+| POST | `/api/v1/admin/invitations` | OWNER/ADMIN | crée l'invitation, ou rattache directement si le compte existe dans le tenant |
+| GET | `/api/v1/admin/invitations?page=&size=&status=&q=` | OWNER/ADMIN | paginé (réretro-compatible : sans `page`, liste complète) |
+| GET | `/api/v1/admin/invitations/validate/{token}` | Public | `accountExists` = identité **globale** (constat B4) |
+| POST | `/api/v1/admin/invitations/accept/{token}` | Public | pas de mot de passe si identité cross-tenant (D3) ; `welcomeEmailSent` |
+| POST | `/api/v1/admin/invitations/{id}/resend` | OWNER/ADMIN | relance manuelle |
+
+### Quotas — `/api/v1/admin/quotas`
+
+`GET /usage` (résolution du plan), `GET /check/{resource}` où `resource` ∈
+`user`, `church`, `department`, `course`, `ai`. **Cette dernière route répond
+toujours `200`** : le dépassement se lit dans le corps (`allowed: false` + `code`),
+pas dans le statut HTTP. Les quotas portent sur les espaces, événements, églises
+et campus (A8).
+
+### Provisionnement — `/api/v1/platform/admin/provisioning`
+
+`POST` atomique, `@PreAuthorize("@authz.isPlatformSuperAdmin()")`, **owner
+obligatoire** (fail-closed). ⚠️ Répond 500 sur une base migrée (constat H8).
+
+### Limites connues de cette page
+
+1. Le sélecteur d'église (`/api/v1/tenant-switcher/my-tenants`, `/switch`) était
+   inopérant (constat H4) ; corrigé dans `fix/schema-drift-h1-h5`, pas dans `main`.
+2. Les endpoints Événements (`/api/v1/events`) pointent une table `events` que les
+   migrations ne créent pas (constat H2) : inutilisables sur une base migrée.
+3. Un corps JSON malformé ou absent répond `400` (corrigé) ; un `Accept` non
+   négociable répond `406` (corrigé).

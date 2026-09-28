@@ -77,19 +77,24 @@ public class PlatformProvisioningController {
                         request.newChefAdresse(),
                         request.ownerEmail(), request.ownerFirstName(), request.ownerLastName()
                 ));
+        // Le `tenant_id` n'est PAS porté par les entités Department/Family en
+        // memoire : il est pose a l'ecriture (trigger/colonne), donc
+        // `department.getTenantId()` vaut null et l'ancien code levait un NPE.
+        // Le tenant provisionne est de toute facon connu ici : on utilise son id.
+        String provisionedTenantId = result.tenant().id().toString();
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("tenant", result.tenant());
         body.put("church", toNodeMap(result.church()));
         body.put("department", Map.of(
                 "id", result.department().getId().toString(),
-                "tenantId", result.department().getTenantId().toString(),
+                "tenantId", provisionedTenantId,
                 "nom", result.department().getNom(),
                 "responsableId", result.department().getResponsableId().toString()
         ));
         body.put("departmentNode", toNodeMap(result.departmentNode()));
         body.put("family", Map.of(
                 "id", result.family().getId().toString(),
-                "tenantId", result.family().getTenantId().toString(),
+                "tenantId", provisionedTenantId,
                 "nom", result.family().getNom(),
                 "chefFamilleId", result.family().getChefFamilleId().toString()
         ));

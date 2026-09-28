@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **Date**: 2026-09-22  
-**Status**: ✅ PRODUCTION READY
+**Statut**: Cloisonnement tenant : ⚠️ la suspension d'un tenant ne s'appliquait qu'au login avant A1 ; le sélecteur d'église était inopérant avant H4
 
 ---
 
@@ -297,7 +297,7 @@ flutter analyze && flutter test
 ## 11. References
 
 - `docs/security/SECURITY_MATRIX.md` — 320-cell permission matrix
-- `reports/SECURITY_AUDIT_REPORT.md` — Final security audit (G6.6)
+- `docs/qa/QA_SCENARIOS.md` — QA scenarios (G6.7)
 - `docs/MULTI_TENANT_ARCHITECTURE.md` — Architecture overview
 - `docs/RBAC.md` — Role-based access control
 - `backend/src/main/java/com/discipolat/common/infrastructure/security/AuthorizationService.java`

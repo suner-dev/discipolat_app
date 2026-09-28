@@ -13,6 +13,12 @@ vi.mock('@/lib/api', () => ({
   getErrorMessage,
 }));
 
+// La page affiche un CTA Stripe réservé aux sessions authentifiées :
+// test du catalogue public → visiteur non connecté.
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ isAuthenticated: false }),
+}));
+
 const renderPage = () => render(
   <MemoryRouter>
     <PricingPage />

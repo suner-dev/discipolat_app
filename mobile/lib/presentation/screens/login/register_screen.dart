@@ -27,6 +27,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _success = false;
   String? _error;
+  // RGPD art. 7/9 : consentements explicites, non pré-cochés, obligatoires.
+  bool _consentCgu = false;
+  bool _consentPrivacy = false;
+  bool _consentArt9 = false;
 
   @override
   void dispose() {
@@ -41,6 +45,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_consentCgu || !_consentPrivacy || !_consentArt9) {
+      setState(() => _error = 'Vous devez accepter les CGU, la politique de confidentialité et consentir au traitement des données religieuses (RGPD art. 9).');
+      return;
+    }
     setState(() { _isLoading = true; _error = null; });
 
     try {
@@ -50,6 +58,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'firstName': _firstNameController.text.trim(),
         'lastName': _lastNameController.text.trim(),
         'phone': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+        'consentCgu': _consentCgu,
+        'consentPrivacy': _consentPrivacy,
+        'consentArt9': _consentArt9,
       });
       if (mounted) setState(() => _success = true);
     } on DioException catch (e) {
@@ -237,6 +248,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               style: const TextStyle(color: Colors.white),
                               validator: (v) => v != _passwordController.text ? 'Les mots de passe ne correspondent pas' : null,
                             ),
+                            const SizedBox(height: 24),
+                            // Consentements RGPD explicites (art. 7 & 9)
+                            _ConsentCheckbox(
+                              value: _consentCgu,
+                              label: 'J\'accepte les conditions générales d\'utilisation',
+                              onChanged: (v) => setState(() => _consentCgu = v),
+                            ),
+                            _ConsentCheckbox(
+                              value: _consentPrivacy,
+                              label: 'J\'accepte la politique de confidentialité',
+                              onChanged: (v) => setState(() => _consentPrivacy = v),
+                            ),
+                            _ConsentCheckbox(
+                              value: _consentArt9,
+                              label: 'Je consens au traitement de mes données religieuses (RGPD art. 9)',
+                              onChanged: (v) => setState(() => _consentArt9 = v),
+                            ),
                           ],
                         ),
                       ),
@@ -276,4 +304,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
+}
+
+/// Case de consentement RGPD — libellé explicite, jamais pré-cochée.
+class _ConsentCheckbox extends StatelessWidget {
+  const _ConsentCheckbox({
+    required this.value,
+    required this.label,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final String label;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => CheckboxListTile(
+        value: value,
+        onChanged: (v) => onChanged(v ?? false),
+        controlAffinity: ListTileControlAffinity.leading,
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        checkboxShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        title: Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 12.5,
+          ),
+        ),
+      );
 }

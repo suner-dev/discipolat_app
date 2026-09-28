@@ -1,7 +1,9 @@
 package com.discipolat.modules.platform.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
+import com.discipolat.common.multitenancy.TenantAwareRedisManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,9 @@ public class PlatformFeatureFlagService {
 
     private static final int MAX_CACHE_ENTRIES = 32;
     private static final long CACHE_TTL_NANOS = TimeUnit.MINUTES.toNanos(5);
+    private static final String REDIS_KEY_PREFIX = "platform:feature-flags:";
+    private static final long REDIS_TTL_SECONDS = 300; // 5 minutes
+
     private static final Map<String, Boolean> DEFAULTS = Map.of(
             AI_ENABLED, true,
             MOBILE_MONEY_ENABLED, true,
@@ -47,7 +52,8 @@ public class PlatformFeatureFlagService {
     );
 
     private final PlatformFeatureFlagRepository repository;
-    private final Map<String, CachedFlag> cache = new LinkedHashMap<>(16, 0.75f, true);
+    private final ObjectProvider<TenantAwareRedisManager> redisManagerProvider;
+    private final Map<String, CachedFlag> localCache = new LinkedHashMap<>(16, 0.75f, true);
     private final Object cacheLock = new Object();
     private long cacheVersion;
 
@@ -69,31 +75,94 @@ public class PlatformFeatureFlagService {
             throw new IllegalArgumentException("Feature flag key is required");
         }
 
+        // Try Redis first (distributed cache)
+        Boolean redisValue = getFromRedis(key);
+        if (redisValue != null) {
+            // Update local cache
+            updateLocalCache(key, redisValue);
+            return redisValue;
+        }
+
+        // Fallback to local cache
         CachedFlag cached;
         long version;
         synchronized (cacheLock) {
-            cached = cache.get(key);
+            cached = localCache.get(key);
             if (cached != null && !cached.isExpired()) {
                 return cached.enabled();
             }
             if (cached != null) {
-                cache.remove(key);
+                localCache.remove(key);
             }
             version = cacheVersion;
         }
 
+        // Fetch from database
         boolean enabled = repository.findByKey(key)
                 .map(PlatformFeatureFlag::isEnabled)
                 .orElseGet(() -> DEFAULTS.getOrDefault(key, false));
+
+        // Store in Redis and local cache
+        putToRedis(key, enabled);
         synchronized (cacheLock) {
             if (version == cacheVersion) {
-                if (cache.size() >= MAX_CACHE_ENTRIES) {
-                    cache.remove(cache.keySet().iterator().next());
+                if (localCache.size() >= MAX_CACHE_ENTRIES) {
+                    localCache.remove(localCache.keySet().iterator().next());
                 }
-                cache.put(key, new CachedFlag(enabled, System.nanoTime() + CACHE_TTL_NANOS));
+                localCache.put(key, new CachedFlag(enabled, System.nanoTime() + CACHE_TTL_NANOS));
             }
         }
         return enabled;
+    }
+
+    private Boolean getFromRedis(String key) {
+        TenantAwareRedisManager redisManager = redisManagerProvider.getIfAvailable();
+        if (redisManager == null) {
+            return null;
+        }
+        try {
+            Object value = redisManager.getValue(REDIS_KEY_PREFIX + key);
+            if (value instanceof Boolean bool) {
+                return bool;
+            }
+            if (value instanceof String str) {
+                return Boolean.parseBoolean(str);
+            }
+        } catch (Exception e) {
+            // Redis unavailable, fallback to local cache
+        }
+        return null;
+    }
+
+    private void putToRedis(String key, boolean value) {
+        TenantAwareRedisManager redisManager = redisManagerProvider.getIfAvailable();
+        if (redisManager == null) {
+            return;
+        }
+        try {
+            redisManager.setValue(REDIS_KEY_PREFIX + key, value, REDIS_TTL_SECONDS,
+                    java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            // Redis unavailable, continue with local cache only
+        }
+    }
+
+    private void removeFromRedis(String key) {
+        TenantAwareRedisManager redisManager = redisManagerProvider.getIfAvailable();
+        if (redisManager == null) {
+            return;
+        }
+        try {
+            redisManager.delete(REDIS_KEY_PREFIX + key);
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
+    private void updateLocalCache(String key, boolean value) {
+        synchronized (cacheLock) {
+            localCache.put(key, new CachedFlag(value, System.nanoTime() + CACHE_TTL_NANOS));
+        }
     }
 
     public void requireEnabled(String key) {
@@ -107,16 +176,29 @@ public class PlatformFeatureFlagService {
     }
 
     public void invalidateCache(String key) {
+        removeFromRedis(key);
         synchronized (cacheLock) {
             cacheVersion++;
-            cache.remove(key);
+            localCache.remove(key);
         }
     }
 
     public void invalidateCache() {
+        // Clear all feature flags from Redis
+        TenantAwareRedisManager redisManager = redisManagerProvider.getIfAvailable();
+        if (redisManager != null) {
+            try {
+                // Delete all keys with our prefix
+                for (String key : DEFAULTS.keySet()) {
+                    removeFromRedis(key);
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
         synchronized (cacheLock) {
             cacheVersion++;
-            cache.clear();
+            localCache.clear();
         }
     }
 

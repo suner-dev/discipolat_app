@@ -2,6 +2,7 @@ package com.discipolat.modules.platform.api;
 
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.CrossTenantScopeAccess;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.security.domain.RefreshTokenSessionService;
 import com.discipolat.modules.tenants.domain.*;
@@ -32,6 +33,8 @@ public class TenantSwitcherController {
     private final TenantStatusGuard tenantStatusGuard;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenSessionService refreshTokenSessionService;
+    /** Lecture cross-tenant déclarée : voir {@link CrossTenantScopeAccess} (constat H4). */
+    private final CrossTenantScopeAccess crossTenantRead;
 
     public TenantSwitcherController(TenantRepository tenantRepository,
                                     TenantMembershipRepository membershipRepository,
@@ -45,7 +48,8 @@ public class TenantSwitcherController {
                                       TenantService tenantService,
                                       TenantStatusGuard tenantStatusGuard,
                                       JwtTokenProvider jwtTokenProvider,
-                                      RefreshTokenSessionService refreshTokenSessionService) {
+                                      RefreshTokenSessionService refreshTokenSessionService,
+                                      CrossTenantScopeAccess crossTenantRead) {
         this.tenantRepository = tenantRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
@@ -59,6 +63,7 @@ public class TenantSwitcherController {
         this.tenantStatusGuard = tenantStatusGuard;
         this.jwtTokenProvider = jwtTokenProvider;
         this.refreshTokenSessionService = refreshTokenSessionService;
+        this.crossTenantRead = crossTenantRead;
     }
 
     // ==================== CONTEXTE COURANT ====================
@@ -70,20 +75,16 @@ public class TenantSwitcherController {
         UUID tenantId = TenantContext.getTenantId();
 
         if (tenantId == null) {
-            // User has multiple tenants - return available tenants for selection
-            List<TenantMembership> memberships = membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
+            // User has multiple tenants - return available tenants for selection.
+            // H4 : la liste doit traverser le filtre multi-tenant, mais elle reste
+            // bornée aux memberships de CET utilisateur (userId vient du principal
+            // authentifié, jamais du client).
+            List<TenantMembership> memberships = crossTenantRead.call(
+                    () -> membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE));
             List<Map<String, Object>> availableTenants = memberships.stream()
                     .map(m -> {
                         Optional<Tenant> tenant = tenantRepository.findById(m.getTenantId());
-                        return tenant.map(t -> Map.<String, Object>of(
-                                "tenantId", t.getId().toString(),
-                                "tenantName", t.getName(),
-                                "tenantSlug", t.getSlug(),
-                                "role", m.getRole().getKey(),
-                                "scopeType", m.getScopeType().name(),
-                                "scopeId", m.getScopeId() != null ? m.getScopeId().toString() : null,
-                                "status", m.getStatus().name()
-                        )).orElse(null);
+                        return tenant.map(t -> MembershipView.of(m, t, false)).orElse(null);
                     })
                     .filter(Objects::nonNull)
                     .toList();
@@ -159,22 +160,16 @@ public class TenantSwitcherController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Map<String, Object>>> getMyTenants() {
         UUID userId = SecurityUtils.getCurrentUserId();
-        List<TenantMembership> memberships = membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE);
+        // H4 : lister les églises d'un utilisateur impose de traverser le filtre
+        // multi-tenant, qui sinon ne renverrait que l'église courante. La requête
+        // reste paramétrée par l'identifiant de l'utilisateur authentifié.
+        List<TenantMembership> memberships = crossTenantRead.call(
+                () -> membershipRepository.findByUserIdAndStatus(userId, MembershipStatus.ACTIVE));
 
         List<Map<String, Object>> result = memberships.stream()
                 .map(m -> {
                     Optional<Tenant> tenant = tenantRepository.findById(m.getTenantId());
-                    return tenant.map(t -> Map.<String, Object>of(
-                            "tenantId", t.getId().toString(),
-                            "tenantName", t.getName(),
-                            "tenantSlug", t.getSlug(),
-                            "plan", t.getPlan(),
-                            "role", m.getRole() != null ? m.getRole().getKey() : "UNKNOWN",
-                            "scopeType", m.getScopeType().name(),
-                            "scopeId", m.getScopeId() != null ? m.getScopeId().toString() : null,
-                            "status", m.getStatus().name(),
-                            "joinedAt", m.getJoinedAt().toString()
-                    )).orElse(null);
+                    return tenant.map(t -> MembershipView.of(m, t, true)).orElse(null);
                 })
                 .filter(Objects::nonNull)
                 .toList();
@@ -196,8 +191,13 @@ public class TenantSwitcherController {
 
         UUID newTenantId = UUID.fromString(tenantIdStr);
 
-        // Validate user has access to this tenant
-        boolean hasAccess = membershipRepository.existsByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE);
+        // Validate user has access to this tenant.
+        // H4 : ce controle doit PAR TOI-MEME traverser le filtre multi-tenant —
+        // c'est justement lui quisinon rendait la bascule impossible, puisque la
+        // requête portait `tenant_id = tenant courant AND tenant_id = tenant
+        // demandé`. Borné aux memberships de l'utilisateur authentifié.
+        boolean hasAccess = crossTenantRead.call(
+                () -> membershipRepository.existsByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE));
         if (!hasAccess) {
             return ResponseEntity.status(403).body(Map.of("error", "Accès non autorisé à ce tenant"));
         }
@@ -208,14 +208,29 @@ public class TenantSwitcherController {
         // aucun accessToken/refreshToken n'est produit.
         tenantStatusGuard.assertAccessible(newTenantId);
 
+        // H4 (2e cran) : l'IDENTITE de l'utilisateur ne change pas lorsqu'on
+        // change d'eglise. Il faut donc le lire AVANT de basculer le contexte :
+        // `TenantAwareSimpleJpaRepository.findById` ajoute explicitement
+        // `tenant_id = TenantContext.getTenantId()`, et apres la bascule on
+        // chercherait un utilisateur dont `users.tenant_id` est encore son tenant
+        // d'origine -> "Utilisateur introuvable", 500. Lire avant evite d'avoir a
+        // contourner l'isolation pour un acces cross-tenant.
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
+
         // Set new tenant context
         TenantContext.setTenantId(newTenantId);
 
         Tenant tenant = tenantRepository.findById(newTenantId).orElseThrow();
-        List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE);
+        // H4 : le filtre porte encore l'ANCIEN tenant (TenantContext vient d'être
+        // changé, le paramètre du filtre, non). Sans cette lecture cross-tenant,
+        // la liste serait vide et `get(0)` lèverait un IndexOutOfBounds.
+        List<TenantMembership> memberships = crossTenantRead.call(
+                () -> membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, newTenantId, MembershipStatus.ACTIVE));
+        if (memberships.isEmpty()) {
+            return ResponseEntity.status(403).body(Map.of("error", "Accès non autorisé à ce tenant"));
+        }
         TenantMembership membership = memberships.get(0);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
         String activeRole = user.getActiveRole() != null ? user.getActiveRole().name() : user.getRole().name();
         Set<String> roles = user.getRoles() != null
                 ? user.getRoles().stream().map(Enum::name).collect(Collectors.toSet())

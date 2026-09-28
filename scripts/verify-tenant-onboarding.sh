@@ -97,7 +97,12 @@ jq_h() { jq -e "$1" <<<"$API_BODY" >/dev/null 2>&1; }
 
 check_backend() {
   scenario "Prealables — backend joignable"
-  api GET '/api/v1/public/docs/openapi.yaml'
+  # Pas d'en-tete Accept impose ici : l'OpenAPI est servi en
+  # application/vnd.oai.openapi, et un `Accept: application/json` y repond
+  # 406 (constat H5b) — la sonde doit donc interroger la representation reelle.
+  API_CODE="$(curl -sS -o /tmp/onb-e2e-probe.$$ -w '%{http_code}' --max-time 10 \
+      "${BASE_URL}/api/v1/public/docs/openapi.yaml" 2>/dev/null || echo 000)"
+  rm -f /tmp/onb-e2e-probe.$$
   if [[ "$API_CODE" == "200" ]]; then
     ok "Backend joignable et OpenAPI expose (${BASE_URL})"
   else
@@ -126,7 +131,9 @@ e2e_1_provision() {
   ok "E2E-1a login Super Admin"
 
   # Un tiers existe dans une AUTRE eglise : servira au cas cross-tenant (B2).
-  TENANT_SLUG="e2e-onb-$(date +%s)"
+  # Un rejeu dans la meme seconde ne doit pas reutiliser le slug :
+  # l'endpoint le refuse alors, et le scenario parait cassé pour rien.
+  TENANT_SLUG="e2e-onb-$(date +%s)-$(( RANDOM % 10000 ))"
   CROSS_EMAIL="cross.${TENANT_SLUG}@example.com"
   api POST '/api/v1/users' "$super_token" \
       "$(jq -nc --arg e "$CROSS_EMAIL" \
@@ -149,7 +156,7 @@ e2e_1_provision() {
         departmentDescription:"Accueil et intercession",
         createNewResponsable:true, newResponsableFirstName:"Resp", newResponsableLastName:"Onb",
         newResponsableEmail:("resp." + $slug + "@example.com"),
-        familyName:"Famille Recette", createNewChef:true, newChefFirstName:"Chef",
+        familyName:("Famille Recette " + $slug), createNewChef:true, newChefFirstName:"Chef",
         newChefLastName:"Onb", newChefEmail:("chef." + $slug + "@example.com"),
         ownerEmail:$owner, ownerFirstName:"Jean", ownerLastName:"Recette"}')"
 
@@ -284,12 +291,19 @@ e2e_3_read_wizard() {
   local missing=""
   for f in id stepType stepOrder title description status isCompleted \
            isSkippable skipRequiresReason startedAt completedAt; do
-    jq_h "[0].${f}" || missing="${missing} ${f}"
+    # `has()` et non une lecture de valeur : `startedAt`/`completedAt` valent
+    # null sur une etape neuve, et `jq -e` quitte en erreur sur null -- un champ
+    # present mais vide ne doit pas etre signale comme manquant.
+    # `.[0]` et NON `[0]` : en jq, un `[0]` en tete de filtre est un
+    # CONSTRUCTEUR de tableau (le litteral [0]), pas un index -- d'ou une erreur
+    # "Cannot check whether array has a string key" et, avant correction, 11
+    # champsdeclare a tort manquants.
+    jq_h ".[0] | has(\"${f}\")" || missing="${missing} ${f}"
   done
   [[ -z "$missing" ]] && ok "E2E-3c contrat 3.1 complet (tous les champs)" \
                       || ko "E2E-3c contrat 3.1 complet" "champs manquants :${missing}"
 
-  jq_h '[0].config' \
+  jq_h '.[0] | has("config")' \
     && ko "E2E-3d l'entite brute n'est pas exposee" "le champ legacy \`config\` fuit dans la reponse" \
     || ok "E2E-3d l'entite brute n'est pas exposee (pas de champ config)"
 
@@ -411,7 +425,7 @@ e2e_6_full_run() {
   fi
 
   complete_step "$STEP_STRUCTURE" \
-    '{"data":{"departments":["Intercession","Chorale"],"families":["Famille Recette"]}}' \
+    "$(jq -nc --arg s "$TENANT_SLUG" '{data:{departments:["Intercession " + $s, "Chorale " + $s], families:["Famille Recette " + $s]}}')" \
     "STRUCTURE" || return
   api GET '/api/v1/admin/departments' "$TENANT_TOKEN"
   if jq -e '[.. | objects | select(.nom? == "Intercession")] | length > 0' <<<"$API_BODY" >/dev/null 2>&1; then

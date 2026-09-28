@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -91,12 +92,60 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId AND deleted = false", nativeQuery = true)
     long countByTenantIdAndDeletedFalse(@Param("tenantId") UUID tenantId);
 
+    /**
+     * Constat H7 : dans une requête NATIVE, l'annotation
+     * {@code @Enumerated(STRING)} de l'entité ne s'applique pas — Hibernate liait
+     * l'ordinal de {@link UserStatus} alors que la colonne {@code statut} est un
+     * {@code varchar}, ce que PostgreSQL refusait
+     * ({@code operator does not exist: character varying = smallint}).
+     *
+     * <p>Impact mesuré : les compteurs d'utilisateurs des DEUX tableaux de bord
+     * principaux (Super Admin et admin tenant) renvoyaient 500. La comparaison
+     * porte donc sur le NOM de l'énumère, et la surcharge garde l'API publique
+     * en enum pour tous les appelants existants.
+     */
     @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId AND statut = :status", nativeQuery = true)
-    long countByTenantIdAndStatut(@Param("tenantId") UUID tenantId, @Param("status") UserStatus status);
+    long countByTenantIdAndStatutName(@Param("tenantId") UUID tenantId, @Param("status") String status);
+
+    default long countByTenantIdAndStatut(UUID tenantId, UserStatus status) {
+        return countByTenantIdAndStatutName(tenantId, status.name());
+    }
 
     long countByStatut(UserStatus status);
 
     List<User> findByTenantId(UUID tenantId);
 
     Page<User> findByTenantIdAndDeletedFalse(UUID tenantId, Pageable pageable);
+
+    @Query(value = """
+        SELECT
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE deleted = false AND statut = 'ACTIVE') as active,
+            COUNT(*) FILTER (WHERE deleted = false AND statut = 'INACTIVE') as inactive,
+            COUNT(*) FILTER (WHERE deleted = false AND whatsapp_opt_in = true) as whatsapp_opt_in
+        FROM users
+        """, nativeQuery = true)
+    Map<String, Object> getDashboardStats();
+
+    @Query(value = """
+        SELECT
+            statut,
+            COUNT(*) as count
+        FROM users
+        WHERE deleted = false
+        GROUP BY statut
+        """, nativeQuery = true)
+    List<Map<String, Object>> getUsersByStatus();
+
+    @Query(value = """
+        SELECT
+            u.tenant_id,
+            COUNT(*) as count
+        FROM users u
+        WHERE u.deleted = false
+        GROUP BY u.tenant_id
+        ORDER BY count DESC
+        LIMIT 100
+        """, nativeQuery = true)
+    List<Map<String, Object>> getTopTenantsByUserCount();
 }

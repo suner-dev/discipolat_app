@@ -85,6 +85,9 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/v1/public/demo-requests").permitAll()
                     // Callback USSD Africa's Talking : public, sécurisé par secret webhook (X-Ussd-Secret)
                     .requestMatchers(HttpMethod.POST, "/api/v1/ussd/callback").permitAll()
+                    // Webhooks opérateurs + Stripe : publics, sécurisés par signature
+                    // opérateur (HMAC/super) ou Stripe-Signature (fail-closed côté contrôleur).
+                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhooks/**").permitAll()
                     // Actuator: health public (for load balancer / Render healthcheck), details only when authenticated
                     .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR");

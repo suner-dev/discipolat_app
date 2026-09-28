@@ -9,6 +9,7 @@ import com.discipolat.modules.departments.domain.DepartmentService;
 import com.discipolat.modules.families.api.CreateFamilyRequest;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyService;
+import com.discipolat.common.multitenancy.CrossTenantScopeAccess;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.domain.OrganizationNode;
 import com.discipolat.modules.tenants.domain.OrganizationNodeService;
@@ -18,6 +19,7 @@ import com.discipolat.modules.tenants.domain.SaasPlanRepository;
 import com.discipolat.modules.tenants.domain.SaasPlanService;
 import com.discipolat.modules.tenants.domain.TenantService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,6 +57,17 @@ class PlatformProvisioningServiceTest {
     private AuditService auditService;
     @Mock
     private TenantOwnerProvisioningService ownerProvisioningService;
+    @Mock
+    private CrossTenantScopeAccess crossTenant;
+
+    @BeforeEach
+    void leScopeCrossTenantExecuteLEBloc() {
+        // Le scope est un point d'entree de securite : un mock qui ne deleguerait
+        // pas ferait passer le test sans executer le code reel. On le force donc a
+        // deleguer, comme le fait la production.
+        org.mockito.Mockito.lenient().when(crossTenant.callForTenantSwitch(
+                org.mockito.ArgumentMatchers.any())).thenAnswer(i -> ((java.util.function.Supplier<?>) i.getArgument(0)).get());
+    }
 
     @AfterEach
     void clearContext() {
@@ -99,7 +112,7 @@ class PlatformProvisioningServiceTest {
 
         PlatformProvisioningService service = new PlatformProvisioningService(tenantService, planRepository,
                 saasPlanService, organizationNodeService, departmentService, familyService, auditService,
-                ownerProvisioningService);
+                ownerProvisioningService, crossTenant);
         PlatformProvisioningService.ProvisioningResult result = service.provision(command());
 
         assertThat(result.tenant()).isEqualTo(tenant);
@@ -126,7 +139,7 @@ class PlatformProvisioningServiceTest {
         SecurityTestHelper.loginAs(UUID.randomUUID());
         PlatformProvisioningService service = new PlatformProvisioningService(tenantService, planRepository,
                 saasPlanService, organizationNodeService, departmentService, familyService, auditService,
-                ownerProvisioningService);
+                ownerProvisioningService, crossTenant);
 
         // Constructeur de compatibilité (avant A5) => aucun owner fourni.
         assertThatThrownBy(() -> service.provision(commandWithoutOwner()))

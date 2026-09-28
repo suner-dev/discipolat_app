@@ -6,6 +6,8 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.authentication.domain.EmailService;
+import com.discipolat.modules.compliance.domain.ComplianceService;
+import com.discipolat.modules.compliance.domain.LegalDocumentService;
 import com.discipolat.modules.tenants.api.CreateTenantRequest;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.domain.MembershipScopeType;
@@ -46,6 +48,8 @@ public class TenantRegistrationService {
     private final RoleRepository roleRepository;
     private final TenantMembershipRepository membershipRepository;
     private final AuditService auditService;
+    private final ComplianceService complianceService;
+    private final LegalDocumentService legalDocumentService;
     private final EmailService emailService;
     private final String frontendUrl;
 
@@ -57,6 +61,8 @@ public class TenantRegistrationService {
                                      RoleRepository roleRepository,
                                      TenantMembershipRepository membershipRepository,
                                      AuditService auditService,
+                                     ComplianceService complianceService,
+                                     LegalDocumentService legalDocumentService,
                                      EmailService emailService,
                                      @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.requestRepository = requestRepository;
@@ -67,19 +73,35 @@ public class TenantRegistrationService {
         this.roleRepository = roleRepository;
         this.membershipRepository = membershipRepository;
         this.auditService = auditService;
+        this.complianceService = complianceService;
+        this.legalDocumentService = legalDocumentService;
         this.emailService = emailService;
         this.frontendUrl = frontendUrl;
     }
 
+    /**
+     * Consentements légaux capturés à la souscription (RGPD art. 7 : preuve
+     * horodatée avec version des documents, IP et user-agent).
+     */
+    public record ConsentInfo(boolean cgu, boolean privacy, boolean art9,
+                              String termsVersion, String ip, String userAgent) {}
+
     @Transactional
     public TenantRegistrationRequest submit(String email, String rawPassword, String firstName,
                                              String lastName, String phone) {
-        return submit(email, rawPassword, firstName, lastName, phone, null);
+        return submit(email, rawPassword, firstName, lastName, phone, null, null);
     }
 
     @Transactional
     public TenantRegistrationRequest submit(String email, String rawPassword, String firstName,
                                              String lastName, String phone, String requestedPlan) {
+        return submit(email, rawPassword, firstName, lastName, phone, requestedPlan, null);
+    }
+
+    @Transactional
+    public TenantRegistrationRequest submit(String email, String rawPassword, String firstName,
+                                             String lastName, String phone, String requestedPlan,
+                                             ConsentInfo consent) {
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         TenantRegistrationRequest request = requestRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseGet(() -> TenantRegistrationRequest.builder().email(normalizedEmail).build());
@@ -111,9 +133,29 @@ public class TenantRegistrationService {
         request.setDecisionReason(null);
         request.setReviewedAt(null);
         request.setCreatedAt(Instant.now());
+        // Preuve de consentement — rejeter toute demande sans les 3 consentements.
+        // Ce controle est un PREALABLE : il doit s'executer AVANT tout
+        // enregistrement, sinon une demande sans consentement resterait en base.
+        if (consent == null || !consent.cgu() || !consent.privacy() || !consent.art9()) {
+            throw new BusinessRuleException(
+                    "Les consentements CGU, confidentialité et données religieuses (RGPD art. 9) sont obligatoires",
+                    "CONSENT_REQUIRED");
+        }
+        String version = consent.termsVersion() != null && !consent.termsVersion().isBlank()
+                ? consent.termsVersion()
+                : legalDocumentService.currentTermsVersion();
+        request.setConsentCgu(true);
+        request.setConsentPrivacy(true);
+        request.setConsentArt9(true);
+        request.setConsentTermsVersion(version);
+        request.setConsentIp(consent.ip());
+        request.setConsentGivenAt(Instant.now());
+
         TenantRegistrationRequest saved = requestRepository.save(request);
-        // Constat M2 : la soumission était 100% silencieuse. L'appelant n'avait
-        // AUCUNE preuve que sa demande était arrivée.
+
+        // Constat M2 : la soumission etait 100% silencieuse. L'appelant n'avait
+        // AUCUNE preuve que sa demande etait arrivee. L'email part APRES
+        // l'enregistrement reussi : on ne notifie jamais une demande inexistante.
         emailService.sendRegistrationReceived(normalizedEmail, request.getFirstName());
         return saved;
     }
@@ -125,7 +167,7 @@ public class TenantRegistrationService {
      * statut de la demande. Une adresse inconnue renvoie {@code NONE}, ce qui est
      * indistinguishable d'une adresse simplement pas encore demandée.
      *
-     * <p>La recherche est <b>insensible à la casse</b> : l'email est une identité
+     * <p>La recherche est <b>insensible a la casse</b> : l'email est une identite
      * globale unique (constat B4 / migration V185).
      */
     @Transactional(readOnly = true)
@@ -207,6 +249,21 @@ public class TenantRegistrationService {
             request.setDecisionReason(reason);
             request.setReviewedAt(Instant.now());
             requestRepository.save(request);
+            // Matérialiser les consentements capturés à la souscription dans le
+            // journal RGPD du tenant (preuve art. 7 : version + IP + horodatage).
+            if (request.isConsentCgu()) {
+                complianceService.logConsent(owner.getId(), "CGU", true,
+                        "Accepté à la souscription", request.getConsentTermsVersion(), request.getConsentIp(), null);
+            }
+            if (request.isConsentPrivacy()) {
+                complianceService.logConsent(owner.getId(), "PRIVACY", true,
+                        "Accepté à la souscription", request.getConsentTermsVersion(), request.getConsentIp(), null);
+            }
+            if (request.isConsentArt9()) {
+                complianceService.logConsent(owner.getId(), "CONSENT_ART9", true,
+                        "Consentement explicite art. 9 — accepté à la souscription",
+                        request.getConsentTermsVersion(), request.getConsentIp(), null);
+            }
             auditService.log(actorId, tenantId, "TENANT_REGISTRATION_APPROVED", "TENANT", tenantId,
                     "SUCCESS", Map.of("requestId", requestId.toString(), "email", request.getEmail()), null, null, null);
             emailService.sendRegistrationApproved(
