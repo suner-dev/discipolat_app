@@ -1335,3 +1335,131 @@ git diff d730771..HEAD -- '*.java' | grep -cE "^\+.*(@Disabled|@Ignore)"
 Aucun test désactivé (gate G-A.2). Les 13 `Skipped` de la suite sont les
 `PerIpRateLimiterIntegrationTest` préexistants (`@EnabledIf("isRedisAvailable")`),
 inchangés.
+
+---
+
+## A12 — Validation Flyway + suite complète backend
+
+- **Statut** : DONE
+- **Aucun fichier modifié** : c'est une tâche de validation.
+
+### A12.1 — Compilation
+
+```
+export JAVA_HOME=~/.sdkman/candidates/java/21.0.12+1.1-tem
+export MAVEN_OPTS="-Xmx600m -XX:MaxMetaspaceSize=350m"
+mvn -B -o -DskipTests compile
+
+[INFO] BUILD SUCCESS
+[INFO] Total time:  0.867 s
+```
+
+### A12.2 — Suite complète (`mvn -B verify`)
+
+```
+mvn -B -o verify -DargLine="-Xmx1200m -XX:MaxMetaspaceSize=450m"
+
+[WARNING] Tests run: 1448, Failures: 0, Errors: 0, Skipped: 13
+[INFO] Building jar: .../backend/target/discipolat-backend-1.0.0.jar
+[INFO] --- spring-boot:3.4.7:repackage (repackage) @ discipolat-backend ---
+[INFO] Replacing main artifact .../discipolat-backend-1.0.0.jar with repackaged archive,
+        adding nested dependencies in BOOT-INF/.
+[INFO] BUILD SUCCESS
+exit=0
+```
+
+| Critère d'acceptation (gate G-A) | Résultat |
+|---|---|
+| Build vert | ✅ `exit=0`, `BUILD SUCCESS` |
+| Nombre de tests ≥ baseline P0.3 | ✅ **1448** ≥ **1252** (+196) |
+| 0 échec | ✅ `Failures: 0, Errors: 0` |
+| Aucun test désactivé | ✅ `git diff d730771..HEAD -- '*.java' \| grep -cE "^\+.*(@Disabled\|@Ignore)"` → **0** |
+| Migrations appliquées | ✅ voir ci-dessous (arbitrage NEED-HELP-02) |
+
+### A12.3 — Migrations (arbitrage NEED-HELP-02 : preuve PostgreSQL hors CI)
+
+Appliquées par `flyway:migrate` sur un conteneur PostgreSQL 16.15 **jetable**
+(`onb-flyway-check`, port 55444, sans aucun lien avec le conteneur de production
+`kfokam48-demo-init-postgres`) :
+
+```
+[INFO] Successfully validated 147 migrations
+[INFO] Migrating schema "public" to version "183 - tenant onboarding completion"
+[INFO] Migrating schema "public" to version "185 - users email global unique"
+[INFO] Successfully applied 147 migrations to schema "public", now at version v185
+[INFO] BUILD SUCCESS
+```
+
+Contrôles effectués sur le schéma résultant :
+
+| Objet | Résultat attendu | Constaté |
+|---|---|---|
+| `tenants.onboarding_completed_at` | `TIMESTAMPTZ` | ✅ |
+| `tenants.onboarding_completed_by` | `UUID` | ✅ |
+| `onboarding_wizard_steps.skip_reason` | `TEXT` | ✅ |
+| `uk_onboarding_step_tenant_type` | `UNIQUE (tenant_id, step_type)` | ✅ |
+| `uk_users_email_lower` | `UNIQUE btree (lower(email)) WHERE deleted = false` | ✅ |
+| `idx_invitations_status_expires` | `(status, expires_at)` | ✅ |
+| Doublon d'étape | refusé | ✅ `duplicate key ... uk_onboarding_step_tenant_type` |
+| Doublon d'email par cas | refusé | ✅ `duplicate key ... uk_users_email_lower` |
+| V185 avec doublons préexistants | **échec explicite, 0 donnée supprimée** | ✅ `V185: 1 doublon(s) email insensibles a la casse` |
+
+> Rappel : `mvn verify` ne prouve **rien** sur les migrations (profil H2,
+> `flyway.enabled: false`). C'est un fait documenté, pas une excuse : c'est
+> précisément la raison pour laquelle la preuve PostgreSQL a été retenue par
+> l'orchestrateur.
+
+---
+
+## A16 — OpenAPI interne + liste des modules publics
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `platform/api/PublicApiDocsController.java`
+  - NEW `backend/src/test/java/com/discipolat/modules/platform/api/PublicApiDocsControllerTest.java` (5 cas)
+  - MOD `docs/API.md` → **livré en A13**
+
+### Deux documentation fausse corrigées
+
+1. **Chemin de module erroné.** Le catalogue des modules annonçait
+   `Onboarding → /api/onboarding-wizard` : le préfixe `/v1` manquait, cette
+   documentation pointait dans le vide. Corrigé en `/api/v1/onboarding-wizard`,
+   et **verrouillé par test**.
+2. **Content-Type de l'OpenAPI.** `GET /api/v1/public/docs/openapi.yaml` renvoyait
+   une `String` sans media type explicite : Spring servait `text/plain`, que les
+   générateurs de SDK et les outils OpenAPI refusent ou devinent. Le media type
+   officiel `application/vnd.oai.openapi;version=3.0` est maintenant posé
+   **dans la réponse** (et pas seulement via `produces`, qui n'est vérifiable
+   que par la couche MVC) — c'est donc testable.
+
+### Endpoints ajoutés à l'OpenAPI publié (contrat §3.1 + §3.3)
+
+`/onboarding-wizard` (GET), `/onboarding-wizard/progress` (GET),
+`/onboarding-wizard/status` (GET), `/onboarding-wizard/initialize` (POST),
+`/onboarding-wizard/{id}/start` (POST), `/onboarding-wizard/{id}/complete` (POST),
+`/onboarding-wizard/{id}/skip` (POST), `/onboarding-wizard/templates/{role}` (GET),
+`/auth/registration-status` (POST) — avec les codes d'erreur et la sémantique
+documentés (corps facultatif de `/complete`, motif obligatoire selon
+`skipRequiresReason`, rate-limit et `no-store` du suivi d'inscription).
+
+### Preuve
+
+```
+mvn -B -o test -Dtest=PublicApiDocsControllerTest -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in ...platform.api.PublicApiDocsControllerTest
+[INFO] BUILD SUCCESS
+```
+
+Les 5 cas vérifient : le préfixe `/api/v1` du module Onboarding, que **tous** les
+chemins de modules commencent par `/api` et ont une description, que les 8 routes
+du wizard sont présentes, que **chaque route déclare la bonne méthode HTTP**
+(une mutation documentée en `GET` induirait les clients en erreur), et le media
+type de l'OpenAPI.
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1453, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```

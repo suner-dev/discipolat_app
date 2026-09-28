@@ -72,7 +72,8 @@ public class PublicApiDocsController {
                 Map.of("name", "GDPR", "path", "/api/v1/gdpr", "description", "Compliance RGPD/CCPA"),
                 Map.of("name", "WhatsApp", "path", "/api/v1/whatsapp", "description", "Pont WhatsApp Business"),
                 Map.of("name", "Currency", "path", "/api/currencies", "description", "Multi-devise et fuseaux horaires"),
-                Map.of("name", "Onboarding", "path", "/api/onboarding-wizard", "description", "Wizard de configuration"),
+                Map.of("name", "Onboarding", "path", "/api/v1/onboarding-wizard",
+                        "description", "Wizard de configuration d'une eglise (7 etapes, contrat fige)"),
                 Map.of("name", "AI", "path", "/api/v1/ai", "description", "Assistant IA pastoral"),
                 Map.of("name", "Map", "path", "/api/v1/map", "description", "Carte interactive et géofencing"),
                 Map.of("name", "DigitalTwin", "path", "/api/v1/twin", "description", "Jumeau numérique")
@@ -101,7 +102,16 @@ public class PublicApiDocsController {
         return ResponseEntity.ok(docs);
     }
 
-    @GetMapping("/openapi.yaml")
+    /**
+     * Le `produces` est explicite : sans lui, Spring renvoie `text/plain` et les
+     * generateurs de SDK / outils OpenAPI refusent ou devinent le format. Le
+     * media type officiel de l'OpenAPI est
+     * `application/vnd.oai.openapi`.
+     */
+    /** Media type officiel de l'OpenAPI. */
+    static final String OPENAPI_MEDIA_TYPE = "application/vnd.oai.openapi;version=3.0";
+
+    @GetMapping(value = "/openapi.yaml", produces = OPENAPI_MEDIA_TYPE)
     public ResponseEntity<String> getOpenApiYaml() {
         featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         String yaml = """
@@ -259,13 +269,70 @@ public class PublicApiDocsController {
                       tags: [Currency]
                   /onboarding-wizard:
                     get:
-                      summary: Étapes du wizard
+                      summary: Les 7 etapes du wizard (initialise si vide)
+                      description: |
+                        Contrat fige. Renvoie `OnboardingStepResponse[]` avec les
+                        champs `id`, `stepType`, `stepOrder`, `title`, `description`,
+                        `status`, `isCompleted`, `isSkippable`, `skipRequiresReason`,
+                        `startedAt`, `completedAt`, `completedData` (objet JSON).
+                      tags: [Onboarding]
+                  /onboarding-wizard/progress:
+                    get:
+                      summary: Progression globale du wizard
+                      description: Renvoie `totalSteps`, `completedSteps` (COMPLETED uniquement),
+                        `skippedSteps`, `percentage`, `isComplete` et `steps`.
+                      tags: [Onboarding]
+                  /onboarding-wizard/status:
+                    get:
+                      summary: Etat d'achèvement de l'onboarding du tenant
+                      description: Renvoie `completed`, `completedAt`, `completedBy`, `totalSteps`,
+                        `completedSteps`, `skippedSteps`, `percentage`.
+                      tags: [Onboarding]
+                  /onboarding-wizard/initialize:
+                    post:
+                      summary: (Re)cree les 7 etapes — idempotent
+                      description: Aucune duplication garantie par l'index unique
+                        `uk_onboarding_step_tenant_type`. Reserve aux administrateurs de tenant.
+                      tags: [Onboarding]
+                  /onboarding-wizard/{id}/start:
+                    post:
+                      summary: Demarre une etape (PENDING -> IN_PROGRESS)
+                      description: 404 `STEP_NOT_FOUND` si l'etape appartient a un autre tenant ;
+                        409 `STEP_ORDER_VIOLATION` si une etape precedente n'est pas reglee.
+                      tags: [Onboarding]
+                  /onboarding-wizard/{id}/complete:
+                    post:
+                      summary: Complete une etape en executant son action metier reelle
+                      description: |
+                        Corps **facultatif** : `{"data": {...}}` ou absent (equivalent `{}`).
+                        Une donnee invalide donne 400 `STEP_DATA_INVALID` avec le champ fautif.
+                        409 `STEP_ALREADY_COMPLETED` / `STEP_ORDER_VIOLATION` / `STEP_PRECONDITION_FAILED`.
+                      tags: [Onboarding]
+                  /onboarding-wizard/{id}/skip:
+                    post:
+                      summary: Saute une etape
+                      description: Motif obligatoire si `skipRequiresReason` (400
+                        `STEP_SKIP_REASON_REQUIRED`) ; 409 `STEP_NOT_SKIPPABLE` sinon.
                       tags: [Onboarding]
                   /onboarding-wizard/templates/{role}:
                     get:
                       summary: Template onboarding par rôle
                       tags: [Onboarding]
+                  /auth/registration-status:
+                    post:
+                      summary: Suivi public d'une demande d'inscription d'eglise
+                      description: |
+                        Endpoint PUBLIC : 3 requetes / 5 min / IP, `Cache-Control: no-store`,
+                        aucune fuite d'information. Renvoie `status`
+                        (`PENDING_APPROVAL` | `APPROVED` | `REJECTED` | `NONE`), `decidedAt`,
+                        `reason` (uniquement si `REJECTED`) et `canLogin`.
+                      tags: [Auth]
                 """;
-        return ResponseEntity.ok(yaml);
+        // MediaType pose EXPLICITEMENT dans la reponse (et pas seulement via
+        // `produces`) : c'est verifiable sans couche MVC, et garantit le type
+        // meme devant un proxy ou un `produces` ecrase par une configuration.
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType(OPENAPI_MEDIA_TYPE))
+                .body(yaml);
     }
 }
