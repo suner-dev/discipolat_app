@@ -48,7 +48,7 @@ public interface TenantMembershipRepository extends JpaRepository<TenantMembersh
 
     List<TenantMembership> findByTenantIdAndStatusIn(UUID tenantId, List<MembershipStatus> statuses);
 
-    Optional<TenantMembership> findByInvitedBy(UUID invitedBy);
+    Optional<TenantMembership> findFirstByInvitedBy(UUID invitedBy);
 
     @Query("SELECT CASE WHEN COUNT(tm) > 0 THEN true ELSE false END FROM TenantMembership tm " +
             "WHERE tm.userId = :userId AND tm.tenantId = :tenantId AND tm.role.id = :roleId " +

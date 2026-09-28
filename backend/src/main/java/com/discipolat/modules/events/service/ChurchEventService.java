@@ -1,6 +1,7 @@
 package com.discipolat.modules.events.service;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.modules.audit.service.AuditEventService;
 import com.discipolat.modules.core.service.OutboxPublisher;
 import com.discipolat.modules.events.domain.ChurchEvent;
@@ -200,7 +201,7 @@ public class ChurchEventService {
         EventAttendance saved = eventAttendanceRepository.save(attendance);
 
         outboxPublisher.publish("CHURCH_EVENT_ATTENDANCE", saved.getId(), "AttendanceRecorded",
-                Map.of(
+                Payloads.of(
                         "eventId", eventId.toString(),
                         "eventTitle", event.getTitle(),
                         "personId", personId.toString(),

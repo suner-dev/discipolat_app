@@ -1,6 +1,7 @@
 package com.discipolat.modules.people.service;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.service.AuditEventService;
 import com.discipolat.modules.core.domain.PermissionVersion;
@@ -305,7 +306,7 @@ public class PeopleService {
 
         // Événement RoleAssigned
         outboxPublisher.publish("ROLE_ASSIGNMENT", saved.getId(), "RoleAssigned",
-                Map.of("personId", personId.toString(), "roleId", roleId.toString(),
+                Payloads.of("personId", personId.toString(), "roleId", roleId.toString(),
                         "orgUnitId", orgUnitId != null ? orgUnitId.toString() : null,
                         "spaceId", spaceId != null ? spaceId.toString() : null));
 

@@ -1,6 +1,7 @@
 package com.discipolat.modules.objectives.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
@@ -118,7 +119,7 @@ public class ObjectiveService {
     }
 
     public void delete(UUID id) {
-        propagationPublisher.publishDeleted("OBJECTIVE", id, Map.of(), "Objectif supprimé");
+        propagationPublisher.publishDeleted("OBJECTIVE", id, Payloads.of(), "Objectif supprimé");
         objectiveRepository.deleteById(id);
     }
 

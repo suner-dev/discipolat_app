@@ -2,6 +2,7 @@ package com.discipolat.modules.transfers.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.enums.*;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
@@ -717,7 +718,7 @@ public class TransferWorkflowService {
                     ? Map.of("type", "FAMILLE", "id", user(personneId).getFamilleGereeId(),
                             "nom", familyName(user(personneId).getFamilleGereeId()))
                     : null;
-            case FAISEUR_DISCIPLE_CHANGEMENT -> Map.of("type", "FAISEUR", "id", soul(personneId).getFaiseurId(),
+            case FAISEUR_DISCIPLE_CHANGEMENT -> Payloads.of("type", "FAISEUR", "id", soul(personneId).getFaiseurId(),
                     "nom", userName(soul(personneId).getFaiseurId()));
             case MEMBRE_DEPARTEMENT_TRANSFERT -> firstActiveDept(personneId);
             case RESPONSABLE_DEPARTEMENT_CHANGEMENT -> department(targetId).getResponsableId() != null

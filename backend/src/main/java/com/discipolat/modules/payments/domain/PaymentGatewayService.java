@@ -118,7 +118,7 @@ public class PaymentGatewayService {
      * À la confirmation → création du reçu financier (module Finances).
      */
     public PaymentIntent handleWebhook(String providerReference, boolean success, String reason) {
-        PaymentIntent intent = repository.findByProviderReference(providerReference)
+        PaymentIntent intent = repository.findFirstByProviderReference(providerReference)
                 .orElseThrow(() -> new EntityNotFoundException("PaymentIntent", "providerReference", providerReference));
 
         if (intent.getStatus() == PaymentIntent.Status.CONFIRMED) {

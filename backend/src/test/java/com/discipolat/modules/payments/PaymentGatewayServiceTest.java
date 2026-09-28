@@ -82,7 +82,7 @@ class PaymentGatewayServiceTest {
                 .status(PaymentIntent.Status.PENDING)
                 .providerReference("MP-DISABLED")
                 .build();
-        when(repository.findByProviderReference("MP-DISABLED")).thenReturn(Optional.of(pending));
+        when(repository.findFirstByProviderReference("MP-DISABLED")).thenReturn(Optional.of(pending));
 
         service.handleWebhook("MP-DISABLED", true, null);
 
@@ -101,7 +101,7 @@ class PaymentGatewayServiceTest {
                 .status(PaymentIntent.Status.PENDING)
                 .providerReference("MP-240822-ABC123")
                 .build();
-        when(repository.findByProviderReference("MP-240822-ABC123")).thenReturn(Optional.of(pending));
+        when(repository.findFirstByProviderReference("MP-240822-ABC123")).thenReturn(Optional.of(pending));
 
         PaymentIntent confirmed = service.handleWebhook("MP-240822-ABC123", true, null);
 
@@ -125,7 +125,7 @@ class PaymentGatewayServiceTest {
                 .status(PaymentIntent.Status.CONFIRMED)
                 .providerReference("MP-X")
                 .build();
-        when(repository.findByProviderReference("MP-X")).thenReturn(Optional.of(confirmed));
+        when(repository.findFirstByProviderReference("MP-X")).thenReturn(Optional.of(confirmed));
 
         service.handleWebhook("MP-X", true, null);
 
@@ -142,7 +142,7 @@ class PaymentGatewayServiceTest {
                 .status(PaymentIntent.Status.PENDING)
                 .providerReference("MTN-Y")
                 .build();
-        when(repository.findByProviderReference("MTN-Y")).thenReturn(Optional.of(pending));
+        when(repository.findFirstByProviderReference("MTN-Y")).thenReturn(Optional.of(pending));
 
         PaymentIntent failed = service.handleWebhook("MTN-Y", false, "Solde insuffisant");
         assertThat(failed.getStatus()).isEqualTo(PaymentIntent.Status.FAILED);

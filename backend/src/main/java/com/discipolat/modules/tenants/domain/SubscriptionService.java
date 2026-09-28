@@ -1,6 +1,7 @@
 package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.modules.tenants.enums.SubscriptionStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -244,9 +245,9 @@ sub.setStatus(SubscriptionStatus.CANCELED);
         TenantSubscription s = sub.get();
         Optional<SaasPlan> plan = planRepository.findByKeyIgnoreCase(s.getPlanKey());
 
-        return Map.of(
+        return Payloads.of(
                 "hasSubscription", true,
-                "subscription", Map.of(
+                "subscription", Payloads.of(
                         "id", s.getId().toString(),
                         "planKey", s.getPlanKey(),
                         "status", s.getStatus().name(),
@@ -256,7 +257,7 @@ sub.setStatus(SubscriptionStatus.CANCELED);
                         "cancelAtPeriodEnd", s.getCancelAtPeriodEnd(),
                         "canceledAt", s.getCanceledAt(),
                         "trialEndsAt", s.getTrialEndsAt(),
-                        "plan", plan.map(p -> Map.of(
+                        "plan", plan.map(p -> Payloads.of(
                                 "name", p.getName(),
                                 "priceMonthly", p.getPriceMonthly(),
                                 "priceYearly", p.getPriceYearly(),

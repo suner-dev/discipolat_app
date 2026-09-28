@@ -107,14 +107,19 @@ public class FamilyService {
         } else if (request.chefFamilleId() != null) {
             // Cas 1 : Sélectionner un chef existant
             chefFamilleId = request.chefFamilleId();
-            User chef = userRepository.findById(chefFamilleId)
-                    .orElseThrow(() -> new EntityNotFoundException("User", chefFamilleId));
+            // Constat architectural : `users.tenant_id` est le tenant d'ORIGINE,
+            // `TenantContext` le tenant d'ACTION. Comparer les deux rejette a tort
+            // un utilisateur multi-eglises — c'est-a-dire exactement ce que le
+            // modele prevoit. Le predicat correct est la MEMBERSHIP ACTIVE dans le
+            // tenant cible, applique par la requete elle-meme.
             UUID currentTenantId = TenantContext.getTenantId();
-            if (currentTenantId != null && (chef.getTenantId() == null
-                    || !currentTenantId.equals(chef.getTenantId()))) {
-                throw new BusinessRuleException("Le chef de famille doit appartenir au tenant cible",
-                        "CHEF_TENANT_MISMATCH");
-            }
+            User chef = currentTenantId == null
+                    ? userRepository.findById(chefFamilleId)
+                            .orElseThrow(() -> new EntityNotFoundException("User", chefFamilleId))
+                    : userRepository.findByIdWithActiveMembershipInTenant(chefFamilleId, currentTenantId)
+                            .orElseThrow(() -> new BusinessRuleException(
+                                    "Le chef de famille doit appartenir au tenant cible",
+                                    "CHEF_TENANT_MISMATCH"));
             chef.setEstChefDeFamille(true);
             userRepository.save(chef);
         } else {
@@ -164,7 +169,7 @@ public class FamilyService {
      */
     private UUID createNewChef(CreateFamilyRequest request) {
         // Vérifier que l'email n'existe pas déjà
-        if (userRepository.findByEmail(request.newChefEmail()).isPresent()) {
+        if (userRepository.findFirstByEmail(request.newChefEmail()).isPresent()) {
             throw new BusinessRuleException(
                     "Un compte avec cet email existe déjà: " + request.newChefEmail(),
                     "DUPLICATE_EMAIL");

@@ -382,15 +382,15 @@ e2e_5_invalid_data() {
 
 # =============================================================== E2E-6 ==========
 complete_step() {   # complete_step <id> <data> <libelle>
-  api POST "/api/v1/onboarding-wizard/$1/complete" "$TENANT_TOKEN" "$2"
+  api POST "/api/v1/onboarding-wizard/${1:-}/complete" "$TENANT_TOKEN" "${2:-}"
   local status; status="$(jq -r '.status // "?"' <<<"$API_BODY")"
   if [[ "$API_CODE" == "200" && "$status" == "COMPLETED" ]]; then
-    ok "E2E-6 $3 COMPLETED"; return 0
+    ok "E2E-6 ${3:-step} COMPLETED"; return 0
   fi
   if [[ "$API_CODE" == "409" && "$status" == "COMPLETED" ]]; then
-    ok "E2E-6 $3 deja complete (rejeu)"; return 0
+    ok "E2E-6 ${3:-step} deja complete (rejeu)"; return 0
   fi
-  ko "E2E-6 $3" "HTTP ${API_CODE} statut ${status} : ${API_BODY}"; return 1
+  ko "E2E-6 ${3:-step}" "HTTP ${API_CODE} statut ${status} : ${API_BODY}"; return 1
 }
 
 e2e_6_full_run() {
@@ -410,6 +410,17 @@ e2e_6_full_run() {
   fi
 
   # MEMBER_IMPORT : skippable AVEC motif obligatoire (D4).
+  # L'ordre est IMPERATIF : on teste d'abord le refus SANS motif (l'etape est
+  # encore PENDING), puis on la saute avec motif. L'inverse donnerait
+  # 409 STEP_ALREADY_COMPLETED, qui ne prouve rien.
+  api POST "/api/v1/onboarding-wizard/${STEP_MEMBER}/skip" "$TENANT_TOKEN" '{}'
+  if [[ "$API_CODE" == "400" ]] \
+     && [[ "$(jq -r '.title // "?"' <<<"$API_BODY")" == "STEP_SKIP_REASON_REQUIRED" ]]; then
+    ok "E2E-6c skip sans motif refuse (400 STEP_SKIP_REASON_REQUIRED)"
+  else
+    ko "E2E-6c skip sans motif refuse" "HTTP ${API_CODE} : ${API_BODY}"
+  fi
+
   api POST "/api/v1/onboarding-wizard/${STEP_MEMBER}/skip" "$TENANT_TOKEN" \
       '{"reason":"Membres declares a importer hors ligne"}'
   if [[ "$API_CODE" == "200" ]] && [[ "$(jq -r '.status // "?"' <<<"$API_BODY")" == "SKIPPED" ]]; then
@@ -417,15 +428,12 @@ e2e_6_full_run() {
   else
     ko "E2E-6b MEMBER_IMPORT sautee" "HTTP ${API_CODE} : ${API_BODY}"
   fi
-  api POST "/api/v1/onboarding-wizard/${STEP_MEMBER}/skip" "$TENANT_TOKEN" '{}'
-  if [[ "$API_CODE" == "400" ]]; then
-    ok "E2E-6c MEMBER_IMPORT refusee sans motif (skipRequiresReason=true)"
-  else
-    ko "E2E-6c MEMBER_IMPORT refusee sans motif" "HTTP ${API_CODE} : ${API_BODY}"
-  fi
 
+  # Noms DISTINCTS de ceux du provisionnement : `families.nom` porte une
+  # contrainte UNIQUE globale, donc rejouer le meme nom dans la meme eglise
+  # echouerait sur la premiere occurrence, pas sur une donnee exterieure.
   complete_step "$STEP_STRUCTURE" \
-    "$(jq -nc --arg s "$TENANT_SLUG" '{data:{departments:["Intercession " + $s, "Chorale " + $s], families:["Famille Recette " + $s]}}')" \
+    "$(jq -nc --arg s "$TENANT_SLUG" '{data:{departments:["Intercession " + $s, "Chorale " + $s], families:["Famille du wizard " + $s]}}')" \
     "STRUCTURE" || return
   api GET '/api/v1/admin/departments' "$TENANT_TOKEN"
   if jq -e '[.. | objects | select(.nom? == "Intercession")] | length > 0' <<<"$API_BODY" >/dev/null 2>&1; then

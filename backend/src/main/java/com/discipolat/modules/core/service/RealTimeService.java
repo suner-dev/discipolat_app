@@ -1,5 +1,6 @@
 package com.discipolat.modules.core.service;
 
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.modules.audit.domain.AuditEvent;
 import com.discipolat.modules.audit.domain.BusinessHistory;
 import com.discipolat.modules.core.domain.OutboxEvent;
@@ -39,7 +40,7 @@ public class RealTimeService {
     public void pushStatusChanged(UUID tenantId, String entityType, UUID entityId,
                                   String fromCode, String toCode, UUID spaceId) {
         String destination = "/topic/tenant:" + tenantId + "/" + entityType.toLowerCase() + "s/" + entityId + "/status";
-        Map<String, Object> message = Map.of(
+        Map<String, Object> message = Payloads.of(
                 "type", "STATUS_CHANGED",
                 "entityType", entityType,
                 "entityId", entityId.toString(),
@@ -62,7 +63,7 @@ public class RealTimeService {
 
     public void pushRoleAssigned(UUID tenantId, UUID userId, String roleCode, UUID spaceId) {
         String userDestination = "/user/tenant:" + tenantId + ":" + userId + "/queue/roles";
-        Map<String, Object> message = Map.of(
+        Map<String, Object> message = Payloads.of(
                 "type", "ROLE_ASSIGNED",
                 "roleCode", roleCode,
                 "spaceId", spaceId != null ? spaceId.toString() : null,
@@ -107,7 +108,7 @@ public class RealTimeService {
 
     public void pushTaskAssigned(UUID tenantId, UUID taskId, UUID assigneeId, UUID spaceId) {
         String userDestination = "/user/tenant:" + tenantId + ":" + assigneeId + "/queue/tasks";
-        Map<String, Object> message = Map.of(
+        Map<String, Object> message = Payloads.of(
                 "type", "TASK_ASSIGNED",
                 "taskId", taskId.toString(),
                 "spaceId", spaceId != null ? spaceId.toString() : null,
@@ -124,7 +125,7 @@ public class RealTimeService {
 
     public void pushTaskCompleted(UUID tenantId, UUID taskId, UUID assigneeId, UUID spaceId) {
         String userDestination = "/user/tenant:" + tenantId + ":" + assigneeId + "/queue/tasks";
-        Map<String, Object> message = Map.of(
+        Map<String, Object> message = Payloads.of(
                 "type", "TASK_COMPLETED",
                 "taskId", taskId.toString(),
                 "spaceId", spaceId != null ? spaceId.toString() : null,
@@ -150,7 +151,7 @@ public class RealTimeService {
     public void pushMemberTransferred(UUID tenantId, UUID personId, UUID fromSpaceId, UUID toSpaceId) {
         // Notify the person
         String userDestination = "/user/tenant:" + tenantId + ":" + personId + "/queue/membership";
-        Map<String, Object> message = Map.of(
+        Map<String, Object> message = Payloads.of(
                 "type", "MEMBER_TRANSFERRED",
                 "fromSpaceId", fromSpaceId != null ? fromSpaceId.toString() : null,
                 "toSpaceId", toSpaceId != null ? toSpaceId.toString() : null,

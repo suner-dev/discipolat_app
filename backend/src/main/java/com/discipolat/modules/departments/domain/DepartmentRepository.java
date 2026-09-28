@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Repository
 public interface DepartmentRepository extends JpaRepository<Department, UUID> {
-    Optional<Department> findByNom(String nom);
+    Optional<Department> findFirstByNom(String nom);
     Page<Department> findByStatut(StatutEntite statut, Pageable pageable);
     List<Department> findByResponsableId(UUID responsableId);
     long countByStatut(StatutEntite statut);

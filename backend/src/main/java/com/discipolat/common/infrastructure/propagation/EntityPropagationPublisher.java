@@ -1,5 +1,6 @@
 package com.discipolat.common.infrastructure.propagation;
 
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import org.slf4j.Logger;
@@ -101,8 +102,8 @@ public class EntityPropagationPublisher {
                                   UUID oldOwnerId, UUID newOwnerId,
                                   String description) {
         publishEvent(entityType, entityId, EntityChangedEvent.ChangeType.REASSIGNED,
-                Map.of(field, oldOwnerId != null ? oldOwnerId.toString() : null),
-                Map.of(field, newOwnerId != null ? newOwnerId.toString() : null),
+                Payloads.of(field, oldOwnerId != null ? oldOwnerId.toString() : null),
+                Payloads.of(field, newOwnerId != null ? newOwnerId.toString() : null),
                 description);
     }
 

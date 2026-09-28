@@ -2,6 +2,7 @@ package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.stereotype.Service;
@@ -169,7 +170,7 @@ public class RoleManagementService {
         role = roleRepository.save(role);
 
         auditService.log(updaterId, role.getTenantId(), "ROLE_UPDATED", "ROLE", role.getId(), "SUCCESS",
-                Map.of("oldLabel", oldLabel, "newLabel", request.label(),
+                Payloads.of("oldLabel", oldLabel, "newLabel", request.label(),
                         "oldDescription", oldDescription, "newDescription", request.description(),
                         "oldPriority", oldPriority, "newPriority", request.priority()),
                 null, null, null);
@@ -285,7 +286,7 @@ public class RoleManagementService {
         membershipRepository.save(membership);
 
         auditService.log(assignerId, tenantId, "ROLE_ASSIGNED", "MEMBERSHIP", membership.getId(), "SUCCESS",
-                Map.of("userId", userId.toString(), "roleKey", role.getKey(), "scopeId", scopeId != null ? scopeId.toString() : null), null, null, null);
+                Payloads.of("userId", userId.toString(), "roleKey", role.getKey(), "scopeId", scopeId != null ? scopeId.toString() : null), null, null, null);
 
         return membership;
     }

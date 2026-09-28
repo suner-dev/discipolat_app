@@ -37,10 +37,10 @@ public interface SoulRepository extends JpaRepository<Soul, UUID> {
     Page<Soul> findAllByIdIn(List<UUID> ids, Pageable pageable);
 
     /** Détection de doublons à l'import (email). */
-    Optional<Soul> findByEmailIgnoreCaseAndDeletedFalse(String email);
+    Optional<Soul> findFirstByEmailIgnoreCaseAndDeletedFalse(String email);
 
     /** Détection de doublons à l'import (téléphone). */
-    Optional<Soul> findByTelephoneAndDeletedFalse(String telephone);
+    Optional<Soul> findFirstByTelephoneAndDeletedFalse(String telephone);
     List<Soul> findByFaiseurIdIn(List<UUID> faiseurIds);
     long countByFaiseurId(UUID faiseurId);
     long countByFamilleId(UUID familleId);

@@ -2071,3 +2071,151 @@ sous-jacent.
   STRUCTURE/roles/quotas, lies a ce defaut multi-tenant et a l'incoherence de la
   fixture de recette).
 - **1469 tests** verts.
+
+---
+
+## Chantier systémique : la famille `Map.of` / NPE (29 sites corrigés + garde-fou)
+
+Conformément à la décision de l'orchestrateur, la famille de défauts est traitée
+comme **un seul chantier cohérent** plutôt que comme une série de correctifs
+ponctuels — c'est exactement ce qui manquait, puisque la découverte un par un
+avait consommé des heures.
+
+### Le correctif systémique : `Payloads` + un test qui interdit la récurrence
+
+`com.discipolat.common.domain.Payloads` construit des charges utiles tolérantes au
+`null` (ordre des clés conservé, nombre impair d'arguments refusé).
+
+`NoNullUnsafeMapLiteralTest` verrouille le résultat avec **deux règles** :
+
+| Règle | Détection | Statut |
+|---|---|---|
+| **R1** — `Map.of` contenant un ternaire produisant `null` | NPE **garantie**, sans faux positif possible | **0 site** — porte stricte |
+| **R2** — `Map.of` en position de charge utile d'audit | heuristique (dépend de la position) | **122 sites** — crémaillère |
+
+R1 est une porte dure. R2 est une **crémaillère** et non une porte : le reliquat
+(122 sites sur une soixanteaine de fichiers) est trop large pour être exigé
+immédiatement, et exiger l'exigence_complete ferait échouer le test en
+permanence — donc l'équipe l'ignorerait, et il perdrait tout pouvoir de signal.
+Le plafond ne peut que **décroître**, et le test affiche la liste complète des
+sites restants, donc le reliquat reste visible et actionnable.
+
+### Les 29 sites corrigés
+
+Deux vagues parallèles sur des fichiers **disjoints**, puis intégration et
+validation séquentielles. Les vagues ont été conduites par des agents dédiés ; ils
+ont **contesté deux de mes hypothèses**, ce qui a évité deux erreurs :
+
+- le chemin de `SuperAdminSaasPlanController` que j'avais donné était faux
+  (`modules/admin/api/`, pas `modules/platform/api/`) ;
+- j'avais supposé `OrganizationNodeService.moveNode` encore à migrer : il l'était
+  déjà, et l'agent l'a correctement laissé intact.
+
+Wave A (12 sites) : `RealTimeService` ×5 (ces NPE **avaient la capacité d'abandonner
+tout un lot de l'outbox**), `SocialAuthController` ×2 (l'exception était avalée en
+« 400 échec d'authentification » — un bug d'authentification trompeur pour le
+support), `ChurchEventService`, `PeopleService`, `TransferWorkflowService`,
+`AiFamilyCohesionService` (NPE avalée en silence → omission de données).
+
+Wave B (17 sites) : `EntityPropagationPublisher` ×2 (`unassign` d'inventaire passait
+`newOwnerId = null` **littéralement** : NPE à 100 % des appels, dans une
+transaction → rollback de la restitution de quantité), `TenantMembershipService` ×3
+et `RoleManagementService` ×2 (**chemins de contrôle d'accès** : création et
+révocation de membership), `OrganizationHierarchyService` ×3,
+`SubscriptionService` (dont un `Map` imbriqué de 10 paires que j'avais omis),
+`TenantSettingsService` (**24 clés** — je comptais 22 : l'agent a vérifié),
+`TenantSwitcherController`, `TenantAdminController` ×2, `SuperAdminSaasPlanController`,
+`ObjectiveService`, `UserController`.
+
+### Impact repaired, par gravité
+
+- **Rollbacks d'écriture** : 9 sites (memberships, rôles, structure d'organisation,
+  inventaire, âmes).
+- **Contrôle d'accès** : `RoleManagementService:288` échouait à **chaque appel** de
+  portée `TENANT` (`scopeId == null`), donc la création de membership par
+  l'affectation de rôle était cassée en toutes circonstances.
+- **Site public** : `TenantSettingsService` alimente `GET /branding/public`,
+  **non authentifié**, avec 24 valeurs toutes nulles pour un tenant qui n'a pas
+  personnalisé son identité visuelle. Le site public d'une église était en 500.
+- **Outbox** : 5 sites qui peuvent faire abandonner un lot entier d'évènements.
+- **Authentification** : 2 sites dont l'erreur est masquée en « échec de connexion ».
+
+### Sites hors périmètre, signalés par les agents (non corrigés)
+
+`RoleManagementService:147`, `TenantSettingsService:139,177`,
+`TenantAdminController:262`, `EntityPropagationPublisher:94`,
+`UserController:159,170,186`, plus les positions d'audit restantes comptées par la
+crémaillère. Ils rejoignent le reliquat R2 et sont donc **visibles et suivis**, pas
+perdus de vue.
+
+### Validation
+
+**1473 tests verts** (1469 + 4 garde-fous), 0 échec, 13 skips préexistants.
+
+---
+
+## Phase C — `users.tenant_id` vs tenant d'action, et rôles globaux invisibles
+
+Deux defects de la meme famille « le filtre multi-tenant masque ce qu'il ne
+devrait pas », tous deux **bloquants**, tous deux invisibles a la suite de tests.
+
+### C1 — Un utilisateur multi-tenant était introuvable (résolu)
+
+`users.tenant_id` est le tenant d'**origine** (une valeur, NOT NULL) ;
+`TenantContext` est le tenant d'**action**. `TenantAwareSimpleJpaRepository.findById`
+ajoute `AND tenant_id = TenantContext`. Dès qu'un utilisateur appartient à deux
+églises — ce que le modèle prévoit explicitement, constat B2 — cette lecture est
+fausse par construction.
+
+Symptôme mesuré : l'étape STRUCTURE du wizard répondait
+`404 User not found with id: …` sur l'utilisateur qui configurait l'église.
+
+`UserRepository.findByIdWithActiveMembershipInTenant(id, tenantId)` applique le
+prédicat **correct** : une membership ACTIVE dans le tenant demandé. Cette méthode
+**n'affaiblit pas l'isolation** — elle ne peut pas servir à lire un utilisateur
+d'une église dont on n'est pas membre ; elle remplace un prédicat faux par un
+prédicat juste. Branchée sur `FamilyService` (chef de famille) et
+`DepartmentService` (responsable), qui comparaient jusqu'ici le tenant d'origine
+au tenant d'action.
+
+### C2 — Les rôles globaux étaient invisibles : impossible d'inviter qui que ce soit (résolu)
+
+**Le défaut le plus grave de la série.**
+
+Tous les rôles sont **globaux** : `DataInitializer` les crée avec
+`tenant_id = NULL` (`PLATFORM_SUPER_ADMIN`, `TENANT_ADMIN`, `MEMBRE`, `PASTEUR`…).
+Or le filtre de l'entité `Role` était `tenant_id = :tenantId` : il masquait donc
+**la totalité** des rôles.
+
+```
+POST /api/v1/admin/invitations
+-> 400 INVITATION_ROLE_INVALID  (« Rôle invalide: TENANT_ADMIN »)
+```
+
+Autrement dit, **aucune invitation ne pouvait être créée, nulle part** — ni par le
+wizard, ni par l'endpoint dédié. L'entité `Permission`, qui porte le même schéma
+global, était touchée de la même façon ; corrigée avec le même prédicat.
+
+Nouveau prédicat : `(tenant_id = :tenantId OR tenant_id IS NULL)`. Il reste
+strictement borné : un tenant voit ses propres rôles **et** les rôles globaux,
+jamais ceux d'un autre tenant.
+
+Vérification : `Role` et `Permission` sont les **seules** entités portant un
+`@Filter` dont la colonne `tenant_id` est nullable en base — donc les seules
+concernées. Contrôle fait par requête sur `information_schema`, pas par intuition.
+
+### État de la recette
+
+`42 PASS, 10 FAIL, 7 SKIP` (contre 14 PASS au début de cette phase).
+
+Les 10 échecs restants sont **identifiés et documentés** :
+
+| Échec | Cause | Nature |
+|---|---|---|
+| E2E-4a, 5b1, 5b2 | la recette sonde des données invalides sur des étapes **hors ordre**, donc reçoit `409 STEP_ORDER_VIOLATION` avant d'atteindre la validation | **bug de la recette** |
+| E2E-6 FIRST_EVENT, 7b, 7c, 7e | le module Événements pointe une table `events` qui n'a jamais été créée (constat **H2**) | **défaut connu, non traité** |
+| E2E-9a | la fixture accorde au Super Admin une membership `TENANT_ADMIN`, mais `hasAnyRole` teste le rôle du **JWT** — le Super Admin n'est donc pas autorisé, ce qui est le comportement RBAC attendu | **limite de la fixture** |
+| E2E-10b, E2E-11 | sondes IDOR et quota dépendantes du jeton inter-tenant ci-dessus | **conséquence de la fixture** |
+
+Aucune de ces lignes n'est un défaut de production non identifié : ce sont soit
+des erreurs de la recette, soit le constat H2 déjà documenté.
