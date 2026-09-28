@@ -1,5 +1,6 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.CrossTenantScopeAccess;
@@ -137,12 +138,12 @@ public class TenantSwitcherController {
                 "type", n.getType().name(),
                 "path", n.getPath()
         )).toList());
-        context.put("subscription", subscription.map(s -> Map.of(
+        context.put("subscription", subscription.map(s -> Payloads.of(
                 "planKey", s.getPlanKey(),
                 "status", s.getStatus().name(),
                 "currentPeriodEnd", s.getCurrentPeriodEnd(),
                 "limits", s.getQuotasJson(),
-                "plan", plan.map(p -> Map.of(
+                "plan", plan.map(p -> Payloads.of(
                         "name", p.getName(),
                         "features", p.getFeaturesJson()
                 )).orElse(null)

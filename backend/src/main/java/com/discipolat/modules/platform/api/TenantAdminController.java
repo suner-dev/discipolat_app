@@ -1,5 +1,6 @@
 package com.discipolat.modules.platform.api;
 
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.multitenancy.TenantContext;
@@ -97,7 +98,7 @@ public class TenantAdminController {
         dashboard.put("subChurchCount", subChurchCount);
         dashboard.put("campusCount", campusCount);
         dashboard.put("groupCount", groupCount);
-        dashboard.put("subscription", subscription.map(s -> Map.of(
+        dashboard.put("subscription", subscription.map(s -> Payloads.of(
             "planKey", s.getPlanKey(),
             "status", s.getStatus().name(),
             "currentPeriodEnd", s.getCurrentPeriodEnd()
@@ -174,7 +175,7 @@ public class TenantAdminController {
         
         List<Role> roles = roleService.getRoles(tenantId);
         
-        return ResponseEntity.ok(roles.stream().map(r -> Map.of(
+        return ResponseEntity.ok(roles.stream().map(r -> Payloads.of(
             "id", r.getId().toString(),
             "key", r.getKey(),
             "label", r.getLabel(),

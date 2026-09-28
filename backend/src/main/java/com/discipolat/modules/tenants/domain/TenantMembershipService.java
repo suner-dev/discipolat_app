@@ -2,6 +2,7 @@ package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.users.domain.User;
@@ -145,7 +146,7 @@ public class TenantMembershipService {
                 "TENANT_MEMBERSHIP",
                 membership.getId(),
                 "SUCCESS",
-                Map.of("oldRole", oldRoleKey, "newRole", newRoleKey),
+                Payloads.of("oldRole", oldRoleKey, "newRole", newRoleKey),
                 null, null, null
         );
 
@@ -169,7 +170,7 @@ public class TenantMembershipService {
                 "TENANT_MEMBERSHIP",
                 membership.getId(),
                 "SUCCESS",
-                Map.of("role", membership.getRole() != null ? membership.getRole().getKey() : null),
+                Payloads.of("role", membership.getRole() != null ? membership.getRole().getKey() : null),
                 null, null, null
         );
     }
@@ -228,7 +229,7 @@ public class TenantMembershipService {
                 "TENANT_MEMBERSHIP",
                 membership.getId(),
                 "SUCCESS",
-                Map.of("userId", membership.getUserId(), "role", membership.getRole() != null ? membership.getRole().getKey() : null),
+                Payloads.of("userId", membership.getUserId(), "role", membership.getRole() != null ? membership.getRole().getKey() : null),
                 null, null, null
         );
     }

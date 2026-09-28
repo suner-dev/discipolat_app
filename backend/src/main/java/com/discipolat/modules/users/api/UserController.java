@@ -2,6 +2,7 @@ package com.discipolat.modules.users.api;
 
 import com.discipolat.modules.users.api.dto.*;
 import com.discipolat.common.infrastructure.api.PageResponse;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.authentication.domain.AuthService;
@@ -326,7 +327,7 @@ public class UserController {
             jakarta.servlet.http.HttpServletRequest httpRequest) {
         UserRole role = UserRole.valueOf(body.role());
         User user = userService.addRole(id, role);
-        auditService.log("ADD_ROLE", "USER", id, null, Map.of("role", body.role()), httpRequest);
+        auditService.log("ADD_ROLE", "USER", id, null, Payloads.of("role", body.role()), httpRequest);
         return ResponseEntity.ok(UserResponse.from(user));
     }
 

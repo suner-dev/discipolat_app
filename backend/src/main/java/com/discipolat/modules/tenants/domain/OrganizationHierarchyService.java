@@ -2,6 +2,7 @@ package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.users.domain.User;
@@ -294,7 +295,7 @@ public class OrganizationHierarchyService {
 
         auditService.log(updaterId, node.getTenantId(), "ORG_NODE_UPDATED", "ORGANIZATION_NODE",
                 node.getId(), "SUCCESS",
-                Map.of(
+                Payloads.of(
                         "oldName", oldName, "newName", request.name(),
                         "oldCode", oldCode, "newCode", request.code(),
                         "oldResponsibleId", oldResponsibleId, "newResponsibleId", request.responsibleId(),
@@ -338,7 +339,7 @@ public class OrganizationHierarchyService {
 
         auditService.log(moverId, node.getTenantId(), "ORG_NODE_MOVED", "ORGANIZATION_NODE",
                 node.getId(), "SUCCESS",
-                Map.of("oldPath", oldPath, "newPath", newPath, "oldParentId", oldParentId, "newParentId", newParentId),
+                Payloads.of("oldPath", oldPath, "newPath", newPath, "oldParentId", oldParentId, "newParentId", newParentId),
                 null, null, null);
 
         return nodeRepository.findById(nodeId).orElseThrow();
@@ -536,7 +537,7 @@ public class OrganizationHierarchyService {
 
         auditService.log(assignerId, node.getTenantId(), "NODE_RESPONSIBLE_SET", "ORGANIZATION_NODE",
                 node.getId(), "SUCCESS",
-                Map.of("oldResponsibleId", oldResponsibleId, "newResponsibleId", responsibleId),
+                Payloads.of("oldResponsibleId", oldResponsibleId, "newResponsibleId", responsibleId),
                 null, null, null);
 
         return getNodeDetails(node.getTenantId(), nodeId);

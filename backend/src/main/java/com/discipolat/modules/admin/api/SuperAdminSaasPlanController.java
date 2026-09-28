@@ -1,5 +1,6 @@
 package com.discipolat.modules.admin.api;
 
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.SaasPlan;
 import com.discipolat.modules.tenants.domain.SaasPlanRepository;
@@ -128,7 +129,7 @@ public class SuperAdminSaasPlanController {
 
     @GetMapping("/usage/{tenantId}")
     public ResponseEntity<Map<String, Object>> getUsage(@PathVariable UUID tenantId) {
-        return ResponseEntity.ok(Map.of(
+        return ResponseEntity.ok(Payloads.of(
                 "tenantId", tenantId,
                 "limits", planService.getCurrentPlan(tenantId) != null ? planService.getCurrentPlan(tenantId).getLimitsJson() : null,
                 "plan", planService.getCurrentPlan(tenantId) != null ? planService.getCurrentPlan(tenantId).getName() : "Aucun"

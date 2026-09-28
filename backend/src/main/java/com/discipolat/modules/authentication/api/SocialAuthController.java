@@ -1,5 +1,6 @@
 package com.discipolat.modules.authentication.api;
 
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.modules.authentication.domain.AuthService;
 import com.discipolat.modules.security.domain.RefreshTokenSessionService;
@@ -108,10 +109,10 @@ public class SocialAuthController {
                     user.getTenantId(), familyId);
             refreshTokenSessionService.register(
                     refreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(refreshToken));
-            return ResponseEntity.ok(Map.of(
+            return ResponseEntity.ok(Payloads.of(
                     "token", accessToken,
                     "refreshToken", refreshToken,
-                    "user", Map.of(
+                    "user", Payloads.of(
                             "id", user.getId().toString(),
                             "email", user.getEmail(),
                             "firstName", user.getFirstName(),
@@ -174,10 +175,10 @@ public class SocialAuthController {
                     user.getTenantId(), familyId);
             refreshTokenSessionService.register(
                     refreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(refreshToken));
-            return ResponseEntity.ok(Map.of(
+            return ResponseEntity.ok(Payloads.of(
                     "token", accessToken,
                     "refreshToken", refreshToken,
-                    "user", Map.of(
+                    "user", Payloads.of(
                             "id", user.getId().toString(),
                             "email", user.getEmail(),
                             "firstName", user.getFirstName(),

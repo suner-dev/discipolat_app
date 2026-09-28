@@ -1,5 +1,6 @@
 package com.discipolat.modules.ai.domain;
 
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyRepository;
@@ -78,7 +79,7 @@ public class AiFamilyCohesionService {
         for (Family f : families) {
             try {
                 Map<String, Object> analysis = analyzeFamilyCohesion(f.getId());
-                results.add(Map.of("familyId", f.getId(), "familyName", f.getNom(),
+                results.add(Payloads.of("familyId", f.getId(), "familyName", f.getNom(),
                     "cohesionScore", analysis.get("cohesionScore"),
                     "cohesionLevel", analysis.get("cohesionLevel"),
                     "memberCount", analysis.get("memberCount")));
