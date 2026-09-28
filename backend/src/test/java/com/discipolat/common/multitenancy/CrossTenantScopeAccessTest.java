@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
  * courant ET tenant demandé — et la bascule vers une autre église était
  * impossible.
  *
- * <p>{@link CrossTenantReadScope} est le contrepoids : il suspend le filtre le
+ * <p>{@link CrossTenantScopeAccess} est le contrepoids : il suspend le filtre le
  * temps du bloc de lecture, puis le rétablit. Ces tests verrouillent les deux
  * moitiés du contrat : le filtre est bien suspendu, et il est TOUJOURS
  * rétabli — y compris quand la lecture échoue, sinon une exception laisserait la
@@ -50,13 +50,13 @@ class CrossTenantReadScopeTest {
     @Mock
     private Filter filter;
 
-    private CrossTenantReadScope scopeWithEnabledFilter(UUID currentTenantId) {
+    private CrossTenantScopeAccess scopeWithEnabledFilter(UUID currentTenantId) {
         when(entityManager.unwrap(Session.class)).thenReturn(session);
         when(session.getEnabledFilter("tenantFilter")).thenReturn(filter);
         // Le retablissement fait `enableFilter(...).setParameter(...)` : sans ce
         // stub, enableFilter renvoie null et l'appel enchaine une NPE.
         when(session.enableFilter("tenantFilter")).thenReturn(filter);
-        CrossTenantReadScope scope = new CrossTenantReadScope();
+        CrossTenantScopeAccess scope = new CrossTenantScopeAccess();
         ReflectionTestUtils.setField(scope, "entityManager", entityManager);
         TenantContext.setTenantId(currentTenantId);
         return scope;
@@ -66,7 +66,7 @@ class CrossTenantReadScopeTest {
     @DisplayName("H4 — le filtre est suspendu pendant la lecture, puis rétabli")
     void suspendsThenRestoresTheFilter() {
         UUID currentTenant = UUID.randomUUID();
-        CrossTenantReadScope scope = scopeWithEnabledFilter(currentTenant);
+        CrossTenantScopeAccess scope = scopeWithEnabledFilter(currentTenant);
 
         AtomicBoolean sawFilterDisabled = new AtomicBoolean(false);
         String result = scope.call(() -> {
@@ -87,7 +87,7 @@ class CrossTenantReadScopeTest {
     @DisplayName("H4 — le filtre est rétabli même si la lecture échoue")
     void restoresTheFilterWhenTheReadFails() {
         UUID currentTenant = UUID.randomUUID();
-        CrossTenantReadScope scope = scopeWithEnabledFilter(currentTenant);
+        CrossTenantScopeAccess scope = scopeWithEnabledFilter(currentTenant);
 
         assertThatThrownBy(() -> scope.call(() -> {
             throw new IllegalStateException("échec de lecture");
@@ -104,7 +104,7 @@ class CrossTenantReadScopeTest {
     void doesNothingWhenNoFilterIsEnabled() {
         when(entityManager.unwrap(Session.class)).thenReturn(session);
         when(session.getEnabledFilter("tenantFilter")).thenReturn(null);
-        CrossTenantReadScope scope = new CrossTenantReadScope();
+        CrossTenantScopeAccess scope = new CrossTenantScopeAccess();
         ReflectionTestUtils.setField(scope, "entityManager", entityManager);
 
         String result = scope.call(() -> "ok");
@@ -122,7 +122,7 @@ class CrossTenantReadScopeTest {
                 .thenReturn(session)                 // 1. suspension
                 .thenThrow(new IllegalStateException("session closed")); // 2. retablissement
         when(session.getEnabledFilter("tenantFilter")).thenReturn(filter);
-        CrossTenantReadScope scope = new CrossTenantReadScope();
+        CrossTenantScopeAccess scope = new CrossTenantScopeAccess();
         ReflectionTestUtils.setField(scope, "entityManager", entityManager);
         TenantContext.setTenantId(currentTenant);
 
@@ -134,7 +134,7 @@ class CrossTenantReadScopeTest {
     @Test
     @DisplayName("H4 — le composant ne touche à rien d'autre que le filtre")
     void touchesNothingElse() {
-        CrossTenantReadScope scope = scopeWithEnabledFilter(UUID.randomUUID());
+        CrossTenantScopeAccess scope = scopeWithEnabledFilter(UUID.randomUUID());
         scope.call(() -> null);
         verify(session).disableFilter("tenantFilter");
         verify(session, never()).flush();

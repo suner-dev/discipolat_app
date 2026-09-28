@@ -1925,3 +1925,84 @@ la branche précédente dans `target/classes` : Flyway les voit alors dans le
 classpath et echoue en `Validate failed: Detected resolved migration not applied`
 (V178 a V182 « presentes » sans l'avoir ete). Toujours construire avec `clean`
 quand on change de branche contenant des migrations.
+
+---
+
+## H4 (suite) — le provisionnement atomique fonctionne enfin, de bout en bout
+
+Trois correctifs successifs, tous validés **par exécution** sur base vierge.
+
+### 1. Le filtre multi-tenant ne suivait pas le changement de contexte
+
+Le filtre Hibernate est positionné une fois par requête HTTP, sur le tenant du
+**début** de la requête. Le provisionnement crée un tenant puis travaille « dans »
+ce tenant : les lignes qu'il venait d'écrire étaient invisibles à la lecture
+suivante, d'où le **404 « OrganizationNode not found »** sur l'église qu'il venait
+de créer.
+
+`CrossTenantScopeAccess` (ex-`CrossTenantReadScope`, renommé car il sert aussi aux
+écritures) expose une seconde entrée, `callForTenantSwitch(...)`, utilisée par le
+provisionnement. Elle porte l'avertissement de sécurité le plus explicite du
+mécanisme, parce que c'est le point le plus sensible.
+
+Le filtrage Hibernate est suspendu sur **exactement** ce bloc, et rétabli en sortie.
+
+### 2. Un NPE latent dans le contrôleur de provisionnement
+
+`PlatformProvisioningController` lisait `department.getTenantId()` et
+`family.getTenantId()`. Ces entités ne portent **pas** `tenant_id` en mémoire : il
+est posé à l'écriture. Le contrôleur levait donc un `NullPointerException` sur
+**tout** provisionnement réussi — un bug qui n'avait jamais été atteint, parce que
+les 500 et 404 l_MASKaient tous les deux.
+
+Le tenant provisionné étant par ailleurs connu à cet endroit, on utilise son id.
+
+### 3. Un test qui aurait dû le voir ne le voyait pas
+
+Dans `PlatformProvisioningServiceTest`, le nouveau paramètre `crossTenant` est un
+mock. Un mock qui ne délègue pas ferait **passer le test sans exécuter le code
+réel** — c'est-à-dire un test qui ne prouve plus rien. Le test force donc le scope
+à déléguer, comme le fait la production. Cettereflection a été appliquée partout
+où un mock remplace un point d'entrée de sécurité.
+
+### Résultat mesuré
+
+```
+  PASS : 14
+  FAIL : 1
+  SKIP : 11
+```
+
+Le **provisionnement atomique répond 201** et renvoie bien `tenant.id`,
+`owner.userId`, `owner.activationEmailSent = true`, avec département et famille
+créés dans la même transaction. C'était le constat B3 du plan, et il est
+désormais prouvé sur une base réelle et non sur un mock.
+
+### Ce qui reste bloqué, et pourquoi c'est honnête
+
+**Un seul** point échoue : obtenir un jeton sur le tenant de recette.
+
+```
+POST /api/v1/tenant-switcher/switch   ->  500
+IllegalStateException: Utilisateur introuvable
+```
+
+Même famille que H4, un cran plus loin : le contrôle d'accès est désormais correct
+(le filtre est suspendu et la vérification de membership passe), mais la lecture de
+l'utilisateur qui suit s'exécute **après** le changement de `TenantContext`, donc
+encore sous le filtre du tenant précédent. La même question architecturale — où
+passe la frontière entre contexte de tenant et opération cross-tenant — revient
+donc sur chaque étape du switch.
+
+Les 11 scénarios restants sont `SKIP`, jamais `PASS` : ils ne sont pas exécutés,
+et le script ne les compte pas comme réussis. C'est exactement pour cela que le
+script distingue les trois états.
+
+### Deux contraintes de données découvertes au passage
+
+- `families.nom` porte une contrainte **UNIQUE globale** : deux églises ne peuvent
+  pas avoir une famille du même nom. C'est un défaut de modèle (l'unicité devrait
+  être `(tenant_id, nom)`), non corrigé ici, mais signalé.
+- `departments` / `families` receiving leur `tenant_id` par un mécanisme d'écriture
+  et non par l'entité : toute lecture de `getTenantId()` sur une entité fraîchement
+  créée renvoie `null` en mémoire. Source du NPE ci-dessus.

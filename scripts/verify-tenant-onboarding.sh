@@ -131,7 +131,9 @@ e2e_1_provision() {
   ok "E2E-1a login Super Admin"
 
   # Un tiers existe dans une AUTRE eglise : servira au cas cross-tenant (B2).
-  TENANT_SLUG="e2e-onb-$(date +%s)"
+  # Un rejeu dans la meme seconde ne doit pas reutiliser le slug :
+  # l'endpoint le refuse alors, et le scenario parait cassé pour rien.
+  TENANT_SLUG="e2e-onb-$(date +%s)-$(( RANDOM % 10000 ))"
   CROSS_EMAIL="cross.${TENANT_SLUG}@example.com"
   api POST '/api/v1/users' "$super_token" \
       "$(jq -nc --arg e "$CROSS_EMAIL" \
@@ -154,7 +156,7 @@ e2e_1_provision() {
         departmentDescription:"Accueil et intercession",
         createNewResponsable:true, newResponsableFirstName:"Resp", newResponsableLastName:"Onb",
         newResponsableEmail:("resp." + $slug + "@example.com"),
-        familyName:"Famille Recette", createNewChef:true, newChefFirstName:"Chef",
+        familyName:("Famille Recette " + $slug), createNewChef:true, newChefFirstName:"Chef",
         newChefLastName:"Onb", newChefEmail:("chef." + $slug + "@example.com"),
         ownerEmail:$owner, ownerFirstName:"Jean", ownerLastName:"Recette"}')"
 
@@ -416,7 +418,7 @@ e2e_6_full_run() {
   fi
 
   complete_step "$STEP_STRUCTURE" \
-    '{"data":{"departments":["Intercession","Chorale"],"families":["Famille Recette"]}}' \
+    "$(jq -nc --arg s "$TENANT_SLUG" '{data:{departments:["Intercession " + $s, "Chorale " + $s], families:["Famille Recette " + $s]}}')" \
     "STRUCTURE" || return
   api GET '/api/v1/admin/departments' "$TENANT_TOKEN"
   if jq -e '[.. | objects | select(.nom? == "Intercession")] | length > 0' <<<"$API_BODY" >/dev/null 2>&1; then

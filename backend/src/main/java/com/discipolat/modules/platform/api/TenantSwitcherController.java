@@ -2,7 +2,7 @@ package com.discipolat.modules.platform.api;
 
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
-import com.discipolat.common.multitenancy.CrossTenantReadScope;
+import com.discipolat.common.multitenancy.CrossTenantScopeAccess;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.security.domain.RefreshTokenSessionService;
 import com.discipolat.modules.tenants.domain.*;
@@ -33,8 +33,8 @@ public class TenantSwitcherController {
     private final TenantStatusGuard tenantStatusGuard;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenSessionService refreshTokenSessionService;
-    /** Lecture cross-tenant déclarée : voir {@link CrossTenantReadScope} (constat H4). */
-    private final CrossTenantReadScope crossTenantRead;
+    /** Lecture cross-tenant déclarée : voir {@link CrossTenantScopeAccess} (constat H4). */
+    private final CrossTenantScopeAccess crossTenantRead;
 
     public TenantSwitcherController(TenantRepository tenantRepository,
                                     TenantMembershipRepository membershipRepository,
@@ -49,7 +49,7 @@ public class TenantSwitcherController {
                                       TenantStatusGuard tenantStatusGuard,
                                       JwtTokenProvider jwtTokenProvider,
                                       RefreshTokenSessionService refreshTokenSessionService,
-                                      CrossTenantReadScope crossTenantRead) {
+                                      CrossTenantScopeAccess crossTenantRead) {
         this.tenantRepository = tenantRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;

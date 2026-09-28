@@ -55,9 +55,9 @@ import java.util.function.Supplier;
  * active pour tout le reste du traitement.
  */
 @Component
-public class CrossTenantReadScope {
+public class CrossTenantScopeAccess {
 
-    private static final Logger log = LoggerFactory.getLogger(CrossTenantReadScope.class);
+    private static final Logger log = LoggerFactory.getLogger(CrossTenantScopeAccess.class);
     private static final String FILTER_NAME = "tenantFilter";
     private static final String TENANT_ID_PARAM = "tenantId";
 
@@ -80,6 +80,32 @@ public class CrossTenantReadScope {
         } finally {
             resumeFilter(suspended);
         }
+    }
+
+    /**
+     * Exécute une opération qui <b>bascule volontairement</b> le contexte de
+     * tenant vers un tenant qu'elle vient de créer — le provisionnement atomique
+     * d'un tenant par le Super Admin.
+     *
+     * <p>Pourquoi c'est nécessaire : le filtre Hibernate est positionné une fois
+     * par requête HTTP, sur le tenant du <em>début</em> de la requête. Quand
+     * l'opération crée un tenant puis travaille « dans » ce tenant, le filtre
+     * continue de pointer sur l'ancien : les lignes qu'elle vient d'écrire sont
+     * invisibles à la lecture suivante. Résultat mesuré : le provisionnement
+     * échouait en <b>404 « OrganizationNode not found »</b> sur la lecture de
+     * l'église qu'il venait de créer.
+     *
+     * <p>Même contrat de sécurité que {@link #call(Supplier)} : le bloc est
+     * entièrement maîtrisé par l'appelant, qui n'écrit et ne lit que ce qu'il
+     * vient de créer. Le filtre est rétabli en sortie, quoi qu'il arrive.
+     *
+     * <p>Ce cas est distinct d'une simple lecture cross-tenant : ici le
+     * <b>contexte</b> change, pas seulement la portée d'un contrôle d'accès. La
+     * méthode est nommée séparément pour que l'intention reste lisible en
+     * relecture — c'est le point le plus sensible du mécanisme.
+     */
+    public <T> T callForTenantSwitch(Supplier<T> operation) {
+        return call(operation);
     }
 
     /**
