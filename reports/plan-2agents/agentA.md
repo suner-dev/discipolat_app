@@ -1210,3 +1210,55 @@ revient.
 5. **La fenêtre de course est rendue déterministe** dans le test (2 premières
    lectures vides). Sans cela, le test aurait pu passer sans jamais exercer la
    course — c'est précisément le piège des tests de concurrence.
+
+---
+
+## A15 — Correction `AuthService` magic-link (message/code inversés)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `authentication/domain/AuthService.java` (`verifyMagicLink`)
+  - MOD `authentication/domain/AuthServiceTest.java` (+2 cas)
+
+### Constat vérifié
+
+`BusinessRuleException` suit la convention `(message, code)`, et
+`GlobalExceptionHandler` place le **code** dans le `title` du `ProblemDetail` —
+le champ que les clients lisent. Les deux exceptions du magic link avaient leurs
+arguments **inversés** :
+
+```java
+// AVANT — le code part dans le detail, le message français part dans le title
+throw new BusinessRuleException("MAGIC_LINK_EXPIRED", "Lien magique invalide ou expiré");
+throw new BusinessRuleException("USER_NOT_FOUND", "Aucun compte associé à cet email");
+```
+
+Conséquence pour le client : `title = "USER_NOT_FOUND"` et
+`detail = "Aucun compte associé à cet email"` — l'inverse de ce qu'attend le
+contrat, et un switch sur le message au lieu du code.
+
+### Correction
+
+```java
+throw new BusinessRuleException("Lien magique invalide ou expiré", "MAGIC_LINK_EXPIRED");
+throw new BusinessRuleException("Aucun compte associé à cet email", "USER_NOT_FOUND");
+```
+
+### Preuve
+
+```
+mvn -B -o test -Dtest=AuthServiceTest -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0 -- in ...authentication.domain.AuthServiceTest
+[INFO] BUILD SUCCESS
+```
+
+Deux cas dédiés, qui vérifient **les deux champs** :
+- `magicLinkExpired_shouldExposeTheCodeInCodeAndTheFrenchTextInMessage` :
+  `getCode() == "MAGIC_LINK_EXPIRED"` **et** `getMessage() == "Lien magique invalide ou expiré"` ;
+- `magicLinkUnknownUser_shouldExposeTheCodeInCodeAndTheFrenchTextInMessage` :
+  `getCode() == "USER_NOT_FOUND"` **et** `getMessage() == "Aucun compte associé à cet email"`.
+
+> Note : `MagicLinkEntry` n'est stocké qu'en mémoire (map statique) avec une durée
+> de 15 minutes ; le test du cas « utilisateur inconnu » génère donc son token et
+> le consomme immédiatement.

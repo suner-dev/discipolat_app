@@ -329,6 +329,31 @@ class AuthServiceTest {
         verify(jwtTokenProvider, never()).generateRefreshToken(any(), any(), any(), any(), any(), any());
     }
 
+    // ===== A15 : convention (message, code) sur les erreurs du magic link =====
+
+    @Test
+    void magicLinkExpired_shouldExposeTheCodeInCodeAndTheFrenchTextInMessage() {
+        authService.generateMagicLink("inconnu@discipolat.com");
+
+        BusinessRuleException thrown = assertThrows(BusinessRuleException.class, () ->
+                authService.verifyMagicLink("token-inexistant"));
+
+        assertEquals("MAGIC_LINK_EXPIRED", thrown.getCode());
+        assertEquals("Lien magique invalide ou expiré", thrown.getMessage());
+    }
+
+    @Test
+    void magicLinkUnknownUser_shouldExposeTheCodeInCodeAndTheFrenchTextInMessage() {
+        when(userRepository.findByEmailIgnoreCase("inconnu@discipolat.com")).thenReturn(Optional.empty());
+        String token = authService.generateMagicLink("inconnu@discipolat.com");
+
+        BusinessRuleException thrown = assertThrows(BusinessRuleException.class, () ->
+                authService.verifyMagicLink(token));
+
+        assertEquals("USER_NOT_FOUND", thrown.getCode());
+        assertEquals("Aucun compte associé à cet email", thrown.getMessage());
+    }
+
     @Test
     void changePassword_WithWrongCurrentPassword_ShouldThrow() {
         SecurityTestHelper.loginAs(userId);

@@ -469,12 +469,16 @@ public class AuthService {
     public User verifyMagicLink(String token) {
         MagicLinkEntry entry = magicLinks.remove(token);
         if (entry == null || entry.expiresAt.isBefore(java.time.LocalDateTime.now())) {
+            // A15 : BusinessRuleException suit la convention (message, code).
+            // Les arguments étaient INVERSÉS : le codeFrançais partait dans le
+            // `detail` de la réponse et le message technique dans le `title`
+            // (donc dans le champ `title` du ProblemDetail, lu par les clients).
             throw new com.discipolat.common.domain.BusinessRuleException(
-                    "MAGIC_LINK_EXPIRED", "Lien magique invalide ou expiré");
+                    "Lien magique invalide ou expiré", "MAGIC_LINK_EXPIRED");
         }
         return userRepository.findByEmailIgnoreCase(entry.email)
                 .orElseThrow(() -> new com.discipolat.common.domain.BusinessRuleException(
-                        "USER_NOT_FOUND", "Aucun compte associé à cet email"));
+                        "Aucun compte associé à cet email", "USER_NOT_FOUND"));
     }
 
     /** Envoie le magic link par email. */
