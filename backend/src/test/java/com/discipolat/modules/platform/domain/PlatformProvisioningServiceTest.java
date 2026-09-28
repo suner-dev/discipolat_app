@@ -18,6 +18,7 @@ import com.discipolat.modules.tenants.domain.SaasPlanRepository;
 import com.discipolat.modules.tenants.domain.SaasPlanService;
 import com.discipolat.modules.tenants.domain.TenantService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,8 +29,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,6 +53,8 @@ class PlatformProvisioningServiceTest {
     private FamilyService familyService;
     @Mock
     private AuditService auditService;
+    @Mock
+    private TenantOwnerProvisioningService ownerProvisioningService;
 
     @AfterEach
     void clearContext() {
@@ -87,8 +92,14 @@ class PlatformProvisioningServiceTest {
         when(organizationNodeService.createNode(eq(tenantId), eq(OrganizationNodeType.DEPARTMENT), any(), any(), eq(churchId), eq(department.getResponsableId()), any())).thenReturn(departmentNode);
         when(familyService.create(any(CreateFamilyRequest.class))).thenReturn(family);
 
+        UUID ownerUserId = UUID.randomUUID();
+        when(ownerProvisioningService.provisionOwner(eq(tenantId), any(), any(), any(), any()))
+                .thenReturn(new TenantOwnerProvisioningService.OwnerProvisioningResult(
+                        ownerUserId, "jean@example.com", true, false));
+
         PlatformProvisioningService service = new PlatformProvisioningService(tenantService, planRepository,
-                saasPlanService, organizationNodeService, departmentService, familyService, auditService);
+                saasPlanService, organizationNodeService, departmentService, familyService, auditService,
+                ownerProvisioningService);
         PlatformProvisioningService.ProvisioningResult result = service.provision(command());
 
         assertThat(result.tenant()).isEqualTo(tenant);
@@ -96,9 +107,50 @@ class PlatformProvisioningServiceTest {
         assertThat(result.department()).isEqualTo(department);
         assertThat(result.departmentNode()).isEqualTo(departmentNode);
         assertThat(result.family()).isEqualTo(family);
+        assertThat(result.owner().userId()).isEqualTo(ownerUserId);
         assertThat(TenantContext.getTenantId()).isNull();
         verify(departmentService).create(any(CreateDepartmentRequest.class));
         verify(familyService).create(any(CreateFamilyRequest.class));
+        // L'owner est provisionné APRÈS l'église racine et AVANT département/famille.
+        org.mockito.InOrder order = org.mockito.Mockito.inOrder(
+                organizationNodeService, ownerProvisioningService, departmentService, familyService);
+        order.verify(organizationNodeService).createRootChurch(eq(tenantId), any(), any(), any());
+        order.verify(ownerProvisioningService).provisionOwner(eq(tenantId), any(), any(), any(), any());
+        order.verify(departmentService).create(any(CreateDepartmentRequest.class));
+        order.verify(familyService).create(any(CreateFamilyRequest.class));
+    }
+
+    @Test
+    @DisplayName("Sans ownerEmail : OWNER_REQUIRED AVANT toute écriture (fail-closed)")
+    void refusesToProvisionATenantWithoutOwnerAndWritesNothing() {
+        SecurityTestHelper.loginAs(UUID.randomUUID());
+        PlatformProvisioningService service = new PlatformProvisioningService(tenantService, planRepository,
+                saasPlanService, organizationNodeService, departmentService, familyService, auditService,
+                ownerProvisioningService);
+
+        // Constructeur de compatibilité (avant A5) => aucun owner fourni.
+        assertThatThrownBy(() -> service.provision(commandWithoutOwner()))
+                .isInstanceOf(com.discipolat.common.domain.BusinessRuleException.class)
+                .hasMessage("Le propriétaire (owner) de l'église est requis")
+                .extracting(thrown -> ((com.discipolat.common.domain.BusinessRuleException) thrown).getCode())
+                .isEqualTo("OWNER_REQUIRED");
+
+        // Aucune écriture d'aucune sorte.
+        verify(tenantService, never()).create(any());
+        verify(ownerProvisioningService, never()).provisionOwner(any(), any(), any(), any(), any());
+        verify(organizationNodeService, never()).createRootChurch(any(), any(), any(), any());
+        verify(departmentService, never()).create(any(CreateDepartmentRequest.class));
+        verify(familyService, never()).create(any(CreateFamilyRequest.class));
+        verify(planRepository, never()).findByKeyIgnoreCaseAndIsActiveTrue(any());
+    }
+
+    private PlatformProvisioningService.Command commandWithoutOwner() {
+        return new PlatformProvisioningService.Command(
+                "Église Bethel", "eglise-bethel", "free", "CM", "XAF", "Africa/Douala", "fr",
+                "Église Bethel", "Accueil", null, null, true, "Jean", "Mpoudi", "jean@example.com", null,
+                "Famille Test", null, null, true, "Pierre", "Mbarga", "pierre@example.com", null,
+                null, null, null
+        );
     }
 
     private PlatformProvisioningService.Command command() {
@@ -106,7 +158,8 @@ class PlatformProvisioningServiceTest {
                 "Église Bethel", "eglise-bethel", "free", "CM", "XAF", "Africa/Douala", "fr",
                 "Église Bethel", "Accueil", null, null, true, "Jean", "Mpoudi", "jean@example.com", null,
                 "Famille Test", null, null, true, "Pierre", "Mbarga", "pierre@example.com", null,
-                null, null, null
+                null, null, null,
+                "jean@example.com", "Jean", "Mpoudi"
         );
     }
 }

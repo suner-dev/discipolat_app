@@ -718,3 +718,87 @@ invalide (`verifyNoInteractions`).
    ce que j'ai vérifié. Voir NEED-HELP-01.
 6. **`skip_reason`** est fusionné dans `completedData` (clé `skipReason`) plutôt
    qu'exposé comme champ du contrat §3.1, qui n'en prévoit pas.
+
+---
+
+## A5 — Provisionnement : owner obligatoire + email d'activation (constat B3)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - NEW `platform/domain/TenantOwnerProvisioningService.java`
+  - MOD `platform/domain/PlatformProvisioningService.java`
+  - MOD `platform/api/PlatformProvisioningController.java`
+  - NEW `platform/domain/TenantOwnerProvisioningServiceTest.java` (7 cas)
+  - MOD `platform/domain/PlatformProvisioningServiceTest.java` (+1 cas, ordre d'appel)
+
+### Constat vérifié
+
+`POST /api/v1/platform/admin/provisioning` créait le tenant, l'église racine, le
+département, le nœud de département et la famille… **mais aucun compte
+administrateur**. Le tenant était créé puis immédiatement inexploitable, sans
+que rien n'automatisait ni ne documente la création d'un compte propriétaire.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='TenantOwnerProvisioningServiceTest,PlatformProvisioningServiceTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- in ...PlatformProvisioningServiceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in ...TenantOwnerProvisioningServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1387, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 135 = **1387**. Aucun échec.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Aucun tenant créé sans owner | `refusesToProvisionATenantWithoutOwnerAndWritesNothing` : `OWNER_REQUIRED` levé **avant** `tenantService.create` — vérifié par `verify(tenantService, never()).create(any())`, `never()` sur `createRootChurch`, `departmentService`, `familyService` et même sur la résolution du plan. **Zéro écriture.** |
+| L'owner reçoit un email d'activation | `createsOwnerUserAndMembership` : `verify(authService).sendActivationEmail(userId)` — le flux d'activation **existant** est réutilisé, pas réimplémenté |
+| Un email déjà utilisé dans un autre tenant est refusé sans création partielle | `refusesEmailAlreadyUsedInAnotherTenant` : `409 OWNER_EMAIL_ALREADY_USED`, puis `never()` sur `userRepository.save`, `membershipRepository.save` et `verifyNoInteractions(authService)` |
+| Idempotence si l'owner existe déjà dans le même tenant | `doesNotDuplicateMembershipWhenOwnerAlreadyMember` : `alreadyMember = true`, aucun doublon de membership, aucun nouvel `User` |
+| SMTP cassé = booléen, pas d'exception (D10) | `smtpFailureNeverBreaksProvisioning` : `activationEmailSent = false` et la membership est bien créée |
+| Mot de passe initial jamais communiqué | `initialPasswordIsRandomStrongAndNeverLeaked` : BCrypt de 32 caractères aléatoires (`SecureRandom`), deux hachages distincts pour deux emails, et `passwordEncoder.matches("password123", hash) == false` |
+| Rôle et statut du compte owner | `PASTEUR` + `roles={PASTEUR}` + `activeRole=PASTEUR` + `PENDING_ACTIVATION` (le propriétaire définit son propre mot de passe via le lien) |
+
+### Décisions et déviations documentées
+
+1. **`OWNER_EMAIL_ALREADY_USED` : `DomainException` et non `BusinessRuleException`.**
+   Le plan (A5.1) demande `BusinessRuleException` **avec un statut 409**, mais
+   `GlobalExceptionHandler:43-52` ne sait mapper `BusinessRuleException` que vers
+   **400** (défaut) ou **403** (préfixes `FEATURE_DISABLED_`/`QUOTA_`) : le 409
+   y est **inatteignable**. J'ai donc utilisé
+   `DomainException(message, HttpStatus.CONFLICT, "OWNER_EMAIL_ALREADY_USED")` —
+   le **code métier est exactement celui du plan**, seul le véhicule change pour
+   rendre le statut 409 atteignable (convention déjà retenue par le wizard, D6).
+   → voir **NEED-HELP-03** pour validation de l'orchestrateur.
+2. **Validation de l'owner en TÊTE de `provision`**, donc avant la résolution du
+   plan et avant `tenantService.create` : le refus est antérieur à toute écriture.
+3. **L'owner est provisionné APRÈS l'église racine et AVANT département/famille**
+   (`PlatformProvisioningServiceTest` le prouve par `InOrder`) : `Department.responsableId`
+   et `Family.chefFamilleId` sont `NOT NULL`, un propriétaire valide doit donc
+   exister avant ces créations.
+4. **Membership `TENANT_OWNER` via `roleLegacy` uniquement.** Le rôle
+   `TENANT_OWNER` est un rôle **global** (`tenant_id IS NULL`) et
+   `TenantMembership.role` pointe vers une entité `Role`. L'utiliser ici
+   introduirait un rôle dans le tenant alors qu'il est global par conception ;
+   `roleLegacy` est le champ prévu pour ce cas, et c'est
+   `AuthorizationService.isTenantAdmin` qui le lit en repli
+   (`membership.getRole() != null ? getRole().getKey() : getRoleLegacy()`).
+5. **Constructeurs de compatibilité** ajoutés à `Command` (27 args),
+   `ProvisioningResult` et `AtomicProvisioningRequest` : l'ajout reste
+   réellement additif et aucun appelant n'est cassé. Un `Command` construit par
+   l'ancien constructeur est aujourd'hui **refusé** avec `OWNER_REQUIRED`, ce qui
+   est exactement le fail-closed voulu (une ancienne version du client web ne
+   peut plus créer d'église sans propriétaire).
+6. **Aucun secret en dur** : le mot de passe initial est généré, haché, et
+   jamais journalisé ni renvoyé.
