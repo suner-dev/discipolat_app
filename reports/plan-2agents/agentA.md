@@ -1262,3 +1262,76 @@ Deux cas dédiés, qui vérifient **les deux champs** :
 > Note : `MagicLinkEntry` n'est stocké qu'en mémoire (map statique) avec une durée
 > de 15 minutes ; le test du cas « utilisateur inconnu » génère donc son token et
 > le consomme immédiatement.
+
+---
+
+## A11 — Tests de sécurité IDOR/isolation (wizard, provisioning, subscription)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `backend/src/test/java/com/discipolat/modules/tenants/MultiTenantSecurityTests.java`
+    (+2 classes imbriquées : 5 + 3 cas)
+  - NEW `backend/src/test/java/com/discipolat/modules/onboarding/OnboardingWizardSecurityIT.java` (9 cas)
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='MultiTenantSecurityTests,OnboardingWizardSecurityIT' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run:  9, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.OnboardingWizardSecurityIT
+[INFO] Tests run:  5, Failures: 0, Errors: 0, Skipped: 0 -- in ...MultiTenantSecurityTests$OnboardingWizardSecurityTests
+[INFO] Tests run:  3, Failures: 0, Errors: 0, Skipped: 0 -- in ...MultiTenantSecurityTests$PlatformAndSubscriptionSecurityTests
+[INFO] Tests run: 44, Failures: 0, Errors: 0, Skipped: 0 -- in ...MultiTenantSecurityTests
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1448, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 196 = **1448**.
+
+### Matrice ajoutée (chaque cas cite la cellule de la matrice de sécurité)
+
+| Cellule | Cas de test | Résultat attendu |
+|---|---|---|
+| Tenant B ne peut **lire** le wizard de A | `tenantBCannotReadProgressOfTenantA`, `tenantBSeesOnlyItsOwnSteps` | 0 étape de A visible, `hasSize(1)` et l'id est bien celui du tenant B |
+| Tenant B ne peut **compléter** une étape de A | `tenantBCannotCompleteStepOfTenantA` (service + HTTP) | `404 STEP_NOT_FOUND` |
+| Tenant B ne peut **sauter** une étape de A | `tenantBCannotSkipStepOfTenantA` (service + HTTP) | `404 STEP_NOT_FOUND` |
+| Tenant B ne peut **démarrer** une étape de A | `tenantBCannotStartStepOfTenantA` | `404 STEP_NOT_FOUND` |
+| Un membre non-admin ne peut pas muter | `nonAdminMemberIsNotTenantAdmin`, `nonAdminMemberCannotMutate` (HTTP) | `403` sur `initialize` et `complete` |
+| Un membre non-admin **peut** lire | `nonAdminMemberCanRead` | `200` (le RBAC ne doit pas casser la lecture) |
+| `GET /tenants/*` réservé au Super Admin | `tenantAdminIsNotPlatformSuperAdmin` | `isPlatformSuperAdmin() == false` pour un `TENANT_OWNER` |
+| `SubscriptionController` refuse un non-admin | `regularMemberIsNotTenantAdmin` | `isTenantAdmin() == false` pour un `MEMBER` |
+| …et l'accepte pour un vrai admin | `tenantOwnerIsTenantAdmin` | `isTenantAdmin() == true` pour un `TENANT_OWNER` |
+| Suspension : API bloquée | `suspendedTenantCannotCallTheWizard` | `403 TENANT_SUSPENDED` |
+| Suspension : **pas de fuite** inter-tenant | `suspensionDoesNotLeakToTheOtherTenant` | le tenant voisin reste en `200` |
+| Suspension : réactivation immédiate | `reactivationRestoresAccess` | `200` **sans attendre le TTL de 30 s** |
+| Aucune fuite dans le corps d'erreur | `tenantBCannotCompleteStepOfTenantA` | `$.detail` ne contient ni le nom du tenant A ni `CHURCH_IDENTITY` |
+
+### Points de conception importants
+
+1. **Les tests de suspension passent par le chemin applicatif réel**
+   (`TenantService.deactivate` / `reactivate`), pas par un `UPDATE` SQL. C'est
+   `TenantService` qui publie `TenantStatusChangedEvent` et invalide le cache de
+   30 s de la garde. Avec un `UPDATE` SQL, le cache continuerait de dire
+   « ACTIVE » et le test **n'aurait rien prouvé** — c'est exactement ce qui s'est
+   produit à la première exécution (200 au lieu de 403).
+2. **`OnboardingWizardSecurityIT` traverse toute la chaîne** : JWT réel →
+   `TenantInterceptor` → filtre Hibernate → `TenantStatusInterceptor` (A1) →
+   `@PreAuthorize` (A3) → service. C'est le seul moyen de prouver que les couches
+   ne se compensent pas mutuellement.
+3. **La réponse d'erreur 404 est vérifiée anti-énumération** : le `detail` ne doit
+   ni nommer le tenant victime ni le type d'étape.
+
+### Non-régression vérifiée
+
+```
+git diff d730771..HEAD -- '*.java' | grep -cE "^\+.*(@Disabled|@Ignore)"
+0
+```
+Aucun test désactivé (gate G-A.2). Les 13 `Skipped` de la suite sont les
+`PerIpRateLimiterIntegrationTest` préexistants (`@EnabledIf("isRedisAvailable")`),
+inchangés.
