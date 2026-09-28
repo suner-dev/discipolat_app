@@ -477,3 +477,129 @@ L'événement `TENANT_ONBOARDING_COMPLETED` listé dans la spécification A2 dé
 `markOnboardingCompleted`, qui n'existe pas encore : il est créé en **A4** avec son
 audit. Ce décalage est assumé et sans impact (le critère « chaque mutation est
 auditée » reste vrai une fois A4 livrée).
+
+---
+
+## A3 — Wizard : DTO figés, actions métier réelles, RBAC, erreurs propres (constat B2)
+
+- **Statut** : DONE
+- **Fichiers principaux** :
+  - NEW `onboarding/api/OnboardingStepResponse.java`, `OnboardingProgressResponse.java`,
+    `OnboardingStatusResponse.java`, `OnboardingStepData.java`
+  - NEW `onboarding/domain/OnboardingStepDefinition.java`, `OnboardingStepActions.java`,
+    `TenantOnboardingStatusPort.java`
+  - MOD `onboarding/domain/OnboardingWizardStep.java` (+ `skip_reason`), `OnboardingWizardService.java`
+  - MOD `onboarding/api/OnboardingWizardController.java` (+ `/status`, `@authz.isTenantAdmin()`)
+  - MOD `tenants/domain/InvitationService.java` (+ `createInvitation` extrait du contrôleur)
+  - MOD `platform/api/InvitationController.java` (délègue au service)
+  - NEW `OnboardingWizardServiceTest`, `OnboardingWizardTenantIsolationTest`,
+    `OnboardingWizardControllerTest`, `InvitationServiceCreateInvitationTest`
+
+### Preuve — tests imposés (`§4 A3`)
+
+```
+mvn -B -o test -Dtest='OnboardingWizardServiceTest,OnboardingWizardControllerTest,OnboardingWizardTenantIsolationTest,InvitationServiceCreateInvitationTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.InvitationServiceCreateInvitationTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingWizardTenantIsolationTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingWizardServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.api.OnboardingWizardControllerTest
+[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+- `OnboardingWizardServiceTest` : **24 cas** (le plan en exige ≥ 12).
+- `OnboardingWizardControllerTest` : **12 cas**, en `@SpringBootTest` + `MockMvc`
+  (JWT réel → `TenantInterceptor` → filtre Hibernate → `TenantStatusInterceptor`
+  → `@PreAuthorize` → service) : le RBAC est donc prouvé sur la **chaîne HTTP
+  réelle**, pas seulement sur une méthode isolée.
+- `OnboardingWizardTenantIsolationTest` : **7 cas** d'isolation inter-tenant.
+- `InvitationServiceCreateInvitationTest` : **11 cas** d'extraction sans régression.
+
+### Preuve — non-régression suite complète
+
+```
+mvn -B -o test
+
+[WARNING] Tests run: 1351, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 99 = **1351**. Aucun échec, 13 skips préexistants inchangés.
+
+### Gate G-A §7.2 — critère 1 vérifié
+
+```
+$ grep -rn "orElseThrow()" backend/src/main/java/com/discipolat/modules/onboarding/
+(aucune occurrence)   -> PASS
+$ grep -rn "orElseThrow("  .../onboarding/
+OnboardingWizardService.java:361:  .orElseThrow(() -> new DomainException(   -> un seul, AVEC message
+```
+
+`requireStepOfCurrentTenant` est le seul point d'accès à une étape par id et il
+lève `DomainException(..., HttpStatus.NOT_FOUND, "STEP_NOT_FOUND")` après un
+`.filter(tenantId.equals(candidate.getTenantId()))` explicite.
+
+> ⚠️ **Note pour le vérificateur (§8.3)** : le Javadoc de `OnboardingWizardService`
+> décrivait le bug corrigé en écrivant littéralement `orElseThrow()`. Ce texte
+> déclenchait un **faux positif** du grep de contrôle. Il a été reformulé en
+> « un `orElseThrow` sans argument » pour que le grep de la porte soit
+> non ambigu. À savoir, sinon un vérificateur automatique pourrait refuser à tort.
+
+### Bugs réels trouvés par les tests pendant cette tâche
+
+1. **`completedSteps` comptait les étapes SKIPPED.** Première version :
+   `completed` incluait `SKIPPED`, donc 6 étapes (5 COMPLETED + 1 SKIPPED)
+   donnaient `completedSteps = 6` et `percentage = 100` sur 7 étapes. Le contrat
+   §3.1 impose `completedSteps = 2, skippedSteps = 1, percentage = 43` pour 3
+   étapes traitées sur 7. **Corrigé** : `completedSteps` ne compte que
+   `COMPLETED`, `percentage = arrondi((completed + skipped) * 100 / total)`.
+   Le test `getProgress_percentageIsRoundedAndCountsSkippedSteps` rejoue
+   désormais l'exemple exact du contrat (2 + 1 sur 7 → 43).
+2. **`PASTEUR` est un admin de tenant dans cette application**
+   (`AuthorizationService.TENANT_ADMIN_ROLE_KEYS = {ADMIN, PASTEUR,
+   TENANT_OWNER, TENANT_ADMIN}`). Le test RBAC utilisait `PASTEUR` et attendait
+   403 : l'hypothèse était fausse, pas le code. Le rôle contrôlé est désormais
+   `MEMBRE`, qui n'est pas admin de tenant.
+
+### Points de conception et déviations documentées
+
+1. **`GET /status` et l'achèvement global** : la méthode `markOnboardingCompleted`
+   et les colonnes V183 appartiennent à **A4**. Pour que chaque commit compile
+   (R3) tout en restant conforme au contrat, A3 expose déjà `GET /status` et le
+   lit via un port `TenantOnboardingStatusPort` (interface du module onboarding,
+   implémentée côté tenants en A4) injecté en `ObjectProvider` : port absent ⇒
+   `completed = false`, ce qui est le fail-closed correct (« En configuration »).
+   Aucun état statique mutable n'a été utilisé.
+2. **`roleTemplate` / `GET /templates/{role}` conservé à l'identique** : le contrat
+   §3.1 le déclare « inchangé ». La méthode a été réintégrée mot pour mot lors de
+   la réécriture du service et un test le vérifie.
+3. **`responsableId` / `chefFamilleId` de l'étape STRUCTURE** : ces colonnes sont
+   `NOT NULL`, mais le contrat §3.1 n'ouvre **aucun** champ responsable/chef sur
+   cette étape. R2 interdisant d'inventer un champ, l'administrateur qui
+   configure l'église est retenu comme responsable et chef par défaut (il peut
+   réattribuer ensuite). Documenté dans le code.
+4. **`typeEvenement` du premier événement** : colonne `NOT NULL` non couverte par
+   le contrat ; la valeur canonique `MEETING` (semantique « rencontre
+   d'église ») est utilisée, comme dans `V158__migrate_legacy_events_to_church_event`.
+   `EventService.create` positionne lui-même `statut = "PLANIFIE"`, conforme au
+   contrat.
+5. **`allowDarkMode` (étape BRANDING)** : `BrandingRequest` n'a pas ce champ.
+   La valeur est conservée dans le `completedData` renvoyé au client, et aucune
+   colonne n'est inventée.
+6. **Extraction de `createInvitation`** : `InvitationController` délègue et
+   reprojette les refus métier vers les **corps d'erreur historiques**
+   (`legacyErrorBody`) : le comportement HTTP observable est inchangé, comme
+   l'exige A3.5.
+7. **Restauration du 404 après 403** : pour les tests d'intégration impactés par
+   A1, la fixture `tenants` a été complétée (voir A1) — donc un accès
+   inter-tenant redonne bien son **404** d'origine, pas un 403.
+
+### Ce que A3 ne fait PAS (et pourquoi)
+
+- **Import réel des membres** : décision D4 assumée — l'étape `MEMBER_IMPORT`
+  est déclarative mais **vérifiée** (`importedCount >= 1` + audit
+  `TENANT_MEMBERS_IMPORTED`). L'import réel reste le module `/imports`.
+  L'interface dit `declaredOnly: true` dans le `completedData` : aucune fausse
+  automatisation.
+- **Appel à `TenantService.markOnboardingCompleted`** : voir point 1, posé en A4.

@@ -51,6 +51,10 @@ class InvitationServiceCrossTenantTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private AuditService auditService;
+    @Mock
+    private TenantRepository tenantRepository;
+    @Mock
+    private com.discipolat.modules.authentication.domain.EmailService emailService;
 
     // ---------- 1. même tenant : réattribution simple, aucun doublon ----------
 
@@ -242,6 +246,7 @@ class InvitationServiceCrossTenantTest {
 
     private InvitationService service() {
         return new InvitationService(invitationRepository, userRepository, membershipRepository,
-                roleRepository, organizationNodeRepository, passwordEncoder, auditService);
+                roleRepository, organizationNodeRepository, passwordEncoder, auditService,
+                tenantRepository, emailService, "https://app.example.com");
     }
 }
