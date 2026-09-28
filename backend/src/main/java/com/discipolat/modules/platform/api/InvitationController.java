@@ -18,6 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import com.discipolat.common.infrastructure.api.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -159,14 +164,69 @@ public class InvitationController {
 
     // ==================== LIST INVITATIONS ====================
 
+    /**
+     * Liste des invitations.
+     *
+     * <p><b>Rétro-compatible</b> : sans le paramètre {@code page}, la réponse
+     * reste la liste complète comme avant (aucun client n'est cassé).
+     *
+     * <p><p>Paginé : {@code ?page=0&size=50} renvoie une {@link PageResponse}
+     * (convention des autres endpoints listés de l'application). Filtres
+     * optionnels : {@code ?status=PENDING} et {@code ?q=email} (recherche
+     * insensible à la casse sur l'email).
+     */
     @GetMapping
     @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
-    public ResponseEntity<List<Map<String, Object>>> listInvitations() {
-        UUID tenantId = TenantContext.requireTenantId();
-        List<Invitation> invitations = invitationRepository.findByTenantIdAndStatusIn(
-                tenantId, List.of(InvitationStatus.PENDING, InvitationStatus.ACCEPTED, InvitationStatus.EXPIRED));
+    public ResponseEntity<?> listInvitations(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String q) {
 
-        return ResponseEntity.ok(invitations.stream().map(this::toMap).toList());
+        UUID tenantId = TenantContext.requireTenantId();
+
+        if (page == null) {
+            // Comportement historique inchangé : liste complète.
+            List<Invitation> invitations = invitationRepository.findByTenantIdAndStatusIn(
+                    tenantId, List.of(InvitationStatus.PENDING, InvitationStatus.ACCEPTED,
+                            InvitationStatus.EXPIRED));
+            return ResponseEntity.ok(invitations.stream().map(this::toMap).toList());
+        }
+
+        int effectiveSize = size == null || size <= 0 ? 50 : Math.min(size, 200);
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, effectiveSize);
+
+        InvitationStatus statusFilter = parseStatusOrNull(status);
+        Page<Invitation> result = invitationRepository.searchForAdmin(
+                tenantId, statusFilter == null ? null : statusFilter.name(),
+                normalizeQuery(q), pageable);
+
+        return ResponseEntity.ok(PageResponse.of(
+                result.getContent().stream().map(this::toMap).toList(),
+                result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages()));
+    }
+
+    private InvitationStatus parseStatusOrNull(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return InvitationStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException unknown) {
+            // Un statut inconnu ne doit pas faire échouer la liste : on ignore
+            // le filtre plutôt que de renvoyer une erreur 400.
+            return null;
+        }
+    }
+
+    private String normalizeQuery(String q) {
+        if (q == null || q.isBlank()) {
+            return null;
+        }
+        String trimmed = q.trim();
+        return trimmed.length() < 2 ? null : trimmed;
     }
 
     // ==================== GET INVITATION DETAILS ====================

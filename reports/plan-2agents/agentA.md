@@ -1127,3 +1127,86 @@ mvn -B -o test     (suite complète)
 Appliquée avec les 146 autres sur base vierge PostgreSQL 16.15 lors de la
 validation A4/A7 (`now at version v185`). La colonne `reminded_at` est
 `TIMESTAMPTZ` nullable, donc **sans risque de refus sur une base existante**.
+
+---
+
+## A10 — Finitions wizard & invitations (mineurs de l'audit)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `platform/api/InvitationController.java` (pagination + filtres, rétro-compatible)
+  - MOD `tenants/domain/InvitationRepository.java` (+ `searchForAdmin` paginé)
+  - NEW `onboarding/domain/OnboardingWizardInitializeConcurrencyTest.java` (2 cas, 2 vrais threads)
+  - MOD `platform/api/InvitationControllerTest.java` (+6 cas de pagination/filtre)
+  - (A10.3 — champ `config` neutralisé et `completedData` documenté : **livré en A3**)
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='InvitationControllerTest,OnboardingWizardInitializeConcurrencyTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationControllerTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- in ...OnboardingWizardInitializeConcurrencyTest
+[INFO] BUILD SUCCESS
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1438, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 186 = **1438**.
+
+### A10.1 — Pagination et filtres, sans casser l'usage existant
+
+| Requête | Comportement | Preuve |
+|---|---|---|
+| `GET /admin/invitations` (sans `page`) | **Liste complète**, strictement comme avant | `listWithoutPageKeepsTheLegacyFullList` : 2 éléments, et `verify(never()).searchForAdmin(...)` |
+| `?page=0&size=50` | `PageResponse` (convention existante du dépôt) | `listWithPageReturnsPageResponse` : `content/page/size/totalElements/totalPages` |
+| `?status=PENDING` | Filtre transmis en majuscules | `listFiltersByStatus` : `verify(searchForAdmin(eq(tenantId), eq("PENDING"), isNull(), any()))` |
+| `?status=PEUT-ETRE` | Statut inconnu **ignoré**, pas d'erreur 400 | `unknownStatusFilterIsIgnored` |
+| `?q=email` | Recherche partielle transmise, `q` < 2 caractères ignoré | `listSearchQueryIsForwarded` (le `trim` est aussi vérifié) |
+| `?size=5000` | Borné à 200 | `listPageSizeIsBounded` : `ArgumentCaptor<Pageable>` ⇒ `getPageSize() == 200` |
+
+### A10.2 — Concurrence sur `initialize`
+
+`OnboardingWizardInitializeConcurrencyTest` utilise **deux vrais threads** et une
+`CyclicBarrier` :
+
+- `concurrentInitializationNeverDuplicatesSteps` : les **deux premières lectures**
+  renvoient volontairement « aucune étape » (c'est la fenêtre réelle entre le
+  SELECT et le INSERT des deux requêtes concurrentes). Résultat : **exactement 7
+  étapes** en base, et **8 tentatives d'insertion** — 7 par le gagnant, 1 par le
+  perdant qui échoue sur l'index unique `uk_onboarding_step_tenant_type` puis
+  relit. Aucun doublon, aucun 500.
+- `integrityViolationIsAbsorbedAndReread` : une `DataIntegrityViolationException`
+  sur le premier `save` est absorbée et les 7 étapes existantes sont relues.
+
+### A10.3 — Champ `config` neutralisé (livré en A3)
+
+Le champ `config` (JSON legacy) n'est plus lu par la logique et n'est plus
+exposé par l'API ; la colonne est **conservée** (aucune suppression de colonne).
+`completedData` est documenté et sérialisé en objet JSON. Le test
+`getSteps_neverLeaksTheLegacyConfigColumn` (A3) verrouille qu'aucune fuite ne
+revient.
+
+### Décisions et déviations documentées
+
+1. **Rétro-compatibilité vérifiée, pas supposée.** Le plan dit « sans paramètres
+   → comportement actuel ». C'est implémenté **et prouvé** par test, avec un
+   `verify(never())` sur la voie paginée : impossible de régresser par erreur.
+2. **Requête native pour la recherche paginée** plutôt qu'un `Specification` : les
+   filtres optionnels sont combinés par `CAST(:status AS VARCHAR) IS NULL OR …`,
+   ce qui garantit qu'un filtre absent n'écarte aucune ligne, et la recherche
+   email est normalisée en minuscules comme partout ailleurs.
+3. **Statut inconnu ignoré plutôt que 400.** Un client qui evolue (ou une
+   mauvaise saisie) ne doit pas casser l'écran d'invitations ; le filtre est
+   simplement neutralisé.
+4. **`q` de moins de 2 caractères ignoré** : une recherche d'une lettre
+   ramènerait tout le répertoire sans valeur pour l'utilisateur et avec un coût
+   de scan.
+5. **La fenêtre de course est rendue déterministe** dans le test (2 premières
+   lectures vides). Sans cela, le test aurait pu passer sans jamais exercer la
+   course — c'est précisément le piège des tests de concurrence.
