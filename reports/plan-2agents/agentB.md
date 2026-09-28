@@ -97,3 +97,22 @@ Worktree : `/home/arise/discipolat/discipolat_app-agentB` (créé le 2026-09-28,
 - **Reste à faire pour clore B1 :** `src/__tests__/OnboardingWizardPage.test.tsx` (≥12 cas),
   `src/__tests__/useOnboardingWizard.test.tsx`, et les clés `onboarding.*` dans les 6 locales
   (`fr` en premier — le mécanisme `tText` indexe par valeur, cf. §5.0.5).
+
+### B1 — clôture
+
+- **Statut : DONE**
+- **Commit :** (voir git log)
+- **Preuves réelles :**
+  - `tsc -b` (strict) → **EXIT 0**
+  - `vitest run OnboardingWizardPage.test.tsx` → **15/15 verts**
+  - `vitest run useOnboardingWizard.test.tsx` → **7/7 verts**
+  - total B1 : **22 tests, 0 échec**
+- **i18n :** 51 clés `onboarding.v2.*` ajoutées dans les **6 locales** (306 clés au total),
+  `fr` en premier (mécanique `tText`). Les 6 clés legacy `onboarding.*` sont **conservées**
+  dans les 6 fichiers — aucune clé supprimée.
+- **2 défauts de conception trouvés et corrigés par les tests** (pas desArrangeements de test) :
+  1. `problemOf()` dépendait d'`instanceof AxiosError` → fragile si axios est dupliqué par
+     l'interopérateur. Remplacé par une détection **structurelle** de la réponse.
+  2. `useOnboardingSteps` faisait `retry: 1` **inconditionnel** → un `403 TENANT_SUSPENDED`
+     (non transitoire) retardait l'écran d'erreur d'environ 1 s. Remplacé par `shouldRetry()`,
+     qui ne rejoue que les erreurs réseau/5xx. Test de non-régression inclus.

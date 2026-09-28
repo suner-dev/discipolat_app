@@ -5,6 +5,7 @@
 // restent cohérentes après chaque mutation.
 
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import api from '@/lib/api';
 import type {
   CompleteStepBody,
@@ -27,13 +28,24 @@ function invalidate(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ONBOARDING_KEYS.status });
 }
 
+/**
+ * Ne rejoue PAS une erreur 4xx : un 403 TENANT_SUSPENDED ou un 404 n'est pas
+ * transitoire, et réessayer retarderait l'affichage de l'écran d'erreur
+ * (~1 s de délai par tentative) sans jamais changer le résultat.
+ */
+function shouldRetry(failureCount: number, error: unknown): boolean {
+  const status = (error as AxiosError | undefined)?.response?.status;
+  if (status !== undefined && status >= 400 && status < 500) return false;
+  return failureCount < 1;
+}
+
 export function useOnboardingSteps() {
   return useQuery({
     queryKey: ONBOARDING_KEYS.steps,
     queryFn: async () => (await api.get<OnboardingStep[]>('/onboarding-wizard')).data,
     // Le backend initialise les étapes au premier GET : une donnée vide est
     // un état transitoire légitime, pas une erreur.
-    retry: 1,
+    retry: shouldRetry,
   });
 }
 

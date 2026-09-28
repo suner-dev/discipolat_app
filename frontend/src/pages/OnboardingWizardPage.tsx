@@ -9,7 +9,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Rocket, CheckCircle2, AlertTriangle, LogOut } from 'lucide-react';
-import { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
 import { useI18n, tText } from '@/i18n';
 import { getErrorMessage } from '@/lib/api';
@@ -45,10 +44,17 @@ function renderStep(props: StepProps, type: OnboardingStepType) {
   }
 }
 
+/**
+ * Extrait le ProblemDetail d'une erreur, sans dépendre d'un `instanceof` :
+ * axios peut être dupliqué par l'interopérateur, et les erreurs de test ne
+ * sont pas des instances réelles. On se base donc sur la forme de l'objet.
+ */
 function problemOf(err: unknown): ProblemDetail | null {
-  if (err instanceof AxiosError) {
-    const d = err.response?.data as ProblemDetail | undefined;
-    return d && typeof d === 'object' ? d : null;
+  const maybe = err as { response?: { data?: unknown } } | null;
+  const data = maybe?.response?.data;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    const p = data as ProblemDetail;
+    if (typeof p.title === 'string' || typeof p.detail === 'string') return p;
   }
   return null;
 }
