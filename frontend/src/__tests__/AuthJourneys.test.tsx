@@ -174,15 +174,19 @@ describe('Parcours d authentification — bout en bout', () => {
     expect(localStorage.getItem('user')).toContain('"activeRole":"FAISEUR"');
   });
 
-  it('inscription → transmet le plan sélectionné depuis le catalogue', async () => {
+  it('inscription → transmet le plan sélectionné et les consentements RGPD', async () => {
     const user = userEvent.setup();
     renderJourney('/register?plan=GROWTH');
 
     await user.type(screen.getByPlaceholderText('Jean'), 'Jean');
     await user.type(screen.getByPlaceholderText('Kouassi'), 'Kouassi');
     await user.type(screen.getByPlaceholderText('vous@email.com'), 'jean@example.com');
-    await user.type(screen.getByLabelText(/mot de passe/i), 'Password123');
+    await user.type(screen.getByLabelText(/^Mot de passe/), 'Password123');
     await user.type(screen.getByPlaceholderText('••••••••'), 'Password123');
+    // RGPD art. 7/9 : les trois consentements explicites sont obligatoires
+    await user.click(screen.getByLabelText(/conditions générales/i));
+    await user.click(screen.getByLabelText(/politique de confidentialité/i));
+    await user.click(screen.getByLabelText(/données religieuses/i));
     const submitButton = screen.getAllByRole('button').at(-1);
     expect(submitButton).toBeDefined();
     await user.click(submitButton!);
@@ -195,7 +199,30 @@ describe('Parcours d authentification — bout en bout', () => {
         lastName: 'Kouassi',
         phone: undefined,
         plan: 'growth',
+        consentCgu: true,
+        consentPrivacy: true,
+        consentArt9: true,
+        legalVersion: undefined,
       });
     });
+  });
+
+  it('inscription refusée sans consentements (cases laissées vides)', async () => {
+    const user = userEvent.setup();
+    renderJourney('/register?plan=DISCOVERY');
+
+    await user.type(screen.getByPlaceholderText('Jean'), 'Jean');
+    await user.type(screen.getByPlaceholderText('Kouassi'), 'Kouassi');
+    await user.type(screen.getByPlaceholderText('vous@email.com'), 'jean@example.com');
+    await user.type(screen.getByLabelText(/^Mot de passe/), 'Password123');
+    await user.type(screen.getByPlaceholderText('••••••••'), 'Password123');
+    const submitButton = screen.getAllByRole('button').at(-1);
+    await user.click(submitButton!);
+
+    // Blocage côté client : aucune requête /auth/register ne part
+    await waitFor(() => {
+      expect(screen.getByText(/accepter les CGU/i)).toBeInTheDocument();
+    });
+    expect(apiPost).not.toHaveBeenCalledWith('/auth/register', expect.anything());
   });
 });

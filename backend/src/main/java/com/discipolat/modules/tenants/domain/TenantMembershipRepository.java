@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -73,4 +74,39 @@ public interface TenantMembershipRepository extends JpaRepository<TenantMembersh
     long countByTenantId(UUID tenantId);
 
     long countByStatus(MembershipStatus status);
+
+    @Query(value = """
+        SELECT
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'ACTIVE') as active,
+            COUNT(*) FILTER (WHERE status = 'PENDING') as pending,
+            COUNT(*) FILTER (WHERE status = 'SUSPENDED') as suspended,
+            COUNT(*) FILTER (WHERE status = 'REVOKED') as revoked
+        FROM tenant_memberships
+        """, nativeQuery = true)
+    Map<String, Object> getDashboardStats();
+
+    @Query(value = """
+        SELECT
+            tm.tenant_id,
+            COUNT(*) as count
+        FROM tenant_memberships tm
+        WHERE tm.status = 'ACTIVE'
+        GROUP BY tm.tenant_id
+        ORDER BY count DESC
+        LIMIT 100
+        """, nativeQuery = true)
+    List<Map<String, Object>> getTopTenantsByMembershipCount();
+
+    @Query(value = """
+        SELECT
+            r.key as role,
+            COUNT(*) as count
+        FROM tenant_memberships tm
+        JOIN roles r ON r.id = tm.role_id
+        WHERE tm.status = 'ACTIVE'
+        GROUP BY r.key
+        ORDER BY count DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> getActiveMembershipsByRole();
 }

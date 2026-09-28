@@ -55,6 +55,12 @@ dist-ts/
 tsconfig.tsbuildinfo
 BOOT-INF
 
+# Fichiers de travail locaux (jamais commités)
+token.tmp
+*.tmp
+app-debug.apk
+*.apk
+
 # Large reference documents (keep locally, not in repo)
 docs/PRMPT.pdf
 docs/PRMPT.txt

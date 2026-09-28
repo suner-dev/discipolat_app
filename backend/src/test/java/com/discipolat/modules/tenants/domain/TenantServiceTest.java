@@ -135,6 +135,9 @@ class TenantServiceTest {
     void list_shouldReturnAllTenantsOrderedByCreation() {
         Tenant a = tenant(UUID.randomUUID(), "a", "free");
         Tenant b = tenant(UUID.randomUUID(), "b", "free");
+        // Horodatages distincts et explicites : tri par date de création.
+        a.setCreatedAt(Instant.now().minusSeconds(120));
+        b.setCreatedAt(Instant.now());
         when(tenantRepository.findAll()).thenReturn(List.of(b, a));
 
         List<TenantResponse> tenants = tenantService.list();

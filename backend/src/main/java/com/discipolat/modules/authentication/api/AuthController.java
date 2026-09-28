@@ -66,9 +66,20 @@ public class AuthController {
 
         // Récupérer l'invite code depuis les headers (optionnel)
         String inviteCode = httpRequest.getHeader("X-Invite-Code");
-        
+
+        // Consentements RGPD obligatoires (validés par @AssertTrue sur le DTO) :
+        // la preuve (version + IP + user-agent) est conservée par le service.
+        com.discipolat.modules.platform.domain.TenantRegistrationService.ConsentInfo consent =
+                new com.discipolat.modules.platform.domain.TenantRegistrationService.ConsentInfo(
+                        Boolean.TRUE.equals(request.consentCgu()),
+                        Boolean.TRUE.equals(request.consentPrivacy()),
+                        Boolean.TRUE.equals(request.consentArt9()),
+                        request.legalVersion(),
+                        clientIp,
+                        httpRequest.getHeader("User-Agent"));
+
         authService.register(request.email(), request.password(), request.firstName(), request.lastName(),
-                request.phone(), inviteCode, request.plan());
+                request.phone(), inviteCode, request.plan(), consent);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "Demande d'église reçue. Elle sera examinée par un Super Admin.",

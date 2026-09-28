@@ -1,17 +1,20 @@
 package com.discipolat.modules.platform.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
+import com.discipolat.common.multitenancy.TenantAwareRedisManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,7 +28,10 @@ class PlatformFeatureFlagServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PlatformFeatureFlagService(repository);
+        // Pas de Redis dans ce test : l'ObjectProvider renvoie null → cache local uniquement
+        @SuppressWarnings("unchecked")
+        ObjectProvider<TenantAwareRedisManager> noRedis = mock(ObjectProvider.class);
+        service = new PlatformFeatureFlagService(repository, noRedis);
     }
 
     @Test

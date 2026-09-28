@@ -83,6 +83,29 @@ public class TenantRegistrationRequest {
     @Column(name = "reviewed_at")
     private Instant reviewedAt;
 
+    // ── Preuve de consentement RGPD (capturée à la souscription, art. 7) ──
+
+    @Column(name = "consent_terms_version", length = 20)
+    private String consentTermsVersion;
+
+    @Column(name = "consent_cgu", nullable = false)
+    @lombok.Builder.Default
+    private boolean consentCgu = false;
+
+    @Column(name = "consent_privacy", nullable = false)
+    @lombok.Builder.Default
+    private boolean consentPrivacy = false;
+
+    @Column(name = "consent_art9", nullable = false)
+    @lombok.Builder.Default
+    private boolean consentArt9 = false;
+
+    @Column(name = "consent_ip", length = 64)
+    private String consentIp;
+
+    @Column(name = "consent_given_at")
+    private Instant consentGivenAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

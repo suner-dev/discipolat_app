@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Check, X, ArrowRight, Zap, Shield, Bot, AlertCircle } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Check, X, ArrowRight, Zap, Shield, Bot, AlertCircle, CreditCard, Loader2 } from 'lucide-react';
 import { tText, useI18n, type Locale } from '@/i18n';
 import api, { getErrorMessage } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PriceView {
   amount: number;
@@ -218,10 +219,46 @@ const toPlanView = (plan: PublicPlan, locale: Locale): PlanView => {
 
 export default function PricingPage() {
   const { locale } = useI18n();
+  const { isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
   const [plans, setPlans] = useState<PlanView[]>(FALLBACK_PLANS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
+  // Stripe : CTA de souscription par carte visibles seulement si la caisse
+  // en ligne est activée côté serveur (STRIPE_SECRET_KEY configurée).
+  const [stripeEnabled, setStripeEnabled] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const cancelled = searchParams.get('checkout') === 'cancelled';
+
+  useEffect(() => {
+    let active = true;
+    api.get<{ stripeEnabled: boolean }>('/public/billing/status')
+      .then(({ data }) => { if (active) setStripeEnabled(Boolean(data?.stripeEnabled)); })
+      .catch(() => { if (active) setStripeEnabled(false); });
+    return () => { active = false; };
+  }, []);
+
+  const subscribeWithStripe = async (planId: string) => {
+    try {
+      setCheckoutBusy(planId);
+      setCheckoutError(null);
+      const { data } = await api.post<{ url: string }>('/billing/stripe/checkout', {
+        planKey: planId.toUpperCase(),
+        billingCycle: 'monthly',
+      });
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        setCheckoutError('Réponse de caisse inattendue, réessayez.');
+        setCheckoutBusy(null);
+      }
+    } catch (err) {
+      setCheckoutError(getErrorMessage(err));
+      setCheckoutBusy(null);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -260,6 +297,17 @@ export default function PricingPage() {
           <div role="alert" className="mx-auto mb-4 flex max-w-2xl items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>Catalogue momentanément indisponible : {error}</span>
+          </div>
+        )}
+        {cancelled && (
+          <div role="status" className="mx-auto mb-4 flex max-w-2xl items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
+            Paiement annulé — votre plan actuel reste inchangé.
+          </div>
+        )}
+        {checkoutError && (
+          <div role="alert" className="mx-auto mb-4 flex max-w-2xl items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {checkoutError}
           </div>
         )}
         {!loading && !error && usingFallback && (
@@ -357,6 +405,20 @@ export default function PricingPage() {
                 Choisir {tText(plan.name)}
                 <ArrowRight className="inline ml-2 w-4 h-4" />
               </Link>
+              {/* Souscription par carte (Stripe) — visible si caisse activée + session admin */}
+              {stripeEnabled && isAuthenticated && plan.id !== 'discovery' && (
+                <button
+                  type="button"
+                  onClick={() => void subscribeWithStripe(plan.id)}
+                  disabled={checkoutBusy !== null}
+                  className="mt-3 inline-flex w-full items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
+                >
+                  {checkoutBusy === plan.id
+                    ? <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                    : <CreditCard className="mr-2 w-4 h-4" />}
+                  Souscrire en ligne
+                </button>
+              )}
             </article>
           ))}
         </div>

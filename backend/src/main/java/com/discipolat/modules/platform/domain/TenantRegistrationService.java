@@ -5,6 +5,8 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.compliance.domain.ComplianceService;
+import com.discipolat.modules.compliance.domain.LegalDocumentService;
 import com.discipolat.modules.tenants.api.CreateTenantRequest;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.domain.MembershipScopeType;
@@ -45,6 +47,8 @@ public class TenantRegistrationService {
     private final RoleRepository roleRepository;
     private final TenantMembershipRepository membershipRepository;
     private final AuditService auditService;
+    private final ComplianceService complianceService;
+    private final LegalDocumentService legalDocumentService;
 
     public TenantRegistrationService(TenantRegistrationRequestRepository requestRepository,
                                      UserRepository userRepository,
@@ -53,7 +57,9 @@ public class TenantRegistrationService {
                                      OrganizationNodeService organizationNodeService,
                                      RoleRepository roleRepository,
                                      TenantMembershipRepository membershipRepository,
-                                     AuditService auditService) {
+                                     AuditService auditService,
+                                     ComplianceService complianceService,
+                                     LegalDocumentService legalDocumentService) {
         this.requestRepository = requestRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -62,17 +68,33 @@ public class TenantRegistrationService {
         this.roleRepository = roleRepository;
         this.membershipRepository = membershipRepository;
         this.auditService = auditService;
+        this.complianceService = complianceService;
+        this.legalDocumentService = legalDocumentService;
     }
+
+    /**
+     * Consentements légaux capturés à la souscription (RGPD art. 7 : preuve
+     * horodatée avec version des documents, IP et user-agent).
+     */
+    public record ConsentInfo(boolean cgu, boolean privacy, boolean art9,
+                              String termsVersion, String ip, String userAgent) {}
 
     @Transactional
     public TenantRegistrationRequest submit(String email, String rawPassword, String firstName,
                                              String lastName, String phone) {
-        return submit(email, rawPassword, firstName, lastName, phone, null);
+        return submit(email, rawPassword, firstName, lastName, phone, null, null);
     }
 
     @Transactional
     public TenantRegistrationRequest submit(String email, String rawPassword, String firstName,
                                              String lastName, String phone, String requestedPlan) {
+        return submit(email, rawPassword, firstName, lastName, phone, requestedPlan, null);
+    }
+
+    @Transactional
+    public TenantRegistrationRequest submit(String email, String rawPassword, String firstName,
+                                             String lastName, String phone, String requestedPlan,
+                                             ConsentInfo consent) {
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         TenantRegistrationRequest request = requestRepository.findByEmail(normalizedEmail)
                 .orElseGet(() -> TenantRegistrationRequest.builder().email(normalizedEmail).build());
@@ -104,6 +126,21 @@ public class TenantRegistrationService {
         request.setDecisionReason(null);
         request.setReviewedAt(null);
         request.setCreatedAt(Instant.now());
+        // Preuve de consentement — rejeter toute demande sans les 3 consentements
+        if (consent == null || !consent.cgu() || !consent.privacy() || !consent.art9()) {
+            throw new BusinessRuleException(
+                    "Les consentements CGU, confidentialité et données religieuses (RGPD art. 9) sont obligatoires",
+                    "CONSENT_REQUIRED");
+        }
+        String version = consent.termsVersion() != null && !consent.termsVersion().isBlank()
+                ? consent.termsVersion()
+                : legalDocumentService.currentTermsVersion();
+        request.setConsentCgu(true);
+        request.setConsentPrivacy(true);
+        request.setConsentArt9(true);
+        request.setConsentTermsVersion(version);
+        request.setConsentIp(consent.ip());
+        request.setConsentGivenAt(Instant.now());
         return requestRepository.save(request);
     }
 
@@ -163,6 +200,21 @@ public class TenantRegistrationService {
             request.setDecisionReason(reason);
             request.setReviewedAt(Instant.now());
             requestRepository.save(request);
+            // Matérialiser les consentements capturés à la souscription dans le
+            // journal RGPD du tenant (preuve art. 7 : version + IP + horodatage).
+            if (request.isConsentCgu()) {
+                complianceService.logConsent(owner.getId(), "CGU", true,
+                        "Accepté à la souscription", request.getConsentTermsVersion(), request.getConsentIp(), null);
+            }
+            if (request.isConsentPrivacy()) {
+                complianceService.logConsent(owner.getId(), "PRIVACY", true,
+                        "Accepté à la souscription", request.getConsentTermsVersion(), request.getConsentIp(), null);
+            }
+            if (request.isConsentArt9()) {
+                complianceService.logConsent(owner.getId(), "CONSENT_ART9", true,
+                        "Consentement explicite art. 9 — accepté à la souscription",
+                        request.getConsentTermsVersion(), request.getConsentIp(), null);
+            }
             auditService.log(actorId, tenantId, "TENANT_REGISTRATION_APPROVED", "TENANT", tenantId,
                     "SUCCESS", Map.of("requestId", requestId.toString(), "email", request.getEmail()), null, null, null);
             return new ApprovalResult(request, tenant, church, owner);
