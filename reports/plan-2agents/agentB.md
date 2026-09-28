@@ -252,3 +252,26 @@ identiques** à mon `frontend/src/types/onboarding.ts`. Aucun écart de contrat 
 Intersection des fichiers modifiés par A et par moi : **vide**. Aucun conflit de zone.
 `frontend/dist-ts/` (3 fichiers de build déjà trackés avant la campagne) restaurés à leur
 état d'origine `d730771` pour ne pas polluer l'artefact de build.
+
+---
+
+## B7 (partie 1) — Service mobile du wizard d'onboarding
+
+- **Statut : DONE** (service + modèle + 13 tests)
+- **Fichiers :**
+  - NEW `mobile/lib/models/onboarding_step.dart` (181 l.) — parsing **strict** : champ manquant
+    ou valeur hors énumération → `FormatException`, jamais de dégradation silencieuse
+  - NEW `mobile/lib/data/services/tenant_onboarding_service.dart` (81 l.) — 7 opérations du §3.1
+  - NEW `mobile/test/tenant_onboarding_service_test.dart` — **13 cas, tous verts**
+- **Preuve :** `flutter test test/tenant_onboarding_service_test.dart` → **13 passed, EXIT 0**
+- **Points prouvés par les tests :**
+  - URLs exactes : `/onboarding-wizard`, `/progress`, `/status`, `POST /{id}/start|complete|skip`
+  - `data` envoyé comme **objet JSON** (`Map`), jamais comme String — conforme au DTO backend
+  - D7 : `completeStep()` sans data envoie `{}` (corps vide), pas d'erreur
+  - `skipStep()` n'envoie `reason` que s'il est non vide
+  - tri par `stepOrder` ; `completedData` exposé en `Map` (pas en String)
+  - **parsing strict** : champ manquant / `stepType` inconnu / statut inconnu / réponse
+    non-liste → `FormatException` (4 tests dédiés)
+- **Note d'alignement :** le fake de test suit la convention du dépôt (`Response` **dio** +
+  `RequestOptions`), et non `http.Response` — premier essai.font un échec de compilation
+ revealé et corrigé.
