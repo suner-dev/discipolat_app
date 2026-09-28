@@ -5,6 +5,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.authentication.domain.EmailService;
 import com.discipolat.modules.compliance.domain.ComplianceService;
 import com.discipolat.modules.compliance.domain.LegalDocumentService;
 import com.discipolat.modules.tenants.api.CreateTenantRequest;
@@ -49,6 +50,8 @@ public class TenantRegistrationService {
     private final AuditService auditService;
     private final ComplianceService complianceService;
     private final LegalDocumentService legalDocumentService;
+    private final EmailService emailService;
+    private final String frontendUrl;
 
     public TenantRegistrationService(TenantRegistrationRequestRepository requestRepository,
                                      UserRepository userRepository,
@@ -59,7 +62,9 @@ public class TenantRegistrationService {
                                      TenantMembershipRepository membershipRepository,
                                      AuditService auditService,
                                      ComplianceService complianceService,
-                                     LegalDocumentService legalDocumentService) {
+                                     LegalDocumentService legalDocumentService,
+                                     EmailService emailService,
+                                     @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.requestRepository = requestRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -70,6 +75,8 @@ public class TenantRegistrationService {
         this.auditService = auditService;
         this.complianceService = complianceService;
         this.legalDocumentService = legalDocumentService;
+        this.emailService = emailService;
+        this.frontendUrl = frontendUrl;
     }
 
     /**
@@ -96,7 +103,7 @@ public class TenantRegistrationService {
                                              String lastName, String phone, String requestedPlan,
                                              ConsentInfo consent) {
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
-        TenantRegistrationRequest request = requestRepository.findByEmail(normalizedEmail)
+        TenantRegistrationRequest request = requestRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseGet(() -> TenantRegistrationRequest.builder().email(normalizedEmail).build());
         if (request.getStatus() != null && request.getStatus() != TenantRegistrationStatus.REJECTED) {
             throw new BusinessRuleException("Une demande existe déjà pour cet email", "REGISTRATION_EXISTS");
@@ -126,7 +133,9 @@ public class TenantRegistrationService {
         request.setDecisionReason(null);
         request.setReviewedAt(null);
         request.setCreatedAt(Instant.now());
-        // Preuve de consentement — rejeter toute demande sans les 3 consentements
+        // Preuve de consentement — rejeter toute demande sans les 3 consentements.
+        // Ce controle est un PREALABLE : il doit s'executer AVANT tout
+        // enregistrement, sinon une demande sans consentement resterait en base.
         if (consent == null || !consent.cgu() || !consent.privacy() || !consent.art9()) {
             throw new BusinessRuleException(
                     "Les consentements CGU, confidentialité et données religieuses (RGPD art. 9) sont obligatoires",
@@ -141,7 +150,47 @@ public class TenantRegistrationService {
         request.setConsentTermsVersion(version);
         request.setConsentIp(consent.ip());
         request.setConsentGivenAt(Instant.now());
-        return requestRepository.save(request);
+
+        TenantRegistrationRequest saved = requestRepository.save(request);
+
+        // Constat M2 : la soumission etait 100% silencieuse. L'appelant n'avait
+        // AUCUNE preuve que sa demande etait arrivee. L'email part APRES
+        // l'enregistrement reussi : on ne notifie jamais une demande inexistante.
+        emailService.sendRegistrationReceived(normalizedEmail, request.getFirstName());
+        return saved;
+    }
+
+    /**
+     * Constat M2 / contrat §3.3 — statut d'une demande d'inscription.
+     *
+     * <p>Ne divulgue ni mot de passe, ni nom d'organisation, ni compte : seul le
+     * statut de la demande. Une adresse inconnue renvoie {@code NONE}, ce qui est
+     * indistinguishable d'une adresse simplement pas encore demandée.
+     *
+     * <p>La recherche est <b>insensible a la casse</b> : l'email est une identite
+     * globale unique (constat B4 / migration V185).
+     */
+    @Transactional(readOnly = true)
+    public com.discipolat.modules.authentication.api.RegistrationStatusResponse registrationStatus(String email) {
+        if (email == null || email.isBlank()) {
+            return new com.discipolat.modules.authentication.api.RegistrationStatusResponse(
+                    "NONE", null, null, false);
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        TenantRegistrationRequest request = requestRepository
+                .findByEmailIgnoreCase(normalizedEmail)
+                .orElse(null);
+        if (request == null || request.getStatus() == null) {
+            return new com.discipolat.modules.authentication.api.RegistrationStatusResponse(
+                    "NONE", null, null, false);
+        }
+        TenantRegistrationStatus status = request.getStatus();
+        String reason = status == TenantRegistrationStatus.REJECTED ? request.getDecisionReason() : null;
+        return new com.discipolat.modules.authentication.api.RegistrationStatusResponse(
+                status.name(),
+                request.getReviewedAt(),
+                reason,
+                status == TenantRegistrationStatus.APPROVED);
     }
 
     @Transactional(readOnly = true)
@@ -217,6 +266,8 @@ public class TenantRegistrationService {
             }
             auditService.log(actorId, tenantId, "TENANT_REGISTRATION_APPROVED", "TENANT", tenantId,
                     "SUCCESS", Map.of("requestId", requestId.toString(), "email", request.getEmail()), null, null, null);
+            emailService.sendRegistrationApproved(
+                    request.getEmail(), request.getFirstName(), frontendUrl + "/login");
             return new ApprovalResult(request, tenant, church, owner);
         } finally {
             if (previousTenantId != null) {
@@ -234,7 +285,10 @@ public class TenantRegistrationService {
         request.setReviewerId(SecurityUtils.getCurrentUserId());
         request.setDecisionReason(reason);
         request.setReviewedAt(Instant.now());
-        return requestRepository.save(request);
+        TenantRegistrationRequest rejected = requestRepository.save(request);
+        emailService.sendRegistrationRejected(
+                request.getEmail(), request.getFirstName(), reason);
+        return rejected;
     }
 
     private TenantRegistrationRequest requirePending(UUID requestId) {

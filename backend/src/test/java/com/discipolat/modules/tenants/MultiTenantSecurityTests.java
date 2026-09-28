@@ -843,4 +843,170 @@ class MultiTenantSecurityTests {
             assertThat(authzService.can(familyLeader.getId(), tenantA.getId(), "MEMBER_READ", MembershipScopeType.FAMILY, UUID.randomUUID())).isFalse();
         }
     }
+
+    // ==================== ONBOARDING WIZARD & SUBSCRIPTION (constat A11) ====================
+
+    @Nested
+    @DisplayName("Onboarding Wizard Isolation")
+    class OnboardingWizardSecurityTests {
+
+        @Autowired com.discipolat.modules.onboarding.domain.OnboardingWizardRepository wizardRepository;
+        @Autowired com.discipolat.modules.onboarding.domain.OnboardingStepActions stepActions;
+        @Autowired com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+        private com.discipolat.modules.onboarding.domain.OnboardingWizardService wizard(UUID tenantId) {
+            return new com.discipolat.modules.onboarding.domain.OnboardingWizardService(
+                    wizardRepository, stepActions, objectMapper,
+                    emptyPort(), emptyPort(),
+                    new com.discipolat.common.infrastructure.security.SecurityUtils(null));
+        }
+
+        private com.discipolat.modules.onboarding.domain.OnboardingWizardStep stepOfTenantA() {
+            com.discipolat.modules.onboarding.domain.OnboardingWizardStep step =
+                    new com.discipolat.modules.onboarding.domain.OnboardingWizardStep();
+            step.setTenantId(tenantA.getId());
+            step.setStepType(com.discipolat.modules.onboarding.domain.OnboardingWizardStep.StepType.CHURCH_IDENTITY);
+            step.setStepOrder(0);
+            step.setStatus(com.discipolat.modules.onboarding.domain.OnboardingWizardStep.Status.PENDING);
+            return wizardRepository.save(step);
+        }
+
+        @Test
+        @DisplayName("[A11] Tenant B cannot read the wizard progress of tenant A")
+        void tenantBCannotReadProgressOfTenantA() {
+            stepOfTenantA();
+
+            // Tenant B dans SON contexte : il ne voit que ses propres étapes,
+            // qui sont absentes de sa base.
+            TenantContext.setTenantId(tenantB.getId());
+            authenticateAs(userB_admin.getId(), "TENANT_OWNER");
+
+            var progress = wizard(tenantB.getId()).getProgress();
+
+            assertThat(progress.steps())
+                    .as("le tenant B ne doit voir AUCUNE étape du tenant A")
+                    .allSatisfy(step ->
+                            assertThat(step.id()).isNotIn(
+                                    wizardRepository.findByTenantIdOrderByStepOrderAsc(tenantA.getId())
+                                            .stream().map(com.discipolat.modules.onboarding.domain.OnboardingWizardStep::getId)
+                                            .toList()));
+        }
+
+        @Test
+        @DisplayName("[A11] Tenant B cannot complete a step of tenant A (404 STEP_NOT_FOUND)")
+        void tenantBCannotCompleteStepOfTenantA() {
+            var stepA = stepOfTenantA();
+
+            TenantContext.setTenantId(tenantB.getId());
+            authenticateAs(userB_admin.getId(), "TENANT_OWNER");
+
+            assertThatThrownBy(() -> wizard(tenantB.getId()).completeStep(stepA.getId(), Map.of()))
+                    .isInstanceOf(com.discipolat.common.exception.DomainException.class)
+                    .satisfies(thrown -> {
+                        var problem = ((com.discipolat.common.exception.DomainException) thrown)
+                                .toProblemDetail();
+                        assertThat(problem.getStatus()).isEqualTo(404);
+                        // Le refus ne doit pas révéler si l'étape existe.
+                        assertThat(problem.getTitle()).isEqualTo("STEP_NOT_FOUND");
+                        assertThat(problem.getDetail())
+                                .doesNotContain(tenantA.getName())
+                                .doesNotContain("Tenant A")
+                                .doesNotContain("CHURCH_IDENTITY");
+                    });
+        }
+
+        @Test
+        @DisplayName("[A11] Tenant B cannot skip a step of tenant A")
+        void tenantBCannotSkipStepOfTenantA() {
+            var stepA = stepOfTenantA();
+
+            TenantContext.setTenantId(tenantB.getId());
+            authenticateAs(userB_admin.getId(), "TENANT_OWNER");
+
+            assertThatThrownBy(() -> wizard(tenantB.getId()).skipStep(stepA.getId(), "raison"))
+                    .isInstanceOf(com.discipolat.common.exception.DomainException.class)
+                    .satisfies(thrown -> assertThat(((com.discipolat.common.exception.DomainException) thrown)
+                            .toProblemDetail().getTitle()).isEqualTo("STEP_NOT_FOUND"));
+        }
+
+        @Test
+        @DisplayName("[A11] Tenant B cannot start a step of tenant A")
+        void tenantBCannotStartStepOfTenantA() {
+            var stepA = stepOfTenantA();
+
+            TenantContext.setTenantId(tenantB.getId());
+            authenticateAs(userB_admin.getId(), "TENANT_OWNER");
+
+            assertThatThrownBy(() -> wizard(tenantB.getId()).startStep(stepA.getId()))
+                    .isInstanceOf(com.discipolat.common.exception.DomainException.class)
+                    .satisfies(thrown -> assertThat(((com.discipolat.common.exception.DomainException) thrown)
+                            .toProblemDetail().getTitle()).isEqualTo("STEP_NOT_FOUND"));
+        }
+
+        @Test
+        @DisplayName("[A11] A non-admin member is not a tenant admin for the wizard")
+        void nonAdminMemberIsNotTenantAdmin() {
+            TenantContext.setTenantId(tenantA.getId());
+            authenticateAs(userA_member.getId(), "MEMBER");
+
+            assertThat(authzService.isTenantAdmin()).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Platform & Subscription Endpoints")
+    class PlatformAndSubscriptionSecurityTests {
+
+        @Test
+        @DisplayName("[A11] A tenant admin is NOT a platform super admin (GET /tenants/*)")
+        void tenantAdminIsNotPlatformSuperAdmin() {
+            TenantContext.setTenantId(tenantA.getId());
+            authenticateAs(userA_admin.getId(), "TENANT_OWNER");
+
+            assertThat(authzService.isPlatformSuperAdmin()).isFalse();
+        }
+
+        @Test
+        @DisplayName("[A11] A regular member is not a tenant admin (abonnement)")
+        void regularMemberIsNotTenantAdmin() {
+            TenantContext.setTenantId(tenantA.getId());
+            authenticateAs(userA_member.getId(), "MEMBER");
+
+            assertThat(authzService.isTenantAdmin()).isFalse();
+        }
+
+        @Test
+        @DisplayName("[A11] The tenant owner IS a tenant admin (abonnement)")
+        void tenantOwnerIsTenantAdmin() {
+            TenantContext.setTenantId(tenantA.getId());
+            authenticateAs(userA_admin.getId(), "TENANT_OWNER");
+
+            assertThat(authzService.isTenantAdmin()).isTrue();
+        }
+    }
+
+    private static <T> org.springframework.beans.factory.ObjectProvider<T> emptyPort() {
+        return new org.springframework.beans.factory.ObjectProvider<>() {
+            @Override
+            public T getObject() {
+                return null;
+            }
+
+            @Override
+            public T getIfAvailable() {
+                return null;
+            }
+
+            @Override
+            public T getIfUnique() {
+                return null;
+            }
+
+            @Override
+            public java.util.Iterator<T> iterator() {
+                return java.util.Collections.emptyIterator();
+            }
+        };
+    }
+
 }

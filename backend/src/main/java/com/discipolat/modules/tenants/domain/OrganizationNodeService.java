@@ -23,16 +23,19 @@ public class OrganizationNodeService {
     private final OrganizationNodeRepository nodeRepository;
     private final InvitationRepository invitationRepository;
     private final AuditService auditService;
+    private final QuotaService quotaService;
     private final EntityPropagationPublisher propagationPublisher;
 
     public OrganizationNodeService(OrganizationNodeRepository nodeRepository,
                                    InvitationRepository invitationRepository,
                                    AuditService auditService,
-                                   EntityPropagationPublisher propagationPublisher) {
+                                   EntityPropagationPublisher propagationPublisher,
+                                   QuotaService quotaService) {
         this.nodeRepository = nodeRepository;
         this.invitationRepository = invitationRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
+        this.quotaService = quotaService;
     }
 
     @Transactional(readOnly = true)
@@ -87,6 +90,19 @@ public class OrganizationNodeService {
      */
     public OrganizationNode createNode(UUID tenantId, OrganizationNodeType type, String name, String code,
                                        UUID parentId, UUID responsibleId, UUID creatorId) {
+        // Constat M3 : `checkCanCreateChurch` existait mais n'était appelé QUE par
+        // l'endpoint de simulation `QuotaController` — la création réelle
+        // n'était donc jamais bornée. On applique le quota ici.
+        //   ROOT_CHURCH / SUB_CHURCH -> quota `churches`
+        //   CAMPUS                     -> quota `campuses`
+        switch (type) {
+            case ROOT_CHURCH, SUB_CHURCH -> quotaService.checkCanCreateChurch(tenantId, type);
+            case CAMPUS -> quotaService.checkCanCreateCampus(tenantId);
+            default -> {
+                // Les autres types (DEPARTMENT, GROUP, …) gardent leur propre
+                // quota appliqué par leurs propres services.
+            }
+        }
         // Valider le parent si fourni
         UUID effectiveParentId = parentId;
         Integer level = 0;

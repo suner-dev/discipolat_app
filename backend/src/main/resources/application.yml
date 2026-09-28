@@ -175,6 +175,12 @@ app:
     switch-role-capacity: 30
     switch-role-refill: 30
     switch-role-period-minutes: 1
+    # Suivi d'une demande d'inscription (endpoint PUBLIC) : 3 requetes / 5 min / IP.
+    # Sans cette borne, la page « Suivre ma demande » devient un oracle
+    # d'existence de compte pour n'importe quelle adresse email.
+    registration-status-capacity: 3
+    registration-status-refill: 3
+    registration-status-period-minutes: 5
 
   scheduler:
     absence-check-cron: "0 0 */6 * * *"

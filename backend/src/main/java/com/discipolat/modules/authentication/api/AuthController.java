@@ -7,6 +7,7 @@ import com.discipolat.modules.authentication.domain.AuthService;
 import com.discipolat.modules.tenants.domain.AuthorizationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,15 +27,51 @@ public class AuthController {
     private final AuthService authService;
     private final PerIpRateLimiter rateLimiter;
     private final AuthorizationService authorizationService;
+    private final com.discipolat.modules.platform.domain.TenantRegistrationService tenantRegistrationService;
 
     public AuthController(
             AuthService authService,
             PerIpRateLimiter rateLimiter,
-            AuthorizationService authorizationService
+            AuthorizationService authorizationService,
+            com.discipolat.modules.platform.domain.TenantRegistrationService tenantRegistrationService
     ) {
         this.authService = authService;
         this.rateLimiter = rateLimiter;
         this.authorizationService = authorizationService;
+        this.tenantRegistrationService = tenantRegistrationService;
+    }
+
+    /**
+     * Suivi d'une demande d'inscription (constat M2, contrat §3.3).
+     *
+     * <p>Endpoint PUBLIC : aucune authentification requise, donc trois
+     * protections obligatoires —
+     * <ol>
+     *   <li><b>rate-limit par IP</b> (3 requêtes / 5 min), sinon la page devient
+     *       un oracle permettant d'énumérer les adresses inscrites ;</li>
+     *   <li><b>{@code Cache-Control: no-store}</b>, sinon un cache partagé
+     *       (proxy, CDN) pourrait servir la réponse d'un utilisateur à un autre ;</li>
+     *   <li><b>aucune fuite</b> : ni mot de passe, ni nom d'organisation, ni
+     *       compte — uniquement le statut de la demande.</li>
+     * </ol>
+     */
+    @PostMapping("/registration-status")
+    public ResponseEntity<RegistrationStatusResponse> registrationStatus(
+            @RequestBody RegistrationStatusRequest request,
+            HttpServletRequest httpRequest) {
+        String clientIp = PerIpRateLimiter.extractClientIp(httpRequest);
+        RateLimitResult rl = rateLimiter.tryConsumeRegistrationStatus(clientIp);
+        if (!rl.allowed()) {
+            return ResponseEntity.status(429)
+                    .cacheControl(CacheControl.noStore())
+                    .header(HEADER_RETRY_AFTER, String.valueOf(rl.retryAfterSeconds()))
+                    .header(HEADER_RATE_LIMIT_REMAINING, "0")
+                    .body(new RegistrationStatusResponse("NONE", null, null, false));
+        }
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .header(HEADER_RATE_LIMIT_REMAINING, String.valueOf(rl.remainingTokens()))
+                .body(tenantRegistrationService.registrationStatus(request.email()));
     }
 
     @PostMapping("/login")

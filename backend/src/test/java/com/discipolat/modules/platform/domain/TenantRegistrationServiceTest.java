@@ -61,6 +61,8 @@ class TenantRegistrationServiceTest {
     private ComplianceService complianceService;
     @Mock
     private LegalDocumentService legalDocumentService;
+    @Mock
+    private com.discipolat.modules.authentication.domain.EmailService emailService;
 
     @AfterEach
     void clearSecurityContext() {
@@ -73,7 +75,7 @@ class TenantRegistrationServiceTest {
 
     @Test
     void publicSubmissionDoesNotCreateTenantOrUser() {
-        when(requestRepository.findByEmail("demandeur@example.com")).thenReturn(Optional.empty());
+        when(requestRepository.findByEmailIgnoreCase("demandeur@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("password123")).thenReturn("hashed-password");
         when(requestRepository.save(any(TenantRegistrationRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
         TenantRegistrationService service = service();
@@ -95,20 +97,24 @@ class TenantRegistrationServiceTest {
 
     @Test
     void submissionWithoutConsentsIsRejected() {
-        when(requestRepository.findByEmail("sans-consentement@example.com")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("password123")).thenReturn("hashed-password");
+        // `findByEmailIgnoreCase` et non `findByEmail` : l'email est une identite
+        // globale unique insensible a la casse (constat B4 / V185).
+        when(requestRepository.findByEmailIgnoreCase("sans-consentement@example.com"))
+                .thenReturn(Optional.empty());
         TenantRegistrationService service = service();
 
         assertThatThrownBy(() -> service.submit(
                 "sans-consentement@example.com", "password123", "Jean", "Test", null, null, null))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("consentements");
+        // Aucune ecriture en base : une demande sans consentement ne doit pas
+        // laisser de trace, et son email de recu ne doit donc pas partir non plus.
         verify(requestRepository, never()).save(any(TenantRegistrationRequest.class));
     }
 
     @Test
     void publicSubmissionNormalizesTheSelectedPublicPlan() {
-        when(requestRepository.findByEmail("growth@example.com")).thenReturn(Optional.empty());
+        when(requestRepository.findByEmailIgnoreCase("growth@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("password123")).thenReturn("hashed-password");
         when(requestRepository.save(any(TenantRegistrationRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -167,6 +173,7 @@ class TenantRegistrationServiceTest {
     private TenantRegistrationService service() {
         return new TenantRegistrationService(requestRepository, userRepository, passwordEncoder,
                 tenantService, organizationNodeService, roleRepository, membershipRepository, auditService,
-                complianceService, legalDocumentService);
+                complianceService, legalDocumentService,
+                emailService, "https://app.example.com");
     }
 }

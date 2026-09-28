@@ -29,6 +29,7 @@ public class TenantSwitcherController {
     private final TenantSubscriptionRepository subscriptionRepository;
     private final SaasPlanRepository planRepository;
     private final TenantService tenantService;
+    private final TenantStatusGuard tenantStatusGuard;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenSessionService refreshTokenSessionService;
 
@@ -42,6 +43,7 @@ public class TenantSwitcherController {
                                     TenantSubscriptionRepository subscriptionRepository,
                                       SaasPlanRepository planRepository,
                                       TenantService tenantService,
+                                      TenantStatusGuard tenantStatusGuard,
                                       JwtTokenProvider jwtTokenProvider,
                                       RefreshTokenSessionService refreshTokenSessionService) {
         this.tenantRepository = tenantRepository;
@@ -54,6 +56,7 @@ public class TenantSwitcherController {
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
         this.tenantService = tenantService;
+        this.tenantStatusGuard = tenantStatusGuard;
         this.jwtTokenProvider = jwtTokenProvider;
         this.refreshTokenSessionService = refreshTokenSessionService;
     }
@@ -198,6 +201,12 @@ public class TenantSwitcherController {
         if (!hasAccess) {
             return ResponseEntity.status(403).body(Map.of("error", "Accès non autorisé à ce tenant"));
         }
+
+        // B1 : un tenant suspendu/annule ne doit jamais delivrer de JWT.
+        // Controleplace AVANT le changement de contexte et AVANT toute generation
+        // de jeton : si le statut est interdit, le ThreadLocal n'est pas pollue et
+        // aucun accessToken/refreshToken n'est produit.
+        tenantStatusGuard.assertAccessible(newTenantId);
 
         // Set new tenant context
         TenantContext.setTenantId(newTenantId);

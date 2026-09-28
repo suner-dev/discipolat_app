@@ -103,6 +103,16 @@ public class PerIpRateLimiter {
     @Value("${app.rate-limiting.invitation-accept-period-minutes:1}")
     private int invitationAcceptPeriodMinutes;
 
+    // §3.3 : consultation du statut d'une demande d'inscription.
+    // 3 requêtes / 5 minutes / IP : la page « Suivre ma demande » est publique
+    // et/devrait devenir un oracle d'existence de compte si elle n'était pas bornée.
+    @Value("${app.rate-limiting.registration-status-capacity:3}")
+    private int registrationStatusCapacity;
+    @Value("${app.rate-limiting.registration-status-refill:3}")
+    private int registrationStatusRefill;
+    @Value("${app.rate-limiting.registration-status-period-minutes:5}")
+    private int registrationStatusPeriodMinutes;
+
     private final MeterRegistry meterRegistry;
     private final boolean usingRedis;
     private final LettuceBasedProxyManager<byte[]> redisProxyManager;
@@ -114,12 +124,14 @@ public class PerIpRateLimiter {
     private Counter counterDemoRequestTotal;
     private Counter counterRegisterTotal;
     private Counter counterInvitationAcceptTotal;
+    private Counter counterRegistrationStatusTotal;
     private Counter counterLoginDenied, counterRefreshDenied, counterForgotPasswordDenied;
     private Counter counterResetPasswordDenied, counterActivateDenied, counterChangePasswordDenied;
     private Counter counterSwitchRoleDenied;
     private Counter counterDemoRequestDenied;
     private Counter counterRegisterDenied;
     private Counter counterInvitationAcceptDenied;
+    private Counter counterRegistrationStatusDenied;
 
     public PerIpRateLimiter(
             Optional<LettuceBasedProxyManager<byte[]>> redisProxyManager,
@@ -147,6 +159,7 @@ public class PerIpRateLimiter {
         counterDemoRequestTotal = buildCounter("demo_request", "total");
         counterRegisterTotal = buildCounter("register", "total");
         counterInvitationAcceptTotal = buildCounter("invitation_accept", "total");
+        counterRegistrationStatusTotal = buildCounter("registration_status", "total");
 
         counterLoginDenied = buildCounter("login", "denied");
         counterRefreshDenied = buildCounter("refresh", "denied");
@@ -158,6 +171,7 @@ public class PerIpRateLimiter {
         counterDemoRequestDenied = buildCounter("demo_request", "denied");
         counterRegisterDenied = buildCounter("register", "denied");
         counterInvitationAcceptDenied = buildCounter("invitation_accept", "denied");
+        counterRegistrationStatusDenied = buildCounter("registration_status", "denied");
     }
 
     private Counter buildCounter(String endpoint, String result) {
@@ -221,6 +235,16 @@ public class PerIpRateLimiter {
     public RateLimitResult tryConsumeRegister(String ip) {
         return consume("register", registerCapacity, registerRefill, registerPeriodMinutes, ip,
                 counterRegisterTotal, counterRegisterDenied);
+    }
+
+    /**
+     * Consultation du statut d'une demande d'inscription (endpoint public) :
+     * 3 requêtes / 5 minutes / IP (contrat §3.3).
+     */
+    public RateLimitResult tryConsumeRegistrationStatus(String ip) {
+        return consume("registration_status",
+                registrationStatusCapacity, registrationStatusRefill, registrationStatusPeriodMinutes, ip,
+                counterRegistrationStatusTotal, counterRegistrationStatusDenied);
     }
 
     public static String extractClientIp(HttpServletRequest request) {

@@ -7,6 +7,7 @@ import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.TenantService;
+import com.discipolat.modules.tenants.domain.TenantStatusGuard;
 import com.discipolat.modules.platform.domain.TenantRegistrationRequest;
 import com.discipolat.modules.platform.domain.TenantRegistrationService;
 import com.discipolat.modules.security.domain.RefreshTokenSessionService;
@@ -54,6 +55,8 @@ class AuthServiceTest {
     private TokenRevocationService tokenRevocationService;
     @Mock
     private RefreshTokenSessionService refreshTokenSessionService;
+    @Mock
+    private TenantStatusGuard tenantStatusGuard;
 
     private PasswordEncoder passwordEncoder;
     private AuthService authService;
@@ -68,7 +71,8 @@ class AuthServiceTest {
         passwordEncoder = new BCryptPasswordEncoder(4);
         authService = new AuthService(userRepository, jwtTokenProvider, passwordEncoder, securityUtils,
                  activationTokenRepository, passwordResetTokenRepository, emailService,
-                 tenantRegistrationService, tokenRevocationService, refreshTokenSessionService, "http://localhost:5173");
+                 tenantRegistrationService, tokenRevocationService, refreshTokenSessionService,
+                tenantStatusGuard, "http://localhost:5173");
 
         userId = UUID.randomUUID();
         testUser = User.builder()
@@ -93,7 +97,7 @@ class AuthServiceTest {
 
     @Test
     void login_WithValidCredentials_ShouldReturnAuthResult() {
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
         when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean(), any()))
                 .thenReturn("access-token");
         when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet(), any(), any()))
@@ -113,7 +117,7 @@ class AuthServiceTest {
 
     @Test
     void login_WithInvalidPassword_ShouldThrowBadCredentialsException() {
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         assertThrows(BadCredentialsException.class, () ->
@@ -127,7 +131,7 @@ class AuthServiceTest {
     @Test
     void login_WithInactiveUser_ShouldThrowBadCredentialsException() {
         testUser.setStatut(UserStatus.INACTIVE);
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
 
         // Password is correct but account is inactive - should throw after password check
         // Since password matches, it won't increment failed attempts, but will throw for inactive
@@ -139,7 +143,7 @@ class AuthServiceTest {
     @Test
     void login_ShouldLockAccountAfter5FailedAttempts() {
         testUser.setFailedLoginAttempts(4);
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         assertThrows(BadCredentialsException.class, () ->
@@ -153,7 +157,7 @@ class AuthServiceTest {
     @Test
     void login_ShouldRejectLockedAccount() {
         testUser.setAccountLockedUntil(java.time.Instant.now().plusSeconds(3600));
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
 
         assertThrows(BadCredentialsException.class, () ->
                 authService.login("test@discipolat.com", "password123")
@@ -240,6 +244,114 @@ class AuthServiceTest {
         verify(userRepository).save(argThat(u ->
                 passwordEncoder.matches("newPassword456", u.getPasswordHash())
         ));
+    }
+
+    // ===== Constat B1 : un tenant suspendu ne peut plus se connecter ni rafraichir =====
+
+    @Test
+    void login_OfSuspendedTenant_ShouldBeRefusedWith403AndContractCode() {
+        User suspendedTenantUser = User.builder()
+                .id(userId)
+                .email("test@discipolat.com")
+                .passwordHash(passwordEncoder.encode("password123"))
+                .firstName("Test")
+                .lastName("User")
+                .role(UserRole.PASTEUR)
+                .statut(UserStatus.ACTIVE)
+                .failedLoginAttempts(0)
+                .tenantId(TenantContext.getTenantId())
+                .build();
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com"))
+                .thenReturn(Optional.of(suspendedTenantUser));
+        // NB : `passwordEncoder` est un vrai BCryptPasswordEncoder dans ce test,
+        // le mot de passe doit donc etre le hash reel de "password123".
+        org.mockito.Mockito.doThrow(new DomainException(
+                        "Le service de cette église est suspendu. Contactez le support Discipolat.",
+                        org.springframework.http.HttpStatus.FORBIDDEN, "TENANT_SUSPENDED"))
+                .when(tenantStatusGuard).assertAccessible(TenantContext.getTenantId());
+
+        DomainException thrown = assertThrows(DomainException.class, () ->
+                authService.login("test@discipolat.com", "password123")
+        );
+
+        assertEquals("TENANT_SUSPENDED", thrown.toProblemDetail().getTitle());
+        assertEquals(403, thrown.toProblemDetail().getStatus());
+        // Aucun jeton ne doit avoir ete produit.
+        verify(jwtTokenProvider, never()).generateAccessToken(any(), any(), any(), any(), any(Boolean.class), any());
+        verify(jwtTokenProvider, never()).generateRefreshToken(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void login_OfActiveTenant_DoesNotTriggerAnyGuardRefusal() {
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(jwtTokenProvider.generateAccessToken(any(), any(), any(), any(), any(Boolean.class), any()))
+                .thenReturn("access");
+        when(jwtTokenProvider.generateRefreshToken(any(), any(), any(), any(), any(), any()))
+                .thenReturn("refresh");
+        when(jwtTokenProvider.getTokenExpiration(any())).thenReturn(java.time.Instant.now());
+
+        assertDoesNotThrow(() -> authService.login("test@discipolat.com", "password123"));
+
+        verify(tenantStatusGuard).assertAccessible(testUser.getTenantId());
+    }
+
+    @Test
+    void refreshToken_OfSuspendedTenant_ShouldBeRefusedBeforeAnyTokenIsIssued() {
+        User suspendedTenantUser = User.builder()
+                .id(userId)
+                .email("test@discipolat.com")
+                .passwordHash("hash")
+                .firstName("Test")
+                .lastName("User")
+                .role(UserRole.PASTEUR)
+                .statut(UserStatus.ACTIVE)
+                .failedLoginAttempts(0)
+                .tenantId(TenantContext.getTenantId())
+                .build();
+        when(jwtTokenProvider.validateToken("refresh")).thenReturn(true);
+        when(jwtTokenProvider.isRefreshToken("refresh")).thenReturn(true);
+        when(jwtTokenProvider.extractUserId("refresh")).thenReturn(userId);
+        when(jwtTokenProvider.extractRefreshFamilyId("refresh")).thenReturn(UUID.randomUUID());
+        when(userRepository.findById(userId)).thenReturn(Optional.of(suspendedTenantUser));
+        org.mockito.Mockito.doThrow(new DomainException(
+                        "Le service de cette église est suspendu. Contactez le support Discipolat.",
+                        org.springframework.http.HttpStatus.FORBIDDEN, "TENANT_SUSPENDED"))
+                .when(tenantStatusGuard).assertAccessible(TenantContext.getTenantId());
+
+        DomainException thrown = assertThrows(DomainException.class, () ->
+                authService.refreshToken("refresh")
+        );
+
+        assertEquals("TENANT_SUSPENDED", thrown.toProblemDetail().getTitle());
+        // La famille de jetons ne doit meme pas etre consommee.
+        verify(refreshTokenSessionService, never()).consume(any(), any(), any());
+        verify(jwtTokenProvider, never()).generateAccessToken(any(), any(), any(), any(), any(Boolean.class), any());
+        verify(jwtTokenProvider, never()).generateRefreshToken(any(), any(), any(), any(), any(), any());
+    }
+
+    // ===== A15 : convention (message, code) sur les erreurs du magic link =====
+
+    @Test
+    void magicLinkExpired_shouldExposeTheCodeInCodeAndTheFrenchTextInMessage() {
+        authService.generateMagicLink("inconnu@discipolat.com");
+
+        BusinessRuleException thrown = assertThrows(BusinessRuleException.class, () ->
+                authService.verifyMagicLink("token-inexistant"));
+
+        assertEquals("MAGIC_LINK_EXPIRED", thrown.getCode());
+        assertEquals("Lien magique invalide ou expiré", thrown.getMessage());
+    }
+
+    @Test
+    void magicLinkUnknownUser_shouldExposeTheCodeInCodeAndTheFrenchTextInMessage() {
+        when(userRepository.findByEmailIgnoreCase("inconnu@discipolat.com")).thenReturn(Optional.empty());
+        String token = authService.generateMagicLink("inconnu@discipolat.com");
+
+        BusinessRuleException thrown = assertThrows(BusinessRuleException.class, () ->
+                authService.verifyMagicLink(token));
+
+        assertEquals("USER_NOT_FOUND", thrown.getCode());
+        assertEquals("Aucun compte associé à cet email", thrown.getMessage());
     }
 
     @Test
