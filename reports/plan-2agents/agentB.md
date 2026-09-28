@@ -69,3 +69,31 @@ Worktree : `/home/arise/discipolat/discipolat_app-agentB` (créé le 2026-09-28,
 - **Décision demandée :** laquelle des trois voies. En l'absence de décision, je poursuis sur les
   tâches **web** (B1 → B2 → B3 → B4 → B5 → B6 → B12), qui ne dépendent pas de Flutter, et je
   laisse les tâches mobiles en `BLOCKED`.
+
+---
+
+## B1 — Wizard web : 7 étapes, contrat §3.1
+
+- **Statut : IN_PROGRESS** (code complet et validé statiquement ; **tests Vitest et clés i18n 6 locales encore à écrire** — la tâche n'est donc pas `DONE`)
+- **Fichiers :**
+  - NEW `frontend/src/types/onboarding.ts` (contrat §3.1 + 7 unions + `ProblemDetail`)
+  - NEW `frontend/src/hooks/useOnboardingWizard.ts` (7 queries/mutations, invalidation croisée)
+  - NEW `frontend/src/components/onboarding/OnboardingStepper.tsx`
+  - NEW `frontend/src/components/onboarding/steps/` : `StepProps.ts` + les 7 formulaires
+  - MOD `frontend/src/pages/OnboardingWizardPage.tsx` (réécriture complète)
+- **Preuves réelles :**
+  - `tsc -b` (TypeScript strict) → **EXIT=0**, 0 erreur
+  - `eslint` sur les 11 fichiers du périmètre → **EXIT=0**, 0 erreur, 0 warning
+- **Corrections appliquées :**
+  1. Le champ `order` (absent du contrat) a disparu : le tri se fait sur `stepOrder`.
+  2. `POST /complete` envoie `{data:{...}}` quand l'étape en exige, `{}` sinon (D7).
+  3. Les 5 états sont traités : squelette, vide, erreur (avec `retry`), succès, hors-ligne.
+  4. `TENANT_SUSPENDED` affiche un écran dédié avec lien de reconnexion — jamais un écran blanc.
+  5. `STEP_DATA_INVALID` affiche les champs fautifs un par un (`details`).
+  6. §5.0 : cibles ≥ 44 px, `aria-current="step"`, `role="progressbar"`, navigation clavier
+     flèches, `prefers-reduced-motion` respecté, `t()` pour les libellés de l'API.
+  7. `OnboardingStepper` **n'est pas un doublon** : il enveloppe et enrichit
+     `UXComponents.OnboardingStepper` (qui existe déjà) au lieu de le recréer.
+- **Reste à faire pour clore B1 :** `src/__tests__/OnboardingWizardPage.test.tsx` (≥12 cas),
+  `src/__tests__/useOnboardingWizard.test.tsx`, et les clés `onboarding.*` dans les 6 locales
+  (`fr` en premier — le mécanisme `tText` indexe par valeur, cf. §5.0.5).
